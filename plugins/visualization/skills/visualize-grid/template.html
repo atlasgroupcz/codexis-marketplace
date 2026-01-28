@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/theme.js"></script>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/skills/visualize-grid/lib/ag-grid-community.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      --viz-bg: #ffffff;
+      --viz-text: #1f2937;
+      --viz-grid: #e5e7eb;
+    }
+    .dark {
+      --viz-bg: #111827;
+      --viz-text: #f9fafb;
+      --viz-grid: #374151;
+    }
+    body {
+      background-color: var(--viz-bg);
+      color: var(--viz-text);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #grid {
+      width: 100%;
+      height: calc(100vh - 60px);
+    }
+    /* AG Grid Alpine theme overrides */
+    .ag-theme-alpine, .ag-theme-alpine-dark {
+      --ag-font-family: system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="p-4 border-b border-[var(--viz-grid)]">
+    <h1 class="text-xl font-semibold">{{TITLE}}</h1>
+  </header>
+  <div id="grid"></div>
+
+  <script>
+    const spec = {{DATA}};
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    // Set up grid container with theme
+    const gridDiv = document.getElementById('grid');
+    gridDiv.className = isDark ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
+
+    // Grid options
+    const options = spec.options || {};
+    const gridOptions = {
+      columnDefs: spec.columnDefs.map(col => ({
+        ...col,
+        sortable: col.sortable !== false,
+        filter: col.filter !== false,
+        resizable: true
+      })),
+      rowData: spec.rowData,
+      defaultColDef: {
+        flex: 1,
+        minWidth: 100
+      },
+      animateRows: true,
+      rowSelection: 'multiple',
+      pagination: options.pagination !== false,
+      paginationPageSize: options.pageSize || 25,
+      paginationPageSizeSelector: [10, 25, 50, 100]
+    };
+
+    // Create grid
+    const gridApi = agGrid.createGrid(gridDiv, gridOptions);
+
+    // Update theme on system change
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      gridDiv.className = e.matches ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
+    });
+  </script>
+</body>
+</html>
