@@ -36,7 +36,7 @@ This is the main entry point for all visualization types. Based on your data and
 3. **Construct A2UI JSON** with `type` field set to chosen type
 4. **Read the template** from `references/{type}/template.html`
 5. **Replace placeholders** `{{TITLE}}` and `{{DATA}}`
-6. **Write output** to `~/.cdx/chats/{sanitized-workdir}/{chatId}/visualization-{type}-{uuid}.html`
+6. **Write output** to `{workDir}/{type}-{datetime}.html` (where `workDir` is the chat's working directory)
 
 ## Type Selection Guide
 
@@ -272,4 +272,9 @@ Interactive tile maps with markers and popups.
 
 ## Output
 
-**Output path:** `~/.cdx/chats/{sanitized-workdir}/{chatId}/visualization-{type}-{uuid}.html`
+**Output path:** `{workDir}/{type}-{datetime}.html`
+
+Where:
+- `workDir` = the chat's working directory (from conversation context)
+- `type` = visualization type (chart, graph, timeline, etc.)
+- `datetime` = ISO timestamp like `2024-01-15T14-30-00`
