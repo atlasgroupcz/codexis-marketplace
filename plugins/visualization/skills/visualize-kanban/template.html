@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      --viz-bg: #ffffff;
+      --viz-text: #1f2937;
+      --viz-grid: #e5e7eb;
+      --viz-card-bg: #ffffff;
+      --viz-column-bg: #f3f4f6;
+    }
+    .dark {
+      --viz-bg: #111827;
+      --viz-text: #f9fafb;
+      --viz-grid: #374151;
+      --viz-card-bg: #1f2937;
+      --viz-column-bg: #1f2937;
+    }
+    body {
+      background-color: var(--viz-bg);
+      color: var(--viz-text);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .kanban-container {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      overflow-x: auto;
+      height: calc(100vh - 60px);
+      align-items: flex-start;
+    }
+    .kanban-column {
+      flex: 0 0 300px;
+      background: var(--viz-column-bg);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      max-height: 100%;
+    }
+    .column-header {
+      padding: 12px 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid;
+    }
+    .column-count {
+      background: var(--viz-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .column-cards {
+      padding: 8px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .kanban-card {
+      background: var(--viz-card-bg);
+      border-radius: 6px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .kanban-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-1px);
+    }
+    .card-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .card-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .dark .card-subtitle {
+      color: #9ca3af;
+    }
+    .card-tags {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .card-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--viz-grid);
+    }
+    .card-tag.urgent {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .dark .card-tag.urgent {
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--viz-bg);
+      border: 1px solid var(--viz-grid);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 250px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="p-4 border-b border-[var(--viz-grid)]">
+    <h1 class="text-xl font-semibold">{{TITLE}}</h1>
+  </header>
+  <div id="kanban" class="kanban-container"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const spec = {{DATA}};
+    const container = document.getElementById('kanban');
+    const tooltip = document.getElementById('tooltip');
+
+    // Group cards by column
+    const cardsByColumn = new Map();
+    spec.columns.forEach(col => cardsByColumn.set(col.id, []));
+    spec.cards.forEach(card => {
+      if (cardsByColumn.has(card.column)) {
+        cardsByColumn.get(card.column).push(card);
+      }
+    });
+
+    // Render columns
+    spec.columns.forEach(column => {
+      const cards = cardsByColumn.get(column.id) || [];
+      const color = column.color || '#6b7280';
+      
+      const columnEl = document.createElement('div');
+      columnEl.className = 'kanban-column';
+      columnEl.innerHTML = `
+        <div class="column-header" style="border-color: ${color}">
+          <span>${column.title}</span>
+          <span class="column-count">${cards.length}</span>
+        </div>
+        <div class="column-cards" data-column="${column.id}"></div>
+      `;
+      
+      const cardsContainer = columnEl.querySelector('.column-cards');
+      
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'kanban-card';
+        
+        let tagsHtml = '';
+        if (card.tags && card.tags.length > 0) {
+          tagsHtml = `<div class="card-tags">${
+            card.tags.map(tag => `<span class="card-tag ${tag}">${tag}</span>`).join('')
+          }</div>`;
+        }
+        
+        cardEl.innerHTML = `
+          <div class="card-title">${card.title}</div>
+          ${card.subtitle ? `<div class="card-subtitle">${card.subtitle}</div>` : ''}
+          ${tagsHtml}
+        `;
+        
+        // Tooltip handlers
+        cardEl.addEventListener('mouseover', (e) => {
+          let content = `<strong>${card.title}</strong>`;
+          if (card.subtitle) content += `<br>${card.subtitle}`;
+          if (card.meta) {
+            Object.entries(card.meta).forEach(([k, v]) => {
+              content += `<br><span style="color:#6b7280">${k}:</span> ${v}`;
+            });
+          }
+          tooltip.innerHTML = content;
+          tooltip.style.opacity = 1;
+        });
+        
+        cardEl.addEventListener('mousemove', (e) => {
+          tooltip.style.left = (e.pageX + 10) + 'px';
+          tooltip.style.top = (e.pageY - 10) + 'px';
+        });
+        
+        cardEl.addEventListener('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+        
+        cardsContainer.appendChild(cardEl);
+      });
+      
+      container.appendChild(columnEl);
+    });
+  </script>
+</body>
+</html>
