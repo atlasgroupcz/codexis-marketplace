@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/d3.min.js"></script>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      --viz-bg: #ffffff;
+      --viz-text: #1f2937;
+      --viz-grid: #e5e7eb;
+      --viz-primary: #3b82f6;
+      --viz-secondary: #10b981;
+      --viz-axis: #6b7280;
+    }
+    .dark {
+      --viz-bg: #111827;
+      --viz-text: #f9fafb;
+      --viz-grid: #374151;
+      --viz-primary: #60a5fa;
+      --viz-secondary: #34d399;
+      --viz-axis: #9ca3af;
+    }
+    body {
+      background-color: var(--viz-bg);
+      color: var(--viz-text);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #timeline {
+      width: 100vw;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+    .axis path, .axis line {
+      stroke: var(--viz-axis);
+    }
+    .axis text {
+      fill: var(--viz-text);
+      font-size: 11px;
+    }
+    .event-point {
+      fill: var(--viz-primary);
+      cursor: pointer;
+      transition: r 0.2s;
+    }
+    .event-point:hover {
+      r: 10;
+    }
+    .event-range {
+      fill: var(--viz-secondary);
+      opacity: 0.7;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .event-range:hover {
+      opacity: 1;
+    }
+    .event-label {
+      fill: var(--viz-text);
+      font-size: 12px;
+      pointer-events: none;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--viz-bg);
+      border: 1px solid var(--viz-grid);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 250px;
+    }
+    .grid line {
+      stroke: var(--viz-grid);
+      stroke-opacity: 0.5;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="p-4 border-b border-[var(--viz-grid)]">
+    <h1 class="text-xl font-semibold">{{TITLE}}</h1>
+  </header>
+  <div id="timeline"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const spec = {{DATA}};
+    
+    const container = document.getElementById('timeline');
+    const tooltip = document.getElementById('tooltip');
+    const isHorizontal = spec.orientation !== 'vertical';
+    
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const width = container.clientWidth - margin.left - margin.right;
+    const height = container.clientHeight - margin.top - margin.bottom;
+
+    // Parse dates
+    const events = spec.events.map(e => ({
+      ...e,
+      date: e.date ? new Date(e.date) : null,
+      start: e.start ? new Date(e.start) : null,
+      end: e.end ? new Date(e.end) : null
+    }));
+
+    // Calculate time extent
+    const allDates = events.flatMap(e => 
+      e.type === 'range' ? [e.start, e.end] : [e.date]
+    ).filter(d => d);
+    
+    const timeExtent = d3.extent(allDates);
+    const padding = (timeExtent[1] - timeExtent[0]) * 0.05;
+    
+    // Create scales
+    const timeScale = d3.scaleTime()
+      .domain([new Date(timeExtent[0] - padding), new Date(timeExtent[1].getTime() + padding)])
+      .range(isHorizontal ? [0, width] : [height, 0]);
+
+    const categoryScale = d3.scaleBand()
+      .domain(events.map((_, i) => i))
+      .range(isHorizontal ? [0, height] : [0, width])
+      .padding(0.3);
+
+    // Create SVG
+    const svg = d3.select('#timeline')
+      .append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom);
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Add zoom
+    const zoom = d3.zoom()
+      .scaleExtent([0.5, 10])
+      .on('zoom', zoomed);
+    
+    svg.call(zoom);
+
+    // Create axes
+    const timeAxis = isHorizontal 
+      ? d3.axisBottom(timeScale).ticks(10)
+      : d3.axisLeft(timeScale).ticks(10);
+
+    const axisG = g.append('g')
+      .attr('class', 'axis')
+      .attr('transform', isHorizontal ? `translate(0,${height})` : '')
+      .call(timeAxis);
+
+    // Add grid lines
+    const gridG = g.append('g')
+      .attr('class', 'grid')
+      .call(isHorizontal 
+        ? d3.axisBottom(timeScale).ticks(10).tickSize(height).tickFormat('')
+        : d3.axisLeft(timeScale).ticks(10).tickSize(-width).tickFormat('')
+      );
+
+    // Draw events
+    const eventsG = g.append('g').attr('class', 'events');
+
+    events.forEach((event, i) => {
+      const y = categoryScale(i) + categoryScale.bandwidth() / 2;
+      
+      if (event.type === 'range') {
+        const x1 = timeScale(event.start);
+        const x2 = timeScale(event.end);
+        
+        if (isHorizontal) {
+          eventsG.append('rect')
+            .attr('class', 'event-range')
+            .attr('x', x1)
+            .attr('y', y - 10)
+            .attr('width', x2 - x1)
+            .attr('height', 20)
+            .attr('rx', 4)
+            .datum(event)
+            .on('mouseover', showTooltip)
+            .on('mousemove', moveTooltip)
+            .on('mouseout', hideTooltip);
+        } else {
+          eventsG.append('rect')
+            .attr('class', 'event-range')
+            .attr('x', y - 10)
+            .attr('y', x2)
+            .attr('width', 20)
+            .attr('height', x1 - x2)
+            .attr('rx', 4)
+            .datum(event)
+            .on('mouseover', showTooltip)
+            .on('mousemove', moveTooltip)
+            .on('mouseout', hideTooltip);
+        }
+      } else {
+        const x = timeScale(event.date);
+        
+        eventsG.append('circle')
+          .attr('class', 'event-point')
+          .attr('cx', isHorizontal ? x : y)
+          .attr('cy', isHorizontal ? y : x)
+          .attr('r', 8)
+          .datum(event)
+          .on('mouseover', showTooltip)
+          .on('mousemove', moveTooltip)
+          .on('mouseout', hideTooltip);
+      }
+
+      // Add label
+      const labelX = isHorizontal 
+        ? (event.type === 'range' ? timeScale(event.start) : timeScale(event.date))
+        : y;
+      const labelY = isHorizontal 
+        ? y - 20
+        : (event.type === 'range' ? timeScale(event.end) - 10 : timeScale(event.date) - 15);
+
+      eventsG.append('text')
+        .attr('class', 'event-label')
+        .attr('x', labelX)
+        .attr('y', labelY)
+        .attr('text-anchor', isHorizontal ? 'start' : 'middle')
+        .text(event.label);
+    });
+
+    // Zoom handler
+    function zoomed(event) {
+      const newTimeScale = event.transform.rescaleX(timeScale);
+      axisG.call(timeAxis.scale(newTimeScale));
+      gridG.call((isHorizontal 
+        ? d3.axisBottom(newTimeScale).ticks(10).tickSize(height).tickFormat('')
+        : d3.axisLeft(newTimeScale).ticks(10).tickSize(-width).tickFormat('')
+      ));
+      
+      eventsG.selectAll('.event-point')
+        .attr(isHorizontal ? 'cx' : 'cy', d => newTimeScale(d.date));
+      
+      eventsG.selectAll('.event-range')
+        .attr(isHorizontal ? 'x' : 'y', d => isHorizontal ? newTimeScale(d.start) : newTimeScale(d.end))
+        .attr(isHorizontal ? 'width' : 'height', d => 
+          isHorizontal 
+            ? newTimeScale(d.end) - newTimeScale(d.start)
+            : newTimeScale(d.start) - newTimeScale(d.end)
+        );
+    }
+
+    // Tooltip functions
+    function showTooltip(event, d) {
+      const dateStr = d.type === 'range'
+        ? `${d.start.toLocaleDateString()} - ${d.end.toLocaleDateString()}`
+        : d.date.toLocaleDateString();
+      tooltip.innerHTML = `<strong>${d.label}</strong><br>${dateStr}`;
+      tooltip.style.opacity = 1;
+    }
+    
+    function moveTooltip(event) {
+      tooltip.style.left = (event.pageX + 10) + 'px';
+      tooltip.style.top = (event.pageY - 10) + 'px';
+    }
+    
+    function hideTooltip() {
+      tooltip.style.opacity = 0;
+    }
+  </script>
+</body>
+</html>
