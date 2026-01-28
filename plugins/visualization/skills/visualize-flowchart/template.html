@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/d3.min.js"></script>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      --viz-bg: #ffffff;
+      --viz-text: #1f2937;
+      --viz-grid: #e5e7eb;
+      --viz-primary: #3b82f6;
+      --viz-secondary: #10b981;
+      --viz-warning: #f59e0b;
+      --viz-danger: #ef4444;
+      --viz-node-fill: #ffffff;
+      --viz-edge: #6b7280;
+    }
+    .dark {
+      --viz-bg: #111827;
+      --viz-text: #f9fafb;
+      --viz-grid: #374151;
+      --viz-primary: #60a5fa;
+      --viz-secondary: #34d399;
+      --viz-warning: #fbbf24;
+      --viz-danger: #f87171;
+      --viz-node-fill: #1f2937;
+      --viz-edge: #9ca3af;
+    }
+    body {
+      background-color: var(--viz-bg);
+      color: var(--viz-text);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #flowchart {
+      width: 100vw;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+    .node-shape {
+      fill: var(--viz-node-fill);
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+    .node-shape:hover {
+      filter: brightness(0.95);
+    }
+    .node-action { stroke: var(--viz-primary); }
+    .node-decision { stroke: var(--viz-warning); }
+    .node-terminal { stroke: var(--viz-danger); }
+    .node-start { stroke: var(--viz-secondary); fill: var(--viz-secondary); }
+    .node-label {
+      fill: var(--viz-text);
+      font-size: 12px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+    .node-start .node-label { fill: white; }
+    .edge {
+      fill: none;
+      stroke: var(--viz-edge);
+      stroke-width: 2px;
+      marker-end: url(#arrowhead);
+    }
+    .edge-label {
+      fill: var(--viz-text);
+      font-size: 11px;
+      text-anchor: middle;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--viz-bg);
+      border: 1px solid var(--viz-grid);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="p-4 border-b border-[var(--viz-grid)]">
+    <h1 class="text-xl font-semibold">{{TITLE}}</h1>
+    <p class="text-sm text-gray-500 mt-1">Drag to pan, scroll to zoom</p>
+  </header>
+  <div id="flowchart"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const spec = {{DATA}};
+    
+    const container = document.getElementById('flowchart');
+    const tooltip = document.getElementById('tooltip');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    const isVertical = spec.direction !== 'LR';
+    const nodeWidth = 140;
+    const nodeHeight = 50;
+    const levelGap = isVertical ? 100 : 160;
+    const nodeGap = isVertical ? 160 : 100;
+
+    // Create SVG
+    const svg = d3.select('#flowchart')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    // Define arrow marker
+    svg.append('defs').append('marker')
+      .attr('id', 'arrowhead')
+      .attr('viewBox', '-5 -5 10 10')
+      .attr('refX', 8)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M-5,-5L5,0L-5,5Z')
+      .attr('fill', 'var(--viz-edge)');
+
+    const g = svg.append('g');
+
+    // Add zoom
+    svg.call(d3.zoom()
+      .extent([[0, 0], [width, height]])
+      .scaleExtent([0.2, 3])
+      .on('zoom', (event) => g.attr('transform', event.transform)));
+
+    // Simple layered layout algorithm
+    function layoutNodes(nodes, edges) {
+      const nodeMap = new Map(nodes.map(n => [n.id, { ...n, layer: 0, position: 0 }]));
+      const incoming = new Map(nodes.map(n => [n.id, []]));
+      const outgoing = new Map(nodes.map(n => [n.id, []]));
+      
+      edges.forEach(e => {
+        outgoing.get(e.from)?.push(e.to);
+        incoming.get(e.to)?.push(e.from);
+      });
+
+      // Find root nodes (no incoming edges)
+      const roots = nodes.filter(n => incoming.get(n.id)?.length === 0);
+      if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0]);
+
+      // BFS to assign layers
+      const visited = new Set();
+      const queue = roots.map(r => ({ id: r.id, layer: 0 }));
+      
+      while (queue.length > 0) {
+        const { id, layer } = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        
+        const node = nodeMap.get(id);
+        node.layer = Math.max(node.layer, layer);
+        
+        outgoing.get(id)?.forEach(targetId => {
+          if (!visited.has(targetId)) {
+            queue.push({ id: targetId, layer: layer + 1 });
+          }
+        });
+      }
+
+      // Group by layer and assign positions
+      const layers = new Map();
+      nodeMap.forEach(node => {
+        if (!layers.has(node.layer)) layers.set(node.layer, []);
+        layers.get(node.layer).push(node);
+      });
+
+      layers.forEach((layerNodes, layer) => {
+        layerNodes.forEach((node, i) => {
+          node.position = i;
+          if (isVertical) {
+            node.x = (i - (layerNodes.length - 1) / 2) * nodeGap + width / 2;
+            node.y = layer * levelGap + 80;
+          } else {
+            node.x = layer * levelGap + 100;
+            node.y = (i - (layerNodes.length - 1) / 2) * nodeGap + height / 2;
+          }
+        });
+      });
+
+      return Array.from(nodeMap.values());
+    }
+
+    const layoutedNodes = layoutNodes(spec.nodes, spec.edges);
+    const nodeMap = new Map(layoutedNodes.map(n => [n.id, n]));
+
+    // Draw edges
+    const edgesG = g.append('g').attr('class', 'edges');
+    
+    spec.edges.forEach(edge => {
+      const source = nodeMap.get(edge.from);
+      const target = nodeMap.get(edge.to);
+      if (!source || !target) return;
+
+      // Calculate edge path with offset for node shapes
+      let x1 = source.x, y1 = source.y, x2 = target.x, y2 = target.y;
+      
+      // Offset from source
+      if (isVertical) {
+        y1 += nodeHeight / 2;
+        y2 -= nodeHeight / 2;
+      } else {
+        x1 += nodeWidth / 2;
+        x2 -= nodeWidth / 2;
+      }
+
+      const path = edgesG.append('path')
+        .attr('class', 'edge')
+        .attr('d', `M${x1},${y1} C${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`);
+
+      if (edge.label) {
+        edgesG.append('text')
+          .attr('class', 'edge-label')
+          .attr('x', (x1 + x2) / 2)
+          .attr('y', (y1 + y2) / 2 - 8)
+          .text(edge.label);
+      }
+    });
+
+    // Draw nodes
+    const nodesG = g.append('g').attr('class', 'nodes');
+
+    layoutedNodes.forEach(node => {
+      const nodeG = nodesG.append('g')
+        .attr('transform', `translate(${node.x},${node.y})`)
+        .on('mouseover', () => {
+          tooltip.innerHTML = `<strong>${node.label}</strong><br><span class="text-gray-500">${node.type}</span>`;
+          tooltip.style.opacity = 1;
+        })
+        .on('mousemove', (event) => {
+          tooltip.style.left = (event.pageX + 10) + 'px';
+          tooltip.style.top = (event.pageY - 10) + 'px';
+        })
+        .on('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+
+      // Draw shape based on type
+      const type = node.type || 'action';
+      
+      if (type === 'decision') {
+        // Diamond
+        const size = 35;
+        nodeG.append('polygon')
+          .attr('class', `node-shape node-${type}`)
+          .attr('points', `0,${-size} ${size},0 0,${size} ${-size},0`);
+      } else if (type === 'terminal') {
+        // Rounded rectangle
+        nodeG.append('rect')
+          .attr('class', `node-shape node-${type}`)
+          .attr('x', -nodeWidth / 2)
+          .attr('y', -nodeHeight / 2)
+          .attr('width', nodeWidth)
+          .attr('height', nodeHeight)
+          .attr('rx', nodeHeight / 2);
+      } else if (type === 'start') {
+        // Circle
+        nodeG.append('circle')
+          .attr('class', `node-shape node-${type}`)
+          .attr('r', 20);
+      } else {
+        // Rectangle (action)
+        nodeG.append('rect')
+          .attr('class', `node-shape node-${type}`)
+          .attr('x', -nodeWidth / 2)
+          .attr('y', -nodeHeight / 2)
+          .attr('width', nodeWidth)
+          .attr('height', nodeHeight)
+          .attr('rx', 4);
+      }
+
+      // Add label
+      nodeG.append('text')
+        .attr('class', 'node-label')
+        .text(node.label);
+    });
+
+    // Center the graph
+    const bounds = g.node().getBBox();
+    const dx = width / 2 - (bounds.x + bounds.width / 2);
+    const dy = height / 2 - (bounds.y + bounds.height / 2);
+    g.attr('transform', `translate(${dx},${dy})`);
+  </script>
+</body>
+</html>
