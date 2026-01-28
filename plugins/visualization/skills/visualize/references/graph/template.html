@@ -8,25 +8,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-      --viz-primary: #3b82f6;
-      --viz-link: #9ca3af;
-      --viz-node-stroke: #ffffff;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-      --viz-primary: #60a5fa;
-      --viz-link: #6b7280;
-      --viz-node-stroke: #1f2937;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -37,15 +21,15 @@
     .node-label {
       font-size: 12px;
       pointer-events: none;
-      fill: var(--viz-text);
+      fill: var(--foreground);
     }
     .link {
-      stroke: var(--viz-link);
+      stroke: var(--muted-foreground);
       stroke-opacity: 0.6;
     }
     .link-label {
       font-size: 10px;
-      fill: var(--viz-text);
+      fill: var(--foreground);
       opacity: 0;
       transition: opacity 0.2s;
     }
@@ -55,8 +39,8 @@
     }
     .tooltip {
       position: absolute;
-      background: var(--viz-bg);
-      border: 1px solid var(--viz-grid);
+      background: var(--background);
+      border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 12px;
@@ -68,7 +52,7 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="graph"></div>
@@ -82,8 +66,14 @@
     const width = container.clientWidth;
     const height = container.clientHeight;
 
+    // Helper function to get CSS variable values
+    const getColor = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const chartColors = [
+      getColor('--chart-1'), getColor('--chart-2'), getColor('--chart-3'),
+      getColor('--chart-4'), getColor('--chart-5')
+    ];
     // Color scale for node groups
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    const colorScale = d3.scaleOrdinal(chartColors);
 
     // Create SVG
     const svg = d3.select('#graph')
@@ -129,7 +119,7 @@
       .join('circle')
       .attr('r', 20)
       .attr('fill', d => colorScale(d.group || 'default'))
-      .attr('stroke', 'var(--viz-node-stroke)')
+      .attr('stroke', 'var(--background)')
       .attr('stroke-width', 2)
       .call(drag(simulation));
 

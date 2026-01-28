@@ -8,21 +8,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-      --viz-axis: #6b7280;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-      --viz-axis: #9ca3af;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -34,14 +22,14 @@
       align-items: center;
     }
     .axis path, .axis line {
-      stroke: var(--viz-axis);
+      stroke: var(--muted-foreground);
     }
     .axis text {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 11px;
     }
     .grid line {
-      stroke: var(--viz-grid);
+      stroke: var(--border);
       stroke-opacity: 0.5;
     }
     .grid path {
@@ -49,8 +37,8 @@
     }
     .tooltip {
       position: absolute;
-      background: var(--viz-bg);
-      border: 1px solid var(--viz-grid);
+      background: var(--background);
+      border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 12px;
@@ -80,7 +68,7 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="chart"></div>
@@ -89,16 +77,22 @@
 
   <script>
     const spec = {{DATA}};
-    
+
     const container = document.getElementById('chart');
     const tooltip = document.getElementById('tooltip');
     const legendContainer = document.getElementById('legend');
-    
+
     const margin = { top: 40, right: 40, bottom: 60, left: 60 };
     const width = Math.min(container.clientWidth, 900) - margin.left - margin.right;
     const height = Math.min(container.clientHeight, 500) - margin.top - margin.bottom;
 
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    // Helper function to get CSS variable values
+    const getColor = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const chartColors = [
+      getColor('--chart-1'), getColor('--chart-2'), getColor('--chart-3'),
+      getColor('--chart-4'), getColor('--chart-5')
+    ];
+    const colorScale = d3.scaleOrdinal(chartColors);
     const chartType = spec.chartType || 'bar';
     const options = spec.options || {};
     const showLegend = options.showLegend !== false;
@@ -262,7 +256,7 @@
       arcs.append('path')
         .attr('d', arc)
         .attr('fill', (d, i) => colorScale(d.data[xAxis]))
-        .attr('stroke', 'var(--viz-bg)')
+        .attr('stroke', 'var(--background)')
         .attr('stroke-width', 2)
         .style('cursor', 'pointer')
         .on('mouseover', function(e, d) {

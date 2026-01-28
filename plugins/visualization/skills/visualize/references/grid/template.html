@@ -8,19 +8,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fgrid%2Flib%2Fag-grid-community.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -28,25 +18,24 @@
       width: 100%;
       height: calc(100vh - 60px);
     }
-    /* AG Grid Alpine theme overrides */
-    .ag-theme-alpine, .ag-theme-alpine-dark {
+    /* AG Grid Quartz theme overrides */
+    .ag-theme-quartz {
       --ag-font-family: system-ui, -apple-system, sans-serif;
     }
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="grid"></div>
 
   <script>
     const spec = {{DATA}};
-    const isDark = document.documentElement.classList.contains('dark');
-    
-    // Set up grid container with theme
+
+    // Set up grid container with Quartz theme (auto-detects dark mode via data-ag-theme-mode)
     const gridDiv = document.getElementById('grid');
-    gridDiv.className = isDark ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
+    gridDiv.className = 'ag-theme-quartz';
 
     // Grid options
     const options = spec.options || {};
@@ -71,11 +60,6 @@
 
     // Create grid
     const gridApi = agGrid.createGrid(gridDiv, gridOptions);
-
-    // Update theme on system change
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      gridDiv.className = e.matches ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
-    });
   </script>
 </body>
 </html>

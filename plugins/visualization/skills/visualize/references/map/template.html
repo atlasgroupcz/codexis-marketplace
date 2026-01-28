@@ -9,19 +9,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fmap%2Flib%2Fleaflet.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -48,13 +38,13 @@
       margin-bottom: 4px;
     }
     .marker-popup {
-      color: #6b7280;
+      color: var(--muted-foreground);
       font-size: 13px;
     }
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="map"></div>

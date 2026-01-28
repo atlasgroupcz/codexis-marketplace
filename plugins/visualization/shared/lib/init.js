@@ -93,6 +93,10 @@ function initTheme() {
   const theme = (themeParam === 'light' || themeParam === 'dark') ? themeParam : 'light';
   document.documentElement.classList.remove('light', 'dark');
   document.documentElement.classList.add(theme);
+  // Set AG Grid theme mode attribute for native dark mode support
+  document.documentElement.setAttribute('data-ag-theme-mode', theme);
+  // Expose isDark globally for JavaScript access in templates
+  window.isDark = theme === 'dark';
 }
 
 // Initialize

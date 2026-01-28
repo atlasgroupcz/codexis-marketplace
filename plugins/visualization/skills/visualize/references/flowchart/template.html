@@ -8,31 +8,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-      --viz-primary: #3b82f6;
-      --viz-secondary: #10b981;
-      --viz-warning: #f59e0b;
-      --viz-danger: #ef4444;
-      --viz-node-fill: #ffffff;
-      --viz-edge: #6b7280;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-      --viz-primary: #60a5fa;
-      --viz-secondary: #34d399;
-      --viz-warning: #fbbf24;
-      --viz-danger: #f87171;
-      --viz-node-fill: #1f2937;
-      --viz-edge: #9ca3af;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -42,7 +20,7 @@
       overflow: hidden;
     }
     .node-shape {
-      fill: var(--viz-node-fill);
+      fill: var(--background);
       stroke-width: 2px;
       cursor: pointer;
       transition: filter 0.2s;
@@ -50,12 +28,12 @@
     .node-shape:hover {
       filter: brightness(0.95);
     }
-    .node-action { stroke: var(--viz-primary); }
-    .node-decision { stroke: var(--viz-warning); }
-    .node-terminal { stroke: var(--viz-danger); }
-    .node-start { stroke: var(--viz-secondary); fill: var(--viz-secondary); }
+    .node-action { stroke: var(--chart-1); }
+    .node-decision { stroke: var(--chart-4); }
+    .node-terminal { stroke: var(--destructive); }
+    .node-start { stroke: var(--chart-2); fill: var(--chart-2); }
     .node-label {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 12px;
       text-anchor: middle;
       dominant-baseline: middle;
@@ -64,19 +42,19 @@
     .node-start .node-label { fill: white; }
     .edge {
       fill: none;
-      stroke: var(--viz-edge);
+      stroke: var(--muted-foreground);
       stroke-width: 2px;
       marker-end: url(#arrowhead);
     }
     .edge-label {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 11px;
       text-anchor: middle;
     }
     .tooltip {
       position: absolute;
-      background: var(--viz-bg);
-      border: 1px solid var(--viz-grid);
+      background: var(--background);
+      border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 12px;
@@ -88,7 +66,7 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
     <p class="text-sm text-gray-500 mt-1">Drag to pan, scroll to zoom</p>
   </header>
@@ -126,7 +104,7 @@
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M-5,-5L5,0L-5,5Z')
-      .attr('fill', 'var(--viz-edge)');
+      .attr('fill', 'var(--muted-foreground)');
 
     const g = svg.append('g');
 

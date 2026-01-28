@@ -8,21 +8,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-      --viz-empty: #ebedf0;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-      --viz-empty: #161b22;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -36,7 +24,7 @@
       padding: 20px;
     }
     .day {
-      stroke: var(--viz-bg);
+      stroke: var(--background);
       stroke-width: 1px;
       rx: 2;
       cursor: pointer;
@@ -46,17 +34,17 @@
       opacity: 0.8;
     }
     .month-label {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 11px;
     }
     .day-label {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 10px;
     }
     .tooltip {
       position: absolute;
-      background: var(--viz-bg);
-      border: 1px solid var(--viz-grid);
+      background: var(--background);
+      border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 12px;
@@ -80,7 +68,7 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="calendar"></div>
@@ -95,12 +83,19 @@
     const cellSize = 14;
     const cellPadding = 2;
     const year = spec.year;
-    
-    // Default GitHub-style color scale
-    const defaultColors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
-    const darkColors = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
-    const isDark = document.documentElement.classList.contains('dark');
-    const colors = spec.colorScale || (isDark ? darkColors : defaultColors);
+
+    // Helper function to get CSS variable values
+    const getColor = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    // Generate color scale from chart variables (empty to filled)
+    const emptyColor = window.isDark ? '#161b22' : '#ebedf0';
+    const colors = spec.colorScale || [
+      emptyColor,
+      getColor('--chart-2'), // Teal/green tones work well for contribution graphs
+      getColor('--chart-3'),
+      getColor('--chart-4'),
+      getColor('--chart-1')
+    ];
 
     // Create data map
     const dataMap = new Map(spec.data.map(d => [d.date, d]));

@@ -8,25 +8,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-      --viz-primary: #3b82f6;
-      --viz-secondary: #10b981;
-      --viz-axis: #6b7280;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-      --viz-primary: #60a5fa;
-      --viz-secondary: #34d399;
-      --viz-axis: #9ca3af;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -36,14 +20,14 @@
       overflow: hidden;
     }
     .axis path, .axis line {
-      stroke: var(--viz-axis);
+      stroke: var(--muted-foreground);
     }
     .axis text {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 11px;
     }
     .event-point {
-      fill: var(--viz-primary);
+      fill: var(--chart-1);
       cursor: pointer;
       transition: r 0.2s;
     }
@@ -51,7 +35,7 @@
       r: 10;
     }
     .event-range {
-      fill: var(--viz-secondary);
+      fill: var(--chart-2);
       opacity: 0.7;
       cursor: pointer;
       transition: opacity 0.2s;
@@ -60,14 +44,14 @@
       opacity: 1;
     }
     .event-label {
-      fill: var(--viz-text);
+      fill: var(--foreground);
       font-size: 12px;
       pointer-events: none;
     }
     .tooltip {
       position: absolute;
-      background: var(--viz-bg);
-      border: 1px solid var(--viz-grid);
+      background: var(--background);
+      border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 12px;
@@ -78,13 +62,13 @@
       max-width: 250px;
     }
     .grid line {
-      stroke: var(--viz-grid);
+      stroke: var(--border);
       stroke-opacity: 0.5;
     }
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="timeline"></div>

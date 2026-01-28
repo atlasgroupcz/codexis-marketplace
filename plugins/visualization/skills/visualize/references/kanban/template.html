@@ -7,23 +7,9 @@
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
-    :root {
-      --viz-bg: #ffffff;
-      --viz-text: #1f2937;
-      --viz-grid: #e5e7eb;
-      --viz-card-bg: #ffffff;
-      --viz-column-bg: #f3f4f6;
-    }
-    .dark {
-      --viz-bg: #111827;
-      --viz-text: #f9fafb;
-      --viz-grid: #374151;
-      --viz-card-bg: #1f2937;
-      --viz-column-bg: #1f2937;
-    }
     body {
-      background-color: var(--viz-bg);
-      color: var(--viz-text);
+      background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -37,7 +23,7 @@
     }
     .kanban-column {
       flex: 0 0 300px;
-      background: var(--viz-column-bg);
+      background: var(--muted);
       border-radius: 8px;
       display: flex;
       flex-direction: column;
@@ -52,7 +38,7 @@
       border-bottom: 3px solid;
     }
     .column-count {
-      background: var(--viz-bg);
+      background: var(--background);
       padding: 2px 8px;
       border-radius: 10px;
       font-size: 12px;
@@ -67,7 +53,7 @@
       gap: 8px;
     }
     .kanban-card {
-      background: var(--viz-card-bg);
+      background: var(--card);
       border-radius: 6px;
       padding: 12px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -84,10 +70,7 @@
     }
     .card-subtitle {
       font-size: 13px;
-      color: #6b7280;
-    }
-    .dark .card-subtitle {
-      color: #9ca3af;
+      color: var(--muted-foreground);
     }
     .card-tags {
       display: flex;
@@ -99,20 +82,16 @@
       font-size: 11px;
       padding: 2px 8px;
       border-radius: 4px;
-      background: var(--viz-grid);
+      background: var(--border);
     }
     .card-tag.urgent {
-      background: #fef2f2;
-      color: #dc2626;
-    }
-    .dark .card-tag.urgent {
-      background: #7f1d1d;
-      color: #fecaca;
+      background: color-mix(in oklch, var(--destructive) 20%, transparent);
+      color: var(--destructive);
     }
     .tooltip {
       position: absolute;
-      background: var(--viz-bg);
-      border: 1px solid var(--viz-grid);
+      background: var(--background);
+      border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 12px;
@@ -126,7 +105,7 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--viz-grid)]">
+  <header class="p-4 border-b border-[var(--border)]">
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="kanban" class="kanban-container"></div>
