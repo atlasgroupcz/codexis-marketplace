@@ -1,0 +1,9 @@
+{
+  "name": "codexis-plugins",
+  "description": "Directory of popular CODEXIS AI extensions including visualization tools, productivity plugins, and MCP integrations",
+  "owner": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "plugins": []
+}
