@@ -5,5 +5,23 @@
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "visualization",
+      "version": "1.0.0",
+      "path": "plugins/visualization",
+      "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
+      "skills": [
+        "visualize-graph",
+        "visualize-timeline",
+        "visualize-tree",
+        "visualize-chart",
+        "visualize-calendar",
+        "visualize-flowchart",
+        "visualize-grid",
+        "visualize-kanban",
+        "visualize-map"
+      ]
+    }
+  ]
 }
