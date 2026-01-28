@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/d3.min.js"></script>
+  <script src="/rest/files/download?path=/home/user/.cdx/plugins/marketplaces/codexis-plugins/visualization/shared/lib/theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      --viz-bg: #ffffff;
+      --viz-text: #1f2937;
+      --viz-grid: #e5e7eb;
+      --viz-primary: #3b82f6;
+      --viz-link: #9ca3af;
+      --viz-node-fill: #ffffff;
+      --viz-node-stroke: #3b82f6;
+    }
+    .dark {
+      --viz-bg: #111827;
+      --viz-text: #f9fafb;
+      --viz-grid: #374151;
+      --viz-primary: #60a5fa;
+      --viz-link: #6b7280;
+      --viz-node-fill: #1f2937;
+      --viz-node-stroke: #60a5fa;
+    }
+    body {
+      background-color: var(--viz-bg);
+      color: var(--viz-text);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #tree {
+      width: 100vw;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+    .node circle {
+      fill: var(--viz-node-fill);
+      stroke: var(--viz-node-stroke);
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .node circle:hover {
+      stroke-width: 3px;
+    }
+    .node.has-children circle {
+      fill: var(--viz-primary);
+    }
+    .node text {
+      fill: var(--viz-text);
+      font-size: 12px;
+    }
+    .link {
+      fill: none;
+      stroke: var(--viz-link);
+      stroke-width: 1.5px;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--viz-bg);
+      border: 1px solid var(--viz-grid);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 250px;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="p-4 border-b border-[var(--viz-grid)]">
+    <h1 class="text-xl font-semibold">{{TITLE}}</h1>
+    <p class="text-sm text-gray-500 mt-1">Click nodes to expand/collapse. Drag to pan, scroll to zoom.</p>
+  </header>
+  <div id="tree"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const spec = {{DATA}};
+    
+    const container = document.getElementById('tree');
+    const tooltip = document.getElementById('tooltip');
+    
+    const margin = { top: 40, right: 120, bottom: 40, left: 120 };
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Create SVG
+    const svg = d3.select('#tree')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Add zoom
+    svg.call(d3.zoom()
+      .extent([[0, 0], [width, height]])
+      .scaleExtent([0.1, 4])
+      .on('zoom', (event) => g.attr('transform', event.transform)));
+
+    // Create hierarchy
+    const root = d3.hierarchy(spec.root);
+    root.x0 = height / 2;
+    root.y0 = 0;
+
+    // Tree layout
+    const treeLayout = d3.tree()
+      .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
+
+    // Collapse children initially (except root)
+    root.children?.forEach(collapse);
+
+    function collapse(d) {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+      }
+    }
+
+    // Update function
+    function update(source) {
+      const duration = 400;
+      const nodes = root.descendants();
+      const links = root.links();
+
+      // Compute new tree layout
+      treeLayout(root);
+
+      // Normalize for fixed-depth
+      nodes.forEach(d => { d.y = d.depth * 180; });
+
+      // Update nodes
+      const node = g.selectAll('g.node')
+        .data(nodes, d => d.id || (d.id = Math.random()));
+
+      // Enter nodes
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => 'node' + (d._children ? ' has-children' : ''))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => {
+          if (d.children) {
+            d._children = d.children;
+            d.children = null;
+          } else {
+            d.children = d._children;
+            d._children = null;
+          }
+          update(d);
+        })
+        .on('mouseover', (event, d) => {
+          let content = `<strong>${d.data.name}</strong>`;
+          if (d.data.meta) {
+            Object.entries(d.data.meta).forEach(([k, v]) => {
+              content += `<br><span class="text-gray-500">${k}:</span> ${v}`;
+            });
+          }
+          if (d.children || d._children) {
+            const count = (d.children || d._children).length;
+            content += `<br><span class="text-gray-500">${count} children</span>`;
+          }
+          tooltip.innerHTML = content;
+          tooltip.style.opacity = 1;
+        })
+        .on('mousemove', (event) => {
+          tooltip.style.left = (event.pageX + 10) + 'px';
+          tooltip.style.top = (event.pageY - 10) + 'px';
+        })
+        .on('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+
+      nodeEnter.append('circle')
+        .attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -15 : 15)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .text(d => d.data.name);
+
+      // Update nodes
+      const nodeUpdate = nodeEnter.merge(node);
+
+      nodeUpdate.transition()
+        .duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`);
+
+      nodeUpdate.select('circle')
+        .attr('r', 8)
+        .attr('class', d => d._children ? 'has-children' : '');
+
+      nodeUpdate.attr('class', d => 'node' + (d._children ? ' has-children' : ''));
+
+      // Exit nodes
+      const nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr('transform', d => `translate(${source.y},${source.x})`)
+        .remove();
+
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      // Update links
+      const link = g.selectAll('path.link')
+        .data(links, d => d.target.id);
+
+      // Enter links
+      const linkEnter = link.enter().insert('path', 'g')
+        .attr('class', 'link')
+        .attr('d', d => {
+          const o = { x: source.x0, y: source.y0 };
+          return diagonal(o, o);
+        });
+
+      // Update links
+      linkEnter.merge(link).transition()
+        .duration(duration)
+        .attr('d', d => diagonal(d.source, d.target));
+
+      // Exit links
+      link.exit().transition()
+        .duration(duration)
+        .attr('d', d => {
+          const o = { x: source.x, y: source.y };
+          return diagonal(o, o);
+        })
+        .remove();
+
+      // Store positions for transition
+      nodes.forEach(d => {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+    }
+
+    // Diagonal path generator
+    function diagonal(s, d) {
+      return `M ${s.y} ${s.x}
+              C ${(s.y + d.y) / 2} ${s.x},
+                ${(s.y + d.y) / 2} ${d.x},
+                ${d.y} ${d.x}`;
+    }
+
+    // Initial render
+    update(root);
+  </script>
+</body>
+</html>
