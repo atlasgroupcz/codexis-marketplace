@@ -6,42 +6,22 @@
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
   },
-  "skills": [
-    {
-      "name": "visualize-graph",
-      "description": "Network graphs, citation networks, document relationships (D3 force layout)"
-    },
-    {
-      "name": "visualize-timeline",
-      "description": "Temporal data, event sequences, case histories (D3 time scale)"
-    },
-    {
-      "name": "visualize-tree",
-      "description": "Hierarchical data, document structures, folder hierarchies (D3 hierarchy)"
-    },
-    {
-      "name": "visualize-chart",
-      "description": "Bar, line, area, pie charts for statistics and comparisons (D3)"
-    },
-    {
-      "name": "visualize-calendar",
-      "description": "Calendar heatmaps for activity over time (D3)"
-    },
-    {
-      "name": "visualize-flowchart",
-      "description": "Process diagrams, workflows, decision trees (D3 directed graph)"
-    },
-    {
-      "name": "visualize-grid",
-      "description": "Data tables with sorting, filtering, pagination (AG Grid)"
-    },
-    {
-      "name": "visualize-kanban",
-      "description": "Workflow boards, task stages, status columns (CSS layout)"
-    },
-    {
-      "name": "visualize-map",
-      "description": "Geographic tile maps with markers (Leaflet)"
-    }
-  ]
+  "keywords": [
+    "d3",
+    "visualization",
+    "chart",
+    "graph",
+    "timeline",
+    "tree",
+    "calendar",
+    "flowchart",
+    "kanban",
+    "map",
+    "leaflet",
+    "ag-grid",
+    "legal",
+    "law"
+  ],
+  "license": "PROPRIETARY",
+  "skills": "./skills"
 }
