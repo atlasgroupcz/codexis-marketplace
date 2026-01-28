@@ -1,6 +1,5 @@
 {
   "name": "codexis-plugins",
-  "description": "Directory of popular CODEXIS AI extensions including visualization tools, productivity plugins, and MCP integrations",
   "owner": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -8,12 +7,9 @@
   "plugins": [
     {
       "name": "visualization",
-      "version": "1.0.0",
       "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
-      "source": {
-        "source": "path",
-        "path": "plugins/visualization"
-      }
+      "source": "./plugins/visualization",
+      "category": "visualization"
     }
   ]
 }
