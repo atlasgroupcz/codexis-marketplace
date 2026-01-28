@@ -1,0 +1,9 @@
+{
+  "name": "visualization",
+  "version": "1.0.0",
+  "description": "D3.js-based data visualization for legal/law data",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  }
+}
