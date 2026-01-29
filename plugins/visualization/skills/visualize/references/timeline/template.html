@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{TITLE}}</title>
-  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fevent-calendar%2Flib%2Fevent-calendar.min.js"></script>
+  <link rel="stylesheet" href="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fevent-calendar%2Flib%2Fevent-calendar.min.css">
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
     body {
@@ -18,53 +19,26 @@
     #timeline {
       width: 100vw;
       height: calc(100vh - 60px);
-      overflow: hidden;
+      padding: 20px;
     }
-    .axis path, .axis line {
-      stroke: var(--muted-foreground);
+    /* Event Calendar theme integration */
+    .ec {
+      --ec-bg-color: var(--background);
+      --ec-text-color: var(--foreground);
+      --ec-border-color: var(--border);
+      --ec-active-bg-color: var(--accent);
+      --ec-highlight-color: var(--muted);
+      --ec-today-bg-color: var(--accent);
+      --ec-button-bg-color: var(--secondary);
+      --ec-button-text-color: var(--secondary-foreground);
+      --ec-button-active-bg-color: var(--primary);
+      --ec-button-active-text-color: var(--primary-foreground);
+      --ec-event-bg-color: var(--chart-1);
+      --ec-event-text-color: #ffffff;
+      --ec-now-indicator-color: var(--destructive);
     }
-    .axis text {
-      fill: var(--foreground);
-      font-size: 11px;
-    }
-    .event-point {
-      fill: var(--chart-1);
-      cursor: pointer;
-      transition: r 0.2s;
-    }
-    .event-point:hover {
-      r: 10;
-    }
-    .event-range {
-      fill: var(--chart-2);
-      opacity: 0.7;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .event-range:hover {
-      opacity: 1;
-    }
-    .event-label {
-      fill: var(--foreground);
-      font-size: 12px;
-      pointer-events: none;
-    }
-    .tooltip {
-      position: absolute;
-      background: var(--background);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-size: 12px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      max-width: 250px;
-    }
-    .grid line {
-      stroke: var(--border);
-      stroke-opacity: 0.5;
+    .ec-resource {
+      background-color: var(--muted);
     }
   </style>
 </head>
@@ -73,7 +47,6 @@
     <h1 class="text-xl font-semibold">{{TITLE}}</h1>
   </header>
   <div id="timeline"></div>
-  <div id="tooltip" class="tooltip"></div>
 
   <script>
     // Process A2UI specification through adapter
@@ -92,177 +65,74 @@
       throw new Error('Invalid specification');
     }
 
-    const container = document.getElementById('timeline');
-    const tooltip = document.getElementById('tooltip');
-    const isHorizontal = spec.orientation !== 'vertical';
-
-    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
-    const width = container.clientWidth - margin.left - margin.right;
-    const height = container.clientHeight - margin.top - margin.bottom;
-
-    // Events are already transformed with Date objects by the adapter
-    const events = spec.events;
-
-    // Calculate time extent
-    const allDates = events.flatMap(e =>
-      e.eventType === 'range' ? [e.start, e.end] : [e.date]
-    ).filter(d => d);
-    
-    const timeExtent = d3.extent(allDates);
-    const padding = (timeExtent[1] - timeExtent[0]) * 0.05;
-    
-    // Create scales
-    const timeScale = d3.scaleTime()
-      .domain([new Date(timeExtent[0] - padding), new Date(timeExtent[1].getTime() + padding)])
-      .range(isHorizontal ? [0, width] : [height, 0]);
-
-    const categoryScale = d3.scaleBand()
-      .domain(events.map((_, i) => i))
-      .range(isHorizontal ? [0, height] : [0, width])
-      .padding(0.3);
-
-    // Create SVG
-    const svg = d3.select('#timeline')
-      .append('svg')
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom);
-
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
-
-    // Add zoom
-    const zoom = d3.zoom()
-      .scaleExtent([0.5, 10])
-      .on('zoom', zoomed);
-    
-    svg.call(zoom);
-
-    // Create axes
-    const timeAxis = isHorizontal 
-      ? d3.axisBottom(timeScale).ticks(10)
-      : d3.axisLeft(timeScale).ticks(10);
-
-    const axisG = g.append('g')
-      .attr('class', 'axis')
-      .attr('transform', isHorizontal ? `translate(0,${height})` : '')
-      .call(timeAxis);
-
-    // Add grid lines
-    const gridG = g.append('g')
-      .attr('class', 'grid')
-      .call(isHorizontal 
-        ? d3.axisBottom(timeScale).ticks(10).tickSize(height).tickFormat('')
-        : d3.axisLeft(timeScale).ticks(10).tickSize(-width).tickFormat('')
-      );
-
-    // Draw events
-    const eventsG = g.append('g').attr('class', 'events');
-
-    events.forEach((event, i) => {
-      const y = categoryScale(i) + categoryScale.bandwidth() / 2;
-
-      if (event.eventType === 'range') {
-        const x1 = timeScale(event.start);
-        const x2 = timeScale(event.end);
-        
-        if (isHorizontal) {
-          eventsG.append('rect')
-            .attr('class', 'event-range')
-            .attr('x', x1)
-            .attr('y', y - 10)
-            .attr('width', x2 - x1)
-            .attr('height', 20)
-            .attr('rx', 4)
-            .datum(event)
-            .on('mouseover', showTooltip)
-            .on('mousemove', moveTooltip)
-            .on('mouseout', hideTooltip);
-        } else {
-          eventsG.append('rect')
-            .attr('class', 'event-range')
-            .attr('x', y - 10)
-            .attr('y', x2)
-            .attr('width', 20)
-            .attr('height', x1 - x2)
-            .attr('rx', 4)
-            .datum(event)
-            .on('mouseover', showTooltip)
-            .on('mousemove', moveTooltip)
-            .on('mouseout', hideTooltip);
-        }
-      } else {
-        const x = timeScale(event.date);
-        
-        eventsG.append('circle')
-          .attr('class', 'event-point')
-          .attr('cx', isHorizontal ? x : y)
-          .attr('cy', isHorizontal ? y : x)
-          .attr('r', 8)
-          .datum(event)
-          .on('mouseover', showTooltip)
-          .on('mousemove', moveTooltip)
-          .on('mouseout', hideTooltip);
+    // Parse slotDuration string to Event Calendar format
+    function parseSlotDuration(str) {
+      if (!str) return { days: 1 };
+      const match = str.match(/^(\d+)\s*(day|hour|minute|week|month)s?$/i);
+      if (!match) return { days: 1 };
+      const value = parseInt(match[1], 10);
+      const unit = match[2].toLowerCase();
+      switch (unit) {
+        case 'minute': return { minutes: value };
+        case 'hour': return { hours: value };
+        case 'day': return { days: value };
+        case 'week': return { weeks: value };
+        case 'month': return { months: value };
+        default: return { days: 1 };
       }
+    }
 
-      // Add label
-      const labelX = isHorizontal
-        ? (event.eventType === 'range' ? timeScale(event.start) : timeScale(event.date))
-        : y;
-      const labelY = isHorizontal
-        ? y - 20
-        : (event.eventType === 'range' ? timeScale(event.end) - 10 : timeScale(event.date) - 15);
+    // Map view names to Event Calendar format
+    const viewMap = {
+      'resourceTimelineMonth': 'resourceTimelineMonth',
+      'resourceTimelineWeek': 'resourceTimelineWeek',
+      'resourceTimelineDay': 'resourceTimelineDay',
+      'month': 'resourceTimelineMonth',
+      'week': 'resourceTimelineWeek',
+      'day': 'resourceTimelineDay'
+    };
 
-      eventsG.append('text')
-        .attr('class', 'event-label')
-        .attr('x', labelX)
-        .attr('y', labelY)
-        .attr('text-anchor', isHorizontal ? 'start' : 'middle')
-        .text(event.label);
+    const defaultView = viewMap[spec.defaultView] || 'resourceTimelineMonth';
+    const slotDuration = parseSlotDuration(spec.slotDuration);
+
+    // Create Event Calendar with ResourceTimeline
+    const ec = EventCalendar.create(document.getElementById('timeline'), {
+      view: defaultView,
+      headerToolbar: {
+        start: 'prev,next today',
+        center: 'title',
+        end: 'resourceTimelineMonth,resourceTimelineWeek,resourceTimelineDay'
+      },
+      slotDuration: slotDuration,
+      resources: spec.resources.map(r => ({
+        id: r.id,
+        title: r.title,
+        eventBackgroundColor: r.color
+      })),
+      events: spec.events.map(e => ({
+        id: e.id,
+        resourceId: e.resourceId,
+        title: e.title,
+        start: e.start,
+        end: e.end,
+        backgroundColor: e.color,
+        extendedProps: {
+          description: e.description
+        }
+      })),
+      // View-only settings
+      editable: false,
+      selectable: false,
+      eventStartEditable: false,
+      eventDurationEditable: false,
+      // Event click handler for description popup
+      eventClick: (info) => {
+        const desc = info.event.extendedProps?.description;
+        if (desc) {
+          alert(`${info.event.title}\n\n${desc}`);
+        }
+      }
     });
-
-    // Zoom handler
-    function zoomed(event) {
-      const newTimeScale = event.transform.rescaleX(timeScale);
-      axisG.call(timeAxis.scale(newTimeScale));
-      gridG.call((isHorizontal 
-        ? d3.axisBottom(newTimeScale).ticks(10).tickSize(height).tickFormat('')
-        : d3.axisLeft(newTimeScale).ticks(10).tickSize(-width).tickFormat('')
-      ));
-      
-      eventsG.selectAll('.event-point')
-        .attr(isHorizontal ? 'cx' : 'cy', d => newTimeScale(d.date));
-      
-      eventsG.selectAll('.event-range')
-        .attr(isHorizontal ? 'x' : 'y', d => isHorizontal ? newTimeScale(d.start) : newTimeScale(d.end))
-        .attr(isHorizontal ? 'width' : 'height', d => 
-          isHorizontal 
-            ? newTimeScale(d.end) - newTimeScale(d.start)
-            : newTimeScale(d.start) - newTimeScale(d.end)
-        );
-    }
-
-    // Tooltip functions
-    function showTooltip(event, d) {
-      const dateStr = d.eventType === 'range'
-        ? d.start.toLocaleDateString() + ' - ' + d.end.toLocaleDateString()
-        : d.date.toLocaleDateString();
-      tooltip.textContent = '';
-      const strong = document.createElement('strong');
-      strong.textContent = d.label;
-      tooltip.appendChild(strong);
-      tooltip.appendChild(document.createElement('br'));
-      tooltip.appendChild(document.createTextNode(dateStr));
-      tooltip.style.opacity = 1;
-    }
-    
-    function moveTooltip(event) {
-      tooltip.style.left = (event.pageX + 10) + 'px';
-      tooltip.style.top = (event.pageY - 10) + 'px';
-    }
-    
-    function hideTooltip() {
-      tooltip.style.opacity = 0;
-    }
   </script>
 </body>
 </html>

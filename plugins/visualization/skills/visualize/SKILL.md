@@ -2,10 +2,11 @@
 name: visualize
 description: >-
   Create interactive data visualizations: charts (bar, line, area, pie), graphs (network, citation, relationship),
-  timelines (chronology, history, events), trees (hierarchy, structure, nested), calendars (heatmap, activity, daily),
-  flowcharts (workflow, process, decision), grids (table, data, spreadsheet), kanban (board, stages, tasks),
-  and maps (geographic, location, coordinates). Triggers on "visualize", "visualization", "chart", "graph",
-  "timeline", "tree", "calendar", "heatmap", "flowchart", "workflow", "grid", "table", "kanban", "board",
+  timelines (resource schedules, Gantt charts, allocations), trees (hierarchy, structure, nested),
+  calendars (scheduled events, appointments, meetings), flowcharts (workflow, process, decision),
+  grids (table, data, spreadsheet), kanban (board, stages, tasks), and maps (geographic, location, coordinates).
+  Triggers on "visualize", "visualization", "chart", "graph", "timeline", "Gantt", "resource schedule",
+  "tree", "calendar", "schedule", "appointments", "flowchart", "workflow", "grid", "table", "kanban", "board",
   "map", "location", "diagram", "plot", "display data", "show data", "render", "draw".
 ---
 
@@ -27,9 +28,9 @@ This skill is a **router only**. For each visualization type, you MUST:
 |------|-------------|-----------------|
 | `chart` | Statistics, trends, comparisons (bar, line, area, pie) | [SKILL.md](references/chart/SKILL.md), [template.html](references/chart/template.html) |
 | `graph` | Networks, relationships, citations | [SKILL.md](references/graph/SKILL.md), [template.html](references/graph/template.html) |
-| `timeline` | Event sequences, case history, chronology | [SKILL.md](references/timeline/SKILL.md), [template.html](references/timeline/template.html) |
+| `timeline` | Resource schedules, Gantt charts, allocations | [SKILL.md](references/timeline/SKILL.md), [template.html](references/timeline/template.html) |
 | `tree` | Hierarchies, document structure, nested data | [SKILL.md](references/tree/SKILL.md), [template.html](references/tree/template.html) |
-| `calendar` | Activity heatmaps, daily data (GitHub-style) | [SKILL.md](references/calendar/SKILL.md), [template.html](references/calendar/template.html) |
+| `calendar` | Scheduled events, appointments, meetings | [SKILL.md](references/calendar/SKILL.md), [template.html](references/calendar/template.html) |
 | `flowchart` | Workflows, processes, decision trees | [SKILL.md](references/flowchart/SKILL.md), [template.html](references/flowchart/template.html) |
 | `grid` | Tables, search results, sortable/filterable listings | [SKILL.md](references/grid/SKILL.md), [template.html](references/grid/template.html) |
 | `kanban` | Workflow stages, task boards, status columns | [SKILL.md](references/kanban/SKILL.md), [template.html](references/kanban/template.html) |
@@ -56,8 +57,8 @@ This skill is a **router only**. For each visualization type, you MUST:
 - Parent-child hierarchies → `tree`
 
 ### Temporal Data
-- Event sequences with dates → `timeline`
-- Activity density by day → `calendar`
+- Resource schedules, Gantt charts → `timeline`
+- Scheduled events, appointments → `calendar`
 
 ### Process/Workflow
 - Decision trees, approval flows → `flowchart`

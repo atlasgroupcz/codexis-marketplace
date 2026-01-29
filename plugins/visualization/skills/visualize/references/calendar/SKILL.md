@@ -1,18 +1,18 @@
 ---
 name: visualize-calendar
-description: Use when visualizing activity over time, event density by date, or calendar-based heatmaps. Triggers on "calendar", "heatmap", "activity", "daily activity", "events per day".
+description: Use when visualizing scheduled events, appointments, meetings, or date-based activities. Triggers on "calendar", "schedule", "appointments", "meetings", "events calendar", "booking".
 ---
 
 # Calendar Visualization Skill
 
-Generate a calendar heatmap visualization using D3.js (similar to GitHub contribution graph).
+Generate an interactive calendar visualization using Event Calendar library with month/week/day views.
 
 ## When to Use
 
-- Showing court activity over time
-- Visualizing filing density by date
-- Displaying case workload patterns
-- Mapping document activity calendars
+- Showing scheduled hearings and appointments
+- Visualizing meeting calendars
+- Displaying case deadlines and important dates
+- Mapping event schedules
 
 ## A2UI Schema
 
@@ -20,16 +20,36 @@ Generate a calendar heatmap visualization using D3.js (similar to GitHub contrib
 {
   "$schema": "a2ui-visualization/1.0",
   "type": "calendar",
-  "title": { "literalString": "2024 Court Activity" },
+  "title": { "literalString": "Court Calendar - March 2024" },
   "config": {
-    "year": 2024,
-    "colorScale": ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]
+    "defaultView": "dayGridMonth"
   },
   "data": {
-    "entries": [
-      { "date": "2024-03-15", "value": 5, "label": { "literalString": "5 hearings" } },
-      { "date": "2024-03-16", "value": 3, "label": { "literalString": "3 filings" } },
-      { "date": "2024-03-20", "value": 8, "label": { "literalString": "8 motions" } }
+    "events": [
+      {
+        "id": "e1",
+        "title": { "literalString": "Case Hearing #2024-001" },
+        "start": "2024-03-15",
+        "end": "2024-03-15",
+        "allDay": true,
+        "color": "#3b82f6",
+        "description": { "literalString": "Initial hearing for Smith v. Jones" }
+      },
+      {
+        "id": "e2",
+        "title": { "literalString": "Filing Deadline" },
+        "start": "2024-03-20",
+        "allDay": true,
+        "color": "#ef4444"
+      },
+      {
+        "id": "e3",
+        "title": { "literalString": "Deposition" },
+        "start": "2024-03-25T09:00:00",
+        "end": "2024-03-25T12:00:00",
+        "allDay": false,
+        "color": "#10b981"
+      }
     ]
   }
 }
@@ -37,24 +57,32 @@ Generate a calendar heatmap visualization using D3.js (similar to GitHub contrib
 
 ## Schema Fields
 
-### config (required)
+### config (optional)
 
-- `year` (number, required): The year to display (e.g., 2024)
-- `colorScale` (array, optional): Array of colors from lowest to highest intensity. Default: GitHub-style green scale `["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]`
+- `defaultView` (string): Initial view mode. Options:
+  - `"dayGridMonth"` (default) - Full month grid
+  - `"dayGridWeek"` - Week view
+  - `"dayGridDay"` - Single day view
 
 ### data (required)
 
-#### entries (required)
+#### events (required)
 
-Array of daily activity entries:
+Array of calendar events:
 
-- `date` (string, required): ISO date format (YYYY-MM-DD)
-- `value` (number, required): Activity count/intensity (determines color)
-- `label` (BoundValue, optional): Tooltip text describing the activity
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | yes | Unique identifier |
+| `title` | BoundValue | yes | Display text for the event |
+| `start` | string | yes | Start date/time (ISO format: "2024-03-15" or "2024-03-15T09:00:00") |
+| `end` | string | no | End date/time (ISO format). Defaults to start if omitted |
+| `allDay` | boolean | no | Full-day event (default: true) |
+| `color` | string | no | Background color (hex or CSS color) |
+| `description` | BoundValue | no | Details shown on click |
 
 ## BoundValue Types
 
-Values like `title`, `label` can be:
+Values like `title`, `description` can be:
 
 - `{ "literalString": "Static Text" }` - Static string
 - `{ "path": "/data/field" }` - Data binding
@@ -68,10 +96,18 @@ Generate an HTML file using the template at `template.html` with the A2UI JSON e
 
 ## Features
 
-- Full year calendar grid
-- Color intensity based on values
-- Hover tooltips with details
-- Month and day labels
-- Legend showing color scale
+- Month, week, and day view switching
+- Navigation buttons (prev/next/today)
+- Click events to see descriptions
 - Light/dark theme support
+- View-only mode (no drag/drop editing)
 - Schema validation with helpful error messages
+
+## Breaking Changes from Previous Version
+
+The calendar visualization has been completely rewritten:
+
+- **Old**: GitHub-style heatmap with `config.year` and `data.entries` (date + value)
+- **New**: Event Calendar with `config.defaultView` and `data.events` (scheduled events)
+
+Old schemas using `entries` with `date`/`value` fields are no longer supported.

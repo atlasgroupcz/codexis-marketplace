@@ -127,6 +127,16 @@ const A2UIAdapter = {
     timeline(spec) {
       const errors = [];
 
+      if (!spec.data?.resources || !Array.isArray(spec.data.resources)) {
+        errors.push({ code: 'MISSING_RESOURCES', message: 'Timeline requires data.resources array' });
+      } else {
+        spec.data.resources.forEach((resource, i) => {
+          if (!resource.id) {
+            errors.push({ code: 'MISSING_RESOURCE_ID', message: `Resource at index ${i} missing required id` });
+          }
+        });
+      }
+
       if (!spec.data?.events || !Array.isArray(spec.data.events)) {
         errors.push({ code: 'MISSING_EVENTS', message: 'Timeline requires data.events array' });
       } else {
@@ -134,15 +144,14 @@ const A2UIAdapter = {
           if (!event.id) {
             errors.push({ code: 'MISSING_EVENT_ID', message: `Event at index ${i} missing required id` });
           }
-          if (event.eventType === 'range') {
-            if (!event.start) {
-              errors.push({ code: 'MISSING_EVENT_START', message: `Range event at index ${i} missing required start date` });
-            }
-            if (!event.end) {
-              errors.push({ code: 'MISSING_EVENT_END', message: `Range event at index ${i} missing required end date` });
-            }
-          } else if (!event.date) {
-            errors.push({ code: 'MISSING_EVENT_DATE', message: `Point event at index ${i} missing required date` });
+          if (!event.resourceId) {
+            errors.push({ code: 'MISSING_RESOURCE_ID', message: `Event at index ${i} missing required resourceId` });
+          }
+          if (!event.start) {
+            errors.push({ code: 'MISSING_EVENT_START', message: `Event at index ${i} missing required start date` });
+          }
+          if (!event.end) {
+            errors.push({ code: 'MISSING_EVENT_END', message: `Event at index ${i} missing required end date` });
           }
         });
       }
@@ -167,19 +176,15 @@ const A2UIAdapter = {
     calendar(spec) {
       const errors = [];
 
-      if (!spec.config?.year) {
-        errors.push({ code: 'MISSING_YEAR', message: 'Calendar requires config.year' });
-      }
-
-      if (!spec.data?.entries || !Array.isArray(spec.data.entries)) {
-        errors.push({ code: 'MISSING_ENTRIES', message: 'Calendar requires data.entries array' });
+      if (!spec.data?.events || !Array.isArray(spec.data.events)) {
+        errors.push({ code: 'MISSING_EVENTS', message: 'Calendar requires data.events array' });
       } else {
-        spec.data.entries.forEach((entry, i) => {
-          if (!entry.date) {
-            errors.push({ code: 'MISSING_ENTRY_DATE', message: `Entry at index ${i} missing required date` });
+        spec.data.events.forEach((event, i) => {
+          if (!event.id) {
+            errors.push({ code: 'MISSING_EVENT_ID', message: `Event at index ${i} missing required id` });
           }
-          if (entry.value === undefined) {
-            errors.push({ code: 'MISSING_ENTRY_VALUE', message: `Entry at index ${i} missing required value` });
+          if (!event.start) {
+            errors.push({ code: 'MISSING_EVENT_START', message: `Event at index ${i} missing required start date` });
           }
         });
       }
@@ -478,7 +483,7 @@ const A2UIAdapter = {
     },
 
     /**
-     * Transform timeline schema with Date objects
+     * Transform timeline schema for Event Calendar ResourceTimeline
      */
     timeline(spec) {
       const config = spec.config || {};
@@ -487,16 +492,22 @@ const A2UIAdapter = {
       return {
         type: 'timeline',
         title: A2UIAdapter.resolve.value(spec.title) || '',
+        defaultView: config.defaultView || 'resourceTimelineMonth',
+        slotDuration: config.slotDuration || '1 day',
+        resources: (data.resources || []).map(r => ({
+          id: r.id,
+          title: A2UIAdapter.resolve.value(r.title) || r.id,
+          color: r.color
+        })),
         events: (data.events || []).map(e => ({
           id: e.id,
-          label: A2UIAdapter.resolve.value(e.label) || '',
-          eventType: e.eventType || 'point',
-          date: e.date ? new Date(e.date) : null,
-          start: e.start ? new Date(e.start) : null,
-          end: e.end ? new Date(e.end) : null,
+          resourceId: e.resourceId,
+          title: A2UIAdapter.resolve.value(e.title) || '',
+          start: e.start,
+          end: e.end,
+          color: e.color,
           description: A2UIAdapter.resolve.value(e.description) || ''
-        })),
-        orientation: config.orientation || 'horizontal'
+        }))
       };
     },
 
@@ -529,27 +540,25 @@ const A2UIAdapter = {
     },
 
     /**
-     * Transform calendar schema for heatmap
+     * Transform calendar schema for Event Calendar
      */
     calendar(spec) {
       const config = spec.config || {};
       const data = spec.data || {};
 
-      // Convert entries to Map for efficient lookup
-      const dataMap = new Map();
-      (data.entries || []).forEach(entry => {
-        dataMap.set(entry.date, {
-          value: entry.value,
-          label: A2UIAdapter.resolve.value(entry.label) || String(entry.value)
-        });
-      });
-
       return {
         type: 'calendar',
         title: A2UIAdapter.resolve.value(spec.title) || '',
-        year: config.year || new Date().getFullYear(),
-        data: dataMap,
-        colorScale: config.colorScale || ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39']
+        defaultView: config.defaultView || 'dayGridMonth',
+        events: (data.events || []).map(e => ({
+          id: e.id,
+          title: A2UIAdapter.resolve.value(e.title) || '',
+          start: e.start,
+          end: e.end || e.start,
+          allDay: e.allDay !== false,
+          color: e.color,
+          description: A2UIAdapter.resolve.value(e.description) || ''
+        }))
       };
     },
 
