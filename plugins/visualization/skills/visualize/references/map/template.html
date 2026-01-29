@@ -51,6 +51,14 @@
   <div id="map"></div>
 
   <script>
+    // Configure Leaflet default icon paths
+    L.Icon.Default.imagePath = '';
+    L.Icon.Default.mergeOptions({
+      iconUrl: '/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fmap%2Flib%2Fimages%2Fmarker-icon.png',
+      iconRetinaUrl: '/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fmap%2Flib%2Fimages%2Fmarker-icon-2x.png',
+      shadowUrl: '/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fmap%2Flib%2Fimages%2Fmarker-shadow.png'
+    });
+
     // Process A2UI specification through adapter
     const rawSpec = {{DATA}};
     const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
