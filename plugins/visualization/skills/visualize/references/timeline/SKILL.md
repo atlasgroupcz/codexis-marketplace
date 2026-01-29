@@ -18,36 +18,72 @@ Generate an interactive timeline visualization using D3.js time scales.
 
 ```json
 {
+  "$schema": "a2ui-visualization/1.0",
   "type": "timeline",
-  "title": "Case History",
-  "events": [
-    { "id": 1, "label": "Filing", "date": "2024-01-15", "type": "point" },
-    { "id": 2, "label": "Discovery", "start": "2024-02-01", "end": "2024-04-30", "type": "range" },
-    { "id": 3, "label": "Decision", "date": "2024-06-15", "type": "point" }
-  ],
-  "orientation": "horizontal"
+  "title": { "literalString": "Case History" },
+  "config": {
+    "orientation": "horizontal"
+  },
+  "data": {
+    "events": [
+      {
+        "id": "e1",
+        "label": { "literalString": "Filing" },
+        "eventType": "point",
+        "date": "2024-01-15"
+      },
+      {
+        "id": "e2",
+        "label": { "literalString": "Discovery Period" },
+        "eventType": "range",
+        "start": "2024-02-01",
+        "end": "2024-04-30"
+      },
+      {
+        "id": "e3",
+        "label": { "literalString": "Decision" },
+        "eventType": "point",
+        "date": "2024-06-15",
+        "description": { "literalString": "Final ruling issued" }
+      }
+    ]
+  }
 }
 ```
 
 ## Schema Fields
 
-### events (required)
-- `id` (number|string): Unique identifier
-- `label` (string): Event description
-- `date` (string): ISO date for point events
+### config (optional)
+
+- `orientation` (string): `"horizontal"` (default) or `"vertical"`
+
+### data (required)
+
+#### events (required)
+
+Array of event objects:
+
+- `id` (string, required): Unique identifier
+- `label` (BoundValue, required): Event display text
+- `eventType` (string, required): `"point"` or `"range"`
+- `date` (string): ISO date for point events (e.g., "2024-01-15")
 - `start` (string): ISO date for range start
 - `end` (string): ISO date for range end
-- `type` (string): "point" or "range"
-- `category` (string, optional): For color coding
+- `description` (BoundValue, optional): Additional details shown in tooltip
 
-### orientation (optional)
-- "horizontal" (default) or "vertical"
+## BoundValue Types
+
+Values like `title`, `label`, `description` can be:
+
+- `{ "literalString": "Static Text" }` - Static string
+- `{ "path": "/data/field" }` - Data binding
+- Plain strings are also accepted
 
 ## Output
 
 Generate an HTML file using the template at `template.html` with the A2UI JSON embedded.
 
-**Output path:** `~/.cdx/chats/{sanitized-workdir}/{chatId}/visualization-timeline-{uuid}.html`
+**Output path:** `{workDir}/timeline-{datetime}.html`
 
 ## Features
 
@@ -56,3 +92,4 @@ Generate an HTML file using the template at `template.html` with the A2UI JSON e
 - Interactive zoom and pan
 - Hover tooltips with full details
 - Light/dark theme support
+- Schema validation with helpful error messages

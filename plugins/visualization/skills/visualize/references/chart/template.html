@@ -6,6 +6,7 @@
   <title>{{TITLE}}</title>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
     body {
@@ -76,7 +77,21 @@
   <div id="tooltip" class="tooltip"></div>
 
   <script>
-    const spec = {{DATA}};
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('chart').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
 
     const container = document.getElementById('chart');
     const tooltip = document.getElementById('tooltip');
@@ -113,13 +128,14 @@
     }
 
     function renderCartesian() {
-      const xAxis = spec.xAxis;
-      const series = spec.series;
+      const xAxisField = spec.xAxis;
+      const series = spec.series.map(s => s.field);
+      const seriesLabels = spec.series.reduce((acc, s) => { acc[s.field] = s.label; return acc; }, {});
       const data = spec.data;
 
       // X scale
       const x0 = d3.scaleBand()
-        .domain(data.map(d => d[xAxis]))
+        .domain(data.map(d => d[xAxisField]))
         .range([0, width])
         .padding(0.2);
 
@@ -157,10 +173,10 @@
           .data(data)
           .join('g')
           .attr('class', 'bar-group')
-          .attr('transform', d => `translate(${x0(d[xAxis])},0)`);
+          .attr('transform', d => `translate(${x0(d[xAxisField])},0)`);
 
         groups.selectAll('rect')
-          .data(d => series.map(s => ({ key: s, value: d[s], category: d[xAxis] })))
+          .data(d => series.map(s => ({ key: s, label: seriesLabels[s], value: d[s], category: d[xAxisField] })))
           .join('rect')
           .attr('x', d => x1(d.key))
           .attr('y', height)
@@ -176,7 +192,7 @@
           .attr('height', d => height - y(d.value));
       } else if (chartType === 'line' || chartType === 'area') {
         series.forEach((s, i) => {
-          const lineData = data.map(d => ({ x: d[xAxis], y: d[s], series: s }));
+          const lineData = data.map(d => ({ x: d[xAxisField], y: d[s], series: s, label: seriesLabels[s] }));
           
           if (chartType === 'area') {
             const area = d3.area()
@@ -211,7 +227,7 @@
             .attr('cy', d => y(d.y))
             .attr('r', 5)
             .attr('fill', colorScale(s))
-            .on('mouseover', (e, d) => showTooltip(e, { key: d.series, value: d.y, category: d.x }))
+            .on('mouseover', (e, d) => showTooltip(e, { key: d.series, label: d.label, value: d.y, category: d.x }))
             .on('mousemove', moveTooltip)
             .on('mouseout', hideTooltip);
         });
@@ -222,7 +238,13 @@
         series.forEach(s => {
           const item = document.createElement('div');
           item.className = 'legend-item';
-          item.innerHTML = `<div class="legend-color" style="background:${colorScale(s)}"></div><span>${s}</span>`;
+          const colorDiv = document.createElement('div');
+          colorDiv.className = 'legend-color';
+          colorDiv.style.background = colorScale(s);
+          const labelSpan = document.createElement('span');
+          labelSpan.textContent = seriesLabels[s];
+          item.appendChild(colorDiv);
+          item.appendChild(labelSpan);
           legendContainer.appendChild(item);
         });
       }
@@ -230,8 +252,9 @@
 
     function renderPie() {
       const radius = Math.min(width, height) / 2;
-      const xAxis = spec.xAxis;
-      const valueField = spec.series[0];
+      const xAxisField = spec.xAxis;
+      const valueField = spec.series[0].field;
+      const valueLabel = spec.series[0].label;
       
       const pieG = svg.append('g')
         .attr('transform', `translate(${width/2},${height/2})`);
@@ -255,13 +278,13 @@
 
       arcs.append('path')
         .attr('d', arc)
-        .attr('fill', (d, i) => colorScale(d.data[xAxis]))
+        .attr('fill', (d, i) => colorScale(d.data[xAxisField]))
         .attr('stroke', 'var(--background)')
         .attr('stroke-width', 2)
         .style('cursor', 'pointer')
         .on('mouseover', function(e, d) {
           d3.select(this).transition().duration(200).attr('d', arcHover);
-          showTooltip(e, { key: d.data[xAxis], value: d.data[valueField], category: '' });
+          showTooltip(e, { key: d.data[xAxisField], label: d.data[xAxisField], value: d.data[valueField], category: '' });
         })
         .on('mousemove', moveTooltip)
         .on('mouseout', function() {
@@ -274,14 +297,30 @@
         spec.data.forEach(d => {
           const item = document.createElement('div');
           item.className = 'legend-item';
-          item.innerHTML = `<div class="legend-color" style="background:${colorScale(d[xAxis])}"></div><span>${d[xAxis]}: ${d[valueField]}</span>`;
+          const colorDiv = document.createElement('div');
+          colorDiv.className = 'legend-color';
+          colorDiv.style.background = colorScale(d[xAxisField]);
+          const labelSpan = document.createElement('span');
+          labelSpan.textContent = d[xAxisField] + ': ' + d[valueField];
+          item.appendChild(colorDiv);
+          item.appendChild(labelSpan);
           legendContainer.appendChild(item);
         });
       }
     }
 
     function showTooltip(event, d) {
-      tooltip.innerHTML = `<strong>${d.key}</strong><br>${d.category ? d.category + ': ' : ''}${d.value}`;
+      tooltip.textContent = '';
+      const strong = document.createElement('strong');
+      strong.textContent = d.label || d.key;
+      tooltip.appendChild(strong);
+      if (d.category) {
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(d.category + ': ' + d.value));
+      } else {
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(String(d.value)));
+      }
       tooltip.style.opacity = 1;
     }
 

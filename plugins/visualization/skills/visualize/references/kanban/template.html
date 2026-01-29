@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{TITLE}}</title>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
     body {
@@ -112,16 +113,34 @@
   <div id="tooltip" class="tooltip"></div>
 
   <script>
-    const spec = {{DATA}};
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('kanban').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
     const container = document.getElementById('kanban');
     const tooltip = document.getElementById('tooltip');
 
-    // Group cards by column
+    // Get column width from options
+    const columnWidth = spec.options?.columnWidth || 300;
+
+    // Group cards by column (using columnId from transformed spec)
     const cardsByColumn = new Map();
     spec.columns.forEach(col => cardsByColumn.set(col.id, []));
     spec.cards.forEach(card => {
-      if (cardsByColumn.has(card.column)) {
-        cardsByColumn.get(card.column).push(card);
+      if (cardsByColumn.has(card.columnId)) {
+        cardsByColumn.get(card.columnId).push(card);
       }
     });
 
@@ -129,61 +148,89 @@
     spec.columns.forEach(column => {
       const cards = cardsByColumn.get(column.id) || [];
       const color = column.color || '#6b7280';
-      
+
       const columnEl = document.createElement('div');
       columnEl.className = 'kanban-column';
-      columnEl.innerHTML = `
-        <div class="column-header" style="border-color: ${color}">
-          <span>${column.title}</span>
-          <span class="column-count">${cards.length}</span>
-        </div>
-        <div class="column-cards" data-column="${column.id}"></div>
-      `;
-      
-      const cardsContainer = columnEl.querySelector('.column-cards');
-      
+      columnEl.style.flex = '0 0 ' + columnWidth + 'px';
+
+      // Create column header
+      const headerEl = document.createElement('div');
+      headerEl.className = 'column-header';
+      headerEl.style.borderColor = color;
+
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = column.title;
+      headerEl.appendChild(titleSpan);
+
+      const countSpan = document.createElement('span');
+      countSpan.className = 'column-count';
+      countSpan.textContent = String(cards.length);
+      headerEl.appendChild(countSpan);
+
+      columnEl.appendChild(headerEl);
+
+      // Create cards container
+      const cardsContainer = document.createElement('div');
+      cardsContainer.className = 'column-cards';
+      cardsContainer.dataset.column = column.id;
+
       cards.forEach(card => {
         const cardEl = document.createElement('div');
         cardEl.className = 'kanban-card';
-        
-        let tagsHtml = '';
-        if (card.tags && card.tags.length > 0) {
-          tagsHtml = `<div class="card-tags">${
-            card.tags.map(tag => `<span class="card-tag ${tag}">${tag}</span>`).join('')
-          }</div>`;
+
+        // Card title
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'card-title';
+        titleDiv.textContent = card.title;
+        cardEl.appendChild(titleDiv);
+
+        // Card description (subtitle)
+        if (card.description) {
+          const descDiv = document.createElement('div');
+          descDiv.className = 'card-subtitle';
+          descDiv.textContent = card.description;
+          cardEl.appendChild(descDiv);
         }
-        
-        cardEl.innerHTML = `
-          <div class="card-title">${card.title}</div>
-          ${card.subtitle ? `<div class="card-subtitle">${card.subtitle}</div>` : ''}
-          ${tagsHtml}
-        `;
-        
+
+        // Tags
+        if (card.tags && card.tags.length > 0) {
+          const tagsDiv = document.createElement('div');
+          tagsDiv.className = 'card-tags';
+          card.tags.forEach(tag => {
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'card-tag ' + tag;
+            tagSpan.textContent = tag;
+            tagsDiv.appendChild(tagSpan);
+          });
+          cardEl.appendChild(tagsDiv);
+        }
+
         // Tooltip handlers
         cardEl.addEventListener('mouseover', (e) => {
-          let content = `<strong>${card.title}</strong>`;
-          if (card.subtitle) content += `<br>${card.subtitle}`;
-          if (card.meta) {
-            Object.entries(card.meta).forEach(([k, v]) => {
-              content += `<br><span style="color:#6b7280">${k}:</span> ${v}`;
-            });
+          tooltip.textContent = '';
+          const strong = document.createElement('strong');
+          strong.textContent = card.title;
+          tooltip.appendChild(strong);
+          if (card.description) {
+            tooltip.appendChild(document.createElement('br'));
+            tooltip.appendChild(document.createTextNode(card.description));
           }
-          tooltip.innerHTML = content;
           tooltip.style.opacity = 1;
         });
-        
+
         cardEl.addEventListener('mousemove', (e) => {
           tooltip.style.left = (e.pageX + 10) + 'px';
           tooltip.style.top = (e.pageY - 10) + 'px';
         });
-        
+
         cardEl.addEventListener('mouseout', () => {
           tooltip.style.opacity = 0;
         });
-        
+
         cardsContainer.appendChild(cardEl);
       });
-      
+
+      columnEl.appendChild(cardsContainer);
       container.appendChild(columnEl);
     });
   </script>

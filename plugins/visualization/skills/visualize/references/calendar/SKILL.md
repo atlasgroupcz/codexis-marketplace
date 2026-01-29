@@ -18,42 +18,60 @@ Generate a calendar heatmap visualization using D3.js (similar to GitHub contrib
 
 ```json
 {
+  "$schema": "a2ui-visualization/1.0",
   "type": "calendar",
-  "title": "Court Activity",
-  "year": 2024,
-  "data": [
-    { "date": "2024-03-15", "value": 5, "label": "5 hearings" },
-    { "date": "2024-03-20", "value": 2, "label": "2 filings" }
-  ],
-  "colorScale": ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]
+  "title": { "literalString": "2024 Court Activity" },
+  "config": {
+    "year": 2024,
+    "colorScale": ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]
+  },
+  "data": {
+    "entries": [
+      { "date": "2024-03-15", "value": 5, "label": { "literalString": "5 hearings" } },
+      { "date": "2024-03-16", "value": 3, "label": { "literalString": "3 filings" } },
+      { "date": "2024-03-20", "value": 8, "label": { "literalString": "8 motions" } }
+    ]
+  }
 }
 ```
 
 ## Schema Fields
 
-### year (required)
-The year to display (e.g., 2024)
+### config (required)
+
+- `year` (number, required): The year to display (e.g., 2024)
+- `colorScale` (array, optional): Array of colors from lowest to highest intensity. Default: GitHub-style green scale `["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]`
 
 ### data (required)
-Array of daily values:
-- `date` (string): ISO date (YYYY-MM-DD)
-- `value` (number): Activity count/intensity
-- `label` (string, optional): Tooltip text
 
-### colorScale (optional)
-Array of colors from lowest to highest intensity.
-Default: GitHub-style green scale
+#### entries (required)
+
+Array of daily activity entries:
+
+- `date` (string, required): ISO date format (YYYY-MM-DD)
+- `value` (number, required): Activity count/intensity (determines color)
+- `label` (BoundValue, optional): Tooltip text describing the activity
+
+## BoundValue Types
+
+Values like `title`, `label` can be:
+
+- `{ "literalString": "Static Text" }` - Static string
+- `{ "path": "/data/field" }` - Data binding
+- Plain strings are also accepted
 
 ## Output
 
 Generate an HTML file using the template at `template.html` with the A2UI JSON embedded.
 
-**Output path:** `~/.cdx/chats/{sanitized-workdir}/{chatId}/visualization-calendar-{uuid}.html`
+**Output path:** `{workDir}/calendar-{datetime}.html`
 
 ## Features
 
 - Full year calendar grid
 - Color intensity based on values
 - Hover tooltips with details
-- Month labels
+- Month and day labels
+- Legend showing color scale
 - Light/dark theme support
+- Schema validation with helpful error messages

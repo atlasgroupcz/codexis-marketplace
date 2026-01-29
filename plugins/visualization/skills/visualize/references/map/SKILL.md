@@ -18,46 +18,72 @@ Generate an interactive tile map using Leaflet (D3 cannot render tile maps).
 
 ```json
 {
+  "$schema": "a2ui-visualization/1.0",
   "type": "map",
-  "title": "Court Jurisdictions",
-  "center": [50.0755, 14.4378],
-  "zoom": 7,
-  "markers": [
-    { "lat": 50.0755, "lng": 14.4378, "label": "Supreme Court", "popup": "Praha" },
-    { "lat": 49.1951, "lng": 16.6068, "label": "Regional Court", "popup": "Brno" }
-  ]
+  "title": { "literalString": "Court Jurisdictions" },
+  "config": {
+    "center": [50.0755, 14.4378],
+    "zoom": 7
+  },
+  "data": {
+    "markers": [
+      {
+        "id": "m1",
+        "coordinates": { "lat": 50.0755, "lng": 14.4378 },
+        "label": { "literalString": "Supreme Court" },
+        "popup": { "literalString": "Praha - Nejvyšší soud" }
+      },
+      {
+        "id": "m2",
+        "coordinates": { "lat": 49.1951, "lng": 16.6068 },
+        "label": { "literalString": "Regional Court" },
+        "popup": { "literalString": "Brno - Krajský soud" },
+        "color": "#3498DB"
+      }
+    ]
+  }
 }
 ```
 
 ## Schema Fields
 
-### center (required)
-Array of [latitude, longitude] for initial map center
+### config (required)
 
-### zoom (optional)
-Initial zoom level (1-18, default: 10)
+- `center` (array, required): Initial map center as `[latitude, longitude]`
+- `zoom` (number, optional): Initial zoom level (1-18), default `10`
+- `bounds` (array, optional): Fit map to bounds `[[lat1, lng1], [lat2, lng2]]`
 
-### markers (optional)
+### data (required)
+
+#### markers (optional)
+
 Array of map markers:
-- `lat` (number): Latitude
-- `lng` (number): Longitude
-- `label` (string): Marker label
-- `popup` (string, optional): Popup content on click
-- `color` (string, optional): Marker color
 
-### bounds (optional)
-Array of [[lat1, lng1], [lat2, lng2]] to fit map to bounds
+- `id` (string, required): Unique identifier
+- `coordinates` (object, required): Position as `{ "lat": number, "lng": number }`
+- `label` (BoundValue, required): Marker label/title
+- `popup` (BoundValue, optional): Popup content on click
+- `color` (string, optional): Marker color (hex)
+
+## BoundValue Types
+
+Values like `title`, `label`, `popup` can be:
+
+- `{ "literalString": "Static Text" }` - Static string
+- `{ "path": "/data/field" }` - Data binding
+- Plain strings are also accepted
 
 ## Output
 
 Generate an HTML file using the template at `template.html` with the A2UI JSON embedded.
 
-**Output path:** `~/.cdx/chats/{sanitized-workdir}/{chatId}/visualization-map-{uuid}.html`
+**Output path:** `{workDir}/map-{datetime}.html`
 
 ## Features
 
 - Interactive pan and zoom
 - Marker clusters (for many points)
-- Click popups
+- Click popups with content
 - Multiple tile providers
 - Light/dark theme support
+- Schema validation with helpful error messages

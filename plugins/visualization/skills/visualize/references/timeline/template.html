@@ -6,6 +6,7 @@
   <title>{{TITLE}}</title>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
     body {
@@ -75,27 +76,36 @@
   <div id="tooltip" class="tooltip"></div>
 
   <script>
-    const spec = {{DATA}};
-    
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('timeline').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
     const container = document.getElementById('timeline');
     const tooltip = document.getElementById('tooltip');
     const isHorizontal = spec.orientation !== 'vertical';
-    
+
     const margin = { top: 40, right: 40, bottom: 60, left: 60 };
     const width = container.clientWidth - margin.left - margin.right;
     const height = container.clientHeight - margin.top - margin.bottom;
 
-    // Parse dates
-    const events = spec.events.map(e => ({
-      ...e,
-      date: e.date ? new Date(e.date) : null,
-      start: e.start ? new Date(e.start) : null,
-      end: e.end ? new Date(e.end) : null
-    }));
+    // Events are already transformed with Date objects by the adapter
+    const events = spec.events;
 
     // Calculate time extent
-    const allDates = events.flatMap(e => 
-      e.type === 'range' ? [e.start, e.end] : [e.date]
+    const allDates = events.flatMap(e =>
+      e.eventType === 'range' ? [e.start, e.end] : [e.date]
     ).filter(d => d);
     
     const timeExtent = d3.extent(allDates);
@@ -150,8 +160,8 @@
 
     events.forEach((event, i) => {
       const y = categoryScale(i) + categoryScale.bandwidth() / 2;
-      
-      if (event.type === 'range') {
+
+      if (event.eventType === 'range') {
         const x1 = timeScale(event.start);
         const x2 = timeScale(event.end);
         
@@ -195,12 +205,12 @@
       }
 
       // Add label
-      const labelX = isHorizontal 
-        ? (event.type === 'range' ? timeScale(event.start) : timeScale(event.date))
+      const labelX = isHorizontal
+        ? (event.eventType === 'range' ? timeScale(event.start) : timeScale(event.date))
         : y;
-      const labelY = isHorizontal 
+      const labelY = isHorizontal
         ? y - 20
-        : (event.type === 'range' ? timeScale(event.end) - 10 : timeScale(event.date) - 15);
+        : (event.eventType === 'range' ? timeScale(event.end) - 10 : timeScale(event.date) - 15);
 
       eventsG.append('text')
         .attr('class', 'event-label')
@@ -233,10 +243,15 @@
 
     // Tooltip functions
     function showTooltip(event, d) {
-      const dateStr = d.type === 'range'
-        ? `${d.start.toLocaleDateString()} - ${d.end.toLocaleDateString()}`
+      const dateStr = d.eventType === 'range'
+        ? d.start.toLocaleDateString() + ' - ' + d.end.toLocaleDateString()
         : d.date.toLocaleDateString();
-      tooltip.innerHTML = `<strong>${d.label}</strong><br>${dateStr}`;
+      tooltip.textContent = '';
+      const strong = document.createElement('strong');
+      strong.textContent = d.label;
+      tooltip.appendChild(strong);
+      tooltip.appendChild(document.createElement('br'));
+      tooltip.appendChild(document.createTextNode(dateStr));
       tooltip.style.opacity = 1;
     }
     

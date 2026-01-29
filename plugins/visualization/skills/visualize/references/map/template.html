@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{TITLE}}</title>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
   <link rel="stylesheet" href="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fmap%2Flib%2Fleaflet.min.css">
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fmap%2Flib%2Fleaflet.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
@@ -50,12 +51,26 @@
   <div id="map"></div>
 
   <script>
-    const spec = {{DATA}};
-    
-    // Initialize map
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('map').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    // Initialize map with transformed spec
     const center = spec.center || [50.0755, 14.4378];
     const zoom = spec.zoom || 10;
-    
+
     const map = L.map('map').setView(center, zoom);
 
     // Add tile layer (OpenStreetMap)
@@ -64,32 +79,36 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Add markers
+    // Add markers from transformed spec
     const markers = spec.markers || [];
     const markerGroup = L.featureGroup();
 
     markers.forEach(marker => {
       const m = L.marker([marker.lat, marker.lng]);
-      
-      // Create popup content
-      let popupContent = `<div class="marker-label">${marker.label}</div>`;
+
+      // Create popup content using safe DOM methods
+      const popupDiv = document.createElement('div');
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'marker-label';
+      labelDiv.textContent = marker.label;
+      popupDiv.appendChild(labelDiv);
+
       if (marker.popup) {
-        popupContent += `<div class="marker-popup">${marker.popup}</div>`;
+        const popupTextDiv = document.createElement('div');
+        popupTextDiv.className = 'marker-popup';
+        popupTextDiv.textContent = marker.popup;
+        popupDiv.appendChild(popupTextDiv);
       }
-      
-      m.bindPopup(popupContent);
+
+      m.bindPopup(popupDiv);
       m.addTo(markerGroup);
     });
 
     markerGroup.addTo(map);
 
     // Fit bounds if markers exist
-    if (markers.length > 0) {
-      if (spec.bounds) {
-        map.fitBounds(spec.bounds);
-      } else if (markers.length > 1) {
-        map.fitBounds(markerGroup.getBounds(), { padding: [50, 50] });
-      }
+    if (markers.length > 1) {
+      map.fitBounds(markerGroup.getBounds(), { padding: [50, 50] });
     }
 
     // Add scale control

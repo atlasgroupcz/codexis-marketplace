@@ -6,6 +6,7 @@
   <title>{{TITLE}}</title>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
     body {
@@ -74,13 +75,28 @@
   <div id="tooltip" class="tooltip"></div>
 
   <script>
-    const spec = {{DATA}};
-    
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('flowchart').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
     const container = document.getElementById('flowchart');
     const tooltip = document.getElementById('tooltip');
     const width = container.clientWidth;
     const height = container.clientHeight;
-    
+
+    // Direction from transformed spec (TB = top-to-bottom, LR = left-to-right)
     const isVertical = spec.direction !== 'LR';
     const nodeWidth = 140;
     const nodeHeight = 50;
@@ -214,7 +230,15 @@
       const nodeG = nodesG.append('g')
         .attr('transform', `translate(${node.x},${node.y})`)
         .on('mouseover', () => {
-          tooltip.innerHTML = `<strong>${node.label}</strong><br><span class="text-gray-500">${node.type}</span>`;
+          tooltip.textContent = '';
+          const strong = document.createElement('strong');
+          strong.textContent = node.label;
+          tooltip.appendChild(strong);
+          tooltip.appendChild(document.createElement('br'));
+          const typeSpan = document.createElement('span');
+          typeSpan.className = 'text-gray-500';
+          typeSpan.textContent = node.nodeType;
+          tooltip.appendChild(typeSpan);
           tooltip.style.opacity = 1;
         })
         .on('mousemove', (event) => {
@@ -225,8 +249,8 @@
           tooltip.style.opacity = 0;
         });
 
-      // Draw shape based on type
-      const type = node.type || 'action';
+      // Draw shape based on nodeType (from A2UI schema)
+      const type = node.nodeType || 'process';
       
       if (type === 'decision') {
         // Diamond

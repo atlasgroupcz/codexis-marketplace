@@ -6,6 +6,7 @@
   <title>{{TITLE}}</title>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
   <script src="/rest/files/download?path=%2Fhome%2Fuser%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
   <style>
     body {
@@ -65,14 +66,32 @@
   <div id="tooltip" class="tooltip"></div>
 
   <script>
-    const spec = {{DATA}};
-    
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('tree').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
     const container = document.getElementById('tree');
     const tooltip = document.getElementById('tooltip');
-    
+
     const margin = { top: 40, right: 120, bottom: 40, left: 120 };
     const width = container.clientWidth;
     const height = container.clientHeight;
+
+    // Get options from transformed spec
+    const options = spec.options || {};
+    const collapsible = options.collapsible !== false;
 
     // Create SVG
     const svg = d3.select('#tree')
@@ -89,8 +108,8 @@
       .scaleExtent([0.1, 4])
       .on('zoom', (event) => g.attr('transform', event.transform)));
 
-    // Create hierarchy
-    const root = d3.hierarchy(spec.root);
+    // Create hierarchy from transformed spec
+    const root = d3.hierarchy(spec.hierarchy);
     root.x0 = height / 2;
     root.y0 = 0;
 
@@ -98,8 +117,10 @@
     const treeLayout = d3.tree()
       .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
 
-    // Collapse children initially (except root)
-    root.children?.forEach(collapse);
+    // Collapse children initially (except root) if collapsible
+    if (collapsible) {
+      root.children?.forEach(collapse);
+    }
 
     function collapse(d) {
       if (d.children) {
@@ -140,17 +161,28 @@
           update(d);
         })
         .on('mouseover', (event, d) => {
-          let content = `<strong>${d.data.name}</strong>`;
+          tooltip.textContent = '';
+          const strong = document.createElement('strong');
+          strong.textContent = d.data.name;
+          tooltip.appendChild(strong);
           if (d.data.meta) {
             Object.entries(d.data.meta).forEach(([k, v]) => {
-              content += `<br><span class="text-gray-500">${k}:</span> ${v}`;
+              tooltip.appendChild(document.createElement('br'));
+              const keySpan = document.createElement('span');
+              keySpan.className = 'text-gray-500';
+              keySpan.textContent = k + ':';
+              tooltip.appendChild(keySpan);
+              tooltip.appendChild(document.createTextNode(' ' + v));
             });
           }
           if (d.children || d._children) {
             const count = (d.children || d._children).length;
-            content += `<br><span class="text-gray-500">${count} children</span>`;
+            tooltip.appendChild(document.createElement('br'));
+            const countSpan = document.createElement('span');
+            countSpan.className = 'text-gray-500';
+            countSpan.textContent = count + ' children';
+            tooltip.appendChild(countSpan);
           }
-          tooltip.innerHTML = content;
           tooltip.style.opacity = 1;
         })
         .on('mousemove', (event) => {

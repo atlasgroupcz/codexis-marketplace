@@ -18,47 +18,72 @@ Generate a kanban board layout using CSS (not a data visualization - for workflo
 
 ```json
 {
+  "$schema": "a2ui-visualization/1.0",
   "type": "kanban",
-  "title": "Change Confirmation Workflow",
-  "columns": [
-    { "id": "pending", "title": "Pending", "color": "#F39C12" },
-    { "id": "review", "title": "In Review", "color": "#3498DB" },
-    { "id": "confirmed", "title": "Confirmed", "color": "#27AE60" }
-  ],
-  "cards": [
-    { "id": 1, "column": "pending", "title": "CR288_2011 - Amendment", "subtitle": "3 changes" },
-    { "id": 2, "column": "review", "title": "CR145_2020 - New Section", "subtitle": "1 change", "tags": ["urgent"] }
-  ]
+  "title": { "literalString": "Change Confirmation Workflow" },
+  "config": {
+    "columnWidth": 300
+  },
+  "data": {
+    "columns": [
+      { "id": "pending", "title": { "literalString": "Pending" }, "color": "#F39C12" },
+      { "id": "review", "title": { "literalString": "In Review" }, "color": "#3498DB" },
+      { "id": "confirmed", "title": { "literalString": "Confirmed" }, "color": "#27AE60" }
+    ],
+    "cards": [
+      { "id": "1", "columnId": "pending", "title": { "literalString": "CR288_2011 - Amendment" }, "subtitle": { "literalString": "3 changes" } },
+      { "id": "2", "columnId": "review", "title": { "literalString": "CR145_2020 - New Section" }, "subtitle": { "literalString": "1 change" }, "tags": ["urgent"] }
+    ]
+  }
 }
 ```
 
 ## Schema Fields
 
-### columns (required)
+### config (optional)
+
+- `columnWidth` (number): Width of each column in pixels, default `300`
+
+### data (required)
+
+#### columns (required)
+
 Array of column definitions:
-- `id` (string): Unique identifier
-- `title` (string): Column header text
+
+- `id` (string, required): Unique identifier
+- `title` (BoundValue, required): Column header text
 - `color` (string, optional): Accent color (hex)
 
-### cards (required)
+#### cards (required)
+
 Array of card objects:
-- `id` (number|string): Unique identifier
-- `column` (string): Column ID where card belongs
-- `title` (string): Card title
-- `subtitle` (string, optional): Secondary text
-- `tags` (array, optional): Tag labels
+
+- `id` (string, required): Unique identifier
+- `columnId` (string, required): Column ID where card belongs
+- `title` (BoundValue, required): Card title
+- `subtitle` (BoundValue, optional): Secondary text
+- `tags` (array, optional): Tag labels as strings
 - `meta` (object, optional): Additional metadata for tooltip
+
+## BoundValue Types
+
+Values like `title`, `subtitle` can be:
+
+- `{ "literalString": "Static Text" }` - Static string
+- `{ "path": "/data/field" }` - Data binding
+- Plain strings are also accepted
 
 ## Output
 
 Generate an HTML file using the template at `template.html` with the A2UI JSON embedded.
 
-**Output path:** `~/.cdx/chats/{sanitized-workdir}/{chatId}/visualization-kanban-{uuid}.html`
+**Output path:** `{workDir}/kanban-{datetime}.html`
 
 ## Features
 
 - Responsive column layout
-- Card count per column
+- Card count per column header
 - Tag display with colors
 - Hover tooltips with metadata
 - Light/dark theme support
+- Schema validation with helpful error messages
