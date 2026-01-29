@@ -70,6 +70,102 @@ This skill is a **router only**. For each visualization type, you MUST:
 ### Geographic Data
 - Locations on a map → `map`
 
+## Fallback: Custom Visualization Types
+
+When the user requests a visualization type **not covered by the pre-defined types above**, use the dynamic fallback approach:
+
+### When to Use Fallback
+
+- User requests visualization types like: heatmap, treemap, sunburst, sankey, radar, chord diagram, word cloud, scatter plot matrix, parallel coordinates, etc.
+- User explicitly asks for a specific library (e.g., "use Chart.js", "make it with Plotly")
+- Pre-defined types don't fit the data or user's visualization goals
+
+### Fallback Workflow
+
+1. **Identify the best open-source library** for the requested visualization:
+   - **D3.js** - Complex custom visualizations, full control
+   - **Chart.js** - Simple charts with good defaults
+   - **Plotly.js** - Scientific/statistical visualizations
+   - **ECharts** - Rich interactive charts
+   - **Vis.js** - Network graphs, timelines
+   - **Cytoscape.js** - Graph theory visualizations
+   - **Three.js** - 3D visualizations
+   - **Vega-Lite** - Declarative grammar of graphics
+
+2. **Follow the same A2UI schema pattern** as pre-defined types:
+   ```json
+   {
+     "$schema": "a2ui-visualization/1.0",
+     "type": "<custom-type-name>",
+     "title": { "literalString": "Title" },
+     "config": { /* library-specific options */ },
+     "data": { /* visualization data */ }
+   }
+   ```
+
+3. **Create a self-contained HTML file** that:
+   - Loads the library via CDN (unpkg, cdnjs, or jsdelivr)
+   - Includes light/dark theme support (matching pre-defined types)
+   - Embeds the A2UI JSON data inline
+   - Validates schema and shows helpful error messages
+   - Is fully responsive and interactive
+
+4. **Use CDN-hosted libraries** - Examples:
+   ```html
+   <!-- Chart.js -->
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+   <!-- Plotly.js -->
+   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+   <!-- ECharts -->
+   <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+   <!-- Cytoscape.js -->
+   <script src="https://cdn.jsdelivr.net/npm/cytoscape/dist/cytoscape.min.js"></script>
+   ```
+
+5. **Output path**: `{workDir}/{custom-type}-{datetime}.html`
+
+### Fallback Template Structure
+
+Follow the same patterns as pre-defined templates:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <!-- CDN library imports -->
+  <style>
+    /* Light/dark theme CSS variables */
+    /* Responsive container styles */
+  </style>
+</head>
+<body>
+  <div id="visualization"></div>
+  <script>
+    const DATA = {{DATA}};
+    // Schema validation
+    // Library initialization
+    // Theme detection and application
+    // Responsive handling
+  </script>
+</body>
+</html>
+```
+
+### Key Requirements for Fallback Visualizations
+
+- **Schema validation**: Validate A2UI JSON structure before rendering
+- **Error handling**: Show user-friendly error messages on invalid data
+- **Theme support**: Detect system preference and support light/dark modes
+- **Responsive**: Adapt to container size changes
+- **Interactive**: Include tooltips, hover effects, zoom/pan where appropriate
+- **Self-contained**: Single HTML file with all dependencies from CDN
+
 ## A2UI Schema Format
 
 All visualizations use this structure:
