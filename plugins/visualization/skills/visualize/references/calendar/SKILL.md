@@ -55,14 +55,45 @@ Generate an interactive calendar visualization using Event Calendar library with
 }
 ```
 
+### List View Example
+
+```json
+{
+  "$schema": "a2ui-visualization/1.0",
+  "type": "calendar",
+  "title": { "literalString": "Upcoming Appointments" },
+  "config": {
+    "defaultView": "listWeek"
+  },
+  "data": {
+    "events": [
+      {
+        "id": "e1",
+        "title": { "literalString": "Team Meeting" },
+        "start": "2024-03-15T10:00:00",
+        "end": "2024-03-15T11:00:00",
+        "allDay": false,
+        "color": "#3b82f6"
+      }
+    ]
+  }
+}
+```
+
 ## Schema Fields
 
 ### config (optional)
 
 - `defaultView` (string): Initial view mode. Options:
-  - `"dayGridMonth"` (default) - Full month grid
-  - `"dayGridWeek"` - Week view
-  - `"dayGridDay"` - Single day view
+  - **Grid Views:**
+    - `"dayGridMonth"` (default) - Full month grid
+    - `"dayGridWeek"` - Week grid view
+    - `"dayGridDay"` - Single day grid
+  - **List/Agenda Views:**
+    - `"listDay"` - Single day list
+    - `"listWeek"` - Week list (agenda)
+    - `"listMonth"` - Month list
+    - `"listYear"` - Year list
 
 ### data (required)
 
@@ -96,7 +127,7 @@ Generate an HTML file using the template at `template.html` with the A2UI JSON e
 
 ## Features
 
-- Month, week, and day view switching
+- Month, week, day, and **list/agenda** view switching
 - Navigation buttons (prev/next/today)
 - Click events to see descriptions
 - Light/dark theme support
