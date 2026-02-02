@@ -1,0 +1,24 @@
+{
+  "name": "codexis",
+  "version": "1.0.0",
+  "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "codexis",
+    "legal",
+    "law",
+    "legislation",
+    "czech",
+    "slovak",
+    "european",
+    "eu",
+    "case-law",
+    "judiciary",
+    "api"
+  ],
+  "license": "PROPRIETARY",
+  "skills": "."
+}
