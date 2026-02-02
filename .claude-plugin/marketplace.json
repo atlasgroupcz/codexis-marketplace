@@ -6,6 +6,12 @@
   },
   "plugins": [
     {
+      "name": "codexis",
+      "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
+      "source": "./plugins/codexis",
+      "category": "legal"
+    },
+    {
       "name": "visualization",
       "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
       "source": "./plugins/visualization",
