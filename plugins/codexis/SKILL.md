@@ -1,6 +1,6 @@
 ---
-name: CODEXIS API
-description: This skill should be used when the user mentions "CODEXIS", asks about Czech legal data, searches for legislation, case law, EU regulations, legal commentaries, or contract templates. Provides guidance for querying the CODEXIS legal database API.
+name: CODEXIS
+description: This skill should be invoked whenever user needs law or legal information, czech or european. Provides guidance for querying the CODEXIS legal database API.
 version: 1.0.0
 ---
 
