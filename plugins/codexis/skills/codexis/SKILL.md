@@ -1,5 +1,5 @@
 ---
-name: CODEXIS
+name: codexis
 description: This skill should be invoked whenever user needs law or legal information, czech or european. Provides guidance for querying the CODEXIS legal database API.
 version: 1.0.0
 ---
