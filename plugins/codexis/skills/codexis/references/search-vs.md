@@ -2,10 +2,19 @@
 
 Search for contract specimens and templates.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/VS" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "kupní smlouva", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/VS
+POST cdx://search/VS
 Content-Type: application/json
 ```
 
@@ -64,7 +73,7 @@ Content-Type: application/json
 ### Search Purchase Agreements
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
+cdx -s -X POST "cdx://search/VS" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "kupní smlouva",
@@ -75,7 +84,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
 ### Search Employment Contracts
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
+cdx -s -X POST "cdx://search/VS" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "pracovní smlouva",
@@ -87,7 +96,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
 ### Search Lease Agreements
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
+cdx -s -X POST "cdx://search/VS" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "nájemní smlouva",
@@ -98,7 +107,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
 ### Search by Author
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/VS" \
+cdx -s -X POST "cdx://search/VS" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "*",
@@ -115,20 +124,20 @@ Templates do not have TOC - fetch full text:
 
 ```bash
 DOC_ID="VS134"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/text"
+cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Save Template to File
 
 ```bash
 DOC_ID="VS134"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/text" > template.txt
+cdx -s "cdx://doc/${DOC_ID}/text" > template.txt
 ```
 
 ### Find Related Legislation
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/VS134/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx -s "cdx://doc/VS134/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 

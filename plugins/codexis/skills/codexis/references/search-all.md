@@ -2,10 +2,19 @@
 
 Search across all data sources simultaneously.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/ALL" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "insolvence", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/ALL
+POST cdx://search/ALL
 Content-Type: application/json
 ```
 
@@ -59,7 +68,7 @@ Content-Type: application/json
 ### Search All Sources
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
+cdx -s -X POST "cdx://search/ALL" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "odpovědnost za škodu",
@@ -70,7 +79,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
 ### Group Results by Source
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
+cdx -s -X POST "cdx://search/ALL" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "ochrana osobních údajů",
@@ -81,7 +90,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
 ### Filter Results by Source (Client-Side)
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
+cdx -s -X POST "cdx://search/ALL" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "GDPR",
@@ -92,7 +101,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
 ### Get Top Result from Each Source
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
+cdx -s -X POST "cdx://search/ALL" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "smlouva o dílo",
@@ -118,7 +127,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
 
 1. Start with global search to understand the landscape:
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
+cdx -s -X POST "cdx://search/ALL" \
   -H 'Content-Type: application/json' \
   -d '{"query": "insolvence", "limit": 50}' | \
   jq '.results | group_by(.source) | map({source: .[0].source, count: length})'
@@ -129,7 +138,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/ALL" \
 3. Drill down with source-specific searches:
 ```bash
 # If legislation is most relevant
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "insolvence", "validNow": true, "limit": 20}'
 ```
@@ -141,8 +150,8 @@ After finding a key document via global search, explore its relations:
 ```bash
 # Get relation counts
 DOC_ID="CR26785"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related/counts" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/related/counts" | jq '.'
 
 # Get specific relations
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&limit=10"
+cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&limit=10"
 ```

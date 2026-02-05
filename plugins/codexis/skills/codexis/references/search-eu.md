@@ -2,10 +2,19 @@
 
 Search for EU regulations, directives, and decisions.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/EU" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "GDPR", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/EU
+POST cdx://search/EU
 Content-Type: application/json
 ```
 
@@ -94,7 +103,7 @@ Content-Type: application/json
 ### Search GDPR-Related Documents
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "GDPR ochrana osobních údajů",
@@ -105,7 +114,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
 ### Search EU Regulations Only
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "potraviny bezpečnost",
@@ -117,7 +126,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
 ### Search by CELEX Number
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "32016R0679",
@@ -128,7 +137,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
 ### Search Recent EU Legislation
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "umělá inteligence AI",
@@ -141,7 +150,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
 ### Search by Domain
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "*",
@@ -154,7 +163,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
 ### Search Directives for Transposition
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "digitální služby",
@@ -174,26 +183,26 @@ EU documents have TOC and versions:
 DOC_ID="EU213382"
 
 # Get full text
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/text"
+cdx -s "cdx://doc/${DOC_ID}/text"
 
 # Get TOC
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/toc" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
 
 # Get versions
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/versions" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/versions" | jq '.'
 ```
 
 ### Find Implementing Czech Legislation
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/EU213382/related?type=SOUVISEJICI_LEGISLATIVA_CR&limit=10" | \
+cdx -s "cdx://doc/EU213382/related?type=SOUVISEJICI_LEGISLATIVA_CR&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Group by Document Type
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/EU" \
+cdx -s -X POST "cdx://search/EU" \
   -H 'Content-Type: application/json' \
   -d '{"query": "finanční trhy", "limit": 50}' | \
   jq '.results | group_by(.docType) | map({type: .[0].docType, count: length})'

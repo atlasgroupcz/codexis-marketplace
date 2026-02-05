@@ -2,10 +2,19 @@
 
 Search for judicial decisions from Czech courts.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/JD" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "náhrada škody", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/JD
+POST cdx://search/JD
 Content-Type: application/json
 ```
 
@@ -93,7 +102,7 @@ Main courts:
 ### Search Constitutional Court Decisions
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "svoboda projevu",
@@ -106,7 +115,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Search by Case File Number
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "I. ÚS 668/15",
@@ -117,7 +126,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Search Recent Supreme Court Decisions
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "odpovědnost za škodu",
@@ -131,7 +140,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Search Administrative Court Decisions
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "stavební povolení",
@@ -143,7 +152,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Extract Legal Sentences (Právní věty)
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "bezdůvodné obohacení",
@@ -156,7 +165,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Search by ECLI
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "ECLI:CZ:US:2015",
@@ -172,13 +181,13 @@ JD documents do not have TOC - fetch full text directly:
 
 ```bash
 DOC_ID="JD252461"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/text"
+cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Extract Clean Legal Sentences
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{"query": "náhrada škody", "limit": 3}' | \
   jq -r '.results[] | "## \(.title)\n\(.legalSentence)\n"' | \
@@ -188,7 +197,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Group by Court
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{"query": "pracovní úraz", "limit": 50}' | \
   jq '.results | group_by(.court) | map({court: .[0].court, count: length}) | sort_by(-.count)'
@@ -199,6 +208,6 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 Case law often references legislation. After finding a decision, use the relations endpoint:
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/JD252461/related?type=SOUVISEJICI_LEGISLATIVA_CR&limit=10" | \
+cdx -s "cdx://doc/JD252461/related?type=SOUVISEJICI_LEGISLATIVA_CR&limit=10" | \
   jq '.results[] | {docId, title}'
 ```

@@ -2,6 +2,14 @@
 
 Documents in CODEXIS are interconnected through various relation types. This guide covers how to explore, count, and filter these relationships.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+DOC_ID="CR26785"
+cdx -s "cdx://doc/${DOC_ID}/related/counts"
+```
+
 ## Relation Endpoints
 
 | Endpoint | Method | Description |
@@ -15,7 +23,7 @@ First, understand what relations exist for a document:
 
 ```bash
 DOC_ID="CR26785"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related/counts" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/related/counts" | jq '.'
 ```
 
 Response:
@@ -64,7 +72,7 @@ Response:
 
 ```bash
 DOC_ID="CR26785"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/related" | jq '.'
 ```
 
 ### Query Parameters
@@ -105,28 +113,28 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related" | jq '.'
 ### Get Related Case Law
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=10" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 ```
 
 ### Get Related EU Legislation
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_PREDPISY_EU&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_PREDPISY_EU&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Get Implementing Regulations
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=PROVADECI_PREDPIS&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=PROVADECI_PREDPIS&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Get Commentaries
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=COMMENT&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=COMMENT&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -136,7 +144,7 @@ Get relations for a specific paragraph/section:
 
 ```bash
 # Relations for paragraph 89 of Civil Code
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&part=paragraf89&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&part=paragraf89&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -148,13 +156,13 @@ This is useful for finding case law interpreting a specific provision.
 
 ```bash
 # First page
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=0"
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=0"
 
 # Second page
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=20"
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=20"
 
 # Third page
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=40"
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=40"
 ```
 
 ### Get All Related Documents (Scripted)
@@ -166,14 +174,14 @@ LIMIT=100
 OFFSET=0
 
 # Get total count first
-TOTAL=$(curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related/counts" | \
+TOTAL=$(cdx -s "cdx://doc/${DOC_ID}/related/counts" | \
   jq -r ".counts[] | select(.type == \"${TYPE}\") | .count")
 
 echo "Total: $TOTAL"
 
 # Iterate through pages
 while [ $OFFSET -lt $TOTAL ]; do
-  curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=${TYPE}&limit=${LIMIT}&offset=${OFFSET}" | \
+  cdx -s "cdx://doc/${DOC_ID}/related?type=${TYPE}&limit=${LIMIT}&offset=${OFFSET}" | \
     jq -r '.results[] | "\(.docId)\t\(.title)"'
   OFFSET=$((OFFSET + LIMIT))
 done
@@ -184,14 +192,14 @@ done
 ### Sort by Date (Most Recent First)
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&sort=date&order=desc&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&sort=date&order=desc&limit=10" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 ```
 
 ### Sort by Title (Alphabetically)
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_LEGISLATIVA_CR&sort=title&order=asc&limit=10" | \
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_LEGISLATIVA_CR&sort=title&order=asc&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -203,15 +211,15 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_LE
 DOC_ID="CR26785"
 
 # 1. Get overview of all relations
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related/counts" | \
+cdx -s "cdx://doc/${DOC_ID}/related/counts" | \
   jq '.counts[] | "\(.name): \(.count)"' -r
 
 # 2. Get recent case law
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&sort=date&limit=5" | \
+cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&sort=date&limit=5" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 
 # 3. Get implementing regulations
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=PROVADECI_PREDPIS" | \
+cdx -s "cdx://doc/${DOC_ID}/related?type=PROVADECI_PREDPIS" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -221,11 +229,11 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=PROVADECI_PR
 DOC_ID="CR26785"
 
 # Laws that amended this one
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=PASIVNI_NOVELA&sort=date" | \
+cdx -s "cdx://doc/${DOC_ID}/related?type=PASIVNI_NOVELA&sort=date" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 
 # Laws this one amends
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=AKTIVNI_NOVELA" | \
+cdx -s "cdx://doc/${DOC_ID}/related?type=AKTIVNI_NOVELA" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -236,7 +244,7 @@ DOC_ID="CR26785"
 PARAGRAPH="paragraf89"
 
 # Get case law for specific paragraph
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&part=${PARAGRAPH}&limit=10" | \
+cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&part=${PARAGRAPH}&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -247,12 +255,12 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=SOUVISEJICI_
 CR_DOC="CR26785"
 
 # Get related EU legislation
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${CR_DOC}/related?type=SOUVISEJICI_PREDPISY_EU" | \
+cdx -s "cdx://doc/${CR_DOC}/related?type=SOUVISEJICI_PREDPISY_EU" | \
   jq '.results[] | {docId, title}'
 
 # For each EU doc, find other Czech implementations
 EU_DOC="EU213382"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${EU_DOC}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx -s "cdx://doc/${EU_DOC}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -263,7 +271,7 @@ DOC_ID="CR26785"
 TYPE="SOUVISEJICI_JUDIKATURA"
 
 echo "docId,title,date" > relations.csv
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/related?type=${TYPE}&limit=100" | \
+cdx -s "cdx://doc/${DOC_ID}/related?type=${TYPE}&limit=100" | \
   jq -r '.results[] | [.docId, .title, .validFrom] | @csv' >> relations.csv
 ```
 

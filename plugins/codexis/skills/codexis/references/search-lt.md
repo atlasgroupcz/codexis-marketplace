@@ -2,10 +2,19 @@
 
 Search for legal publications and articles.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/LT" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "smlouva", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/LT
+POST cdx://search/LT
 Content-Type: application/json
 ```
 
@@ -50,7 +59,7 @@ Content-Type: application/json
 ### Search Legal Articles
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/LT" \
+cdx -s -X POST "cdx://search/LT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "odpovědnost za škodu",
@@ -61,7 +70,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/LT" \
 ### Search Recent Publications
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/LT" \
+cdx -s -X POST "cdx://search/LT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "GDPR ochrana údajů",
@@ -74,7 +83,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/LT" \
 ### Search by Topic
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/LT" \
+cdx -s -X POST "cdx://search/LT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "insolvence úpadek",
@@ -90,20 +99,20 @@ Literature documents do not have TOC - fetch full text:
 
 ```bash
 DOC_ID="LT12345"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/text"
+cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Find Related Legislation
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/LT12345/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx -s "cdx://doc/LT12345/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Find Related Case Law
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/LT12345/related?type=SOUVISEJICI_JUDIKATURA" | \
+cdx -s "cdx://doc/LT12345/related?type=SOUVISEJICI_JUDIKATURA" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -111,17 +120,17 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/LT12345/related?type=SOUVISEJICI_JU
 
 1. Search literature for academic perspective:
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/LT" \
+cdx -s -X POST "cdx://search/LT" \
   -H 'Content-Type: application/json' \
   -d '{"query": "bezdůvodné obohacení", "limit": 5}'
 ```
 
 2. Find related legislation cited in articles:
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/LT_DOC_ID/related?type=SOUVISEJICI_LEGISLATIVA_CR"
+cdx -s "cdx://doc/LT_DOC_ID/related?type=SOUVISEJICI_LEGISLATIVA_CR"
 ```
 
 3. Find supporting case law:
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/LT_DOC_ID/related?type=SOUVISEJICI_JUDIKATURA"
+cdx -s "cdx://doc/LT_DOC_ID/related?type=SOUVISEJICI_JUDIKATURA"
 ```

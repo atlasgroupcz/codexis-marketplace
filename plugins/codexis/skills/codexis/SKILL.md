@@ -8,15 +8,7 @@ version: 1.0.0
 
 CODEXIS is a comprehensive Czech legal database providing structured access to legislation, case law, EU law, legal literature, and contract templates via a REST API.
 
-## API Configuration
-
-The API base URL is configured via environment variable:
-
-```bash
-export CODEXIS_API_URL="https://your-codexis-instance.example.com"
-```
-
-All endpoints are relative to `${CODEXIS_API_URL}/rest/cdx-api/`.
+Use the `cdx` CLI for all requests. It accepts standard curl flags and `cdx://` URLs (for example `cdx://search/CR` or `cdx://doc/CR26785/text`).
 
 ## Data Sources
 
@@ -39,7 +31,7 @@ All endpoints are relative to `${CODEXIS_API_URL}/rest/cdx-api/`.
 All search endpoints use POST with JSON body:
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/{SOURCE}" \
+cdx -s -X POST "cdx://search/{SOURCE}" \
   -H 'Content-Type: application/json' \
   -d '{"query": "search terms", "limit": 10}'
 ```
@@ -72,14 +64,14 @@ Documents use composite IDs with optional version suffix:
 ### Extract Specific Fields with jq
 
 ```bash
-# Get document IDs and titles
-curl -s -X POST ... | jq '.results[] | {docId: .docId, title: .title}'
+# Get document IDs and titles (works for CR/SK/EU, COMMENT, and others)
+cdx -s -X POST ... | jq '.results[] | {docId: (.main.docId // .docId // .commentId), title: (.main.title // .title)}'
 
 # Get just the first result
-curl -s -X POST ... | jq '.results[0]'
+cdx -s -X POST ... | jq '.results[0]'
 
 # Count total results
-curl -s -X POST ... | jq '.totalResults'
+cdx -s -X POST ... | jq '.totalResults'
 ```
 
 ### Working with Document Text
@@ -88,13 +80,13 @@ Documents with TOC (CR, SK, EU) support line-based extraction:
 
 ```bash
 # Get full text
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/text"
+cdx -s "cdx://doc/CR26785/text"
 
 # Get TOC with line numbers
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/toc" | jq '.'
+cdx -s "cdx://doc/CR26785/toc" | jq '.'
 
 # Extract specific section using line numbers from TOC
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/text" | sed -n '27,50p'
+cdx -s "cdx://doc/CR26785/text" | sed -n '27,50p'
 ```
 
 ## Reference Files
@@ -122,7 +114,7 @@ For detailed schemas, examples, and workflows, consult:
 ### Search Czech Laws
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "občanský zákoník", "limit": 5, "validNow": true}' \
   | jq '.results[] | {docId: .main.docId, title: .main.title}'
@@ -131,7 +123,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Search Case Law
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
+cdx -s -X POST "cdx://search/JD" \
   -H 'Content-Type: application/json' \
   -d '{"query": "náhrada škody", "soud": ["Ústavní soud"], "limit": 5}' \
   | jq '.results[] | {docId, title, court, ecli}'
@@ -140,7 +132,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/JD" \
 ### Get Related Case Law for a Law
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=10" \
+cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=10" \
   | jq '.results[] | {docId, title}'
 ```
 
@@ -148,11 +140,11 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/related?type=SOUVISEJICI_JU
 
 ```bash
 # 1. Get TOC to find paragraph location
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/toc" \
+cdx -s "cdx://doc/CR26785/toc" \
   | jq '.. | objects | select(.elementId == "paragraf89") | {startLine, endLine}'
 
 # 2. Extract those lines from text
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/CR26785/text" | sed -n '1842,1860p'
+cdx -s "cdx://doc/CR26785/text" | sed -n '1842,1860p'
 ```
 
 ## Best Practices

@@ -2,10 +2,19 @@
 
 Search for Slovak laws and regulations.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/SK" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "daň", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/SK
+POST cdx://search/SK
 Content-Type: application/json
 ```
 
@@ -89,7 +98,7 @@ Content-Type: application/json
 ### Search Slovak Laws
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/SK" \
+cdx -s -X POST "cdx://search/SK" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "občiansky zákonník",
@@ -101,7 +110,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/SK" \
 ### Search Recent Slovak Legislation
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/SK" \
+cdx -s -X POST "cdx://search/SK" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "daň z príjmov",
@@ -117,13 +126,13 @@ Slovak and Czech laws often have similar structure. Search both:
 
 ```bash
 # Czech
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "zákoník práce", "validNow": true, "limit": 3}' | \
   jq '.results[] | {source: "CR", docId: .main.docId, title: .main.title}'
 
 # Slovak
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/SK" \
+cdx -s -X POST "cdx://search/SK" \
   -H 'Content-Type: application/json' \
   -d '{"query": "zákonník práce", "limit": 3}' | \
   jq '.results[] | {source: "SK", docId: .main.docId, title: .main.title}'
@@ -137,13 +146,13 @@ Slovak documents have TOC and versions like Czech legislation:
 DOC_ID="SK12345"
 
 # Get full text
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/text"
+cdx -s "cdx://doc/${DOC_ID}/text"
 
 # Get TOC
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/toc" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
 
 # Get versions
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${DOC_ID}/versions" | jq '.'
+cdx -s "cdx://doc/${DOC_ID}/versions" | jq '.'
 ```
 
 See `czech-legislature.md` for detailed text extraction techniques - same patterns apply.

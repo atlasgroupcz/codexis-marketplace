@@ -2,10 +2,19 @@
 
 Search for Czech laws, decrees, regulations, and municipal documents.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/CR" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "občanský zákoník", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/CR
+POST cdx://search/CR
 Content-Type: application/json
 ```
 
@@ -103,7 +112,7 @@ Common values:
 ### Search for Currently Valid Laws
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "daň z příjmů",
@@ -116,7 +125,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Search Laws Valid at Specific Date
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "občanský zákoník",
@@ -128,7 +137,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Search Recent Changes
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "stavební zákon",
@@ -141,7 +150,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Search Municipal Documents
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "Praha",
@@ -155,7 +164,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 
 ```bash
 # Search broadly and extract unique types
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "*", "limit": 50}' \
   | jq '[.results[].main.docType] | unique'
@@ -166,7 +175,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Extract Document IDs for Further Processing
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "zákoník práce", "validNow": true, "limit": 5}' \
   | jq -r '.results[].main.docId'
@@ -175,7 +184,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Get Version-Specific IDs
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "trestní zákoník", "validNow": true, "limit": 3}' \
   | jq -r '.results[].timecut.timecutId'
@@ -184,7 +193,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
 ### Filter by Multiple Document Types
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "ochrana osobních údajů",

@@ -2,10 +2,19 @@
 
 Search for LIBERIS legal commentaries on Czech legislation.
 
+## cdx Usage
+Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+
+```bash
+cdx -s -X POST "cdx://search/COMMENT" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "nájem bytu", "limit": 5}'
+```
+
 ## Endpoint
 
 ```
-POST ${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT
+POST cdx://search/COMMENT
 Content-Type: application/json
 ```
 
@@ -65,7 +74,7 @@ Content-Type: application/json
 ### Search Commentaries on a Topic
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
+cdx -s -X POST "cdx://search/COMMENT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "kupní smlouva",
@@ -76,7 +85,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
 ### Find Commentaries for Specific Law
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
+cdx -s -X POST "cdx://search/COMMENT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "občanský zákoník",
@@ -88,7 +97,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
 ### Find Commentary for Specific Paragraph
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
+cdx -s -X POST "cdx://search/COMMENT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "*",
@@ -101,7 +110,7 @@ curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
 ### Search Recent Commentaries
 
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
+cdx -s -X POST "cdx://search/COMMENT" \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "GDPR ochrana údajů",
@@ -119,13 +128,13 @@ Commentaries do not have TOC - fetch full text:
 
 ```bash
 COMMENT_ID="COMMENT112807"
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/${COMMENT_ID}/text"
+cdx -s "cdx://doc/${COMMENT_ID}/text"
 ```
 
 ### Find Related Legislation
 
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/COMMENT112807/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx -s "cdx://doc/COMMENT112807/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -133,19 +142,19 @@ curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/COMMENT112807/related?type=SOUVISEJ
 
 1. Search for relevant law:
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/CR" \
+cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "nájem bytu", "validNow": true, "limit": 3}'
 ```
 
 2. Find commentaries for that law:
 ```bash
-curl -s -X POST "${CODEXIS_API_URL}/rest/cdx-api/search/COMMENT" \
+cdx -s -X POST "cdx://search/COMMENT" \
   -H 'Content-Type: application/json' \
   -d '{"query": "nájem bytu", "relatedWithItem": "CR26785", "limit": 5}'
 ```
 
 3. Get commentary text:
 ```bash
-curl -s "${CODEXIS_API_URL}/rest/cdx-api/doc/COMMENT_ID/text"
+cdx -s "cdx://doc/COMMENT_ID/text"
 ```
