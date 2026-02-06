@@ -17,7 +17,7 @@
     }
     #graph {
       width: 100vw;
-      height: calc(100vh - 60px);
+      height: 100vh;
     }
     .node-label {
       font-size: 12px;
@@ -53,9 +53,6 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <header class="p-4 border-b border-[var(--border)]">
-    <h1 class="text-xl font-semibold">{{TITLE}}</h1>
-  </header>
   <div id="graph"></div>
   <div id="tooltip" class="tooltip"></div>
 
@@ -163,7 +160,7 @@
       if (d.group) {
         tooltip.appendChild(document.createElement('br'));
         const groupSpan = document.createElement('span');
-        groupSpan.className = 'text-gray-500';
+        groupSpan.className = 'text-[var(--muted-foreground)]';
         groupSpan.textContent = d.group;
         tooltip.appendChild(groupSpan);
       }

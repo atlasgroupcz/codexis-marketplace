@@ -102,3 +102,9 @@ function initTheme() {
 // Initialize
 injectThemeStyles();
 initTheme();
+
+// Configure Tailwind v4 to use class-based dark mode (instead of prefers-color-scheme)
+const twConfig = document.createElement('style');
+twConfig.setAttribute('type', 'text/tailwindcss');
+twConfig.textContent = '@custom-variant dark (&:where(.dark, .dark *));';
+document.head.appendChild(twConfig);
