@@ -86,10 +86,13 @@ function injectThemeStyles() {
   document.head.appendChild(style);
 }
 
-// Theme detection from URL query parameter
+// Theme detection: own URL params > parent URL params (srcdoc iframe) > default light
 function initTheme() {
-  const params = new URLSearchParams(window.location.search);
-  const themeParam = params.get('theme');
+  let themeParam = new URLSearchParams(window.location.search).get('theme');
+  if (!themeParam) {
+    try { themeParam = new URLSearchParams(window.parent.location.search).get('theme'); }
+    catch (e) { /* cross-origin — ignore */ }
+  }
   const theme = (themeParam === 'light' || themeParam === 'dark') ? themeParam : 'light';
   document.documentElement.classList.remove('light', 'dark');
   document.documentElement.classList.add(theme);
