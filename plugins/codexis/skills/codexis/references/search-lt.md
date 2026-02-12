@@ -39,13 +39,13 @@ Content-Type: application/json
 {
   "results": [
     {
-      "docId": "LT12345",
-      "title": "Odpovědnost za škodu v občanském právu",
+      "docId": "LT146061",
+      "docUrl": "cdx://doc/LT146061/text",
+      "docType": "Životní situace",
+      "title": "Životní situace - Uzavírání partnerství podle občanského zákoníku",
       "snippet": "text with <mark>highlights</mark>",
-      "nameSnippet": "title with <mark>highlights</mark>",
-      "author": "Jan Novák",
-      "source": "Právní rozhledy",
-      "createdDate": "2024-03-15"
+      "source": "ATLAS consulting spol. s r.o.",
+      "createdDate": "2025-01-01"
     }
   ],
   "totalResults": 5678,
@@ -53,6 +53,16 @@ Content-Type: application/json
   "limit": 10
 }
 ```
+
+## Key Fields Explained
+
+| Field | Description |
+|-------|-------------|
+| `docId` | Document ID for retrieval |
+| `docUrl` | Literature text URL |
+| `docType` | Literature content type |
+| `source` | Publisher/source |
+| `createdDate` | Publication/update date |
 
 ## Examples
 
@@ -64,7 +74,7 @@ cdx -s -X POST "cdx://search/LT" \
   -d '{
     "query": "odpovědnost za škodu",
     "limit": 10
-  }' | jq '.results[] | {docId, title, author, source}'
+  }' | jq '.results[] | {docId, docType, title, source}'
 ```
 
 ### Search Recent Publications
@@ -88,31 +98,32 @@ cdx -s -X POST "cdx://search/LT" \
   -d '{
     "query": "insolvence úpadek",
     "limit": 15
-  }' | jq '.results[] | {docId, title, author}'
+  }' | jq '.results[] | {docId, docType, title}'
 ```
 
 ## Working with Literature
 
 ### Get Article Text
 
-Literature documents do not have TOC - fetch full text:
+LT documents often expose a generated TOC (`SEKCE...` element IDs). Prefer TOC + marker extraction when available; otherwise use full text:
 
 ```bash
-DOC_ID="LT12345"
+DOC_ID="LT146061"
+cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
 cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Find Related Legislation
 
 ```bash
-cdx -s "cdx://doc/LT12345/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx -s "cdx://doc/LT146061/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Find Related Case Law
 
 ```bash
-cdx -s "cdx://doc/LT12345/related?type=SOUVISEJICI_JUDIKATURA" | \
+cdx -s "cdx://doc/LT146061/related?type=SOUVISEJICI_JUDIKATURA" | \
   jq '.results[] | {docId, title}'
 ```
 

@@ -44,9 +44,9 @@ Content-Type: application/json
   "results": [
     {
       "docId": "JD252461",
+      "docUrl": "cdx://doc/JD252461/text",
       "title": "Nález - Ke stanovení výše náhrady škody za neoprávněně odebranou elektřinu",
       "snippet": "text with <mark>highlights</mark>",
-      "nameSnippet": "title with <mark>highlights</mark>",
       "legalSentence": "<div>Legal principle HTML...</div>",
       "createdDate": "2015-08-11",
       "court": "Ústavní soud",
@@ -72,6 +72,7 @@ Content-Type: application/json
 | Field | Description |
 |-------|-------------|
 | `docId` | Document ID for retrieval |
+| `docUrl` | Decision text URL |
 | `legalSentence` | Key legal principle (HTML formatted) |
 | `court` | Court name |
 | `spZns` | Case file numbers (spisové značky) |
@@ -177,10 +178,11 @@ cdx -s -X POST "cdx://search/JD" \
 
 ### Get Document Text
 
-JD documents do not have TOC - fetch full text directly:
+JD documents often expose a lightweight generated TOC (`SEKCE...` element IDs). Prefer TOC + marker extraction when available; otherwise use full text directly:
 
 ```bash
 DOC_ID="JD252461"
+cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
 cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 

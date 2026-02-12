@@ -31,7 +31,7 @@ Content-Type: application/json
   "issuedFrom": "date (YYYY-MM-DD)",
   "issuedTo": "date",
 
-  "relatedWithItem": "string - related CR docId",
+  "relatedWithItem": "string - related CR docId (base or version ID)",
   "relatedWithItemPart": "string - specific paragraph (use with relatedWithItem)"
 }
 ```
@@ -42,15 +42,15 @@ Content-Type: application/json
 {
   "results": [
     {
-      "commentId": "COMMENT112807",
-      "title": "Nový občanský zákoník. Smluvní právo - Kapitola 9 Smlouvy se spotřebiteli",
+      "docId": "COMMENT76521",
+      "docUrl": "cdx://doc/COMMENT76521/text",
+      "title": "Listina základních práv a svobod - judikatorní komentář - Čl. 11 [Vlastnické právo]",
       "snippet": "text with <mark>highlights</mark>",
-      "nameSnippet": "title with <mark>highlights</mark>",
-      "partName": "Kapitola 9 Smlouvy se spotřebiteli",
-      "bookId": "BOOKS1000070",
-      "editionId": "BOOKS1000070_2017_09_22",
-      "validFromDate": null,
-      "tags": ["LIBERIS", "MONITOR_CIRKEV", "MONITOR_OBECNI_SAMOSPRAVA"]
+      "partName": "Čl. 11 [Vlastnické právo]",
+      "bookId": "BOOKS1000128",
+      "editionId": "BOOKS1000128_2017_03_01",
+      "validFromDate": "2017-03-01",
+      "tags": ["LIBERIS"]
     }
   ],
   "totalResults": 17310,
@@ -63,7 +63,8 @@ Content-Type: application/json
 
 | Field | Description |
 |-------|-------------|
-| `commentId` | Commentary ID for retrieval |
+| `docId` | Commentary ID for retrieval |
+| `docUrl` | Commentary text URL |
 | `partName` | Chapter/section name |
 | `bookId` | Parent book ID |
 | `editionId` | Specific edition |
@@ -79,7 +80,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
   -d '{
     "query": "kupní smlouva",
     "limit": 10
-  }' | jq '.results[] | {id: .commentId, title, part: .partName}'
+  }' | jq '.results[] | {docId, title, part: .partName}'
 ```
 
 ### Find Commentaries for Specific Law
@@ -91,7 +92,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
     "query": "občanský zákoník",
     "relatedWithItem": "CR26785",
     "limit": 10
-  }' | jq '.results[] | {id: .commentId, title, part: .partName}'
+  }' | jq '.results[] | {docId, title, part: .partName}'
 ```
 
 ### Find Commentary for Specific Paragraph
@@ -104,7 +105,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
     "relatedWithItem": "CR26785",
     "relatedWithItemPart": "paragraf89",
     "limit": 10
-  }' | jq '.results[] | {id: .commentId, title, part: .partName}'
+  }' | jq '.results[] | {docId, title, part: .partName}'
 ```
 
 ### Search Recent Commentaries
@@ -117,18 +118,18 @@ cdx -s -X POST "cdx://search/COMMENT" \
     "issuedFrom": "2023-01-01",
     "sort": "DATE",
     "limit": 10
-  }' | jq '.results[] | {id: .commentId, title}'
+  }' | jq '.results[] | {docId, title}'
 ```
 
 ## Working with Commentaries
 
 ### Get Commentary Text
 
-Commentaries do not have TOC - fetch full text:
+Commentaries do not have TOC (`/toc` currently returns HTTP 500) - fetch full text:
 
 ```bash
-COMMENT_ID="COMMENT112807"
-cdx -s "cdx://doc/${COMMENT_ID}/text"
+DOC_ID="COMMENT76521"
+cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Find Related Legislation
@@ -151,10 +152,10 @@ cdx -s -X POST "cdx://search/CR" \
 ```bash
 cdx -s -X POST "cdx://search/COMMENT" \
   -H 'Content-Type: application/json' \
-  -d '{"query": "nájem bytu", "relatedWithItem": "CR26785", "limit": 5}'
+  -d '{"query": "nájem bytu", "relatedWithItem": "CR26785_2026_01_01", "limit": 5}'
 ```
 
 3. Get commentary text:
 ```bash
-cdx -s "cdx://doc/COMMENT_ID/text"
+cdx -s "cdx://doc/COMMENT_DOC_ID/text"
 ```

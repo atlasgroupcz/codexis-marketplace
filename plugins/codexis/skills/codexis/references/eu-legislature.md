@@ -48,7 +48,7 @@ cdx -s "cdx://doc/${VERSION_ID}/text"
 
 ## Table of Contents (TOC)
 
-EU documents have hierarchical TOC similar to Czech laws.
+EU documents have hierarchical TOC similar to Czech laws. Use TOC for discovery and `/text` markers for extraction.
 
 ### Get TOC
 
@@ -70,14 +70,14 @@ EU regulations typically follow this hierarchy:
 ```bash
 # Find Article 5
 cdx -s "cdx://doc/EU213382/toc" | \
-  jq '.. | objects | select(.title | contains("Článek 5"))'
+  jq '.. | objects | select(.title? | contains("Článek 5"))'
 ```
 
 ### List All Articles
 
 ```bash
 cdx -s "cdx://doc/EU213382/toc" | \
-  jq '.. | objects | select(.title | startswith("Článek")) | {title, startLine, endLine}'
+  jq '.. | objects | select(.title? | startswith("Článek")) | {title, elementId, startLine, endLine}'
 ```
 
 ## Document Text
@@ -94,19 +94,38 @@ cdx -s "cdx://doc/${DOC_ID}/text"
 EU document text follows similar patterns to Czech laws:
 - `[id: #unit-N]` - Unit anchors
 - `[?part=elementId]` - Section markers
-- Links to other EU documents
+- Links to other EU documents (`cdx://doc/...`; append `/text` or `/meta` when opening)
 
 ## Extracting Specific Sections
 
-### Using Line Numbers from TOC
+### Using Section Markers (Recommended)
 
 ```bash
-# 1. Find article line numbers
-cdx -s "cdx://doc/EU213382/toc" | \
-  jq '.. | objects | select(.title | contains("Článek 5")) | {startLine, endLine}'
+DOC_ID="EU213382"
+ARTICLE_PART="CL5"
 
-# 2. Extract those lines
-cdx -s "cdx://doc/EU213382/text" | sed -n 'START,ENDp'
+cdx -s "cdx://doc/${DOC_ID}/text" | \
+  awk -v section="${ARTICLE_PART}" '
+    $0 == "[?part=" section "]" {capture=1}
+    capture {
+      if ($0 ~ /^\[\?part=/ && $0 != "[?part=" section "]") exit
+      print
+    }
+  '
+```
+
+### Using Line Numbers from TOC (Fallback Only)
+
+Use this only if marker extraction fails. Always validate that output starts with the expected article heading.
+
+```bash
+DOC_ID="EU213382"
+TARGET="Článek 5"
+
+LINES=$(cdx -s "cdx://doc/${DOC_ID}/toc" | \
+  jq -r ".. | objects | select(.title? | contains(\"${TARGET}\")) | \"\(.startLine),\(.endLine)\"")
+
+cdx -s "cdx://doc/${DOC_ID}/text" | sed -n "${LINES}p"
 ```
 
 ### Search Within Text
@@ -133,7 +152,7 @@ cdx -s -X POST "cdx://search/EU" \
 # Then get specific article
 DOC_ID="EU_GDPR_DOC_ID"
 cdx -s "cdx://doc/${DOC_ID}/toc" | \
-  jq '.. | objects | select(.title | contains("Článek 17"))'
+  jq '.. | objects | select(.title? | contains("Článek 17")) | {title, elementId}'
 ```
 
 ### Workflow 2: Find Czech Implementation
@@ -171,7 +190,7 @@ EU regulations have recitals before the main articles:
 ```bash
 # Recitals are typically before "Článek 1"
 cdx -s "cdx://doc/EU213382/toc" | \
-  jq '.. | objects | select(.title | contains("Článek 1")) | .startLine'
+  jq '.. | objects | select(.title? | contains("Článek 1")) | .startLine'
 
 # Get text before that line
 START_LINE=<from_above>
@@ -216,6 +235,14 @@ cdx -s "cdx://doc/EU_DOC_ID/related?type=SOUVISEJICI_PREDPISY_ESD_ESLP" | \
 
 ## Processing Tips
 
+### Known Pitfalls
+
+- `cdx://doc/<DOC_ID>/text?part=<ELEMENT_ID>` is not a direct section API.
+- `cdx://doc/<DOC_ID>?part=<ELEMENT_ID>` is an invalid resource path.
+- `cdx://doc/<DOC_ID>` (without endpoint suffix) returns 404; append `/text` or `/meta`.
+- TOC can be an array; avoid fixed `.toc` object assumptions.
+- Validate extracted heading after any `startLine/endLine` extraction.
+
 ### Clean Text
 
 ```bash
@@ -235,5 +262,5 @@ cdx -s "cdx://doc/EU213382/toc" | \
 
 ```bash
 cdx -s "cdx://doc/EU213382/toc" | \
-  jq '[.. | objects | select(.title | startswith("Článek"))] | length'
+  jq '[.. | objects | select(.title? | startswith("Článek"))] | length'
 ```

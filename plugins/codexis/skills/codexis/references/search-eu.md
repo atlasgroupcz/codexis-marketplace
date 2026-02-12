@@ -49,21 +49,21 @@ Content-Type: application/json
 {
   "results": [
     {
-      "docId": "EU213382",
-      "title": "2023/1795: Prováděcí rozhodnutí Komise (EU) 2023/1795...",
+      "docId": "EU192067",
+      "docUrl": "cdx://doc/EU192067/text",
+      "title": "2021/1772: Prováděcí rozhodnutí Komise (EU) 2021/1772...",
       "snippet": "text with <mark>highlights</mark>",
-      "nameSnippet": "title with <mark>highlights</mark>",
       "docType": "Rozhodnutí",
       "source": "Úřední věstník Evropské unie",
-      "createdDate": "2023-09-20",
+      "createdDate": "2021-10-11",
       "sourceUveu": "L",
-      "language": "CZ",
+      "language": "",
       "domain": "Průmyslová politika a vnitřní trh",
-      "celex": "32023D1795",
-      "validFrom": "2023-09-20",
-      "validTo": null,
-      "approvalDate": "2023-07-10",
-      "docNumber": "2023/1795"
+      "celex": "32021D1772",
+      "validFrom": "2021-10-11",
+      "validTo": "2025-12-27",
+      "approvalDate": "2021-06-28",
+      "docNumber": "2021/1772"
     }
   ],
   "totalResults": 384,
@@ -77,6 +77,7 @@ Content-Type: application/json
 | Field | Description |
 |-------|-------------|
 | `docId` | Document ID for retrieval |
+| `docUrl` | Document text URL |
 | `celex` | CELEX number (EU document identifier) |
 | `docType` | Document type (Nařízení, Směrnice, etc.) |
 | `sourceUveu` | Official Journal series (L or C) |

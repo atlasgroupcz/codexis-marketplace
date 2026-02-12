@@ -39,12 +39,12 @@ Content-Type: application/json
 {
   "results": [
     {
-      "docId": "VS134",
-      "title": "Kupní smlouva o převodu nemovité věci",
+      "docId": "VS1000018",
+      "docUrl": "cdx://doc/VS1000018/text",
+      "title": "Kupní smlouva",
       "snippet": "",
-      "nameSnippet": "Kupní smlouva o převodu nemovité věci",
-      "author": "AK Sokol Novák tdpA",
-      "createdDate": "2023-03-01"
+      "author": "CODEXIS publishing",
+      "createdDate": "2025-07-01"
     }
   ],
   "totalResults": 178,
@@ -58,6 +58,7 @@ Content-Type: application/json
 | Field | Description |
 |-------|-------------|
 | `docId` | Document ID for retrieval |
+| `docUrl` | Template text URL |
 | `author` | Template author/law firm |
 | `createdDate` | Creation/update date |
 
@@ -120,24 +121,24 @@ cdx -s -X POST "cdx://search/VS" \
 
 ### Get Template Text
 
-Templates do not have TOC - fetch full text:
+Templates do not have TOC (`/toc` currently returns HTTP 500) - fetch full text:
 
 ```bash
-DOC_ID="VS134"
+DOC_ID="VS1000018"
 cdx -s "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Save Template to File
 
 ```bash
-DOC_ID="VS134"
+DOC_ID="VS1000018"
 cdx -s "cdx://doc/${DOC_ID}/text" > template.txt
 ```
 
 ### Find Related Legislation
 
 ```bash
-cdx -s "cdx://doc/VS134/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx -s "cdx://doc/VS1000018/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 

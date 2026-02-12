@@ -36,18 +36,18 @@ Content-Type: application/json
 {
   "results": [
     {
-      "docId": "CR26785",
+      "docId": "CR26785_2026_01_01",
       "source": "CR",
+      "docUrl": "cdx://doc/CR26785_2026_01_01/text",
       "title": "89/2012 Sb. Zákon občanský zákoník",
-      "snippet": "text with <mark>highlights</mark>",
-      "score": 0.95
+      "snippet": "text with <mark>highlights</mark>"
     },
     {
       "docId": "JD252461",
       "source": "JD",
+      "docUrl": "cdx://doc/JD252461/text",
       "title": "Nález - Ke stanovení výše náhrady škody...",
-      "snippet": "text with <mark>highlights</mark>",
-      "score": 0.87
+      "snippet": "text with <mark>highlights</mark>"
     }
   ],
   "totalResults": 387122,
@@ -60,8 +60,11 @@ Content-Type: application/json
 
 | Field | Description |
 |-------|-------------|
+| `docUrl` | Source-specific document URL |
 | `source` | Data source (CR, JD, EU, SK, ES, LT, VS, COMMENT) |
-| `score` | Relevance score |
+
+`docUrl` may contain source-specific query hints (for example `?part=...`).  
+For deterministic workflows, use `docId` and call explicit endpoints (`/meta`, `/text`, `/toc`, `/related`) as needed.
 
 ## Examples
 

@@ -39,32 +39,23 @@ Content-Type: application/json
 
 ## Response Schema
 
+Runtime note: on current backend, `/text` and `/toc` for SK require a **version ID** (`SK..._YYYY_MM_DD`), not a base ID.
+
 ```json
 {
   "results": [
     {
-      "main": {
-        "docId": "SK12345",
-        "title": "40/1964 Zb. Občiansky zákonník",
-        "docType": "Zákon",
-        "docNumber": "40/1964",
-        "source": "Zbierka zákonov",
-        "authors": ["Národná rada"],
-        "schvaleno": "1964-02-26",
-        "platnyOd": "1964-03-05",
-        "ucinnyOd": "1964-04-01",
-        "zruseno": null,
-        "note": null
-      },
-      "timecut": {
-        "timecutId": "SK12345_2026_01_01",
-        "docId": "SK12345",
-        "validFrom": "2026-01-01",
-        "validTo": null,
-        "derogation": false
-      },
+      "docId": "SK48_2026_01_01",
+      "docUrl": "cdx://doc/SK48_2026_01_01/text",
+      "docNumber": "40/1964 Zb.",
+      "docType": "Zákon",
+      "source": "www.slov-lex.sk",
+      "amount": "19/1964",
+      "vyhlaseno": "1964-03-05",
+      "schvaleno": "1964-02-26",
+      "author": "Národné zhromaždenie Československej socialistickej republiky",
       "snippet": "text with <mark>highlights</mark>",
-      "nameSnippet": "title with <mark>highlights</mark>"
+      "title": "40/1964 Zb. <mark>Občiansky</mark> <mark>zákonník</mark>"
     }
   ],
   "totalResults": 1234,
@@ -77,13 +68,11 @@ Content-Type: application/json
 
 | Field | Description |
 |-------|-------------|
-| `docId` | Base document ID |
-| `timecutId` | Version-specific ID |
+| `docId` | Version-specific ID (required for `/text` and `/toc`) |
 | `docType` | Document type |
 | `schvaleno` | Approval date |
-| `platnyOd` | Valid from (published) |
-| `ucinnyOd` | Effective from |
-| `zruseno` | Repealed date (null = valid) |
+| `vyhlaseno` | Published date |
+| `docUrl` | Link to document text endpoint |
 
 ## Document Types (typ facet)
 
@@ -104,7 +93,7 @@ cdx -s -X POST "cdx://search/SK" \
     "query": "občiansky zákonník",
     "typ": ["Zákon"],
     "limit": 10
-  }' | jq '.results[] | {docId: .main.docId, title: .main.title}'
+  }' | jq '.results[] | {docId, title}'
 ```
 
 ### Search Recent Slovak Legislation
@@ -117,7 +106,7 @@ cdx -s -X POST "cdx://search/SK" \
     "issuedFrom": "2024-01-01",
     "sort": "DATE",
     "limit": 10
-  }' | jq '.results[] | {docId: .main.docId, title: .main.title, date: .main.ucinnyOd}'
+  }' | jq '.results[] | {docId, title, approved: .schvaleno, published: .vyhlaseno}'
 ```
 
 ### Compare with Czech Legislation
@@ -129,13 +118,13 @@ Slovak and Czech laws often have similar structure. Search both:
 cdx -s -X POST "cdx://search/CR" \
   -H 'Content-Type: application/json' \
   -d '{"query": "zákoník práce", "validNow": true, "limit": 3}' | \
-  jq '.results[] | {source: "CR", docId: .main.docId, title: .main.title}'
+  jq '.results[] | {source: "CR", docId, title}'
 
 # Slovak
 cdx -s -X POST "cdx://search/SK" \
   -H 'Content-Type: application/json' \
   -d '{"query": "zákonník práce", "limit": 3}' | \
-  jq '.results[] | {source: "SK", docId: .main.docId, title: .main.title}'
+  jq '.results[] | {source: "SK", docId, title}'
 ```
 
 ## Working with Slovak Documents
@@ -143,7 +132,7 @@ cdx -s -X POST "cdx://search/SK" \
 Slovak documents have TOC and versions like Czech legislation:
 
 ```bash
-DOC_ID="SK12345"
+DOC_ID="SK48_2026_01_01"
 
 # Get full text
 cdx -s "cdx://doc/${DOC_ID}/text"
