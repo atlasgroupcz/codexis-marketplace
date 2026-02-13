@@ -16,6 +16,12 @@
       "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
       "source": "./plugins/visualization",
       "category": "visualization"
+    },
+    {
+      "name": "katastr",
+      "description": "Katastr nemovitostí ČR - property registry lookup and cadastral data access",
+      "source": "./plugins/katastr",
+      "category": "legal"
     }
   ]
 }
