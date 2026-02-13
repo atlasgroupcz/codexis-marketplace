@@ -12,6 +12,30 @@ description: Access to CUZK REST API KN (api-kn.cuzk.gov.cz)
 - Typical header: `Accept: application/json`
 - API is GET-only.
 
+## Calling the API from the `shell` tool (multitenant-friendly)
+
+In CDX/multitenant chats you will often need to do real HTTP fetches (no special client is assumed).
+The most reliable pattern is a tiny Python helper using `requests` (handles URL encoding + JSON decoding):
+
+```bash
+python3 - <<'PY'
+import requests, json
+
+BASE = "https://api-kn.cuzk.gov.cz"
+HEADERS = {
+  "ApiKey": "i2sPUMBuyNlssfXudxY1NE1pdRWzXo",
+  "Accept": "application/json",
+}
+
+def kn_get(path, params=None):
+    r = requests.get(BASE + path, headers=HEADERS, params=params, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+print(json.dumps(kn_get("/api/v1/AplikacniSluzby/Health"), ensure_ascii=False, indent=2)[:2000])
+PY
+```
+
 ## Response envelope
 
 Most endpoints return:
@@ -46,12 +70,30 @@ Notes:
 - This API does not provide personal data (owners etc.). If you need owners / full LV extracts, that is typically DP/WSDP.
 - The API is useful for identification, linking (address <-> building <-> parcels <-> LV number), basic attributes, and basic signals (plomby/rizeni lists if present).
 
+### 0) “Is it clean?” quick check for a parcel (basic workflow)
+
+“Čisté” typically means one of two things, so clarify:
+
+- `no_plomby`: no pending proceedings (plomby/řízení) on parcel/building/unit in this API
+- `no_rights_limits`: no liens/easements/rights restrictions (NOT available via this API; needs an official LV extract)
+
+Minimal workflow for `no_plomby` + basic red flags:
+
+1. Resolve parcel internal ID via `Parcely/Vyhledani` (include `PoddeleniCislaParcely` for parcel numbers like `2642/9`).
+2. Fetch `Parcely/{id}` and check:
+- `rizeniPlomby` (empty list is the “no plomby” signal)
+- `zpusobyOchrany` (not a plomba, but an important territorial/protection limit)
+- `lv` (cross-check LV number; use `lv.id` for LV detail)
+- `stavba.id` (if present: fetch `Stavby/{id}` and also check `rizeniPlomby`)
+3. Optional: fetch `LV/{lv.id}` and check `rizeniPlomby` + lists/counts of `parcely`, `stavby`, `jednotky`.
+
 ### 1) Identify parcel by (k.u. code + parcel number)
 
 Inputs:
 
 - `KodKatastralnihoUzemi` (e.g. 638790)
 - `KmenoveCisloParcely` (e.g. 545)
+- `PoddeleniCislaParcely` (optional; for parcel numbers like `2642/9`, use `KmenoveCisloParcely=2642` + `PoddeleniCislaParcely=9`)
 - `DruhCislovaniParcely` (1/2). If unsure, try both.
 - `TypParcely` usually `PKN`
 
@@ -74,6 +116,23 @@ What to read from parcel detail:
 - `stavba.id` (if a numbered building is linked)
 - `definicniBod` (S-JTSK) for spatial queries
 - `rizeniPlomby` (if not empty, there is pending activity)
+
+### LV detail (List vlastnictvi, limited)
+
+If you have `lv.id` from parcel/building/unit detail:
+
+```bash
+kn_get "/api/v1/LV/<LV_ID>"
+```
+
+What you can use it for (in this API):
+
+- `rizeniPlomby` at LV-level (signal only)
+- lists/counts of linked `parcely`, `stavby`, `jednotky`
+
+What you cannot get here:
+
+- owners and full rights/restrictions sections as in the official LV extract
 
 ### 2) Neighbors + "around" (context for due diligence)
 
@@ -186,4 +245,4 @@ kn_get "/api/v1/CiselnikyISKN/Pracoviste"
 
 - Parcel search works with: `KodKatastralnihoUzemi=638790`, `TypParcely=PKN`, `DruhCislovaniParcely=2`, `KmenoveCisloParcely=545`
 - RUIAN address point for "Mala Strana 66, Hladke Zivotice" was resolved via VDP fulltext, then `Stavby/AdresniMisto/{kod}` returned building + linked parcel(s) + LV number.
-
+- Parcel numbers with slash (e.g. `2642/9`) require `PoddeleniCislaParcely` in `Parcely/Vyhledani`, then “clean check” uses `rizeniPlomby` on parcel + linked building and reviews `zpusobyOchrany` as a non-plomba limit.
