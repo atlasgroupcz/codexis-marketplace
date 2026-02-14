@@ -22,6 +22,12 @@
       "description": "Katastr nemovitostí ČR - property registry lookup and cadastral data access",
       "source": "./plugins/katastr",
       "category": "legal"
+    },
+    {
+      "name": "playwright",
+      "description": "Playwright MCP (fork) configured with --no-sandbox for Chromium under bwrap.",
+      "source": "./plugins/playwright",
+      "category": "development"
     }
   ]
 }

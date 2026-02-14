@@ -1,0 +1,8 @@
+{
+  "name": "playwright",
+  "description": "Playwright MCP (fork): runs with --no-sandbox so Chromium works under bwrap userns uid 0.",
+  "author": {
+    "name": "Microsoft"
+  }
+}
+
