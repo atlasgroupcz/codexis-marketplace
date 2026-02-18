@@ -19,5 +19,6 @@
     "judiciary",
     "api"
   ],
-  "license": "PROPRIETARY"
+  "license": "PROPRIETARY",
+  "skills": "./skills"
 }
