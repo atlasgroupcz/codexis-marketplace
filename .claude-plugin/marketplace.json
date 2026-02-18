@@ -28,6 +28,12 @@
       "description": "Playwright MCP (fork) configured with --no-sandbox for Chromium under bwrap.",
       "source": "./plugins/playwright",
       "category": "development"
+    },
+    {
+      "name": "ocr",
+      "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
+      "source": "./plugins/ocr",
+      "category": "document-processing"
     }
   ]
 }
