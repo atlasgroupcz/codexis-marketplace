@@ -34,6 +34,12 @@
       "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
       "source": "./plugins/ocr",
       "category": "document-processing"
+    },
+    {
+      "name": "video-analyze",
+      "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
+      "source": "./plugins/video-analyze",
+      "category": "media"
     }
   ]
 }
