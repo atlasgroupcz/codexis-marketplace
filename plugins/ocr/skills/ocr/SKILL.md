@@ -2,7 +2,8 @@
 name: ocr
 description: >-
   Convert binary documents to markdown using OCR / document conversion.
-  Supported formats: PDF, DOCX, PPTX, XLSX, images (PNG, JPG, TIFF, BMP, GIF), ZIP archives.
+  Supported formats: PDF, DOC, DOCX, PPTX, XLS, XLSX, ODS, ODT, RTF, HTML,
+  images (PNG, JPG, TIFF, BMP, GIF, WEBP), ZIP archives.
   Triggers on "ocr", "convert to markdown", "read PDF", "extract text from document",
   "convert document", "read this file" (for binary files).
 metadata:
@@ -22,8 +23,9 @@ ocr <absolute-path-to-file>
 
 ## Supported Formats
 
-- **Documents:** PDF, DOCX, PPTX, XLSX
-- **Images:** PNG, JPG, TIFF, BMP, GIF
+- **Documents:** PDF, DOC, DOCX, PPTX, XLS, XLSX, ODS, ODT, RTF
+- **Web:** HTML, HTM
+- **Images:** PNG, JPG, TIFF, BMP, GIF, WEBP
 - **Archives:** ZIP (all contained files are converted automatically — do NOT unzip first)
 
 ## When to Use
