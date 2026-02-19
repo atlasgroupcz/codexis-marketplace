@@ -12,6 +12,8 @@ Use the `cdx` CLI for all requests. It accepts standard curl flags and `cdx://` 
 
 ## Data Sources
 
+> **Note:** The source codes below (`CR`, `JD`, etc.) are internal API identifiers used to construct `cdx://` URLs. Never expose them in user-facing output — use human-readable names instead (see [User-Facing Output Rules](#user-facing-output-rules)).
+
 | Code | Name | Description | Has TOC | Has Versions |
 |------|------|-------------|---------|--------------|
 | `CR` | Czech Legislation | Laws, decrees, regulations, municipal documents | Yes | Yes |
@@ -23,6 +25,91 @@ Use the `cdx` CLI for all requests. It accepts standard curl flags and `cdx://` 
 | `VS` | Contract Templates | Contract specimens and templates | No (`/toc` may return 500) | Yes (usually single version) |
 | `COMMENT` | Legal Commentaries | LIBERIS legal commentary | No (`/toc` may return 500) | Yes (usually single version) |
 | `ALL` | Global Search | Search across all sources | - | - |
+
+## User-Facing Output Rules
+
+All responses shown to the user **must** follow these formatting rules. The raw identifiers, codes, and enums from the API are for constructing CLI calls only — they must never leak into user-visible text.
+
+### Base URL Resolution
+
+**Before generating any document links**, run this command to obtain the actual base URL:
+
+```bash
+echo $CODEXIS_BASE_URL
+```
+
+Store the returned value (e.g., `https://next.codexis.cz`) and use it verbatim in all links. If empty or unset, warn the user that `CODEXIS_BASE_URL` is not configured and that you cannot generate document links until it is set. Do not fabricate a URL. Never output the literal string `$CODEXIS_BASE_URL` or `${CODEXIS_BASE_URL}` — always substitute the resolved value.
+
+### Link Format
+
+Every document reference in your response must be a markdown link with the **resolved** base URL value:
+
+- **Document link:** `[{document title}]({resolved_base_url}/doc/{docId})`
+- **Document part link:** `[{section title}]({resolved_base_url}/doc/{docId}#{partId})`
+
+For example, if `echo $CODEXIS_BASE_URL` returned `https://next.codexis.cz`, a link would look like:
+`[89/2012 Sb. Zákon občanský zákoník](https://next.codexis.cz/doc/CR26785_2026_01_01)`
+
+All sources use the `/doc/` path prefix.
+
+### Forbidden Raw Identifiers
+
+Never include any of the following in user-facing text:
+
+- Raw document IDs (e.g., `CR26785_2026_01_01`, `JD252461`)
+- Raw source codes (e.g., `CR`, `JD`, `ES`, `EU`)
+- Raw relation type enums (e.g., `SOUVISEJICI_JUDIKATURA`, `AKTIVNI_NOVELA`)
+- Raw `cdx://` URIs (e.g., `cdx://doc/CR26785_2026_01_01/text`)
+- Unresolved environment variable names (e.g., `$CODEXIS_BASE_URL`, `${CODEXIS_BASE_URL}`)
+- HTML tags (e.g., `<a href=...>`) — use markdown links only
+
+### Human-Readable Source Names
+
+When referring to data sources in prose, match the user's conversation language:
+
+| Code (internal) | Czech Name | English Name |
+|---|---|---|
+| `CR` | Česká legislativa | Czech Legislation |
+| `SK` | Slovenská legislativa | Slovak Legislation |
+| `JD` | Česká judikatura | Czech Case Law |
+| `ES` | Judikatura EU | EU Court Decisions |
+| `EU` | Legislativa EU | EU Legislation |
+| `LT` | Právní literatura | Legal Literature |
+| `VS` | Vzory smluv | Contract Templates |
+| `COMMENT` | Komentáře | Legal Commentaries |
+
+### Human-Readable Relation Names
+
+Use the `name` field from the `/related/counts` API response, never the `type` enum. For example, say "Související judikatura ČR", not `SOUVISEJICI_JUDIKATURA`.
+
+### Document Titles
+
+Use these fields as the link text:
+
+- **CR/SK:** `title` from search results (e.g., "89/2012 Sb. Zákon občanský zákoník") — strip `<mark>` tags
+- **JD:** `title` + court name (e.g., "Nález Ústavního soudu — Ke stanovení výše náhrady škody…")
+- **EU/ES:** `title` from search results
+- **LT/VS/COMMENT:** `title` from search results
+
+If title is unavailable (edge case), use `docNumber` or a descriptive fallback — never the raw document ID.
+
+### Examples
+
+Assume `echo $CODEXIS_BASE_URL` returned `https://next.codexis.cz`.
+
+**Correct:**
+```
+Podle [zákona č. 89/2012 Sb., občanský zákoník](https://next.codexis.cz/doc/CR26785_2026_01_01), konkrétně [§ 89](https://next.codexis.cz/doc/CR26785_2026_01_01#paragraf89), …
+```
+
+**Incorrect:**
+```
+Podle CR26785_2026_01_01, konkrétně paragraf89, …
+Podle [262/2006 Sb. Zákon zákoník práce](${CODEXIS_BASE_URL}/doc/CR13986_2026_01_01) …
+Podle <a href="https://next.codexis.cz/doc/CR13986_2026_01_01" target="_blank">262/2006 Sb.</a> …
+Podle cdx://doc/CR26785_2026_01_01/text …
+Zdroj: CR, JD
+```
 
 ## Core API Operations
 
@@ -71,6 +158,8 @@ Notes:
 - `/cz_law/.../text` supports the same repeated `part` query param as `/doc/{docId}/text` (example: `?part=paragraf1`).
 
 ### Document IDs
+
+> **Note:** Document IDs are internal API identifiers. In user-facing output, always use the document title as a markdown link (see [User-Facing Output Rules](#user-facing-output-rules)).
 
 Documents use composite IDs with optional version suffix:
 - Base ID: `CR26785` (Civil Code)
@@ -184,6 +273,8 @@ cdx -s -X POST "cdx://search/CR" \
   | jq '.results[] | {docId, title}'
 ```
 
+> Present results as markdown links with the resolved base URL, e.g. `[{title}](https://next.codexis.cz/doc/{docId})` — never raw JSON, IDs, or unresolved variables.
+
 ### Search Case Law
 
 ```bash
@@ -193,12 +284,16 @@ cdx -s -X POST "cdx://search/JD" \
   | jq '.results[] | {docId, title, court, ecli}'
 ```
 
+> Present results as markdown links with court name, e.g. `[{title}](https://next.codexis.cz/doc/{docId}) ({court})` — never raw JSON, IDs, or unresolved variables.
+
 ### Get Related Case Law for a Law
 
 ```bash
 cdx -s "cdx://doc/CR26785_2026_01_01/related?type=SOUVISEJICI_JUDIKATURA&limit=10" \
   | jq '.results[] | {docId, title}'
 ```
+
+> Present related documents as linked titles — never expose the relation type enum or raw IDs to the user.
 
 ### Extract Specific Paragraph from Law
 
