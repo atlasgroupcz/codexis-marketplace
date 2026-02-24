@@ -20,5 +20,6 @@
     "api"
   ],
   "license": "PROPRIETARY",
-  "skills": "./skills"
+  "skills": "./skills",
+  "components": "./components"
 }
