@@ -34,6 +34,10 @@ extract_form_field() {
 
 request_method="${REQUEST_METHOD:-GET}"
 request_path="${SCRIPT_NAME:-/}"
+request_base="$request_path"
+if [[ "$request_base" != */ ]]; then
+  request_base="$request_base/"
+fi
 input_value=""
 
 if [[ "$request_method" == "POST" ]]; then
@@ -56,6 +60,7 @@ cat <<HTML
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="$request_base" />
   <title>Echo Form</title>
   <link rel="stylesheet" href="./assets/styles.css" />
   <script defer src="./assets/app.js"></script>
@@ -75,7 +80,7 @@ cat <<HTML
       <img src="./assets/icon.png" alt="icon" class="icon" />
     </section>
 
-    <form id="echo-form" class="form" method="POST" action="$request_path" autocomplete="off">
+    <form id="echo-form" class="form" method="POST" action="$request_base" autocomplete="off">
       <input id="inputText" name="inputText" type="text" placeholder="Type something" value="$escaped_value" />
       <button type="submit">Echo</button>
     </form>
