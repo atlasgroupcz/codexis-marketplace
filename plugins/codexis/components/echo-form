@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+url_decode() {
+  local data="${1//+/ }"
+  printf '%b' "${data//%/\\x}"
+}
+
+html_escape() {
+  local value="$1"
+  value="${value//&/&amp;}"
+  value="${value//</&lt;}"
+  value="${value//>/&gt;}"
+  value="${value//\"/&quot;}"
+  value="${value//\'/&#39;}"
+  printf '%s' "$value"
+}
+
+extract_form_field() {
+  local payload="$1"
+  local target_key="$2"
+  local pair
+  IFS='&' read -r -a pairs <<< "$payload"
+  for pair in "${pairs[@]}"; do
+    local key="${pair%%=*}"
+    local value="${pair#*=}"
+    if [[ "$key" == "$target_key" ]]; then
+      url_decode "$value"
+      return 0
+    fi
+  done
+  printf ''
+}
+
+if [[ "${1:-}" == "--describe" ]]; then
+  cat <<'JSON'
+{"id":"echo-form","title":"Echo Form","icon":"message-square","route":"echo-form","description":"Simple CGI demo that echoes submitted input","entrypoint":true}
+JSON
+  exit 0
+fi
+
+request_method="${REQUEST_METHOD:-GET}"
+request_path="${REQUEST_PATH:-}"
+if [[ -z "$request_path" || "$request_path" == "/" ]]; then
+  request_path="${SCRIPT_NAME:-/}"
+fi
+input_value=""
+
+if [[ "$request_method" == "POST" ]]; then
+  content_length="${CONTENT_LENGTH:-0}"
+  body=""
+  if [[ "$content_length" =~ ^[0-9]+$ ]] && (( content_length > 0 )); then
+    IFS= read -r -N "$content_length" body || true
+  fi
+  input_value="$(extract_form_field "$body" "inputText")"
+else
+  input_value="$(extract_form_field "${QUERY_STRING:-}" "inputText")"
+fi
+
+escaped_value="$(html_escape "$input_value")"
+
+printf 'Content-Type: text/html; charset=utf-8\n\n'
+cat <<HTML
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Echo Form</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; }
+    form { display: flex; gap: 8px; margin-bottom: 16px; }
+    input { flex: 1; padding: 8px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    .result { padding: 12px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
+  </style>
+</head>
+<body>
+  <h1>Echo Form</h1>
+  <form method="POST" action="$request_path">
+    <input name="inputText" type="text" placeholder="Type something" value="$escaped_value" />
+    <button type="submit">Echo</button>
+  </form>
+  <div class="result"><strong>Echo:</strong> $escaped_value</div>
+</body>
+</html>
+HTML
