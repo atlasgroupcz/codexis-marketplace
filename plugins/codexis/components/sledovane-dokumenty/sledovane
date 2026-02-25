@@ -4,6 +4,24 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_FILE="${SCRIPT_DIR}/assets/sample-data.json"
 QUERY_STRING_VALUE="${QUERY_STRING:-}"
+HTTP_ACCEPT_VALUE="${HTTP_ACCEPT:-}"
+ENTRYPOINT="${SCRIPT_DIR}/index.html"
+
+# If the request accepts JSON or has a uuid query param, serve JSON data.
+# Otherwise, serve the HTML entrypoint (the React app).
+serve_json=false
+case "${HTTP_ACCEPT_VALUE}" in
+  *application/json*) serve_json=true ;;
+esac
+case "${QUERY_STRING_VALUE}" in
+  *uuid=*) serve_json=true ;;
+esac
+
+if [ "$serve_json" = "false" ] && [ -f "$ENTRYPOINT" ]; then
+  printf 'Content-Type: text/html; charset=utf-8\n\n'
+  cat "$ENTRYPOINT"
+  exit 0
+fi
 
 if ! command -v python3 >/dev/null 2>&1; then
   printf 'Status: 500 Internal Server Error\n'
