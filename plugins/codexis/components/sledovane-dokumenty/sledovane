@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DATA_FILE="${SCRIPT_DIR}/assets/sample-data.json"
+QUERY_STRING_VALUE="${QUERY_STRING:-}"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'Status: 500 Internal Server Error\n'
+  printf 'Content-Type: application/json; charset=utf-8\n\n'
+  cat <<'JSON'
+{
+  "error": "python3 runtime is required for sledovane component"
+}
+JSON
+  exit 0
+fi
+
+python3 - "$DATA_FILE" "$QUERY_STRING_VALUE" <<'PY'
+import datetime
+import json
+import sys
+import urllib.parse
+
+data_file = sys.argv[1]
+query_string = sys.argv[2]
+
+
+def emit(payload, status=None):
+    if status:
+        print(f"Status: {status}")
+    print("Content-Type: application/json; charset=utf-8")
+    print()
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def parse_data(path):
+    with open(path, "r", encoding="utf-8") as handle:
+        raw = json.load(handle)
+    documents = raw.get("trackedDocuments", [])
+    if not isinstance(documents, list):
+        return []
+    return [doc for doc in documents if isinstance(doc, dict)]
+
+
+def count_changes(document):
+    changes = document.get("changes", [])
+    if not isinstance(changes, list):
+        return 0, 0
+    total = len([item for item in changes if isinstance(item, dict)])
+    unconfirmed = 0
+    for change in changes:
+        if not isinstance(change, dict):
+            continue
+        confirmed_on = change.get("confirmed_on")
+        if confirmed_on in (None, ""):
+            unconfirmed += 1
+    return total, unconfirmed
+
+
+def to_overview_entry(document):
+    total_changes, unconfirmed_changes = count_changes(document)
+    return {
+        "uuid": document.get("uuid"),
+        "codexisId": document.get("codexisId"),
+        "name": document.get("name"),
+        "added_on": document.get("added_on"),
+        "tracking_type": document.get("tracking_type"),
+        "unconfirmed_changes": unconfirmed_changes,
+        "total_changes": total_changes,
+    }
+
+
+def now_utc():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+try:
+    tracked_documents = parse_data(data_file)
+except Exception as exc:
+    emit(
+        {
+            "error": "failed to read tracked documents data",
+            "details": str(exc),
+        },
+        status="500 Internal Server Error",
+    )
+    sys.exit(0)
+
+params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+requested_uuid = (params.get("uuid", [""])[0] or "").strip()
+
+if requested_uuid:
+    matching = None
+    for document in tracked_documents:
+        if str(document.get("uuid", "")).strip() == requested_uuid:
+            matching = document
+            break
+
+    if matching is None:
+        emit(
+            {
+                "mode": "detail",
+                "generated_at": now_utc(),
+                "uuid": requested_uuid,
+                "error": "tracked document not found",
+            },
+            status="404 Not Found",
+        )
+        sys.exit(0)
+
+    total_changes, unconfirmed_changes = count_changes(matching)
+    detail_document = dict(matching)
+    detail_document["total_changes"] = total_changes
+    detail_document["unconfirmed_changes"] = unconfirmed_changes
+    emit(
+        {
+            "mode": "detail",
+            "generated_at": now_utc(),
+            "document": detail_document,
+        }
+    )
+    sys.exit(0)
+
+overview_items = [to_overview_entry(document) for document in tracked_documents]
+emit(
+    {
+        "mode": "overview",
+        "generated_at": now_utc(),
+        "tracked_documents": overview_items,
+    }
+)
+PY

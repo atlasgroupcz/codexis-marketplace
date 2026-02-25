@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sledovane dokumenty viewer</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <script defer src="./assets/app.js"></script>
+</head>
+<body>
+  <main class="viewer">
+    <header class="viewer-header">
+      <img src="./assets/logo.svg" alt="CODEXIS logo" class="logo" />
+      <div>
+        <h1>Sledovane dokumenty</h1>
+        <p class="subtitle">
+          HTML entrypoint calling the JSON binary endpoint.
+        </p>
+      </div>
+      <img src="./assets/icon.png" alt="" class="icon" />
+    </header>
+
+    <section class="controls-panel">
+      <form id="query-form" class="controls">
+        <label for="uuid-input" class="field-label">UUID</label>
+        <input
+          id="uuid-input"
+          name="uuid"
+          type="text"
+          placeholder="e.g. 2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d"
+        />
+        <button type="submit">Load Detail</button>
+        <button id="load-overview-button" type="button" class="secondary-button">
+          Load Overview
+        </button>
+      </form>
+      <p class="hint">
+        Binary modes: no query = overview, <code>?uuid=...</code> = detail.
+      </p>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <section class="summary-panel">
+      <h2>Overview</h2>
+      <table class="overview-table">
+        <thead>
+          <tr>
+            <th>UUID</th>
+            <th>Document</th>
+            <th>Unconfirmed</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="overview-body"></tbody>
+      </table>
+      <p id="overview-empty" class="empty">No overview records available.</p>
+    </section>
+
+    <section class="json-panel">
+      <h2>Raw JSON response</h2>
+      <pre id="json-output" class="json-output"></pre>
+    </section>
+  </main>
+</body>
+</html>
