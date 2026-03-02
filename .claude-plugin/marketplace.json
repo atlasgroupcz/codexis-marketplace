@@ -12,6 +12,12 @@
       "category": "legal"
     },
     {
+      "name": "cdx-sk",
+      "description": "Slovak legal database — legislation, general courts, supreme & constitutional court decisions",
+      "source": "./plugins/cdx-sk",
+      "category": "legal"
+    },
+    {
       "name": "visualization",
       "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
       "source": "./plugins/visualization",

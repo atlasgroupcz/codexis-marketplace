@@ -1,0 +1,12 @@
+{
+  "name": "cdx-sk",
+  "version": "1.0.0",
+  "description": "Slovak legal database API access for legislation (e-Zbierka), general court decisions, and supreme/constitutional court decisions",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-sk", "legal", "law", "legislation", "slovak", "judiciary", "case-law", "court", "api"],
+  "license": "PROPRIETARY",
+  "skills": "./skills"
+}
