@@ -8,33 +8,28 @@ description: Access to CUZK REST API KN (api-kn.cuzk.gov.cz)
 ## Config
 
 - Base URL: `https://api-kn.cuzk.gov.cz`
-- Auth header: `ApiKey: i2sPUMBuyNlssfXudxY1NE1pdRWzXo`
-- Typical header: `Accept: application/json`
-- API is GET-only.
+- API is GET-only, returns JSON.
+- Authentication and key management are handled by the `kn` tool (see below).
 
-## Calling the API from the `shell` tool (multitenant-friendly)
+## Calling the API
 
-In CDX/multitenant chats you will often need to do real HTTP fetches (no special client is assumed).
-The most reliable pattern is a tiny Python helper using `requests` (handles URL encoding + JSON decoding):
+Use the `kn` tool located in this skill's base directory. It handles API key loading, authentication errors, and JSON output automatically.
 
 ```bash
-python3 - <<'PY'
-import requests, json
-
-BASE = "https://api-kn.cuzk.gov.cz"
-HEADERS = {
-  "ApiKey": "i2sPUMBuyNlssfXudxY1NE1pdRWzXo",
-  "Accept": "application/json",
-}
-
-def kn_get(path, params=None):
-    r = requests.get(BASE + path, headers=HEADERS, params=params, timeout=30)
-    r.raise_for_status()
-    return r.json()
-
-print(json.dumps(kn_get("/api/v1/AplikacniSluzby/Health"), ensure_ascii=False, indent=2)[:2000])
-PY
+./kn "<API_PATH>"
 ```
+
+Examples:
+
+```bash
+./kn "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
+./kn "/api/v1/Parcely/12345"
+./kn "/api/v1/AplikacniSluzby/StavUctu"
+```
+
+Output is JSON, truncated to 4000 chars by default. Use `--raw` for full output.
+
+**IMPORTANT:** If `kn` prints an ERROR about missing or invalid API key, stop immediately and tell the user to configure the key in Doplňky → Katastr → Nastavení. Do NOT try alternative data sources.
 
 ## Response envelope
 
@@ -47,11 +42,13 @@ Most endpoints return:
 
 ## Sanity checks (key + service)
 
+Note: `Health` is public (does not validate API key). Use `StavUctu` to verify the key is valid.
+
 ```bash
-kn_get "/api/v1/AplikacniSluzby/Health"
-kn_get "/api/v1/AplikacniSluzby/StavUctu"
-kn_get "/api/v1/AplikacniSluzby/AktualnostDat"
-kn_get "/api/v1/AplikacniSluzby/ProvozniInformace"
+./kn "/api/v1/AplikacniSluzby/Health"
+./kn "/api/v1/AplikacniSluzby/StavUctu"
+./kn "/api/v1/AplikacniSluzby/AktualnostDat"
+./kn "/api/v1/AplikacniSluzby/ProvozniInformace"
 ```
 
 ## Known enums (from official Swagger)
@@ -100,13 +97,13 @@ Inputs:
 Search:
 
 ```bash
-kn_get "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
+./kn "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
 ```
 
 Take `data[0].id`, then:
 
 ```bash
-kn_get "/api/v1/Parcely/<ID>"
+./kn "/api/v1/Parcely/<ID>"
 ```
 
 What to read from parcel detail:
@@ -122,7 +119,7 @@ What to read from parcel detail:
 If you have `lv.id` from parcel/building/unit detail:
 
 ```bash
-kn_get "/api/v1/LV/<LV_ID>"
+./kn "/api/v1/LV/<LV_ID>"
 ```
 
 What you can use it for (in this API):
@@ -139,7 +136,7 @@ What you cannot get here:
 Neighbors (fast, topological):
 
 ```bash
-kn_get "/api/v1/Parcely/SousedniParcely/<PARCEL_ID>"
+./kn "/api/v1/Parcely/SousedniParcely/<PARCEL_ID>"
 ```
 
 Spatial queries by polygon (EPSG:5514 or EPSG:5513, meters):
@@ -147,10 +144,10 @@ Spatial queries by polygon (EPSG:5514 or EPSG:5513, meters):
 - Query parameter: `SeznamSouradnic`
 - Value: JSON array of points with `x,y`
 - Polygon should be closed (last point equals first)
+- URL-encode the `SeznamSouradnic` value
 
 ```bash
-kn_get "/api/v1/Parcely/Polygon" --get --data-urlencode 'SeznamSouradnic=[{"x":-494110.17,"y":-1116432.13},{"x":-494060.17,"y":-1116432.13},{"x":-494060.17,"y":-1116382.13},{"x":-494110.17,"y":-1116382.13},{"x":-494110.17,"y":-1116432.13}]'
-kn_get "/api/v1/Stavby/Polygon"  --get --data-urlencode 'SeznamSouradnic=[{"x":-494110.17,"y":-1116432.13},{"x":-494060.17,"y":-1116432.13},{"x":-494060.17,"y":-1116382.13},{"x":-494110.17,"y":-1116382.13},{"x":-494110.17,"y":-1116432.13}]'
+./kn "/api/v1/Parcely/Polygon?SeznamSouradnic=%5B%7B%22x%22%3A-494110.17%2C%22y%22%3A-1116432.13%7D%2C%7B%22x%22%3A-494060.17%2C%22y%22%3A-1116432.13%7D%2C%7B%22x%22%3A-494060.17%2C%22y%22%3A-1116382.13%7D%2C%7B%22x%22%3A-494110.17%2C%22y%22%3A-1116382.13%7D%2C%7B%22x%22%3A-494110.17%2C%22y%22%3A-1116432.13%7D%5D"
 ```
 
 Practical trick:
@@ -178,7 +175,7 @@ curl -fsS \
 Take `polozky[0].kod` (RUIAN code), then:
 
 ```bash
-kn_get "/api/v1/Stavby/AdresniMisto/<RUIAN_KOD>"
+./kn "/api/v1/Stavby/AdresniMisto/<RUIAN_KOD>"
 ```
 
 Expected: `data` is an object (not a list) containing:
@@ -193,7 +190,7 @@ Expected: `data` is an object (not a list) containing:
 To fetch full building detail:
 
 ```bash
-kn_get "/api/v1/Stavby/<STAVBA_ID>"
+./kn "/api/v1/Stavby/<STAVBA_ID>"
 ```
 
 ### 4) Units (apartments / non-residential units)
@@ -201,8 +198,8 @@ kn_get "/api/v1/Stavby/<STAVBA_ID>"
 If you know unit number + building identity:
 
 ```bash
-kn_get "/api/v1/Jednotky/Vyhledani?KodCastiObce=<KOD_CASTI_OBCE>&TypStavby=1&CisloDomovni=<CP>&CisloJednotky=<CISLO_JEDNOTKY>"
-kn_get "/api/v1/Jednotky/<JEDNOTKA_ID>"
+./kn "/api/v1/Jednotky/Vyhledani?KodCastiObce=<KOD_CASTI_OBCE>&TypStavby=1&CisloDomovni=<CP>&CisloJednotky=<CISLO_JEDNOTKY>"
+./kn "/api/v1/Jednotky/<JEDNOTKA_ID>"
 ```
 
 Where to get `KodCastiObce` and `CisloDomovni`:
@@ -215,30 +212,30 @@ Where to get `KodCastiObce` and `CisloDomovni`:
 Look for `rizeniPlomby` on parcel/building/unit. If you have a proceeding ID:
 
 ```bash
-kn_get "/api/v1/Rizeni/<RIZENI_ID>"
+./kn "/api/v1/Rizeni/<RIZENI_ID>"
 ```
 
 If you have official proceeding identifiers:
 
 ```bash
-kn_get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=<CISLO>&Rok=<ROK>&KodPracoviste=<KOD>"
-kn_get "/api/v1/Rizeni/PrijateDne?TypRizeni=V&KodPracoviste=<KOD>&DatumPrijeti=2026-02-13"
+./kn "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=<CISLO>&Rok=<ROK>&KodPracoviste=<KOD>"
+./kn "/api/v1/Rizeni/PrijateDne?TypRizeni=V&KodPracoviste=<KOD>&DatumPrijeti=2026-02-13"
 ```
 
 ### 6) Code lists (decode codes for reports)
 
 ```bash
-kn_get "/api/v1/CiselnikyUzemnichJednotek/Obce"
-kn_get "/api/v1/CiselnikyUzemnichJednotek/KatastralniUzemi"
-kn_get "/api/v1/CiselnikyUzemnichJednotek/CastiObci"
-kn_get "/api/v1/CiselnikyISKN/DruhyPozemku"
-kn_get "/api/v1/CiselnikyISKN/TypyStavby"
-kn_get "/api/v1/CiselnikyISKN/TypyJednotky"
-kn_get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiStavby"
-kn_get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiParcely"
-kn_get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiJednotky"
-kn_get "/api/v1/CiselnikyISKN/ZpusobyOchrany"
-kn_get "/api/v1/CiselnikyISKN/Pracoviste"
+./kn "/api/v1/CiselnikyUzemnichJednotek/Obce"
+./kn "/api/v1/CiselnikyUzemnichJednotek/KatastralniUzemi"
+./kn "/api/v1/CiselnikyUzemnichJednotek/CastiObci"
+./kn "/api/v1/CiselnikyISKN/DruhyPozemku"
+./kn "/api/v1/CiselnikyISKN/TypyStavby"
+./kn "/api/v1/CiselnikyISKN/TypyJednotky"
+./kn "/api/v1/CiselnikyISKN/ZpusobyVyuzitiStavby"
+./kn "/api/v1/CiselnikyISKN/ZpusobyVyuzitiParcely"
+./kn "/api/v1/CiselnikyISKN/ZpusobyVyuzitiJednotky"
+./kn "/api/v1/CiselnikyISKN/ZpusobyOchrany"
+./kn "/api/v1/CiselnikyISKN/Pracoviste"
 ```
 
 ## What we verified against real data (Hladke Zivotice example)

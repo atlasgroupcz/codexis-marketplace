@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENV_DIR="${CDX_USER_HOME:-$HOME}/.cdx/apps/katastr"
+ENV_FILE="$ENV_DIR/.env"
+REQUEST_METHOD="${REQUEST_METHOD:-GET}"
+QUERY_STRING_VALUE="${QUERY_STRING:-}"
+
+ensure_env_file() {
+  if [ ! -d "$ENV_DIR" ]; then
+    mkdir -p "$ENV_DIR"
+  fi
+  if [ ! -f "$ENV_FILE" ]; then
+    printf 'API_KEY=\n' > "$ENV_FILE"
+  fi
+}
+
+read_api_key() {
+  ensure_env_file
+  local key=""
+  while IFS='=' read -r name value; do
+    if [ "$name" = "API_KEY" ]; then
+      key="$value"
+      break
+    fi
+  done < "$ENV_FILE"
+  printf '%s' "$key"
+}
+
+mask_key() {
+  local key="$1"
+  local len=${#key}
+  if [ "$len" -le 8 ]; then
+    printf '%s' "****"
+  else
+    printf '%s****%s' "${key:0:4}" "${key:$((len-4)):4}"
+  fi
+}
+
+json_escape() {
+  local val="$1"
+  val="${val//\\/\\\\}"
+  val="${val//\"/\\\"}"
+  printf '%s' "$val"
+}
+
+serve_status() {
+  local key
+  key="$(read_api_key)"
+  printf 'Content-Type: application/json; charset=utf-8\n\n'
+  if [ -n "$key" ]; then
+    local masked
+    masked="$(mask_key "$key")"
+    local escaped
+    escaped="$(json_escape "$masked")"
+    printf '{"configured":true,"maskedKey":"%s"}\n' "$escaped"
+  else
+    printf '{"configured":false}\n'
+  fi
+}
+
+serve_save() {
+  ensure_env_file
+  local body=""
+  local content_length="${CONTENT_LENGTH:-0}"
+  if [[ "$content_length" =~ ^[0-9]+$ ]] && (( content_length > 0 )); then
+    IFS= read -r -N "$content_length" body || true
+  fi
+
+  local api_key=""
+  if command -v python3 >/dev/null 2>&1; then
+    api_key="$(python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('apiKey',''))" <<< "$body")"
+  else
+    api_key="$(printf '%s' "$body" | sed -n 's/.*"apiKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  fi
+
+  if [ -z "$api_key" ]; then
+    printf 'Content-Type: application/json; charset=utf-8\n\n'
+    printf '{"saved":false,"error":"API klíč je prázdný."}\n'
+    return
+  fi
+
+  local validate_result=""
+  validate_result="$(printf '%s' "$api_key" | python3 -c "
+import urllib.request, sys
+api_key = sys.stdin.read().strip()
+try:
+    req = urllib.request.Request('https://api-kn.cuzk.gov.cz/api/v1/AplikacniSluzby/StavUctu',
+        headers={'ApiKey': api_key, 'Accept': 'application/json'})
+    urllib.request.urlopen(req, timeout=10)
+    print('ok')
+except urllib.error.HTTPError as e:
+    print(e.code)
+except Exception:
+    print('000')
+" 2>/dev/null || printf '000')"
+
+  if [ "$validate_result" = "401" ] || [ "$validate_result" = "403" ]; then
+    printf 'Content-Type: application/json; charset=utf-8\n\n'
+    printf '{"saved":false,"error":"API klíč je neplatný (HTTP %s)."}\n' "$validate_result"
+    return
+  fi
+
+  if [ "$validate_result" = "000" ] || [ -z "$validate_result" ]; then
+    printf 'Content-Type: application/json; charset=utf-8\n\n'
+    printf '{"saved":false,"error":"Nepodařilo se ověřit klíč — ČÚZK API nedostupné."}\n'
+    return
+  fi
+
+  printf 'API_KEY=%s\n' "$api_key" > "$ENV_FILE"
+  printf 'Content-Type: application/json; charset=utf-8\n\n'
+  printf '{"saved":true}\n'
+}
+
+# Route: GET with ?status -> JSON status; POST -> save; GET -> index.html
+case "$REQUEST_METHOD" in
+  POST)
+    serve_save
+    ;;
+  GET|HEAD)
+    case "$QUERY_STRING_VALUE" in
+      *status*)
+        serve_status
+        ;;
+      *)
+        # Let PluginComponentController serve index.html
+        ensure_env_file
+        printf 'Content-Type: text/html; charset=utf-8\n\n'
+        cat "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/index.html"
+        ;;
+    esac
+    ;;
+  *)
+    printf 'Status: 405 Method Not Allowed\n'
+    printf 'Content-Type: application/json; charset=utf-8\n\n'
+    printf '{"error":"Method not allowed"}\n'
+    ;;
+esac
