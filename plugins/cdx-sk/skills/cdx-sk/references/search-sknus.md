@@ -1,6 +1,6 @@
 # Slovak Supreme & Constitutional Court Decisions Search (SKNUS)
 
-Search for Slovak Supreme Court (NSSR) and Constitutional Court (USSR) decisions.
+Search for Slovak Supreme Court (NSSR) and Constitutional Court (USSR) decisions from www.slov-lex.sk.
 
 ## cdx-sk Usage
 Use `cdx-sk` for requests. It accepts standard curl flags and `cdx-sk://` URLs.
@@ -27,7 +27,7 @@ Content-Type: application/json
   "offset": "integer (default: 0)",
 
   "court": "string - court code filter (e.g. NSSR, USSR)",
-  "courtName": "string - court name filter (exact match)",
+  "courtName": "string - exact court name (e.g. Najvyšší súd Slovenskej republiky)",
   "typRozhodnutia": "string - decision type in Slovak (e.g. Uznesenie, Nález)",
   "decisionType": "string - alias for typRozhodnutia",
   "spisovaZnacka": "string - case file number (e.g. 3Obdo/27/2018)",
@@ -59,7 +59,6 @@ Query parameters (appended to URL, not in body):
       "ecli": "ECLI:SK:NSSR:2017:2013200459",
       "legalDomains": ["Občianske právo", "Obchodné právo"],
       "legalSentence": "Právna veta rozhodnutia...",
-      "url": "https://www.slov-lex.sk/sudne-rozhodnutia/judikaty/abc-123",
       "docId": "SKNUS1234",
       "score": 12.45,
       "highlight": {
@@ -86,13 +85,14 @@ Query parameters (appended to URL, not in body):
 | `legalDomains` | Legal domain classifications |
 | `legalSentence` | Key legal principle (právna veta) |
 | `decisionDate` | Date of the decision |
+| `highlight` | Search snippets with `<mark>` tags on legalSentence and content_markdown |
 
-## Courts (court facet)
+## Courts (court filter)
 
 - `NSSR` - Najvyšší súd Slovenskej republiky (Supreme Court)
 - `USSR` - Ústavný súd Slovenskej republiky (Constitutional Court)
 
-## Decision Types (typRozhodnutia facet)
+## Decision Types (typRozhodnutia filter)
 
 - `Uznesenie` - Resolution
 - `Nález` - Finding (Constitutional Court)
@@ -167,20 +167,20 @@ Documents are single-version (no timecutId needed). Text supports `page` param f
 ```bash
 DOC_ID="SKNUS1234"
 
+# Get metadata
+cdx-sk -s "cdx-sk://doc/${DOC_ID}/meta" | jq '.'
+
 # Get full text
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/text"
 
 # Get specific page
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/text?page=1"
 
-# Get TOC / available sections
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/parts" | jq '.'
-
-# Get metadata
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/meta" | jq '.'
-
 # Get versions (single version for court decisions)
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/versions" | jq '.'
+
+# Get available sections
+cdx-sk -s "cdx-sk://doc/${DOC_ID}/parts" | jq '.'
 ```
 
 ### Retrieve Specific Sections
@@ -198,9 +198,22 @@ cdx-sk -s "cdx-sk://doc/SKNUS1234/text?part=section-1"
 cdx-sk -s "cdx-sk://doc/SKNUS1234/text?part=section-1&part=section-2"
 ```
 
+### Download Attachments
+
+```bash
+cdx-sk -s "cdx-sk://doc/SKNUS1234/meta" | jq '.assets[] | {original_name, download_url}'
+
+# Download a specific attachment
+cdx-sk -s "cdx-sk://doc/SKNUS1234/attachment/content_1.pdf" --output decision.pdf
+```
+
 ### Find Related Documents
 
 ```bash
+# Get relation counts first
+cdx-sk -s "cdx-sk://doc/SKNUS1234/related/counts" | jq '.'
+
+# Get laws referenced by this decision
 cdx-sk -s "cdx-sk://doc/SKNUS1234/related?type=REFERENCED_LAW&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
