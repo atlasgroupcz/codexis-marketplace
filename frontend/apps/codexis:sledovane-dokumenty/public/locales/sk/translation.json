@@ -1,0 +1,27 @@
+{
+  "followedDocs": {
+    "title": "Sledované dokumenty",
+    "empty": "Žiadne sledované dokumenty.",
+    "back": "Späť",
+    "trackedSince": "Sledované od {{date}}",
+    "trackedParts": "Sledované časti",
+    "changes": "Zmeny ({{count}})",
+    "total": "{{count}} celkom",
+    "unconfirmed": "{{count}} nepotvrdené",
+    "retry": "Skúsiť znova",
+    "confirmed": "Potvrdené {{date}}",
+    "notConfirmed": "Nepotvrdené",
+    "detected": "Zistené: {{date}}",
+    "effective": "Účinnosť: {{date}}",
+    "sourceDocuments": "Zdrojové dokumenty:",
+    "changeType": {
+      "documentChange": "Zmena dokumentu",
+      "relatedChange": "Súvisiaca zmena"
+    },
+    "trackingType": {
+      "all": "Všetko",
+      "documentChanges": "Zmeny dokumentu",
+      "relatedDocumentsChanges": "Súvisiace zmeny"
+    }
+  }
+}

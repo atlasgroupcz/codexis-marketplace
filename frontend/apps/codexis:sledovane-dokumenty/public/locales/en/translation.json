@@ -1,0 +1,27 @@
+{
+  "followedDocs": {
+    "title": "Followed documents",
+    "empty": "No followed documents.",
+    "back": "Back",
+    "trackedSince": "Tracked since {{date}}",
+    "trackedParts": "Tracked parts",
+    "changes": "Changes ({{count}})",
+    "total": "{{count}} total",
+    "unconfirmed": "{{count}} unconfirmed",
+    "retry": "Try again",
+    "confirmed": "Confirmed {{date}}",
+    "notConfirmed": "Unconfirmed",
+    "detected": "Detected: {{date}}",
+    "effective": "Effective: {{date}}",
+    "sourceDocuments": "Source documents:",
+    "changeType": {
+      "documentChange": "Document change",
+      "relatedChange": "Related change"
+    },
+    "trackingType": {
+      "all": "All",
+      "documentChanges": "Document changes",
+      "relatedDocumentsChanges": "Related changes"
+    }
+  }
+}
