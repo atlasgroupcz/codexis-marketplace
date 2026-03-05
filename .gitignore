@@ -120,3 +120,7 @@ dist/**
 dist-fe/
 dist-be/
 tmp/
+
+# Plugin runtime binaries are versioned artifacts.
+!plugins/*/bin/
+!plugins/*/bin/**

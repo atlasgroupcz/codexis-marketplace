@@ -42,7 +42,7 @@
   }
 
   function buildEndpoint(uuid) {
-    var endpoint = new URL('./', window.location.href);
+    var endpoint = new URL('./api', window.location.href);
     if (uuid) {
       endpoint.searchParams.set('uuid', uuid);
     }
