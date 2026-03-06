@@ -6,7 +6,10 @@ use serde_json::{json, Value};
 
 pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::GET_MARKETPLACES, json!({}))?;
-    let marketplaces = data.get("marketplaces").cloned().unwrap_or(Value::Array(vec![]));
+    let marketplaces = data
+        .get("marketplaces")
+        .cloned()
+        .unwrap_or(Value::Array(vec![]));
     print_output(&marketplaces, format);
     Ok(())
 }
@@ -46,13 +49,12 @@ pub fn add(
     Ok(())
 }
 
-pub fn remove(
-    client: &GraphQLClient,
-    name: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
+pub fn remove(client: &GraphQLClient, name: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::REMOVE_MARKETPLACE, json!({ "name": name }))?;
-    let result = data.get("removeMarketplace").cloned().unwrap_or(Value::Null);
+    let result = data
+        .get("removeMarketplace")
+        .cloned()
+        .unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }
@@ -64,11 +66,11 @@ pub fn update(
 ) -> Result<(), CdxctlError> {
     match name {
         Some(n) => {
-            let data = client.execute(
-                graphql::UPDATE_MARKETPLACE,
-                json!({ "marketplace": n }),
-            )?;
-            let result = data.get("updateMarketplace").cloned().unwrap_or(Value::Null);
+            let data = client.execute(graphql::UPDATE_MARKETPLACE, json!({ "marketplace": n }))?;
+            let result = data
+                .get("updateMarketplace")
+                .cloned()
+                .unwrap_or(Value::Null);
             print_output(&result, format);
         }
         None => {

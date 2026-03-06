@@ -1,13 +1,16 @@
+use super::resolve_node_id;
 use crate::client::GraphQLClient;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
-use super::resolve_node_id;
 use serde_json::{json, Value};
 
 pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::GET_AUTOMATIONS, json!({}))?;
-    let automations = data.get("automations").cloned().unwrap_or(Value::Array(vec![]));
+    let automations = data
+        .get("automations")
+        .cloned()
+        .unwrap_or(Value::Array(vec![]));
     print_output(&automations, format);
     Ok(())
 }
@@ -83,22 +86,35 @@ pub fn update(
             a.get("id").and_then(|v| v.as_str()) == Some(&node_id)
                 || a.get("uuid").and_then(|v| v.as_str()) == Some(id)
         })
-        .ok_or_else(|| {
-            CdxctlError::GraphQL(vec![format!("Automation not found: {id}")])
-        })?;
+        .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation not found: {id}")]))?;
 
     // Build merged input — use provided values or fall back to current
     let merged_title = title
         .map(String::from)
-        .or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from))
+        .or_else(|| {
+            current
+                .get("title")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+        })
         .unwrap_or_default();
     let merged_cron = cron
         .map(String::from)
-        .or_else(|| current.get("cron").and_then(|v| v.as_str()).map(String::from))
+        .or_else(|| {
+            current
+                .get("cron")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+        })
         .unwrap_or_default();
     let merged_prompt = prompt
         .map(String::from)
-        .or_else(|| current.get("prompt").and_then(|v| v.as_str()).map(String::from))
+        .or_else(|| {
+            current
+                .get("prompt")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+        })
         .unwrap_or_default();
 
     let mut input = json!({
@@ -120,7 +136,10 @@ pub fn update(
 
     input["skillFullNames"] = match skills {
         Some(s) => json!(s),
-        None => current.get("skillFullNames").cloned().unwrap_or(Value::Null),
+        None => current
+            .get("skillFullNames")
+            .cloned()
+            .unwrap_or(Value::Null),
     };
 
     input["maxTurns"] = match max_turns {
@@ -151,11 +170,7 @@ pub fn update(
     Ok(())
 }
 
-pub fn delete(
-    client: &GraphQLClient,
-    id: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
+pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let node_id = resolve_node_id(id, "Automation");
     let data = client.execute(graphql::DELETE_AUTOMATION, json!({ "id": node_id }))?;
     let result = data.get("deleteNode").cloned().unwrap_or(Value::Null);
@@ -163,14 +178,13 @@ pub fn delete(
     Ok(())
 }
 
-pub fn trigger(
-    client: &GraphQLClient,
-    id: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
+pub fn trigger(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let node_id = resolve_node_id(id, "Automation");
     let data = client.execute(graphql::TRIGGER_AUTOMATION, json!({ "id": node_id }))?;
-    let result = data.get("triggerAutomation").cloned().unwrap_or(Value::Null);
+    let result = data
+        .get("triggerAutomation")
+        .cloned()
+        .unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }

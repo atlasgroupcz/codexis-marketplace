@@ -9,11 +9,11 @@ pub fn status(
     folder: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(
-        graphql::GET_TABULAR_EXTRACTION,
-        json!({ "folder": folder }),
-    )?;
-    let result = data.get("tabularExtraction").cloned().unwrap_or(Value::Null);
+    let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "folder": folder }))?;
+    let result = data
+        .get("tabularExtraction")
+        .cloned()
+        .unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }
@@ -94,7 +94,10 @@ pub fn remove_column(
         graphql::REMOVE_TABULAR_COLUMN,
         json!({ "folder": folder, "columnId": column_id }),
     )?;
-    let result = data.get("removeTabularColumn").cloned().unwrap_or(Value::Null);
+    let result = data
+        .get("removeTabularColumn")
+        .cloned()
+        .unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }
@@ -108,7 +111,10 @@ pub fn start(
         graphql::START_TABULAR_EXTRACTION,
         json!({ "folder": folder }),
     )?;
-    let result = data.get("startTabularExtraction").cloned().unwrap_or(Value::Null);
+    let result = data
+        .get("startTabularExtraction")
+        .cloned()
+        .unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }
@@ -118,11 +124,11 @@ pub fn results(
     folder: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(
-        graphql::GET_TABULAR_EXTRACTION,
-        json!({ "folder": folder }),
-    )?;
-    let extraction = data.get("tabularExtraction").cloned().unwrap_or(Value::Null);
+    let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "folder": folder }))?;
+    let extraction = data
+        .get("tabularExtraction")
+        .cloned()
+        .unwrap_or(Value::Null);
 
     // For results, flatten rows into a more readable format
     if let Some(rows) = extraction.get("rows").and_then(|r| r.as_array()) {
@@ -160,15 +166,32 @@ pub fn results(
 }
 
 fn extract_cell_value(cell: &Value) -> Value {
-    if let Some(v) = cell.get("text") { return v.clone(); }
-    if let Some(v) = cell.get("date") { return v.clone(); }
-    if let Some(v) = cell.get("checked") { return v.clone(); }
-    if let Some(v) = cell.get("number") { return v.clone(); }
-    if let Some(v) = cell.get("tag") { return v.clone(); }
-    if let Some(v) = cell.get("tags") { return v.clone(); }
-    if let Some(v) = cell.get("items") { return v.clone(); }
+    if let Some(v) = cell.get("text") {
+        return v.clone();
+    }
+    if let Some(v) = cell.get("date") {
+        return v.clone();
+    }
+    if let Some(v) = cell.get("checked") {
+        return v.clone();
+    }
+    if let Some(v) = cell.get("number") {
+        return v.clone();
+    }
+    if let Some(v) = cell.get("tag") {
+        return v.clone();
+    }
+    if let Some(v) = cell.get("tags") {
+        return v.clone();
+    }
+    if let Some(v) = cell.get("items") {
+        return v.clone();
+    }
     if let Some(v) = cell.get("amount") {
-        let currency = cell.get("currencyCode").and_then(|c| c.as_str()).unwrap_or("");
+        let currency = cell
+            .get("currencyCode")
+            .and_then(|c| c.as_str())
+            .unwrap_or("");
         return json!(format!("{} {}", v, currency));
     }
     Value::Null

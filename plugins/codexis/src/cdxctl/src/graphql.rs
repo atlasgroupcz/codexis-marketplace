@@ -210,6 +210,81 @@ mutation UninstallPlugin($input: PluginInstallInput!) {
 
 // ==================== Skills ====================
 
+pub const GET_AGENTS: &str = r#"
+query GetAgents {
+    agents {
+        id
+        name
+        fullName
+        description
+        marketplace
+        plugin
+        tools
+        skills
+        model
+        maxTurns
+        disallowedTools
+        sourceKind
+        editable
+        deletable
+        pathInfo { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const CREATE_AGENT: &str = r#"
+mutation CreateAgent($markdown: String!) {
+    createAgent(markdown: $markdown) {
+        id
+        name
+        fullName
+        description
+        marketplace
+        plugin
+        tools
+        skills
+        model
+        maxTurns
+        disallowedTools
+        sourceKind
+        editable
+        deletable
+        pathInfo { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const UPDATE_AGENT: &str = r#"
+mutation UpdateAgent($id: ID!, $markdown: String!) {
+    updateAgent(id: $id, markdown: $markdown) {
+        id
+        name
+        fullName
+        description
+        marketplace
+        plugin
+        tools
+        skills
+        model
+        maxTurns
+        disallowedTools
+        sourceKind
+        editable
+        deletable
+        pathInfo { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const DELETE_AGENT: &str = r#"
+mutation DeleteAgent($id: ID!) {
+    deleteNode(id: $id)
+}
+"#;
+
 pub const GET_SKILLS: &str = r#"
 query GetSkills {
     skills {
@@ -272,6 +347,33 @@ mutation DeleteSkill($id: ID!) {
     deleteNode(id: $id)
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::{CREATE_AGENT, DELETE_AGENT, GET_AGENTS, UPDATE_AGENT};
+
+    #[test]
+    fn agent_queries_target_canonical_agent_api() {
+        assert!(GET_AGENTS.contains("query GetAgents"));
+        assert!(GET_AGENTS.contains("agents {"));
+        assert!(CREATE_AGENT.contains("createAgent(markdown: $markdown)"));
+        assert!(UPDATE_AGENT.contains("updateAgent(id: $id, markdown: $markdown)"));
+        assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
+    }
+
+    #[test]
+    fn agent_queries_request_local_crud_metadata() {
+        for query in [GET_AGENTS, CREATE_AGENT, UPDATE_AGENT] {
+            assert!(query.contains("sourceKind"));
+            assert!(query.contains("editable"));
+            assert!(query.contains("deletable"));
+            assert!(query.contains("pathInfo { absolutePath displayPath }"));
+            assert!(query.contains("sourcePath { absolutePath displayPath }"));
+            assert!(query.contains("maxTurns"));
+            assert!(query.contains("disallowedTools"));
+        }
+    }
+}
 
 // ==================== Tabular Extraction ====================
 

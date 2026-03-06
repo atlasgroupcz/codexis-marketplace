@@ -1,7 +1,7 @@
 ---
 name: cdxctl
-description: Use when the user asks to create, list, update, or delete custom skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, or extract tabular data from files in a folder. Provides the cdxctl CLI for platform management operations.
-version: 1.2.0
+description: Use when the user asks to create, list, update, or delete custom/local agents or skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, or extract tabular data from files in a folder. Provides the cdxctl CLI for platform management operations.
+version: 1.3.0
 ---
 
 # cdxctl — Platform Management CLI
@@ -80,6 +80,50 @@ cdxctl plugin install --marketplace "marketplace-name" --name "plugin-name"
 # Uninstall a plugin
 cdxctl plugin uninstall --marketplace "marketplace-name" --name "plugin-name"
 ```
+
+## Agents
+
+Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API.
+
+```bash
+# List all agents
+cdxctl agent list
+
+# List only editable custom/local agents
+cdxctl agent list --editable-only
+
+# Create a custom/local agent from an existing markdown file
+cdxctl agent create --file /path/to/local-agent.md
+
+# Create a custom/local agent from stdin
+cat <<'EOF' | cdxctl agent create --stdin
+---
+name: custom-local-agent
+description: Helps with a focused local workflow.
+tools: Read, Bash
+maxTurns: 8
+---
+
+You are a custom local agent.
+EOF
+
+# Update an existing agent from a file
+cdxctl agent update <id-or-name> --file /path/to/local-agent.md
+
+# Update an existing agent from stdin
+cat /path/to/local-agent.md | cdxctl agent update <id-or-name> --stdin
+
+# Delete an editable custom/local agent
+cdxctl agent delete <id-or-name>
+```
+
+**IDs:** `cdxctl agent update` and `cdxctl agent delete` accept the GraphQL `id` from `cdxctl agent list`, a base64 Node ID, or a raw local agent name like `my-agent`.
+
+**Recommended agent workflow:**
+1. Run `cdxctl agent list --editable-only` to find the target agent and its `sourcePath.absolutePath`.
+2. Read or edit the markdown file in the shell.
+3. Apply the change with `cdxctl agent update <id-or-name> --file <path>` or pipe the markdown with `--stdin`.
+4. Use `cdxctl agent create` for new local agents and `cdxctl agent delete` for removal.
 
 ## Skills
 

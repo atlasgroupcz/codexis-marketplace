@@ -20,7 +20,10 @@ impl OutputFormat {
 pub fn print_output(value: &Value, format: OutputFormat) {
     match format {
         OutputFormat::Json => {
-            println!("{}", serde_json::to_string_pretty(value).unwrap_or_default());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(value).unwrap_or_default()
+            );
         }
         OutputFormat::Table => {
             print_table(value);
@@ -38,7 +41,10 @@ fn print_table(value: &Value) {
             // Collect column names from the first object
             let columns = collect_columns(&arr[0]);
             if columns.is_empty() {
-                println!("{}", serde_json::to_string_pretty(value).unwrap_or_default());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(value).unwrap_or_default()
+                );
                 return;
             }
             // Calculate column widths

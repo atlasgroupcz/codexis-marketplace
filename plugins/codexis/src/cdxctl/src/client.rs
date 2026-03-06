@@ -10,8 +10,7 @@ pub struct GraphQLClient {
 
 impl GraphQLClient {
     pub fn new() -> Self {
-        let url = std::env::var("CDXCTL_API_URL")
-            .unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+        let url = std::env::var("CDXCTL_API_URL").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
         GraphQLClient {
             url,
             client: reqwest::blocking::Client::new(),
@@ -36,9 +35,7 @@ impl GraphQLClient {
         let text = response.text()?;
 
         if !status.is_success() {
-            return Err(CdxctlError::Network(format!(
-                "HTTP {status}: {text}"
-            )));
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
         }
 
         let parsed: Value = serde_json::from_str(&text)?;

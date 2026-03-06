@@ -13,20 +13,20 @@ pub fn list(
     editable_only: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::GET_SKILLS, json!({}))?;
-    let skills = data
-        .get("skills")
+    let data = client.execute(graphql::GET_AGENTS, json!({}))?;
+    let agents = data
+        .get("agents")
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
 
     let filtered: Vec<Value> = if editable_only {
-        skills
+        agents
             .into_iter()
-            .filter(|skill| skill.get("editable").and_then(Value::as_bool) == Some(true))
+            .filter(|agent| agent.get("editable").and_then(Value::as_bool) == Some(true))
             .collect()
     } else {
-        skills
+        agents
     };
 
     print_output(&json!(filtered), format);
@@ -40,8 +40,8 @@ pub fn create(
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let markdown = load_markdown(file, stdin)?;
-    let data = client.execute(graphql::CREATE_SKILL, json!({ "markdown": markdown }))?;
-    let result = data.get("createSkill").cloned().unwrap_or(Value::Null);
+    let data = client.execute(graphql::CREATE_AGENT, json!({ "markdown": markdown }))?;
+    let result = data.get("createAgent").cloned().unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }
@@ -54,19 +54,19 @@ pub fn update(
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let markdown = load_markdown(file, stdin)?;
-    let node_id = resolve_node_id(id, "Skill");
+    let node_id = resolve_node_id(id, "Agent");
     let data = client.execute(
-        graphql::UPDATE_SKILL,
+        graphql::UPDATE_AGENT,
         json!({ "id": node_id, "markdown": markdown }),
     )?;
-    let result = data.get("updateSkill").cloned().unwrap_or(Value::Null);
+    let result = data.get("updateAgent").cloned().unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
-    let node_id = resolve_node_id(id, "Skill");
-    let data = client.execute(graphql::DELETE_SKILL, json!({ "id": node_id }))?;
+    let node_id = resolve_node_id(id, "Agent");
+    let data = client.execute(graphql::DELETE_AGENT, json!({ "id": node_id }))?;
     let result = data.get("deleteNode").cloned().unwrap_or(Value::Null);
     print_output(&json!({ "deleted": result }), format);
     Ok(())
@@ -78,7 +78,7 @@ fn load_markdown(file: Option<&str>, stdin: bool) -> Result<String, CdxctlError>
             "Choose exactly one input source: --file or --stdin".into(),
         )),
         (None, false) => Err(CdxctlError::Parse(
-            "Provide skill markdown via --file or --stdin".into(),
+            "Provide agent markdown via --file or --stdin".into(),
         )),
         (Some(path), false) => load_markdown_from_file(path),
         (None, true) => load_markdown_from_stdin(),
@@ -88,7 +88,7 @@ fn load_markdown(file: Option<&str>, stdin: bool) -> Result<String, CdxctlError>
 fn load_markdown_from_file(path: &str) -> Result<String, CdxctlError> {
     let content = fs::read_to_string(path).map_err(|error| {
         CdxctlError::Parse(format!(
-            "Failed to read skill markdown from {}: {}",
+            "Failed to read agent markdown from {}: {}",
             Path::new(path).display(),
             error
         ))
@@ -99,14 +99,14 @@ fn load_markdown_from_file(path: &str) -> Result<String, CdxctlError> {
 fn load_markdown_from_stdin() -> Result<String, CdxctlError> {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer).map_err(|error| {
-        CdxctlError::Parse(format!("Failed to read skill markdown from stdin: {error}"))
+        CdxctlError::Parse(format!("Failed to read agent markdown from stdin: {error}"))
     })?;
     validate_markdown(buffer)
 }
 
 fn validate_markdown(content: String) -> Result<String, CdxctlError> {
     if content.trim().is_empty() {
-        return Err(CdxctlError::Parse("Skill markdown cannot be empty".into()));
+        return Err(CdxctlError::Parse("Agent markdown cannot be empty".into()));
     }
     Ok(content)
 }
@@ -123,23 +123,23 @@ mod tests {
         let error = load_markdown(None, false).unwrap_err();
         assert!(matches!(error, CdxctlError::Parse(_)));
 
-        let error = load_markdown(Some("/tmp/skill.md"), true).unwrap_err();
+        let error = load_markdown(Some("/tmp/agent.md"), true).unwrap_err();
         assert!(matches!(error, CdxctlError::Parse(_)));
     }
 
     #[test]
-    fn load_markdown_from_file_reads_skill_contents() {
-        let path = unique_temp_path("skill-md");
+    fn load_markdown_from_file_reads_agent_contents() {
+        let path = unique_temp_path("agent-md");
         fs::write(
             &path,
-            "---\nname: test\ndescription: demo\n---\n\n# Instructions\n",
+            "---\nname: test-agent\ndescription: demo\n---\n\nYou are a test agent.\n",
         )
         .unwrap();
 
         let content = load_markdown_from_file(path.to_str().unwrap()).unwrap();
 
-        assert!(content.contains("name: test"));
-        assert!(content.contains("# Instructions"));
+        assert!(content.contains("name: test-agent"));
+        assert!(content.contains("You are a test agent."));
 
         let _ = fs::remove_file(path);
     }

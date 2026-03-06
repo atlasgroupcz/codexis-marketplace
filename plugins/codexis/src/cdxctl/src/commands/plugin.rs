@@ -16,18 +16,16 @@ pub fn list(
             None => json!({ "marketplace": null }),
         };
         let data = client.execute(graphql::GET_AVAILABLE_PLUGINS, vars)?;
-        let result = data.get("availablePlugins").cloned().unwrap_or(Value::Array(vec![]));
+        let result = data
+            .get("availablePlugins")
+            .cloned()
+            .unwrap_or(Value::Array(vec![]));
         print_output(&result, format);
     } else {
         let m = marketplace.ok_or_else(|| {
-            CdxctlError::Parse(
-                "--marketplace is required for listing installed plugins".into(),
-            )
+            CdxctlError::Parse("--marketplace is required for listing installed plugins".into())
         })?;
-        let data = client.execute(
-            graphql::GET_INSTALLED_PLUGINS,
-            json!({ "marketplace": m }),
-        )?;
+        let data = client.execute(graphql::GET_INSTALLED_PLUGINS, json!({ "marketplace": m }))?;
         let result = data
             .get("installedPlugins")
             .cloned()

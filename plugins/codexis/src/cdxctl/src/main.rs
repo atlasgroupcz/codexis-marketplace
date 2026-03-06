@@ -38,6 +38,11 @@ enum Commands {
         #[command(subcommand)]
         command: PluginCommands,
     },
+    /// Manage agents
+    Agent {
+        #[command(subcommand)]
+        command: AgentCommands,
+    },
     /// Manage skills
     Skill {
         #[command(subcommand)]
@@ -180,6 +185,41 @@ enum PluginCommands {
 }
 
 #[derive(Subcommand)]
+enum AgentCommands {
+    /// List all agents
+    List {
+        /// Show only editable custom agents
+        #[arg(long, default_value = "false")]
+        editable_only: bool,
+    },
+    /// Create an agent from markdown content
+    Create {
+        /// Read agent markdown content from a file
+        #[arg(long)]
+        file: Option<String>,
+        /// Read agent markdown content from stdin
+        #[arg(long, default_value = "false")]
+        stdin: bool,
+    },
+    /// Update an agent from markdown content
+    Update {
+        /// Agent ID, node ID, or raw agent name
+        id: String,
+        /// Read agent markdown content from a file
+        #[arg(long)]
+        file: Option<String>,
+        /// Read agent markdown content from stdin
+        #[arg(long, default_value = "false")]
+        stdin: bool,
+    },
+    /// Delete an agent
+    Delete {
+        /// Agent ID, node ID, or raw agent name
+        id: String,
+    },
+}
+
+#[derive(Subcommand)]
 enum SkillCommands {
     /// List all skills
     List {
@@ -314,9 +354,7 @@ fn main() {
                 enabled,
                 format,
             ),
-            AutomationCommands::Delete { id } => {
-                commands::automation::delete(&client, &id, format)
-            }
+            AutomationCommands::Delete { id } => commands::automation::delete(&client, &id, format),
             AutomationCommands::Trigger { id } => {
                 commands::automation::trigger(&client, &id, format)
             }
@@ -353,6 +391,18 @@ fn main() {
                 commands::plugin::uninstall(&client, &marketplace, &name, format)
             }
         },
+        Commands::Agent { command } => match command {
+            AgentCommands::List { editable_only } => {
+                commands::agent::list(&client, editable_only, format)
+            }
+            AgentCommands::Create { file, stdin } => {
+                commands::agent::create(&client, file.as_deref(), stdin, format)
+            }
+            AgentCommands::Update { id, file, stdin } => {
+                commands::agent::update(&client, &id, file.as_deref(), stdin, format)
+            }
+            AgentCommands::Delete { id } => commands::agent::delete(&client, &id, format),
+        },
         Commands::Skill { command } => match command {
             SkillCommands::List { editable_only } => {
                 commands::skill::list(&client, editable_only, format)
@@ -387,9 +437,7 @@ fn main() {
             TabularCommands::RemoveColumn { folder, column_id } => {
                 commands::tabular::remove_column(&client, &folder, &column_id, format)
             }
-            TabularCommands::Start { folder } => {
-                commands::tabular::start(&client, &folder, format)
-            }
+            TabularCommands::Start { folder } => commands::tabular::start(&client, &folder, format),
             TabularCommands::Results { folder } => {
                 commands::tabular::results(&client, &folder, format)
             }
@@ -399,5 +447,49 @@ fn main() {
     if let Err(e) = result {
         eprintln!("Error: {e}");
         process::exit(e.exit_code());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_agent_list_command() {
+        let cli =
+            Cli::try_parse_from(["cdxctl", "agent", "list"]).expect("agent list should parse");
+
+        match cli.command {
+            Commands::Agent {
+                command: AgentCommands::List { editable_only },
+            } => {
+                assert!(!editable_only);
+            }
+            _ => panic!("expected agent list command"),
+        }
+    }
+
+    #[test]
+    fn parses_agent_update_with_file_input() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "agent",
+            "update",
+            "local-agent",
+            "--file",
+            "/tmp/local-agent.md",
+        ])
+        .expect("agent update should parse");
+
+        match cli.command {
+            Commands::Agent {
+                command: AgentCommands::Update { id, file, stdin },
+            } => {
+                assert_eq!(id, "local-agent");
+                assert_eq!(file.as_deref(), Some("/tmp/local-agent.md"));
+                assert!(!stdin);
+            }
+            _ => panic!("expected agent update command"),
+        }
     }
 }

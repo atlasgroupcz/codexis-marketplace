@@ -1,3 +1,4 @@
+pub mod agent;
 pub mod automation;
 pub mod marketplace;
 pub mod plugin;
@@ -22,8 +23,7 @@ pub fn resolve_node_id(id: &str, type_prefix: &str) -> String {
 
 fn is_uuid(s: &str) -> bool {
     s.len() == 36
-        && s.chars()
-            .all(|c| c.is_ascii_hexdigit() || c == '-')
+        && s.chars().all(|c| c.is_ascii_hexdigit() || c == '-')
         && s.chars().filter(|c| *c == '-').count() == 4
 }
 
