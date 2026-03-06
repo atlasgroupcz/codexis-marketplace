@@ -38,6 +38,11 @@ enum Commands {
         #[command(subcommand)]
         command: PluginCommands,
     },
+    /// Manage skills
+    Skill {
+        #[command(subcommand)]
+        command: SkillCommands,
+    },
     /// Tabular data extraction from files
     Tabular {
         #[command(subcommand)]
@@ -171,6 +176,41 @@ enum PluginCommands {
         /// Plugin name
         #[arg(long)]
         name: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum SkillCommands {
+    /// List all skills
+    List {
+        /// Show only editable custom skills
+        #[arg(long, default_value = "false")]
+        editable_only: bool,
+    },
+    /// Create a skill from SKILL.md content
+    Create {
+        /// Read SKILL.md content from a file
+        #[arg(long)]
+        file: Option<String>,
+        /// Read SKILL.md content from stdin
+        #[arg(long, default_value = "false")]
+        stdin: bool,
+    },
+    /// Update a skill from SKILL.md content
+    Update {
+        /// Skill ID, node ID, or raw skill name
+        id: String,
+        /// Read SKILL.md content from a file
+        #[arg(long)]
+        file: Option<String>,
+        /// Read SKILL.md content from stdin
+        #[arg(long, default_value = "false")]
+        stdin: bool,
+    },
+    /// Delete a skill
+    Delete {
+        /// Skill ID, node ID, or raw skill name
+        id: String,
     },
 }
 
@@ -312,6 +352,18 @@ fn main() {
             PluginCommands::Uninstall { marketplace, name } => {
                 commands::plugin::uninstall(&client, &marketplace, &name, format)
             }
+        },
+        Commands::Skill { command } => match command {
+            SkillCommands::List { editable_only } => {
+                commands::skill::list(&client, editable_only, format)
+            }
+            SkillCommands::Create { file, stdin } => {
+                commands::skill::create(&client, file.as_deref(), stdin, format)
+            }
+            SkillCommands::Update { id, file, stdin } => {
+                commands::skill::update(&client, &id, file.as_deref(), stdin, format)
+            }
+            SkillCommands::Delete { id } => commands::skill::delete(&client, &id, format),
         },
         Commands::Tabular { command } => match command {
             TabularCommands::Status { folder } => {

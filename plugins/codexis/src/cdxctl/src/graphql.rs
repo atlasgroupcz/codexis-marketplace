@@ -208,6 +208,71 @@ mutation UninstallPlugin($input: PluginInstallInput!) {
 }
 "#;
 
+// ==================== Skills ====================
+
+pub const GET_SKILLS: &str = r#"
+query GetSkills {
+    skills {
+        id
+        name
+        fullName
+        description
+        marketplace
+        plugin
+        allowedTools
+        sourceKind
+        editable
+        deletable
+        pathInfo { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const CREATE_SKILL: &str = r#"
+mutation CreateSkill($markdown: String!) {
+    createSkill(markdown: $markdown) {
+        id
+        name
+        fullName
+        description
+        marketplace
+        plugin
+        allowedTools
+        sourceKind
+        editable
+        deletable
+        pathInfo { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const UPDATE_SKILL: &str = r#"
+mutation UpdateSkill($id: ID!, $markdown: String!) {
+    updateSkill(id: $id, markdown: $markdown) {
+        id
+        name
+        fullName
+        description
+        marketplace
+        plugin
+        allowedTools
+        sourceKind
+        editable
+        deletable
+        pathInfo { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const DELETE_SKILL: &str = r#"
+mutation DeleteSkill($id: ID!) {
+    deleteNode(id: $id)
+}
+"#;
+
 // ==================== Tabular Extraction ====================
 
 pub const GET_TABULAR_EXTRACTION: &str = r#"

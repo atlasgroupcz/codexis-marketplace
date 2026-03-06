@@ -1,7 +1,7 @@
 ---
 name: cdxctl
-description: Use when the user asks to create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install/uninstall plugins, or extract tabular data from files in a folder. Provides the cdxctl CLI for platform management operations.
-version: 1.1.0
+description: Use when the user asks to create, list, update, or delete custom skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, or extract tabular data from files in a folder. Provides the cdxctl CLI for platform management operations.
+version: 1.2.0
 ---
 
 # cdxctl — Platform Management CLI
@@ -80,6 +80,50 @@ cdxctl plugin install --marketplace "marketplace-name" --name "plugin-name"
 # Uninstall a plugin
 cdxctl plugin uninstall --marketplace "marketplace-name" --name "plugin-name"
 ```
+
+## Skills
+
+Use these commands for custom skill CRUD. `cdxctl` returns the skill `id`, `sourcePath`, and `pathInfo`, so the agent can locate `SKILL.md`, edit it in the shell, and then push the updated markdown back through the API.
+
+```bash
+# List all skills
+cdxctl skill list
+
+# List only editable custom skills
+cdxctl skill list --editable-only
+
+# Create a custom skill from an existing SKILL.md file
+cdxctl skill create --file /path/to/SKILL.md
+
+# Create a custom skill from stdin
+cat <<'EOF' | cdxctl skill create --stdin
+---
+name: custom-skill
+description: Use when the user needs a custom workflow.
+---
+
+# Instructions
+
+Describe what the agent should do.
+EOF
+
+# Update an existing skill from a file
+cdxctl skill update <id-or-name> --file /path/to/SKILL.md
+
+# Update an existing skill from stdin
+cat /path/to/SKILL.md | cdxctl skill update <id-or-name> --stdin
+
+# Delete an editable custom skill
+cdxctl skill delete <id-or-name>
+```
+
+**IDs:** `cdxctl skill update` and `cdxctl skill delete` accept the GraphQL `id` from `cdxctl skill list`, a base64 Node ID, or a raw skill name like `my-skill`.
+
+**Recommended agent workflow:**
+1. Run `cdxctl skill list --editable-only` to find the target skill and its `sourcePath.absolutePath`.
+2. Read or edit the `SKILL.md` file in the shell.
+3. Apply the change with `cdxctl skill update <id-or-name> --file <path>` or pipe the markdown with `--stdin`.
+4. Use `cdxctl skill create` for new custom skills and `cdxctl skill delete` for removal.
 
 ## Tabular Extraction
 
