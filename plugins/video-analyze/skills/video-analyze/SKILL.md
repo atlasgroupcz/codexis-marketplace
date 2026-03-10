@@ -1,19 +1,19 @@
 ---
 name: video-analyze
 description: >-
-  Analyze video content using Gemini. Supports YouTube URLs and local video files.
-  Supported formats: mp4, webm, mov, mpeg, flv, wmv, avi, 3gpp.
-  Other formats are converted automatically by the command.
+  Analyze video and audio files using Gemini multimodal models.
+  Supports local files (mp4, webm, mov, avi, mkv) and YouTube URLs.
+  Handles upload, authentication, and Gemini API calls automatically.
   Triggers on "analyze video", "what is in this video", "describe video",
-  "video summary", "watch this video".
+  "video summary", "watch this video", "transcribe video".
 metadata:
   skill-visibility: model
 allowed-tools: shell
 ---
 
-# Video Analysis
+# Video & Audio Analysis
 
-Analyze video content using the `video-analyze` command available in the shell.
+Analyze video/audio files or YouTube URLs using the `video-analyze` command.
 
 ## Usage
 
@@ -21,52 +21,31 @@ Analyze video content using the `video-analyze` command available in the shell.
 video-analyze <source> <query>
 ```
 
-- `source` — YouTube URL or absolute file path to video
-- `query` — What to analyze in the video (be specific)
+- `source` — absolute file path or YouTube URL
+- `query` — what to analyze (e.g. "Transcribe this video", "Summarize the key points")
 
-## Supported Formats
-
-- **Direct upload:** mp4, webm, mov, mpeg, flv, wmv, avi, 3gpp
-- **Any other format:** `video-analyze` converts it to mp4 automatically (no manual conversion needed)
-- **YouTube:** full URLs (youtube.com, youtu.be)
-
-## When to Use
-
-- User asks to analyze, describe, or summarize a video
-- User asks about the content of a video file or YouTube link
-- User wants to extract information from video content
-
-## When NOT to Use
-
-- Audio-only files — this is for video content
-- Image files — use vision/image analysis instead
-
-## How It Works
-
-1. Run `video-analyze <source> "<query>"`
-2. The command returns JSON: `{"response": "analysis text..."}`
-3. Present the analysis to the user
+The command handles file upload, authentication, and Gemini API calls automatically.
 
 ## Examples
 
 ```bash
-# Analyze a YouTube video
-video-analyze "https://www.youtube.com/watch?v=abc123" "What is this video about?"
+# Transcribe a local video
+video-analyze /home/codexis/meeting.mp4 "Transcribe this video with timestamps and speaker identification"
 
-# Analyze a local video file
-video-analyze /home/codexis/recording.mp4 "Describe the main topics discussed"
+# Summarize a YouTube video
+video-analyze "https://www.youtube.com/watch?v=abc123" "Summarize the key points"
 
 # Extract specific information
 video-analyze /home/codexis/presentation.mp4 "List all products mentioned with their prices"
 ```
 
-## Error Handling
+## Supported formats
 
-On error, the command returns JSON with an error message:
-```json
-{"error": "Failed to analyze video: ..."}
-```
+- **Video:** mp4, webm, mov, avi, mkv
+- **Audio:** mp3, wav, flac, ogg, aac
+- **YouTube:** full URLs (youtube.com, youtu.be)
 
-## Constraints
+## Output
 
-- Requires GEMINI_API_KEY set in ~/.cdx/.env
+The command prints the Gemini response text directly to stdout.
+On error, it prints an error message to stderr and exits with a non-zero code.

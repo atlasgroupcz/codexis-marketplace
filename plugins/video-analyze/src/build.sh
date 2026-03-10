@@ -45,7 +45,7 @@ build_crate() {
     -v "$crate_dir:/workspace" \
     -w /workspace \
     "$RUST_IMAGE" \
-    cargo build --release --locked
+    cargo build --release
 
   install -m 0755 "$crate_dir/target/release/$bin_name" "$BIN_DIR/$bin_name"
   echo "   installed -> $BIN_DIR/$bin_name"
