@@ -4,18 +4,27 @@
 
 It adds two behaviors:
 - rewrites `cdx://...` URLs to CODEXIS CDX API URLs
-- optionally adds Authorization header from environment
+- adds Authorization header from required configuration
 
 ## Requirements
 
 - `curl` must be available in `PATH`
 - `CODEXIS_API_URL` must be set
+- `CDX_API_JWT_AUTH` must be set
 
 Example:
 
 ```bash
 export CODEXIS_API_URL="https://app.codexis.cz"
+export CDX_API_JWT_AUTH="Bearer <jwt>"
 ```
+
+`CDX_API_JWT_AUTH` may also be set to the raw JWT value (`<jwt>`); `cdx` adds
+the `Bearer` prefix when needed.
+
+If one or both variables are missing from the process environment, `cdx` tries
+to read them from `~/.cdx/.env`. Process environment values win over values in
+the file.
 
 ## URL rewriting
 
@@ -38,7 +47,8 @@ All other arguments are passed to `curl` unchanged.
 
 ## Authentication via `CDX_API_JWT_AUTH`
 
-If `CDX_API_JWT_AUTH` is set and non-empty, `cdx` adds `-H <Authorization header>`.
+`CDX_API_JWT_AUTH` is required. `cdx` reads it from the process environment or
+falls back to `~/.cdx/.env`, then adds `-H <Authorization header>`.
 
 Accepted formats:
 - `Authorization: Bearer <jwt>` (used as-is)
@@ -46,7 +56,8 @@ Accepted formats:
 - `<jwt>` (JWT-like `a.b.c` heuristic, converted to `Authorization: Bearer <jwt>`)
 - any other value (converted to `Authorization: <value>`)
 
-If `CDX_API_JWT_AUTH` is missing/empty, no Authorization header is added.
+If `CDX_API_JWT_AUTH` is missing or empty in both places, `cdx` exits with an
+error.
 
 ## Usage
 
