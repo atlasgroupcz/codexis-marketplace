@@ -14,5 +14,8 @@
     "multimedia"
   ],
   "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
+  "postUninstall": "sudo rm -f /usr/local/bin/video-analyze",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
   "skills": "./skills"
 }

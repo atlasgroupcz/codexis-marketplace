@@ -8,5 +8,8 @@
   },
   "keywords": ["cdx-sk", "legal", "law", "legislation", "slovak", "judiciary", "case-law", "court", "api"],
   "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-sk-link-rewriter\" /usr/local/bin/cdx-sk-link-rewriter",
+  "postUninstall": "sudo rm -f /usr/local/bin/cdx-sk-link-rewriter",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-sk-link-rewriter\" /usr/local/bin/cdx-sk-link-rewriter",
   "skills": "./skills"
 }

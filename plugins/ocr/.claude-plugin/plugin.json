@@ -14,5 +14,8 @@
     "conversion"
   ],
   "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
+  "postUninstall": "sudo rm -f /usr/local/bin/ocr",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
   "skills": "./skills"
 }
