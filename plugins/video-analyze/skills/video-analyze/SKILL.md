@@ -7,7 +7,7 @@ description: >-
   Triggers on "analyze video", "what is in this video", "describe video",
   "video summary", "watch this video", "transcribe video".
 metadata:
-  skill-visibility: model
+  skill-visibility: user
 allowed-tools: shell
 ---
 
