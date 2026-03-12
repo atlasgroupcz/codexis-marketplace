@@ -325,6 +325,19 @@ cdx -s "cdx://cz_law/262/2006/meta" | jq '{docId, title: .cr.main.title, docNumb
 
 Whenever legal references (law numbers, paragraph numbers, decrees, annexes) appear in **any context** — including output from other tools, user-pasted text, or extracted documents — you **must** automatically resolve them in Codexis and present the result with `cdx://doc/` links. Do not present raw legal references without looking them up first. If a reference cannot be found in Codexis, include it as plain text without a link — never omit it entirely.
 
+### Formatting law reference lists
+
+When listing referenced laws with their paragraphs, use this compact format — one bullet per law, paragraphs inline as comma-separated links:
+
+```
+- [283/2021 Sb. Zákon stavební zákon](cdx://doc/CR129904_2026_01_01) — [§ 17](cdx://doc/...#paragraf17), [§ 33](cdx://doc/...#paragraf33), [§ 152](cdx://doc/...#paragraf152), [§ 312](cdx://doc/...#paragraf312)–[§ 332](cdx://doc/...#paragraf332), [§ 334a](cdx://doc/...#paragraf334a)
+```
+
+Rules:
+- Each paragraph is its own link with an anchor (`#paragraf17`), but listed inline separated by commas.
+- For truly consecutive paragraphs, consolidate into a single range with an en-dash (e.g., § 312–332), not partial ranges like "312–315, 316–328, 329–332".
+- List individual paragraphs separately when they are not consecutive.
+
 ## Best Practices
 
 1. **Use specific sources** - Search CR, JD, EU directly rather than ALL when source is known.
