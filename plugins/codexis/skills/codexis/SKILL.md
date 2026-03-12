@@ -348,3 +348,4 @@ Rules:
 6. **Cache document text** - Full text is large; fetch once and extract sections locally.
 7. **Use jq for filtering** - Process JSON results with jq rather than multiple API calls.
 8. **Use cdx:// links** - Always use `cdx://doc/{docId}` for links, never resolve URLs manually.
+9. **Always extract docId from metadata** - When resolving laws, always include `docId` in the jq filter (e.g., `jq '{docId, title: .cr.main.title}'`). Never construct or guess docId values — they must come from the API response. A wrong docId means a broken link.
