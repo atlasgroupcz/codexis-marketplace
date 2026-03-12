@@ -321,6 +321,10 @@ cdx -s "cdx://cz_law/262/2006/text?part=paragraf1"
 cdx -s "cdx://cz_law/262/2006/meta" | jq '{docId, title: .cr.main.title, docNumber: .cr.main.docNumber}'
 ```
 
+## Proactive legal reference enrichment
+
+Whenever legal references (law numbers, paragraph numbers, decrees, annexes) appear in **any context** — including output from other tools, user-pasted text, or extracted documents — you **must** automatically resolve them in Codexis and present the result with `cdx://doc/` links. Do not present raw legal references without looking them up first. If a reference cannot be found in Codexis, include it as plain text without a link — never omit it entirely.
+
 ## Best Practices
 
 1. **Use specific sources** - Search CR, JD, EU directly rather than ALL when source is known.
