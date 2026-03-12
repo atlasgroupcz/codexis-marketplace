@@ -45,6 +45,10 @@ video-analyze /home/codexis/presentation.mp4 "List all products mentioned with t
 - **Audio:** mp3, wav, flac, ogg, aac
 - **YouTube:** full URLs (youtube.com, youtu.be)
 
+## Error handling
+
+- **429 / rate limit errors are transient.** Wait 10–30 seconds and retry.
+
 ## Output
 
 The command prints the Gemini response text directly to stdout.
