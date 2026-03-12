@@ -6,7 +6,7 @@ use std::process::Command;
 const MODEL: &str = "gemini-3.1-flash-lite-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
-const UPLOAD_ENDPOINT: &str = "http://localhost:38083/rest/llm/gemini/upload";
+const UPLOAD_ENDPOINT: &str = "http://localhost:8086/rest/llm/gemini/upload";
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -25,12 +25,13 @@ fn main() {
     let source = &args[0];
     let query = args[1..].join(" ");
     let api_key = load_api_key();
+    let daemon_auth = load_daemon_auth();
     let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
     let (file_uri, mime_type) = if is_youtube {
         (source.clone(), String::new())
     } else {
-        let upload_json = upload_file(source);
+        let upload_json = upload_file(source, &daemon_auth);
         let uri = extract_json_field(&upload_json, "uri");
         let mime = extract_json_field(&upload_json, "mimeType");
         if uri.is_empty() {
@@ -78,12 +79,35 @@ fn load_api_key() -> String {
     std::process::exit(2);
 }
 
-fn upload_file(path: &str) -> String {
+fn load_daemon_auth() -> String {
+    let home = env::var("HOME").unwrap_or_else(|_| "/home/codexis".to_string());
+    let env_file = format!("{}/.cdx/.daemon.env", home);
+    if let Ok(content) = fs::read_to_string(&env_file) {
+        for line in content.lines() {
+            if let Some(val) = line.strip_prefix("CDX_DAEMON_AUTH=") {
+                let val = val.trim();
+                if !val.is_empty() {
+                    return val.to_string();
+                }
+            }
+        }
+    }
+    if let Ok(val) = env::var("CDX_DAEMON_AUTH") {
+        if !val.is_empty() {
+            return val;
+        }
+    }
+    eprintln!("error: CDX_DAEMON_AUTH not found in ~/.cdx/.daemon.env or environment");
+    std::process::exit(2);
+}
+
+fn upload_file(path: &str, daemon_auth: &str) -> String {
     let encoded_path = percent_encode(path.as_bytes());
     let url = format!("{}?path={}", UPLOAD_ENDPOINT, encoded_path);
 
+    let auth_header = format!("Authorization: {}", daemon_auth);
     let output = Command::new("curl")
-        .args(["-s", "--fail-with-body", "-X", "POST", &url, "-H", "Content-Type: application/json"])
+        .args(["-s", "--fail-with-body", "-X", "POST", &url, "-H", &auth_header, "-H", "Content-Type: application/json"])
         .output();
 
     match output {
