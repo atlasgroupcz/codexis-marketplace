@@ -1,6 +1,9 @@
 use std::env;
 use std::fmt::Write;
+use std::fs;
 use std::process::{Command, Stdio};
+
+const OCR_ENDPOINT: &str = "http://localhost:8086/rest/ocr";
 
 fn percent_encode(input: &[u8]) -> String {
     let mut out = String::with_capacity(input.len() * 3);
@@ -17,6 +20,28 @@ fn percent_encode(input: &[u8]) -> String {
     out
 }
 
+fn load_daemon_auth() -> String {
+    let home = env::var("HOME").unwrap_or_else(|_| "/home/codexis".to_string());
+    let env_file = format!("{}/.cdx/.daemon.env", home);
+    if let Ok(content) = fs::read_to_string(&env_file) {
+        for line in content.lines() {
+            if let Some(val) = line.strip_prefix("CDX_DAEMON_AUTH=") {
+                let val = val.trim();
+                if !val.is_empty() {
+                    return val.to_string();
+                }
+            }
+        }
+    }
+    if let Ok(val) = env::var("CDX_DAEMON_AUTH") {
+        if !val.is_empty() {
+            return val;
+        }
+    }
+    eprintln!("error: CDX_DAEMON_AUTH not found in ~/.cdx/.daemon.env or environment");
+    std::process::exit(2);
+}
+
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -25,25 +50,11 @@ fn main() {
         std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
     }
 
-    let daemon_url = match env::var("CDX_DAEMON_URL") {
-        Ok(value) if !value.trim().is_empty() => value.trim().trim_end_matches('/').to_string(),
-        _ => {
-            eprintln!("CDX_DAEMON_URL must be set");
-            std::process::exit(2);
-        }
-    };
-
-    let daemon_auth = match env::var("CDX_DAEMON_AUTH") {
-        Ok(value) if !value.trim().is_empty() => value.trim().to_string(),
-        _ => {
-            eprintln!("CDX_DAEMON_AUTH must be set");
-            std::process::exit(2);
-        }
-    };
+    let daemon_auth = load_daemon_auth();
 
     let path = &args[0];
     let encoded_path = percent_encode(path.as_bytes());
-    let url = format!("{}/rest/ocr?path={}", daemon_url, encoded_path);
+    let url = format!("{}?path={}", OCR_ENDPOINT, encoded_path);
 
     let auth_header = format!("Authorization: {}", daemon_auth);
     let status = Command::new("curl")

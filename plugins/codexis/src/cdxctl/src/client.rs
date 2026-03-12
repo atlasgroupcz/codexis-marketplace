@@ -1,18 +1,22 @@
 use crate::error::CdxctlError;
 use serde_json::{json, Value};
+use std::fs;
 
-const DEFAULT_API_URL: &str = "http://localhost:38083/graphql";
+const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
 
 pub struct GraphQLClient {
     url: String,
+    auth: String,
     client: reqwest::blocking::Client,
 }
 
 impl GraphQLClient {
     pub fn new() -> Self {
         let url = std::env::var("CDXCTL_API_URL").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+        let auth = load_daemon_auth();
         GraphQLClient {
             url,
+            auth,
             client: reqwest::blocking::Client::new(),
         }
     }
@@ -28,6 +32,7 @@ impl GraphQLClient {
             .client
             .post(&self.url)
             .header("Content-Type", "application/json")
+            .header("Authorization", &self.auth)
             .json(&body)
             .send()?;
 
@@ -59,4 +64,26 @@ impl GraphQLClient {
             .cloned()
             .ok_or_else(|| CdxctlError::Parse("Response missing 'data' field".into()))
     }
+}
+
+fn load_daemon_auth() -> String {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/codexis".to_string());
+    let env_file = format!("{}/.cdx/.daemon.env", home);
+    if let Ok(content) = fs::read_to_string(&env_file) {
+        for line in content.lines() {
+            if let Some(val) = line.strip_prefix("CDX_DAEMON_AUTH=") {
+                let val = val.trim();
+                if !val.is_empty() {
+                    return val.to_string();
+                }
+            }
+        }
+    }
+    if let Ok(val) = std::env::var("CDX_DAEMON_AUTH") {
+        if !val.is_empty() {
+            return val;
+        }
+    }
+    eprintln!("error: CDX_DAEMON_AUTH not found in ~/.cdx/.daemon.env or environment");
+    std::process::exit(2);
 }
