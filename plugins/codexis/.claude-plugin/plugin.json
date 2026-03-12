@@ -20,9 +20,9 @@
     "api"
   ],
   "license": "PROPRIETARY",
-  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx",
-  "postUninstall": "sudo rm -f /usr/local/bin/cdx",
-  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
+  "postUninstall": "sudo rm -f /usr/local/bin/cdx /usr/local/bin/cdxctl",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
   "skills": "./skills",
   "components": "./components"
 }
