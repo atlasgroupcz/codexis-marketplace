@@ -27,9 +27,9 @@ Before answering any question about a media file, generate a detailed transcript
 video-analyze transcript <source>
 ```
 
-The binary automatically saves the transcript to `.transcripts/<filename>.transcript.md` in the current working directory (e.g. `meeting.mp4` → `.transcripts/meeting.mp4.transcript.md`, YouTube → `.transcripts/youtube-<video_id>.transcript.md`). The transcript content is also printed to stdout.
+The binary automatically saves the transcript to `.transcripts/<filename>.transcript.json` in the current working directory (e.g. `meeting.mp4` → `.transcripts/meeting.mp4.transcript.json`, YouTube → `.transcripts/youtube-<video_id>.transcript.json`). The transcript content is also printed to stdout.
 
-The transcript includes timestamps, spoken dialogue, scene descriptions, and audio cues — produced by Gemini Pro for maximum detail.
+The transcript is output as a JSON array of `{ text, startSecond, endSecond }` segments, compatible with the AI SDK transcription component. Produced by Gemini Pro.
 
 ### Step 2: Answer from the transcript
 

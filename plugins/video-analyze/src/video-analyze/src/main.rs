@@ -10,13 +10,14 @@ const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
 const UPLOAD_ENDPOINT: &str = "http://localhost:8086/rest/llm/gemini/upload";
 
-const TRANSCRIPT_PROMPT: &str = "Create a detailed transcript of this media file. Include:\n\
-    - Precise timestamps for every segment (e.g. [00:00] - [00:15])\n\
-    - Full verbatim transcription of all spoken dialogue with speaker identification where possible\n\
-    - Visual scene descriptions between dialogue sections (what is shown, camera angles, on-screen text, graphics)\n\
-    - Notable audio cues (music, sound effects, silence)\n\
-    - Transitions and scene changes\n\n\
-    Format the output as a chronological timeline. Be thorough and capture every detail.";
+const TRANSCRIPT_PROMPT: &str = "Transcribe all spoken dialogue in this media file.\n\
+    Output ONLY a valid JSON array with no markdown formatting, no code fences, no extra text.\n\
+    Each element must have exactly these fields:\n\
+    - \"text\": the spoken words for that segment\n\
+    - \"startSecond\": start time in seconds (number)\n\
+    - \"endSecond\": end time in seconds (number)\n\n\
+    Example: [{\"text\":\"Hello everyone\",\"startSecond\":0,\"endSecond\":1.5},{\"text\":\"Welcome to the meeting\",\"startSecond\":1.5,\"endSecond\":3.2}]\n\n\
+    Transcribe every segment of speech. Be precise with timestamps. Output raw JSON only.";
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -56,7 +57,7 @@ fn main() {
         }
 
         let base_name = transcript_filename(source, is_youtube);
-        let transcript_path = transcript_dir.join(format!("{}.transcript.md", base_name));
+        let transcript_path = transcript_dir.join(format!("{}.transcript.json", base_name));
         if let Err(e) = fs::write(&transcript_path, &text) {
             eprintln!("error: failed to write transcript: {}", e);
             std::process::exit(1);
