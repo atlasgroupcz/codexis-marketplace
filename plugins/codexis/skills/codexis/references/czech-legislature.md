@@ -3,12 +3,12 @@
 Czech legislation documents have rich structure: time versions, table of contents, and full text with anchors. This guide covers efficient retrieval and extraction techniques.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
 BASE_DOC_ID="CR26785"
 DOC_ID="CR26785_2026_01_01"  # full version ID (required for /text and /toc)
-cdx -s "cdx://doc/${BASE_DOC_ID}/meta"
+cdx "cdx://doc/${BASE_DOC_ID}/meta"
 ```
 
 For CR documents, `/text` and `/toc` require a full version ID (for example `CR26785_2026_01_01`).  
@@ -21,14 +21,14 @@ finding a `CR...` id via search:
 
 ```bash
 # Resolve and get metadata (returns resolved timecut under .docId)
-cdx -s "cdx://cz_law/262/2006/meta" | jq '.'
+cdx "cdx://cz_law/262/2006/meta" | jq '.'
 
 # Fetch a specific paragraph directly
-cdx -s "cdx://cz_law/262/2006/text?part=paragraf1"
+cdx "cdx://cz_law/262/2006/text?part=paragraf1"
 
 # ToC and versions
-cdx -s "cdx://cz_law/262/2006/toc" | jq '.'
-cdx -s "cdx://cz_law/262/2006/versions" | jq '.'
+cdx "cdx://cz_law/262/2006/toc" | jq '.'
+cdx "cdx://cz_law/262/2006/versions" | jq '.'
 ```
 
 Notes:
@@ -47,7 +47,7 @@ Czech laws consist of:
 
 ```bash
 BASE_DOC_ID="CR26785"
-cdx -s "cdx://doc/${BASE_DOC_ID}/meta" | jq '.'
+cdx "cdx://doc/${BASE_DOC_ID}/meta" | jq '.'
 ```
 
 Response includes:
@@ -60,7 +60,7 @@ Response includes:
 
 ```bash
 BASE_DOC_ID="CR26785"
-cdx -s "cdx://doc/${BASE_DOC_ID}/versions" | jq '.'
+cdx "cdx://doc/${BASE_DOC_ID}/versions" | jq '.'
 ```
 
 Response:
@@ -85,7 +85,7 @@ Response:
 
 ```bash
 # Find version valid on 2020-01-01
-cdx -s "cdx://doc/CR26785/versions" | \
+cdx "cdx://doc/CR26785/versions" | \
   jq '.[] | select(.validFrom <= "2020-01-01" and (.validTo == null or .validTo >= "2020-01-01"))'
 ```
 
@@ -95,7 +95,7 @@ Use `versionId` to get text as it was at that time:
 
 ```bash
 VERSION_ID="CR26785_2020_01_01"
-cdx -s "cdx://doc/${VERSION_ID}/text"
+cdx "cdx://doc/${VERSION_ID}/text"
 ```
 
 ## Table of Contents (TOC)
@@ -111,7 +111,7 @@ Current CR behavior:
 
 ```bash
 DOC_ID="CR26785_2026_01_01"
-cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
+cdx "cdx://doc/${DOC_ID}/toc" | jq '.'
 ```
 
 ### TOC Structure
@@ -145,21 +145,21 @@ TOC can be returned as a top-level array:
 
 ```bash
 # Find paragraph 89
-cdx -s "cdx://doc/CR26785_2026_01_01/toc" | \
+cdx "cdx://doc/CR26785_2026_01_01/toc" | \
   jq '.. | objects | select(.elementId? == "paragraf89")'
 ```
 
 ### List All Paragraphs
 
 ```bash
-cdx -s "cdx://doc/CR26785_2026_01_01/toc" | \
+cdx "cdx://doc/CR26785_2026_01_01/toc" | \
   jq '.. | objects | select(.elementId? | startswith("paragraf")) | {title, elementId, startLine, endLine}'
 ```
 
 ### Find Section by Title
 
 ```bash
-cdx -s "cdx://doc/CR26785_2026_01_01/toc" | \
+cdx "cdx://doc/CR26785_2026_01_01/toc" | \
   jq '.. | objects | select(.title? | contains("Smlouvy"))'
 ```
 
@@ -169,7 +169,7 @@ cdx -s "cdx://doc/CR26785_2026_01_01/toc" | \
 
 ```bash
 DOC_ID="CR26785_2026_01_01"
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Text Format
@@ -196,7 +196,7 @@ Example:
 DOC_ID="CR26785_2026_01_01"
 SECTION="paragraf89"
 
-cdx -s "cdx://doc/${DOC_ID}/text" | \
+cdx "cdx://doc/${DOC_ID}/text" | \
   awk -v section="${SECTION}" '
     $0 == "[?part=" section "]" {capture=1}
     capture {
@@ -213,7 +213,7 @@ For CR, this endpoint currently returns a section-focused preview:
 ```bash
 DOC_ID="CR26785_2026_01_01"
 SECTION="paragraf89"
-cdx -s "cdx://doc/${DOC_ID}/text?part=${SECTION}"
+cdx "cdx://doc/${DOC_ID}/text?part=${SECTION}"
 ```
 
 ### Using Line Numbers from TOC
@@ -224,33 +224,33 @@ Recommended for leaf elements (`paragraf...`). Validate heading after extraction
 DOC_ID="CR26785_2026_01_01"
 SECTION="paragraf89"
 
-LINES=$(cdx -s "cdx://doc/${DOC_ID}/toc" | \
+LINES=$(cdx "cdx://doc/${DOC_ID}/toc" | \
   jq -r ".. | objects | select(.elementId? == \"${SECTION}\") | \"\(.startLine),\(.endLine)\"")
 
-cdx -s "cdx://doc/${DOC_ID}/text" | sed -n "${LINES}p"
+cdx "cdx://doc/${DOC_ID}/text" | sed -n "${LINES}p"
 ```
 
 ### Using grep to Find Content
 
 ```bash
 # Find all paragraphs mentioning "smlouva"
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | grep -i "smlouva"
+cdx "cdx://doc/CR26785_2026_01_01/text" | grep -i "smlouva"
 
 # Find with context
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | grep -B2 -A5 "§ 89"
+cdx "cdx://doc/CR26785_2026_01_01/text" | grep -B2 -A5 "§ 89"
 ```
 
 ### Using head/tail for Ranges
 
 ```bash
 # Get first 100 lines
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | head -100
+cdx "cdx://doc/CR26785_2026_01_01/text" | head -100
 
 # Get lines 500-600
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | sed -n '500,600p'
+cdx "cdx://doc/CR26785_2026_01_01/text" | sed -n '500,600p'
 
 # Get last 50 lines
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | tail -50
+cdx "cdx://doc/CR26785_2026_01_01/text" | tail -50
 ```
 
 ### Extract Section by Element ID
@@ -260,7 +260,7 @@ cdx -s "cdx://doc/CR26785_2026_01_01/text" | tail -50
 DOC_ID="CR26785_2026_01_01"
 SECTION="paragraf89"
 
-cdx -s "cdx://doc/${DOC_ID}/text" | \
+cdx "cdx://doc/${DOC_ID}/text" | \
   awk -v section="${SECTION}" '
     $0 == "[?part=" section "]" {capture=1}
     capture {
@@ -289,11 +289,11 @@ PARA_NUM="89"
 SECTION="paragraf${PARA_NUM}"
 
 # Step 1: Resolve section in TOC
-cdx -s "cdx://doc/${DOC_ID}/toc" | \
+cdx "cdx://doc/${DOC_ID}/toc" | \
   jq ".. | objects | select(.elementId? == \"${SECTION}\") | {title, elementId}"
 
 # Step 2: Extract by marker range
-cdx -s "cdx://doc/${DOC_ID}/text" | \
+cdx "cdx://doc/${DOC_ID}/text" | \
   awk -v section="${SECTION}" '
     $0 == "[?part=" section "]" {capture=1}
     capture {
@@ -310,17 +310,33 @@ cdx -s "cdx://doc/${DOC_ID}/text" | \
 
 ```bash
 BASE_DOC_ID="CR26785"
-DOC_ID="CR26785_2026_01_01"
+TARGET_DATE="2026-01-01"
 
-# Get current version
-cdx -s "cdx://doc/${DOC_ID}/text" > /tmp/current.txt
+# Resolve the boundary first
+VERSIONS=$(cdx "cdx://doc/${BASE_DOC_ID}/versions")
 
-# Get old version
-cdx -s "cdx://doc/${BASE_DOC_ID}_2020_01_01/text" > /tmp/old.txt
+PAIR=$(printf '%s' "$VERSIONS" | jq -r --arg d "$TARGET_DATE" '
+  to_entries as $rows
+  | $rows[]
+  | select(.value.validFrom == $d)
+  | "\(.value.versionId) \($rows[.key + 1].value.versionId // empty)"')
 
-# Compare
-diff /tmp/old.txt /tmp/current.txt | head -50
+NEW_VERSION=$(printf '%s\n' "$PAIR" | awk '{print $1}')
+OLD_VERSION=$(printf '%s\n' "$PAIR" | awk '{print $2}')
+
+cdx "cdx://doc/${OLD_VERSION}/text" > /tmp/old.txt
+cdx "cdx://doc/${NEW_VERSION}/text" > /tmp/new.txt
+
+# Normalize internal self-links before comparing
+sed -E 's#cdx://doc/[A-Z0-9_]+/text\\?part=[A-Za-z0-9_]+#INTERNAL_LINK#g' /tmp/old.txt > /tmp/old.norm
+sed -E 's#cdx://doc/[A-Z0-9_]+/text\\?part=[A-Za-z0-9_]+#INTERNAL_LINK#g' /tmp/new.txt > /tmp/new.norm
+
+diff -u /tmp/old.norm /tmp/new.norm | sed -n '1,120p'
 ```
+
+If the full diff is noisy, re-diff only the changed `part` with `text?part=<elementId>` or marker extraction from the full text.
+
+For full change-tracing workflows, see `references/law-changes.md`.
 
 ### Workflow 3: Extract All Paragraphs to JSON
 
@@ -328,7 +344,7 @@ diff /tmp/old.txt /tmp/current.txt | head -50
 DOC_ID="CR26785_2026_01_01"
 
 # Get TOC with paragraph info
-cdx -s "cdx://doc/${DOC_ID}/toc" | \
+cdx "cdx://doc/${DOC_ID}/toc" | \
   jq '[.. | objects | select(.elementId? | startswith("paragraf")) | {
     paragraph: .title,
     elementId: .elementId,
@@ -343,7 +359,7 @@ cdx -s "cdx://doc/${DOC_ID}/toc" | \
 DOC_ID="CR26785_2026_01_01"
 
 # Search for definition patterns
-cdx -s "cdx://doc/${DOC_ID}/text" | \
+cdx "cdx://doc/${DOC_ID}/text" | \
   grep -n "se rozumí\|znamená\|je definován"
 ```
 
@@ -357,7 +373,7 @@ CACHE_FILE="/tmp/codexis_${DOC_ID}.txt"
 
 # Download once
 if [ ! -f "$CACHE_FILE" ]; then
-  cdx -s "cdx://doc/${DOC_ID}/text" > "$CACHE_FILE"
+  cdx "cdx://doc/${DOC_ID}/text" > "$CACHE_FILE"
 fi
 
 # Use cached file
@@ -372,7 +388,7 @@ sed -n '100,200p' "$CACHE_FILE"
 Remove anchors for cleaner reading:
 
 ```bash
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | \
+cdx "cdx://doc/CR26785_2026_01_01/text" | \
   sed 's/\[id: #[^]]*\]//g' | \
   sed 's/\[?part=[^]]*\]//g'
 ```
@@ -380,20 +396,20 @@ cdx -s "cdx://doc/CR26785_2026_01_01/text" | \
 ### Convert Links to Plain Text
 
 ```bash
-cdx -s "cdx://doc/CR26785_2026_01_01/text" | \
+cdx "cdx://doc/CR26785_2026_01_01/text" | \
   sed 's/\[\([^]]*\)\](cdx:\/\/[^)]*)/\1/g'
 ```
 
 ### Count Paragraphs
 
 ```bash
-cdx -s "cdx://doc/CR26785_2026_01_01/toc" | \
+cdx "cdx://doc/CR26785_2026_01_01/toc" | \
   jq '[.. | objects | select(.elementId? | startswith("paragraf"))] | length'
 ```
 
 ### Get TOC as Flat List
 
 ```bash
-cdx -s "cdx://doc/CR26785_2026_01_01/toc" | \
+cdx "cdx://doc/CR26785_2026_01_01/toc" | \
   jq '[.. | objects | select(.title) | {title, level, elementId}]'
 ```

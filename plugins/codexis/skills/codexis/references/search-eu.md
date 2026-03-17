@@ -3,11 +3,10 @@
 Search for EU regulations, directives, and decisions.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{"query": "GDPR", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/EU" \
 
 ```
 POST cdx://search/EU
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -104,8 +103,7 @@ Content-Type: application/json
 ### Search GDPR-Related Documents
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{
     "query": "GDPR ochrana osobních údajů",
     "limit": 10
@@ -115,8 +113,7 @@ cdx -s -X POST "cdx://search/EU" \
 ### Search EU Regulations Only
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{
     "query": "potraviny bezpečnost",
     "typ": ["Nařízení"],
@@ -127,8 +124,7 @@ cdx -s -X POST "cdx://search/EU" \
 ### Search by CELEX Number
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{
     "query": "32016R0679",
     "limit": 5
@@ -138,8 +134,7 @@ cdx -s -X POST "cdx://search/EU" \
 ### Search Recent EU Legislation
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{
     "query": "umělá inteligence AI",
     "issuedFrom": "2024-01-01",
@@ -151,8 +146,7 @@ cdx -s -X POST "cdx://search/EU" \
 ### Search by Domain
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{
     "query": "*",
     "oblast": ["Životní prostředí"],
@@ -164,8 +158,7 @@ cdx -s -X POST "cdx://search/EU" \
 ### Search Directives for Transposition
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{
     "query": "digitální služby",
     "typ": ["Směrnice"],
@@ -184,27 +177,26 @@ EU documents have TOC and versions:
 DOC_ID="EU213382"
 
 # Get full text
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/text"
 
 # Get TOC
-cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
+cdx "cdx://doc/${DOC_ID}/toc" | jq '.'
 
 # Get versions
-cdx -s "cdx://doc/${DOC_ID}/versions" | jq '.'
+cdx "cdx://doc/${DOC_ID}/versions" | jq '.'
 ```
 
 ### Find Implementing Czech Legislation
 
 ```bash
-cdx -s "cdx://doc/EU213382/related?type=SOUVISEJICI_LEGISLATIVA_CR&limit=10" | \
+cdx "cdx://doc/EU213382/related?type=SOUVISEJICI_LEGISLATIVA_CR&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Group by Document Type
 
 ```bash
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{"query": "finanční trhy", "limit": 50}' | \
   jq '.results | group_by(.docType) | map({type: .[0].docType, count: length})'
 ```

@@ -1,13 +1,12 @@
 # Global Search (ALL)
 
-Search across all data sources simultaneously.
+Search across all data sources simultaneously. Use this only for orientation when the relevant source is unclear; do not treat it as the final authority for citations or extraction.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/ALL" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ALL" \
   -d '{"query": "insolvence", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/ALL" \
 
 ```
 POST cdx://search/ALL
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -28,7 +27,7 @@ Content-Type: application/json
 }
 ```
 
-**Note:** Global search has fewer filtering options than source-specific searches.
+**Note:** Global search has fewer filtering options than source-specific searches and should be followed by a source-specific search before final use.
 
 ## Response Schema
 
@@ -66,13 +65,20 @@ Content-Type: application/json
 `docUrl` may contain source-specific query hints (for example `?part=...`).  
 For deterministic workflows, use `docId` and call explicit endpoints (`/meta`, `/text`, `/toc`, `/related`) as needed.
 
+## Important Limitations
+
+- `ALL` is exploratory, not authoritative resolution.
+- Results may include base legislation IDs instead of version IDs.
+- Results may surface mixed identifier families such as `LIBERIS...` commentary IDs or `BOOKS...` records.
+- `BOOKS...` records may appear in `ALL` even though there is no documented dedicated `search/BOOKS` endpoint and the record may not be directly retrievable via `/doc/...`.
+- After using `ALL`, rerun the query in the relevant source (`CR`, `EU`, `JD`, `ES`, `COMMENT`, `LT`, `VS`) before citing, extracting, or linking for the user.
+
 ## Examples
 
 ### Search All Sources
 
 ```bash
-cdx -s -X POST "cdx://search/ALL" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ALL" \
   -d '{
     "query": "odpovědnost za škodu",
     "limit": 20
@@ -82,8 +88,7 @@ cdx -s -X POST "cdx://search/ALL" \
 ### Group Results by Source
 
 ```bash
-cdx -s -X POST "cdx://search/ALL" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ALL" \
   -d '{
     "query": "ochrana osobních údajů",
     "limit": 50
@@ -93,8 +98,7 @@ cdx -s -X POST "cdx://search/ALL" \
 ### Filter Results by Source (Client-Side)
 
 ```bash
-cdx -s -X POST "cdx://search/ALL" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ALL" \
   -d '{
     "query": "GDPR",
     "limit": 50
@@ -104,8 +108,7 @@ cdx -s -X POST "cdx://search/ALL" \
 ### Get Top Result from Each Source
 
 ```bash
-cdx -s -X POST "cdx://search/ALL" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ALL" \
   -d '{
     "query": "smlouva o dílo",
     "limit": 50
@@ -118,43 +121,44 @@ cdx -s -X POST "cdx://search/ALL" \
 - Exploring a topic across multiple domains
 - Don't know which source is most relevant
 - Need to see the distribution across sources
-- Initial research phase
+- Doing an initial reconnaissance pass before switching to a specific source
 
 **Use source-specific search when:**
 - Know the target source (e.g., only need laws)
 - Need advanced filtering (validity dates, facets)
 - Need comprehensive results from one source
 - Performance is critical (ALL is slower)
+- You need a stable document ID for linking or extraction
 
 ## Workflow: Topic Research
 
-1. Start with global search to understand the landscape:
+1. If the source is unknown, start with global search to understand the landscape:
 ```bash
-cdx -s -X POST "cdx://search/ALL" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ALL" \
   -d '{"query": "insolvence", "limit": 50}' | \
   jq '.results | group_by(.source) | map({source: .[0].source, count: length})'
 ```
 
-2. Identify most relevant sources from distribution
+2. Identify the most relevant source or sources from the distribution.
 
-3. Drill down with source-specific searches:
+3. Rerun the query in the relevant source and resolve the final document there:
 ```bash
 # If legislation is most relevant
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{"query": "insolvence", "validNow": true, "limit": 20}'
 ```
 
+4. Only after source-specific resolution should you fetch `/meta`, `/text`, `/toc`, or build user-facing `cdx://doc/...` links.
+
 ## Combining with Relations
 
-After finding a key document via global search, explore its relations:
+After finding a promising document family via global search, resolve the final document in its source first, then explore its relations:
 
 ```bash
 # Get relation counts
 DOC_ID="CR26785"
-cdx -s "cdx://doc/${DOC_ID}/related/counts" | jq '.'
+cdx "cdx://doc/${DOC_ID}/related/counts" | jq '.'
 
 # Get specific relations
-cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&limit=10"
+cdx "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&limit=10"
 ```

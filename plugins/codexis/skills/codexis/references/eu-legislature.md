@@ -3,11 +3,11 @@
 EU legislation documents share similar structure with Czech legislation: time versions, table of contents, and full text. This guide covers EU-specific patterns.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
 DOC_ID="EU213382"
-cdx -s "cdx://doc/${DOC_ID}/meta"
+cdx "cdx://doc/${DOC_ID}/meta"
 ```
 
 ## Document Structure
@@ -22,7 +22,7 @@ EU documents consist of:
 
 ```bash
 DOC_ID="EU213382"
-cdx -s "cdx://doc/${DOC_ID}/meta" | jq '.'
+cdx "cdx://doc/${DOC_ID}/meta" | jq '.'
 ```
 
 Key fields:
@@ -36,14 +36,14 @@ Key fields:
 
 ```bash
 DOC_ID="EU213382"
-cdx -s "cdx://doc/${DOC_ID}/versions" | jq '.'
+cdx "cdx://doc/${DOC_ID}/versions" | jq '.'
 ```
 
 ### Get Specific Version
 
 ```bash
 VERSION_ID="EU213382_2024_01_01"
-cdx -s "cdx://doc/${VERSION_ID}/text"
+cdx "cdx://doc/${VERSION_ID}/text"
 ```
 
 ## Table of Contents (TOC)
@@ -54,7 +54,7 @@ EU documents have hierarchical TOC similar to Czech laws. Use TOC for discovery 
 
 ```bash
 DOC_ID="EU213382"
-cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
+cdx "cdx://doc/${DOC_ID}/toc" | jq '.'
 ```
 
 ### EU Document Structure
@@ -69,14 +69,14 @@ EU regulations typically follow this hierarchy:
 
 ```bash
 # Find Article 5
-cdx -s "cdx://doc/EU213382/toc" | \
+cdx "cdx://doc/EU213382/toc" | \
   jq '.. | objects | select(.title? | contains("Článek 5"))'
 ```
 
 ### List All Articles
 
 ```bash
-cdx -s "cdx://doc/EU213382/toc" | \
+cdx "cdx://doc/EU213382/toc" | \
   jq '.. | objects | select(.title? | startswith("Článek")) | {title, elementId, startLine, endLine}'
 ```
 
@@ -86,7 +86,7 @@ cdx -s "cdx://doc/EU213382/toc" | \
 
 ```bash
 DOC_ID="EU213382"
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/text"
 ```
 
 ### EU Text Format
@@ -104,7 +104,7 @@ EU document text follows similar patterns to Czech laws:
 DOC_ID="EU213382"
 ARTICLE_PART="CL5"
 
-cdx -s "cdx://doc/${DOC_ID}/text" | \
+cdx "cdx://doc/${DOC_ID}/text" | \
   awk -v section="${ARTICLE_PART}" '
     $0 == "[?part=" section "]" {capture=1}
     capture {
@@ -122,20 +122,20 @@ Use this only if marker extraction fails. Always validate that output starts wit
 DOC_ID="EU213382"
 TARGET="Článek 5"
 
-LINES=$(cdx -s "cdx://doc/${DOC_ID}/toc" | \
+LINES=$(cdx "cdx://doc/${DOC_ID}/toc" | \
   jq -r ".. | objects | select(.title? | contains(\"${TARGET}\")) | \"\(.startLine),\(.endLine)\"")
 
-cdx -s "cdx://doc/${DOC_ID}/text" | sed -n "${LINES}p"
+cdx "cdx://doc/${DOC_ID}/text" | sed -n "${LINES}p"
 ```
 
 ### Search Within Text
 
 ```bash
 # Find all references to "osobní údaje"
-cdx -s "cdx://doc/EU213382/text" | grep -i "osobní údaje"
+cdx "cdx://doc/EU213382/text" | grep -i "osobní údaje"
 
 # Find with context
-cdx -s "cdx://doc/EU213382/text" | grep -B2 -A5 "Článek 5"
+cdx "cdx://doc/EU213382/text" | grep -B2 -A5 "Článek 5"
 ```
 
 ## Practical Workflows
@@ -145,13 +145,12 @@ cdx -s "cdx://doc/EU213382/text" | grep -B2 -A5 "Článek 5"
 ```bash
 # GDPR is typically EU document with CELEX 32016R0679
 # First find the docId
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{"query": "32016R0679", "limit": 1}' | jq -r '.results[0].docId'
 
 # Then get specific article
 DOC_ID="EU_GDPR_DOC_ID"
-cdx -s "cdx://doc/${DOC_ID}/toc" | \
+cdx "cdx://doc/${DOC_ID}/toc" | \
   jq '.. | objects | select(.title? | contains("Článek 17")) | {title, elementId}'
 ```
 
@@ -159,13 +158,12 @@ cdx -s "cdx://doc/${DOC_ID}/toc" | \
 
 ```bash
 # Find EU directive
-cdx -s -X POST "cdx://search/EU" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/EU" \
   -d '{"query": "směrnice digitální služby", "typ": ["Směrnice"], "limit": 3}'
 
 # Get related Czech legislation
 DOC_ID="EU_DIRECTIVE_ID"
-cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -173,10 +171,10 @@ cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
 
 ```bash
 # Get EU regulation text
-cdx -s "cdx://doc/EU_DOC_ID/text" > /tmp/eu_text.txt
+cdx "cdx://doc/EU_DOC_ID/text" > /tmp/eu_text.txt
 
 # Get Czech implementing law
-cdx -s "cdx://doc/CR_DOC_ID/text" > /tmp/cr_text.txt
+cdx "cdx://doc/CR_DOC_ID/text" > /tmp/cr_text.txt
 
 # Search for common terms
 grep -i "sankce" /tmp/eu_text.txt
@@ -189,12 +187,12 @@ EU regulations have recitals before the main articles:
 
 ```bash
 # Recitals are typically before "Článek 1"
-cdx -s "cdx://doc/EU213382/toc" | \
+cdx "cdx://doc/EU213382/toc" | \
   jq '.. | objects | select(.title? | contains("Článek 1")) | .startLine'
 
 # Get text before that line
 START_LINE=<from_above>
-cdx -s "cdx://doc/EU213382/text" | head -$((START_LINE - 1))
+cdx "cdx://doc/EU213382/text" | head -$((START_LINE - 1))
 ```
 
 ## EU-Specific Considerations
@@ -222,14 +220,14 @@ Document type codes:
 For directives (Směrnice), find implementing Czech laws:
 
 ```bash
-cdx -s "cdx://doc/EU_DIRECTIVE_ID/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/EU_DIRECTIVE_ID/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Finding EU Court Interpretation
 
 ```bash
-cdx -s "cdx://doc/EU_DOC_ID/related?type=SOUVISEJICI_PREDPISY_ESD_ESLP" | \
+cdx "cdx://doc/EU_DOC_ID/related?type=SOUVISEJICI_PREDPISY_ESD_ESLP" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -246,7 +244,7 @@ cdx -s "cdx://doc/EU_DOC_ID/related?type=SOUVISEJICI_PREDPISY_ESD_ESLP" | \
 ### Clean Text
 
 ```bash
-cdx -s "cdx://doc/EU213382/text" | \
+cdx "cdx://doc/EU213382/text" | \
   sed 's/\[id: #[^]]*\]//g' | \
   sed 's/\[?part=[^]]*\]//g'
 ```
@@ -254,13 +252,13 @@ cdx -s "cdx://doc/EU213382/text" | \
 ### Extract Chapter Structure
 
 ```bash
-cdx -s "cdx://doc/EU213382/toc" | \
+cdx "cdx://doc/EU213382/toc" | \
   jq '[.. | objects | select(.level <= 2) | {title, level}]'
 ```
 
 ### Count Articles
 
 ```bash
-cdx -s "cdx://doc/EU213382/toc" | \
+cdx "cdx://doc/EU213382/toc" | \
   jq '[.. | objects | select(.title? | startswith("Článek"))] | length'
 ```

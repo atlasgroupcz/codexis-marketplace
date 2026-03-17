@@ -3,11 +3,11 @@
 Documents in CODEXIS are interconnected through various relation types. This guide covers how to explore, count, and filter these relationships.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
 DOC_ID="CR26785"
-cdx -s "cdx://doc/${DOC_ID}/related/counts"
+cdx "cdx://doc/${DOC_ID}/related/counts"
 ```
 
 ## Relation Endpoints
@@ -23,7 +23,7 @@ First, understand what relations exist for a document:
 
 ```bash
 DOC_ID="CR26785"
-cdx -s "cdx://doc/${DOC_ID}/related/counts" | jq '.'
+cdx "cdx://doc/${DOC_ID}/related/counts" | jq '.'
 ```
 
 Response:
@@ -66,13 +66,29 @@ Response:
 | `PREKLAD` | Translations | CR, EU |
 | `ALL` | All relations | All |
 
+## Amendment Provenance
+
+For amendment-tracking questions, start with relation counts and then choose the relation type deliberately.
+
+- `PASIVNI_NOVELA` answers: `what amended this law?`
+- `AKTIVNI_NOVELA` answers: `what does this law amend?`
+- `DUVODOVA_ZPRAVA` is optional explanatory follow-up, not the primary proof of a change
+
+Default order:
+1. `/related/counts`
+2. `PASIVNI_NOVELA`
+3. `AKTIVNI_NOVELA` if the user asks the inverse question
+4. `DUVODOVA_ZPRAVA` only when explanation is needed
+
+For full versions-plus-diff workflows, see `references/law-changes.md`.
+
 ## Getting Related Documents
 
 ### Basic Query
 
 ```bash
 DOC_ID="CR26785"
-cdx -s "cdx://doc/${DOC_ID}/related" | jq '.'
+cdx "cdx://doc/${DOC_ID}/related" | jq '.'
 ```
 
 ### Query Parameters
@@ -113,28 +129,28 @@ cdx -s "cdx://doc/${DOC_ID}/related" | jq '.'
 ### Get Related Case Law
 
 ```bash
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=10" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 ```
 
 ### Get Related EU Legislation
 
 ```bash
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_PREDPISY_EU&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_PREDPISY_EU&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Get Implementing Regulations
 
 ```bash
-cdx -s "cdx://doc/CR26785/related?type=PROVADECI_PREDPIS&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=PROVADECI_PREDPIS&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Get Commentaries
 
 ```bash
-cdx -s "cdx://doc/CR26785/related?type=COMMENT&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=COMMENT&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -144,7 +160,7 @@ Get relations for a specific paragraph/section:
 
 ```bash
 # Relations for paragraph 89 of Civil Code
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&part=paragraf89&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&part=paragraf89&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -156,13 +172,13 @@ This is useful for finding case law interpreting a specific provision.
 
 ```bash
 # First page
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=0"
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=0"
 
 # Second page
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=20"
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=20"
 
 # Third page
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=40"
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&limit=20&offset=40"
 ```
 
 ### Get All Related Documents (Scripted)
@@ -174,14 +190,14 @@ LIMIT=100
 OFFSET=0
 
 # Get total count first
-TOTAL=$(cdx -s "cdx://doc/${DOC_ID}/related/counts" | \
+TOTAL=$(cdx "cdx://doc/${DOC_ID}/related/counts" | \
   jq -r ".counts[] | select(.type == \"${TYPE}\") | .count")
 
 echo "Total: $TOTAL"
 
 # Iterate through pages
 while [ $OFFSET -lt $TOTAL ]; do
-  cdx -s "cdx://doc/${DOC_ID}/related?type=${TYPE}&limit=${LIMIT}&offset=${OFFSET}" | \
+  cdx "cdx://doc/${DOC_ID}/related?type=${TYPE}&limit=${LIMIT}&offset=${OFFSET}" | \
     jq -r '.results[] | "\(.docId)\t\(.title)"'
   OFFSET=$((OFFSET + LIMIT))
 done
@@ -192,14 +208,14 @@ done
 ### Sort by Date (Most Recent First)
 
 ```bash
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&sort=date&order=desc&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_JUDIKATURA&sort=date&order=desc&limit=10" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 ```
 
 ### Sort by Title (Alphabetically)
 
 ```bash
-cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_LEGISLATIVA_CR&sort=title&order=asc&limit=10" | \
+cdx "cdx://doc/CR26785/related?type=SOUVISEJICI_LEGISLATIVA_CR&sort=title&order=asc&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -211,15 +227,15 @@ cdx -s "cdx://doc/CR26785/related?type=SOUVISEJICI_LEGISLATIVA_CR&sort=title&ord
 DOC_ID="CR26785"
 
 # 1. Get overview of all relations
-cdx -s "cdx://doc/${DOC_ID}/related/counts" | \
+cdx "cdx://doc/${DOC_ID}/related/counts" | \
   jq '.counts[] | "\(.name): \(.count)"' -r
 
 # 2. Get recent case law
-cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&sort=date&limit=5" | \
+cdx "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&sort=date&limit=5" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 
 # 3. Get implementing regulations
-cdx -s "cdx://doc/${DOC_ID}/related?type=PROVADECI_PREDPIS" | \
+cdx "cdx://doc/${DOC_ID}/related?type=PROVADECI_PREDPIS" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -228,14 +244,20 @@ cdx -s "cdx://doc/${DOC_ID}/related?type=PROVADECI_PREDPIS" | \
 ```bash
 DOC_ID="CR26785"
 
+# Check that amendment relations exist
+cdx "cdx://doc/${DOC_ID}/related/counts" | \
+  jq '.counts[] | select(.type == "PASIVNI_NOVELA" or .type == "AKTIVNI_NOVELA")'
+
 # Laws that amended this one
-cdx -s "cdx://doc/${DOC_ID}/related?type=PASIVNI_NOVELA&sort=date" | \
+cdx "cdx://doc/${DOC_ID}/related?type=PASIVNI_NOVELA&sort=date&order=desc&limit=10" | \
   jq '.results[] | {docId, title, date: .validFrom}'
 
 # Laws this one amends
-cdx -s "cdx://doc/${DOC_ID}/related?type=AKTIVNI_NOVELA" | \
+cdx "cdx://doc/${DOC_ID}/related?type=AKTIVNI_NOVELA&sort=date&order=desc&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
+
+Use this workflow to identify amendment provenance. Use `references/law-changes.md` when you also need target-date detection, version selection, or a diff of the changed wording.
 
 ### Workflow 3: Find Paragraph-Specific Case Law
 
@@ -244,7 +266,7 @@ DOC_ID="CR26785"
 PARAGRAPH="paragraf89"
 
 # Get case law for specific paragraph
-cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&part=${PARAGRAPH}&limit=10" | \
+cdx "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&part=${PARAGRAPH}&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -255,12 +277,12 @@ cdx -s "cdx://doc/${DOC_ID}/related?type=SOUVISEJICI_JUDIKATURA&part=${PARAGRAPH
 CR_DOC="CR26785"
 
 # Get related EU legislation
-cdx -s "cdx://doc/${CR_DOC}/related?type=SOUVISEJICI_PREDPISY_EU" | \
+cdx "cdx://doc/${CR_DOC}/related?type=SOUVISEJICI_PREDPISY_EU" | \
   jq '.results[] | {docId, title}'
 
 # For each EU doc, find other Czech implementations
 EU_DOC="EU213382"
-cdx -s "cdx://doc/${EU_DOC}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/${EU_DOC}/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -271,7 +293,7 @@ DOC_ID="CR26785"
 TYPE="SOUVISEJICI_JUDIKATURA"
 
 echo "docId,title,date" > relations.csv
-cdx -s "cdx://doc/${DOC_ID}/related?type=${TYPE}&limit=100" | \
+cdx "cdx://doc/${DOC_ID}/related?type=${TYPE}&limit=100" | \
   jq -r '.results[] | [.docId, .title, .validFrom] | @csv' >> relations.csv
 ```
 

@@ -3,11 +3,10 @@
 Search for contract specimens and templates.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/VS" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/VS" \
   -d '{"query": "kupní smlouva", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/VS" \
 
 ```
 POST cdx://search/VS
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -74,8 +73,7 @@ Content-Type: application/json
 ### Search Purchase Agreements
 
 ```bash
-cdx -s -X POST "cdx://search/VS" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/VS" \
   -d '{
     "query": "kupní smlouva",
     "limit": 10
@@ -85,8 +83,7 @@ cdx -s -X POST "cdx://search/VS" \
 ### Search Employment Contracts
 
 ```bash
-cdx -s -X POST "cdx://search/VS" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/VS" \
   -d '{
     "query": "pracovní smlouva",
     "kategorie": ["Pracovní právo (vzory dle zákoníku práce)"],
@@ -97,8 +94,7 @@ cdx -s -X POST "cdx://search/VS" \
 ### Search Lease Agreements
 
 ```bash
-cdx -s -X POST "cdx://search/VS" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/VS" \
   -d '{
     "query": "nájemní smlouva",
     "limit": 10
@@ -108,8 +104,7 @@ cdx -s -X POST "cdx://search/VS" \
 ### Search by Author
 
 ```bash
-cdx -s -X POST "cdx://search/VS" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/VS" \
   -d '{
     "query": "*",
     "autor": ["CODEXIS publishing"],
@@ -125,20 +120,20 @@ Templates do not have TOC (`/toc` currently returns HTTP 500) - fetch full text:
 
 ```bash
 DOC_ID="VS1000018"
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Save Template to File
 
 ```bash
 DOC_ID="VS1000018"
-cdx -s "cdx://doc/${DOC_ID}/text" > template.txt
+cdx "cdx://doc/${DOC_ID}/text" > template.txt
 ```
 
 ### Find Related Legislation
 
 ```bash
-cdx -s "cdx://doc/VS1000018/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/VS1000018/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 

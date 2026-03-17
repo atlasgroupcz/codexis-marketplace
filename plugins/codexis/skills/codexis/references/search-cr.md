@@ -3,11 +3,10 @@
 Search for Czech laws, decrees, regulations, and municipal documents.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{"query": "občanský zákoník", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/CR" \
 
 ```
 POST cdx://search/CR
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -103,8 +102,7 @@ Common values:
 ### Search for Currently Valid Laws
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{
     "query": "daň z příjmů",
     "validNow": true,
@@ -116,8 +114,7 @@ cdx -s -X POST "cdx://search/CR" \
 ### Search Laws Valid at Specific Date
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{
     "query": "občanský zákoník",
     "validAt": "2010-01-01",
@@ -128,8 +125,7 @@ cdx -s -X POST "cdx://search/CR" \
 ### Search Recent Changes
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{
     "query": "stavební zákon",
     "changedFrom": "2024-01-01",
@@ -141,8 +137,7 @@ cdx -s -X POST "cdx://search/CR" \
 ### Search Municipal Documents
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{
     "query": "Praha",
     "typ": ["Obecně závazná vyhláška", "Nařízení obce"],
@@ -155,8 +150,7 @@ cdx -s -X POST "cdx://search/CR" \
 
 ```bash
 # Search broadly and extract unique types
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{"query": "*", "limit": 50}' \
   | jq '[.results[].docType] | unique'
 ```
@@ -166,8 +160,7 @@ cdx -s -X POST "cdx://search/CR" \
 ### Extract Document IDs for Further Processing
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{"query": "zákoník práce", "validNow": true, "limit": 5}' \
   | jq -r '.results[].docId'
 ```
@@ -177,8 +170,7 @@ cdx -s -X POST "cdx://search/CR" \
 `docId` is already version-specific in CR search results.
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{"query": "trestní zákoník", "validNow": true, "limit": 3}' \
   | jq -r '.results[].docId'
 ```
@@ -186,8 +178,7 @@ cdx -s -X POST "cdx://search/CR" \
 ### Filter by Multiple Document Types
 
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{
     "query": "ochrana osobních údajů",
     "typ": ["Zákon", "Nařízení vlády", "Vyhláška"],

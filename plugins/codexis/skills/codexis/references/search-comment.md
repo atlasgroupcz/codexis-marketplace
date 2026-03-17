@@ -3,11 +3,10 @@
 Search for LIBERIS legal commentaries on Czech legislation.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/COMMENT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/COMMENT" \
   -d '{"query": "nájem bytu", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
 
 ```
 POST cdx://search/COMMENT
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -75,8 +74,7 @@ Content-Type: application/json
 ### Search Commentaries on a Topic
 
 ```bash
-cdx -s -X POST "cdx://search/COMMENT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/COMMENT" \
   -d '{
     "query": "kupní smlouva",
     "limit": 10
@@ -86,8 +84,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
 ### Find Commentaries for Specific Law
 
 ```bash
-cdx -s -X POST "cdx://search/COMMENT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/COMMENT" \
   -d '{
     "query": "občanský zákoník",
     "relatedWithItem": "CR26785",
@@ -98,8 +95,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
 ### Find Commentary for Specific Paragraph
 
 ```bash
-cdx -s -X POST "cdx://search/COMMENT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/COMMENT" \
   -d '{
     "query": "*",
     "relatedWithItem": "CR26785",
@@ -111,8 +107,7 @@ cdx -s -X POST "cdx://search/COMMENT" \
 ### Search Recent Commentaries
 
 ```bash
-cdx -s -X POST "cdx://search/COMMENT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/COMMENT" \
   -d '{
     "query": "GDPR ochrana údajů",
     "issuedFrom": "2023-01-01",
@@ -129,13 +124,13 @@ Commentaries do not have TOC (`/toc` currently returns HTTP 500) - fetch full te
 
 ```bash
 DOC_ID="COMMENT76521"
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Find Related Legislation
 
 ```bash
-cdx -s "cdx://doc/COMMENT112807/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/COMMENT112807/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -143,19 +138,17 @@ cdx -s "cdx://doc/COMMENT112807/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
 
 1. Search for relevant law:
 ```bash
-cdx -s -X POST "cdx://search/CR" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/CR" \
   -d '{"query": "nájem bytu", "validNow": true, "limit": 3}'
 ```
 
 2. Find commentaries for that law:
 ```bash
-cdx -s -X POST "cdx://search/COMMENT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/COMMENT" \
   -d '{"query": "nájem bytu", "relatedWithItem": "CR26785_2026_01_01", "limit": 5}'
 ```
 
 3. Get commentary text:
 ```bash
-cdx -s "cdx://doc/COMMENT_DOC_ID/text"
+cdx "cdx://doc/COMMENT_DOC_ID/text"
 ```

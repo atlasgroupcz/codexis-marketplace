@@ -3,11 +3,10 @@
 Search for EU Court of Justice and ECHR rulings.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/ES" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ES" \
   -d '{"query": "privacy", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/ES" \
 
 ```
 POST cdx://search/ES
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -81,8 +80,7 @@ Content-Type: application/json
 ### Search EU Court Judgments
 
 ```bash
-cdx -s -X POST "cdx://search/ES" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ES" \
   -d '{
     "query": "ochrana spotřebitele",
     "typ": ["Rozsudek"],
@@ -93,8 +91,7 @@ cdx -s -X POST "cdx://search/ES" \
 ### Search GDPR-Related Decisions
 
 ```bash
-cdx -s -X POST "cdx://search/ES" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ES" \
   -d '{
     "query": "GDPR osobní údaje",
     "limit": 10
@@ -104,8 +101,7 @@ cdx -s -X POST "cdx://search/ES" \
 ### Search Recent Decisions
 
 ```bash
-cdx -s -X POST "cdx://search/ES" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ES" \
   -d '{
     "query": "volný pohyb zboží",
     "issuedFrom": "2024-01-01",
@@ -117,8 +113,7 @@ cdx -s -X POST "cdx://search/ES" \
 ### Search by Case Number
 
 ```bash
-cdx -s -X POST "cdx://search/ES" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/ES" \
   -d '{
     "query": "C-383/23",
     "limit": 5
@@ -133,21 +128,21 @@ ES documents often expose a lightweight generated TOC (`SEKCE...` element IDs). 
 
 ```bash
 DOC_ID="ES64859"
-cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/toc" | jq '.'
+cdx "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Find Related EU Legislation
 
 ```bash
-cdx -s "cdx://doc/ES64859/related?type=SOUVISEJICI_PREDPISY_EU" | \
+cdx "cdx://doc/ES64859/related?type=SOUVISEJICI_PREDPISY_EU" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Find Related Czech Legislation
 
 ```bash
-cdx -s "cdx://doc/ES64859/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/ES64859/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 

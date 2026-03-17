@@ -3,11 +3,10 @@
 Search for legal publications and articles.
 
 ## cdx Usage
-Use `cdx` for requests. It accepts standard curl flags and `cdx://` URLs.
+Use `cdx` for requests. It is opinionated: it runs silently by default, and `-d` implies `POST` plus `Content-Type: application/json` unless you override them.
 
 ```bash
-cdx -s -X POST "cdx://search/LT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/LT" \
   -d '{"query": "smlouva", "limit": 5}'
 ```
 
@@ -15,7 +14,7 @@ cdx -s -X POST "cdx://search/LT" \
 
 ```
 POST cdx://search/LT
-Content-Type: application/json
+JSON request body
 ```
 
 ## Request Schema
@@ -69,8 +68,7 @@ Content-Type: application/json
 ### Search Legal Articles
 
 ```bash
-cdx -s -X POST "cdx://search/LT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/LT" \
   -d '{
     "query": "odpovědnost za škodu",
     "limit": 10
@@ -80,8 +78,7 @@ cdx -s -X POST "cdx://search/LT" \
 ### Search Recent Publications
 
 ```bash
-cdx -s -X POST "cdx://search/LT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/LT" \
   -d '{
     "query": "GDPR ochrana údajů",
     "issuedFrom": "2024-01-01",
@@ -93,8 +90,7 @@ cdx -s -X POST "cdx://search/LT" \
 ### Search by Topic
 
 ```bash
-cdx -s -X POST "cdx://search/LT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/LT" \
   -d '{
     "query": "insolvence úpadek",
     "limit": 15
@@ -109,21 +105,21 @@ LT documents often expose a generated TOC (`SEKCE...` element IDs). Prefer TOC +
 
 ```bash
 DOC_ID="LT146061"
-cdx -s "cdx://doc/${DOC_ID}/toc" | jq '.'
-cdx -s "cdx://doc/${DOC_ID}/text"
+cdx "cdx://doc/${DOC_ID}/toc" | jq '.'
+cdx "cdx://doc/${DOC_ID}/text"
 ```
 
 ### Find Related Legislation
 
 ```bash
-cdx -s "cdx://doc/LT146061/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
+cdx "cdx://doc/LT146061/related?type=SOUVISEJICI_LEGISLATIVA_CR" | \
   jq '.results[] | {docId, title}'
 ```
 
 ### Find Related Case Law
 
 ```bash
-cdx -s "cdx://doc/LT146061/related?type=SOUVISEJICI_JUDIKATURA" | \
+cdx "cdx://doc/LT146061/related?type=SOUVISEJICI_JUDIKATURA" | \
   jq '.results[] | {docId, title}'
 ```
 
@@ -131,17 +127,16 @@ cdx -s "cdx://doc/LT146061/related?type=SOUVISEJICI_JUDIKATURA" | \
 
 1. Search literature for academic perspective:
 ```bash
-cdx -s -X POST "cdx://search/LT" \
-  -H 'Content-Type: application/json' \
+cdx "cdx://search/LT" \
   -d '{"query": "bezdůvodné obohacení", "limit": 5}'
 ```
 
 2. Find related legislation cited in articles:
 ```bash
-cdx -s "cdx://doc/LT_DOC_ID/related?type=SOUVISEJICI_LEGISLATIVA_CR"
+cdx "cdx://doc/LT_DOC_ID/related?type=SOUVISEJICI_LEGISLATIVA_CR"
 ```
 
 3. Find supporting case law:
 ```bash
-cdx -s "cdx://doc/LT_DOC_ID/related?type=SOUVISEJICI_JUDIKATURA"
+cdx "cdx://doc/LT_DOC_ID/related?type=SOUVISEJICI_JUDIKATURA"
 ```
