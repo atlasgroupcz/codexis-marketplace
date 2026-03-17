@@ -10,14 +10,19 @@ const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
 const UPLOAD_ENDPOINT: &str = "http://localhost:8086/rest/llm/gemini/upload";
 
-const TRANSCRIPT_PROMPT: &str = "Transcribe all spoken dialogue in this media file.\n\
-    Output ONLY a valid JSON array with no markdown formatting, no code fences, no extra text.\n\
-    Each element must have exactly these fields:\n\
-    - \"text\": the spoken words for that segment\n\
-    - \"startSecond\": start time in seconds (number)\n\
-    - \"endSecond\": end time in seconds (number)\n\n\
-    Example: [{\"text\":\"Hello everyone\",\"startSecond\":0,\"endSecond\":1.5},{\"text\":\"Welcome to the meeting\",\"startSecond\":1.5,\"endSecond\":3.2}]\n\n\
-    Transcribe every segment of speech. Be precise with timestamps. Output raw JSON only.";
+const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
+    Use this exact format:\n\n\
+    [MM:SS] Speaker text here\n\
+    [MM:SS] (scene) Description of what is shown on screen\n\n\
+    Rules:\n\
+    - One line per speech segment or scene change\n\
+    - Timestamp in [MM:SS] format at the start of each line\n\
+    - Verbatim transcription of all spoken dialogue\n\
+    - Identify speakers if distinguishable (e.g. [00:05] Moderator: ...)\n\
+    - Mark visual descriptions with (scene) prefix: on-screen text, slides, graphics, camera changes\n\
+    - Note significant audio cues with (audio) prefix: music, sound effects, silence\n\
+    - No extra commentary, headers, or formatting — just timestamped lines\n\
+    - Do not use markdown, code fences, or any wrapper";
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -57,14 +62,13 @@ fn main() {
         }
 
         let base_name = transcript_filename(source, is_youtube);
-        let transcript_path = transcript_dir.join(format!("{}.transcript.json", base_name));
+        let transcript_path = transcript_dir.join(format!("{}.transcript.txt", base_name));
         if let Err(e) = fs::write(&transcript_path, &text) {
             eprintln!("error: failed to write transcript: {}", e);
             std::process::exit(1);
         }
 
-        eprintln!("transcript saved: {}", transcript_path.display());
-        println!("{}", text);
+        println!("{}", transcript_path.display());
     } else {
         if args.len() < 2 {
             eprintln!("error: missing query");

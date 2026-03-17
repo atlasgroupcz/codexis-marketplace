@@ -27,17 +27,19 @@ Before answering any question about a media file, generate a detailed transcript
 video-analyze transcript <source>
 ```
 
-The binary automatically saves the transcript to `.transcripts/<filename>.transcript.json` in the current working directory (e.g. `meeting.mp4` → `.transcripts/meeting.mp4.transcript.json`, YouTube → `.transcripts/youtube-<video_id>.transcript.json`). The transcript content is also printed to stdout.
+The command prints the **file path** to stdout (e.g. `.transcripts/meeting.mp4.transcript.txt`). The transcript itself is saved to that file — read it with `readFile` to access the content.
 
-The transcript is output as a JSON array of `{ text, startSecond, endSecond }` segments, compatible with the AI SDK transcription component. Produced by Gemini Pro.
+The transcript uses a simple timestamped format with spoken dialogue, scene descriptions, and audio cues. Produced by Gemini Pro.
+
+**Important:** Use a generous shell timeout (e.g. `timeoutMs: 300000`) — transcription of long media can take several minutes.
 
 ### Step 2: Answer from the transcript
 
-Use the transcript to answer the user's question. The content is available both from stdout and from the saved file at `.transcripts/`. In most cases, the transcript contains everything you need.
+Read the transcript file and use its contents to answer the user's question. In most cases, the transcript contains everything you need.
 
 ### Step 3: Fall back to direct query only if needed
 
-If the transcript does not contain enough information to answer the user's question (e.g. they ask about a very specific visual detail, a color, a logo, text on screen that wasn't captured), use the direct query mode to ask Gemini a targeted follow-up:
+If the transcript does not contain enough information to answer the user's question (e.g. they ask about a very specific visual detail not captured in the transcript), use the direct query mode:
 
 ```bash
 video-analyze <source> "<specific question about what's missing>"
@@ -48,9 +50,12 @@ This re-sends the media to Gemini with your specific question. Only use this whe
 ## Examples
 
 ```bash
-# Step 1: Always start by generating a transcript
+# Step 1: Generate transcript (prints file path)
 video-analyze transcript /home/codexis/meeting.mp4
-video-analyze transcript "https://www.youtube.com/watch?v=abc123"
+# → .transcripts/meeting.mp4.transcript.txt
+
+# Then read the transcript
+readFile .transcripts/meeting.mp4.transcript.txt
 
 # Step 3: Only if transcript is insufficient, ask a targeted question
 video-analyze /home/codexis/meeting.mp4 "What color is the logo shown at 2:15?"
@@ -68,5 +73,6 @@ video-analyze /home/codexis/meeting.mp4 "What color is the logo shown at 2:15?"
 
 ## Output
 
-The command prints the Gemini response text directly to stdout.
-On error, it prints an error message to stderr and exits with a non-zero code.
+- `transcript` mode: prints the saved file path to stdout
+- Query mode: prints the Gemini response text directly to stdout
+- On error, prints an error message to stderr and exits with a non-zero code.
