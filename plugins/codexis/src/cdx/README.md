@@ -1,10 +1,14 @@
 # cdx CLI wrapper
 
-`cdx` is a thin wrapper around `curl`.
+`cdx` is an opinionated wrapper around `curl`.
 
-It adds two behaviors:
+It adds these defaults:
 - rewrites `cdx://...` URLs to CODEXIS CDX API URLs
 - adds Authorization header from required configuration
+- adds `-sS` unless you explicitly choose curl output or verbosity flags
+- when you pass `-d` or `--data*`, it assumes JSON request body and adds `POST` plus `Content-Type: application/json` unless you override them
+
+You can still pass explicit curl flags when you need to override the defaults.
 
 ## Requirements
 
@@ -62,9 +66,17 @@ error.
 ## Usage
 
 ```bash
-cdx cdx://doc/CR10_2025_01_01
-cdx -sS -X POST cdx://search -H 'Content-Type: application/json' -d '{"q":"test"}'
+cdx "cdx://doc/CR10_2025_01_01/text"
+cdx "cdx://search/CR" -d '{"query":"test","limit":5}'
 ```
+
+Equivalent explicit curl-style request:
+
+```bash
+cdx -X POST -H 'Content-Type: application/json' "cdx://search/CR" -d '{"query":"test","limit":5}'
+```
+
+The explicit form is still supported, but the short form is the default style.
 
 ## Integration with `cdx-daemon`
 
