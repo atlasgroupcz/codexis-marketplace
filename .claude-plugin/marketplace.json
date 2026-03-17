@@ -46,6 +46,12 @@
       "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
       "source": "./plugins/video-analyze",
       "category": "media"
+    },
+    {
+      "name": "presentation",
+      "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
+      "source": "./plugins/presentation",
+      "category": "document-processing"
     }
   ]
 }
