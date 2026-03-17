@@ -1,0 +1,17 @@
+{
+  "name": "presentation",
+  "version": "1.0.0",
+  "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "presentation",
+    "slides",
+    "powerpoint",
+    "pptx"
+  ],
+  "license": "PROPRIETARY",
+  "skills": "./skills"
+}
