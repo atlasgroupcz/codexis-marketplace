@@ -5,7 +5,7 @@ use std::path::Path;
 use std::process::Command;
 
 const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
-const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro";
+const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
 const UPLOAD_ENDPOINT: &str = "http://localhost:8086/rest/llm/gemini/upload";
