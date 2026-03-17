@@ -15,28 +15,45 @@ allowed-tools: shell
 
 Analyze video/audio files or YouTube URLs using the `video-analyze` command.
 
-## Usage
+## Workflow
+
+When the user asks you to work with a media file, **always follow this two-step approach:**
+
+### Step 1: Generate transcript first
+
+Before answering any question about a media file, generate a detailed transcript:
 
 ```bash
-video-analyze <source> <query>
+video-analyze transcript <source>
 ```
 
-- `source` — absolute file path or YouTube URL
-- `query` — what to analyze (e.g. "Transcribe this video", "Summarize the key points")
+The binary automatically saves the transcript to `.transcripts/<filename>.transcript.md` in the current working directory (e.g. `meeting.mp4` → `.transcripts/meeting.mp4.transcript.md`, YouTube → `.transcripts/youtube-<video_id>.transcript.md`). The transcript content is also printed to stdout.
 
-The command handles file upload, authentication, and Gemini API calls automatically.
+The transcript includes timestamps, spoken dialogue, scene descriptions, and audio cues — produced by Gemini Pro for maximum detail.
+
+### Step 2: Answer from the transcript
+
+Use the transcript to answer the user's question. The content is available both from stdout and from the saved file at `.transcripts/`. In most cases, the transcript contains everything you need.
+
+### Step 3: Fall back to direct query only if needed
+
+If the transcript does not contain enough information to answer the user's question (e.g. they ask about a very specific visual detail, a color, a logo, text on screen that wasn't captured), use the direct query mode to ask Gemini a targeted follow-up:
+
+```bash
+video-analyze <source> "<specific question about what's missing>"
+```
+
+This re-sends the media to Gemini with your specific question. Only use this when the transcript genuinely lacks the answer.
 
 ## Examples
 
 ```bash
-# Transcribe a local video
-video-analyze /home/codexis/meeting.mp4 "Transcribe this video with timestamps and speaker identification"
+# Step 1: Always start by generating a transcript
+video-analyze transcript /home/codexis/meeting.mp4
+video-analyze transcript "https://www.youtube.com/watch?v=abc123"
 
-# Summarize a YouTube video
-video-analyze "https://www.youtube.com/watch?v=abc123" "Summarize the key points"
-
-# Extract specific information
-video-analyze /home/codexis/presentation.mp4 "List all products mentioned with their prices"
+# Step 3: Only if transcript is insufficient, ask a targeted question
+video-analyze /home/codexis/meeting.mp4 "What color is the logo shown at 2:15?"
 ```
 
 ## Supported formats

@@ -1,12 +1,22 @@
 use std::env;
 use std::fmt::Write as FmtWrite;
 use std::fs;
+use std::path::Path;
 use std::process::Command;
 
-const MODEL: &str = "gemini-3.1-flash-lite-preview";
+const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
+const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
 const UPLOAD_ENDPOINT: &str = "http://localhost:8086/rest/llm/gemini/upload";
+
+const TRANSCRIPT_PROMPT: &str = "Create a detailed transcript of this media file. Include:\n\
+    - Precise timestamps for every segment (e.g. [00:00] - [00:15])\n\
+    - Full verbatim transcription of all spoken dialogue with speaker identification where possible\n\
+    - Visual scene descriptions between dialogue sections (what is shown, camera angles, on-screen text, graphics)\n\
+    - Notable audio cues (music, sound effects, silence)\n\
+    - Transitions and scene changes\n\n\
+    Format the output as a chronological timeline. Be thorough and capture every detail.";
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -16,22 +26,73 @@ fn main() {
         std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
     }
 
-    if args.len() < 2 {
-        eprintln!("error: missing query");
-        print_usage();
-        std::process::exit(1);
-    }
+    let is_transcript = args.first().map(|a| a == "transcript").unwrap_or(false);
 
-    let source = &args[0];
-    let query = args[1..].join(" ");
-    let api_key = load_api_key();
-    let daemon_auth = load_daemon_auth();
-    let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
+    if is_transcript {
+        if args.len() < 2 {
+            eprintln!("error: missing source");
+            eprintln!("Usage: video-analyze transcript <source>");
+            std::process::exit(1);
+        }
+        let source = &args[1];
+        let api_key = load_api_key();
+        let daemon_auth = load_daemon_auth();
+        let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
-    let (file_uri, mime_type) = if is_youtube {
-        (source.clone(), String::new())
+        let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
+        let response = query_gemini(&api_key, &file_uri, &mime_type, TRANSCRIPT_PROMPT, is_youtube, MODEL_TRANSCRIPT);
+        let text = extract_response_text(&response);
+        if text.is_empty() {
+            eprintln!("{}", response);
+            std::process::exit(1);
+        }
+
+        let transcript_dir = Path::new(".transcripts");
+        if !transcript_dir.exists() {
+            if let Err(e) = fs::create_dir_all(transcript_dir) {
+                eprintln!("error: failed to create .transcripts directory: {}", e);
+                std::process::exit(1);
+            }
+        }
+
+        let base_name = transcript_filename(source, is_youtube);
+        let transcript_path = transcript_dir.join(format!("{}.transcript.md", base_name));
+        if let Err(e) = fs::write(&transcript_path, &text) {
+            eprintln!("error: failed to write transcript: {}", e);
+            std::process::exit(1);
+        }
+
+        eprintln!("transcript saved: {}", transcript_path.display());
+        println!("{}", text);
     } else {
-        let upload_json = upload_file(source, &daemon_auth);
+        if args.len() < 2 {
+            eprintln!("error: missing query");
+            print_usage();
+            std::process::exit(1);
+        }
+
+        let source = &args[0];
+        let query = args[1..].join(" ");
+        let api_key = load_api_key();
+        let daemon_auth = load_daemon_auth();
+        let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
+
+        let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
+        let response = query_gemini(&api_key, &file_uri, &mime_type, &query, is_youtube, MODEL_QUERY);
+        let text = extract_response_text(&response);
+        if text.is_empty() {
+            eprintln!("{}", response);
+            std::process::exit(1);
+        }
+        println!("{}", text);
+    }
+}
+
+fn upload_source(source: &str, daemon_auth: &str, is_youtube: bool) -> (String, String) {
+    if is_youtube {
+        (source.to_string(), String::new())
+    } else {
+        let upload_json = upload_file(source, daemon_auth);
         let uri = extract_json_field(&upload_json, "uri");
         let mime = extract_json_field(&upload_json, "mimeType");
         if uri.is_empty() {
@@ -39,22 +100,31 @@ fn main() {
             std::process::exit(1);
         }
         (uri, mime)
-    };
-
-    let response = query_gemini(&api_key, &file_uri, &mime_type, &query, is_youtube);
-    let text = extract_response_text(&response);
-    if text.is_empty() {
-        eprintln!("{}", response);
-        std::process::exit(1);
     }
-    println!("{}", text);
+}
+
+fn transcript_filename(source: &str, is_youtube: bool) -> String {
+    if is_youtube {
+        let video_id = source
+            .split("v=").nth(1).map(|s| s.split('&').next().unwrap_or(s))
+            .or_else(|| source.split("youtu.be/").nth(1).map(|s| s.split('?').next().unwrap_or(s)))
+            .unwrap_or("unknown");
+        format!("youtube-{}", video_id)
+    } else {
+        Path::new(source)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    }
 }
 
 fn print_usage() {
-    eprintln!("Usage: video-analyze <source> <query>");
+    eprintln!("Usage:");
+    eprintln!("  video-analyze transcript <source>    Generate detailed transcript");
+    eprintln!("  video-analyze <source> <query>       Ask a question about media");
     eprintln!();
     eprintln!("  <source>  Local file path or YouTube URL");
-    eprintln!("  <query>   What to analyze (e.g. \"Transcribe this video\")");
+    eprintln!("  <query>   What to analyze (e.g. \"Summarize the key points\")");
 }
 
 fn load_api_key() -> String {
@@ -127,10 +197,10 @@ fn upload_file(path: &str, daemon_auth: &str) -> String {
     }
 }
 
-fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_youtube: bool) -> String {
+fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_youtube: bool, model: &str) -> String {
     let url = format!(
         "http://localhost:4000/vertex_ai/v1/projects/{}/locations/{}/publishers/google/models/{}:generateContent",
-        VERTEX_PROJECT, VERTEX_LOCATION, MODEL
+        VERTEX_PROJECT, VERTEX_LOCATION, model
     );
 
     let file_data = if is_youtube {
