@@ -6,32 +6,36 @@ export const overviewFixture: OverviewResponse = {
   tracked_documents: [
     {
       uuid: '2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d',
-      codexisId: 'cdx://doc/A10001',
-      name: 'Zakonik prace',
+      codexisId: 'cdx://doc/CR13986',
+      name: 'Zákoník práce (262/2006 Sb.)',
       added_on: '2026-02-18T09:15:00Z',
       tracking_type: 'all',
       unconfirmed_changes: 1,
       total_changes: 1,
+      groups: [],
     },
     {
       uuid: '6a6de088-1909-4d80-a764-d2fcb8ec4eb2',
-      codexisId: 'cdx://doc/B10002',
-      name: 'Obcansky zakonik',
+      codexisId: 'cdx://doc/CR26785',
+      name: 'Občanský zákoník (89/2012 Sb.)',
       added_on: '2026-02-22T13:20:00Z',
       tracking_type: 'document_changes',
       unconfirmed_changes: 0,
       total_changes: 1,
+      groups: [],
     },
     {
       uuid: 'e748e106-0fd0-4662-9576-6dd5a1949570',
-      codexisId: 'cdx://doc/C10003',
-      name: 'Spravni rad',
+      codexisId: 'cdx://doc/CR8977',
+      name: 'Zákon o DPH (235/2004 Sb.)',
       added_on: '2026-02-25T07:40:00Z',
       tracking_type: 'related_documents_changes',
       unconfirmed_changes: 1,
       total_changes: 1,
+      groups: [],
     },
   ],
+  groups: [],
 }
 
 export const detailFixture: DetailResponse = {
@@ -39,26 +43,31 @@ export const detailFixture: DetailResponse = {
   generated_at: '2026-02-25T09:00:00Z',
   document: {
     uuid: '2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d',
-    codexisId: 'cdx://doc/A10001',
-    name: 'Zakonik prace',
+    codexisId: 'cdx://doc/CR13986',
+    name: 'Zákoník práce (262/2006 Sb.)',
     added_on: '2026-02-18T09:15:00Z',
     tracking_type: 'all',
     parts: [],
     changes: [
       {
         source_documents: [
-          { codexisId: 'cdx://doc/A10001', name: 'Zakonik prace' },
+          { codexisId: 'cdx://doc/CR13986', name: 'Zákoník práce (262/2006 Sb.)' },
         ],
         detected_on: '2026-02-19T08:30:00Z',
-        effective_on: '2026-03-01',
+        effective_on: '2026-01-01',
         change_type: 'document_change',
-        description_md: 'Text zakona byl novelizovan v casti pracovni doby.',
+        description_md: 'Novela zákoníku práce v oblasti pracovní doby a dovolené.',
         confirmed_on: null,
+        compare_url: 'https://next.codexis.cz/porovnat?sourceDocId=CR13986_2025_01_01&targetDocId=CR13986_2026_01_01&puvodniZneni=CR13986_2025_01_01&viewType=INSIDE&changesOnly=true',
+        amendments: [{ id: 'CR156140_2026_01_01', name: '270/2025 Sb. novela zákoníku práce' }],
       },
     ],
     total_changes: 1,
     unconfirmed_changes: 1,
+    groups: [],
+    user_notes: [],
   },
+  groups: [],
 }
 
 export const detailWithPartsFixture: DetailResponse = {
@@ -66,27 +75,32 @@ export const detailWithPartsFixture: DetailResponse = {
   generated_at: '2026-02-25T09:00:00Z',
   document: {
     uuid: '6a6de088-1909-4d80-a764-d2fcb8ec4eb2',
-    codexisId: 'cdx://doc/B10002',
-    name: 'Obcansky zakonik',
+    codexisId: 'cdx://doc/CR26785',
+    name: 'Občanský zákoník (89/2012 Sb.)',
     added_on: '2026-02-22T13:20:00Z',
     tracking_type: 'document_changes',
     parts: [
-      { partId: 'paragraf123', label: '\u00a7 123' },
+      { partId: 'paragraf89', label: '\u00a7 89' },
       { partId: 'paragraf2991', label: '\u00a7 2991' },
     ],
     changes: [
       {
         source_documents: [
-          { codexisId: 'cdx://doc/B10002', name: 'Obcansky zakonik' },
+          { codexisId: 'cdx://doc/CR26785', name: 'Občanský zákoník (89/2012 Sb.)' },
         ],
         detected_on: '2026-02-23T11:00:00Z',
-        effective_on: '2026-04-01',
+        effective_on: '2026-01-01',
         change_type: 'document_change',
-        description_md: 'Uprava ustanoveni \u00a7 2991.',
+        description_md: 'Úprava ustanovení \u00a7 2991 o náhradě škody.',
         confirmed_on: '2026-02-24T07:00:00Z',
+        compare_url: 'https://next.codexis.cz/porovnat?sourceDocId=CR26785_2025_01_01&targetDocId=CR26785_2026_01_01&puvodniZneni=CR26785_2025_01_01&viewType=INSIDE&changesOnly=true',
+        amendments: [],
       },
     ],
     total_changes: 1,
     unconfirmed_changes: 0,
+    groups: [],
+    user_notes: [],
   },
+  groups: [],
 }
