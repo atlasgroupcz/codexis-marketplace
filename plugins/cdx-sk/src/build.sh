@@ -51,6 +51,7 @@ build_crate() {
   echo "   installed -> $BIN_DIR/$bin_name"
 }
 
+build_crate "$SCRIPT_DIR/cdx-sk" "cdx-sk"
 build_crate "$SCRIPT_DIR/cdx-sk-link-rewriter" "cdx-sk-link-rewriter"
 
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

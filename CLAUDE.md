@@ -94,8 +94,32 @@ Documentation and instructions...
   },
   "keywords": ["relevant", "keywords"],
   "license": "PROPRIETARY",
+  "postInstall": "command to run after plugin installation (e.g. copy binaries from bin/ to system PATH)",
+  "postUninstall": "command to run after plugin uninstallation (e.g. remove binaries from system PATH)",
+  "onUpdate": "command to run after plugin update (e.g. replace binaries in system PATH)",
   "skills": "./skills"
 }
+```
+
+### Lifecycle Hooks
+
+Plugins support three lifecycle hooks executed as shell commands by the harness:
+
+- **`postInstall`** — runs after the plugin is installed
+- **`postUninstall`** — runs after the plugin is uninstalled
+- **`onUpdate`** — runs after the plugin is updated
+
+The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the plugin's installation directory.
+
+### Executables / Binaries
+
+Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to copy these binaries to a system PATH location (e.g. `/usr/local/bin/`) on install/update and remove them on uninstall.
+
+Example (from codexis plugin):
+```json
+"postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
+"postUninstall": "sudo rm -f /usr/local/bin/cdx /usr/local/bin/cdxctl",
+"onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl"
 ```
 
 ## A2UI Visualization Schema
