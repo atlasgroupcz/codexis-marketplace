@@ -25,6 +25,15 @@ export function DocumentListItem({ document, onClick }: DocumentListItemProps) {
           <span>&middot;</span>
           <span>{formatDate(document.added_on)}</span>
         </div>
+        {document.groups && document.groups.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {document.groups.map((g) => (
+              <Badge key={g.id} variant="outline" className="text-xs py-0">
+                {g.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
       <TrackingTypeBadge type={document.tracking_type} />
       {document.unconfirmed_changes > 0 && (

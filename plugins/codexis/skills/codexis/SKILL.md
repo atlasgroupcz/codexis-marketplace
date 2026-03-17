@@ -8,7 +8,7 @@ version: 1.2.0
 
 CODEXIS is a comprehensive Czech legal database providing structured access to legislation, case law, EU law, legal literature, and contract templates via a REST API.
 
-Use the `cdx` CLI for all requests. It accepts standard curl flags and `cdx://` URLs (for example `cdx://search/CR` or `cdx://doc/CR26785_2026_01_01/text`).
+Use the `cdx` CLI for all requests. It is located in this skill's directory — run it as `./cdx` from the skill base directory. It accepts standard curl flags and `cdx://` URLs (for example `cdx://search/CR` or `cdx://doc/CR26785_2026_01_01/text`). Do NOT search for it in PATH or other locations.
 
 ## Data Sources
 

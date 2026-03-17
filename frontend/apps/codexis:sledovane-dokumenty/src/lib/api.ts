@@ -1,5 +1,5 @@
-import { detailResponseSchema, overviewResponseSchema } from './schemas'
-import type { DetailResponse, OverviewResponse } from './schemas'
+import { actionResponseSchema, detailResponseSchema, overviewResponseSchema } from './schemas'
+import type { ActionResponse, DetailResponse, OverviewResponse } from './schemas'
 
 type RawChange = {
   confirmed_on?: string | null
@@ -154,4 +154,66 @@ export async function fetchDetail(uuid: string): Promise<DetailResponse> {
     }
     throw error
   }
+}
+
+export async function postAction(action: string, uuid: string, changeIndex?: number): Promise<ActionResponse> {
+  const url = new URL(getApiBase(), window.location.href).toString()
+  const body: Record<string, unknown> = { action, uuid }
+  if (changeIndex !== undefined) {
+    body.changeIndex = changeIndex
+  }
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  const json: unknown = await response.json()
+  return actionResponseSchema.parse(json)
+}
+
+export async function postNoteAction(
+  action: 'note_add' | 'note_remove',
+  uuid: string,
+  payload: Record<string, unknown>,
+): Promise<ActionResponse> {
+  const url = new URL(getApiBase(), window.location.href).toString()
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ action, uuid, ...payload }),
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  const json: unknown = await response.json()
+  return actionResponseSchema.parse(json)
+}
+
+export async function postGroupAction(
+  action: 'group_add' | 'group_remove' | 'group_delete' | 'group_rename',
+  payload: Record<string, unknown>,
+): Promise<ActionResponse> {
+  const url = new URL(getApiBase(), window.location.href).toString()
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ action, ...payload }),
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  const json: unknown = await response.json()
+  return actionResponseSchema.parse(json)
 }

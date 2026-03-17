@@ -22,6 +22,12 @@ export const documentPartSchema = z.object({
 })
 export type DocumentPart = z.infer<typeof documentPartSchema>
 
+export const amendmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+})
+export type Amendment = z.infer<typeof amendmentSchema>
+
 export const changeSchema = z.object({
   source_documents: z.array(sourceDocumentSchema),
   detected_on: z.string(),
@@ -29,8 +35,23 @@ export const changeSchema = z.object({
   change_type: changeTypeSchema,
   description_md: z.string(),
   confirmed_on: z.string().nullable(),
+  compare_url: z.string().optional(),
+  amendments: z.array(amendmentSchema).optional().default([]),
 })
 export type Change = z.infer<typeof changeSchema>
+
+export const groupRefSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+})
+export type GroupRef = z.infer<typeof groupRefSchema>
+
+export const groupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  members: z.array(z.string()),
+})
+export type Group = z.infer<typeof groupSchema>
 
 export const trackedDocumentSummarySchema = z.object({
   uuid: z.string(),
@@ -40,6 +61,7 @@ export const trackedDocumentSummarySchema = z.object({
   tracking_type: trackingTypeSchema,
   unconfirmed_changes: z.number(),
   total_changes: z.number(),
+  groups: z.array(groupRefSchema).optional().default([]),
 })
 export type TrackedDocumentSummary = z.infer<typeof trackedDocumentSummarySchema>
 
@@ -47,6 +69,7 @@ export const overviewResponseSchema = z.object({
   mode: z.literal('overview'),
   generated_at: z.string(),
   tracked_documents: z.array(trackedDocumentSummarySchema),
+  groups: z.array(groupSchema).optional().default([]),
 })
 export type OverviewResponse = z.infer<typeof overviewResponseSchema>
 
@@ -60,12 +83,21 @@ export const documentDetailSchema = z.object({
   changes: z.array(changeSchema),
   total_changes: z.number(),
   unconfirmed_changes: z.number(),
+  groups: z.array(groupRefSchema).optional().default([]),
+  user_notes: z.array(z.string()).optional().default([]),
 })
 export type DocumentDetail = z.infer<typeof documentDetailSchema>
+
+export const actionResponseSchema = z.object({
+  ok: z.boolean(),
+  error: z.string().optional(),
+})
+export type ActionResponse = z.infer<typeof actionResponseSchema>
 
 export const detailResponseSchema = z.object({
   mode: z.literal('detail'),
   generated_at: z.string(),
   document: documentDetailSchema,
+  groups: z.array(groupSchema).optional().default([]),
 })
 export type DetailResponse = z.infer<typeof detailResponseSchema>
