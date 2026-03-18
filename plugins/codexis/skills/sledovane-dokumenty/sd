@@ -12,6 +12,9 @@ Usage:
     ./sd group remove <codexisId> <groupName>
     ./sd group list
     ./sd group delete <groupName>
+    ./sd note add <codexisId> <text>
+    ./sd note list <codexisId>
+    ./sd note remove <codexisId> <index>
 
 Examples:
     ./sd add CR13986
@@ -25,6 +28,9 @@ Examples:
     ./sd group remove CR13986 Pracovní právo
     ./sd group list
     ./sd group delete Pracovní právo
+    ./sd note add CR13986 "zajímá mě pracovní doba"
+    ./sd note list CR13986
+    ./sd note remove CR13986 0
 """
 
 import datetime
@@ -128,14 +134,14 @@ def find_group(groups, name):
 
 
 def cdx_get(path):
-    """Call cdx binary and return parsed JSON or raw text."""
+    """Call cdx binary and return parsed JSON or raw text. Returns None on error."""
     result = subprocess.run(
         [CDX_BIN, "-s", path],
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
         print(f"ERROR: cdx failed for {path}: {result.stderr.strip()}")
-        sys.exit(1)
+        return None
     stdout = result.stdout.strip()
     try:
         data = json.loads(stdout)
@@ -148,19 +154,19 @@ def cdx_get(path):
             has_jwt = "CDX_API_JWT_AUTH" in os.environ
             has_url = "CODEXIS_API_URL" in os.environ
             print(f"  CDX_API_JWT_AUTH set: {has_jwt}, CODEXIS_API_URL set: {has_url}")
-        sys.exit(1)
+        return None
     return data
 
 
 def cdx_get_text(path):
-    """Call cdx binary and return raw text (for /text endpoints)."""
+    """Call cdx binary and return raw text (for /text endpoints). Returns None on error."""
     result = subprocess.run(
         [CDX_BIN, "-s", "-H", "Accept: text/plain", path],
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
         print(f"ERROR: cdx failed for {path}: {result.stderr.strip()}")
-        sys.exit(1)
+        return None
     stdout = result.stdout.strip()
     # Detect JSON error responses even when expecting text
     if stdout.startswith("{"):
@@ -168,7 +174,7 @@ def cdx_get_text(path):
             data = json.loads(stdout)
             if isinstance(data, dict) and "error" in data:
                 print(f"ERROR: CODEXIS API error for {path}: {data['error']}")
-                sys.exit(1)
+                return None
         except json.JSONDecodeError:
             pass
     return result.stdout
@@ -234,10 +240,8 @@ def build_per_section_changes(old_text, new_text):
 
     section_changes = []
     for pid in part_ids:
-        old_s = strip_part_markers(normalize_cdx_links(strip_changes_in_time(
-            extract_section(old_text, pid))))
-        new_s = strip_part_markers(normalize_cdx_links(strip_changes_in_time(
-            extract_section(new_text, pid))))
+        old_s = normalize_text(extract_section(old_text, pid))
+        new_s = normalize_text(extract_section(new_text, pid))
         if old_s == new_s:
             continue
         section_changes.append(f"### {pid}\nSTARÉ ZNĚNÍ:\n{old_s}\n\nNOVÉ ZNĚNÍ:\n{new_s}")
@@ -264,7 +268,7 @@ def ensure_check_automation():
     """Create a COMMAND automation for 'sd check' if none exists yet.
 
     Calls daemon GraphQL createAutomation. Idempotent — skips if an automation
-    with the same title already exists.
+    with a command ending in 'sd check' already exists.
     """
     daemon_url = os.environ.get("CDX_DAEMON_URL", DEFAULT_DAEMON_URL)
     daemon_auth = load_daemon_auth()
@@ -416,6 +420,11 @@ def strip_part_markers(text):
     return text
 
 
+def normalize_text(text):
+    """Strip temporal changes, normalize links, and remove part markers."""
+    return strip_part_markers(normalize_cdx_links(strip_changes_in_time(text)))
+
+
 
 
 # ── Commands ──────────────────────────────────────────────────────────────
@@ -428,6 +437,9 @@ def cmd_add(codexis_id, parts=None):
 
     # Verify document exists
     meta = get_meta(codexis_id)
+    if meta is None:
+        print(f"ERROR: Nepodařilo se ověřit dokument {codexis_id}.")
+        sys.exit(1)
     name = get_doc_name(meta)
     if not name:
         print(f"ERROR: Dokument {codexis_id} nebyl nalezen v CODEXIS.")
@@ -517,6 +529,143 @@ def cmd_list():
         print()
 
 
+def generate_summary(codexis_id, name, old_vid, new_vid, parts, user_notes):
+    """Fetch texts, build word changes, call llm_extract. Returns summary or None."""
+    if parts:
+        all_old = []
+        all_new = []
+        for part_id in parts:
+            old_text = cdx_get_text(f"cdx://doc/{old_vid}/text?part={part_id}")
+            new_text = cdx_get_text(f"cdx://doc/{new_vid}/text?part={part_id}")
+            if old_text is None or new_text is None:
+                return None
+            all_old.append(normalize_text(old_text))
+            all_new.append(normalize_text(new_text))
+        word_changes = extract_word_changes("\n\n".join(all_old), "\n\n".join(all_new), context_words=30)
+    else:
+        old_text = cdx_get_text(f"cdx://doc/{old_vid}/text")
+        new_text = cdx_get_text(f"cdx://doc/{new_vid}/text")
+        if old_text is None or new_text is None:
+            return None
+        word_changes = build_per_section_changes(old_text, new_text)
+        if not word_changes:
+            old_clean = normalize_text(old_text)
+            new_clean = normalize_text(new_text)
+            word_changes = extract_word_changes(old_clean, new_clean, context_words=30)
+
+    if not word_changes:
+        return None
+
+    prompt = (
+        f"Shrň věcné změny v předpisu '{name}'. "
+        "Vstup obsahuje sekce se STARÝM a NOVÝM ZNĚNÍM. "
+        "Popiš POUZE skutečné změny v textu zákona. "
+        "Přeskoč sekce kde se změnily jen poznámky autora, čísla vyhlášek nebo sdělení. "
+        "Odpověz česky, stručně, plynulým textem."
+    )
+    if user_notes:
+        notes_text = "; ".join(user_notes)
+        prompt += (
+            f"\n\nUživatele zvláště zajímá: {notes_text}. "
+            "Pokud se změny týkají těchto témat, zdůrazni to."
+        )
+    return llm_extract(word_changes, prompt)
+
+
+def summarize_pending_changes():
+    """Generate AI summaries for all changes with summary_pending=true."""
+    if not os.path.isdir(FOLLOWED_DIR):
+        return
+    for cid in sorted(os.listdir(FOLLOWED_DIR)):
+        s = load_state(cid)
+        if not s:
+            continue
+        name = s.get("name", cid)
+        parts = s.get("parts", [])
+        changed = False
+        for change in s.get("changes", []):
+            if not change.get("summary_pending"):
+                continue
+            old_vid = change.get("old_version_id")
+            new_vid = change.get("new_version_id")
+            if not old_vid or not new_vid:
+                continue
+            print(f"  {name}: generating summary ({old_vid} -> {new_vid})")
+            summary = generate_summary(cid, name, old_vid, new_vid, parts, s.get("user_notes", []))
+            if summary:
+                change["description_md"] = summary
+                change["summary_pending"] = False
+                changed = True
+                print(f"  {name}: summary done")
+        if changed:
+            save_state(cid, s)
+
+
+def compute_version_diff(baseline_vid, latest_vid, parts):
+    """Fetch texts and compute diff between two versions. Returns list of diff parts."""
+    diff_parts = []
+    if parts:
+        for part_id in parts:
+            old_text = cdx_get_text(f"cdx://doc/{baseline_vid}/text?part={part_id}")
+            new_text = cdx_get_text(f"cdx://doc/{latest_vid}/text?part={part_id}")
+            if old_text is None or new_text is None:
+                continue
+            old_clean = normalize_text(old_text)
+            new_clean = normalize_text(new_text)
+            if old_clean != new_clean:
+                diff = compute_diff(old_clean, new_clean, label=part_id)
+                diff_parts.append({"part": part_id, "diff": diff})
+                print(f"    {part_id}: změněn")
+            else:
+                print(f"    {part_id}: beze změn")
+    else:
+        old_text = cdx_get_text(f"cdx://doc/{baseline_vid}/text")
+        new_text = cdx_get_text(f"cdx://doc/{latest_vid}/text")
+        if old_text is None or new_text is None:
+            return diff_parts
+        old_clean = normalize_text(old_text)
+        new_clean = normalize_text(new_text)
+        if old_clean != new_clean:
+            diff = compute_diff(old_clean, new_clean)
+            diff_parts.append({"part": "full", "diff": diff})
+    return diff_parts
+
+
+def find_version_info(versions, version_id):
+    """Find a version entry by versionId. Returns dict or None."""
+    for v in versions:
+        if v.get("versionId") == version_id:
+            return v
+    return None
+
+
+def resolve_amendments(versions, latest_vid):
+    """Resolve amendment IDs to {id, name} dicts."""
+    version_info = find_version_info(versions, latest_vid)
+    amendment_ids = version_info.get("amendmentDocIds", []) if version_info else []
+    amendments = []
+    for aid in amendment_ids:
+        base_id = aid.split("_")[0] if "_" in aid else aid
+        meta = get_meta(base_id)
+        title = get_doc_name(meta) if meta else None
+        if not title:
+            title = aid
+        amendments.append({"id": aid, "name": title})
+    return amendments
+
+
+def build_compare_url(baseline_vid, latest_vid):
+    """Build CODEXIS comparison URL."""
+    return (
+        f"https://next.codexis.cz/porovnat"
+        f"?sourceDocId={baseline_vid}"
+        f"&targetDocId={latest_vid}"
+        f"&puvodniZneni={baseline_vid}"
+        f"&viewType=INSIDE"
+        f"&changesOnly=true"
+    )
+
+
 def cmd_check(codexis_id=None):
     if not os.path.isdir(FOLLOWED_DIR):
         print("Žádné sledované dokumenty.")
@@ -525,6 +674,7 @@ def cmd_check(codexis_id=None):
     ids = [codexis_id] if codexis_id else sorted(os.listdir(FOLLOWED_DIR))
     changes_found = 0
 
+    # Phase 1: Detect new versions
     for cid in ids:
         s = load_state(cid)
         if not s:
@@ -535,8 +685,6 @@ def cmd_check(codexis_id=None):
 
         name = s.get("name", cid)
         baseline_vid = s.get("baseline_version_id")
-
-        # Get current versions
         versions = get_versions(cid)
         latest_vid = get_latest_version_id(versions)
 
@@ -552,143 +700,34 @@ def cmd_check(codexis_id=None):
             print(f"  {name}: beze změn (verze {latest_vid})")
             continue
 
-        # New version detected — compute diff
+        # Skip if already detected
+        changes = s.get("changes", [])
+        if any(c.get("old_version_id") == baseline_vid and c.get("new_version_id") == latest_vid for c in changes):
+            save_state(cid, s)
+            print(f"  {name}: změna již zaznamenána ({baseline_vid} -> {latest_vid})")
+            continue
+
         print(f"  {name}: NOVÁ VERZE {latest_vid} (baseline: {baseline_vid})")
         changes_found += 1
 
-        parts = s.get("parts", [])
-        diff_parts = []
-        all_old_clean = []
-        all_new_clean = []
-
-        if parts:
-            # Diff only tracked parts
-            for part_id in parts:
-                old_text = cdx_get_text(f"cdx://doc/{baseline_vid}/text?part={part_id}")
-                new_text = cdx_get_text(f"cdx://doc/{latest_vid}/text?part={part_id}")
-                old_clean = strip_part_markers(normalize_cdx_links(strip_changes_in_time(old_text)))
-                new_clean = strip_part_markers(normalize_cdx_links(strip_changes_in_time(new_text)))
-                all_old_clean.append(old_clean)
-                all_new_clean.append(new_clean)
-                if old_clean != new_clean:
-                    diff = compute_diff(old_clean, new_clean, label=part_id)
-                    diff_parts.append({"part": part_id, "diff": diff})
-                    print(f"    {part_id}: změněn")
-                else:
-                    print(f"    {part_id}: beze změn")
-        else:
-            # Diff full text
-            old_text = cdx_get_text(f"cdx://doc/{baseline_vid}/text")
-            new_text = cdx_get_text(f"cdx://doc/{latest_vid}/text")
-            old_clean = strip_part_markers(normalize_cdx_links(strip_changes_in_time(old_text)))
-            new_clean = strip_part_markers(normalize_cdx_links(strip_changes_in_time(new_text)))
-            all_old_clean.append(old_clean)
-            all_new_clean.append(new_clean)
-            if old_clean != new_clean:
-                diff = compute_diff(old_clean, new_clean)
-                diff_parts.append({"part": "full", "diff": diff})
-
-        # Find amendment info and resolve names
-        amendment_ids = []
-        for v in versions:
-            if v.get("versionId") == latest_vid:
-                amendment_ids = v.get("amendmentDocIds", [])
-                break
-
-        amendments = []
-        for aid in amendment_ids:
-            base_id = aid.split("_")[0] if "_" in aid else aid
-            try:
-                meta = get_meta(base_id)
-                title = get_doc_name(meta) or aid
-            except SystemExit:
-                title = aid
-            amendments.append({"id": aid, "name": title})
-
-        # Find effective date
-        effective_on = None
-        for v in versions:
-            if v.get("versionId") == latest_vid:
-                effective_on = v.get("validFrom")
-                break
-
-        # Build description with AI summary
-        desc_lines = []
-        if diff_parts:
-            changed_parts = [d["part"] for d in diff_parts if d.get("diff")]
-            if changed_parts and changed_parts != ["full"]:
-                desc_lines.append(f"Změněné části: {', '.join(changed_parts)}")
-
-            # Try per-section diff first (much better AI results for large documents)
-            # For full-text tracking, split by TOC sections so AI gets targeted diffs
-            word_changes = None
-            if not parts:
-                word_changes = build_per_section_changes(old_text, new_text)
-
-            # Fallback to full-text word diff if per-section approach failed
-            if not word_changes:
-                word_changes = extract_word_changes(
-                    "\n\n".join(all_old_clean),
-                    "\n\n".join(all_new_clean),
-                    context_words=30,
-                )
-
-            if word_changes:
-                print(f"    AI input ({len(word_changes)} chars):\n{word_changes}\n---")
-                user_notes = s.get("user_notes", [])
-                prompt = (
-                    f"Shrň věcné změny v předpisu '{name}'. "
-                    "Vstup obsahuje sekce se STARÝM a NOVÝM ZNĚNÍM. "
-                    "Popiš POUZE skutečné změny v textu zákona. "
-                    "Přeskoč sekce kde se změnily jen poznámky autora, čísla vyhlášek nebo sdělení. "
-                    "Odpověz česky, stručně, plynulým textem."
-                )
-                if user_notes:
-                    notes_text = "; ".join(user_notes)
-                    prompt += (
-                        f"\n\nUživatele zvláště zajímá: {notes_text}. "
-                        "Pokud se změny týkají těchto témat, zdůrazni to."
-                    )
-                summary = llm_extract(word_changes, prompt)
-                if summary:
-                    desc_lines.append(summary)
-        if not desc_lines:
-            desc_lines.append(f"Nová verze dokumentu {name}, účinná od {effective_on or 'neznámo'}.")
-
-        compare_url = (
-            f"https://next.codexis.cz/porovnat"
-            f"?sourceDocId={baseline_vid}"
-            f"&targetDocId={latest_vid}"
-            f"&puvodniZneni={baseline_vid}"
-            f"&viewType=INSIDE"
-            f"&changesOnly=true"
-        )
-
-        new_change = {
+        version_info = find_version_info(versions, latest_vid)
+        changes.append({
             "detected_on": now_utc(),
-            "effective_on": effective_on,
+            "effective_on": version_info.get("validFrom") if version_info else None,
             "new_version_id": latest_vid,
             "old_version_id": baseline_vid,
-            "amendments": amendments,
-            "description_md": "\n".join(desc_lines),
-            "compare_url": compare_url,
-            "diffs": diff_parts,
+            "amendments": resolve_amendments(versions, latest_vid),
+            "description_md": "",
+            "compare_url": build_compare_url(baseline_vid, latest_vid),
+            "diffs": compute_version_diff(baseline_vid, latest_vid, s.get("parts", [])),
             "confirmed_on": None,
-        }
-
-        # Replace existing unconfirmed change for same baseline, or append
-        changes = s.get("changes", [])
-        replaced = False
-        for i, c in enumerate(changes):
-            if not c.get("confirmed_on") and c.get("old_version_id") == baseline_vid:
-                changes[i] = new_change
-                replaced = True
-                break
-        if not replaced:
-            changes.append(new_change)
+            "summary_pending": True,
+        })
         s["changes"] = changes
-
         save_state(cid, s)
+
+    # Phase 2: Generate AI summaries for all pending changes
+    summarize_pending_changes()
 
     if changes_found == 0:
         print("Žádné nové změny.")
@@ -942,7 +981,12 @@ def main():
             if len(sys.argv) < 5:
                 print("ERROR: Použití: ./sd note remove <codexisId> <index>")
                 sys.exit(1)
-            cmd_note_remove(sys.argv[3], int(sys.argv[4]))
+            try:
+                index = int(sys.argv[4])
+            except ValueError:
+                print(f"ERROR: index musí být číslo, dostal '{sys.argv[4]}'")
+                sys.exit(1)
+            cmd_note_remove(sys.argv[3], index)
         else:
             print(f"ERROR: neznámá akce '{sub}'. Použijte: add, list, remove")
             sys.exit(1)
