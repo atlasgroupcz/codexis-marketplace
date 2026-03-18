@@ -4,6 +4,7 @@ use crate::core::config::Config;
 use crate::core::error::CliError;
 use crate::core::http::{execute_get_request, execute_search_request, SearchFacetMode};
 use crate::core::schema::{render_search_schema, SearchSchemaKind};
+use crate::cz_law::CzLawCommand;
 use crate::get::GetArgs;
 use crate::sources::all::{SearchAllArgs, SEARCH_ALL_HELP};
 use crate::sources::comment::{SearchCommentArgs, SEARCH_COMMENT_HELP};
@@ -20,7 +21,7 @@ use crate::sources::vs::{SearchVsArgs, SEARCH_VS_HELP};
 #[command(
     name = "cdx-cli",
     version,
-    about = "CODEXIS CLI for search and cdx:// resource fetches",
+    about = "CODEXIS CLI for search, cdx:// resource fetches, and Czech law access",
     disable_version_flag = true,
     disable_help_subcommand = true,
     subcommand_required = true,
@@ -44,6 +45,17 @@ enum Commands {
 
     #[command(about = "Fetch a cdx:// resource", arg_required_else_help = true)]
     Get(GetArgs),
+
+    #[command(
+        name = "cz_law",
+        visible_alias = "cz-law",
+        about = "Fetch Czech law resources by number/year",
+        arg_required_else_help = true
+    )]
+    CzLaw {
+        #[command(subcommand)]
+        action: CzLawCommand,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -206,6 +218,7 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
     match cli.command {
         Commands::Search { source } => execute_search(source),
         Commands::Get(args) => execute_get(args),
+        Commands::CzLaw { action } => execute_cz_law(action),
     }
 }
 
@@ -234,6 +247,17 @@ fn execute_get(args: GetArgs) -> Result<(), CliError> {
         &config.auth_header,
         &args.resource,
         args.dry_run,
+    )
+}
+
+fn execute_cz_law(action: CzLawCommand) -> Result<(), CliError> {
+    let config = Config::load()?;
+    let resource = action.resource()?;
+    execute_get_request(
+        &config.base_url,
+        &config.auth_header,
+        &resource,
+        action.dry_run(),
     )
 }
 
@@ -321,6 +345,59 @@ mod tests {
                 assert_eq!(args.resource, "cdx://doc/JD1/meta");
             }
             _ => panic!("expected get command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_cz_law_meta_command() {
+        let cli = Cli::try_parse_from(["cdx-cli", "cz_law", "meta", "89/2012"]).unwrap();
+
+        match cli.command {
+            Commands::CzLaw {
+                action: CzLawCommand::Meta(args),
+            } => assert_eq!(args.law_ref, "89/2012"),
+            _ => panic!("expected cz_law meta command"),
+        }
+    }
+
+    #[test]
+    fn cli_accepts_cz_law_alias() {
+        let cli = Cli::try_parse_from(["cdx-cli", "cz-law", "versions", "89/2012"]).unwrap();
+
+        match cli.command {
+            Commands::CzLaw {
+                action: CzLawCommand::Versions(args),
+            } => assert_eq!(args.law_ref, "89/2012"),
+            _ => panic!("expected cz_law versions command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_cz_law_related_command() {
+        let cli = Cli::try_parse_from([
+            "cdx-cli",
+            "cz_law",
+            "related",
+            "89/2012",
+            "--type",
+            "SOUVISEJICI_JUDIKATURA",
+            "--limit",
+            "2",
+        ])
+        .unwrap();
+
+        match cli.command {
+            Commands::CzLaw {
+                action: CzLawCommand::Related(args),
+            } => {
+                assert_eq!(args.base.law_ref, "89/2012");
+                assert_eq!(
+                    args.relation_type.as_deref(),
+                    Some("SOUVISEJICI_JUDIKATURA")
+                );
+                assert_eq!(args.limit, Some(2));
+            }
+            _ => panic!("expected cz_law related command"),
         }
     }
 

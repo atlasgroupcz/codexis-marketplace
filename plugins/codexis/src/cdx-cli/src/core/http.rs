@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::process::{Command, Stdio};
+use std::process::{Command, Output, Stdio};
 
 use crate::core::error::CliError;
 
@@ -29,25 +29,8 @@ pub(crate) fn execute_search_request(
         return Ok(());
     }
 
-    let output = Command::new("curl")
-        .args(&curl_args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .output()
-        .map_err(CliError::CurlSpawn)?;
-
-    match output.status.code() {
-        Some(0) => {
-            print_response_body(&output.stdout, facet_mode)?;
-            Ok(())
-        }
-        Some(code) => Err(CliError::CommandExited {
-            command: "curl",
-            code,
-        }),
-        None => Err(CliError::CommandTerminated { command: "curl" }),
-    }
+    let output = execute_curl(&curl_args)?;
+    handle_curl_output(&output, |body| print_response_body(body, facet_mode))
 }
 
 pub(crate) fn execute_get_request(
@@ -63,26 +46,51 @@ pub(crate) fn execute_get_request(
         return Ok(());
     }
 
-    let status = Command::new("curl")
-        .args(&curl_args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()
-        .map_err(CliError::CurlSpawn)?;
+    let output = execute_curl(&curl_args)?;
+    handle_curl_output(&output, print_raw_response_body)
+}
 
-    match status.code() {
-        Some(0) => Ok(()),
-        Some(code) => Err(CliError::CommandExited {
-            command: "curl",
-            code,
-        }),
+fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
+    Command::new("curl")
+        .args(curl_args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(CliError::CurlSpawn)
+}
+
+fn handle_curl_output<F>(output: &Output, print_body: F) -> Result<(), CliError>
+where
+    F: Fn(&[u8]) -> Result<(), CliError>,
+{
+    match output.status.code() {
+        Some(0) => print_body(&output.stdout),
+        Some(code) => {
+            if !output.stdout.is_empty() {
+                print_body(&output.stdout)?;
+            }
+            Err(CliError::RequestFailed { code })
+        }
         None => Err(CliError::CommandTerminated { command: "curl" }),
     }
 }
 
 fn print_response_body(body: &[u8], facet_mode: SearchFacetMode) -> Result<(), CliError> {
     let rendered = render_search_output(body, facet_mode);
+    write_stdout(&rendered)
+}
+
+fn print_raw_response_body(body: &[u8]) -> Result<(), CliError> {
+    let rendered = String::from_utf8_lossy(body).into_owned();
+    write_stdout(&rendered)
+}
+
+fn write_stdout(rendered: &str) -> Result<(), CliError> {
+    if rendered.is_empty() {
+        return Ok(());
+    }
+
     let mut stdout = io::stdout().lock();
     stdout
         .write_all(rendered.as_bytes())
@@ -127,6 +135,7 @@ fn build_search_curl_args(
 ) -> Vec<String> {
     vec![
         "-sS".to_string(),
+        "--fail-with-body".to_string(),
         "-H".to_string(),
         auth_header.to_string(),
         "-X".to_string(),
@@ -146,6 +155,7 @@ fn build_get_curl_args(
 ) -> Result<Vec<String>, CliError> {
     Ok(vec![
         "-sS".to_string(),
+        "--fail-with-body".to_string(),
         "-H".to_string(),
         auth_header.to_string(),
         build_cdx_url(base_url, resource)?,
@@ -267,6 +277,7 @@ mod tests {
             args,
             vec![
                 "-sS",
+                "--fail-with-body",
                 "-H",
                 "Authorization: Bearer token",
                 "-X",
@@ -291,7 +302,7 @@ mod tests {
         );
 
         assert_eq!(
-            args[7],
+            args[8],
             "https://app.codexis.cz/rest/cdx-api/search/JD?fullFacets=true"
         );
     }
@@ -309,6 +320,7 @@ mod tests {
             args,
             vec![
                 "-sS",
+                "--fail-with-body",
                 "-H",
                 "Authorization: Bearer token",
                 "https://app.codexis.cz/rest/cdx-api/doc/CR10_2026_01_01/text",
@@ -325,7 +337,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(args[3], "https://app.codexis.cz/rest/cdx-api");
+        assert_eq!(args[4], "https://app.codexis.cz/rest/cdx-api");
     }
 
     #[test]

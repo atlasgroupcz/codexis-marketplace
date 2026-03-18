@@ -1,5 +1,6 @@
 mod cli;
 mod core;
+mod cz_law;
 mod get;
 mod sources;
 
@@ -10,7 +11,9 @@ fn main() {
     let cli = cli::Cli::parse();
 
     if let Err(error) = cli::run(cli) {
-        eprintln!("error: {error}");
+        if error.should_print() {
+            eprintln!("error: {error}");
+        }
         process::exit(error.exit_code());
     }
 }
