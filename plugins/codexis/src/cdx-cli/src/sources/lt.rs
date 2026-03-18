@@ -1,19 +1,10 @@
 use clap::Args;
 
 use crate::sources::common::{
-    IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs, StandardSortArgs,
+    IssuedDateArgs, JsonMap, SearchBaseArgs, SearchFacetArgs, SearchPayloadArgs, StandardSortArgs,
 };
 
-pub(crate) const SEARCH_LT_HELP: &str = r#"Search legal literature, practical guides, and articles.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --issued-from YYYY-MM-DD
-  --issued-to YYYY-MM-DD
-
-Example:
+pub(crate) const SEARCH_LT_HELP: &str = r#"Example:
   cdx-cli search LT --query "odpovědnost za škodu" --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -23,6 +14,9 @@ pub(crate) struct SearchLtArgs {
 
     #[command(flatten)]
     pub(crate) sort: StandardSortArgs,
+
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
 
     #[command(flatten)]
     pub(crate) issued: IssuedDateArgs,
@@ -38,7 +32,11 @@ impl SearchPayloadArgs for SearchLtArgs {
         self.issued.insert_into(payload);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
-        self.sort.is_present() || self.issued.is_present()
+        self.sort.is_present() || self.facets.is_present() || self.issued.is_present()
     }
 }

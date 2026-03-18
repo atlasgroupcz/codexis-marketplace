@@ -2,25 +2,10 @@ use clap::Args;
 
 use crate::sources::common::{
     insert_bool, insert_string, insert_string_array, ApprovedDateArgs, ChangedDateArgs, CrSortArgs,
-    EffectiveDateArgs, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+    EffectiveDateArgs, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchFacetArgs, SearchPayloadArgs,
 };
 
-pub(crate) const SEARCH_CR_HELP: &str = r#"Search Czech legislation, decrees, and municipal regulations.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --type VALUE           repeatable
-  --author VALUE         repeatable
-  --current
-  --valid-at YYYY-MM-DD
-  --issued-from / --issued-to
-  --effective-from / --effective-to
-  --approved-from / --approved-to
-  --changed-from / --changed-to
-
-Example:
+pub(crate) const SEARCH_CR_HELP: &str = r#"Example:
   cdx-cli search CR --query "občanský zákoník" --type Zákon --current --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -31,10 +16,13 @@ pub(crate) struct SearchCrArgs {
     #[command(flatten)]
     pub(crate) sort: CrSortArgs,
 
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
+
     #[arg(
         long = "type",
         visible_alias = "typ",
-        help = "Document type",
+        help = "Document type (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) types: Vec<String>,
@@ -42,7 +30,7 @@ pub(crate) struct SearchCrArgs {
     #[arg(
         long = "author",
         visible_alias = "autor",
-        help = "Author",
+        help = "Author (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) authors: Vec<String>,
@@ -87,8 +75,13 @@ impl SearchPayloadArgs for SearchCrArgs {
         self.changed.insert_into(payload);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
         self.sort.is_present()
+            || self.facets.is_present()
             || !self.types.is_empty()
             || !self.authors.is_empty()
             || self.current

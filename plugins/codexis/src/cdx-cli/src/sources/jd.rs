@@ -1,23 +1,11 @@
 use clap::Args;
 
 use crate::sources::common::{
-    insert_string_array, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
-    StandardSortArgs,
+    insert_string_array, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchFacetArgs,
+    SearchPayloadArgs, StandardSortArgs,
 };
 
-pub(crate) const SEARCH_JD_HELP: &str = r#"Search judicial decisions from Czech courts.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|CITEX|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC             default: DESC
-  --court VALUE          repeatable
-  --city VALUE           repeatable
-  --type VALUE           repeatable
-  --issued-from YYYY-MM-DD
-  --issued-to YYYY-MM-DD
-
-Example:
+pub(crate) const SEARCH_JD_HELP: &str = r#"Example:
   cdx-cli search JD --query "náhrada škody" --court "Nejvyšší soud" --type Rozsudek --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -28,10 +16,13 @@ pub(crate) struct SearchJdArgs {
     #[command(flatten)]
     pub(crate) sort: StandardSortArgs,
 
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
+
     #[arg(
         long = "court",
         visible_alias = "soud",
-        help = "Court",
+        help = "Court (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) courts: Vec<String>,
@@ -39,7 +30,7 @@ pub(crate) struct SearchJdArgs {
     #[arg(
         long = "city",
         visible_alias = "mesto",
-        help = "City",
+        help = "City (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) cities: Vec<String>,
@@ -47,7 +38,7 @@ pub(crate) struct SearchJdArgs {
     #[arg(
         long = "type",
         visible_alias = "typ",
-        help = "Decision type",
+        help = "Decision type (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) types: Vec<String>,
@@ -69,8 +60,13 @@ impl SearchPayloadArgs for SearchJdArgs {
         self.issued.insert_into(payload);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
         self.sort.is_present()
+            || self.facets.is_present()
             || !self.courts.is_empty()
             || !self.cities.is_empty()
             || !self.types.is_empty()

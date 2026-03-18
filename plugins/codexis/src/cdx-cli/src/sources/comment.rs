@@ -1,21 +1,11 @@
 use clap::Args;
 
 use crate::sources::common::{
-    insert_string, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs, StandardSortArgs,
+    insert_string, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchFacetArgs, SearchPayloadArgs,
+    StandardSortArgs,
 };
 
-pub(crate) const SEARCH_COMMENT_HELP: &str = r#"Search LIBERIS legal commentaries related to Czech legislation.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --issued-from YYYY-MM-DD
-  --issued-to YYYY-MM-DD
-  --related-doc DOC_ID
-  --related-part PART_ID
-
-Example:
+pub(crate) const SEARCH_COMMENT_HELP: &str = r#"Example:
   cdx-cli search COMMENT --query "nájem bytu" --related-doc CR26785 --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -25,6 +15,9 @@ pub(crate) struct SearchCommentArgs {
 
     #[command(flatten)]
     pub(crate) sort: StandardSortArgs,
+
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
 
     #[command(flatten)]
     pub(crate) issued: IssuedDateArgs,
@@ -56,8 +49,13 @@ impl SearchPayloadArgs for SearchCommentArgs {
         insert_string(payload, "relatedWithItemPart", &self.related_part);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
         self.sort.is_present()
+            || self.facets.is_present()
             || self.issued.is_present()
             || self.related_doc.is_some()
             || self.related_part.is_some()

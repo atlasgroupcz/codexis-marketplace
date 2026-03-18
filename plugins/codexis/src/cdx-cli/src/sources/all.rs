@@ -5,14 +5,7 @@ use crate::sources::common::{JsonMap, SearchBaseArgs, SearchPayloadArgs, Standar
 pub(crate) const SEARCH_ALL_HELP: &str = r#"Use ALL for orientation when the relevant source is not clear yet.
 Follow up with a source-specific search before citing or extracting.
 
-Key flags:
-  --query STRING
-  --sort RELEVANCE|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --limit N            default: 10
-  --offset N           default: 1
-
-Example:
+Examples:
   cdx-cli search ALL --query "insolvence" --limit 5
   cdx-cli search ALL '{"query":"insolvence","limit":5}'"#;
 

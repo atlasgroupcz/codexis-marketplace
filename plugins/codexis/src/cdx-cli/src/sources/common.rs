@@ -3,6 +3,7 @@ use serde_json::{Map, Value};
 use std::io::{self, Read};
 
 use crate::core::error::CliError;
+use crate::core::http::SearchFacetMode;
 use crate::core::schema::SearchSchemaKind;
 
 pub(crate) type JsonMap = Map<String, Value>;
@@ -33,13 +34,6 @@ pub(crate) struct SearchBaseArgs {
     pub(crate) dry_run: bool,
 
     #[arg(
-        long,
-        conflicts_with = "dry_run",
-        help = "Pretty-print JSON search output"
-    )]
-    pub(crate) human: bool,
-
-    #[arg(
         long = "schema-input",
         conflicts_with = "schema_output",
         help = "Print the stored input schema and exit"
@@ -52,6 +46,23 @@ pub(crate) struct SearchBaseArgs {
         help = "Print the stored output schema and exit"
     )]
     pub(crate) schema_output: bool,
+}
+
+#[derive(Args, Debug, Clone, Default)]
+pub(crate) struct SearchFacetArgs {
+    #[arg(
+        long = "with-facets",
+        conflicts_with = "with_full_facets",
+        help = "Include available filters in search output"
+    )]
+    pub(crate) with_facets: bool,
+
+    #[arg(
+        long = "with-full-facets",
+        conflicts_with = "with_facets",
+        help = "Include all available filters in search output and request full facet set"
+    )]
+    pub(crate) with_full_facets: bool,
 }
 
 #[derive(Args, Debug, Clone, Default)]
@@ -126,6 +137,9 @@ pub(crate) trait SearchPayloadArgs {
     fn has_source_filters(&self) -> bool {
         false
     }
+    fn facet_mode(&self) -> SearchFacetMode {
+        SearchFacetMode::Hidden
+    }
 
     fn build_payload(&self, source_code: &'static str) -> Result<String, CliError> {
         let mut payload = JsonMap::new();
@@ -141,10 +155,6 @@ pub(crate) trait SearchPayloadArgs {
         self.base().dry_run
     }
 
-    fn human(&self) -> bool {
-        self.base().human
-    }
-
     fn schema_kind(&self) -> Option<SearchSchemaKind> {
         self.base().schema_kind()
     }
@@ -156,7 +166,7 @@ pub(crate) trait SearchPayloadArgs {
 
         if self.base().has_search_inputs() || self.has_source_filters() {
             return Err(CliError::InvalidSearchArgument(format!(
-                "{} cannot be combined with query, payload, pagination, sorting, filters, or output flags like --dry-run/--human",
+                "{} cannot be combined with query, payload, pagination, sorting, filters, facet flags, or --dry-run",
                 kind.flag_name()
             )));
         }
@@ -196,7 +206,22 @@ impl SearchBaseArgs {
             || self.offset.is_some()
             || self.payload.is_some()
             || self.dry_run
-            || self.human
+    }
+}
+
+impl SearchFacetArgs {
+    pub(crate) fn mode(&self) -> SearchFacetMode {
+        if self.with_full_facets {
+            SearchFacetMode::Full
+        } else if self.with_facets {
+            SearchFacetMode::Summary
+        } else {
+            SearchFacetMode::Hidden
+        }
+    }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.with_facets || self.with_full_facets
     }
 }
 
@@ -600,6 +625,24 @@ mod tests {
                 schema_input: true,
                 query: Some("test".to_string()),
                 ..SearchBaseArgs::default()
+            },
+            ..SearchJdArgs::default()
+        };
+
+        let error = args.validate_schema_request().unwrap_err();
+        assert!(matches!(error, CliError::InvalidSearchArgument(_)));
+    }
+
+    #[test]
+    fn schema_input_cannot_be_combined_with_facet_flags() {
+        let args = SearchJdArgs {
+            base: SearchBaseArgs {
+                schema_input: true,
+                ..SearchBaseArgs::default()
+            },
+            facets: SearchFacetArgs {
+                with_facets: true,
+                ..SearchFacetArgs::default()
             },
             ..SearchJdArgs::default()
         };

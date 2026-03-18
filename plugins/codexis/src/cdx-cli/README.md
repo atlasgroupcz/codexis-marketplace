@@ -8,7 +8,6 @@ into the correct search request:
 ```bash
 cdx-cli search <SOURCE> --query "..." [source flags]
 cdx-cli search <SOURCE> '<json-payload>'
-cdx-cli search <SOURCE> --human --query "..."
 cdx-cli search <SOURCE> --schema-input
 cdx-cli search <SOURCE> --schema-output
 ```
@@ -21,6 +20,8 @@ POST {CODEXIS_API_URL}/rest/cdx-api/search/<SOURCE>
 
 The API response is streamed to stdout as JSON.
 Schema mode prints stored API request/response definitions in a human-readable form.
+For source-specific searches, `availableFilters` are hidden by default unless
+you request facet output explicitly.
 
 ## Requirements
 
@@ -55,7 +56,8 @@ cdx-cli search <SOURCE> '<json-payload>'
 cdx-cli search <SOURCE> --query "..." '<json-payload>'
 cdx-cli search <SOURCE> -
 cdx-cli search <SOURCE> --dry-run --query "..."
-cdx-cli search <SOURCE> --human --query "..."
+cdx-cli search <SOURCE> --with-facets --query "..."
+cdx-cli search <SOURCE> --with-full-facets --query "..."
 cdx-cli search <SOURCE> --schema-input
 cdx-cli search <SOURCE> --schema-output
 ```
@@ -74,8 +76,10 @@ Rules:
 - JSON boolean filters use `true` / `false`
 - JSON sort fields should use `sort` and `sortOrder` across all sources
 - CLI boolean filters are presence-only flags, for example `--current`
-- `--human` pretty-prints JSON search responses
 - backend-specific request fields are mapped internally, for example CR `sort` -> `sortBy`
+- default search output hides top-level `availableFilters`
+- `--with-facets` keeps `availableFilters` in the response for source-specific searches except `ALL`
+- `--with-full-facets` keeps `availableFilters` and requests `?fullFacets=true`
 - `--schema-input` and `--schema-output` print stored API schemas and cannot be combined with other search flags
 
 Examples:
@@ -93,7 +97,9 @@ cat payload.json | cdx-cli search EU -
 
 cdx-cli search ALL --dry-run --query "insolvence" --limit 5
 
-cdx-cli search JD --human --query "náhrada škody" --limit 1
+cdx-cli search JD --with-facets --query "náhrada škody" --limit 1
+
+cdx-cli search JD --with-full-facets --query "náhrada škody" --limit 1
 
 cdx-cli search JD --schema-input
 

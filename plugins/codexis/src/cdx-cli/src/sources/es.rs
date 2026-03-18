@@ -1,21 +1,11 @@
 use clap::Args;
 
 use crate::sources::common::{
-    insert_string_array, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
-    StandardSortArgs,
+    insert_string_array, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchFacetArgs,
+    SearchPayloadArgs, StandardSortArgs,
 };
 
-pub(crate) const SEARCH_ES_HELP: &str = r#"Search EU court decisions and ECHR-related rulings exposed by CODEXIS.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --type VALUE           repeatable
-  --issued-from YYYY-MM-DD
-  --issued-to YYYY-MM-DD
-
-Example:
+pub(crate) const SEARCH_ES_HELP: &str = r#"Example:
   cdx-cli search ES --query "ochrana spotřebitele" --type Rozsudek --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -26,10 +16,13 @@ pub(crate) struct SearchEsArgs {
     #[command(flatten)]
     pub(crate) sort: StandardSortArgs,
 
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
+
     #[arg(
         long = "type",
         visible_alias = "typ",
-        help = "Decision type",
+        help = "Decision type (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) types: Vec<String>,
@@ -49,7 +42,14 @@ impl SearchPayloadArgs for SearchEsArgs {
         self.issued.insert_into(payload);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
-        self.sort.is_present() || !self.types.is_empty() || self.issued.is_present()
+        self.sort.is_present()
+            || self.facets.is_present()
+            || !self.types.is_empty()
+            || self.issued.is_present()
     }
 }

@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 use crate::core::config::Config;
 use crate::core::error::CliError;
-use crate::core::http::execute_search_request;
+use crate::core::http::{execute_search_request, SearchFacetMode};
 use crate::core::schema::{render_search_schema, SearchSchemaKind};
 use crate::sources::all::{SearchAllArgs, SEARCH_ALL_HELP};
 use crate::sources::comment::{SearchCommentArgs, SEARCH_COMMENT_HELP};
@@ -15,51 +15,12 @@ use crate::sources::lt::{SearchLtArgs, SEARCH_LT_HELP};
 use crate::sources::sk::{SearchSkArgs, SEARCH_SK_HELP};
 use crate::sources::vs::{SearchVsArgs, SEARCH_VS_HELP};
 
-const GLOBAL_AFTER_HELP: &str = r#"Examples:
-  cdx-cli search JD --query "náhrada škody" --limit 5
-  cdx-cli search ALL '{"query":"insolvence","limit":5}'
-  cdx-cli search JD --help
-
-Configuration:
-  Reads CODEXIS_API_URL and CDX_API_JWT_AUTH from the environment or ~/.cdx/.env."#;
-
-const SEARCH_AFTER_HELP: &str = r#"Sources:
-  ALL      Search across all data sources
-  COMMENT  Legal commentaries
-  CR       Czech legislation
-  ES       EU court decisions
-  EU       EU legislation
-  JD       Czech case law
-  LT       Legal literature
-  SK       Slovak legislation
-  VS       Contract templates
-
-Examples:
-  cdx-cli search JD --query "náhrada škody" --court "Nejvyšší soud" --limit 5
-  cdx-cli search CR --query "občanský zákoník" --type Zákon --current
-  cdx-cli search JD --human --query "náhrada škody"
-  cdx-cli search JD --schema-input
-  cdx-cli search JD '{"query":"náhrada škody","limit":5}'
-  cat payload.json | cdx-cli search CR -
-
-Formats:
-  Dates: YYYY-MM-DD
-  JSON booleans: true / false
-  JSON sort fields: use sort / sortOrder across all sources
-  CLI boolean filters: presence-only flags, for example --current
-  Defaults: limit 10, offset 1, sort RELEVANCE, sort-order DESC
-  Human mode: --human pretty-prints JSON search results
-  Schema mode: --schema-input or --schema-output, with no other search flags
-
-Flags map to JSON fields. If JSON_PAYLOAD is also provided, matching keys from JSON win.
-Backend-specific request fields are handled internally, for example CR sort -> sortBy."#;
-
 #[derive(Parser, Debug)]
 #[command(
     name = "cdx-cli",
     version,
     about = "CODEXIS CLI for source-oriented search",
-    after_help = GLOBAL_AFTER_HELP,
+    disable_version_flag = true,
     disable_help_subcommand = true,
     subcommand_required = true,
     arg_required_else_help = true
@@ -73,7 +34,6 @@ pub(crate) struct Cli {
 enum Commands {
     #[command(
         about = "Search one CODEXIS data source",
-        after_help = SEARCH_AFTER_HELP,
         arg_required_else_help = true
     )]
     Search {
@@ -209,17 +169,17 @@ impl SearchSource {
         }
     }
 
-    fn human(&self) -> bool {
+    fn facet_mode(&self) -> SearchFacetMode {
         match self {
-            Self::All(args) => args.human(),
-            Self::Comment(args) => args.human(),
-            Self::Cr(args) => args.human(),
-            Self::Es(args) => args.human(),
-            Self::Eu(args) => args.human(),
-            Self::Jd(args) => args.human(),
-            Self::Lt(args) => args.human(),
-            Self::Sk(args) => args.human(),
-            Self::Vs(args) => args.human(),
+            Self::All(args) => args.facet_mode(),
+            Self::Comment(args) => args.facet_mode(),
+            Self::Cr(args) => args.facet_mode(),
+            Self::Es(args) => args.facet_mode(),
+            Self::Eu(args) => args.facet_mode(),
+            Self::Jd(args) => args.facet_mode(),
+            Self::Lt(args) => args.facet_mode(),
+            Self::Sk(args) => args.facet_mode(),
+            Self::Vs(args) => args.facet_mode(),
         }
     }
 
@@ -258,7 +218,7 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
         source.source_code(),
         &payload,
         source.dry_run(),
-        source.human(),
+        source.facet_mode(),
     )
 }
 
@@ -336,15 +296,89 @@ mod tests {
     }
 
     #[test]
-    fn cli_accepts_human_flag() {
-        let cli =
-            Cli::try_parse_from(["cdx-cli", "search", "JD", "--human", "--query", "test"]).unwrap();
+    fn cli_accepts_with_facets_flag() {
+        let cli = Cli::try_parse_from([
+            "cdx-cli",
+            "search",
+            "JD",
+            "--with-facets",
+            "--query",
+            "test",
+        ])
+        .unwrap();
 
         match cli.command {
             Commands::Search {
                 source: SearchSource::Jd(args),
-            } => assert!(args.base.human),
+            } => assert!(args.facets.with_facets),
             _ => panic!("expected JD search command"),
+        }
+    }
+
+    #[test]
+    fn cli_accepts_with_full_facets_flag() {
+        let cli = Cli::try_parse_from([
+            "cdx-cli",
+            "search",
+            "JD",
+            "--with-full-facets",
+            "--query",
+            "test",
+        ])
+        .unwrap();
+
+        match cli.command {
+            Commands::Search {
+                source: SearchSource::Jd(args),
+            } => assert!(args.facets.with_full_facets),
+            _ => panic!("expected JD search command"),
+        }
+    }
+
+    #[test]
+    fn cli_rejects_facet_flags_for_all_search() {
+        let error = Cli::try_parse_from([
+            "cdx-cli",
+            "search",
+            "ALL",
+            "--with-facets",
+            "--query",
+            "test",
+        ])
+        .unwrap_err();
+
+        let rendered = error.to_string();
+        assert!(rendered.contains("--with-facets"));
+        assert!(rendered.contains("unexpected"));
+    }
+
+    #[test]
+    fn cli_rejects_conflicting_facet_flags() {
+        let error = Cli::try_parse_from([
+            "cdx-cli",
+            "search",
+            "JD",
+            "--with-facets",
+            "--with-full-facets",
+            "--query",
+            "test",
+        ])
+        .unwrap_err();
+
+        let rendered = error.to_string();
+        assert!(rendered.contains("--with-full-facets"));
+        assert!(rendered.contains("cannot be used with"));
+    }
+
+    #[test]
+    fn search_source_uses_hidden_facets_for_all() {
+        let cli = Cli::try_parse_from(["cdx-cli", "search", "ALL", "--query", "test"]).unwrap();
+
+        match cli.command {
+            Commands::Search {
+                source: SearchSource::All(args),
+            } => assert_eq!(args.facet_mode(), SearchFacetMode::Hidden),
+            _ => panic!("expected ALL search command"),
         }
     }
 }

@@ -5,68 +5,52 @@ use crate::core::error::CliError;
 
 const API_PREFIX: &str = "/rest/cdx-api";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) enum SearchFacetMode {
+    #[default]
+    Hidden,
+    Summary,
+    Full,
+}
+
 pub(crate) fn execute_search_request(
     base_url: &str,
     auth_header: &str,
     source_code: &str,
     payload: &str,
     dry_run: bool,
-    human: bool,
+    facet_mode: SearchFacetMode,
 ) -> Result<(), CliError> {
-    let curl_args = build_search_curl_args(base_url, auth_header, source_code, payload);
+    let curl_args = build_search_curl_args(base_url, auth_header, source_code, payload, facet_mode);
 
     if dry_run {
         println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
         return Ok(());
     }
 
-    if human {
-        let output = Command::new("curl")
-            .args(&curl_args)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .output()
-            .map_err(CliError::CurlSpawn)?;
+    let output = Command::new("curl")
+        .args(&curl_args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .output()
+        .map_err(CliError::CurlSpawn)?;
 
-        match output.status.code() {
-            Some(0) => {
-                print_response_body(&output.stdout, true)?;
-                Ok(())
-            }
-            Some(code) => Err(CliError::CommandExited {
-                command: "curl",
-                code,
-            }),
-            None => Err(CliError::CommandTerminated { command: "curl" }),
+    match output.status.code() {
+        Some(0) => {
+            print_response_body(&output.stdout, facet_mode)?;
+            Ok(())
         }
-    } else {
-        let status = Command::new("curl")
-            .args(&curl_args)
-            .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .status()
-            .map_err(CliError::CurlSpawn)?;
-
-        match status.code() {
-            Some(0) => Ok(()),
-            Some(code) => Err(CliError::CommandExited {
-                command: "curl",
-                code,
-            }),
-            None => Err(CliError::CommandTerminated { command: "curl" }),
-        }
+        Some(code) => Err(CliError::CommandExited {
+            command: "curl",
+            code,
+        }),
+        None => Err(CliError::CommandTerminated { command: "curl" }),
     }
 }
 
-fn print_response_body(body: &[u8], human: bool) -> Result<(), CliError> {
-    let rendered = if human {
-        format_json_output(body)
-    } else {
-        String::from_utf8_lossy(body).into_owned()
-    };
-
+fn print_response_body(body: &[u8], facet_mode: SearchFacetMode) -> Result<(), CliError> {
+    let rendered = render_search_output(body, facet_mode);
     let mut stdout = io::stdout().lock();
     stdout
         .write_all(rendered.as_bytes())
@@ -83,11 +67,22 @@ fn print_response_body(body: &[u8], human: bool) -> Result<(), CliError> {
     Ok(())
 }
 
-fn format_json_output(body: &[u8]) -> String {
+fn render_search_output(body: &[u8], facet_mode: SearchFacetMode) -> String {
     let text = String::from_utf8_lossy(body);
     match serde_json::from_str::<serde_json::Value>(&text) {
-        Ok(value) => serde_json::to_string_pretty(&value).unwrap_or_else(|_| text.into_owned()),
+        Ok(mut value) => {
+            apply_facet_mode(&mut value, facet_mode);
+            serde_json::to_string(&value).unwrap_or_else(|_| text.into_owned())
+        }
         Err(_) => text.into_owned(),
+    }
+}
+
+fn apply_facet_mode(value: &mut serde_json::Value, facet_mode: SearchFacetMode) {
+    if matches!(facet_mode, SearchFacetMode::Hidden) {
+        if let Some(object) = value.as_object_mut() {
+            object.remove("availableFilters");
+        }
     }
 }
 
@@ -96,6 +91,7 @@ fn build_search_curl_args(
     auth_header: &str,
     source_code: &str,
     payload: &str,
+    facet_mode: SearchFacetMode,
 ) -> Vec<String> {
     vec![
         "-sS".to_string(),
@@ -105,10 +101,18 @@ fn build_search_curl_args(
         "POST".to_string(),
         "-H".to_string(),
         "Content-Type: application/json".to_string(),
-        build_api_url(base_url, &format!("search/{source_code}")),
+        build_search_url(base_url, source_code, facet_mode),
         "-d".to_string(),
         payload.to_string(),
     ]
+}
+
+fn build_search_url(base_url: &str, source_code: &str, facet_mode: SearchFacetMode) -> String {
+    let mut url = build_api_url(base_url, &format!("search/{source_code}"));
+    if matches!(facet_mode, SearchFacetMode::Full) {
+        url.push_str("?fullFacets=true");
+    }
+    url
 }
 
 fn build_api_url(base_url: &str, rest: &str) -> String {
@@ -201,6 +205,7 @@ mod tests {
             "Authorization: Bearer token",
             "JD",
             r#"{"query":"náhrada škody","limit":5}"#,
+            SearchFacetMode::Hidden,
         );
 
         assert_eq!(
@@ -217,6 +222,22 @@ mod tests {
                 "-d",
                 r#"{"query":"náhrada škody","limit":5}"#,
             ]
+        );
+    }
+
+    #[test]
+    fn full_facet_mode_adds_query_parameter_to_search_url() {
+        let args = build_search_curl_args(
+            "https://app.codexis.cz",
+            "Authorization: Bearer token",
+            "JD",
+            r#"{"query":"pes","limit":10}"#,
+            SearchFacetMode::Full,
+        );
+
+        assert_eq!(
+            args[7],
+            "https://app.codexis.cz/rest/cdx-api/search/JD?fullFacets=true"
         );
     }
 
@@ -255,19 +276,55 @@ mod tests {
     }
 
     #[test]
-    fn human_output_pretty_prints_valid_json() {
-        let rendered = format_json_output(br#"{"results":[{"docId":"JD1"}],"limit":1}"#);
+    fn default_output_hides_available_filters() {
+        let rendered = render_search_output(
+            br#"{"results":[{"docId":"JD1"}],"availableFilters":[{"key":"court"}],"limit":1}"#,
+            SearchFacetMode::Hidden,
+        );
 
-        assert!(rendered.contains("\n  \"limit\": 1,"));
-        assert!(rendered.contains("\n  \"results\": ["));
-        let reparsed: serde_json::Value = serde_json::from_str(&rendered).unwrap();
-        assert_eq!(reparsed["limit"], 1);
-        assert_eq!(reparsed["results"][0]["docId"], "JD1");
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert!(value.get("availableFilters").is_none());
+        assert_eq!(value["results"][0]["docId"], "JD1");
     }
 
     #[test]
-    fn human_output_falls_back_to_raw_text_for_invalid_json() {
-        let rendered = format_json_output(br#"not-json"#);
+    fn facet_output_keeps_available_filters() {
+        let rendered = render_search_output(
+            br#"{"results":[{"docId":"JD1"}],"availableFilters":[{"key":"court"}],"limit":1}"#,
+            SearchFacetMode::Summary,
+        );
+
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert_eq!(value["availableFilters"][0]["key"], "court");
+    }
+
+    #[test]
+    fn facet_output_tolerates_missing_available_filters() {
+        let rendered = render_search_output(
+            br#"{"results":[{"docId":"JD1"}],"limit":1}"#,
+            SearchFacetMode::Summary,
+        );
+
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert!(value.get("availableFilters").is_none());
+        assert_eq!(value["results"][0]["docId"], "JD1");
+    }
+
+    #[test]
+    fn full_facet_output_tolerates_missing_available_filters() {
+        let rendered = render_search_output(
+            br#"{"results":[{"docId":"JD1"}],"limit":1}"#,
+            SearchFacetMode::Full,
+        );
+
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert!(value.get("availableFilters").is_none());
+        assert_eq!(value["results"][0]["docId"], "JD1");
+    }
+
+    #[test]
+    fn invalid_json_output_is_printed_raw() {
+        let rendered = render_search_output(br#"not-json"#, SearchFacetMode::Hidden);
         assert_eq!(rendered, "not-json");
     }
 }

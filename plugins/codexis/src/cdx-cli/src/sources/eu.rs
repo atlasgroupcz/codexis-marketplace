@@ -2,25 +2,10 @@ use clap::Args;
 
 use crate::sources::common::{
     insert_string_array, ApprovedDateArgs, EffectiveDateArgs, IssuedDateArgs, JsonMap,
-    SearchBaseArgs, SearchPayloadArgs, StandardSortArgs,
+    SearchBaseArgs, SearchFacetArgs, SearchPayloadArgs, StandardSortArgs,
 };
 
-pub(crate) const SEARCH_EU_HELP: &str = r#"Search EU regulations, directives, and decisions.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|DATE|NAME  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --type VALUE           repeatable
-  --source VALUE         repeatable
-  --series VALUE         repeatable
-  --author VALUE         repeatable
-  --domain VALUE         repeatable
-  --issued-from / --issued-to
-  --approved-from / --approved-to
-  --effective-from / --effective-to
-
-Example:
+pub(crate) const SEARCH_EU_HELP: &str = r#"Example:
   cdx-cli search EU --query GDPR --type Nařízení --series L --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -31,10 +16,13 @@ pub(crate) struct SearchEuArgs {
     #[command(flatten)]
     pub(crate) sort: StandardSortArgs,
 
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
+
     #[arg(
         long = "type",
         visible_alias = "typ",
-        help = "Document type",
+        help = "Document type (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) types: Vec<String>,
@@ -42,7 +30,7 @@ pub(crate) struct SearchEuArgs {
     #[arg(
         long = "source",
         visible_alias = "zdroj",
-        help = "Source",
+        help = "Source (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) sources: Vec<String>,
@@ -50,7 +38,7 @@ pub(crate) struct SearchEuArgs {
     #[arg(
         long = "series",
         visible_alias = "zdroj-uveu",
-        help = "Official journal series",
+        help = "Official journal series (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) series: Vec<String>,
@@ -58,7 +46,7 @@ pub(crate) struct SearchEuArgs {
     #[arg(
         long = "author",
         visible_alias = "autor",
-        help = "Author",
+        help = "Author (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) authors: Vec<String>,
@@ -66,7 +54,7 @@ pub(crate) struct SearchEuArgs {
     #[arg(
         long = "domain",
         visible_alias = "oblast",
-        help = "Domain",
+        help = "Domain (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) domains: Vec<String>,
@@ -98,8 +86,13 @@ impl SearchPayloadArgs for SearchEuArgs {
         self.effective.insert_into(payload);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
         self.sort.is_present()
+            || self.facets.is_present()
             || !self.types.is_empty()
             || !self.sources.is_empty()
             || !self.series.is_empty()

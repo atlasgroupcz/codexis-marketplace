@@ -1,19 +1,11 @@
 use clap::Args;
 
 use crate::sources::common::{
-    insert_string_array, JsonMap, SearchBaseArgs, SearchPayloadArgs, StandardSortArgs,
+    insert_string_array, JsonMap, SearchBaseArgs, SearchFacetArgs, SearchPayloadArgs,
+    StandardSortArgs,
 };
 
-pub(crate) const SEARCH_VS_HELP: &str = r#"Search contract specimens and templates.
-
-Key flags:
-  --query STRING
-  --sort RELEVANCE|NAME|DATE  default: RELEVANCE
-  --sort-order ASC|DESC       default: DESC
-  --author VALUE         repeatable
-  --category VALUE       repeatable
-
-Example:
+pub(crate) const SEARCH_VS_HELP: &str = r#"Example:
   cdx-cli search VS --query "pracovní smlouva" --category "Pracovní právo (vzory dle zákoníku práce)" --limit 5"#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -24,10 +16,13 @@ pub(crate) struct SearchVsArgs {
     #[command(flatten)]
     pub(crate) sort: StandardSortArgs,
 
+    #[command(flatten)]
+    pub(crate) facets: SearchFacetArgs,
+
     #[arg(
         long = "author",
         visible_alias = "autor",
-        help = "Author",
+        help = "Author (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) authors: Vec<String>,
@@ -35,7 +30,7 @@ pub(crate) struct SearchVsArgs {
     #[arg(
         long = "category",
         visible_alias = "kategorie",
-        help = "Category",
+        help = "Category (repeatable)",
         value_name = "VALUE"
     )]
     pub(crate) categories: Vec<String>,
@@ -52,7 +47,14 @@ impl SearchPayloadArgs for SearchVsArgs {
         insert_string_array(payload, "kategorie", &self.categories);
     }
 
+    fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
+        self.facets.mode()
+    }
+
     fn has_source_filters(&self) -> bool {
-        self.sort.is_present() || !self.authors.is_empty() || !self.categories.is_empty()
+        self.sort.is_present()
+            || self.facets.is_present()
+            || !self.authors.is_empty()
+            || !self.categories.is_empty()
     }
 }
