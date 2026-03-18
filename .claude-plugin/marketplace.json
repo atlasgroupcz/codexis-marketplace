@@ -52,6 +52,12 @@
       "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
       "source": "./plugins/presentation",
       "category": "document-processing"
+    },
+    {
+      "name": "cdx-cz-spp",
+      "description": "Czech municipal regulations (sbirkapp.gov.cz) — municipal decrees, ordinances, and local legal acts",
+      "source": "./plugins/cdx-cz-spp",
+      "category": "legal"
     }
   ]
 }

@@ -1,0 +1,15 @@
+{
+  "name": "cdx-cz-spp",
+  "version": "1.0.0",
+  "description": "Czech municipal regulations (sbirkapp.gov.cz) API access for municipal decrees, ordinances, and other local legal acts",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-cz-spp", "legal", "law", "legislation", "czech", "municipal", "sbirkapp", "api"],
+  "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp\" /usr/local/bin/cdx-cz-spp && sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp-link-rewriter\" /usr/local/bin/cdx-cz-spp-link-rewriter",
+  "postUninstall": "sudo rm -f /usr/local/bin/cdx-cz-spp /usr/local/bin/cdx-cz-spp-link-rewriter",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp\" /usr/local/bin/cdx-cz-spp && sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp-link-rewriter\" /usr/local/bin/cdx-cz-spp-link-rewriter",
+  "skills": "./skills"
+}
