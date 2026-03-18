@@ -78,17 +78,4 @@ impl SearchPayloadArgs for SearchCrArgs {
     fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
         self.facets.mode()
     }
-
-    fn has_source_filters(&self) -> bool {
-        self.sort.is_present()
-            || self.facets.is_present()
-            || !self.types.is_empty()
-            || !self.authors.is_empty()
-            || self.current
-            || self.valid_at.is_some()
-            || self.issued.is_present()
-            || self.effective.is_present()
-            || self.approved.is_present()
-            || self.changed.is_present()
-    }
 }

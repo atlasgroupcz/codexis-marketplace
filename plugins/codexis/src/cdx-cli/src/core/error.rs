@@ -13,7 +13,6 @@ pub(crate) enum CliError {
     MissingQueryField,
     InvalidSearchArgument(String),
     InvalidCdxUrl(String),
-    InvalidLawRef(String),
     InvalidStoredSchema(String),
     CurlSpawn(io::Error),
     RequestFailed { code: i32 },
@@ -32,7 +31,6 @@ impl CliError {
             | Self::MissingQueryField
             | Self::InvalidSearchArgument(_)
             | Self::InvalidCdxUrl(_)
-            | Self::InvalidLawRef(_)
             | Self::InvalidStoredSchema(_) => 2,
             Self::CurlSpawn(_) | Self::CommandTerminated { .. } => 1,
         }
@@ -66,7 +64,6 @@ impl fmt::Display for CliError {
             }
             Self::InvalidSearchArgument(message) => write!(f, "{message}"),
             Self::InvalidCdxUrl(message) => write!(f, "{message}"),
-            Self::InvalidLawRef(message) => write!(f, "{message}"),
             Self::InvalidStoredSchema(message) => write!(f, "invalid stored schema: {message}"),
             Self::CurlSpawn(source) => write!(f, "failed to run curl: {source}"),
             Self::RequestFailed { code } => write!(f, "request failed with exit code {code}"),

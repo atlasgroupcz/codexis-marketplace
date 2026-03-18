@@ -52,12 +52,4 @@ impl SearchPayloadArgs for SearchCommentArgs {
     fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
         self.facets.mode()
     }
-
-    fn has_source_filters(&self) -> bool {
-        self.sort.is_present()
-            || self.facets.is_present()
-            || self.issued.is_present()
-            || self.related_doc.is_some()
-            || self.related_part.is_some()
-    }
 }

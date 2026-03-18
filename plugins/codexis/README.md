@@ -38,6 +38,10 @@ Hlavní funkce — fulltextové vyhledávání napříč všemi zdroji CODEXIS. 
 ### Sledované dokumenty
 Interaktivní komponenta, která vám umožní sledovat vybrané právní předpisy a být informováni o jejich změnách.
 
+### CLI nástroje
+Plugin při instalaci přidává `cdx-cli` jako hlavní CLI, ponechává `cdx` jako
+legacy fallback a instaluje také `cdxctl` pro správu platformy.
+
 ### Správa platformy (cdxctl)
 Nástroj pro pokročilé uživatele — správa automatizací (pravidelné úlohy), marketplace pluginů a extrakce dat z dokumentů do strukturované tabulky.
 

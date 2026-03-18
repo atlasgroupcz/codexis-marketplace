@@ -50,11 +50,4 @@ impl SearchPayloadArgs for SearchVsArgs {
     fn facet_mode(&self) -> crate::core::http::SearchFacetMode {
         self.facets.mode()
     }
-
-    fn has_source_filters(&self) -> bool {
-        self.sort.is_present()
-            || self.facets.is_present()
-            || !self.authors.is_empty()
-            || !self.categories.is_empty()
-    }
 }

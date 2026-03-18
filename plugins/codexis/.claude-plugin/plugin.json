@@ -20,9 +20,9 @@
     "api"
   ],
   "license": "PROPRIETARY",
-  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
-  "postUninstall": "sudo rm -f /usr/local/bin/cdx /usr/local/bin/cdxctl",
-  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "components": "./components"
 }

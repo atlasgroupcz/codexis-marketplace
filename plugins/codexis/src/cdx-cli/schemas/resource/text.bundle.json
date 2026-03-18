@@ -1,0 +1,124 @@
+{
+  "endpoint": "text",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T15:10:22Z",
+  "cdxPatterns": [
+    "cdx://doc/<DOC_ID>/text",
+    "cdx://cz_law/<NUM>/<YEAR>/text"
+  ],
+  "operations": [
+    {
+      "path": "/rest/cdx-api/doc/{docId}/text",
+      "method": "get",
+      "summary": "Get document full text with anchors",
+      "description": "Returns the full text content of a document with embedded anchors. Anchors are in format [id: #elementId] for units and [?part=elementId] for content items. Use together with /toc to extract specific sections by line numbers. Use optional 'part' query parameter to return only specific text parts. Supports IDs like CR17044 and time versions like CR17044_2026_01_01.",
+      "operationId": "getDocumentText",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document identifier (e.g. CR17044_2026_01_01 or JD12345)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CR17044_2026_01_01"
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "Optional part identifier filter. Returns text only for selected parts. Use repeated query params (?part=paragraf140&part=paragraf141).",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document text with anchors",
+          "content": {
+            "text/plain": {}
+          }
+        },
+        "404": {
+          "description": "Document not found",
+          "content": {
+            "text/plain;charset=UTF-8": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/rest/cdx-api/cz_law/{lawNumber}/{lawYear}/text",
+      "method": "get",
+      "summary": "Get Czech law full text with anchors (by law number and year)",
+      "description": "Resolves Czech legislation by law number/year (e.g. 262/2006 Sb.) to the current/nearest valid time version and returns its text. Same output format as GET /doc/{docId}/text. Use optional repeated 'part' query parameter to return only specific parts (e.g. ?part=paragraf1).",
+      "operationId": "getCzLawText",
+      "parameters": [
+        {
+          "name": "lawNumber",
+          "in": "path",
+          "description": "Number of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 262
+        },
+        {
+          "name": "lawYear",
+          "in": "path",
+          "description": "Year of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 2006
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "Optional part identifier filter. Returns text only for selected parts. Use repeated query params (?part=paragraf140&part=paragraf141).",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document text with anchors",
+          "content": {
+            "text/plain": {}
+          }
+        },
+        "404": {
+          "description": "Law not found",
+          "content": {
+            "text/plain;charset=UTF-8": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}

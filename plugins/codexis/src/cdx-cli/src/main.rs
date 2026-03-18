@@ -1,6 +1,5 @@
 mod cli;
 mod core;
-mod cz_law;
 mod get;
 mod sources;
 

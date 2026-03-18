@@ -1,0 +1,197 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T15:10:22Z",
+  "cdxPatterns": [
+    "cdx://doc/<DOC_ID>/related"
+  ],
+  "operations": [
+    {
+      "path": "/rest/cdx-api/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get related documents",
+      "description": "Returns paginated list of documents related to the specified document. Supports filtering by relation type (e.g., PROVADECI_PREDPIS, SOUVISEJICI_JUDIKATURA) and document part. Results can be sorted by relevance, title, or date.",
+      "operationId": "getRelatedDocs",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document identifier",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CR13986_2026_01_01"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Filter by relation type (e.g., PROVADECI_PREDPIS, SOUVISEJICI_JUDIKATURA). Default: ALL",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "Filter by document part (e.g., specific paragraph)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset. Default: 0",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Maximum results to return. Default: 20, Max: 100",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "description": "Sort field: relevance, title, date. Default: relevance",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "order",
+          "in": "query",
+          "description": "Sort order: asc or desc. Default: desc",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Related documents",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelatedDocsResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Document not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelatedDocsResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RelatedDocItem": {
+        "type": "object",
+        "description": "A single related document item",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "CR12345_2025_01_01"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source type",
+            "enum": [
+              "CR",
+              "SK",
+              "JD",
+              "ES",
+              "EU",
+              "LT",
+              "VS",
+              "COMMENT"
+            ],
+            "example": "CR"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title",
+            "example": "Zákon o daních z příjmů"
+          },
+          "relationType": {
+            "type": "string",
+            "description": "Relation type connecting this document to the source document",
+            "example": "PROVADECI_PREDPIS"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Validity/effective start date. For CR/SK/EU: when the version became valid. For JD/ES: decision date. For LT/VS: publication date."
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "description": "Validity end date (for CR, SK, EU documents). Null means currently valid, no end date, or not applicable."
+          }
+        }
+      },
+      "RelatedDocsResponse": {
+        "type": "object",
+        "description": "Paginated response containing related documents",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Source document ID",
+            "example": "CR13986_2026_01_01"
+          },
+          "relationType": {
+            "type": "string",
+            "description": "Relation type filter applied (null means all types)",
+            "example": "PROVADECI_PREDPIS"
+          },
+          "totalResults": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total number of related documents matching the filter"
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pagination offset"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum number of results returned"
+          },
+          "results": {
+            "type": "array",
+            "description": "List of related documents",
+            "items": {
+              "$ref": "#/components/schemas/RelatedDocItem"
+            }
+          }
+        }
+      }
+    }
+  }
+}

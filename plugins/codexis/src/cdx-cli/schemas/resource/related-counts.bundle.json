@@ -1,0 +1,105 @@
+{
+  "endpoint": "related-counts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T15:10:22Z",
+  "cdxPatterns": [
+    "cdx://doc/<DOC_ID>/related-counts"
+  ],
+  "operations": [
+    {
+      "path": "/rest/cdx-api/doc/{docId}/related/counts",
+      "method": "get",
+      "summary": "Get relation type counts",
+      "description": "Returns counts of related documents grouped by relation type. Useful for displaying relation type filters with document counts.",
+      "operationId": "getRelationTypeCounts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document identifier",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CR13986_2026_01_01"
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "Filter by document part (e.g., specific paragraph)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Relation type counts",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationTypeCountsResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Document not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationTypeCountsResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RelationTypeCountItem": {
+        "type": "object",
+        "description": "Count of documents for a specific relation type",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Relation type",
+            "example": "PROVADECI_PREDPIS"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name of the relation type",
+            "example": "Prováděcí předpisy"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of related documents of this type"
+          }
+        }
+      },
+      "RelationTypeCountsResponse": {
+        "type": "object",
+        "description": "Response containing counts of related documents by relation type",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Source document ID",
+            "example": "CR13986_2026_01_01"
+          },
+          "counts": {
+            "type": "array",
+            "description": "Counts per relation type",
+            "items": {
+              "$ref": "#/components/schemas/RelationTypeCountItem"
+            }
+          }
+        }
+      }
+    }
+  }
+}
