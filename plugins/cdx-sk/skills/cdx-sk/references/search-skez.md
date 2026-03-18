@@ -25,7 +25,6 @@ Content-Type: application/json
   "query": "string (optional) - fulltext search in paragraph text, titles, headings",
   "limit": "integer (1-100, default: 20)",
   "offset": "integer (default: 0)",
-
   "docNumber": "string - exact match on document number (e.g. '40/1964 Zb.')",
   "typ": "string - exact document type (e.g. 'Zakon')",
   "validAt": "date (YYYY-MM-DD) - filter to versions valid at this date",
@@ -40,10 +39,7 @@ Query parameters (appended to URL, not in body):
 
 ## Response Schema
 
-Runtime note: `/text` and `/toc` require a version-specific `timecutId` parameter or default to the currently valid version.
-Search results return the best-matching version. Use `/versions` to list all available versions.
-
-Results are collapsed by law -- one result per law, showing the best-matching version.
+**Versioned domain:** Laws have multiple timecuts (versions) with validFrom/validTo. Results are collapsed by law (one result per law, best-matching version). Use `/versions` to list all versions. Pass `timecutId` to `/text`, `/toc`, `/parts` for a specific version; without it the API defaults to the currently valid version.
 
 ```json
 {
@@ -64,10 +60,7 @@ Results are collapsed by law -- one result per law, showing the best-matching ve
       "sectionOznacenie": "SS 123",
       "sectionNadpis": "Nadobudnutie vlastnictva",
       "docId": "SKEZ1234",
-      "score": 12.5,
-      "highlight": {
-        "sectionText": ["text with <mark>highlights</mark>"]
-      },
+      "highlight": { "sectionText": ["text with <mark>highlights</mark>"] },
       "docUrl": "cdx-sk://doc/SKEZ1234/meta"
     }
   ],
@@ -87,172 +80,103 @@ Results are collapsed by law -- one result per law, showing the best-matching ve
 | `declaredDate` | Date declared in the collection |
 | `validFrom` / `validTo` | Validity period of the matched version (null validTo = currently valid) |
 | `vyhlasene` | True if this is the as-published version |
-| `lawNumber` / `lawYear` | Law number and year (use with `/law/{number}/{year}` endpoint) |
+| `lawNumber` / `lawYear` | Law number and year (use with `/law/SK/{number}/{year}`) |
 | `sectionOznacenie` | Designation of the best-matching section (e.g. "SS 1") |
 | `legalDomains` | Legal domain classifications |
 | `highlight` | Search hit highlights with `<mark>` tags |
 
 ## Document Types (typ filter)
 
-- `Zakon` - Law
-- `Vyhlaska` - Decree
-- `Oznamenie` - Notice
-- `Opatrenie` - Measure
-- `Nariadenie vlady` - Government regulation
-- `Ustavny zakon` - Constitutional law
+`Zakon`, `Vyhlaska`, `Oznamenie`, `Opatrenie`, `Nariadenie vlady`, `Ustavny zakon`
 
 ## Examples
 
-### Search Slovak Laws by Topic
-
 ```bash
+# Search by topic with type filter
 cdx-sk -s -X POST "cdx-sk://search/SKEZ" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "query": "obciansky zakonnik",
-    "typ": "Zakon",
-    "limit": 10
-  }' | jq '.results[] | {docId, title, docNumber, lawNumber, lawYear}'
-```
+  -d '{"query": "obciansky zakonnik", "typ": "Zakon", "limit": 10}' \
+  | jq '.results[] | {docId, title, docNumber, lawNumber, lawYear}'
 
-### Search Laws Valid at a Specific Date
-
-```bash
+# Search laws valid at a specific date
 cdx-sk -s -X POST "cdx-sk://search/SKEZ" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "query": "dan z pridanej hodnoty",
-    "validAt": "2025-06-01",
-    "limit": 10
-  }' | jq '.results[] | {docId, title, validFrom, validTo}'
-```
+  -d '{"query": "dan z pridanej hodnoty", "validAt": "2025-06-01", "limit": 10}' \
+  | jq '.results[] | {docId, title, validFrom, validTo}'
 
-### Search Recent Legislation by Declared Date
-
-```bash
-cdx-sk -s -X POST "cdx-sk://search/SKEZ" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "ochrana osobnych udajov",
-    "issuedFrom": "2024-01-01",
-    "limit": 10
-  }' | jq '.results[] | {docId, title, declaredDate}'
-```
-
-### Sort by Date
-
-```bash
+# Sort by date descending
 cdx-sk -s -X POST "cdx-sk://search/SKEZ?sort=date&order=desc" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "query": "pracovne pravo",
-    "limit": 10
-  }' | jq '.results[] | {docId, title, declaredDate}'
-```
+  -d '{"query": "pracovne pravo", "limit": 10}' \
+  | jq '.results[] | {docId, title, declaredDate}'
 
-### Find Law by Document Number
-
-```bash
+# Find law by document number
 cdx-sk -s -X POST "cdx-sk://search/SKEZ" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "docNumber": "311/2001 Z. z.",
-    "limit": 1
-  }' | jq '.results[] | {docId, title, docNumber}'
+  -d '{"docNumber": "311/2001 Z. z.", "limit": 1}' \
+  | jq '.results[] | {docId, title, docNumber}'
 ```
 
-## Working with eZbierka Documents
+## Working with Documents
 
 ```bash
 DOC_ID="SKEZ1234"
 
-# Get document metadata
+# Metadata (default: current version assets only; add ?includeAllAssets=true for all)
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/meta" | jq '.'
 
-# Get full text (defaults to currently valid version)
+# Full text (defaults to currently valid version)
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/text"
 
-# Get TOC
+# Text of specific paragraphs
+cdx-sk -s "cdx-sk://doc/${DOC_ID}/text?part=paragraf-1&part=paragraf-2"
+
+# Text for a specific version
+cdx-sk -s "cdx-sk://doc/${DOC_ID}/text?timecutId=1964_40_2025-01-01"
+
+# TOC
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/toc" | jq '.'
 
-# Get versions
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/versions" | jq '.'
+# Versions (list all timecuts)
+cdx-sk -s "cdx-sk://doc/${DOC_ID}/versions" | jq '.versions[] | {versionId, validFrom, validTo, vyhlasene}'
 ```
-
-### Direct Access by Law Number/Year (Skip Search)
-
-If you know the law number and year (e.g., 40/1964), resolve directly:
-
-```bash
-# Resolve law
-cdx-sk -s "cdx-sk://law/SK/40/1964" | jq '{docId, title, docNumber}'
-
-# Get law text directly
-cdx-sk -s "cdx-sk://law/SK/40/1964/text"
-
-# Get law TOC
-cdx-sk -s "cdx-sk://law/SK/40/1964/toc" | jq '.'
-
-# Get law versions
-cdx-sk -s "cdx-sk://law/SK/40/1964/versions" | jq '.'
-
-# Get law metadata
-cdx-sk -s "cdx-sk://law/SK/40/1964/meta" | jq '.'
-```
-
-### Versioning (timecutId)
-
-Laws have multiple versions (timecuts). Use `/versions` to list them:
-
-```bash
-cdx-sk -s "cdx-sk://doc/SKEZ1234/versions" | jq '.versions[] | {versionId, validFrom, validTo, vyhlasene}'
-```
-
-Each version has a `versionId` you can pass as `timecutId` to `/text` and `/toc`:
-
-```bash
-# Get text for a specific version
-cdx-sk -s "cdx-sk://doc/SKEZ1234/text?timecutId=1964_40_2025-01-01"
-
-# Get TOC for a specific version
-cdx-sk -s "cdx-sk://doc/SKEZ1234/toc?timecutId=1964_40_2025-01-01" | jq '.'
-```
-
-Without `timecutId`, the API defaults to the currently valid version.
 
 ### Parts (Paragraphs)
 
-Use `/parts` to list available paragraph IDs, then retrieve specific paragraphs:
+List paragraph IDs with optional search and pagination (max limit: 500). Each part includes `textUrl` (cdx-sk:// link with timecutId) and `attachmentUrl` (PDF page link).
 
 ```bash
 # List parts
 cdx-sk -s "cdx-sk://doc/SKEZ1234/parts" | jq '.parts[] | {id, oznacenie, nadpis}'
 
-# Get text of specific paragraphs
-cdx-sk -s "cdx-sk://doc/SKEZ1234/text?part=paragraf-1&part=paragraf-2"
+# Search parts by id or designation (case-insensitive substring)
+cdx-sk -s "cdx-sk://doc/SKEZ1234/parts?search=paragraf-23&offset=0&limit=50" | jq '.'
+
+# Get text of a specific part
+cdx-sk -s "cdx-sk://doc/SKEZ1234/text?part=paragraf-123"
 ```
 
-Each part item includes `textUrl` (cdx-sk:// link to that section's text) and `attachmentUrl` (link to PDF page where the section starts).
+### Direct Access by Law Number/Year
 
-### Find Related Documents
+If you know the law number and year (e.g. 40/1964), skip search entirely:
 
 ```bash
-# Implementing regulations
-cdx-sk -s "cdx-sk://doc/SKEZ1234/related?type=IMPLEMENTING&limit=10" | \
-  jq '.results[] | {docId, title}'
+cdx-sk -s "cdx-sk://law/SK/40/1964" | jq '{docId, title, docNumber}'
+cdx-sk -s "cdx-sk://law/SK/40/1964/meta" | jq '.'
+cdx-sk -s "cdx-sk://law/SK/40/1964/text"
+cdx-sk -s "cdx-sk://law/SK/40/1964/toc" | jq '.'
+cdx-sk -s "cdx-sk://law/SK/40/1964/versions" | jq '.'
+cdx-sk -s "cdx-sk://law/SK/40/1964/parts?search=paragraf-23&offset=0&limit=50" | jq '.'
+cdx-sk -s "cdx-sk://law/SK/40/1964/related?type=AMENDED_BY&limit=10" | jq '.'
+cdx-sk -s "cdx-sk://law/SK/40/1964/related/counts" | jq '.'
+```
 
-# Laws that amend this law
-cdx-sk -s "cdx-sk://doc/SKEZ1234/related?type=AMENDED_BY&limit=10" | \
-  jq '.results[] | {docId, title}'
+### Related Documents
 
-# Get counts of all relation types
+```bash
+cdx-sk -s "cdx-sk://doc/SKEZ1234/related?type=IMPLEMENTING&limit=10" | jq '.results[] | {docId, title}'
+cdx-sk -s "cdx-sk://doc/SKEZ1234/related?type=AMENDED_BY&limit=10" | jq '.results[] | {docId, title}'
 cdx-sk -s "cdx-sk://doc/SKEZ1234/related/counts" | jq '.'
 ```
 
-Relation types:
-- `IMPLEMENTING` - Implementing regulations (vykonavacie predpisy)
-- `AMENDS` - Laws this regulation amends
-- `AMENDED_BY` - Laws that amend this regulation
-- `REPEALS` - Laws this regulation repeals
-- `REFERENCING_DECISION` - Court decisions referencing this law
-- `REFERENCED_LAW` - Laws referenced by a court decision
+Relation types: `IMPLEMENTING` (implementing regulations), `AMENDS` (laws this regulation amends), `AMENDED_BY` (laws that amend this regulation), `REPEALS` (laws this regulation repeals), `REFERENCING_DECISION` (court decisions referencing this law), `REFERENCED_LAW` (laws referenced by a court decision).

@@ -1,6 +1,6 @@
 # Slovak General Court Decisions Search (SKVS)
 
-Search for decisions from Slovak general courts (okresne, krajske, etc.).
+Search for decisions from Slovak general courts (okresne, krajske, and other general courts). ~4.6M decisions.
 
 ## cdx-sk Usage
 Use `cdx-sk` for requests. It accepts standard curl flags and `cdx-sk://` URLs.
@@ -22,17 +22,17 @@ Content-Type: application/json
 
 ```json
 {
-  "query": "string (optional) - fulltext search",
+  "query": "string (optional) - fulltext search on decision text",
   "limit": "integer (1-100, default: 20)",
   "offset": "integer (default: 0)",
 
-  "court": "string - filter by court code (exact match, e.g. 'OSBA1')",
-  "courtName": "string - filter by court name (e.g. 'Okresny sud Bratislava I')",
-  "judge": "string - filter by judge name (e.g. 'JUDr. Novak')",
-  "spisovaZnacka": "string - filter by case file number (exact match, e.g. '1C/123/2024')",
-  "decisionForm": "string - filter by decision form (e.g. 'Rozsudok')",
-  "decisionNature": "string - filter by decision nature",
-  "ecli": "string - filter by ECLI identifier",
+  "court": "string - court code exact match (e.g. 'OSBA1')",
+  "courtName": "string - court name exact match (e.g. 'Okresny sud Bratislava I')",
+  "judge": "string - judge name exact match (e.g. 'JUDr. Novak')",
+  "spisovaZnacka": "string - case file number exact match (e.g. '1C/123/2024')",
+  "decisionForm": "string - decision form (e.g. 'Rozsudok')",
+  "decisionNature": "string - decision nature filter",
+  "ecli": "string - ECLI identifier exact match",
   "dateFrom": "date (YYYY-MM-DD) - decision date from (inclusive)",
   "dateTo": "date (YYYY-MM-DD) - decision date to (inclusive)"
 }
@@ -61,12 +61,11 @@ Query parameters (appended to URL, not in body):
       "ecli": "ECLI:SK:OSBA1:2024:1234567890",
       "legalDomain": "Obcianske pravo",
       "legalSubDomain": "Nahrady",
-      "docId": "SKVS1234",
-      "score": 12.34,
+      "docId": "SKVS5678",
       "highlight": {
         "content_markdown": ["text with <em>highlights</em>"]
       },
-      "docUrl": "cdx-sk://doc/SKVS1234/meta"
+      "docUrl": "cdx-sk://doc/SKVS5678/meta"
     }
   ],
   "totalResults": 4590000,
@@ -79,32 +78,33 @@ Query parameters (appended to URL, not in body):
 
 | Field | Description |
 |-------|-------------|
-| `docId` | Document ID for retrieval (e.g. SKVS1234) |
+| `docId` | Document ID for retrieval (e.g. SKVS5678) |
 | `recordId` | Internal record identifier (ECLI-based) |
 | `court` | Court code (e.g. OSBA1, KSBA) |
 | `courtName` | Full court name in Slovak |
 | `spisovaZnacka` | Case file number (spisovna znacka) |
+| `povodnaSpisovaZnacka` | Original case file number (if case was transferred) |
 | `ecli` | European Case Law Identifier |
-| `legalDomain` | Legal domain classification |
+| `legalDomain` / `legalSubDomain` | Legal domain classification |
 | `decisionForm` | Type of decision (Rozsudok, Uznesenie, etc.) |
+| `decisionNature` | Nature of the decision (first-instance, appellate, etc.) |
 
-## Decision Forms (decisionForm facet)
+## Decision Forms (decisionForm filter)
 
 - `Rozsudok` - Judgment
 - `Uznesenie` - Resolution
 - `Platobny rozkaz` - Payment order
 - `Zmenkovy platobny rozkaz` - Bill of exchange payment order
 
-## Decision Nature (decisionNature facet)
+## Decision Nature (decisionNature filter)
 
 - `Prvostupnove nenapadnute opravnymi prostriedkami` - First-instance not challenged
-- `Prvostupnove nenapadnute opravnymi prostriedkami - Loss` - First-instance not challenged (loss)
 - `Odvolacie` - Appellate
 - `Dovolacie` - Cassation
 
 ## Examples
 
-### Search Court Decisions by Topic
+### Search by Topic
 
 ```bash
 cdx-sk -s -X POST "cdx-sk://search/SKVS" \
@@ -168,7 +168,10 @@ cdx-sk -s -X POST "cdx-sk://search/SKVS" \
 Documents are single-version (no timecutId). Text supports `page` param for page-level retrieval. `/parts` returns section items with id and oznacenie (e.g., "Vyrok", "Odovodnenie").
 
 ```bash
-DOC_ID="SKVS1234"
+DOC_ID="SKVS5678"
+
+# Get metadata
+cdx-sk -s "cdx-sk://doc/${DOC_ID}/meta" | jq '.'
 
 # Get full text
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/text"
@@ -176,32 +179,38 @@ cdx-sk -s "cdx-sk://doc/${DOC_ID}/text"
 # Get specific page
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/text?page=1"
 
-# Get TOC / sections
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/parts" | jq '.'
-
-# Get specific section text
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/text?part=section-1"
-
-# Get multiple sections
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/text?part=section-1&part=section-2"
-
-# Get metadata
-cdx-sk -s "cdx-sk://doc/${DOC_ID}/meta" | jq '.'
-
-# Get versions (single version expected for court decisions)
+# Get versions (single version for court decisions)
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/versions" | jq '.'
 
 # Download attachment
 cdx-sk -s "cdx-sk://doc/${DOC_ID}/attachment/content_1.pdf" -o decision.pdf
 ```
 
+### Retrieve Specific Sections
+
+Use `/parts` to discover section IDs, then pass them to `/text?part=...`:
+
+```bash
+# List sections
+cdx-sk -s "cdx-sk://doc/SKVS5678/parts" | jq '.parts[] | {id, oznacenie}'
+
+# Get specific section
+cdx-sk -s "cdx-sk://doc/SKVS5678/text?part=section-1"
+
+# Get multiple sections
+cdx-sk -s "cdx-sk://doc/SKVS5678/text?part=section-1&part=section-2"
+```
+
 ### Find Related Documents
 
 ```bash
-cdx-sk -s "cdx-sk://doc/SKVS1234/related?type=REFERENCED_LAW&limit=10" | \
+# Get relation counts first
+cdx-sk -s "cdx-sk://doc/SKVS5678/related/counts" | jq '.'
+
+# Get laws referenced by this decision
+cdx-sk -s "cdx-sk://doc/SKVS5678/related?type=REFERENCED_LAW&limit=10" | \
   jq '.results[] | {docId, title}'
 ```
 
 Applicable relation types for court decisions:
-- `REFERENCED_LAW` - Laws referenced by this court decision
-- `REFERENCING_DECISION` - Other court decisions referencing the same laws
+- `REFERENCED_LAW` - Laws referenced by this decision

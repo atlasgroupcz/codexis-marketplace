@@ -115,9 +115,25 @@ cdx-sk -s "cdx-sk://law/SK/{number}/{year}/text"      # full text
 cdx-sk -s "cdx-sk://law/SK/{number}/{year}/meta"      # metadata
 cdx-sk -s "cdx-sk://law/SK/{number}/{year}/toc"       # table of contents
 cdx-sk -s "cdx-sk://law/SK/{number}/{year}/versions"  # version list
+cdx-sk -s "cdx-sk://law/SK/{number}/{year}/parts"     # sections/paragraphs
+cdx-sk -s "cdx-sk://law/SK/{number}/{year}/related?type=T"       # related documents
+cdx-sk -s "cdx-sk://law/SK/{number}/{year}/related/counts"       # relation type counts
 ```
 
 `number` is the part before `/` (e.g., `40`), `year` after (e.g., `1964`). Defaults to the currently valid version.
+
+**Parts search and pagination (SKEZ):**
+```bash
+cdx-sk -s "cdx-sk://law/SK/40/1964/parts?search=paragraf-23"           # filter by ID or designation
+cdx-sk -s "cdx-sk://law/SK/40/1964/parts?offset=0&limit=50"            # paginate large laws
+cdx-sk -s "cdx-sk://doc/SKEZ1234/parts?search=paragraf-23&limit=10"    # also works with docId
+```
+
+**Meta asset trimming (SKEZ):** By default, `/meta` returns only assets from the current version. Use `?includeAllAssets=true` to get all historical assets:
+```bash
+cdx-sk -s "cdx-sk://law/SK/40/1964/meta"                          # current version assets only
+cdx-sk -s "cdx-sk://law/SK/40/1964/meta?includeAllAssets=true"    # all historical assets
+```
 
 ### Resolve Display ID
 
@@ -207,16 +223,46 @@ cdx-sk -s "cdx-sk://doc/SKEZ1234/related?type=IMPLEMENTING&limit=10" \
   | jq '.results[] | {docId, title}'
 ```
 
+## Workflow Recipes
+
+### Law → Paragraph → Link (SKEZ)
+
+When the user asks about a specific paragraph of a known law:
+
+```bash
+# 1. Search parts directly (no need to resolve docId first)
+cdx-sk -s "cdx-sk://law/SK/40/1964/parts?search=paragraf-23" \
+  | jq '.parts[] | {id, oznacenie, startPage, attachmentUrl}'
+
+# 2. Use attachmentUrl directly from the response for the user-facing link
+# Result: [§ 23 Obcianskeho zakonnika](cdx-sk://doc/SKEZ1234/attachment/content_1.pdf#page=45)
+```
+
+No resolve step needed — law-level endpoints handle it automatically.
+
+### Find Related Laws (SKEZ)
+
+```bash
+# 1. Check what relation types exist
+cdx-sk -s "cdx-sk://law/SK/40/1964/related/counts" | jq '.'
+
+# 2. Fetch specific relation type
+cdx-sk -s "cdx-sk://law/SK/40/1964/related?type=IMPLEMENTING&limit=10" \
+  | jq '.results[] | {docId, title}'
+```
+
 ## Best Practices
 
-1. **Check `/meta` first** — always retrieve metadata for the assets array (attachment filenames) before building user-facing links.
-2. **Use `#page=N` from `/parts`** — get `startPage` from the parts response for page-level attachment links.
-3. **Prefer direct law access** — use `/law/SK/{number}/{year}` when the law reference is known, to skip the search step.
-4. **Use `validAt` for legislation** — filter by `validAt: "YYYY-MM-DD"` to get the version valid at a specific date.
-5. **Use specific source codes** — always search `SKEZ`, `SKVS`, or `SKNUS` directly. There is no cross-domain search endpoint.
-6. **Use jq for filtering** — process JSON results with jq rather than multiple API calls.
-7. **Strip `<mark>` tags** — search highlights include `<mark>` tags; remove them before displaying titles.
-8. **Use `cdx-sk://` links** — always use `cdx-sk://doc/{id}/attachment/{filename}` for user-facing links, never resolve URLs manually.
+1. **Prefer `/parts?search=X` over `/meta`** — when you need a specific paragraph link, search parts directly instead of downloading full metadata.
+2. **Use `attachmentUrl` from `/parts`** — never construct attachment URLs manually. The `/parts` response includes ready-to-use `attachmentUrl` for each part.
+3. **Use law-level endpoints** — use `cdx-sk://law/SK/{number}/{year}/...` for all ezbierka operations when the law reference is known. No need to resolve docId first.
+4. **Never mix docId and filenames** — never combine a docId from one API response with attachment filenames from another.
+5. **Use `#page=N` from `/parts`** — get `startPage` from the parts response for page-level attachment links.
+6. **Use `validAt` for legislation** — filter by `validAt: "YYYY-MM-DD"` to get the version valid at a specific date.
+7. **Use specific source codes** — always search `SKEZ`, `SKVS`, or `SKNUS` directly. There is no cross-domain search endpoint.
+8. **Use jq for filtering** — process JSON results with jq rather than multiple API calls.
+9. **Strip `<mark>` tags** — search highlights include `<mark>` tags; remove them before displaying titles.
+10. **Use `cdx-sk://` links** — always use `cdx-sk://doc/{id}/attachment/{filename}` for user-facing links, never resolve URLs manually.
 
 ## Reference Files
 
