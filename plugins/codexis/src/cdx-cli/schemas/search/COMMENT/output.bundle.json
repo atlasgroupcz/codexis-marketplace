@@ -1,0 +1,85 @@
+{
+  "source": "COMMENT",
+  "kind": "output",
+  "root": "CommentSearchResponse",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T09:41:52Z",
+  "components": {
+    "CommentSearchResponse": {
+      "type": "object",
+      "description": "Search response for Liberis comments containing document data",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "List of matching comments",
+          "items": {
+            "$ref": "#/components/schemas/CommentSearchResultItem"
+          }
+        },
+        "totalResults": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Total number of matching comments"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Offset of the first result"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum number of results returned"
+        }
+      }
+    },
+    "CommentSearchResultItem": {
+      "type": "object",
+      "description": "Single flattened COMMENT search result item",
+      "properties": {
+        "docId": {
+          "type": "string",
+          "description": "Comment ID",
+          "example": "COMMENT123456"
+        },
+        "docUrl": {
+          "type": "string",
+          "description": "Document text URL",
+          "example": "cdx://doc/COMMENT123456/text"
+        },
+        "partName": {
+          "type": "string",
+          "description": "Comment part name"
+        },
+        "bookId": {
+          "type": "string",
+          "description": "Book ID"
+        },
+        "editionId": {
+          "type": "string",
+          "description": "Edition ID"
+        },
+        "validFromDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Valid from date"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Access tags",
+          "items": {
+            "type": "string"
+          }
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Search match snippet from document content (HTML)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Search match snippet from document title (HTML)"
+        }
+      }
+    }
+  }
+}

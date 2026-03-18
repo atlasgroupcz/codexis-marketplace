@@ -8,6 +8,9 @@ into the correct search request:
 ```bash
 cdx-cli search <SOURCE> --query "..." [source flags]
 cdx-cli search <SOURCE> '<json-payload>'
+cdx-cli search <SOURCE> --human --query "..."
+cdx-cli search <SOURCE> --schema-input
+cdx-cli search <SOURCE> --schema-output
 ```
 
 into the correct authenticated `curl` call to:
@@ -17,12 +20,15 @@ POST {CODEXIS_API_URL}/rest/cdx-api/search/<SOURCE>
 ```
 
 The API response is streamed to stdout as JSON.
+Schema mode prints stored API request/response definitions in a human-readable form.
 
 ## Requirements
 
 - `curl` must be available in `PATH`
 - `CODEXIS_API_URL` must be set
 - `CDX_API_JWT_AUTH` must be set
+
+Schema mode does not require API configuration.
 
 Example:
 
@@ -49,6 +55,9 @@ cdx-cli search <SOURCE> '<json-payload>'
 cdx-cli search <SOURCE> --query "..." '<json-payload>'
 cdx-cli search <SOURCE> -
 cdx-cli search <SOURCE> --dry-run --query "..."
+cdx-cli search <SOURCE> --human --query "..."
+cdx-cli search <SOURCE> --schema-input
+cdx-cli search <SOURCE> --schema-output
 ```
 
 Rules:
@@ -65,7 +74,9 @@ Rules:
 - JSON boolean filters use `true` / `false`
 - JSON sort fields should use `sort` and `sortOrder` across all sources
 - CLI boolean filters are presence-only flags, for example `--current`
+- `--human` pretty-prints JSON search responses
 - backend-specific request fields are mapped internally, for example CR `sort` -> `sortBy`
+- `--schema-input` and `--schema-output` print stored API schemas and cannot be combined with other search flags
 
 Examples:
 
@@ -81,6 +92,12 @@ cdx-cli search JD --query "náhrada škody" '{"limit":1,"query":"náhrada škody
 cat payload.json | cdx-cli search EU -
 
 cdx-cli search ALL --dry-run --query "insolvence" --limit 5
+
+cdx-cli search JD --human --query "náhrada škody" --limit 1
+
+cdx-cli search JD --schema-input
+
+cdx-cli search CR --schema-output
 ```
 
 ## Help Model
@@ -96,6 +113,20 @@ cdx-cli search JD --help
 `cdx-cli search --help` lists the supported sources.  
 `cdx-cli search <SOURCE> --help` shows the available flags for that source plus
 a brief example request and the relevant filter formats.
+
+## Stored Schemas
+
+Search input/output schemas are stored under `schemas/search/<SOURCE>/` and are
+embedded into the binary at build time.
+
+Refresh them from the live OpenAPI docs with:
+
+```bash
+./scripts/update-search-schemas.sh
+```
+
+The script fetches `https://beta.next.codexis.cz/rest/v3/api-docs` and falls
+back to the non-`/rest` variant if needed.
 
 ## Supported Search Sources
 

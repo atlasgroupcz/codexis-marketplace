@@ -68,4 +68,12 @@ impl SearchPayloadArgs for SearchJdArgs {
         insert_string_array(payload, "typ", &self.types);
         self.issued.insert_into(payload);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present()
+            || !self.courts.is_empty()
+            || !self.cities.is_empty()
+            || !self.types.is_empty()
+            || self.issued.is_present()
+    }
 }

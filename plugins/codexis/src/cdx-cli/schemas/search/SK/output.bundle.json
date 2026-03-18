@@ -1,0 +1,91 @@
+{
+  "source": "SK",
+  "kind": "output",
+  "root": "SkSearchResponse",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T09:41:52Z",
+  "components": {
+    "SkSearchResponse": {
+      "type": "object",
+      "description": "Search response for Slovak legislation (SK) containing flattened result items",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "List of matching documents",
+          "items": {
+            "$ref": "#/components/schemas/SkSearchResultItem"
+          }
+        },
+        "totalResults": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Total number of matching documents"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Offset of the first result"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum number of results returned"
+        }
+      }
+    },
+    "SkSearchResultItem": {
+      "type": "object",
+      "description": "Single flattened SK search result item",
+      "properties": {
+        "docId": {
+          "type": "string",
+          "description": "Document ID (timecut ID)",
+          "example": "SK123456_2024_01_01"
+        },
+        "docUrl": {
+          "type": "string",
+          "description": "Document text URL",
+          "example": "cdx://doc/SK123456_2024_01_01/text"
+        },
+        "docNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "docType": {
+          "type": "string",
+          "description": "Document type"
+        },
+        "source": {
+          "type": "string",
+          "description": "Document source"
+        },
+        "amount": {
+          "type": "string",
+          "description": "Issue number (číslo částky)"
+        },
+        "vyhlaseno": {
+          "type": "string",
+          "format": "date",
+          "description": "Publication date (vyhlášeno)"
+        },
+        "schvaleno": {
+          "type": "string",
+          "format": "date",
+          "description": "Approval date (schváleno)"
+        },
+        "author": {
+          "type": "string",
+          "description": "Author"
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Search match snippet from document content (HTML)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Search match snippet from document title (HTML)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "source": "ES",
+  "kind": "output",
+  "root": "EsSearchResponse",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T09:41:52Z",
+  "components": {
+    "EsSearchResponse": {
+      "type": "object",
+      "description": "Search response for EU Court of Justice decisions (ES) containing document data",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "List of matching documents",
+          "items": {
+            "$ref": "#/components/schemas/EsSearchResultItem"
+          }
+        },
+        "totalResults": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Total number of matching documents"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Offset of the first result"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum number of results returned"
+        }
+      }
+    },
+    "EsSearchResultItem": {
+      "type": "object",
+      "description": "Single flattened ES search result item",
+      "properties": {
+        "docId": {
+          "type": "string",
+          "description": "Document ID",
+          "example": "ES123456"
+        },
+        "docUrl": {
+          "type": "string",
+          "description": "Document text URL",
+          "example": "cdx://doc/ES123456/text"
+        },
+        "docType": {
+          "type": "string",
+          "description": "Document type",
+          "example": "Rozsudek"
+        },
+        "source": {
+          "type": "string",
+          "description": "Document source"
+        },
+        "court": {
+          "type": "string",
+          "description": "Court name"
+        },
+        "city": {
+          "type": "string",
+          "description": "City"
+        },
+        "createdDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Creation date"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject matter"
+        },
+        "celex": {
+          "type": "string",
+          "description": "CELEX identifier"
+        },
+        "ecli": {
+          "type": "string",
+          "description": "ECLI identifier"
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Search match snippet from document content (HTML)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Search match snippet from document title (HTML)"
+        }
+      }
+    }
+  }
+}

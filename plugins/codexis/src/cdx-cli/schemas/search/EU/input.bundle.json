@@ -1,0 +1,149 @@
+{
+  "source": "EU",
+  "kind": "input",
+  "root": "EuSearchRequest",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T09:41:52Z",
+  "components": {
+    "EuSearchRequest": {
+      "type": "object",
+      "description": "Search request for EU legislation",
+      "properties": {
+        "sort": {
+          "type": "string",
+          "description": "Sorting option",
+          "enum": [
+            "DATE",
+            "NAME",
+            "RELEVANCE"
+          ]
+        },
+        "query": {
+          "type": "string",
+          "description": "Fulltext search query. Supports space-separated terms, wildcards (*), and phrase search with double quotes. Write Czech characters directly (e.g., `požární ochrana`, `nájem bytu`). Do not use Unicode escapes.",
+          "examples": [
+            "požární ochrana \"nájem bytu\"",
+            "smlouva o dílo",
+            "vražda z afektu"
+          ],
+          "minLength": 1
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "default": 0,
+          "description": "Offset of the first result (0-based)"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "default": 10,
+          "description": "Number of results (1-50)"
+        },
+        "sortOrder": {
+          "type": "string",
+          "default": "DESC",
+          "description": "Sort order for results",
+          "enum": [
+            "ASC",
+            "DESC"
+          ]
+        },
+        "typ": {
+          "type": "array",
+          "description": "Facet field 'typ'",
+          "example": [
+            "Nařízení",
+            "Směrnice",
+            "Rozhodnutí"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "zdroj": {
+          "type": "array",
+          "description": "Facet field 'zdroj'",
+          "example": [
+            "Úřední věstník Evropské unie"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "zdrojUveu": {
+          "type": "array",
+          "description": "Facet field 'zdrojUveu' - source in Official Journal",
+          "example": [
+            "L",
+            "C"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "autor": {
+          "type": "array",
+          "description": "Facet field 'autor'",
+          "example": [
+            "Evropský parlament",
+            "Evropská komise"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "oblast": {
+          "type": "array",
+          "description": "Facet field 'oblast'",
+          "example": [
+            "Průmyslová politika a vnitřní trh",
+            "Zemědělství"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuedFrom": {
+          "type": "string",
+          "format": "date",
+          "description": "Issue date from",
+          "example": "2020-01-01"
+        },
+        "issuedTo": {
+          "type": "string",
+          "format": "date",
+          "description": "Issue date to",
+          "example": "2023-12-31"
+        },
+        "approvedFrom": {
+          "type": "string",
+          "format": "date",
+          "description": "Approval date from",
+          "example": "2021-01-01"
+        },
+        "approvedTo": {
+          "type": "string",
+          "format": "date",
+          "description": "Approval date to",
+          "example": "2023-12-31"
+        },
+        "effectiveFrom": {
+          "type": "string",
+          "format": "date",
+          "description": "Effective date from",
+          "example": "2022-01-01"
+        },
+        "effectiveTo": {
+          "type": "string",
+          "format": "date",
+          "description": "Effective date to",
+          "example": "2024-12-31"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  }
+}

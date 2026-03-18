@@ -3,6 +3,7 @@ use serde_json::{Map, Value};
 use std::io::{self, Read};
 
 use crate::core::error::CliError;
+use crate::core::schema::SearchSchemaKind;
 
 pub(crate) type JsonMap = Map<String, Value>;
 
@@ -30,6 +31,27 @@ pub(crate) struct SearchBaseArgs {
 
     #[arg(long, help = "Print the translated curl command and exit")]
     pub(crate) dry_run: bool,
+
+    #[arg(
+        long,
+        conflicts_with = "dry_run",
+        help = "Pretty-print JSON search output"
+    )]
+    pub(crate) human: bool,
+
+    #[arg(
+        long = "schema-input",
+        conflicts_with = "schema_output",
+        help = "Print the stored input schema and exit"
+    )]
+    pub(crate) schema_input: bool,
+
+    #[arg(
+        long = "schema-output",
+        conflicts_with = "schema_input",
+        help = "Print the stored output schema and exit"
+    )]
+    pub(crate) schema_output: bool,
 }
 
 #[derive(Args, Debug, Clone, Default)]
@@ -101,6 +123,9 @@ pub(crate) struct ChangedDateArgs {
 pub(crate) trait SearchPayloadArgs {
     fn base(&self) -> &SearchBaseArgs;
     fn extend_payload(&self, payload: &mut JsonMap);
+    fn has_source_filters(&self) -> bool {
+        false
+    }
 
     fn build_payload(&self, source_code: &'static str) -> Result<String, CliError> {
         let mut payload = JsonMap::new();
@@ -114,6 +139,29 @@ pub(crate) trait SearchPayloadArgs {
 
     fn dry_run(&self) -> bool {
         self.base().dry_run
+    }
+
+    fn human(&self) -> bool {
+        self.base().human
+    }
+
+    fn schema_kind(&self) -> Option<SearchSchemaKind> {
+        self.base().schema_kind()
+    }
+
+    fn validate_schema_request(&self) -> Result<Option<SearchSchemaKind>, CliError> {
+        let Some(kind) = self.schema_kind() else {
+            return Ok(None);
+        };
+
+        if self.base().has_search_inputs() || self.has_source_filters() {
+            return Err(CliError::InvalidSearchArgument(format!(
+                "{} cannot be combined with query, payload, pagination, sorting, filters, or output flags like --dry-run/--human",
+                kind.flag_name()
+            )));
+        }
+
+        Ok(Some(kind))
     }
 }
 
@@ -131,6 +179,25 @@ impl SearchBaseArgs {
             Some(self.offset.unwrap_or(DEFAULT_RESULT_OFFSET)),
         );
     }
+
+    pub(crate) fn schema_kind(&self) -> Option<SearchSchemaKind> {
+        if self.schema_input {
+            Some(SearchSchemaKind::Input)
+        } else if self.schema_output {
+            Some(SearchSchemaKind::Output)
+        } else {
+            None
+        }
+    }
+
+    fn has_search_inputs(&self) -> bool {
+        self.query.is_some()
+            || self.limit.is_some()
+            || self.offset.is_some()
+            || self.payload.is_some()
+            || self.dry_run
+            || self.human
+    }
 }
 
 impl StandardSortArgs {
@@ -145,6 +212,10 @@ impl StandardSortArgs {
             "sortOrder",
             self.sort_order.as_deref().unwrap_or(DEFAULT_SORT_ORDER),
         );
+    }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.sort.is_some() || self.sort_order.is_some()
     }
 }
 
@@ -161,12 +232,20 @@ impl CrSortArgs {
             self.sort_order.as_deref().unwrap_or(DEFAULT_SORT_ORDER),
         );
     }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.sort_by.is_some() || self.sort_order.is_some()
+    }
 }
 
 impl IssuedDateArgs {
     pub(crate) fn insert_into(&self, payload: &mut JsonMap) {
         insert_string(payload, "issuedFrom", &self.issued_from);
         insert_string(payload, "issuedTo", &self.issued_to);
+    }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.issued_from.is_some() || self.issued_to.is_some()
     }
 }
 
@@ -175,6 +254,10 @@ impl EffectiveDateArgs {
         insert_string(payload, "effectiveFrom", &self.effective_from);
         insert_string(payload, "effectiveTo", &self.effective_to);
     }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.effective_from.is_some() || self.effective_to.is_some()
+    }
 }
 
 impl ApprovedDateArgs {
@@ -182,12 +265,20 @@ impl ApprovedDateArgs {
         insert_string(payload, "approvedFrom", &self.approved_from);
         insert_string(payload, "approvedTo", &self.approved_to);
     }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.approved_from.is_some() || self.approved_to.is_some()
+    }
 }
 
 impl ChangedDateArgs {
     pub(crate) fn insert_into(&self, payload: &mut JsonMap) {
         insert_string(payload, "changedFrom", &self.changed_from);
         insert_string(payload, "changedTo", &self.changed_to);
+    }
+
+    pub(crate) fn is_present(&self) -> bool {
+        self.changed_from.is_some() || self.changed_to.is_some()
     }
 }
 
@@ -499,6 +590,21 @@ mod tests {
         )
         .unwrap_err();
 
+        assert!(matches!(error, CliError::InvalidSearchArgument(_)));
+    }
+
+    #[test]
+    fn schema_input_cannot_be_combined_with_search_arguments() {
+        let args = SearchJdArgs {
+            base: SearchBaseArgs {
+                schema_input: true,
+                query: Some("test".to_string()),
+                ..SearchBaseArgs::default()
+            },
+            ..SearchJdArgs::default()
+        };
+
+        let error = args.validate_schema_request().unwrap_err();
         assert!(matches!(error, CliError::InvalidSearchArgument(_)));
     }
 }

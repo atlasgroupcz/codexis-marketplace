@@ -55,4 +55,11 @@ impl SearchPayloadArgs for SearchCommentArgs {
         insert_string(payload, "relatedWithItem", &self.related_doc);
         insert_string(payload, "relatedWithItemPart", &self.related_part);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present()
+            || self.issued.is_present()
+            || self.related_doc.is_some()
+            || self.related_part.is_some()
+    }
 }

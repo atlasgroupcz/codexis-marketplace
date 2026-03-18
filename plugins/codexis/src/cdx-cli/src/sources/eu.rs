@@ -97,4 +97,16 @@ impl SearchPayloadArgs for SearchEuArgs {
         self.approved.insert_into(payload);
         self.effective.insert_into(payload);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present()
+            || !self.types.is_empty()
+            || !self.sources.is_empty()
+            || !self.series.is_empty()
+            || !self.authors.is_empty()
+            || !self.domains.is_empty()
+            || self.issued.is_present()
+            || self.approved.is_present()
+            || self.effective.is_present()
+    }
 }

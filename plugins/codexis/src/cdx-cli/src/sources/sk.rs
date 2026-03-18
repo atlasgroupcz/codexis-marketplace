@@ -52,4 +52,11 @@ impl SearchPayloadArgs for SearchSkArgs {
         self.issued.insert_into(payload);
         self.effective.insert_into(payload);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present()
+            || !self.types.is_empty()
+            || self.issued.is_present()
+            || self.effective.is_present()
+    }
 }

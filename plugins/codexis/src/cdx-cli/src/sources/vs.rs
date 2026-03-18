@@ -51,4 +51,8 @@ impl SearchPayloadArgs for SearchVsArgs {
         insert_string_array(payload, "autor", &self.authors);
         insert_string_array(payload, "kategorie", &self.categories);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present() || !self.authors.is_empty() || !self.categories.is_empty()
+    }
 }

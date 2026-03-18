@@ -33,4 +33,8 @@ impl SearchPayloadArgs for SearchAllArgs {
     fn extend_payload(&self, payload: &mut JsonMap) {
         self.sort.insert_into(payload);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present()
+    }
 }

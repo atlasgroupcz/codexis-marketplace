@@ -1,0 +1,109 @@
+{
+  "source": "EU",
+  "kind": "output",
+  "root": "EuSearchResponse",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T09:41:52Z",
+  "components": {
+    "EuSearchResponse": {
+      "type": "object",
+      "description": "Search response for EU legislation (EU) containing document data",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "List of matching documents",
+          "items": {
+            "$ref": "#/components/schemas/EuSearchResultItem"
+          }
+        },
+        "totalResults": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Total number of matching documents"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Offset of the first result"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum number of results returned"
+        }
+      }
+    },
+    "EuSearchResultItem": {
+      "type": "object",
+      "description": "Single flattened EU search result item",
+      "properties": {
+        "docId": {
+          "type": "string",
+          "description": "Document ID",
+          "example": "EU123456"
+        },
+        "docUrl": {
+          "type": "string",
+          "description": "Document text URL",
+          "example": "cdx://doc/EU123456/text"
+        },
+        "docNumber": {
+          "type": "string",
+          "description": "Document number"
+        },
+        "docType": {
+          "type": "string",
+          "description": "Document type"
+        },
+        "source": {
+          "type": "string",
+          "description": "Document source"
+        },
+        "sourceUveu": {
+          "type": "string",
+          "description": "Source in EU Official Journal"
+        },
+        "language": {
+          "type": "string",
+          "description": "Language"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Legal domain"
+        },
+        "celex": {
+          "type": "string",
+          "description": "CELEX identifier"
+        },
+        "createdDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Creation date"
+        },
+        "validFrom": {
+          "type": "string",
+          "format": "date",
+          "description": "Valid from date"
+        },
+        "validTo": {
+          "type": "string",
+          "format": "date",
+          "description": "Valid to date"
+        },
+        "approvalDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Approval date"
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Search match snippet from document content (HTML)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Search match snippet from document title (HTML)"
+        }
+      }
+    }
+  }
+}

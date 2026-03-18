@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 use crate::core::config::Config;
 use crate::core::error::CliError;
 use crate::core::http::execute_search_request;
+use crate::core::schema::{render_search_schema, SearchSchemaKind};
 use crate::sources::all::{SearchAllArgs, SEARCH_ALL_HELP};
 use crate::sources::comment::{SearchCommentArgs, SEARCH_COMMENT_HELP};
 use crate::sources::common::SearchPayloadArgs;
@@ -36,6 +37,8 @@ const SEARCH_AFTER_HELP: &str = r#"Sources:
 Examples:
   cdx-cli search JD --query "náhrada škody" --court "Nejvyšší soud" --limit 5
   cdx-cli search CR --query "občanský zákoník" --type Zákon --current
+  cdx-cli search JD --human --query "náhrada škody"
+  cdx-cli search JD --schema-input
   cdx-cli search JD '{"query":"náhrada škody","limit":5}'
   cat payload.json | cdx-cli search CR -
 
@@ -45,6 +48,8 @@ Formats:
   JSON sort fields: use sort / sortOrder across all sources
   CLI boolean filters: presence-only flags, for example --current
   Defaults: limit 10, offset 1, sort RELEVANCE, sort-order DESC
+  Human mode: --human pretty-prints JSON search results
+  Schema mode: --schema-input or --schema-output, with no other search flags
 
 Flags map to JSON fields. If JSON_PAYLOAD is also provided, matching keys from JSON win.
 Backend-specific request fields are handled internally, for example CR sort -> sortBy."#;
@@ -203,17 +208,49 @@ impl SearchSource {
             Self::Vs(args) => args.dry_run(),
         }
     }
-}
 
-pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
-    let config = Config::load()?;
+    fn human(&self) -> bool {
+        match self {
+            Self::All(args) => args.human(),
+            Self::Comment(args) => args.human(),
+            Self::Cr(args) => args.human(),
+            Self::Es(args) => args.human(),
+            Self::Eu(args) => args.human(),
+            Self::Jd(args) => args.human(),
+            Self::Lt(args) => args.human(),
+            Self::Sk(args) => args.human(),
+            Self::Vs(args) => args.human(),
+        }
+    }
 
-    match cli.command {
-        Commands::Search { source } => execute_search(&config, source),
+    fn validate_schema_request(&self) -> Result<Option<SearchSchemaKind>, CliError> {
+        match self {
+            Self::All(args) => args.validate_schema_request(),
+            Self::Comment(args) => args.validate_schema_request(),
+            Self::Cr(args) => args.validate_schema_request(),
+            Self::Es(args) => args.validate_schema_request(),
+            Self::Eu(args) => args.validate_schema_request(),
+            Self::Jd(args) => args.validate_schema_request(),
+            Self::Lt(args) => args.validate_schema_request(),
+            Self::Sk(args) => args.validate_schema_request(),
+            Self::Vs(args) => args.validate_schema_request(),
+        }
     }
 }
 
-fn execute_search(config: &Config, source: SearchSource) -> Result<(), CliError> {
+pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
+    match cli.command {
+        Commands::Search { source } => execute_search(source),
+    }
+}
+
+fn execute_search(source: SearchSource) -> Result<(), CliError> {
+    if let Some(kind) = source.validate_schema_request()? {
+        println!("{}", render_search_schema(source.source_code(), kind)?);
+        return Ok(());
+    }
+
+    let config = Config::load()?;
     let payload = source.build_payload()?;
     execute_search_request(
         &config.base_url,
@@ -221,6 +258,7 @@ fn execute_search(config: &Config, source: SearchSource) -> Result<(), CliError>
         source.source_code(),
         &payload,
         source.dry_run(),
+        source.human(),
     )
 }
 
@@ -281,6 +319,31 @@ mod tests {
             Commands::Search {
                 source: SearchSource::Jd(args),
             } => assert_eq!(args.base.query.as_deref(), Some("test")),
+            _ => panic!("expected JD search command"),
+        }
+    }
+
+    #[test]
+    fn cli_accepts_schema_input_flag() {
+        let cli = Cli::try_parse_from(["cdx-cli", "search", "JD", "--schema-input"]).unwrap();
+
+        match cli.command {
+            Commands::Search {
+                source: SearchSource::Jd(args),
+            } => assert!(args.base.schema_input),
+            _ => panic!("expected JD search command"),
+        }
+    }
+
+    #[test]
+    fn cli_accepts_human_flag() {
+        let cli =
+            Cli::try_parse_from(["cdx-cli", "search", "JD", "--human", "--query", "test"]).unwrap();
+
+        match cli.command {
+            Commands::Search {
+                source: SearchSource::Jd(args),
+            } => assert!(args.base.human),
             _ => panic!("expected JD search command"),
         }
     }

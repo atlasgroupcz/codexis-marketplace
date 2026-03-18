@@ -37,4 +37,8 @@ impl SearchPayloadArgs for SearchLtArgs {
         self.sort.insert_into(payload);
         self.issued.insert_into(payload);
     }
+
+    fn has_source_filters(&self) -> bool {
+        self.sort.is_present() || self.issued.is_present()
+    }
 }

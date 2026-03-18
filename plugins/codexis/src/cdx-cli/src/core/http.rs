@@ -1,3 +1,4 @@
+use std::io::{self, Write};
 use std::process::{Command, Stdio};
 
 use crate::core::error::CliError;
@@ -10,6 +11,7 @@ pub(crate) fn execute_search_request(
     source_code: &str,
     payload: &str,
     dry_run: bool,
+    human: bool,
 ) -> Result<(), CliError> {
     let curl_args = build_search_curl_args(base_url, auth_header, source_code, payload);
 
@@ -18,21 +20,74 @@ pub(crate) fn execute_search_request(
         return Ok(());
     }
 
-    let status = Command::new("curl")
-        .args(&curl_args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()
-        .map_err(CliError::CurlSpawn)?;
+    if human {
+        let output = Command::new("curl")
+            .args(&curl_args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .output()
+            .map_err(CliError::CurlSpawn)?;
 
-    match status.code() {
-        Some(0) => Ok(()),
-        Some(code) => Err(CliError::CommandExited {
-            command: "curl",
-            code,
-        }),
-        None => Err(CliError::CommandTerminated { command: "curl" }),
+        match output.status.code() {
+            Some(0) => {
+                print_response_body(&output.stdout, true)?;
+                Ok(())
+            }
+            Some(code) => Err(CliError::CommandExited {
+                command: "curl",
+                code,
+            }),
+            None => Err(CliError::CommandTerminated { command: "curl" }),
+        }
+    } else {
+        let status = Command::new("curl")
+            .args(&curl_args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .map_err(CliError::CurlSpawn)?;
+
+        match status.code() {
+            Some(0) => Ok(()),
+            Some(code) => Err(CliError::CommandExited {
+                command: "curl",
+                code,
+            }),
+            None => Err(CliError::CommandTerminated { command: "curl" }),
+        }
+    }
+}
+
+fn print_response_body(body: &[u8], human: bool) -> Result<(), CliError> {
+    let rendered = if human {
+        format_json_output(body)
+    } else {
+        String::from_utf8_lossy(body).into_owned()
+    };
+
+    let mut stdout = io::stdout().lock();
+    stdout
+        .write_all(rendered.as_bytes())
+        .map_err(|source| CliError::Io {
+            context: "failed to write response to stdout".to_string(),
+            source,
+        })?;
+    if !rendered.ends_with('\n') {
+        stdout.write_all(b"\n").map_err(|source| CliError::Io {
+            context: "failed to write trailing newline to stdout".to_string(),
+            source,
+        })?;
+    }
+    Ok(())
+}
+
+fn format_json_output(body: &[u8]) -> String {
+    let text = String::from_utf8_lossy(body);
+    match serde_json::from_str::<serde_json::Value>(&text) {
+        Ok(value) => serde_json::to_string_pretty(&value).unwrap_or_else(|_| text.into_owned()),
+        Err(_) => text.into_owned(),
     }
 }
 
@@ -197,5 +252,22 @@ mod tests {
             rendered,
             "curl -H 'Authorization: Bearer <redacted>' -d '{\"query\":\"test\"}'"
         );
+    }
+
+    #[test]
+    fn human_output_pretty_prints_valid_json() {
+        let rendered = format_json_output(br#"{"results":[{"docId":"JD1"}],"limit":1}"#);
+
+        assert!(rendered.contains("\n  \"limit\": 1,"));
+        assert!(rendered.contains("\n  \"results\": ["));
+        let reparsed: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert_eq!(reparsed["limit"], 1);
+        assert_eq!(reparsed["results"][0]["docId"], "JD1");
+    }
+
+    #[test]
+    fn human_output_falls_back_to_raw_text_for_invalid_json() {
+        let rendered = format_json_output(br#"not-json"#);
+        assert_eq!(rendered, "not-json");
     }
 }
