@@ -2,8 +2,9 @@ use clap::{Parser, Subcommand};
 
 use crate::core::config::Config;
 use crate::core::error::CliError;
-use crate::core::http::{execute_search_request, SearchFacetMode};
+use crate::core::http::{execute_get_request, execute_search_request, SearchFacetMode};
 use crate::core::schema::{render_search_schema, SearchSchemaKind};
+use crate::get::GetArgs;
 use crate::sources::all::{SearchAllArgs, SEARCH_ALL_HELP};
 use crate::sources::comment::{SearchCommentArgs, SEARCH_COMMENT_HELP};
 use crate::sources::common::SearchPayloadArgs;
@@ -19,7 +20,7 @@ use crate::sources::vs::{SearchVsArgs, SEARCH_VS_HELP};
 #[command(
     name = "cdx-cli",
     version,
-    about = "CODEXIS CLI for source-oriented search",
+    about = "CODEXIS CLI for search and cdx:// resource fetches",
     disable_version_flag = true,
     disable_help_subcommand = true,
     subcommand_required = true,
@@ -40,6 +41,9 @@ enum Commands {
         #[command(subcommand)]
         source: SearchSource,
     },
+
+    #[command(about = "Fetch a cdx:// resource", arg_required_else_help = true)]
+    Get(GetArgs),
 }
 
 #[derive(Subcommand, Debug)]
@@ -201,6 +205,7 @@ impl SearchSource {
 pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
     match cli.command {
         Commands::Search { source } => execute_search(source),
+        Commands::Get(args) => execute_get(args),
     }
 }
 
@@ -219,6 +224,16 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
         &payload,
         source.dry_run(),
         source.facet_mode(),
+    )
+}
+
+fn execute_get(args: GetArgs) -> Result<(), CliError> {
+    let config = Config::load()?;
+    execute_get_request(
+        &config.base_url,
+        &config.auth_header,
+        &args.resource,
+        args.dry_run,
     )
 }
 
@@ -292,6 +307,20 @@ mod tests {
                 source: SearchSource::Jd(args),
             } => assert!(args.base.schema_input),
             _ => panic!("expected JD search command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_get_command() {
+        let cli =
+            Cli::try_parse_from(["cdx-cli", "get", "--dry-run", "cdx://doc/JD1/meta"]).unwrap();
+
+        match cli.command {
+            Commands::Get(args) => {
+                assert!(args.dry_run);
+                assert_eq!(args.resource, "cdx://doc/JD1/meta");
+            }
+            _ => panic!("expected get command"),
         }
     }
 

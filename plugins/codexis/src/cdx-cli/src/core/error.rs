@@ -12,6 +12,7 @@ pub(crate) enum CliError {
     SearchPayloadMustBeObject,
     MissingQueryField,
     InvalidSearchArgument(String),
+    InvalidCdxUrl(String),
     InvalidStoredSchema(String),
     CurlSpawn(io::Error),
     CommandExited { command: &'static str, code: i32 },
@@ -29,6 +30,7 @@ impl CliError {
             | Self::SearchPayloadMustBeObject
             | Self::MissingQueryField
             | Self::InvalidSearchArgument(_)
+            | Self::InvalidCdxUrl(_)
             | Self::InvalidStoredSchema(_) => 2,
             Self::CurlSpawn(_) | Self::CommandTerminated { .. } => 1,
         }
@@ -57,6 +59,7 @@ impl fmt::Display for CliError {
                 )
             }
             Self::InvalidSearchArgument(message) => write!(f, "{message}"),
+            Self::InvalidCdxUrl(message) => write!(f, "{message}"),
             Self::InvalidStoredSchema(message) => write!(f, "invalid stored schema: {message}"),
             Self::CurlSpawn(source) => write!(f, "failed to run curl: {source}"),
             Self::CommandExited { command, code } => {

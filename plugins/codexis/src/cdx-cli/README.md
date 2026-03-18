@@ -1,9 +1,16 @@
 # cdx-cli
 
-`cdx-cli` is a source-oriented CODEXIS search CLI.
+`cdx-cli` is a CODEXIS CLI for source-oriented search and direct `cdx://`
+resource fetches.
 
-It focuses on one job for now: translate either convenience flags or inline JSON
-into the correct search request:
+It currently supports two commands:
+
+- `search` translates either convenience flags or inline JSON into the correct
+  authenticated search request
+- `get` fetches any `cdx://...` resource by translating it to the configured
+  CODEXIS CDX API base URL and adding authorization
+
+Search examples:
 
 ```bash
 cdx-cli search <SOURCE> --query "..." [source flags]
@@ -12,13 +19,21 @@ cdx-cli search <SOURCE> --schema-input
 cdx-cli search <SOURCE> --schema-output
 ```
 
-into the correct authenticated `curl` call to:
+Get examples:
+
+```bash
+cdx-cli get cdx://doc/CR10_2025_01_01/text
+cdx-cli get --dry-run cdx://doc/JD419870/meta
+```
+
+Search requests are translated into:
 
 ```text
 POST {CODEXIS_API_URL}/rest/cdx-api/search/<SOURCE>
 ```
 
-The API response is streamed to stdout as JSON.
+`get` requests translate `cdx://...` to `{CODEXIS_API_URL}/rest/cdx-api/...`.
+Responses are streamed to stdout.
 Schema mode prints stored API request/response definitions in a human-readable form.
 For source-specific searches, `availableFilters` are hidden by default unless
 you request facet output explicitly.
@@ -51,6 +66,8 @@ tries `~/.cdx/.env`. Process environment values win over file values.
 ## Usage
 
 ```bash
+cdx-cli get cdx://doc/CR10_2025_01_01/text
+cdx-cli get --dry-run cdx://doc/JD419870/meta
 cdx-cli search <SOURCE> --query "..." [flags]
 cdx-cli search <SOURCE> '<json-payload>'
 cdx-cli search <SOURCE> --query "..." '<json-payload>'
@@ -64,6 +81,9 @@ cdx-cli search <SOURCE> --schema-output
 
 Rules:
 
+- `get` accepts only `cdx://...` URLs and translates them to `{CODEXIS_API_URL}/rest/cdx-api/...`
+- `cdx://` maps to `{CODEXIS_API_URL}/rest/cdx-api`
+- a leading slash after `cdx://` is ignored, so `cdx:///doc/CR10/text` works
 - `<SOURCE>` is one of `ALL`, `COMMENT`, `CR`, `ES`, `EU`, `JD`, `LT`, `SK`, `VS`
 - either `--query` or `JSON_PAYLOAD` must provide a non-empty final `"query"` string
 - `JSON_PAYLOAD` must be a JSON object
@@ -85,6 +105,10 @@ Rules:
 Examples:
 
 ```bash
+cdx-cli get cdx://doc/CR10_2025_01_01/text
+
+cdx-cli get --dry-run cdx://doc/JD419870/meta
+
 cdx-cli search JD --query "náhrada škody" --court "Nejvyšší soud" --type Rozsudek --limit 5
 
 cdx-cli search CR --query "občanský zákoník" --type Zákon --current --limit 5
@@ -112,10 +136,12 @@ The CLI is intentionally nested:
 
 ```bash
 cdx-cli --help
+cdx-cli get --help
 cdx-cli search --help
 cdx-cli search JD --help
 ```
 
+`cdx-cli get --help` shows the direct `cdx://` fetch interface.  
 `cdx-cli search --help` lists the supported sources.  
 `cdx-cli search <SOURCE> --help` shows the available flags for that source plus
 a brief example request and the relevant filter formats.
@@ -149,5 +175,5 @@ back to the non-`/rest` variant if needed.
 ## Notes
 
 - `ALL` is useful for orientation, not for final authoritative retrieval.
-- `cdx-cli` currently focuses on search. The raw `cdx` curl wrapper can remain
-  available separately for lower-level API work.
+- `cdx-cli get` covers the straightforward `cdx://` fetch use case; the raw
+  `cdx` wrapper can still remain available for lower-level curl overrides.

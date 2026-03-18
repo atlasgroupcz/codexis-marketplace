@@ -3,6 +3,7 @@ use std::process::{Command, Stdio};
 
 use crate::core::error::CliError;
 
+const CDX_SCHEME: &str = "cdx://";
 const API_PREFIX: &str = "/rest/cdx-api";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -41,6 +42,37 @@ pub(crate) fn execute_search_request(
             print_response_body(&output.stdout, facet_mode)?;
             Ok(())
         }
+        Some(code) => Err(CliError::CommandExited {
+            command: "curl",
+            code,
+        }),
+        None => Err(CliError::CommandTerminated { command: "curl" }),
+    }
+}
+
+pub(crate) fn execute_get_request(
+    base_url: &str,
+    auth_header: &str,
+    resource: &str,
+    dry_run: bool,
+) -> Result<(), CliError> {
+    let curl_args = build_get_curl_args(base_url, auth_header, resource)?;
+
+    if dry_run {
+        println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
+        return Ok(());
+    }
+
+    let status = Command::new("curl")
+        .args(&curl_args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status()
+        .map_err(CliError::CurlSpawn)?;
+
+    match status.code() {
+        Some(0) => Ok(()),
         Some(code) => Err(CliError::CommandExited {
             command: "curl",
             code,
@@ -107,12 +139,35 @@ fn build_search_curl_args(
     ]
 }
 
+fn build_get_curl_args(
+    base_url: &str,
+    auth_header: &str,
+    resource: &str,
+) -> Result<Vec<String>, CliError> {
+    Ok(vec![
+        "-sS".to_string(),
+        "-H".to_string(),
+        auth_header.to_string(),
+        build_cdx_url(base_url, resource)?,
+    ])
+}
+
 fn build_search_url(base_url: &str, source_code: &str, facet_mode: SearchFacetMode) -> String {
     let mut url = build_api_url(base_url, &format!("search/{source_code}"));
     if matches!(facet_mode, SearchFacetMode::Full) {
         url.push_str("?fullFacets=true");
     }
     url
+}
+
+fn build_cdx_url(base_url: &str, resource: &str) -> Result<String, CliError> {
+    let Some(rest) = resource.strip_prefix(CDX_SCHEME) else {
+        return Err(CliError::InvalidCdxUrl(format!(
+            "get expects a cdx:// URL, got: {resource}"
+        )));
+    };
+
+    Ok(build_api_url(base_url, rest))
 }
 
 fn build_api_url(base_url: &str, rest: &str) -> String {
@@ -239,6 +294,50 @@ mod tests {
             args[7],
             "https://app.codexis.cz/rest/cdx-api/search/JD?fullFacets=true"
         );
+    }
+
+    #[test]
+    fn get_curl_args_translate_cdx_resource_to_api_url() {
+        let args = build_get_curl_args(
+            "https://app.codexis.cz",
+            "Authorization: Bearer token",
+            "cdx://doc/CR10_2026_01_01/text",
+        )
+        .unwrap();
+
+        assert_eq!(
+            args,
+            vec![
+                "-sS",
+                "-H",
+                "Authorization: Bearer token",
+                "https://app.codexis.cz/rest/cdx-api/doc/CR10_2026_01_01/text",
+            ]
+        );
+    }
+
+    #[test]
+    fn get_curl_args_accept_empty_cdx_root() {
+        let args = build_get_curl_args(
+            "https://app.codexis.cz",
+            "Authorization: Bearer token",
+            "cdx://",
+        )
+        .unwrap();
+
+        assert_eq!(args[3], "https://app.codexis.cz/rest/cdx-api");
+    }
+
+    #[test]
+    fn get_curl_args_reject_non_cdx_urls() {
+        let error = build_get_curl_args(
+            "https://app.codexis.cz",
+            "Authorization: Bearer token",
+            "https://example.com/doc/1",
+        )
+        .unwrap_err();
+
+        assert!(matches!(error, CliError::InvalidCdxUrl(_)));
     }
 
     #[test]
