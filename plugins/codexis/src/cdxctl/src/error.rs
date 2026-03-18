@@ -47,3 +47,9 @@ impl From<serde_json::Error> for CdxctlError {
         CdxctlError::Parse(e.to_string())
     }
 }
+
+impl From<std::io::Error> for CdxctlError {
+    fn from(e: std::io::Error) -> Self {
+        CdxctlError::Network(format!("I/O error: {e}"))
+    }
+}

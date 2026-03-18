@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod automation;
 pub mod marketplace;
+pub mod notification;
 pub mod plugin;
 pub mod skill;
 pub mod tabular;

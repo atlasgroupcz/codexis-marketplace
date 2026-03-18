@@ -1,7 +1,7 @@
 ---
 name: cdxctl
-description: Use when the user asks to create, list, update, or delete custom/local agents or skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, or extract tabular data from files in a folder. Provides the cdxctl CLI for platform management operations.
-version: 1.3.0
+description: Use when the user asks to create, list, update, or delete custom/local agents or skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, extract tabular data from files in a folder, or create, list, and manage notifications. Provides the cdxctl CLI for platform management operations.
+version: 1.4.0
 ---
 
 # cdxctl — Platform Management CLI
@@ -202,6 +202,45 @@ cdxctl tabular results ~/invoices
 **Tag/tags types** require `--option` flags in `value:COLOR` format. Available colors: RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, PINK, CYAN, TEAL, AMBER, EMERALD, INDIGO, VIOLET, FUCHSIA, ROSE, SKY, LIME, SLATE, GRAY, ZINC, NEUTRAL, STONE.
 
 **Workflow:** add columns → start → poll status/results until done.
+
+## Notifications
+
+Create file-based notifications that appear in the frontend bell/sheet. Apps and automations inside VMs use these to notify users.
+
+```bash
+# Create a notification (triggers daemon refresh automatically)
+cdxctl notification create --message "Export completed: report.xlsx"
+
+# Create with a link (clicking navigates to the URL and marks as confirmed)
+cdxctl notification create \
+    --message "Chat completed — click to view" \
+    --link "/chat/Q2hhdDoxMjYtMzZhOTFk..."
+
+# Create with a shell action (executed on daemon refresh)
+cdxctl notification create \
+    --message "Backup finished" \
+    --action "echo done > /tmp/backup_status"
+
+# Create with extra custom fields
+cdxctl notification create \
+    --message "New data available" \
+    --extra source=pipeline \
+    --extra priority=high
+
+# List notifications (last 7 days)
+cdxctl notification list
+
+# List only unseen notifications
+cdxctl notification list --unseen
+
+# Mark a notification as seen
+cdxctl notification seen <id>
+
+# Mark a notification as confirmed
+cdxctl notification confirm <id>
+```
+
+**File format:** Notifications are JSON files at `~/.cdx/notifications/YYYY/MM/DD/HH/n_{timestamp_ms}_{uuid}.json` with fields: `message` (required), `action`, `link`, `seen`, `confirmed`, plus any custom fields.
 
 ## Output
 

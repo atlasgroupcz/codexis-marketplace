@@ -375,6 +375,45 @@ mod tests {
     }
 }
 
+// ==================== Notifications ====================
+
+pub const NOTIFICATIONS_QUERY: &str = r#"
+    query Notifications {
+        notifications {
+            id
+            message
+            action
+            seen
+            confirmed
+            createdAt
+        }
+    }
+"#;
+
+pub const UNSEEN_NOTIFICATION_COUNT_QUERY: &str = r#"
+    query UnseenNotificationCount {
+        unseenNotificationCount
+    }
+"#;
+
+pub const REFRESH_NOTIFICATIONS_MUTATION: &str = r#"
+    mutation RefreshNotifications {
+        refreshNotifications
+    }
+"#;
+
+pub const MARK_NOTIFICATIONS_SEEN_MUTATION: &str = r#"
+    mutation MarkNotificationsSeen($ids: [ID!]!) {
+        markNotificationsSeen(ids: $ids)
+    }
+"#;
+
+pub const MARK_NOTIFICATION_CONFIRMED_MUTATION: &str = r#"
+    mutation MarkNotificationConfirmed($id: ID!) {
+        markNotificationConfirmed(id: $id)
+    }
+"#;
+
 // ==================== Tabular Extraction ====================
 
 pub const GET_TABULAR_EXTRACTION: &str = r#"

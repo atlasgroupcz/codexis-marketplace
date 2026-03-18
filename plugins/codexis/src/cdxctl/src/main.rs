@@ -53,6 +53,11 @@ enum Commands {
         #[command(subcommand)]
         command: TabularCommands,
     },
+    /// Manage notifications
+    Notification {
+        #[command(subcommand)]
+        command: NotificationCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -298,6 +303,51 @@ enum TabularCommands {
     },
 }
 
+#[derive(Subcommand)]
+enum NotificationCommands {
+    /// Create a new notification
+    Create {
+        /// Notification message
+        #[arg(short, long)]
+        message: String,
+        /// Optional shell action to execute on refresh
+        #[arg(short, long)]
+        action: Option<String>,
+        /// Optional link URL (clicking navigates here and marks as confirmed)
+        #[arg(short, long)]
+        link: Option<String>,
+        /// Extra key-value pairs (e.g. --extra key=value)
+        #[arg(long, value_parser = parse_key_value)]
+        extra: Vec<(String, String)>,
+    },
+    /// List notifications
+    List {
+        /// Number of days to show (default: 7)
+        #[arg(long, default_value = "7")]
+        days: u32,
+        /// Show only unseen notifications
+        #[arg(long)]
+        unseen: bool,
+    },
+    /// Mark a notification as seen
+    Seen {
+        /// Notification ID
+        id: String,
+    },
+    /// Mark a notification as confirmed
+    Confirm {
+        /// Notification ID
+        id: String,
+    },
+}
+
+fn parse_key_value(s: &str) -> Result<(String, String), String> {
+    let pos = s
+        .find('=')
+        .ok_or_else(|| format!("invalid KEY=VALUE: no `=` found in `{s}`"))?;
+    Ok((s[..pos].to_string(), s[pos + 1..].to_string()))
+}
+
 fn main() {
     let cli = Cli::parse();
     let client = GraphQLClient::new();
@@ -440,6 +490,30 @@ fn main() {
             TabularCommands::Start { folder } => commands::tabular::start(&client, &folder, format),
             TabularCommands::Results { folder } => {
                 commands::tabular::results(&client, &folder, format)
+            }
+        },
+        Commands::Notification { command } => match command {
+            NotificationCommands::Create {
+                message,
+                action,
+                link,
+                extra,
+            } => commands::notification::create(
+                &client,
+                &message,
+                action.as_deref(),
+                link.as_deref(),
+                &extra,
+                format,
+            ),
+            NotificationCommands::List { days, unseen } => {
+                commands::notification::list(&client, days, unseen, format)
+            }
+            NotificationCommands::Seen { id } => {
+                commands::notification::seen(&client, &id, format)
+            }
+            NotificationCommands::Confirm { id } => {
+                commands::notification::confirm(&client, &id, format)
             }
         },
     };
