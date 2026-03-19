@@ -284,7 +284,6 @@ def ensure_check_automation():
     if not isinstance(automations, list):
         return
 
-    legacy_ids = []
     for automation in automations:
         if not isinstance(automation, dict):
             continue
@@ -296,20 +295,6 @@ def ensure_check_automation():
             continue
 
         if command == desired_command:
-            return
-
-        if command.endswith("sd check"):
-            automation_id = automation.get("uuid") or automation.get("id")
-            if isinstance(automation_id, str) and automation_id:
-                legacy_ids.append(automation_id)
-
-    for automation_id in legacy_ids:
-        try:
-            subprocess.run(
-                [CDXCTL_BIN, "automation", "delete", automation_id],
-                capture_output=True, text=True, timeout=15,
-            )
-        except Exception:
             return
 
     try:
