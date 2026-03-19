@@ -15,5 +15,5 @@ remove_binary() {
 }
 
 remove_binary "cdx-cli"
-remove_binary "cdx"
+remove_binary "cdx-sledovane-dokumenty"
 remove_binary "cdxctl"

@@ -15,11 +15,12 @@ Example (`codexis`):
 ```text
 plugins/codexis/
 ├── bin/
-│   ├── cdx
+│   ├── cdx-cli
+│   ├── cdx-sledovane-dokumenty
 │   └── cdx-link-rewriter
 └── src/
     ├── build.sh
-    ├── cdx/
+    ├── cdx-cli/
     │   ├── Cargo.toml
     │   └── src/main.rs
     └── cdx-link-rewriter/

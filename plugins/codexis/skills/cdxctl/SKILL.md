@@ -26,6 +26,13 @@ cdxctl automation create \
     --max-turns 10 \
     --work-dir "/home/user/project"
 
+# Create a COMMAND automation
+cdxctl automation create-command \
+    --title "Tracked Documents Check" \
+    --cron "0 8 * * 1" \
+    --command "cdx-sledovane-dokumenty check" \
+    --description "Weekly tracked-document change check"
+
 # Update (partial — only specified fields change)
 cdxctl automation update <id> --title "New Title"
 cdxctl automation update <id> --cron "0 */2 * * *" --enabled true
@@ -39,6 +46,8 @@ cdxctl automation trigger <id>
 ```
 
 **Required fields for create:** `--title`, `--cron` (5-field unix cron), `--prompt`
+
+**Required fields for create-command:** `--title`, `--cron`, `--command`
 
 **IDs:** Use the `id` or `uuid` from `automation list` output. Both Node IDs (base64) and raw UUIDs work.
 

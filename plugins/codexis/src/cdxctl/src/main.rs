@@ -94,6 +94,24 @@ enum AutomationCommands {
         #[arg(long, default_value = "false")]
         disabled: bool,
     },
+    /// Create a new COMMAND automation
+    CreateCommand {
+        /// Automation title
+        #[arg(long)]
+        title: String,
+        /// Cron expression (5-field unix cron)
+        #[arg(long)]
+        cron: String,
+        /// Shell command to execute
+        #[arg(long)]
+        command: String,
+        /// Description
+        #[arg(long)]
+        description: Option<String>,
+        /// Create in disabled state
+        #[arg(long, default_value = "false")]
+        disabled: bool,
+    },
     /// Update an existing automation (partial update)
     Update {
         /// Automation ID (Node ID or UUID)
@@ -376,6 +394,21 @@ fn main() {
                 &skill,
                 max_turns,
                 work_dir.as_deref(),
+                disabled,
+                format,
+            ),
+            AutomationCommands::CreateCommand {
+                title,
+                cron,
+                command,
+                description,
+                disabled,
+            } => commands::automation::create_command(
+                &client,
+                &title,
+                &cron,
+                &command,
+                description.as_deref(),
                 disabled,
                 format,
             ),

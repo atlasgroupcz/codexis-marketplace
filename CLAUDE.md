@@ -117,9 +117,9 @@ Plugin executables must be placed in a `bin/` folder inside the plugin directory
 
 Example (from codexis plugin):
 ```json
-"postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
-"postUninstall": "sudo rm -f /usr/local/bin/cdx /usr/local/bin/cdxctl",
-"onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx\" /usr/local/bin/cdx && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl"
+"postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cli\" /usr/local/bin/cdx-cli && sudo cp \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" /usr/local/bin/cdx-sledovane-dokumenty && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
+"postUninstall": "sudo rm -f /usr/local/bin/cdx-cli /usr/local/bin/cdx-sledovane-dokumenty /usr/local/bin/cdxctl",
+"onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cli\" /usr/local/bin/cdx-cli && sudo cp \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" /usr/local/bin/cdx-sledovane-dokumenty && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl"
 ```
 
 ## A2UI Visualization Schema

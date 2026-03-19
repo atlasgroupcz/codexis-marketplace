@@ -51,7 +51,6 @@ build_crate() {
   echo "   installed -> $BIN_DIR/$bin_name"
 }
 
-build_crate "$SCRIPT_DIR/cdx" "cdx"
 build_crate "$SCRIPT_DIR/cdx-cli" "cdx-cli"
 build_crate "$SCRIPT_DIR/cdx-link-rewriter" "cdx-link-rewriter"
 build_crate "$SCRIPT_DIR/cdxctl" "cdxctl"

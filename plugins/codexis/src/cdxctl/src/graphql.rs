@@ -5,6 +5,8 @@ query GetAutomations {
     automations {
         id
         uuid
+        type
+        command
         title
         description
         agentFullName
@@ -32,6 +34,8 @@ mutation CreateAutomation($input: AutomationInput!) {
     createAutomation(input: $input) {
         id
         uuid
+        type
+        command
         title
         description
         agentFullName
@@ -50,6 +54,8 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
     updateAutomation(id: $id, input: $input) {
         id
         uuid
+        type
+        command
         title
         description
         agentFullName

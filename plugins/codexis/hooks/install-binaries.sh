@@ -25,7 +25,6 @@ install_binary() {
   echo "Installed ${binary_name} -> ${target_path}"
 }
 
-# Install the new CLI first. Keep legacy `cdx` available as a fallback.
 install_binary "cdx-cli"
-install_binary "cdx"
+install_binary "cdx-sledovane-dokumenty"
 install_binary "cdxctl"

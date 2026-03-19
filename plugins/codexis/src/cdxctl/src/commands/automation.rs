@@ -57,6 +57,33 @@ pub fn create(
     Ok(())
 }
 
+pub fn create_command(
+    client: &GraphQLClient,
+    title: &str,
+    cron: &str,
+    command: &str,
+    description: Option<&str>,
+    disabled: bool,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let mut input = json!({
+        "type": "COMMAND",
+        "title": title,
+        "cron": cron,
+        "command": command,
+        "enabled": !disabled,
+    });
+
+    if let Some(desc) = description {
+        input["description"] = json!(desc);
+    }
+
+    let data = client.execute(graphql::CREATE_AUTOMATION, json!({ "input": input }))?;
+    let result = data.get("createAutomation").cloned().unwrap_or(Value::Null);
+    print_output(&result, format);
+    Ok(())
+}
+
 pub fn update(
     client: &GraphQLClient,
     id: &str,

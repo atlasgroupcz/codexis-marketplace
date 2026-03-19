@@ -1,36 +1,36 @@
 #!/usr/bin/env python3
-"""sd – Sledované dokumenty: track Czech legislation changes via CODEXIS API.
+"""cdx-sledovane-dokumenty – track Czech legislation changes via CODEXIS API.
 
 Usage:
-    ./sd add <codexisId> [--parts paragraf1,paragraf2]
-    ./sd remove <codexisId>
-    ./sd list
-    ./sd check [<codexisId>]
-    ./sd confirm <codexisId>
-    ./sd show <codexisId>
-    ./sd group add <codexisId> <groupName>
-    ./sd group remove <codexisId> <groupName>
-    ./sd group list
-    ./sd group delete <groupName>
-    ./sd note add <codexisId> <text>
-    ./sd note list <codexisId>
-    ./sd note remove <codexisId> <index>
+    cdx-sledovane-dokumenty add <codexisId> [--parts paragraf1,paragraf2]
+    cdx-sledovane-dokumenty remove <codexisId>
+    cdx-sledovane-dokumenty list
+    cdx-sledovane-dokumenty check [<codexisId>]
+    cdx-sledovane-dokumenty confirm <codexisId>
+    cdx-sledovane-dokumenty show <codexisId>
+    cdx-sledovane-dokumenty group add <codexisId> <groupName>
+    cdx-sledovane-dokumenty group remove <codexisId> <groupName>
+    cdx-sledovane-dokumenty group list
+    cdx-sledovane-dokumenty group delete <groupName>
+    cdx-sledovane-dokumenty note add <codexisId> <text>
+    cdx-sledovane-dokumenty note list <codexisId>
+    cdx-sledovane-dokumenty note remove <codexisId> <index>
 
 Examples:
-    ./sd add CR13986
-    ./sd add CR26785 --parts paragraf89,paragraf2991
-    ./sd list
-    ./sd check
-    ./sd check CR13986
-    ./sd confirm CR13986
-    ./sd show CR26785
-    ./sd group add CR13986 Pracovní právo
-    ./sd group remove CR13986 Pracovní právo
-    ./sd group list
-    ./sd group delete Pracovní právo
-    ./sd note add CR13986 "zajímá mě pracovní doba"
-    ./sd note list CR13986
-    ./sd note remove CR13986 0
+    cdx-sledovane-dokumenty add CR13986
+    cdx-sledovane-dokumenty add CR26785 --parts paragraf89,paragraf2991
+    cdx-sledovane-dokumenty list
+    cdx-sledovane-dokumenty check
+    cdx-sledovane-dokumenty check CR13986
+    cdx-sledovane-dokumenty confirm CR13986
+    cdx-sledovane-dokumenty show CR26785
+    cdx-sledovane-dokumenty group add CR13986 Pracovní právo
+    cdx-sledovane-dokumenty group remove CR13986 Pracovní právo
+    cdx-sledovane-dokumenty group list
+    cdx-sledovane-dokumenty group delete Pracovní právo
+    cdx-sledovane-dokumenty note add CR13986 "zajímá mě pracovní doba"
+    cdx-sledovane-dokumenty note list CR13986
+    cdx-sledovane-dokumenty note remove CR13986 0
 """
 
 import datetime
@@ -45,7 +45,9 @@ import uuid
 
 FOLLOWED_DIR = os.path.expanduser("~/.cdx/apps/sledovane-dokumenty")
 GROUPS_PATH = os.path.join(FOLLOWED_DIR, "groups.json")
-CDX_BIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cdx")
+CDX_CLI_BIN = "cdx-cli"
+CDXCTL_BIN = "cdxctl"
+TRACKING_BIN = "cdx-sledovane-dokumenty"
 MAX_OUTPUT = 6000
 DEFAULT_DAEMON_URL = "http://localhost:8086"
 DAEMON_ENV_FILE = os.path.expanduser("~/.cdx/.daemon.env")
@@ -134,20 +136,20 @@ def find_group(groups, name):
 
 
 def cdx_get(path):
-    """Call cdx binary and return parsed JSON or raw text. Returns None on error."""
+    """Call cdx-cli get and return parsed JSON or raw text. Returns None on error."""
     result = subprocess.run(
-        [CDX_BIN, "-s", path],
+        [CDX_CLI_BIN, "get", path],
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
-        print(f"ERROR: cdx failed for {path}: {result.stderr.strip()}")
+        print(f"ERROR: cdx-cli get failed for {path}: {result.stderr.strip()}")
         return None
     stdout = result.stdout.strip()
     try:
         data = json.loads(stdout)
     except json.JSONDecodeError:
         return stdout
-    # Detect API-level errors (cdx/curl returns 0 even on HTTP 401/403/etc.)
+    # Detect API-level errors returned in a JSON body.
     if isinstance(data, dict) and "error" in data:
         print(f"ERROR: CODEXIS API error for {path}: {data['error']}")
         if "Authorization" in data.get("error", ""):
@@ -159,13 +161,13 @@ def cdx_get(path):
 
 
 def cdx_get_text(path):
-    """Call cdx binary and return raw text (for /text endpoints). Returns None on error."""
+    """Call cdx-cli get and return raw text (for /text endpoints). Returns None on error."""
     result = subprocess.run(
-        [CDX_BIN, "-s", "-H", "Accept: text/plain", path],
+        [CDX_CLI_BIN, "get", path],
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
-        print(f"ERROR: cdx failed for {path}: {result.stderr.strip()}")
+        print(f"ERROR: cdx-cli get failed for {path}: {result.stderr.strip()}")
         return None
     stdout = result.stdout.strip()
     # Detect JSON error responses even when expecting text
@@ -265,67 +267,61 @@ def compute_diff(old_text, new_text, label=""):
 
 
 def ensure_check_automation():
-    """Create a COMMAND automation for 'sd check' if none exists yet.
+    """Ensure the periodic COMMAND automation exists via cdxctl."""
+    desired_command = f"{TRACKING_BIN} check"
 
-    Calls daemon GraphQL createAutomation. Idempotent — skips if an automation
-    with a command ending in 'sd check' already exists.
-    """
-    daemon_url = os.environ.get("CDX_DAEMON_URL", DEFAULT_DAEMON_URL)
-    daemon_auth = load_daemon_auth()
-    if not daemon_auth:
-        return  # silently skip — no daemon connection available
-
-    sd_path = os.path.abspath(__file__)
-
-    # Check if automation already exists (match by command, not title)
-    list_query = json.dumps({
-        "query": "{ automations { command type } }"
-    })
     try:
         result = subprocess.run(
-            [
-                "curl", "-sS", "-X", "POST",
-                f"{daemon_url}/graphql",
-                "-H", f"Authorization: {daemon_auth}",
-                "-H", "Content-Type: application/json",
-                "-d", list_query,
-            ],
-            capture_output=True, text=True, timeout=10,
+            [CDXCTL_BIN, "automation", "list"],
+            capture_output=True, text=True, timeout=15,
         )
-        if result.returncode == 0:
-            data = json.loads(result.stdout)
-            for a in data.get("data", {}).get("automations", []):
-                if a.get("command", "").endswith("sd check"):
-                    return  # already exists
+        if result.returncode != 0:
+            return
+        automations = json.loads(result.stdout)
     except Exception:
-        return  # can't reach daemon, skip
-    payload = json.dumps({
-        "query": """
-            mutation($input: AutomationInput!) {
-                createAutomation(input: $input) { uuid title }
-            }
-        """,
-        "variables": {
-            "input": {
-                "type": "COMMAND",
-                "title": "Sledované dokumenty – kontrola změn",
-                "description": "Pravidelná kontrola sledovaných dokumentů v CODEXIS.",
-                "cron": "0 8 * * 1",
-                "command": f"{sd_path} check",
-                "enabled": True,
-            }
-        }
-    })
+        return  # non-fatal — automation is a convenience, not critical
+
+    if not isinstance(automations, list):
+        return
+
+    legacy_ids = []
+    for automation in automations:
+        if not isinstance(automation, dict):
+            continue
+        if automation.get("type") != "COMMAND":
+            continue
+
+        command = automation.get("command")
+        if not isinstance(command, str):
+            continue
+
+        if command == desired_command:
+            return
+
+        if command.endswith("sd check"):
+            automation_id = automation.get("uuid") or automation.get("id")
+            if isinstance(automation_id, str) and automation_id:
+                legacy_ids.append(automation_id)
+
+    for automation_id in legacy_ids:
+        try:
+            subprocess.run(
+                [CDXCTL_BIN, "automation", "delete", automation_id],
+                capture_output=True, text=True, timeout=15,
+            )
+        except Exception:
+            return
+
     try:
-        result = subprocess.run(
+        subprocess.run(
             [
-                "curl", "-sS", "-X", "POST",
-                f"{daemon_url}/graphql",
-                "-H", f"Authorization: {daemon_auth}",
-                "-H", "Content-Type: application/json",
-                "-d", payload,
+                CDXCTL_BIN, "automation", "create-command",
+                "--title", "Sledované dokumenty – kontrola změn",
+                "--cron", "0 8 * * 1",
+                "--command", desired_command,
+                "--description", "Pravidelná kontrola sledovaných dokumentů v CODEXIS.",
             ],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=15,
         )
     except Exception:
         pass  # non-fatal — automation is a convenience, not critical
@@ -901,7 +897,7 @@ def main():
 
     if command == "add":
         if len(sys.argv) < 3:
-            print("ERROR: chybí codexisId. Použití: ./sd add <codexisId> [--parts p1,p2]")
+            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} add <codexisId> [--parts p1,p2]")
             sys.exit(1)
         codexis_id = sys.argv[2]
         parts = None
@@ -913,7 +909,7 @@ def main():
 
     elif command == "remove":
         if len(sys.argv) < 3:
-            print("ERROR: chybí codexisId. Použití: ./sd remove <codexisId>")
+            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} remove <codexisId>")
             sys.exit(1)
         cmd_remove(sys.argv[2])
 
@@ -926,36 +922,36 @@ def main():
 
     elif command == "confirm":
         if len(sys.argv) < 3:
-            print("ERROR: chybí codexisId. Použití: ./sd confirm <codexisId>")
+            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} confirm <codexisId>")
             sys.exit(1)
         cmd_confirm(sys.argv[2])
 
     elif command == "show":
         if len(sys.argv) < 3:
-            print("ERROR: chybí codexisId. Použití: ./sd show <codexisId>")
+            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} show <codexisId>")
             sys.exit(1)
         cmd_show(sys.argv[2])
 
     elif command == "group":
         if len(sys.argv) < 3:
-            print("ERROR: chybí akce. Použití: ./sd group <add|remove|list|delete> ...")
+            print(f"ERROR: chybí akce. Použití: {TRACKING_BIN} group <add|remove|list|delete> ...")
             sys.exit(1)
         sub = sys.argv[2]
         if sub == "add":
             if len(sys.argv) < 5:
-                print("ERROR: Použití: ./sd group add <codexisId> <název skupiny>")
+                print(f"ERROR: Použití: {TRACKING_BIN} group add <codexisId> <název skupiny>")
                 sys.exit(1)
             cmd_group_add(sys.argv[3], " ".join(sys.argv[4:]))
         elif sub == "remove":
             if len(sys.argv) < 5:
-                print("ERROR: Použití: ./sd group remove <codexisId> <název skupiny>")
+                print(f"ERROR: Použití: {TRACKING_BIN} group remove <codexisId> <název skupiny>")
                 sys.exit(1)
             cmd_group_remove(sys.argv[3], " ".join(sys.argv[4:]))
         elif sub == "list":
             cmd_group_list()
         elif sub == "delete":
             if len(sys.argv) < 4:
-                print("ERROR: Použití: ./sd group delete <název skupiny>")
+                print(f"ERROR: Použití: {TRACKING_BIN} group delete <název skupiny>")
                 sys.exit(1)
             cmd_group_delete(" ".join(sys.argv[3:]))
         else:
@@ -964,22 +960,22 @@ def main():
 
     elif command == "note":
         if len(sys.argv) < 3:
-            print("ERROR: chybí akce. Použití: ./sd note <add|list|remove> ...")
+            print(f"ERROR: chybí akce. Použití: {TRACKING_BIN} note <add|list|remove> ...")
             sys.exit(1)
         sub = sys.argv[2]
         if sub == "add":
             if len(sys.argv) < 5:
-                print("ERROR: Použití: ./sd note add <codexisId> <text>")
+                print(f"ERROR: Použití: {TRACKING_BIN} note add <codexisId> <text>")
                 sys.exit(1)
             cmd_note_add(sys.argv[3], " ".join(sys.argv[4:]))
         elif sub == "list":
             if len(sys.argv) < 4:
-                print("ERROR: Použití: ./sd note list <codexisId>")
+                print(f"ERROR: Použití: {TRACKING_BIN} note list <codexisId>")
                 sys.exit(1)
             cmd_note_list(sys.argv[3])
         elif sub == "remove":
             if len(sys.argv) < 5:
-                print("ERROR: Použití: ./sd note remove <codexisId> <index>")
+                print(f"ERROR: Použití: {TRACKING_BIN} note remove <codexisId> <index>")
                 sys.exit(1)
             try:
                 index = int(sys.argv[4])
@@ -992,7 +988,7 @@ def main():
             sys.exit(1)
 
     else:
-        print(f"ERROR: neznámý příkaz '{command}'. Použijte ./sd --help")
+        print(f"ERROR: neznámý příkaz '{command}'. Použijte {TRACKING_BIN} --help")
         sys.exit(1)
 
 
