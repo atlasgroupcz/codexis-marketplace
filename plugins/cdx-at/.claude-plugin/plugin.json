@@ -1,0 +1,15 @@
+{
+  "name": "cdx-at",
+  "version": "1.0.0",
+  "description": "Austrian legal database API access for federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), and other publications (Sonstige)",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-at", "legal", "law", "legislation", "austrian", "ris", "judiciary", "case-law", "court", "api"],
+  "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-at\" /usr/local/bin/cdx-at && sudo cp \"${PLUGIN_DIR}/bin/cdx-at-link-rewriter\" /usr/local/bin/cdx-at-link-rewriter",
+  "postUninstall": "sudo rm -f /usr/local/bin/cdx-at /usr/local/bin/cdx-at-link-rewriter",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-at\" /usr/local/bin/cdx-at && sudo cp \"${PLUGIN_DIR}/bin/cdx-at-link-rewriter\" /usr/local/bin/cdx-at-link-rewriter",
+  "skills": "./skills"
+}
