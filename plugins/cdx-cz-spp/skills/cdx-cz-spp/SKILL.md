@@ -210,7 +210,7 @@ cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/versions" \
 
 ## Best Practices
 
-1. **Use `pageUrl` from search results** — search results include ready-to-use `pageUrl` for user-facing links to the matching page.
+1. **Use `pageUrl` from search results** — each result is a single page match with a ready-to-use `pageUrl` link. The same regulation may appear multiple times (once per matching page).
 2. **Use `jq` for filtering** — process JSON results with jq rather than multiple API calls.
 3. **Strip `<mark>` tags** — search highlights include `<mark>` tags; remove them before displaying titles.
 4. **Use `cdx-cz-spp://` links** — always use the custom scheme for user-facing links, never resolve URLs manually.

@@ -50,7 +50,7 @@ Query parameters (appended to URL, not in body):
 
 ## Response Schema
 
-Results are collapsed by document — one result per regulation, showing the best-matching page.
+Results are page-level — the same regulation may appear multiple times (once per matching page), sorted by relevance.
 
 ```json
 {
@@ -90,11 +90,12 @@ Results are collapsed by document — one result per regulation, showing the bes
 | `hlavniTyp` | `pp` = pravni predpisy (regulations), `oa` = ostatni akty (other acts) |
 | `druhPredpisu` | Document type (Obecne zavazna vyhlaska, Narizeni, etc.) |
 | `platnost` | Validity status (Platne = valid) |
-| `pageNumber` | Best-matching page (0-based, from AIMD conversion) |
+| `pageNumber` | Matching page number (0-based, from AIMD conversion) |
 | `sourceFile` | Source file for the matching page |
 | `highlight` | Search hit highlights with `<mark>` tags |
 | `docUrl` | cdx-cz-spp:// link to document |
 | `pageUrl` | cdx-cz-spp:// link to matching page in attachment |
+| `totalResults` | Total matching pages (not regulations — same doc may contribute multiple page hits) |
 
 ## Document Types (druhPredpisu filter)
 

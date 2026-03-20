@@ -80,14 +80,16 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         None => (cdx_path, ""),
     };
 
+    let encoded_query = encode_query_values(query);
+
     if let Some(domain) = path.strip_prefix("search/") {
         let api_path = lookup_search_prefix(domain)?;
-        Ok(format!("{base}/{api_path}/search{query}"))
+        Ok(format!("{base}/{api_path}/search{encoded_query}"))
     } else if let Some(rest) = path.strip_prefix("law/SK/") {
         if rest.is_empty() {
             return Err("Missing law number/year after law/SK/".to_string());
         }
-        Ok(format!("{base}/SK/ezbierka/law/{rest}{query}"))
+        Ok(format!("{base}/SK/ezbierka/law/{rest}{encoded_query}"))
     } else if let Some(rest) = path.strip_prefix("doc/") {
         let (id, endpoint) = rest.split_once('/')
             .ok_or_else(|| format!("Missing endpoint after doc ID in: doc/{rest}"))?;
@@ -95,14 +97,64 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
             return Err(format!("Empty endpoint after doc/{id}/"));
         }
         let api_path = lookup_display_id_prefix(id)?;
-        Ok(format!("{base}/{api_path}/doc/{id}/{endpoint}{query}"))
+        Ok(format!("{base}/{api_path}/doc/{id}/{endpoint}{encoded_query}"))
     } else if let Some(rest) = path.strip_prefix("resolve/") {
         if rest.is_empty() {
             return Err("Missing ID after resolve/".to_string());
         }
-        Ok(format!("{base}/resolve/{rest}{query}"))
+        Ok(format!("{base}/resolve/{rest}{encoded_query}"))
     } else {
         Err(format!("Unknown cdx-sk:// path: {path}"))
+    }
+}
+
+/// Percent-encode non-ASCII bytes in query parameter values.
+/// Preserves query structure characters (`?`, `&`, `=`) and ASCII values untouched.
+fn encode_query_values(query: &str) -> String {
+    let query = match query.strip_prefix('?') {
+        Some(q) => q,
+        None => return query.to_string(),
+    };
+
+    let mut result = String::with_capacity(query.len() + 16);
+    result.push('?');
+
+    for (i, pair) in query.split('&').enumerate() {
+        if i > 0 {
+            result.push('&');
+        }
+        match pair.split_once('=') {
+            Some((key, value)) => {
+                result.push_str(key);
+                result.push('=');
+                percent_encode_utf8(&mut result, value);
+            }
+            None => result.push_str(pair),
+        }
+    }
+
+    result
+}
+
+/// Percent-encode any non-ASCII bytes in a UTF-8 string.
+/// ASCII characters are passed through unchanged.
+fn percent_encode_utf8(out: &mut String, input: &str) {
+    for byte in input.bytes() {
+        if byte.is_ascii() {
+            out.push(byte as char);
+        } else {
+            out.push('%');
+            out.push(to_hex_digit(byte >> 4));
+            out.push(to_hex_digit(byte & 0x0F));
+        }
+    }
+}
+
+fn to_hex_digit(nibble: u8) -> char {
+    match nibble {
+        0..=9 => (b'0' + nibble) as char,
+        10..=15 => (b'A' + nibble - 10) as char,
+        _ => unreachable!(),
     }
 }
 
@@ -223,6 +275,36 @@ mod tests {
         assert_eq!(
             resolve_cdx_url(BASE, "doc/SKEZ1/text?part=paragraf-1"),
             Ok(format!("{BASE}/SK/ezbierka/doc/SKEZ1/text?part=paragraf-1"))
+        );
+    }
+
+    #[test]
+    fn doc_with_slovak_diacritics_in_query_value() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/SKVS1/text?part=odôvodnenie"),
+            Ok(format!(
+                "{BASE}/SK/vseobecne-sudy/doc/SKVS1/text?part=od%C3%B4vodnenie"
+            ))
+        );
+    }
+
+    #[test]
+    fn query_with_multiple_params_and_diacritics() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/SKEZ1/text?part=paragraf-1&timecutId=účinnosť"),
+            Ok(format!(
+                "{BASE}/SK/ezbierka/doc/SKEZ1/text?part=paragraf-1&timecutId=%C3%BA%C4%8Dinnos%C5%A5"
+            ))
+        );
+    }
+
+    #[test]
+    fn law_with_diacritics_in_query() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "law/SK/40/1964/text?part=časť-1"),
+            Ok(format!(
+                "{BASE}/SK/ezbierka/law/40/1964/text?part=%C4%8Das%C5%A5-1"
+            ))
         );
     }
 
