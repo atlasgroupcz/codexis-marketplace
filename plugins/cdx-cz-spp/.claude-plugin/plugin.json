@@ -1,6 +1,6 @@
 {
   "name": "cdx-cz-spp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Czech municipal regulations (sbirkapp.gov.cz) API access for municipal decrees, ordinances, and other local legal acts",
   "author": {
     "name": "ATLAS GROUP",

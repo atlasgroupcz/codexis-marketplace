@@ -41,7 +41,9 @@ Interaktivní komponenta, která vám umožní sledovat vybrané právní předp
 ### CLI nástroje
 Plugin při instalaci přidává `cdx-cli` jako hlavní CLI a instaluje také
 `cdxctl` pro správu platformy a `cdx-sledovane-dokumenty` pro správu
-sledovaných dokumentů.
+sledovaných dokumentů. Součástí instalace je také `cdx-link-rewriter`,
+který backend používá jako PATH-resolved render hook pro přepis `cdx://`
+odkazů na absolutní URL.
 
 ### Správa platformy (cdxctl)
 Nástroj pro pokročilé uživatele — správa automatizací (pravidelné úlohy), marketplace pluginů a extrakce dat z dokumentů do strukturované tabulky.

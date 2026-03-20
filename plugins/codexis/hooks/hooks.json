@@ -2,7 +2,7 @@
   "hooks": {
     "onRender": [
       {
-        "command": "bin/cdx-link-rewriter",
+        "command": "cdx-link-rewriter",
         "timeout": 5,
         "description": "Rewrites cdx:// links to absolute URLs"
       }

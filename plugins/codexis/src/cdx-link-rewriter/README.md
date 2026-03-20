@@ -45,14 +45,15 @@ echo '<a href="cdx://doc/CR10">doc</a>' | cdx-link-rewriter
 ## Integration with cdx-daemon
 
 This binary is shipped inside the codexis plugin and declared as an onRender
-hook in `hooks/hooks.json`:
+hook in `hooks/hooks.json`. The plugin install/update lifecycle copies the
+binary to `/usr/local/bin`, and the backend resolves it from `PATH`:
 
 ```json
 {
   "hooks": {
     "onRender": [
       {
-        "command": "bin/cdx-link-rewriter",
+        "command": "cdx-link-rewriter",
         "timeout": 5,
         "description": "Rewrites cdx:// links to absolute URLs"
       }

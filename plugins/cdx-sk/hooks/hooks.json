@@ -2,7 +2,7 @@
   "hooks": {
     "onRender": [
       {
-        "command": "bin/cdx-sk-link-rewriter",
+        "command": "cdx-sk-link-rewriter",
         "timeout": 5,
         "description": "Rewrites cdx-sk:// links to absolute URLs and opens PDFs in new tab"
       }
