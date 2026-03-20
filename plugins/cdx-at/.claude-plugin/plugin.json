@@ -8,8 +8,8 @@
   },
   "keywords": ["cdx-at", "legal", "law", "legislation", "austrian", "ris", "judiciary", "case-law", "court", "api"],
   "license": "PROPRIETARY",
-  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-at\" /usr/local/bin/cdx-at && sudo cp \"${PLUGIN_DIR}/bin/cdx-at-link-rewriter\" /usr/local/bin/cdx-at-link-rewriter",
-  "postUninstall": "sudo rm -f /usr/local/bin/cdx-at /usr/local/bin/cdx-at-link-rewriter",
-  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-at\" /usr/local/bin/cdx-at && sudo cp \"${PLUGIN_DIR}/bin/cdx-at-link-rewriter\" /usr/local/bin/cdx-at-link-rewriter",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills"
 }

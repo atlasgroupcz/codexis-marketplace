@@ -8,8 +8,8 @@
   },
   "keywords": ["cdx-cz-spp", "legal", "law", "legislation", "czech", "municipal", "sbirkapp", "api"],
   "license": "PROPRIETARY",
-  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp\" /usr/local/bin/cdx-cz-spp && sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp-link-rewriter\" /usr/local/bin/cdx-cz-spp-link-rewriter",
-  "postUninstall": "sudo rm -f /usr/local/bin/cdx-cz-spp /usr/local/bin/cdx-cz-spp-link-rewriter",
-  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp\" /usr/local/bin/cdx-cz-spp && sudo cp \"${PLUGIN_DIR}/bin/cdx-cz-spp-link-rewriter\" /usr/local/bin/cdx-cz-spp-link-rewriter",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills"
 }
