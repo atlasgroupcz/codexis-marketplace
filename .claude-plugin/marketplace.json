@@ -58,6 +58,12 @@
       "description": "Czech municipal regulations (sbirkapp.gov.cz) — municipal decrees, ordinances, and local legal acts",
       "source": "./plugins/cdx-cz-spp",
       "category": "legal"
+    },
+    {
+      "name": "cdx-at",
+      "description": "Austrian legal database (RIS) — legislation, court decisions, and legal information",
+      "source": "./plugins/cdx-at",
+      "category": "legal"
     }
   ]
 }
