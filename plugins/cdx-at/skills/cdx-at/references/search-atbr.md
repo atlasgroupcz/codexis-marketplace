@@ -1,71 +1,40 @@
-# Austrian Federal Legislation Search (ATBR — Bundesrecht)
+# ATBR Search Filter Values
 
-Federal legislation as published in the Bundesgesetzblatt (BGBl). Covers laws, decrees, and regulations published in BGBl Teil I, II, and III.
+Austrian federal legislation (BGBl). ~18,500 documents from 2004 to present.
 
-## Search Request
+## query
+Free-text search in title, short title, and content. Optional.
 
-```bash
-cdx-at -s -X POST "cdx-at://search/ATBR" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "Datenschutz",
-    "part": "Teil1",
-    "dateFrom": "2024-01-01",
-    "limit": 10
-  }'
-```
+## documentType
+Document type (exact match):
+- `Bundesgesetz` - Federal law (Teil I)
+- `Verordnung` - Regulation (Teil II)
+- `Kundmachung` - Announcement (Teil III)
+- `Sonstiges` - Other
 
-### Request Fields
+## part
+BGBl part (exact match):
+- `Teil1` - Teil I (laws)
+- `Teil2` - Teil II (regulations)
+- `Teil3` - Teil III (international)
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `query` | string | Full-text search | `"Finanzmarktaufsicht"` |
-| `documentType` | string | Document type | `"Verordnung"`, `"Bundesgesetz"` |
-| `part` | string | BGBl part | `"Teil1"` (I), `"Teil2"` (II), `"Teil3"` (III) |
-| `gazetteNumber` | string | Exact BGBl number | `"BGBl. II Nr. 352/2019"` |
-| `dateFrom` | date | Publication date from (YYYY-MM-DD) | `"2024-01-01"` |
-| `dateTo` | date | Publication date to (YYYY-MM-DD) | `"2025-12-31"` |
-| `offset` | int | Pagination offset (default 0) | `0` |
-| `limit` | int | Results per page (max 100, default 20) | `10` |
+## gazetteNumber
+Exact BGBl number. Example: `BGBl. II Nr. 352/2019`
 
-### Query Parameters
+## dateFrom / dateTo
+Publication date range (YYYY-MM-DD, inclusive).
 
-| Param | Values | Description |
-|-------|--------|-------------|
-| `sort` | `relevance`, `title`, `date` | Sort field (default: relevance) |
-| `order` | `asc`, `desc` | Sort direction |
+## sort (query param)
+- `relevance` (default)
+- `title`
+- `date` (sorts by publication date)
 
-## Response Fields
+## order (query param)
+- `asc`
+- `desc` (default)
 
-| Field | Description |
-|-------|-------------|
-| `docId` | Display ID (e.g., ATBR1234) — internal only |
-| `title` | Full title of the legislation |
-| `shortTitle` | Short title |
-| `gazetteNumber` | BGBl number (e.g., "BGBl. II Nr. 352/2019") |
-| `part` | BGBl part (Teil1/Teil2/Teil3) |
-| `publicationDate` | Publication date (YYYY-MM-DD) |
-| `documentType` | Bundesgesetz, Verordnung, etc. |
-| `authority` | Issuing authority |
-| `eli` | European Legislation Identifier |
-| `celexNumbers` | EU CELEX directive references |
+## offset
+Integer, 0-based. Default: 0.
 
-## Examples
-
-### Search Recent Legislation
-
-```bash
-cdx-at -s -X POST "cdx-at://search/ATBR" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "Klimaschutz", "dateFrom": "2024-01-01", "limit": 5}' \
-  | jq '.results[] | {docId, title, gazetteNumber, publicationDate}'
-```
-
-### Search by BGBl Number
-
-```bash
-cdx-at -s -X POST "cdx-at://search/ATBR" \
-  -H 'Content-Type: application/json' \
-  -d '{"gazetteNumber": "BGBl. I Nr. 58/2018", "limit": 1}' \
-  | jq '.results[0]'
-```
+## limit
+Integer, 1-100. Default: 20.

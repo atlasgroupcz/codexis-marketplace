@@ -1,29 +1,29 @@
 ---
 name: cdx-cz-spp
 description: This skill should be invoked whenever user needs Czech municipal regulations — ordinances, decrees, and other local legal acts from sbirkapp.gov.cz (Sbírka právních předpisů).
-version: 1.0.0
+version: 2.0.0
 ---
 
-# Czech Municipal Regulations API (cdx-cz-spp)
+# Czech Municipal Regulations (cdx-cz-spp)
 
-Czech municipal regulations database providing structured access to ordinances (obecně závazné vyhlášky), regulations (nařízení), and other local legal acts published in the official collection at sbirkapp.gov.cz.
+Czech municipal regulations database providing structured access to ordinances (obecně závazné vyhlášky), regulations (nařízení), and other local legal acts published in the official collection at sbirkapp.gov.cz. All documents are from a single source: Sbírka právních předpisů (CZSB).
 
-Use the `cdx-cz-spp` CLI for all requests. It accepts standard curl flags and `cdx-cz-spp://` URLs (for example `cdx-cz-spp://search/CZSB` or `cdx-cz-spp://doc/CZSB123/text`).
+## Commands
 
-## Data Source
+### search
+Search documents: `cdx-cz-spp search <SOURCE> [OPTIONS]`
 
-> **Note:** The source code `CZSB` is an internal API identifier used to construct `cdx-cz-spp://` URLs. Never expose it in user-facing output — use human-readable names instead (see [User-Facing Output Rules](#user-facing-output-rules)).
+Use `cdx-cz-spp search <SOURCE> --help` for available filters.
 
-| Code | Name | Description | Has Versions |
-|------|------|-------------|--------------|
-| `CZSB` | Sbírka právních předpisů | Municipal ordinances, regulations, constitutional court rulings, and other acts from Czech municipalities and regions | Yes (numbered versions) |
+### get
+Fetch a document resource: `cdx-cz-spp get <cdx-cz-spp://URL> [--dry-run]`
 
-### Document Categories
+Use `cdx-cz-spp get --help` for available URL patterns.
 
-| hlavniTyp | Name | Types |
-|-----------|------|-------|
-| `pp` | Právní předpisy (Legal regulations) | Obecně závazná vyhláška, Nařízení |
-| `oa` | Ostatní akty (Other acts) | Nález Ústavního soudu, Rozhodnutí o pozastavení účinnosti, Smlouva, Stav nebezpečí |
+### schema
+Print response schema for get endpoints: `cdx-cz-spp schema <ENDPOINT> [SOURCE]`
+
+Use `cdx-cz-spp schema --help` for available endpoints.
 
 ## User-Facing Output Rules
 
@@ -78,149 +78,6 @@ cdx-cz-spp://doc/CZSB123/text — wrong, API endpoint as link
 https://search.example.com/api/CZ/sbirkapp/doc/CZSB123 — wrong, resolved URL
 ```
 
-## Core API Operations
-
-### Search Documents
-
-```bash
-cdx-cz-spp -s -X POST "cdx-cz-spp://search/CZSB" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "search terms", "limit": 10}'
-```
-
-Supports fulltext, Czech characters. Query params `?sort=relevance|title|date&order=asc|desc` for sorting.
-
-### Document Retrieval
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/doc/{docId}/meta` | GET | Document metadata (includes assets array with filenames) |
-| `/doc/{docId}/text` | GET | Full document text (supports `?page=N`, `?part=ID`, `?file=F`, `?version=N`) |
-| `/doc/{docId}/attachment/{filename}` | GET | PDF/content file (use for user-facing links) |
-| `/doc/{docId}/parts` | GET | Available sections with headings and levels |
-| `/doc/{docId}/versions` | GET | Version list (numbered versions with their own assets) |
-| `/doc/{docId}/related` | GET | Related documents (supports `?type=T&limit=N`) |
-| `/doc/{docId}/related/counts` | GET | Relation type counts |
-| `/doc/{docId}/toc` | GET | Table of contents |
-
-### Resolve Display ID
-
-```bash
-cdx-cz-spp -s "cdx-cz-spp://resolve/{displayId}"   # auto-routes by prefix
-```
-
-## Working with Results
-
-### Extract Fields with jq
-
-```bash
-# docId + title from search
-cdx-cz-spp -s -X POST "cdx-cz-spp://search/CZSB" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "odpad", "limit": 5}' \
-  | jq '.results[] | {docId, nazev, publikujici, cisloPredpisu}'
-
-# Attachment filename from /meta (needed for user-facing links)
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/meta" | jq '.assets[]'
-
-# Sections from /parts
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/parts" | jq '.parts[] | {id, heading, level}'
-```
-
-### Follow-Up Patterns
-
-```bash
-# List document versions, pick specific one
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/versions" \
-  | jq '.versions[] | {versionNum, nazev, assets}'
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/text?version=1"
-
-# List parts, then fetch specific section text
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/parts" \
-  | jq '.parts[] | {id, heading, level}'
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/text?part=section-1"
-```
-
-## Quick Examples
-
-### Search Municipal Regulations by Topic
-
-```bash
-cdx-cz-spp -s -X POST "cdx-cz-spp://search/CZSB" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "odpadove hospodarstvi", "hlavniTyp": "pp", "limit": 5}' \
-  | jq '.results[] | {docId, nazev, publikujici, cisloPredpisu}'
-```
-
-> Present results as attachment links: `[{nazev} — {publikujici}, č. {cisloPredpisu}](cdx-cz-spp://doc/{docId}/attachment/{sourceFile}.pdf)` — never raw JSON, IDs, or resolved HTTP URLs.
-
-### Find Regulations by Municipality
-
-```bash
-cdx-cz-spp -s -X POST "cdx-cz-spp://search/CZSB" \
-  -H 'Content-Type: application/json' \
-  -d '{"publikujici": "Statutarni mesto Brno", "platnost": "Platne", "limit": 10}' \
-  | jq '.results[] | {docId, nazev, cisloPredpisu, datumVydani}'
-```
-
-### Find Related Documents
-
-```bash
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/related/counts" | jq '.'
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/related?type=AMENDED_BY&limit=10" \
-  | jq '.results[] | {sourceId, nazev, cisloPredpisu}'
-```
-
-## Workflow Recipes
-
-### Search → Read → Cite
-
-When the user asks about a municipal regulation:
-
-```bash
-# 1. Search
-cdx-cz-spp -s -X POST "cdx-cz-spp://search/CZSB" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "mistni poplatek ze psu", "hlavniTyp": "pp", "limit": 5}' \
-  | jq '.results[] | {docId, nazev, publikujici, cisloPredpisu, pageUrl}'
-
-# 2. Get text of the matching page
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/text?page=0"
-
-# 3. Get asset filename for link
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/meta" | jq '.assets[]'
-
-# 4. Present: [OZV o místním poplatku ze psů — Město X, č. 1/2025](cdx-cz-spp://doc/CZSB123/attachment/content_1.pdf)
-```
-
-### Track Amendment History
-
-```bash
-# 1. Check what relation types exist
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/related/counts" | jq '.'
-
-# 2. Fetch amendments
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/related?type=AMENDED_BY&limit=10" \
-  | jq '.results[] | {sourceId, nazev}'
-
-# 3. Compare versions
-cdx-cz-spp -s "cdx-cz-spp://doc/CZSB123/versions" \
-  | jq '.versions[] | {versionNum, nazev}'
-```
-
-## Best Practices
-
-1. **Use `pageUrl` from search results** — each result is a single page match with a ready-to-use `pageUrl` link. The same regulation may appear multiple times (once per matching page).
-2. **Use `jq` for filtering** — process JSON results with jq rather than multiple API calls.
-3. **Strip `<mark>` tags** — search highlights include `<mark>` tags; remove them before displaying titles.
-4. **Use `cdx-cz-spp://` links** — always use the custom scheme for user-facing links, never resolve URLs manually.
-5. **Filter by `hlavniTyp`** — use `pp` for regulations or `oa` for other acts to narrow results.
-6. **Use `platnost` for validity** — filter by `"Platne"` to find currently valid regulations.
-7. **Combine publisher + topic** — use `publikujici` with `query` to find specific municipality's regulations on a topic.
-8. **Check versions** — municipal regulations are often amended; use `/versions` to list all versions before citing.
-
 ## Reference Files
-
-For detailed request/response schemas, all filter options, document types, and worked examples, consult:
 
 - **`references/search-czsb.md`** — Czech municipal regulations search: document types, date filters, publisher lookup, sorting

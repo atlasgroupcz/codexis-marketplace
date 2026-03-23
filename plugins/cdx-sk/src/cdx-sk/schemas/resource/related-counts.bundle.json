@@ -1,0 +1,55 @@
+{
+  "endpoint": "related-counts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/related-counts"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ezbierka/doc/{docId}/related/counts",
+      "method": "get",
+      "summary": "Get related document counts",
+      "description": "Get counts of related documents grouped by relation type for an e-Zbierka document.",
+      "operationId": "getRelatedCounts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKEZ1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Relation counts",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RelationCountsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RelationCountsResponse": {
+        "type": "object",
+        "description": "Count of related documents per relation type",
+        "properties": {
+          "counts": {
+            "type": "object",
+            "description": "Counts keyed by relation type",
+            "additionalProperties": { "type": "integer", "format": "int64" },
+            "example": { "IMPLEMENTING": 3, "AMENDS": 5, "REFERENCING_DECISION": 12 }
+          }
+        }
+      }
+    }
+  }
+}

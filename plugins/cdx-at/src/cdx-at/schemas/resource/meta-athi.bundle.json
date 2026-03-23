@@ -1,0 +1,109 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-at://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/AT/history/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for an Austrian consolidated federal law norm (Bundesnormen) by document ID. Returns the raw DomainMetadata object.",
+      "operationId": "getMeta_4",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ATHI1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RisHistoryMetadata" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RisHistoryMetadata": {
+        "type": "object",
+        "description": "Metadata for Austrian consolidated federal law norms (Bundesnormen)",
+        "properties": {
+          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "url": { "type": "string", "description": "Source URL" },
+          "documentNumber": { "type": "string", "description": "Document number" },
+          "application": { "type": "string", "description": "Application" },
+          "shortTitle": { "type": "string", "description": "Short title" },
+          "title": { "type": "string", "description": "Full title" },
+          "eli": { "type": "string", "description": "European Legislation Identifier" },
+          "publicationOrgan": { "type": "string", "description": "Publication organ" },
+          "documentType": { "type": "string", "description": "Document type" },
+          "normType": { "type": "string", "description": "Norm type" },
+          "articleParagraph": { "type": "string", "description": "Article/paragraph" },
+          "paragraphNumber": { "type": "string", "description": "Paragraph number" },
+          "parentPublicationOrgan": { "type": "string", "description": "Parent publication organ" },
+          "parentGazetteNumber": { "type": "string", "description": "Parent gazette number" },
+          "effectiveDate": { "type": "string", "description": "Effective date" },
+          "expiryDate": { "type": "string", "description": "Expiry date" },
+          "abbreviation": { "type": "string", "description": "Law abbreviation" },
+          "indices": {
+            "type": "array",
+            "description": "Subject indices",
+            "items": { "type": "string" }
+          },
+          "note": {
+            "type": "array",
+            "description": "Notes",
+            "items": { "type": "string" }
+          },
+          "amendments": {
+            "type": "array",
+            "description": "Amendment references (BGBl numbers)",
+            "items": { "type": "string" }
+          },
+          "annotation": {
+            "type": "array",
+            "description": "Annotations",
+            "items": { "type": "string" }
+          },
+          "keywords": {
+            "type": "array",
+            "description": "Keywords",
+            "items": { "type": "string" }
+          },
+          "lawNumber": { "type": "string", "description": "Law number" },
+          "fullLegislationUrl": { "type": "string", "description": "Full legislation URL" },
+          "authority": { "type": "string", "description": "Issuing authority" },
+          "publishedDate": { "type": "string", "description": "Published date" },
+          "lastModified": { "type": "string", "description": "Last modified date" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "description": "Asset file reference",
+        "properties": {
+          "file": { "type": "string", "description": "Internal filename" },
+          "originalName": { "type": "string", "description": "Original filename from source" }
+        }
+      }
+    }
+  }
+}

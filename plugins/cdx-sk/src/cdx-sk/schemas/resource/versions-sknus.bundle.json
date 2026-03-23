@@ -1,0 +1,62 @@
+{
+  "endpoint": "versions",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/versions"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/najvyssi-ustavny-sud/doc/{docId}/versions",
+      "method": "get",
+      "summary": "Get document versions",
+      "description": "List available versions of a court decision. Court decisions typically have a single version.",
+      "operationId": "getVersions_2",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKNUS1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Version list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NajvyssiUstavnySudVersionsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "NajvyssiUstavnySudVersionsResponse": {
+        "type": "object",
+        "description": "Available versions of a court decision (single version expected)",
+        "properties": {
+          "versions": {
+            "type": "array",
+            "description": "List of versions",
+            "items": { "$ref": "#/components/schemas/NajvyssiUstavnySudVersionItem" }
+          },
+          "docUrl": { "type": "string", "description": "Link to document metadata endpoint" }
+        }
+      },
+      "NajvyssiUstavnySudVersionItem": {
+        "type": "object",
+        "description": "A single version of a court decision",
+        "properties": {
+          "versionId": { "type": "string", "description": "Version identifier", "example": "v1" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-at://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/AT/judikatur/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for an Austrian case law document by document ID. Returns the raw DomainMetadata object.",
+      "operationId": "getMeta_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ATJD1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RisJudikaturMetadata" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RisJudikaturMetadata": {
+        "type": "object",
+        "description": "Metadata for Austrian case law records",
+        "properties": {
+          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "url": { "type": "string", "description": "Source URL" },
+          "documentNumber": { "type": "string", "description": "Document number" },
+          "application": { "type": "string", "description": "Court application (Vfgh, Vwgh, Justiz, etc.)" },
+          "documentType": { "type": "string", "description": "Document type" },
+          "caseNumbers": {
+            "type": "array",
+            "description": "Case numbers",
+            "items": { "type": "string" }
+          },
+          "legalNorms": {
+            "type": "array",
+            "description": "Referenced legal norms",
+            "items": { "type": "string" }
+          },
+          "parsedLegalNorms": {
+            "type": "array",
+            "description": "Parsed legal norm references",
+            "items": { "$ref": "#/components/schemas/ParsedLegalNorm" }
+          },
+          "decisionDate": { "type": "string", "description": "Decision date" },
+          "keywords": { "type": "string", "description": "Keywords" },
+          "ecli": { "type": "string", "description": "ECLI identifier" },
+          "court": { "type": "string", "description": "Court name" },
+          "decisionType": { "type": "string", "description": "Decision type" },
+          "headnote": { "type": "string", "description": "Headnote/summary" },
+          "indices": {
+            "type": "array",
+            "description": "Subject indices",
+            "items": { "type": "string" }
+          },
+          "state": { "type": "string", "description": "State (for Lvwg)" },
+          "lastModified": { "type": "string", "description": "Last modified date" },
+          "legalPrincipleNumber": { "type": "string", "description": "Legal principle number" },
+          "documentNumberType": { "type": "string", "description": "Document number type" },
+          "parentLegalPrincipleNumber": { "type": "string", "description": "Parent legal principle number" },
+          "parentLegalPrincipleHint": { "type": "string", "description": "Parent legal principle hint" },
+          "note": { "type": "string", "description": "Note" },
+          "legalAreas": {
+            "type": "array",
+            "description": "Legal areas",
+            "items": { "type": "string" }
+          },
+          "legalPrincipleNumbers": {
+            "type": "array",
+            "description": "Legal principle numbers",
+            "items": { "type": "string" }
+          },
+          "shortDescription": { "type": "string", "description": "Short description" },
+          "decidingAuthority": { "type": "string", "description": "Deciding authority" },
+          "shortName": { "type": "string", "description": "Short name" },
+          "references": {
+            "type": "array",
+            "description": "References",
+            "items": { "type": "string" }
+          },
+          "fullDecisionUrl": { "type": "string", "description": "Full decision URL" },
+          "decisionTextUrl": { "type": "string", "description": "Decision text URL" },
+          "legalPrinciplesUrl": { "type": "string", "description": "Legal principles URL" },
+          "legalPrincipleChainUrl": { "type": "string", "description": "Legal principle chain URL" },
+          "decisionTextDocumentNumber": { "type": "string", "description": "Decision text document number" },
+          "fullDecisionDocumentNumber": { "type": "string", "description": "Full decision document number" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "ParsedLegalNorm": {
+        "type": "object",
+        "description": "Parsed legal norm reference",
+        "properties": {
+          "law": { "type": "string", "description": "Law abbreviation" },
+          "section": { "type": "string", "description": "Section reference" },
+          "detail": { "type": "string", "description": "Detail text" }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "description": "Asset file reference",
+        "properties": {
+          "file": { "type": "string", "description": "Internal filename" },
+          "originalName": { "type": "string", "description": "Original filename from source" }
+        }
+      }
+    }
+  }
+}

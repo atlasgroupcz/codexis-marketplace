@@ -1,85 +1,62 @@
-# Austrian Case Law Search (ATJD — Judikatur)
+# ATJD Search Filter Values
 
-Court decisions from 7 Austrian courts: VfGH (Constitutional), VwGH (Administrative), Justiz (Civil/Criminal), BVwG (Federal Administrative), LVwG (State Administrative), Dok (Disciplinary), Umse (Environmental Senate).
+Austrian case law (Judikatur) from 7 courts. ~650,000+ decisions.
 
-## Search Request
+## query
+Free-text search in headnote and decision text. Optional.
 
-```bash
-cdx-at -s -X POST "cdx-at://search/ATJD" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "Meinungsfreiheit",
-    "application": "Vfgh",
-    "dateFrom": "2024-01-01",
-    "limit": 10
-  }'
-```
+## application
+Court code (exact match):
+- `Vfgh` - Verfassungsgerichtshof / Constitutional Court (~10,600)
+- `Vwgh` - Verwaltungsgerichtshof / Administrative Court (~353,800)
+- `Justiz` - Justiz / Civil and Criminal Courts (~6,900)
+- `Bvwg` - Bundesverwaltungsgericht / Federal Administrative Court (~237,500)
+- `Lvwg` - Landesverwaltungsgerichte / State Administrative Courts (~41,000)
+- `Dok` - Dokumentation / Documentation (~1,600)
+- `Umse` - Umweltsenat / Environmental Senate (~390)
 
-### Request Fields
+## documentType
+Document type (exact match):
+- `Entscheidungstext` - Full decision text
+- `Rechtssatz` - Legal principle / headnote
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `query` | string | Full-text search | `"Grundrecht"` |
-| `application` | string | Court code | `"Vfgh"`, `"Vwgh"`, `"Justiz"`, `"Bvwg"`, `"Lvwg"`, `"Dok"`, `"Umse"` |
-| `documentType` | string | Document type | `"Entscheidungstext"`, `"Rechtssatz"` |
-| `decisionType` | string | Decision form | `"Erkenntnis"`, `"Beschluss"` |
-| `caseNumber` | string | Case file number | `"G 37/2024"` |
-| `ecli` | string | ECLI identifier | `"ECLI:AT:VFGH:2024:G37.2024"` |
-| `state` | string | Austrian state (LVwG only) | `"Wien"`, `"Steiermark"` |
-| `dateFrom` | date | Decision date from (YYYY-MM-DD) | `"2024-01-01"` |
-| `dateTo` | date | Decision date to (YYYY-MM-DD) | `"2025-12-31"` |
-| `offset` | int | Pagination offset (default 0) | `0` |
-| `limit` | int | Results per page (max 100, default 20) | `10` |
+## decisionType
+Decision form (exact match):
+- `Erkenntnis` - Judgment/finding
+- `Beschluss` - Resolution/order
 
-### Query Parameters
+## caseNumber
+Case file number (exact match). Example: `G 37/2024`
 
-| Param | Values | Description |
-|-------|--------|-------------|
-| `sort` | `relevance`, `title`, `date` | Sort field (default: relevance) |
-| `order` | `asc`, `desc` | Sort direction |
+## ecli
+ECLI identifier (exact match). Example: `ECLI:AT:VFGH:2024:G37.2024`
 
-## Response Fields
+## state
+Austrian federal state (LVwG decisions only, exact match):
+- `Burgenland`
+- `Kaernten`
+- `Niederoesterreich`
+- `Oberoesterreich`
+- `Salzburg`
+- `Steiermark`
+- `Tirol`
+- `Vorarlberg`
+- `Wien`
 
-| Field | Description |
-|-------|-------------|
-| `docId` | Display ID (e.g., ATJD1234) — internal only |
-| `title` | Decision title/headline |
-| `court` | Court name |
-| `application` | Court application code |
-| `documentType` | Entscheidungstext or Rechtssatz |
-| `decisionType` | Erkenntnis, Beschluss, etc. |
-| `caseNumbers` | Array of case file numbers |
-| `decisionDate` | Decision date (YYYY-MM-DD) |
-| `ecli` | European Case Law Identifier |
-| `headnote` | Legal headnote summary |
-| `legalNorms` | Referenced legal norms |
-| `state` | Austrian state (for LVwG) |
+## dateFrom / dateTo
+Decision date range (YYYY-MM-DD, inclusive).
 
-## Examples
+## sort (query param)
+- `relevance` (default)
+- `title`
+- `date` (sorts by decision date)
 
-### Search Constitutional Court Decisions
+## order (query param)
+- `asc`
+- `desc` (default)
 
-```bash
-cdx-at -s -X POST "cdx-at://search/ATJD" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "Gleichheitsgrundsatz", "application": "Vfgh", "limit": 5}' \
-  | jq '.results[] | {docId, court, caseNumbers, decisionDate}'
-```
+## offset
+Integer, 0-based. Default: 0.
 
-### Search by Case Number
-
-```bash
-cdx-at -s -X POST "cdx-at://search/ATJD" \
-  -H 'Content-Type: application/json' \
-  -d '{"caseNumber": "G 37/2024", "limit": 5}' \
-  | jq '.results[] | {docId, title, court}'
-```
-
-### Search by ECLI
-
-```bash
-cdx-at -s -X POST "cdx-at://search/ATJD" \
-  -H 'Content-Type: application/json' \
-  -d '{"ecli": "ECLI:AT:VFGH:2024:G37.2024", "limit": 1}' \
-  | jq '.results[0]'
-```
+## limit
+Integer, 1-100. Default: 20.

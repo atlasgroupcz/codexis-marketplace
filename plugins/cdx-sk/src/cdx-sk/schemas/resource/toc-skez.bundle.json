@@ -1,0 +1,104 @@
+{
+  "endpoint": "toc",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/toc",
+    "cdx-sk://law/SK/<NUM>/<YEAR>/toc"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ezbierka/doc/{docId}/toc",
+      "method": "get",
+      "summary": "Get document table of contents",
+      "description": "Retrieve the hierarchical TOC tree for an e-Zbierka document version.",
+      "operationId": "getToc",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKEZ1234"
+        },
+        {
+          "name": "timecutId",
+          "in": "query",
+          "description": "Defaults to currently valid version.",
+          "required": false,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "TOC tree",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaTocResponse" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/SK/ezbierka/law/{number}/{year}/toc",
+      "method": "get",
+      "summary": "Get law table of contents",
+      "description": "Resolve a law by number/year and return its TOC.",
+      "operationId": "getLawToc",
+      "parameters": [
+        {
+          "name": "number",
+          "in": "path",
+          "description": "Law number",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 40
+        },
+        {
+          "name": "year",
+          "in": "path",
+          "description": "Law year",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 1964
+        },
+        {
+          "name": "timecutId",
+          "in": "query",
+          "description": "Defaults to currently valid version.",
+          "required": false,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "TOC tree",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaTocResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "EzbierkaTocResponse": {
+        "type": "object",
+        "description": "Table of contents for an ezbierka document",
+        "properties": {
+          "toc": {
+            "type": "array",
+            "description": "Hierarchical TOC tree. Each item has: id, type, oznacenie (designation), nadpis (heading), and children array.",
+            "items": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

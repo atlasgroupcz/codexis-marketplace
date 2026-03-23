@@ -1,81 +1,45 @@
-# Austrian Consolidated Law History Search (ATHI — History)
+# ATHI Search Filter Values
 
-Consolidated federal law norms (Bundesnormen) with amendment chains. Each record represents a single consolidated norm provision with its full amendment history linking back to BGBl publications.
+Austrian consolidated federal law norms (Bundesnormen / History). ~437,000 norm provisions with amendment chains.
 
-## Search Request
+## query
+Free-text search in title, short title, and content. Optional.
 
-```bash
-cdx-at -s -X POST "cdx-at://search/ATHI" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": "Sozialversicherung",
-    "abbreviation": "ASVG",
-    "limit": 10
-  }'
-```
+## documentType
+Document type code (exact match):
+- `BG` - Bundesgesetz (Federal law)
+- `V` - Verordnung (Regulation)
+- And other type codes used in RIS
 
-### Request Fields
+## abbreviation
+Law abbreviation (exact match). Common examples:
+- `ASVG` - Allgemeines Sozialversicherungsgesetz
+- `StGB` - Strafgesetzbuch
+- `B-VG` - Bundes-Verfassungsgesetz
+- `ABGB` - Allgemeines buergerliches Gesetzbuch
+- `StPO` - Strafprozessordnung
+- `ZPO` - Zivilprozessordnung
+- `AVG` - Allgemeines Verwaltungsverfahrensgesetz
+- `BAO` - Bundesabgabenordnung
+- `EStG` - Einkommensteuergesetz
+- `GewO` - Gewerbeordnung
+- `KSchG` - Konsumentenschutzgesetz
+- `UStG` - Umsatzsteuergesetz
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `query` | string | Full-text search | `"Sozialversicherung"` |
-| `documentType` | string | Document type code | `"BG"` (Bundesgesetz), `"V"` (Verordnung) |
-| `abbreviation` | string | Law abbreviation | `"ASVG"`, `"StGB"`, `"B-VG"`, `"ABGB"` |
-| `dateFrom` | date | Effective date from (YYYY-MM-DD) | `"2024-01-01"` |
-| `dateTo` | date | Effective date to (YYYY-MM-DD) | `"2025-12-31"` |
-| `offset` | int | Pagination offset (default 0) | `0` |
-| `limit` | int | Results per page (max 100, default 20) | `10` |
+## dateFrom / dateTo
+Effective date range (YYYY-MM-DD, inclusive).
 
-### Query Parameters
+## sort (query param)
+- `relevance` (default)
+- `title`
+- `date` (sorts by effective date)
 
-| Param | Values | Description |
-|-------|--------|-------------|
-| `sort` | `relevance`, `title`, `date` | Sort field (default: relevance) |
-| `order` | `asc`, `desc` | Sort direction |
+## order (query param)
+- `asc`
+- `desc` (default)
 
-## Response Fields
+## offset
+Integer, 0-based. Default: 0.
 
-| Field | Description |
-|-------|-------------|
-| `docId` | Display ID (e.g., ATHI1234) — internal only |
-| `shortTitle` | Short title of the law |
-| `title` | Full title |
-| `abbreviation` | Law abbreviation (e.g., StGB, ASVG) |
-| `articleParagraph` | Article/paragraph reference (e.g., "§ 165") |
-| `lawNumber` | Gesetzesnummer (internal RIS law number) |
-| `effectiveDate` | Effective date (YYYY-MM-DD) |
-| `expiryDate` | Expiry date or null if still in force |
-| `publicationOrgan` | Original publication (e.g., "BGBl. Nr. 189/1955") |
-| `documentType` | BG, V, etc. |
-| `amendments` | Array of BGBl references that amended this norm |
-| `eli` | European Legislation Identifier |
-
-## Examples
-
-### Search by Law Abbreviation
-
-```bash
-cdx-at -s -X POST "cdx-at://search/ATHI" \
-  -H 'Content-Type: application/json' \
-  -d '{"abbreviation": "StGB", "limit": 10}' \
-  | jq '.results[] | {docId, shortTitle, articleParagraph, effectiveDate}'
-```
-
-### Search Currently Effective Norms
-
-```bash
-cdx-at -s -X POST "cdx-at://search/ATHI" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "Datenschutz", "dateFrom": "2026-01-01", "limit": 5}' \
-  | jq '.results[] | {docId, abbreviation, shortTitle, amendments}'
-```
-
-### Find Norms by Amendment
-
-```bash
-# Search for norms amended by a specific BGBl
-cdx-at -s -X POST "cdx-at://search/ATHI" \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "BGBl. I Nr. 58/2018", "limit": 10}' \
-  | jq '.results[] | {docId, abbreviation, articleParagraph, amendments}'
-```
+## limit
+Integer, 1-100. Default: 20.
