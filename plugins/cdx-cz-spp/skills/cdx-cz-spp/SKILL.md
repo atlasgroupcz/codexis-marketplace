@@ -1,7 +1,7 @@
 ---
 name: cdx-cz-spp
 description: This skill should be invoked whenever user needs Czech municipal regulations — ordinances, decrees, and other local legal acts from sbirkapp.gov.cz (Sbírka právních předpisů).
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Czech Municipal Regulations (cdx-cz-spp)
@@ -34,7 +34,7 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 **IMPORTANT:** All document links in user-facing output MUST use the `cdx-cz-spp://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CDX_CZ_SPP_API_URL` for link construction.
 
 When citing documents, link to **attachment** URLs: `[Title](cdx-cz-spp://doc/{id}/attachment/{filename}#page=N)`.
-Get the filename from the `/meta` response (assets array) and the page from search results (`pageNumber`) or `/parts`.
+Search results include a `pageUrl` field with the complete attachment URL (including `#page=N`) — use it directly. If `pageUrl` is absent, get the filename from `/meta` assets.
 
 Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
 
@@ -68,7 +68,7 @@ If nazev is unavailable, use `cisloPredpisu` and `publikujici` as fallback — n
 
 **Correct:**
 ```
-[OZV o místním poplatku za obecní systém odpadového hospodářství — Statutární město Brno, č. 8/2025](cdx-cz-spp://doc/CZSB123/attachment/content_1.pdf)
+[OZV o místním poplatku za obecní systém odpadového hospodářství — Statutární město Brno, č. 8/2025](cdx-cz-spp://doc/CZSB123/attachment/content_1.pdf#page=3)
 ```
 
 **Incorrect:**
@@ -77,6 +77,15 @@ CZSB123 — wrong, raw document ID
 cdx-cz-spp://doc/CZSB123/text — wrong, API endpoint as link
 https://search.example.com/api/CZ/sbirkapp/doc/CZSB123 — wrong, resolved URL
 ```
+
+## Hard Rules
+
+### Always Link to Attachments
+
+Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
+
+- Search results include a ready-made `pageUrl` field — use it directly as the link target. It is a complete `cdx-cz-spp://` URL with `#page=N` already built in.
+- When `pageUrl` is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link without `#page` rather than omitting the link.
 
 ## Reference Files
 

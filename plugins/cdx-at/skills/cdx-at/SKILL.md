@@ -1,7 +1,7 @@
 ---
 name: cdx-at
 description: This skill should be invoked whenever user needs Austrian law or legal information — federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), or other publications (Sonstige) from the RIS system.
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Austrian Legal Database (cdx-at)
@@ -88,6 +88,15 @@ ATJD5678 — wrong, raw document ID
 cdx-at://doc/ATJD5678/text — wrong, API endpoint as link
 https://search.example.com/api/AT/judikatur/doc/ATJD5678 — wrong, resolved URL
 ```
+
+## Hard Rules
+
+### Always Link to Attachments
+
+Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
+
+- Get the filename from `/meta` assets. No page-level data is available in Austrian domains, so link without `#page`.
+- If `/meta` hasn't been fetched yet, fetch it to get the attachment filename before presenting the document to the user.
 
 ## Reference Files
 

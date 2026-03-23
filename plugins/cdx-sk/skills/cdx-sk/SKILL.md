@@ -1,7 +1,7 @@
 ---
 name: cdx-sk
 description: This skill should be invoked whenever user needs Slovak law or legal information — legislation from e-Zbierka, general court decisions, or supreme/constitutional court decisions.
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Slovak Legal Database (cdx-sk)
@@ -33,8 +33,10 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 **IMPORTANT:** All document links in user-facing output MUST use the `cdx-sk://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CDX_SK_API_URL` for link construction.
 
-When citing documents, link to **attachment** URLs: `[Title](cdx-sk://doc/{id}/attachment/{filename}#page=N)`.
-Get the filename from the `/meta` response (assets array) and the page from the `/parts` response.
+Every document reference MUST be a clickable attachment link — never plain text. How to build the link depends on the source:
+
+- **SKEZ (legislation):** Use the `attachmentUrl` field from the `/parts` response directly — it already includes `#page=N`. If you haven't fetched `/parts`, get the filename from `/meta` assets and link without `#page`. When `attachmentUrl` is absent (PDF page mapping unavailable), fall back to a link without `#page`.
+- **SKNUS/SKVS (court decisions):** Get the filename from `/meta` assets. Link to the attachment without `#page` — no page-level data exists for court decisions. Their `/parts` only provide `textUrl` for section text, not attachment URLs.
 
 Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
 
@@ -82,6 +84,14 @@ SKEZ1234 — wrong, raw document ID
 cdx-sk://doc/SKEZ1234/text — wrong, API endpoint as link
 https://search.example.com/api/SK/ezbierka/doc/SKEZ1234 — wrong, resolved URL
 ```
+
+## Hard Rules
+
+### Do Not Use includeAllAssets=true on /meta
+
+The SKEZ `/meta` endpoint defaults to `includeAllAssets=false`, which returns only the current timecut's assets. This is correct for virtually all use cases. Do NOT pass `includeAllAssets=true` unless the user explicitly asks for all historical versions.
+
+Example: Trestný zákonník has ~80 timecut versions, each with its own set of PDF assets. Passing `includeAllAssets=true` returns all of them — dozens of PDFs across all versions — which is never useful when answering a question about current law.
 
 ## Reference Files
 
