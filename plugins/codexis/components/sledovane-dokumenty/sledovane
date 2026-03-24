@@ -112,6 +112,20 @@ def slugify(name):
     return slug or "skupina"
 
 
+def _resolve_tracking_type(state):
+    """Determine tracking_type from state for FE."""
+    has_parts = bool(state.get("parts"))
+    rt = state.get("related_tracking", {})
+    has_related = rt.get("enabled", False)
+    if has_related and not has_parts:
+        return "all"
+    if has_related and has_parts:
+        return "all"
+    if has_parts:
+        return "document_changes"
+    return "all"
+
+
 def load_followed_documents(base_dir):
     """Load tracked documents from state.json files."""
     documents = []
@@ -133,20 +147,32 @@ def load_followed_documents(base_dir):
         for change in state.get("changes", []):
             if not isinstance(change, dict):
                 continue
-            fe_change = {
-                "source_documents": [
-                    {"codexisId": "cdx://doc/" + state.get("codexisId", ""), "name": state.get("name", "")}
-                ],
-                "detected_on": change.get("detected_on", ""),
-                "effective_on": change.get("effective_on", ""),
-                "change_type": "document_change",
-                "description_md": change.get("description_md", ""),
-                "confirmed_on": change.get("confirmed_on"),
-                "amendments": [
-                    a if isinstance(a, dict) else {"id": a, "name": a}
-                    for a in change.get("amendments", [])
-                ],
-            }
+            raw_change_type = change.get("change_type", "document_change")
+            if raw_change_type == "related_change":
+                fe_change = {
+                    "source_documents": change.get("source_documents", []),
+                    "detected_on": change.get("detected_on", ""),
+                    "effective_on": change.get("detected_on", ""),
+                    "change_type": "related_change",
+                    "description_md": change.get("description_md", ""),
+                    "confirmed_on": change.get("confirmed_on"),
+                    "amendments": [],
+                }
+            else:
+                fe_change = {
+                    "source_documents": [
+                        {"codexisId": "cdx://doc/" + state.get("codexisId", ""), "name": state.get("name", "")}
+                    ],
+                    "detected_on": change.get("detected_on", ""),
+                    "effective_on": change.get("effective_on", ""),
+                    "change_type": "document_change",
+                    "description_md": change.get("description_md", ""),
+                    "confirmed_on": change.get("confirmed_on"),
+                    "amendments": [
+                        a if isinstance(a, dict) else {"id": a, "name": a}
+                        for a in change.get("amendments", [])
+                    ],
+                }
             compare_url = change.get("compare_url")
             if compare_url:
                 fe_change["compare_url"] = compare_url
@@ -156,7 +182,7 @@ def load_followed_documents(base_dir):
             "codexisId": "cdx://doc/" + state.get("codexisId", ""),
             "name": state.get("name", ""),
             "added_on": state.get("added_on", ""),
-            "tracking_type": "document_changes" if state.get("parts") else "all",
+            "tracking_type": _resolve_tracking_type(state),
             "parts": [{"partId": p, "label": p} for p in (state.get("parts") or [])],
             "changes": changes,
             "user_notes": state.get("user_notes", []),

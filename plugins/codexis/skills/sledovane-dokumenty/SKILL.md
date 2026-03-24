@@ -26,7 +26,7 @@ cdx-sledovane-dokumenty add CR26785 --parts paragraf89,paragraf2991
 # List all tracked documents
 cdx-sledovane-dokumenty list
 
-# Check all tracked documents for changes
+# Check all tracked documents for changes (versions + related documents)
 cdx-sledovane-dokumenty check
 
 # Check a specific document
@@ -61,6 +61,18 @@ cdx-sledovane-dokumenty note list CR13986
 
 # Remove a note by index
 cdx-sledovane-dokumenty note remove CR13986 0
+
+# Add a relation type to track
+cdx-sledovane-dokumenty related add CR13986 PROVADECI_PREDPIS
+
+# Remove a relation type from tracking
+cdx-sledovane-dokumenty related remove CR13986 PROVADECI_PREDPIS
+
+# List currently tracked relation types
+cdx-sledovane-dokumenty related list CR13986
+
+# Show all available relation types with counts (from API)
+cdx-sledovane-dokumenty related types CR13986
 ```
 
 ## Personalization by Profession
@@ -80,6 +92,32 @@ If the user mentions their profession (e.g. "jsem účetní", "pracuji jako advo
 5. If a new version exists, `cdx-sledovane-dokumenty` computes a text diff and stores the change
 6. User reviews the change on the Sledované dokumenty app page or via `cdx-sledovane-dokumenty show`
 7. `cdx-sledovane-dokumenty confirm` marks the change as reviewed and advances the baseline
+
+## Related Document Tracking
+
+Beyond text changes (new versions/amendments), `cdx-sledovane-dokumenty` can track changes in **related documents** — new case law, implementing regulations, related legislation, etc. The CODEXIS API provides relation types for each document.
+
+### How it works
+
+1. Add relation types to track: `cdx-sledovane-dokumenty related add CR13986 PROVADECI_PREDPIS`
+2. `cdx-sledovane-dokumenty` downloads the current set of related document IDs for the type and saves them as a baseline
+3. During `cdx-sledovane-dokumenty check`, the current related IDs are compared against the baseline — new or removed documents are reported as `related_change` entries
+4. Changes appear in the UI alongside version changes
+
+### Choosing relation types
+
+Run `cdx-sledovane-dokumenty related types CR13986` to see all available types with counts. There are no defaults — the user (or AI) chooses which types to track based on the document and their needs.
+
+For types with very high counts (e.g. `JUDIKATURA` with 1000+), consider whether the user really needs to track all of them — the baseline can be large and checks slower.
+
+### Recommended workflow
+
+**IMPORTANT:** `related` subcommands only work on documents that are already tracked. Always `add` first, then configure related tracking.
+
+After adding a document, briefly mention that related tracking is available (e.g. "Můžu také zapnout sledování souvisejících dokumentů, chcete?"). Do NOT enable it automatically — wait for the user to ask. If the user wants it:
+1. Run `cdx-sledovane-dokumenty related types <codexisId>` to see available types
+2. Recommend types based on the document and user's needs
+3. Add chosen types: `cdx-sledovane-dokumenty related add <codexisId> <type>`
 
 ## Finding the codexisId
 
@@ -104,6 +142,7 @@ A periodic `cdx-sledovane-dokumenty check` automation is created automatically w
 ## Storage
 
 State files: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/state.json`
+Related baselines: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/related_<TYPE>.json`
 Groups file: `~/.cdx/apps/sledovane-dokumenty/groups.json`
 
 The Sledované dokumenty UI component reads from this directory automatically.
