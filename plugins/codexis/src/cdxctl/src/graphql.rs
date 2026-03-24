@@ -4,7 +4,6 @@ pub const GET_AUTOMATIONS: &str = r#"
 query GetAutomations {
     automations {
         id
-        uuid
         type
         command
         title
@@ -18,8 +17,7 @@ query GetAutomations {
         workDirPathInfo { absolutePath displayPath }
         lastRun {
             id
-            uuid
-            status
+                status
             startedAt
             finishedAt
             trigger
@@ -33,7 +31,6 @@ pub const CREATE_AUTOMATION: &str = r#"
 mutation CreateAutomation($input: AutomationInput!) {
     createAutomation(input: $input) {
         id
-        uuid
         type
         command
         title
@@ -53,7 +50,6 @@ pub const UPDATE_AUTOMATION: &str = r#"
 mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
     updateAutomation(id: $id, input: $input) {
         id
-        uuid
         type
         command
         title
@@ -79,8 +75,6 @@ pub const TRIGGER_AUTOMATION: &str = r#"
 mutation TriggerAutomation($id: ID!) {
     triggerAutomation(id: $id) {
         id
-        uuid
-        automationUuid
         status
         startedAt
         trigger
