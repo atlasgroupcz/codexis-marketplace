@@ -396,6 +396,18 @@ pub const UNSEEN_NOTIFICATION_COUNT_QUERY: &str = r#"
     }
 "#;
 
+pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
+    mutation CreateNotification($input: CreateNotificationInput!) {
+        createNotification(input: $input) {
+            id
+            message
+            action
+            link
+            createdAt
+        }
+    }
+"#;
+
 pub const REFRESH_NOTIFICATIONS_MUTATION: &str = r#"
     mutation RefreshNotifications {
         refreshNotifications
