@@ -28,4 +28,5 @@ install_binary() {
 install_binary "cdx-cli"
 install_binary "cdx-link-rewriter"
 install_binary "cdx-sledovane-dokumenty"
+install_binary "cdx-sledovana-judikatura"
 install_binary "cdxctl"

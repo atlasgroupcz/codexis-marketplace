@@ -17,4 +17,5 @@ remove_binary() {
 remove_binary "cdx-cli"
 remove_binary "cdx-link-rewriter"
 remove_binary "cdx-sledovane-dokumenty"
+remove_binary "cdx-sledovana-judikatura"
 remove_binary "cdxctl"
