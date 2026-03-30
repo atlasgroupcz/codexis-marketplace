@@ -65,6 +65,9 @@ cdx-sledovana-judikatura confirm-report <uuid> <report_id>
 
 # Store automation ID (call after creating automation)
 cdx-sledovana-judikatura set-automation <uuid> <automation_id>
+
+# Update last_check_at without creating a report (use when no new decisions found)
+cdx-sledovana-judikatura touch <uuid>
 ```
 
 ## Notes vs Automation
@@ -219,7 +222,7 @@ When running a periodic check:
    - Save: `cdx-sledovana-judikatura save-report <uuid> --file report.json`
    - Update baseline if the judicial view has shifted: `cdx-sledovana-judikatura area set-baseline <uuid> <index> "<updated summary>"`
    - Send email notification if configured
-5. If nothing new — skip report generation (no empty reports)
+5. If nothing new — do not create a report, but update the last check timestamp: `cdx-sledovana-judikatura touch <uuid>`
 
 ## Storage
 

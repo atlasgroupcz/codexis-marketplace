@@ -18,6 +18,7 @@ Usage:
     cdx-sledovana-judikatura show-report <uuid> <report_id>
     cdx-sledovana-judikatura confirm-report <uuid> <report_id>
     cdx-sledovana-judikatura set-automation <uuid> <automation_id>
+    cdx-sledovana-judikatura touch <uuid>
 
 Examples:
     cdx-sledovana-judikatura init "Náhrada škody"
@@ -229,6 +230,14 @@ def cmd_set_automation(partial_uuid, automation_id):
     data["automation_id"] = automation_id
     save_topic(full_uuid, data)
     print(f"OK: automation_id '{automation_id}' uloženo")
+
+
+def cmd_touch(partial_uuid):
+    """Update last_check_at to now without creating a report."""
+    full_uuid, data = require_topic(partial_uuid)
+    data["last_check_at"] = now_utc()
+    save_topic(full_uuid, data)
+    print(f"OK: last_check_at aktualizováno na {data['last_check_at']}")
 
 
 # ── notes ────────────────────────────────────────────────────────────────────
@@ -577,6 +586,12 @@ def main():
             print(f"ERROR: Použití: {BIN_NAME} set-automation <uuid> <automation_id>")
             sys.exit(1)
         cmd_set_automation(sys.argv[2], sys.argv[3])
+
+    elif command == "touch":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} touch <uuid>")
+            sys.exit(1)
+        cmd_touch(sys.argv[2])
 
     else:
         print(f"ERROR: neznámý příkaz '{command}'. Použijte {BIN_NAME} --help")
