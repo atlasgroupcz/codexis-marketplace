@@ -83,7 +83,7 @@ export function ReportView({ uuid, reportId, onBack }: ReportViewProps) {
       {allDocs.length > 0 && (
         <div>
           <h2 className="mb-3 font-semibold">{t('judikatura.overviewTable')}</h2>
-          <div className="overflow-x-auto rounded-xl border shadow-sm">
+          <div className="overflow-x-auto rounded-xl border shadow-sm" data-testid="decisions-table">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
