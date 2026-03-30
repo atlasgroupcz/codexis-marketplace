@@ -12,6 +12,7 @@ Usage:
     cdx-sledovana-judikatura area add <uuid> <name>
     cdx-sledovana-judikatura area remove <uuid> <index>
     cdx-sledovana-judikatura area list <uuid>
+    cdx-sledovana-judikatura area set-baseline <uuid> <index> <summary>
     cdx-sledovana-judikatura save-report <uuid> [--file report.json]
     cdx-sledovana-judikatura list-reports <uuid>
     cdx-sledovana-judikatura show-report <uuid> <report_id>

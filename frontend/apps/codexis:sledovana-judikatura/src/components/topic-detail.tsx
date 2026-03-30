@@ -22,7 +22,7 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [removing, setRemoving] = useState(false)
 
-  if (loading) return <LoadingSkeleton />
+  if (loading && !data) return <LoadingSkeleton />
   if (error) return <ErrorMessage error={error} onRetry={refetch} />
   if (!data) return null
 

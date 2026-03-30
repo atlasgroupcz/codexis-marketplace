@@ -69,6 +69,15 @@ def now_utc():
     return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
+def validate_id(value):
+    """Reject path traversal attempts."""
+    import re
+    if not value or not re.match(r'^[a-zA-Z0-9_-]+$', value):
+        emit({"error": f"Invalid identifier: {value}"}, status="400 Bad Request")
+        sys.exit(0)
+    return value
+
+
 def load_topic(topic_uuid):
     path = os.path.join(app_dir, topic_uuid, "topic.json")
     if not os.path.isfile(path):
@@ -135,6 +144,10 @@ def all_topics():
 params = urllib.parse.parse_qs(query_string)
 topic_uuid = params.get("uuid", [None])[0]
 report_id = params.get("report", [None])[0]
+if topic_uuid:
+    validate_id(topic_uuid)
+if report_id:
+    validate_id(report_id)
 
 # ── Handle POST actions ──────────────────────────────────────────────────────
 
@@ -153,6 +166,8 @@ if request_method == "POST":
         if not uuid or not rid:
             emit({"error": "uuid and report_id required"}, status="400 Bad Request")
             sys.exit(0)
+        validate_id(uuid)
+        validate_id(rid)
         report = load_report(uuid, rid)
         if not report:
             emit({"error": "Report not found"}, status="404 Not Found")
@@ -170,6 +185,7 @@ if request_method == "POST":
         if not uuid:
             emit({"error": "uuid required"}, status="400 Bad Request")
             sys.exit(0)
+        validate_id(uuid)
         import shutil
         import subprocess
         # Delete associated automation if stored
@@ -196,6 +212,7 @@ if request_method == "POST":
         if not uuid or not text:
             emit({"error": "uuid and text required"}, status="400 Bad Request")
             sys.exit(0)
+        validate_id(uuid)
         topic = load_topic(uuid)
         if not topic:
             emit({"error": "Topic not found"}, status="404 Not Found")
@@ -213,9 +230,10 @@ if request_method == "POST":
     elif action == "note_remove":
         uuid = body.get("uuid")
         index = body.get("index")
-        if not uuid or index is None:
-            emit({"error": "uuid and index required"}, status="400 Bad Request")
+        if not uuid or index is None or not isinstance(index, int):
+            emit({"error": "uuid and index (int) required"}, status="400 Bad Request")
             sys.exit(0)
+        validate_id(uuid)
         topic = load_topic(uuid)
         if not topic:
             emit({"error": "Topic not found"}, status="404 Not Found")

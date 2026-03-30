@@ -14,7 +14,7 @@ export function TopicList({ onSelectTopic }: TopicListProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
 
-  if (loading) return <LoadingSkeleton />
+  if (loading && !data) return <LoadingSkeleton />
   if (error) return <ErrorMessage error={error} onRetry={refetch} />
   if (!data) return null
 
