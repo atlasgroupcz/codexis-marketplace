@@ -1,0 +1,69 @@
+{
+  "name": "codexis-plugins",
+  "owner": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "plugins": [
+    {
+      "name": "codexis",
+      "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
+      "source": "./plugins/codexis",
+      "category": "legal"
+    },
+    {
+      "name": "cdx-sk",
+      "description": "Slovak legal database — legislation, general courts, supreme & constitutional court decisions",
+      "source": "./plugins/cdx-sk",
+      "category": "legal"
+    },
+    {
+      "name": "visualization",
+      "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
+      "source": "./plugins/visualization",
+      "category": "visualization"
+    },
+    {
+      "name": "katastr",
+      "description": "Katastr nemovitostí ČR - property registry lookup and cadastral data access",
+      "source": "./plugins/katastr",
+      "category": "legal"
+    },
+    {
+      "name": "playwright",
+      "description": "Playwright MCP (fork) configured with --no-sandbox for Chromium under bwrap.",
+      "source": "./plugins/playwright",
+      "category": "development"
+    },
+    {
+      "name": "ocr",
+      "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
+      "source": "./plugins/ocr",
+      "category": "document-processing"
+    },
+    {
+      "name": "video-analyze",
+      "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
+      "source": "./plugins/video-analyze",
+      "category": "media"
+    },
+    {
+      "name": "presentation",
+      "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
+      "source": "./plugins/presentation",
+      "category": "document-processing"
+    },
+    {
+      "name": "cdx-cz-spp",
+      "description": "Czech municipal regulations (sbirkapp.gov.cz) — municipal decrees, ordinances, and local legal acts",
+      "source": "./plugins/cdx-cz-spp",
+      "category": "legal"
+    },
+    {
+      "name": "cdx-at",
+      "description": "Austrian legal database (RIS) — legislation, court decisions, and legal information",
+      "source": "./plugins/cdx-at",
+      "category": "legal"
+    }
+  ]
+}

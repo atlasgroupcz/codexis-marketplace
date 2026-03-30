@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #flowchart {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .node-shape {
+      fill: var(--background);
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+    .node-shape:hover {
+      filter: brightness(0.95);
+    }
+    .node-action { stroke: var(--chart-1); }
+    .node-decision { stroke: var(--chart-4); }
+    .node-terminal { stroke: var(--destructive); }
+    .node-start { stroke: var(--chart-2); fill: var(--chart-2); }
+    .node-label {
+      fill: var(--foreground);
+      font-size: 12px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+    .node-start .node-label { fill: white; }
+    .edge {
+      fill: none;
+      stroke: var(--muted-foreground);
+      stroke-width: 2px;
+      marker-end: url(#arrowhead);
+    }
+    .edge-label {
+      fill: var(--foreground);
+      font-size: 11px;
+      text-anchor: middle;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="flowchart"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('flowchart').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    const container = document.getElementById('flowchart');
+    const tooltip = document.getElementById('tooltip');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Direction from transformed spec (TB = top-to-bottom, LR = left-to-right)
+    const isVertical = spec.direction !== 'LR';
+    const nodeWidth = 140;
+    const nodeHeight = 50;
+    const levelGap = isVertical ? 100 : 160;
+    const nodeGap = isVertical ? 160 : 100;
+
+    // Create SVG
+    const svg = d3.select('#flowchart')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    // Define arrow marker
+    svg.append('defs').append('marker')
+      .attr('id', 'arrowhead')
+      .attr('viewBox', '-5 -5 10 10')
+      .attr('refX', 8)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M-5,-5L5,0L-5,5Z')
+      .attr('fill', 'var(--muted-foreground)');
+
+    const g = svg.append('g');
+
+    // Add zoom
+    svg.call(d3.zoom()
+      .extent([[0, 0], [width, height]])
+      .scaleExtent([0.2, 3])
+      .on('zoom', (event) => g.attr('transform', event.transform)));
+
+    // Simple layered layout algorithm
+    function layoutNodes(nodes, edges) {
+      const nodeMap = new Map(nodes.map(n => [n.id, { ...n, layer: 0, position: 0 }]));
+      const incoming = new Map(nodes.map(n => [n.id, []]));
+      const outgoing = new Map(nodes.map(n => [n.id, []]));
+      
+      edges.forEach(e => {
+        outgoing.get(e.from)?.push(e.to);
+        incoming.get(e.to)?.push(e.from);
+      });
+
+      // Find root nodes (no incoming edges)
+      const roots = nodes.filter(n => incoming.get(n.id)?.length === 0);
+      if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0]);
+
+      // BFS to assign layers
+      const visited = new Set();
+      const queue = roots.map(r => ({ id: r.id, layer: 0 }));
+      
+      while (queue.length > 0) {
+        const { id, layer } = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        
+        const node = nodeMap.get(id);
+        node.layer = Math.max(node.layer, layer);
+        
+        outgoing.get(id)?.forEach(targetId => {
+          if (!visited.has(targetId)) {
+            queue.push({ id: targetId, layer: layer + 1 });
+          }
+        });
+      }
+
+      // Group by layer and assign positions
+      const layers = new Map();
+      nodeMap.forEach(node => {
+        if (!layers.has(node.layer)) layers.set(node.layer, []);
+        layers.get(node.layer).push(node);
+      });
+
+      layers.forEach((layerNodes, layer) => {
+        layerNodes.forEach((node, i) => {
+          node.position = i;
+          if (isVertical) {
+            node.x = (i - (layerNodes.length - 1) / 2) * nodeGap + width / 2;
+            node.y = layer * levelGap + 80;
+          } else {
+            node.x = layer * levelGap + 100;
+            node.y = (i - (layerNodes.length - 1) / 2) * nodeGap + height / 2;
+          }
+        });
+      });
+
+      return Array.from(nodeMap.values());
+    }
+
+    const layoutedNodes = layoutNodes(spec.nodes, spec.edges);
+    const nodeMap = new Map(layoutedNodes.map(n => [n.id, n]));
+
+    // Draw edges
+    const edgesG = g.append('g').attr('class', 'edges');
+    
+    spec.edges.forEach(edge => {
+      const source = nodeMap.get(edge.from);
+      const target = nodeMap.get(edge.to);
+      if (!source || !target) return;
+
+      // Calculate edge path with offset for node shapes
+      let x1 = source.x, y1 = source.y, x2 = target.x, y2 = target.y;
+      
+      // Offset from source
+      if (isVertical) {
+        y1 += nodeHeight / 2;
+        y2 -= nodeHeight / 2;
+      } else {
+        x1 += nodeWidth / 2;
+        x2 -= nodeWidth / 2;
+      }
+
+      const path = edgesG.append('path')
+        .attr('class', 'edge')
+        .attr('d', `M${x1},${y1} C${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`);
+
+      if (edge.label) {
+        edgesG.append('text')
+          .attr('class', 'edge-label')
+          .attr('x', (x1 + x2) / 2)
+          .attr('y', (y1 + y2) / 2 - 8)
+          .text(edge.label);
+      }
+    });
+
+    // Draw nodes
+    const nodesG = g.append('g').attr('class', 'nodes');
+
+    layoutedNodes.forEach(node => {
+      const nodeG = nodesG.append('g')
+        .attr('transform', `translate(${node.x},${node.y})`)
+        .on('mouseover', () => {
+          tooltip.textContent = '';
+          const strong = document.createElement('strong');
+          strong.textContent = node.label;
+          tooltip.appendChild(strong);
+          tooltip.appendChild(document.createElement('br'));
+          const typeSpan = document.createElement('span');
+          typeSpan.className = 'text-[var(--muted-foreground)]';
+          typeSpan.textContent = node.nodeType;
+          tooltip.appendChild(typeSpan);
+          tooltip.style.opacity = 1;
+        })
+        .on('mousemove', (event) => {
+          tooltip.style.left = (event.pageX + 10) + 'px';
+          tooltip.style.top = (event.pageY - 10) + 'px';
+        })
+        .on('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+
+      // Draw shape based on nodeType (from A2UI schema)
+      const type = node.nodeType || 'process';
+      
+      if (type === 'decision') {
+        // Diamond
+        const size = 35;
+        nodeG.append('polygon')
+          .attr('class', `node-shape node-${type}`)
+          .attr('points', `0,${-size} ${size},0 0,${size} ${-size},0`);
+      } else if (type === 'terminal') {
+        // Rounded rectangle
+        nodeG.append('rect')
+          .attr('class', `node-shape node-${type}`)
+          .attr('x', -nodeWidth / 2)
+          .attr('y', -nodeHeight / 2)
+          .attr('width', nodeWidth)
+          .attr('height', nodeHeight)
+          .attr('rx', nodeHeight / 2);
+      } else if (type === 'start') {
+        // Circle
+        nodeG.append('circle')
+          .attr('class', `node-shape node-${type}`)
+          .attr('r', 20);
+      } else {
+        // Rectangle (action)
+        nodeG.append('rect')
+          .attr('class', `node-shape node-${type}`)
+          .attr('x', -nodeWidth / 2)
+          .attr('y', -nodeHeight / 2)
+          .attr('width', nodeWidth)
+          .attr('height', nodeHeight)
+          .attr('rx', 4);
+      }
+
+      // Add label
+      nodeG.append('text')
+        .attr('class', 'node-label')
+        .text(node.label);
+    });
+
+    // Center the graph
+    const bounds = g.node().getBBox();
+    const dx = width / 2 - (bounds.x + bounds.width / 2);
+    const dy = height / 2 - (bounds.y + bounds.height / 2);
+    g.attr('transform', `translate(${dx},${dy})`);
+  </script>
+</body>
+</html>

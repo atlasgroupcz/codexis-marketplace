@@ -1,0 +1,104 @@
+:root {
+  color-scheme: light;
+  --bg: #f7fbff;
+  --fg: #0f172a;
+  --muted: #475569;
+  --card: #ffffff;
+  --line: #cbd5e1;
+  --accent: #0ea5e9;
+  --success: #16a34a;
+  --error: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top right, #dbeafe, var(--bg));
+  color: var(--fg);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.card {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.status {
+  margin: 16px 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.form {
+  margin: 16px 0;
+}
+
+.form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.input-row input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.875rem;
+}
+
+.input-row button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.input-row button:hover {
+  opacity: 0.9;
+}
+
+.message {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  min-height: 1.5em;
+}
+
+.message.success {
+  color: var(--success);
+}
+
+.message.error {
+  color: var(--error);
+}

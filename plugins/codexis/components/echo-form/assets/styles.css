@@ -1,0 +1,106 @@
+:root {
+  color-scheme: light;
+  --bg: #f7fbff;
+  --fg: #0f172a;
+  --muted: #475569;
+  --card: #ffffff;
+  --line: #cbd5e1;
+  --accent: #0ea5e9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top right, #dbeafe, var(--bg));
+  color: var(--fg);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.card {
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+
+.images {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.banner {
+  width: 220px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+}
+
+.form {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.form input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.form button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.result {
+  margin: 12px 0;
+}
+
+.json {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+  font-size: 12px;
+  color: #1e293b;
+  overflow: auto;
+}

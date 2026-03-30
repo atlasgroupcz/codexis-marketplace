@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #chart {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .axis path, .axis line {
+      stroke: var(--muted-foreground);
+    }
+    .axis text {
+      fill: var(--foreground);
+      font-size: 11px;
+    }
+    .grid line {
+      stroke: var(--border);
+      stroke-opacity: 0.5;
+    }
+    .grid path {
+      stroke-width: 0;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="chart"></div>
+  <div id="legend" class="legend"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('chart').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    const container = document.getElementById('chart');
+    const tooltip = document.getElementById('tooltip');
+    const legendContainer = document.getElementById('legend');
+
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const width = Math.min(container.clientWidth, 900) - margin.left - margin.right;
+    const height = Math.min(container.clientHeight, 500) - margin.top - margin.bottom;
+
+    // Helper function to get CSS variable values
+    const getColor = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const chartColors = [
+      getColor('--chart-1'), getColor('--chart-2'), getColor('--chart-3'),
+      getColor('--chart-4'), getColor('--chart-5')
+    ];
+    const colorScale = d3.scaleOrdinal(chartColors);
+    const chartType = spec.chartType || 'bar';
+    const options = spec.options || {};
+    const showLegend = options.showLegend !== false;
+
+    // Create SVG
+    const svg = d3.select('#chart')
+      .append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Render based on chart type
+    if (chartType === 'pie') {
+      renderPie();
+    } else {
+      renderCartesian();
+    }
+
+    function renderCartesian() {
+      const xAxisField = spec.xAxis;
+      const series = spec.series.map(s => s.field);
+      const seriesLabels = spec.series.reduce((acc, s) => { acc[s.field] = s.label; return acc; }, {});
+      const data = spec.data;
+
+      // X scale
+      const x0 = d3.scaleBand()
+        .domain(data.map(d => d[xAxisField]))
+        .range([0, width])
+        .padding(0.2);
+
+      const x1 = d3.scaleBand()
+        .domain(series)
+        .range([0, x0.bandwidth()])
+        .padding(0.05);
+
+      // Y scale
+      const yMax = d3.max(data, d => d3.max(series, s => d[s]));
+      const y = d3.scaleLinear()
+        .domain([0, yMax * 1.1])
+        .nice()
+        .range([height, 0]);
+
+      // Grid
+      svg.append('g')
+        .attr('class', 'grid')
+        .call(d3.axisLeft(y).tickSize(-width).tickFormat(''));
+
+      // X axis
+      svg.append('g')
+        .attr('class', 'axis')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x0));
+
+      // Y axis
+      svg.append('g')
+        .attr('class', 'axis')
+        .call(d3.axisLeft(y));
+
+      if (chartType === 'bar') {
+        // Grouped bars
+        const groups = svg.selectAll('.bar-group')
+          .data(data)
+          .join('g')
+          .attr('class', 'bar-group')
+          .attr('transform', d => `translate(${x0(d[xAxisField])},0)`);
+
+        groups.selectAll('rect')
+          .data(d => series.map(s => ({ key: s, label: seriesLabels[s], value: d[s], category: d[xAxisField] })))
+          .join('rect')
+          .attr('x', d => x1(d.key))
+          .attr('y', height)
+          .attr('width', x1.bandwidth())
+          .attr('height', 0)
+          .attr('fill', d => colorScale(d.key))
+          .on('mouseover', showTooltip)
+          .on('mousemove', moveTooltip)
+          .on('mouseout', hideTooltip)
+          .transition()
+          .duration(500)
+          .attr('y', d => y(d.value))
+          .attr('height', d => height - y(d.value));
+      } else if (chartType === 'line' || chartType === 'area') {
+        series.forEach((s, i) => {
+          const lineData = data.map(d => ({ x: d[xAxisField], y: d[s], series: s, label: seriesLabels[s] }));
+          
+          if (chartType === 'area') {
+            const area = d3.area()
+              .x(d => x0(d.x) + x0.bandwidth() / 2)
+              .y0(height)
+              .y1(d => y(d.y));
+
+            svg.append('path')
+              .datum(lineData)
+              .attr('fill', colorScale(s))
+              .attr('fill-opacity', 0.3)
+              .attr('d', area);
+          }
+
+          const line = d3.line()
+            .x(d => x0(d.x) + x0.bandwidth() / 2)
+            .y(d => y(d.y));
+
+          svg.append('path')
+            .datum(lineData)
+            .attr('fill', 'none')
+            .attr('stroke', colorScale(s))
+            .attr('stroke-width', 2)
+            .attr('d', line);
+
+          // Add dots
+          svg.selectAll(`.dot-${i}`)
+            .data(lineData)
+            .join('circle')
+            .attr('class', `dot-${i}`)
+            .attr('cx', d => x0(d.x) + x0.bandwidth() / 2)
+            .attr('cy', d => y(d.y))
+            .attr('r', 5)
+            .attr('fill', colorScale(s))
+            .on('mouseover', (e, d) => showTooltip(e, { key: d.series, label: d.label, value: d.y, category: d.x }))
+            .on('mousemove', moveTooltip)
+            .on('mouseout', hideTooltip);
+        });
+      }
+
+      // Legend
+      if (showLegend) {
+        series.forEach(s => {
+          const item = document.createElement('div');
+          item.className = 'legend-item';
+          const colorDiv = document.createElement('div');
+          colorDiv.className = 'legend-color';
+          colorDiv.style.background = colorScale(s);
+          const labelSpan = document.createElement('span');
+          labelSpan.textContent = seriesLabels[s];
+          item.appendChild(colorDiv);
+          item.appendChild(labelSpan);
+          legendContainer.appendChild(item);
+        });
+      }
+    }
+
+    function renderPie() {
+      const radius = Math.min(width, height) / 2;
+      const xAxisField = spec.xAxis;
+      const valueField = spec.series[0].field;
+      const valueLabel = spec.series[0].label;
+      
+      const pieG = svg.append('g')
+        .attr('transform', `translate(${width/2},${height/2})`);
+
+      const pie = d3.pie()
+        .value(d => d[valueField])
+        .sort(null);
+
+      const arc = d3.arc()
+        .innerRadius(radius * 0.4)
+        .outerRadius(radius * 0.8);
+
+      const arcHover = d3.arc()
+        .innerRadius(radius * 0.4)
+        .outerRadius(radius * 0.85);
+
+      const arcs = pieG.selectAll('.arc')
+        .data(pie(spec.data))
+        .join('g')
+        .attr('class', 'arc');
+
+      arcs.append('path')
+        .attr('d', arc)
+        .attr('fill', (d, i) => colorScale(d.data[xAxisField]))
+        .attr('stroke', 'var(--background)')
+        .attr('stroke-width', 2)
+        .style('cursor', 'pointer')
+        .on('mouseover', function(e, d) {
+          d3.select(this).transition().duration(200).attr('d', arcHover);
+          showTooltip(e, { key: d.data[xAxisField], label: d.data[xAxisField], value: d.data[valueField], category: '' });
+        })
+        .on('mousemove', moveTooltip)
+        .on('mouseout', function() {
+          d3.select(this).transition().duration(200).attr('d', arc);
+          hideTooltip();
+        });
+
+      // Legend
+      if (showLegend) {
+        spec.data.forEach(d => {
+          const item = document.createElement('div');
+          item.className = 'legend-item';
+          const colorDiv = document.createElement('div');
+          colorDiv.className = 'legend-color';
+          colorDiv.style.background = colorScale(d[xAxisField]);
+          const labelSpan = document.createElement('span');
+          labelSpan.textContent = d[xAxisField] + ': ' + d[valueField];
+          item.appendChild(colorDiv);
+          item.appendChild(labelSpan);
+          legendContainer.appendChild(item);
+        });
+      }
+    }
+
+    function showTooltip(event, d) {
+      tooltip.textContent = '';
+      const strong = document.createElement('strong');
+      strong.textContent = d.label || d.key;
+      tooltip.appendChild(strong);
+      if (d.category) {
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(d.category + ': ' + d.value));
+      } else {
+        tooltip.appendChild(document.createElement('br'));
+        tooltip.appendChild(document.createTextNode(String(d.value)));
+      }
+      tooltip.style.opacity = 1;
+    }
+
+    function moveTooltip(event) {
+      tooltip.style.left = (event.pageX + 10) + 'px';
+      tooltip.style.top = (event.pageY - 10) + 'px';
+    }
+
+    function hideTooltip() {
+      tooltip.style.opacity = 0;
+    }
+  </script>
+</body>
+</html>

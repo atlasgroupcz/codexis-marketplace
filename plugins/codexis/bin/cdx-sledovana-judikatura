@@ -1,0 +1,602 @@
+#!/usr/bin/env python3
+"""cdx-sledovana-judikatura – track case law topics via AI-driven CODEXIS search.
+
+Usage:
+    cdx-sledovana-judikatura init <name> [--notes "text"] [--filters '{"soud":["Nejvyšší soud"]}']
+    cdx-sledovana-judikatura list
+    cdx-sledovana-judikatura show <uuid>
+    cdx-sledovana-judikatura delete <uuid>
+    cdx-sledovana-judikatura note add <uuid> <text>
+    cdx-sledovana-judikatura note list <uuid>
+    cdx-sledovana-judikatura note remove <uuid> <index>
+    cdx-sledovana-judikatura area add <uuid> <name>
+    cdx-sledovana-judikatura area remove <uuid> <index>
+    cdx-sledovana-judikatura area list <uuid>
+    cdx-sledovana-judikatura area set-baseline <uuid> <index> <summary>
+    cdx-sledovana-judikatura save-report <uuid> [--file report.json]
+    cdx-sledovana-judikatura list-reports <uuid>
+    cdx-sledovana-judikatura show-report <uuid> <report_id>
+    cdx-sledovana-judikatura confirm-report <uuid> <report_id>
+    cdx-sledovana-judikatura set-automation <uuid> <automation_id>
+    cdx-sledovana-judikatura touch <uuid>
+
+Examples:
+    cdx-sledovana-judikatura init "Náhrada škody"
+    cdx-sledovana-judikatura init "Okamžité zrušení PP" --notes "zajímá mě role GDPR"
+    cdx-sledovana-judikatura note add abc123 "přelomové rozsudky NS"
+    cdx-sledovana-judikatura area add abc123 "Odpovědnost za vady výrobku"
+    cdx-sledovana-judikatura save-report abc123 --file /tmp/report.json
+    cdx-sledovana-judikatura confirm-report abc123 2026-03-25
+"""
+
+import datetime
+import json
+import os
+import subprocess
+import sys
+import uuid as uuid_mod
+
+APP_DIR = os.path.expanduser("~/.cdx/apps/sledovana-judikatura")
+BIN_NAME = "cdx-sledovana-judikatura"
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+def now_utc():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def topic_dir(topic_uuid):
+    return os.path.join(APP_DIR, topic_uuid)
+
+
+def topic_path(topic_uuid):
+    return os.path.join(topic_dir(topic_uuid), "topic.json")
+
+
+def reports_dir(topic_uuid):
+    return os.path.join(topic_dir(topic_uuid), "reports")
+
+
+def load_topic(topic_uuid):
+    path = topic_path(topic_uuid)
+    if not os.path.isfile(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_topic(topic_uuid, data):
+    d = topic_dir(topic_uuid)
+    os.makedirs(d, exist_ok=True)
+    with open(topic_path(topic_uuid), "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+
+def all_topics():
+    """Return list of (uuid, topic_data) for all topics."""
+    if not os.path.isdir(APP_DIR):
+        return []
+    results = []
+    for name in sorted(os.listdir(APP_DIR)):
+        tp = topic_path(name)
+        if os.path.isfile(tp):
+            try:
+                with open(tp, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                results.append((name, data))
+            except (json.JSONDecodeError, OSError):
+                pass
+    return results
+
+
+def resolve_uuid(partial):
+    """Resolve a partial UUID to a full one. Returns full UUID or None."""
+    if os.path.isdir(topic_dir(partial)):
+        return partial
+    # try prefix match
+    if not os.path.isdir(APP_DIR):
+        return None
+    matches = [d for d in os.listdir(APP_DIR) if d.startswith(partial)]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        print(f"ERROR: nejednoznačný UUID prefix '{partial}', nalezeno {len(matches)} shod")
+        sys.exit(1)
+    return None
+
+
+def require_topic(partial_uuid):
+    """Resolve UUID and load topic, exit on error."""
+    full_uuid = resolve_uuid(partial_uuid)
+    if not full_uuid:
+        print(f"ERROR: téma '{partial_uuid}' nenalezeno")
+        sys.exit(1)
+    data = load_topic(full_uuid)
+    if not data:
+        print(f"ERROR: nelze načíst téma '{full_uuid}'")
+        sys.exit(1)
+    return full_uuid, data
+
+
+def print_json(obj):
+    print(json.dumps(obj, indent=2, ensure_ascii=False))
+
+
+# ── commands ─────────────────────────────────────────────────────────────────
+
+def cmd_init(name, notes=None, filters=None):
+    """Create a new tracked topic."""
+    topic_uuid = str(uuid_mod.uuid4())
+    data = {
+        "uuid": topic_uuid,
+        "name": name,
+        "notes": [notes] if notes else [],
+        "areas": [],
+        "filters": filters or {},
+        "created_at": now_utc(),
+        "last_check_at": None,
+    }
+    save_topic(topic_uuid, data)
+    print_json(data)
+
+
+def cmd_list():
+    """List all tracked topics."""
+    topics = all_topics()
+    if not topics:
+        print("Žádná sledovaná témata.")
+        return
+    result = []
+    for t_uuid, data in topics:
+        # count reports
+        rd = reports_dir(t_uuid)
+        report_count = 0
+        unconfirmed = 0
+        if os.path.isdir(rd):
+            for rf in os.listdir(rd):
+                if rf.endswith(".json"):
+                    report_count += 1
+                    try:
+                        with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
+                            r = json.load(f)
+                        if not r.get("confirmed_on"):
+                            unconfirmed += 1
+                    except (json.JSONDecodeError, OSError):
+                        pass
+        result.append({
+            "uuid": t_uuid,
+            "name": data.get("name", ""),
+            "areas": len(data.get("areas", [])),
+            "notes": len(data.get("notes", [])),
+            "created_at": data.get("created_at"),
+            "last_check_at": data.get("last_check_at"),
+            "total_reports": report_count,
+            "unconfirmed_reports": unconfirmed,
+        })
+    print_json(result)
+
+
+def cmd_show(partial_uuid):
+    """Show full topic state including reports summary."""
+    full_uuid, data = require_topic(partial_uuid)
+
+    # add reports summary
+    rd = reports_dir(full_uuid)
+    report_list = []
+    if os.path.isdir(rd):
+        for rf in sorted(os.listdir(rd)):
+            if rf.endswith(".json"):
+                try:
+                    with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
+                        r = json.load(f)
+                    report_list.append({
+                        "report_id": rf.replace(".json", ""),
+                        "checked_at": r.get("checked_at"),
+                        "period_from": r.get("period_from"),
+                        "period_to": r.get("period_to"),
+                        "found_count": r.get("found_count", 0),
+                        "confirmed_on": r.get("confirmed_on"),
+                    })
+                except (json.JSONDecodeError, OSError):
+                    pass
+
+    output = dict(data)
+    output["reports"] = report_list
+    print_json(output)
+
+
+def cmd_delete(partial_uuid):
+    """Delete a tracked topic, its reports, and associated automation."""
+    full_uuid, data = require_topic(partial_uuid)
+    automation_id = data.get("automation_id")
+    if automation_id:
+        try:
+            subprocess.run(
+                ["cdxctl", "automation", "delete", automation_id],
+                capture_output=True, text=True, timeout=15,
+            )
+        except Exception:
+            pass  # non-fatal — automation may already be deleted
+    import shutil
+    shutil.rmtree(topic_dir(full_uuid))
+    print(f"OK: téma '{full_uuid}' smazáno")
+
+
+def cmd_set_automation(partial_uuid, automation_id):
+    """Store automation ID in topic.json."""
+    full_uuid, data = require_topic(partial_uuid)
+    data["automation_id"] = automation_id
+    save_topic(full_uuid, data)
+    print(f"OK: automation_id '{automation_id}' uloženo")
+
+
+def cmd_touch(partial_uuid):
+    """Update last_check_at to now without creating a report."""
+    full_uuid, data = require_topic(partial_uuid)
+    data["last_check_at"] = now_utc()
+    save_topic(full_uuid, data)
+    print(f"OK: last_check_at aktualizováno na {data['last_check_at']}")
+
+
+# ── notes ────────────────────────────────────────────────────────────────────
+
+def cmd_note_add(partial_uuid, text):
+    full_uuid, data = require_topic(partial_uuid)
+    notes = data.get("notes", [])
+    notes.append(text)
+    data["notes"] = notes
+    save_topic(full_uuid, data)
+    print(f"OK: poznámka přidána (index {len(notes) - 1})")
+
+
+def cmd_note_list(partial_uuid):
+    full_uuid, data = require_topic(partial_uuid)
+    notes = data.get("notes", [])
+    if not notes:
+        print("Žádné poznámky.")
+        return
+    for i, n in enumerate(notes):
+        print(f"  [{i}] {n}")
+
+
+def cmd_note_remove(partial_uuid, index):
+    full_uuid, data = require_topic(partial_uuid)
+    notes = data.get("notes", [])
+    if index < 0 or index >= len(notes):
+        print(f"ERROR: index {index} mimo rozsah (0–{len(notes) - 1})")
+        sys.exit(1)
+    removed = notes.pop(index)
+    data["notes"] = notes
+    save_topic(full_uuid, data)
+    print(f"OK: poznámka [{index}] odstraněna: {removed}")
+
+
+# ── areas (podoblasti) ───────────────────────────────────────────────────────
+
+def cmd_area_add(partial_uuid, name):
+    full_uuid, data = require_topic(partial_uuid)
+    areas = data.get("areas", [])
+    # check duplicates
+    if any(a.get("name", "").lower() == name.lower() for a in areas):
+        print(f"ERROR: oblast '{name}' již existuje")
+        sys.exit(1)
+    area = {
+        "name": name,
+        "baseline_summary": None,
+        "added_at": now_utc(),
+    }
+    areas.append(area)
+    data["areas"] = areas
+    save_topic(full_uuid, data)
+    print(f"OK: oblast '{name}' přidána (index {len(areas) - 1})")
+
+
+def cmd_area_remove(partial_uuid, index):
+    full_uuid, data = require_topic(partial_uuid)
+    areas = data.get("areas", [])
+    if index < 0 or index >= len(areas):
+        print(f"ERROR: index {index} mimo rozsah (0–{len(areas) - 1})")
+        sys.exit(1)
+    removed = areas.pop(index)
+    data["areas"] = areas
+    save_topic(full_uuid, data)
+    print(f"OK: oblast [{index}] '{removed.get('name', '')}' odstraněna")
+
+
+def cmd_area_list(partial_uuid):
+    full_uuid, data = require_topic(partial_uuid)
+    areas = data.get("areas", [])
+    if not areas:
+        print("Žádné podoblasti.")
+        return
+    for i, a in enumerate(areas):
+        baseline = "✓ baseline" if a.get("baseline_summary") else "⚠ bez baseline"
+        print(f"  [{i}] {a.get('name', '')} ({baseline})")
+
+
+def cmd_area_set_baseline(partial_uuid, index, summary):
+    """Set baseline summary for an area."""
+    full_uuid, data = require_topic(partial_uuid)
+    areas = data.get("areas", [])
+    if index < 0 or index >= len(areas):
+        print(f"ERROR: index {index} mimo rozsah (0–{len(areas) - 1})")
+        sys.exit(1)
+    areas[index]["baseline_summary"] = summary
+    areas[index]["baseline_set_at"] = now_utc()
+    data["areas"] = areas
+    save_topic(full_uuid, data)
+    print(f"OK: baseline pro oblast [{index}] '{areas[index].get('name', '')}' nastaven")
+
+
+# ── reports ──────────────────────────────────────────────────────────────────
+
+def cmd_save_report(partial_uuid, file_path=None):
+    """Save a report from JSON (stdin or file)."""
+    full_uuid, data = require_topic(partial_uuid)
+
+    if file_path:
+        with open(file_path, "r", encoding="utf-8") as f:
+            report = json.load(f)
+    else:
+        report = json.load(sys.stdin)
+
+    # ensure required fields
+    if "checked_at" not in report:
+        report["checked_at"] = now_utc()
+    if "confirmed_on" not in report:
+        report["confirmed_on"] = None
+
+    # use date as report ID
+    report_id = report.get("report_id")
+    if not report_id:
+        report_id = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+        report["report_id"] = report_id
+
+    rd = reports_dir(full_uuid)
+    os.makedirs(rd, exist_ok=True)
+    report_path = os.path.join(rd, f"{report_id}.json")
+
+    with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+    # update last_check_at
+    data["last_check_at"] = report["checked_at"]
+    save_topic(full_uuid, data)
+
+    print(f"OK: report '{report_id}' uložen")
+    print_json(report)
+
+
+def cmd_list_reports(partial_uuid):
+    """List all reports for a topic."""
+    full_uuid, _ = require_topic(partial_uuid)
+    rd = reports_dir(full_uuid)
+    if not os.path.isdir(rd):
+        print("Žádné reporty.")
+        return
+    reports = []
+    for rf in sorted(os.listdir(rd)):
+        if rf.endswith(".json"):
+            try:
+                with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
+                    r = json.load(f)
+                reports.append({
+                    "report_id": rf.replace(".json", ""),
+                    "checked_at": r.get("checked_at"),
+                    "period_from": r.get("period_from"),
+                    "period_to": r.get("period_to"),
+                    "found_count": r.get("found_count", 0),
+                    "confirmed_on": r.get("confirmed_on"),
+                })
+            except (json.JSONDecodeError, OSError):
+                pass
+    print_json(reports)
+
+
+def cmd_show_report(partial_uuid, report_id):
+    """Show full report content."""
+    full_uuid, _ = require_topic(partial_uuid)
+    report_path = os.path.join(reports_dir(full_uuid), f"{report_id}.json")
+    if not os.path.isfile(report_path):
+        print(f"ERROR: report '{report_id}' nenalezen")
+        sys.exit(1)
+    with open(report_path, "r", encoding="utf-8") as f:
+        report = json.load(f)
+    print_json(report)
+
+
+def cmd_confirm_report(partial_uuid, report_id):
+    """Mark a report as confirmed/read."""
+    full_uuid, _ = require_topic(partial_uuid)
+    report_path = os.path.join(reports_dir(full_uuid), f"{report_id}.json")
+    if not os.path.isfile(report_path):
+        print(f"ERROR: report '{report_id}' nenalezen")
+        sys.exit(1)
+    with open(report_path, "r", encoding="utf-8") as f:
+        report = json.load(f)
+    report["confirmed_on"] = now_utc()
+    with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    print(f"OK: report '{report_id}' potvrzen")
+
+
+# ── main ─────────────────────────────────────────────────────────────────────
+
+def print_help():
+    print(__doc__)
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] in ("--help", "-h", "help"):
+        print_help()
+        sys.exit(0)
+
+    command = sys.argv[1]
+
+    if command == "init":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} init <název tématu> [--notes \"text\"] [--filters '{{}}']")
+            sys.exit(1)
+        name = sys.argv[2]
+        notes = None
+        filters = None
+        i = 3
+        while i < len(sys.argv):
+            if sys.argv[i] == "--notes" and i + 1 < len(sys.argv):
+                notes = sys.argv[i + 1]
+                i += 2
+            elif sys.argv[i] == "--filters" and i + 1 < len(sys.argv):
+                try:
+                    filters = json.loads(sys.argv[i + 1])
+                except json.JSONDecodeError:
+                    print(f"ERROR: --filters musí být platný JSON")
+                    sys.exit(1)
+                i += 2
+            else:
+                i += 1
+        cmd_init(name, notes=notes, filters=filters)
+
+    elif command == "list":
+        cmd_list()
+
+    elif command == "show":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} show <uuid>")
+            sys.exit(1)
+        cmd_show(sys.argv[2])
+
+    elif command == "delete":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} delete <uuid>")
+            sys.exit(1)
+        cmd_delete(sys.argv[2])
+
+    elif command == "note":
+        if len(sys.argv) < 3:
+            print(f"ERROR: chybí akce. Použití: {BIN_NAME} note <add|list|remove> ...")
+            sys.exit(1)
+        sub = sys.argv[2]
+        if sub == "add":
+            if len(sys.argv) < 5:
+                print(f"ERROR: Použití: {BIN_NAME} note add <uuid> <text>")
+                sys.exit(1)
+            cmd_note_add(sys.argv[3], " ".join(sys.argv[4:]))
+        elif sub == "list":
+            if len(sys.argv) < 4:
+                print(f"ERROR: Použití: {BIN_NAME} note list <uuid>")
+                sys.exit(1)
+            cmd_note_list(sys.argv[3])
+        elif sub == "remove":
+            if len(sys.argv) < 5:
+                print(f"ERROR: Použití: {BIN_NAME} note remove <uuid> <index>")
+                sys.exit(1)
+            try:
+                index = int(sys.argv[4])
+            except ValueError:
+                print(f"ERROR: index musí být číslo, dostal '{sys.argv[4]}'")
+                sys.exit(1)
+            cmd_note_remove(sys.argv[3], index)
+        else:
+            print(f"ERROR: neznámá akce '{sub}'. Použijte: add, list, remove")
+            sys.exit(1)
+
+    elif command == "area":
+        if len(sys.argv) < 3:
+            print(f"ERROR: chybí akce. Použití: {BIN_NAME} area <add|remove|list|set-baseline> ...")
+            sys.exit(1)
+        sub = sys.argv[2]
+        if sub == "add":
+            if len(sys.argv) < 5:
+                print(f"ERROR: Použití: {BIN_NAME} area add <uuid> <název oblasti>")
+                sys.exit(1)
+            cmd_area_add(sys.argv[3], " ".join(sys.argv[4:]))
+        elif sub == "remove":
+            if len(sys.argv) < 5:
+                print(f"ERROR: Použití: {BIN_NAME} area remove <uuid> <index>")
+                sys.exit(1)
+            try:
+                index = int(sys.argv[4])
+            except ValueError:
+                print(f"ERROR: index musí být číslo, dostal '{sys.argv[4]}'")
+                sys.exit(1)
+            cmd_area_remove(sys.argv[3], index)
+        elif sub == "list":
+            if len(sys.argv) < 4:
+                print(f"ERROR: Použití: {BIN_NAME} area list <uuid>")
+                sys.exit(1)
+            cmd_area_list(sys.argv[3])
+        elif sub == "set-baseline":
+            if len(sys.argv) < 6:
+                print(f"ERROR: Použití: {BIN_NAME} area set-baseline <uuid> <index> <summary_text>")
+                sys.exit(1)
+            try:
+                index = int(sys.argv[4])
+            except ValueError:
+                print(f"ERROR: index musí být číslo, dostal '{sys.argv[4]}'")
+                sys.exit(1)
+            cmd_area_set_baseline(sys.argv[3], index, " ".join(sys.argv[5:]))
+        else:
+            print(f"ERROR: neznámá akce '{sub}'. Použijte: add, remove, list, set-baseline")
+            sys.exit(1)
+
+    elif command == "save-report":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} save-report <uuid> [--file report.json]")
+            sys.exit(1)
+        file_path = None
+        if len(sys.argv) >= 5 and sys.argv[3] == "--file":
+            file_path = sys.argv[4]
+            partial_uuid = sys.argv[2]
+        elif len(sys.argv) >= 4 and sys.argv[3] == "--file":
+            print(f"ERROR: chybí cesta k souboru po --file")
+            sys.exit(1)
+        else:
+            partial_uuid = sys.argv[2]
+            # check for --file anywhere
+            for idx in range(3, len(sys.argv) - 1):
+                if sys.argv[idx] == "--file":
+                    file_path = sys.argv[idx + 1]
+                    break
+        cmd_save_report(partial_uuid, file_path=file_path)
+
+    elif command == "list-reports":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} list-reports <uuid>")
+            sys.exit(1)
+        cmd_list_reports(sys.argv[2])
+
+    elif command == "show-report":
+        if len(sys.argv) < 4:
+            print(f"ERROR: Použití: {BIN_NAME} show-report <uuid> <report_id>")
+            sys.exit(1)
+        cmd_show_report(sys.argv[2], sys.argv[3])
+
+    elif command == "confirm-report":
+        if len(sys.argv) < 4:
+            print(f"ERROR: Použití: {BIN_NAME} confirm-report <uuid> <report_id>")
+            sys.exit(1)
+        cmd_confirm_report(sys.argv[2], sys.argv[3])
+
+    elif command == "set-automation":
+        if len(sys.argv) < 4:
+            print(f"ERROR: Použití: {BIN_NAME} set-automation <uuid> <automation_id>")
+            sys.exit(1)
+        cmd_set_automation(sys.argv[2], sys.argv[3])
+
+    elif command == "touch":
+        if len(sys.argv) < 3:
+            print(f"ERROR: Použití: {BIN_NAME} touch <uuid>")
+            sys.exit(1)
+        cmd_touch(sys.argv[2])
+
+    else:
+        print(f"ERROR: neznámý příkaz '{command}'. Použijte {BIN_NAME} --help")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

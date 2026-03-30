@@ -1,0 +1,15 @@
+{
+  "name": "cdx-at",
+  "version": "1.0.0",
+  "description": "Austrian legal database API access for federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), and other publications (Sonstige)",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-at", "legal", "law", "legislation", "austrian", "ris", "judiciary", "case-law", "court", "api"],
+  "license": "PROPRIETARY",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}

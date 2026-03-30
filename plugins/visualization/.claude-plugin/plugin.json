@@ -1,0 +1,27 @@
+{
+  "name": "visualization",
+  "version": "1.0.0",
+  "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "d3",
+    "visualization",
+    "chart",
+    "graph",
+    "timeline",
+    "tree",
+    "calendar",
+    "flowchart",
+    "kanban",
+    "map",
+    "leaflet",
+    "ag-grid",
+    "legal",
+    "law"
+  ],
+  "license": "PROPRIETARY",
+  "skills": "./skills"
+}

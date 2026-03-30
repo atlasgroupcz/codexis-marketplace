@@ -1,0 +1,21 @@
+{
+  "name": "ocr",
+  "version": "1.0.0",
+  "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "ocr",
+    "pdf",
+    "document",
+    "markdown",
+    "conversion"
+  ],
+  "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
+  "postUninstall": "sudo rm -f /usr/local/bin/ocr",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
+  "skills": "./skills"
+}

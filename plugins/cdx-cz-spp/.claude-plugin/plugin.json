@@ -1,0 +1,15 @@
+{
+  "name": "cdx-cz-spp",
+  "version": "1.0.1",
+  "description": "Czech municipal regulations (sbirkapp.gov.cz) API access for municipal decrees, ordinances, and other local legal acts",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-cz-spp", "legal", "law", "legislation", "czech", "municipal", "sbirkapp", "api"],
+  "license": "PROPRIETARY",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}

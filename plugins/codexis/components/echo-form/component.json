@@ -1,0 +1,9 @@
+{
+  "id": "echo-form",
+  "title": "Echo Form",
+  "icon": "assets/icon.png",
+  "route": "echo-form",
+  "description": "Binary-rendered component with static JS/CSS/image assets",
+  "entrypoint": "index.html",
+  "binary": "echo-form"
+}

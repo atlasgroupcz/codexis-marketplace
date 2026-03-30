@@ -1,0 +1,28 @@
+{
+  "name": "codexis",
+  "version": "1.1.1",
+  "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "codexis",
+    "legal",
+    "law",
+    "legislation",
+    "czech",
+    "slovak",
+    "european",
+    "eu",
+    "case-law",
+    "judiciary",
+    "api"
+  ],
+  "license": "PROPRIETARY",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills",
+  "components": "./components"
+}

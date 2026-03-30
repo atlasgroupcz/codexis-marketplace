@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "onRender": [
+      {
+        "command": "cdx-cz-spp-link-rewriter",
+        "timeout": 5,
+        "description": "Rewrites cdx-cz-spp:// links to absolute URLs and opens PDFs in new tab"
+      }
+    ]
+  }
+}

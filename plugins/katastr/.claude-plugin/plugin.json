@@ -1,0 +1,15 @@
+{
+  "name": "katastr",
+  "description": "Katastr nemovitostí ČR",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "katastr",
+    "nemovitosti"
+  ],
+  "license": "PROPRIETARY",
+  "skills": "./skills",
+  "components": "./components"
+}

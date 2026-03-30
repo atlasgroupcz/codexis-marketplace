@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #graph {
+      width: 100vw;
+      height: 100vh;
+    }
+    .node-label {
+      font-size: 12px;
+      pointer-events: none;
+      fill: var(--foreground);
+    }
+    .link {
+      stroke: var(--muted-foreground);
+      stroke-opacity: 0.6;
+    }
+    .link-label {
+      font-size: 10px;
+      fill: var(--foreground);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .link:hover + .link-label,
+    .link-label:hover {
+      opacity: 1;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="graph"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('graph').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    const container = document.getElementById('graph');
+    const tooltip = document.getElementById('tooltip');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Helper function to get CSS variable values
+    const getColor = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const chartColors = [
+      getColor('--chart-1'), getColor('--chart-2'), getColor('--chart-3'),
+      getColor('--chart-4'), getColor('--chart-5')
+    ];
+    // Color scale for node groups
+    const colorScale = d3.scaleOrdinal(chartColors);
+
+    // Get options from transformed spec
+    const options = spec.options || {};
+    const nodeSize = options.nodeSize || 20;
+    const linkDistance = options.linkDistance || 100;
+
+    // Create SVG
+    const svg = d3.select('#graph')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    // Add zoom behavior
+    const g = svg.append('g');
+    svg.call(d3.zoom()
+      .extent([[0, 0], [width, height]])
+      .scaleExtent([0.1, 4])
+      .on('zoom', (event) => g.attr('transform', event.transform)));
+
+    // Create force simulation
+    const simulation = d3.forceSimulation(spec.nodes)
+      .force('link', d3.forceLink(spec.links).id(d => d.id).distance(linkDistance))
+      .force('charge', d3.forceManyBody().strength(-300))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(nodeSize * 2));
+
+    // Draw links
+    const link = g.append('g')
+      .selectAll('line')
+      .data(spec.links)
+      .join('line')
+      .attr('class', 'link')
+      .attr('stroke-width', 2);
+
+    // Draw link labels
+    const linkLabel = g.append('g')
+      .selectAll('text')
+      .data(spec.links)
+      .join('text')
+      .attr('class', 'link-label')
+      .attr('text-anchor', 'middle')
+      .text(d => d.label || '');
+
+    // Draw nodes
+    const node = g.append('g')
+      .selectAll('circle')
+      .data(spec.nodes)
+      .join('circle')
+      .attr('r', nodeSize)
+      .attr('fill', d => colorScale(d.group || 'default'))
+      .attr('stroke', 'var(--background)')
+      .attr('stroke-width', 2)
+      .call(drag(simulation));
+
+    // Node labels
+    const nodeLabel = g.append('g')
+      .selectAll('text')
+      .data(spec.nodes)
+      .join('text')
+      .attr('class', 'node-label')
+      .attr('text-anchor', 'middle')
+      .attr('dy', 35)
+      .text(d => d.label);
+
+    // Tooltip handlers
+    node.on('mouseover', (event, d) => {
+      tooltip.style.opacity = 1;
+      tooltip.textContent = '';
+      const strong = document.createElement('strong');
+      strong.textContent = d.label;
+      tooltip.appendChild(strong);
+      if (d.group) {
+        tooltip.appendChild(document.createElement('br'));
+        const groupSpan = document.createElement('span');
+        groupSpan.className = 'text-[var(--muted-foreground)]';
+        groupSpan.textContent = d.group;
+        tooltip.appendChild(groupSpan);
+      }
+    })
+    .on('mousemove', (event) => {
+      tooltip.style.left = (event.pageX + 10) + 'px';
+      tooltip.style.top = (event.pageY - 10) + 'px';
+    })
+    .on('mouseout', () => {
+      tooltip.style.opacity = 0;
+    });
+
+    // Simulation tick
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      linkLabel
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2);
+
+      node
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+
+      nodeLabel
+        .attr('x', d => d.x)
+        .attr('y', d => d.y);
+    });
+
+    // Drag behavior
+    function drag(simulation) {
+      function dragstarted(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      }
+      function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      }
+      function dragended(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+      }
+      return d3.drag()
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended);
+    }
+  </script>
+</body>
+</html>

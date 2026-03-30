@@ -1,0 +1,5 @@
+{
+  "component": "echo-form",
+  "assetsServed": ["index.html", "styles.css", "app.js", "logo.svg", "icon.png", "banner.png"],
+  "ok": true
+}

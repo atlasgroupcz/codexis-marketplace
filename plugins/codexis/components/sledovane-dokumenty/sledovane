@@ -1,0 +1,469 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FOLLOWED_DIR="${HOME}/.cdx/apps/sledovane-dokumenty"
+QUERY_STRING_VALUE="${QUERY_STRING:-}"
+HTTP_ACCEPT_VALUE="${HTTP_ACCEPT:-}"
+REQUEST_METHOD_VALUE="${REQUEST_METHOD:-GET}"
+ENTRYPOINT="${SCRIPT_DIR}/index.html"
+
+# POST requests are always JSON actions.
+if [ "$REQUEST_METHOD_VALUE" = "POST" ]; then
+  serve_json=true
+else
+  # If the request accepts JSON or has a uuid query param, serve JSON data.
+  # Otherwise, serve the HTML entrypoint (the React app).
+  serve_json=false
+  case "${HTTP_ACCEPT_VALUE}" in
+    *application/json*) serve_json=true ;;
+  esac
+  case "${QUERY_STRING_VALUE}" in
+    *uuid=*) serve_json=true ;;
+  esac
+
+  if [ "$serve_json" = "false" ] && [ -f "$ENTRYPOINT" ]; then
+    printf 'Content-Type: text/html; charset=utf-8\n\n'
+    cat "$ENTRYPOINT"
+    exit 0
+  fi
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'Status: 500 Internal Server Error\n'
+  printf 'Content-Type: application/json; charset=utf-8\n\n'
+  cat <<'JSON'
+{
+  "error": "python3 runtime is required for sledovane component"
+}
+JSON
+  exit 0
+fi
+
+CONTENT_LENGTH_VALUE="${CONTENT_LENGTH:-0}"
+STDIN_BODY=""
+if [ "$REQUEST_METHOD_VALUE" = "POST" ] && [ "$CONTENT_LENGTH_VALUE" -gt 0 ] 2>/dev/null; then
+  IFS= read -r -N "$CONTENT_LENGTH_VALUE" STDIN_BODY || true
+fi
+
+python3 - "$FOLLOWED_DIR" "$QUERY_STRING_VALUE" "$REQUEST_METHOD_VALUE" "$STDIN_BODY" <<'PY'
+import datetime
+import json
+import os
+import shutil
+import sys
+import urllib.parse
+
+followed_dir = sys.argv[1]
+query_string = sys.argv[2]
+request_method = sys.argv[3]
+request_body = sys.argv[4] if len(sys.argv) > 4 else ""
+groups_path = os.path.join(followed_dir, "groups.json")
+
+
+def emit(payload, status=None):
+    if status:
+        print(f"Status: {status}")
+    print("Content-Type: application/json; charset=utf-8")
+    print()
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def now_utc():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def load_groups():
+    """Load groups.json, return [] if missing."""
+    if not os.path.isfile(groups_path):
+        return []
+    try:
+        with open(groups_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def save_groups(groups):
+    """Write groups list to groups.json."""
+    os.makedirs(followed_dir, exist_ok=True)
+    with open(groups_path, "w", encoding="utf-8") as f:
+        json.dump(groups, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+
+def get_groups_for_doc(groups, codexis_id):
+    """Return list of {id, name} for groups containing this codexisId."""
+    result = []
+    for g in groups:
+        if codexis_id in g.get("members", []):
+            result.append({"id": g.get("id", ""), "name": g.get("name", "")})
+    return result
+
+
+def slugify(name):
+    """Convert group name to a URL-friendly id."""
+    import re
+    import unicodedata
+    nfkd = unicodedata.normalize("NFKD", name)
+    ascii_str = nfkd.encode("ascii", "ignore").decode("ascii").lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_str).strip("-")
+    return slug or "skupina"
+
+
+def _resolve_tracking_type(state):
+    """Determine tracking_type from state for FE."""
+    has_parts = bool(state.get("parts"))
+    rt = state.get("related_tracking", {})
+    has_related = rt.get("enabled", False)
+    if has_related and not has_parts:
+        return "all"
+    if has_related and has_parts:
+        return "all"
+    if has_parts:
+        return "document_changes"
+    return "all"
+
+
+def load_followed_documents(base_dir):
+    """Load tracked documents from state.json files."""
+    documents = []
+    if not os.path.isdir(base_dir):
+        return documents
+    for name in sorted(os.listdir(base_dir)):
+        state_file = os.path.join(base_dir, name, "state.json")
+        if not os.path.isfile(state_file):
+            continue
+        try:
+            with open(state_file, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(state, dict):
+            continue
+        # Convert state.json changes to the format expected by the frontend
+        changes = []
+        for change in state.get("changes", []):
+            if not isinstance(change, dict):
+                continue
+            raw_change_type = change.get("change_type", "document_change")
+            if raw_change_type == "related_change":
+                fe_change = {
+                    "source_documents": change.get("source_documents", []),
+                    "detected_on": change.get("detected_on", ""),
+                    "effective_on": change.get("detected_on", ""),
+                    "change_type": "related_change",
+                    "description_md": change.get("description_md", ""),
+                    "confirmed_on": change.get("confirmed_on"),
+                    "amendments": [],
+                }
+            else:
+                fe_change = {
+                    "source_documents": [
+                        {"codexisId": "cdx://doc/" + state.get("codexisId", ""), "name": state.get("name", "")}
+                    ],
+                    "detected_on": change.get("detected_on", ""),
+                    "effective_on": change.get("effective_on", ""),
+                    "change_type": "document_change",
+                    "description_md": change.get("description_md", ""),
+                    "confirmed_on": change.get("confirmed_on"),
+                    "amendments": [
+                        a if isinstance(a, dict) else {"id": a, "name": a}
+                        for a in change.get("amendments", [])
+                    ],
+                }
+            compare_url = change.get("compare_url")
+            if compare_url:
+                fe_change["compare_url"] = compare_url
+            changes.append(fe_change)
+        documents.append({
+            "uuid": state.get("uuid", ""),
+            "codexisId": "cdx://doc/" + state.get("codexisId", ""),
+            "name": state.get("name", ""),
+            "added_on": state.get("added_on", ""),
+            "tracking_type": _resolve_tracking_type(state),
+            "parts": [{"partId": p, "label": p} for p in (state.get("parts") or [])],
+            "changes": changes,
+            "user_notes": state.get("user_notes", []),
+        })
+    return documents
+
+
+def count_changes(document):
+    changes = document.get("changes", [])
+    if not isinstance(changes, list):
+        return 0, 0
+    total = len([item for item in changes if isinstance(item, dict)])
+    unconfirmed = 0
+    for change in changes:
+        if not isinstance(change, dict):
+            continue
+        confirmed_on = change.get("confirmed_on")
+        if confirmed_on in (None, ""):
+            unconfirmed += 1
+    return total, unconfirmed
+
+
+def to_overview_entry(document, groups):
+    total_changes, unconfirmed_changes = count_changes(document)
+    raw_id = document.get("codexisId", "").replace("cdx://doc/", "")
+    return {
+        "uuid": document.get("uuid"),
+        "codexisId": document.get("codexisId"),
+        "name": document.get("name"),
+        "added_on": document.get("added_on"),
+        "tracking_type": document.get("tracking_type"),
+        "unconfirmed_changes": unconfirmed_changes,
+        "total_changes": total_changes,
+        "groups": get_groups_for_doc(groups, raw_id),
+    }
+
+
+def find_state_by_uuid(base_dir, target_uuid):
+    """Find the codexisId directory whose state.json has the given uuid."""
+    if not os.path.isdir(base_dir):
+        return None, None
+    for name in os.listdir(base_dir):
+        state_file = os.path.join(base_dir, name, "state.json")
+        if not os.path.isfile(state_file):
+            continue
+        try:
+            with open(state_file, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            continue
+        if isinstance(state, dict) and state.get("uuid") == target_uuid:
+            return name, state
+    return None, None
+
+
+def handle_post():
+    """Handle POST actions: confirm, remove, and group management."""
+    try:
+        body = json.loads(request_body) if request_body else {}
+    except json.JSONDecodeError:
+        emit({"ok": False, "error": "invalid JSON body"}, status="400 Bad Request")
+        return
+
+    action = body.get("action", "")
+
+    # Group actions don't require uuid
+    if action in ("group_add", "group_remove", "group_delete", "group_rename"):
+        handle_group_action(action, body)
+        return
+
+    target_uuid = body.get("uuid", "")
+
+    if not action or not target_uuid:
+        emit({"ok": False, "error": "'action' and 'uuid' are required"}, status="400 Bad Request")
+        return
+
+    codexis_id, state = find_state_by_uuid(followed_dir, target_uuid)
+    if codexis_id is None or state is None:
+        emit({"ok": False, "error": "tracked document not found"}, status="404 Not Found")
+        return
+
+    if action == "note_add":
+        text = body.get("text", "").strip()
+        if not text:
+            emit({"ok": False, "error": "'text' is required"}, status="400 Bad Request")
+            return
+        notes = state.get("user_notes", [])
+        notes.append(text)
+        state["user_notes"] = notes
+        state_file = os.path.join(followed_dir, codexis_id, "state.json")
+        with open(state_file, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        emit({"ok": True})
+        return
+
+    if action == "note_remove":
+        index = body.get("index")
+        if index is None or not isinstance(index, int):
+            emit({"ok": False, "error": "'index' is required"}, status="400 Bad Request")
+            return
+        notes = state.get("user_notes", [])
+        if index < 0 or index >= len(notes):
+            emit({"ok": False, "error": "invalid index"}, status="400 Bad Request")
+            return
+        notes.pop(index)
+        state["user_notes"] = notes
+        state_file = os.path.join(followed_dir, codexis_id, "state.json")
+        with open(state_file, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        emit({"ok": True})
+        return
+
+    if action == "confirm":
+        change_index = body.get("changeIndex")
+        changes = state.get("changes", [])
+        if change_index is not None:
+            if not isinstance(change_index, int) or change_index < 0 or change_index >= len(changes):
+                emit({"ok": False, "error": "invalid changeIndex"}, status="400 Bad Request")
+                return
+            changes[change_index]["confirmed_on"] = now_utc()
+        else:
+            for c in changes:
+                if not c.get("confirmed_on"):
+                    c["confirmed_on"] = now_utc()
+        state_file = os.path.join(followed_dir, codexis_id, "state.json")
+        with open(state_file, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        emit({"ok": True})
+        return
+
+    if action == "remove":
+        # Clean up group memberships
+        groups = load_groups()
+        for g in groups:
+            members = g.get("members", [])
+            if codexis_id in members:
+                members.remove(codexis_id)
+        save_groups(groups)
+        shutil.rmtree(os.path.join(followed_dir, codexis_id))
+        emit({"ok": True})
+        return
+
+    emit({"ok": False, "error": f"unknown action: {action}"}, status="400 Bad Request")
+
+
+def handle_group_action(action, body):
+    """Handle group management POST actions."""
+    groups = load_groups()
+
+    if action == "group_add":
+        codexis_id = body.get("codexisId", "").replace("cdx://doc/", "")
+        group_name = body.get("groupName", "").strip()
+        if not group_name:
+            emit({"ok": False, "error": "'groupName' is required"}, status="400 Bad Request")
+            return
+        # Find or create group
+        target = None
+        for g in groups:
+            if g.get("name", "").lower() == group_name.lower():
+                target = g
+                break
+        if target is None:
+            target = {"id": slugify(group_name), "name": group_name, "members": []}
+            groups.append(target)
+        if codexis_id and codexis_id not in target.get("members", []):
+            target.setdefault("members", []).append(codexis_id)
+        save_groups(groups)
+        emit({"ok": True})
+        return
+
+    if action == "group_remove":
+        codexis_id = body.get("codexisId", "").replace("cdx://doc/", "")
+        group_id = body.get("groupId", "")
+        if not codexis_id or not group_id:
+            emit({"ok": False, "error": "'codexisId' and 'groupId' are required"}, status="400 Bad Request")
+            return
+        for g in groups:
+            if g.get("id") == group_id:
+                members = g.get("members", [])
+                if codexis_id in members:
+                    members.remove(codexis_id)
+                break
+        save_groups(groups)
+        emit({"ok": True})
+        return
+
+    if action == "group_delete":
+        group_id = body.get("groupId", "")
+        if not group_id:
+            emit({"ok": False, "error": "'groupId' is required"}, status="400 Bad Request")
+            return
+        groups = [g for g in groups if g.get("id") != group_id]
+        save_groups(groups)
+        emit({"ok": True})
+        return
+
+    if action == "group_rename":
+        group_id = body.get("groupId", "")
+        new_name = body.get("newName", "").strip()
+        if not group_id or not new_name:
+            emit({"ok": False, "error": "'groupId' and 'newName' are required"}, status="400 Bad Request")
+            return
+        for g in groups:
+            if g.get("id") == group_id:
+                g["name"] = new_name
+                g["id"] = slugify(new_name)
+                break
+        save_groups(groups)
+        emit({"ok": True})
+        return
+
+    emit({"ok": False, "error": f"unknown group action: {action}"}, status="400 Bad Request")
+
+
+if request_method == "POST":
+    handle_post()
+    sys.exit(0)
+
+try:
+    tracked_documents = load_followed_documents(followed_dir)
+except Exception as exc:
+    emit(
+        {
+            "error": "failed to read tracked documents data",
+            "details": str(exc),
+        },
+        status="500 Internal Server Error",
+    )
+    sys.exit(0)
+
+params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+requested_uuid = (params.get("uuid", [""])[0] or "").strip()
+
+if requested_uuid:
+    matching = None
+    for document in tracked_documents:
+        if str(document.get("uuid", "")).strip() == requested_uuid:
+            matching = document
+            break
+
+    if matching is None:
+        emit(
+            {
+                "mode": "detail",
+                "generated_at": now_utc(),
+                "uuid": requested_uuid,
+                "error": "tracked document not found",
+            },
+            status="404 Not Found",
+        )
+        sys.exit(0)
+
+    groups = load_groups()
+    total_changes, unconfirmed_changes = count_changes(matching)
+    detail_document = dict(matching)
+    detail_document["total_changes"] = total_changes
+    detail_document["unconfirmed_changes"] = unconfirmed_changes
+    raw_id = matching.get("codexisId", "").replace("cdx://doc/", "")
+    detail_document["groups"] = get_groups_for_doc(groups, raw_id)
+    detail_document["user_notes"] = matching.get("user_notes", [])
+    emit(
+        {
+            "mode": "detail",
+            "generated_at": now_utc(),
+            "document": detail_document,
+            "groups": groups,
+        }
+    )
+    sys.exit(0)
+
+groups = load_groups()
+overview_items = [to_overview_entry(document, groups) for document in tracked_documents]
+emit(
+    {
+        "mode": "overview",
+        "generated_at": now_utc(),
+        "tracked_documents": overview_items,
+        "groups": groups,
+    }
+)
+PY

@@ -1,0 +1,228 @@
+:root {
+  color-scheme: light;
+  --bg: #f8fbff;
+  --panel: #ffffff;
+  --line: #d6e2f1;
+  --line-strong: #b8cbdf;
+  --ink: #0f172a;
+  --muted: #475569;
+  --primary: #0f766e;
+  --primary-ink: #ecfeff;
+  --secondary: #f1f5f9;
+  --secondary-ink: #1e293b;
+  --ok: #166534;
+  --error: #b91c1c;
+  --info: #1d4ed8;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 0% 0%, #dbeafe 0%, rgba(219, 234, 254, 0) 40%),
+    radial-gradient(circle at 100% 100%, #ccfbf1 0%, rgba(204, 251, 241, 0) 40%),
+    var(--bg);
+}
+
+code {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #eef2ff;
+  font-size: 12px;
+}
+
+.viewer {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.viewer-header,
+.controls-panel,
+.summary-panel,
+.json-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewer-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+
+.logo {
+  width: 44px;
+  height: 44px;
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 120px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.field-label {
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+button {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+.secondary-button {
+  background: var(--secondary);
+  color: var(--secondary-ink);
+  border-color: var(--line);
+}
+
+.hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status {
+  min-height: 20px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.status-success {
+  color: var(--ok);
+}
+
+.status-error {
+  color: var(--error);
+}
+
+.status-info {
+  color: var(--info);
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.overview-table th,
+.overview-table td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 8px 6px;
+  vertical-align: top;
+  font-size: 14px;
+}
+
+.overview-table th {
+  font-weight: 600;
+  color: #334155;
+  font-size: 13px;
+}
+
+.uuid-link {
+  border: 0;
+  background: transparent;
+  color: #0f4aa8;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.doc-name {
+  font-weight: 600;
+}
+
+.doc-id {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.empty {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.json-output {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #1e293b;
+  padding: 12px;
+  min-height: 220px;
+  max-height: 420px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+@media (max-width: 780px) {
+  body {
+    padding: 10px;
+  }
+
+  .viewer-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .icon {
+    margin-left: 0;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "settings",
+  "title": "Katastr - Nastavení",
+  "icon": "assets/icon.png",
+  "route": "settings",
+  "description": "Nastavení API klíče pro ČÚZK REST API KN",
+  "entrypoint": "index.html",
+  "binary": "settings"
+}

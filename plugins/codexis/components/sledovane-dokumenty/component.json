@@ -1,0 +1,9 @@
+{
+  "id": "sledovane-dokumenty",
+  "title": "CODEXIS Sledovane dokumenty",
+  "icon": "assets/icon.png",
+  "route": "sledovane-dokumenty",
+  "description": "Sledujte zmeny legislativy a souvisejicich dokumentu podle CODEXIS ID.",
+  "entrypoint": "index.html",
+  "binary": "sledovane"
+}

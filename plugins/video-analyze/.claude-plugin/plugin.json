@@ -1,0 +1,21 @@
+{
+  "name": "video-analyze",
+  "version": "1.0.0",
+  "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "video",
+    "analysis",
+    "gemini",
+    "youtube",
+    "multimedia"
+  ],
+  "license": "PROPRIETARY",
+  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
+  "postUninstall": "sudo rm -f /usr/local/bin/video-analyze",
+  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
+  "skills": "./skills"
+}
