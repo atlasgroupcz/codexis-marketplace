@@ -4,11 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mapfile -t BUILD_SCRIPTS < <(
-  find "$ROOT_DIR/plugins" -mindepth 3 -maxdepth 3 -type f -path '*/src/build.sh' | sort
+  find "$ROOT_DIR/plugins" -mindepth 3 -maxdepth 3 -type f \
+    \( -path '*/components/build.sh' -o -path '*/src/build.sh' \) \
+    | sort
 )
 
 if (( ${#BUILD_SCRIPTS[@]} == 0 )); then
-  echo "ERROR: No plugin build scripts found under plugins/*/src/build.sh" >&2
+  echo "ERROR: No plugin build scripts found under plugins/*/{components,src}/build.sh" >&2
   exit 1
 fi
 

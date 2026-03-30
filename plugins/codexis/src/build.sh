@@ -32,6 +32,7 @@ mkdir -p "$BIN_DIR"
 build_crate() {
   local crate_dir="$1"
   local bin_name="$2"
+  local cargo_args="${3:---release --locked}"
 
   if [[ ! -f "$crate_dir/Cargo.toml" ]]; then
     echo "ERROR: Missing Cargo.toml in $crate_dir" >&2
@@ -46,15 +47,16 @@ build_crate() {
     -v "$crate_dir:/workspace" \
     -w /workspace \
     "$RUST_IMAGE" \
-    cargo build --release --locked
+    cargo build $cargo_args
 
   install -m 0755 "$crate_dir/target/release/$bin_name" "$BIN_DIR/$bin_name"
   echo "   installed -> $BIN_DIR/$bin_name"
 }
 
-build_cdx_cli_macos_arm64() {
-  local crate_dir="$SCRIPT_DIR/cdx-cli"
-  local bin_name="cdx-cli"
+build_crate_macos_arm64() {
+  local crate_dir="$1"
+  local bin_name="$2"
+  local cargo_args="${3:---release --locked}"
   local osxcross_bin="$HOME/opt/macos/target/bin"
   local sdk_root="$HOME/opt/macos/target/SDK/MacOSX26.1.sdk"
   local linker="aarch64-apple-darwin25.1-clang"
@@ -75,7 +77,7 @@ build_cdx_cli_macos_arm64() {
       PATH="$PATH:$osxcross_bin" \
       CC_aarch64_apple_darwin="$linker" \
       CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER="$linker" \
-      cargo build --release --locked --target "$MACOS_ARM64_TARGET"
+      cargo build $cargo_args --target "$MACOS_ARM64_TARGET"
   )
 
   install -m 0755 "$target_bin" "$dst_bin"
@@ -83,8 +85,10 @@ build_cdx_cli_macos_arm64() {
 }
 
 build_crate "$SCRIPT_DIR/cdx-cli" "cdx-cli"
-build_cdx_cli_macos_arm64
+build_crate_macos_arm64 "$SCRIPT_DIR/cdx-cli" "cdx-cli"
 build_crate "$SCRIPT_DIR/cdx-link-rewriter" "cdx-link-rewriter"
+build_crate_macos_arm64 "$SCRIPT_DIR/cdx-link-rewriter" "cdx-link-rewriter"
 build_crate "$SCRIPT_DIR/cdxctl" "cdxctl"
+build_crate_macos_arm64 "$SCRIPT_DIR/cdxctl" "cdxctl"
 
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

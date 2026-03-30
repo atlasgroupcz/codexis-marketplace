@@ -25,6 +25,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
+    build: {
+      chunkSizeWarningLimit: 700,
+    },
     plugins: [
       viteReact({
         babel: {

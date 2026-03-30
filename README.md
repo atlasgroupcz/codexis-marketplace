@@ -61,3 +61,26 @@ Run only `codexis` plugin build:
 ```bash
 ./plugins/codexis/src/build.sh
 ```
+
+## Distribution Copy
+
+Root script: `./create-dist.sh`
+
+Behavior:
+
+- Creates a sibling directory next to this repository named `<repo>-dist`
+- Recreates that directory from scratch on every run
+- Copies the repository with `rsync`
+- Applies exclusions from `dist-exclusions.txt`, including the root `README.md`
+- Overlays files from `dist-content/` into the dist root while preserving relative paths
+
+Examples:
+
+- `dist-content/README.md` becomes `<repo>-dist/README.md`
+- `dist-content/folder/test.txt` becomes `<repo>-dist/folder/test.txt`
+
+Run:
+
+```bash
+./create-dist.sh
+```

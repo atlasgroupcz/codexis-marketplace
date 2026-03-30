@@ -26,23 +26,25 @@ install_binary() {
   echo "Installed ${source_name} -> ${target_path}"
 }
 
-select_cdx_cli_binary() {
+select_binary_source() {
+  local binary_name="$1"
+
   case "$(uname -s):$(uname -m)" in
     Darwin:arm64|Darwin:aarch64)
-      echo "cdx-cli-aarch64-apple-darwin"
+      echo "${binary_name}-aarch64-apple-darwin"
       ;;
     Darwin:*)
-      echo "ERROR: cdx-cli ships a macOS build for Apple Silicon only" >&2
+      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
       exit 1
       ;;
     *)
-      echo "cdx-cli"
+      echo "${binary_name}"
       ;;
   esac
 }
 
-install_binary "$(select_cdx_cli_binary)" "cdx-cli"
-install_binary "cdx-link-rewriter"
+install_binary "$(select_binary_source "cdx-cli")" "cdx-cli"
+install_binary "$(select_binary_source "cdx-link-rewriter")" "cdx-link-rewriter"
 install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"
-install_binary "cdxctl"
+install_binary "$(select_binary_source "cdxctl")" "cdxctl"

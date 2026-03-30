@@ -390,12 +390,6 @@ pub const NOTIFICATIONS_QUERY: &str = r#"
     }
 "#;
 
-pub const UNSEEN_NOTIFICATION_COUNT_QUERY: &str = r#"
-    query UnseenNotificationCount {
-        unseenNotificationCount
-    }
-"#;
-
 pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
     mutation CreateNotification($input: CreateNotificationInput!) {
         createNotification(input: $input) {
@@ -405,12 +399,6 @@ pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
             link
             createdAt
         }
-    }
-"#;
-
-pub const REFRESH_NOTIFICATIONS_MUTATION: &str = r#"
-    mutation RefreshNotifications {
-        refreshNotifications
     }
 "#;
 

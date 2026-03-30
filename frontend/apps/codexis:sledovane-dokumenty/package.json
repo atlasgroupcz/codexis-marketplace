@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bunx vite --port 3001",
-    "build": "tsc && bunx --bun vite build",
-    "preview": "bunx --bun vite preview",
-    "test": "bun --bun vitest run",
-    "test:watch": "bun --bun vitest",
+    "dev": "./node_modules/.bin/vite --port 3001",
+    "build": "tsc && ./node_modules/.bin/vite build",
+    "preview": "./node_modules/.bin/vite preview",
+    "test": "./node_modules/.bin/vitest run",
+    "test:watch": "./node_modules/.bin/vitest",
     "lint": "eslint --max-warnings=0 'src/**/*.{ts,tsx}'",
     "typecheck": "tsc --noEmit",
     "codegen": "echo 'no codegen needed'"
