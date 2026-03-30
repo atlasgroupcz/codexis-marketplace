@@ -114,6 +114,7 @@ volumes/
 .playwright-mcp/
 test-data/**
 fe-static/
+/dist/
 dist/**
 
 #dist

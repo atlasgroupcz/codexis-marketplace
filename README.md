@@ -68,16 +68,24 @@ Root script: `./create-dist.sh`
 
 Behavior:
 
-- Creates a sibling directory next to this repository named `<repo>-dist`
+- Creates a gitignored `./dist/` directory inside this repository
 - Recreates that directory from scratch on every run
-- Copies the repository with `rsync`
+- Builds the dist contents with `rsync` in a temporary staging directory
 - Applies exclusions from `dist-exclusions.txt`, including the root `README.md`
 - Overlays files from `dist-content/` into the dist root while preserving relative paths
+- Treats `dist/` as a checkout of `git@github.com:atlasgroupcz/codexis-marketplace.git`
+- Pushes the generated contents to the target branch after committing any detected changes
+
+Branch selection:
+
+- Uses `DIST_BRANCH` when set
+- Otherwise uses the remote default branch when it can be resolved
+- Falls back to `main` when the remote is empty or has no symbolic `HEAD`
 
 Examples:
 
-- `dist-content/README.md` becomes `<repo>-dist/README.md`
-- `dist-content/folder/test.txt` becomes `<repo>-dist/folder/test.txt`
+- `dist-content/README.md` becomes `dist/README.md`
+- `dist-content/folder/test.txt` becomes `dist/folder/test.txt`
 
 Run:
 
