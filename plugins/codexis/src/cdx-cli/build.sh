@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 BIN_NAME="cdx-cli"
+MACOS_ARM64_TARGET="aarch64-apple-darwin"
 
 build_linux_docker() {
   echo "Building $BIN_NAME for Linux ARM64 via Docker..."
@@ -29,6 +30,31 @@ build_linux_native() {
   echo "Built: $bin_dst"
 }
 
+build_macos_native() {
+  local target_triple
+
+  case "$(uname -m)" in
+    aarch64|arm64)
+      target_triple="$MACOS_ARM64_TARGET"
+      ;;
+    x86_64|amd64)
+      target_triple="x86_64-apple-darwin"
+      ;;
+    *)
+      echo "ERROR: Unsupported macOS CPU architecture: $(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+
+  echo "Building $BIN_NAME for macOS ($target_triple)..."
+  cargo build --release
+
+  local bin_dst="$SCRIPT_DIR/${BIN_NAME}-${target_triple}"
+  cp "target/release/$BIN_NAME" "$bin_dst"
+  chmod 0755 "$bin_dst"
+  echo "Built: $bin_dst"
+}
+
 build_macos_osxcross() {
   local osxcross_bin="$HOME/opt/macos/target/bin"
   local sdk_root="$HOME/opt/macos/target/SDK/MacOSX26.1.sdk"
@@ -40,27 +66,28 @@ build_macos_osxcross() {
   fi
 
   echo "Building $BIN_NAME for macOS ARM64 via osxcross..."
-  rustup target add aarch64-apple-darwin >/dev/null
+  rustup target add "$MACOS_ARM64_TARGET" >/dev/null
 
   SDKROOT="$sdk_root" \
     PATH="$PATH:$osxcross_bin" \
     CC_aarch64_apple_darwin="$linker" \
     CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER="$linker" \
-    cargo build --release --target aarch64-apple-darwin
+    cargo build --release --target "$MACOS_ARM64_TARGET"
 
-  local bin_dst="$SCRIPT_DIR/${BIN_NAME}-aarch64-apple-darwin"
-  cp "target/aarch64-apple-darwin/release/$BIN_NAME" "$bin_dst"
+  local bin_dst="$SCRIPT_DIR/${BIN_NAME}-${MACOS_ARM64_TARGET}"
+  cp "target/$MACOS_ARM64_TARGET/release/$BIN_NAME" "$bin_dst"
   chmod 0755 "$bin_dst"
   echo "Built: $bin_dst"
 }
 
 case "$(uname -s)" in
   Darwin)
+    build_macos_native
+
     if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
       build_linux_docker
     else
-      echo "ERROR: Docker required to build $BIN_NAME on macOS" >&2
-      exit 1
+      echo "Skipping Linux ARM64 build: Docker not available on macOS host" >&2
     fi
     ;;
   Linux)

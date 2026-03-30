@@ -80,6 +80,15 @@ export CDX_API_JWT_AUTH="Bearer <jwt>"
 If one or both variables are missing from the process environment, `cdx-cli`
 tries `~/.cdx/.env`. Process environment values win over file values.
 
+## Build outputs
+
+- Linux builds produce `cdx-cli`
+- Linux builders with `osxcross` at `$HOME/opt/macos/target` also produce
+  `cdx-cli-aarch64-apple-darwin` for modern Apple Silicon Macs
+- Apple Silicon macOS builds produce `cdx-cli-aarch64-apple-darwin`
+- On macOS, Docker is optional and only needed if you also want the extra Linux
+  ARM64 artifact (`cdx-cli-arm64`)
+
 `CDX_API_JWT_AUTH` accepts:
 
 - `Authorization: Bearer <jwt>` as-is
