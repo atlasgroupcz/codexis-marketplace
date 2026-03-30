@@ -183,6 +183,7 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
                 key={report.report_id}
                 type="button"
                 className="bg-card text-card-foreground flex w-full items-center gap-4 rounded-xl border p-4 text-left shadow-sm transition-colors hover:bg-accent/50"
+                data-testid={`report-card-${report.report_id}`}
                 onClick={() => onSelectReport(report.report_id)}
               >
                 <div className="flex-1 space-y-1">
