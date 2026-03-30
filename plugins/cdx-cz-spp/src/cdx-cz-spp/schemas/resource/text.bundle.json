@@ -40,7 +40,7 @@
         {
           "name": "file",
           "in": "query",
-          "description": "Specific file to retrieve text from",
+          "description": "Specific content file to retrieve text from (e.g. content_1.pdf). Defaults to content_1 if omitted.",
           "required": false,
           "schema": { "type": "string" }
         },

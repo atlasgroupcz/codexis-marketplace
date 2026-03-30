@@ -3,9 +3,9 @@ use clap::Args;
 const GET_HELP: &str = "\
 Common document resources:
   cdx-cz-spp://doc/<DOC_ID>/meta[?includeAllAssets=true]
-  cdx-cz-spp://doc/<DOC_ID>/text[?timecutId=X&part=Y&part=Z]
-  cdx-cz-spp://doc/<DOC_ID>/toc[?timecutId=X]
-  cdx-cz-spp://doc/<DOC_ID>/parts[?timecutId=X&search=S&offset=N&limit=N]
+  cdx-cz-spp://doc/<DOC_ID>/text[?file=F&timecutId=X&part=Y&part=Z]
+  cdx-cz-spp://doc/<DOC_ID>/toc[?file=F&timecutId=X]
+  cdx-cz-spp://doc/<DOC_ID>/parts[?file=F&timecutId=X&search=S&offset=N&limit=N]
   cdx-cz-spp://doc/<DOC_ID>/versions
   cdx-cz-spp://doc/<DOC_ID>/related?type=T[&offset=N&limit=N&sort=S&order=O]
   cdx-cz-spp://doc/<DOC_ID>/related/counts

@@ -9,25 +9,27 @@ Free-text search in title, content, legal area, legal authorization. Optional.
 Document type (exact match):
 
 PP types (hlavniTyp=pp):
-- `Obecne zavazna vyhlaska` - Municipal ordinance
-- `Narizeni` - Regulation
+- `Obecně závazná vyhláška` - Municipal ordinance
+- `Nařízení` - Regulation
 
 OA types (hlavniTyp=oa):
-- `Nalez Ustavniho soudu` - Constitutional Court ruling
-- `Rozhodnuti o pozastaveni ucinnosti` - Decision on suspension
+- `Nález Ústavního soudu` - Constitutional Court ruling
+- `Rozhodnutí o pozastavení účinnosti` - Decision on suspension
 - `Smlouva` - Contract
-- `Stav nebezpeci` - State of emergency
+- `Stav nebezpečí` - State of emergency
+
+**Important:** Values require correct Czech diacritics — ASCII-stripped variants return zero results.
 
 ## publikujici
-Publisher / municipality name (match query, all words must match). Example: `Statutarni mesto Brno`
+Publisher / municipality name (match query, all words must match). Example: `Statutární město Brno`
 
 ## oblastPravniUpravy
 Legal area (match query, all words must match). Example: `Odpady`
 
 ## platnost
 Validity status (exact match):
-- `Platne` - Valid
-- `Neplatne` - Invalid
+- `Platné` - Valid
+- `Zrušeno k <date>` - Cancelled (date-specific, e.g. `Zrušeno k 16.12.2025` — not usable as a filter since each value is unique)
 
 ## cisloPredpisu
 Document number (exact match). Example: `1/2026`
