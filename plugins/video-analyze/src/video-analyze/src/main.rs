@@ -226,15 +226,25 @@ fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_
 
     let auth_header = format!("Authorization: Bearer {}", api_key);
 
+    let mut args = vec![
+        "-s".to_string(), "--fail-with-body".to_string(),
+        "-X".to_string(), "POST".to_string(),
+        url.clone(),
+        "-H".to_string(), auth_header,
+        "-H".to_string(), "Content-Type: application/json".to_string(),
+    ];
+    if let Ok(chat_id) = env::var("CDX_SESSION_ID") {
+        if !chat_id.is_empty() {
+            args.extend([
+                "-H".to_string(),
+                format!("x-litellm-spend-logs-metadata: {{\"sessionId\":\"{}\"}}", chat_id),
+            ]);
+        }
+    }
+    args.extend(["-d".to_string(), body]);
+
     let output = Command::new("curl")
-        .args([
-            "-s", "--fail-with-body",
-            "-X", "POST",
-            &url,
-            "-H", &auth_header,
-            "-H", "Content-Type: application/json",
-            "-d", &body,
-        ])
+        .args(&args)
         .output();
 
     match output {

@@ -334,14 +334,18 @@ def llm_extract(text, query):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write(text)
             tmp_path = f.name
-        result = subprocess.run(
-            [
+        cmd = [
                 "curl", "-sS", "-X", "POST",
                 f"{daemon_url}/rest/llm/extract",
                 "-H", f"Authorization: {daemon_auth}",
                 "-F", f"text=<{tmp_path}",
                 "-F", f"query={query}",
-            ],
+        ]
+        chat_id = os.environ.get("CDX_SESSION_ID")
+        if chat_id:
+            cmd.extend(["-H", f"X-CDX-Session-Id: {chat_id}"])
+        result = subprocess.run(
+            cmd,
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode != 0:
