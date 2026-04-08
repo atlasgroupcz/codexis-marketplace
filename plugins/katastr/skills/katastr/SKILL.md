@@ -5,18 +5,18 @@ description: Český katastr nemovitostí (ČÚZK REST API KN). Use for both ad-
 
 # Katastr nemovitostí ČR
 
-A single tool — **`katastr`** — wraps the entire ČÚZK REST API KN plus a stateful tracker for cadastral proceedings.
+A single tool — **`katastr-cli`** — wraps the entire ČÚZK REST API KN plus a stateful tracker for cadastral proceedings.
 
-**IMPORTANT:** The only tool in this skill is `katastr`. Do NOT call `kn`, `cdx-cli`, `cdxctl`, `curl`, or any other tool directly. Assume `katastr` is installed and available in `PATH`.
+**IMPORTANT:** The only tool in this skill is `katastr-cli`. Do NOT call `kn`, `cdx-cli`, `cdxctl`, `curl`, or any other tool directly. Assume `katastr-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** If `katastr` outputs an `ERROR:` line, stop immediately and report it to the user. Do not retry blindly or guess workarounds.
+**IMPORTANT:** If `katastr-cli` outputs an `ERROR:` line, stop immediately and report it to the user. Do not retry blindly or guess workarounds.
 
 ## Three namespaces
 
 ```bash
-katastr tracking <verb> ...   # stateful tracking of proceedings
-katastr api <verb> ...        # raw GET requests against ČÚZK
-katastr settings <verb> ...   # API key management
+katastr-cli tracking <verb> ...   # stateful tracking of proceedings
+katastr-cli api <verb> ...        # raw GET requests against ČÚZK
+katastr-cli settings <verb> ...   # API key management
 ```
 
 ---
@@ -24,30 +24,30 @@ katastr settings <verb> ...   # API key management
 ## Decision tree — when to use what
 
 **The user wants raw INFO about a parcel / building / unit / address / owner / LV / plomba?**
-→ `katastr api get <PATH>` (one-shot lookup, no state)
+→ `katastr-cli api get <PATH>` (one-shot lookup, no state)
 
 **The user wants to START MONITORING a proceeding?** Trigger words: "sleduj", "hlídej", "monitoruj", "informuj mě o změnách", "začni hlídat", "přidej na hlídání".
-→ `katastr tracking add <CISLO_RIZENI> [--label "..."]`
+→ `katastr-cli tracking add <CISLO_RIZENI> [--label "..."]`
 
 **The user asks for a list of THEIR tracked proceedings?**
-→ `katastr tracking list`
+→ `katastr-cli tracking list`
 
 **The user asks "co je nového u řízení V-XYZ?" or "jaký je stav řízení V-XYZ?":**
 
 Ambiguous — check tracked state first.
 
-1. `katastr tracking list` (or just try `katastr tracking show V-XYZ`)
-2. **If tracked** → `katastr tracking show V-XYZ` (rich state with change history). Optionally also `katastr tracking check V-XYZ` to refresh from ČÚZK before showing.
-3. **If NOT tracked** → `katastr api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=...&Rok=...&KodPracoviste=..."` to get the current state from ČÚZK, present it, AND offer:
+1. `katastr-cli tracking list` (or just try `katastr-cli tracking show V-XYZ`)
+2. **If tracked** → `katastr-cli tracking show V-XYZ` (rich state with change history). Optionally also `katastr-cli tracking check V-XYZ` to refresh from ČÚZK before showing.
+3. **If NOT tracked** → `katastr-cli api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=...&Rok=...&KodPracoviste=..."` to get the current state from ČÚZK, present it, AND offer:
    *"Pokud chceš, můžu řízení přidat ke sledování — budu hlídat změny stavu a operací každý týden."*
 
 **Never add a proceeding to tracking without explicit user intent.** Adding requires "sleduj/hlídej/přidej/začni hlídat" or an affirmative answer to the offer above.
 
 **The user wants to set/check/test API key?**
-→ `katastr settings set <KEY>` / `katastr settings show` / `katastr settings test`
+→ `katastr-cli settings set <KEY>` / `katastr-cli settings show` / `katastr-cli settings test`
 
-**`katastr` reports `ERROR: API klíč ... není nastaven` or `... byl odmítnut`?**
-→ Stop. Tell the user to either set the key via `katastr settings set <KEY>` (if they have one) or to obtain one from the ČÚZK customer portal and configure it in the Katastr UI (gear icon in the header).
+**`katastr-cli` reports `ERROR: API klíč ... není nastaven` or `... byl odmítnut`?**
+→ Stop. Tell the user to either set the key via `katastr-cli settings set <KEY>` (if they have one) or to obtain one from the ČÚZK customer portal and configure it in the Katastr UI (gear icon in the header).
 
 ---
 
@@ -55,80 +55,80 @@ Ambiguous — check tracked state first.
 
 **User: "Kdo vlastní parcelu 545 v k.ú. 638790?"**
 ```bash
-katastr api get "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
+katastr-cli api get "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
 # → take data[0].id, then:
-katastr api get "/api/v1/Parcely/<ID>"
+katastr-cli api get "/api/v1/Parcely/<ID>"
 # Present owner info from LV cross-reference. Don't track (parcels can't be tracked anyway).
 ```
 
 **User: "Sleduj řízení V-123/2026-701 jako Novákovi"**
 ```bash
-katastr tracking add V-123/2026-701 --label "Novákovi"
+katastr-cli tracking add V-123/2026-701 --label "Novákovi"
 # → Confirm with stav and operace count.
 ```
 
 **User: "Co je nového u V-123/2026-701?"**
 ```bash
-katastr tracking show V-123/2026-701   # if tracked: rich state + changes
+katastr-cli tracking show V-123/2026-701   # if tracked: rich state + changes
 # OR
-katastr api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=123&Rok=2026&KodPracoviste=701"
+katastr-cli api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=123&Rok=2026&KodPracoviste=701"
 # if not tracked → present + offer to add
 ```
 
 **User: "Označ všechny změny u V-123/... za přečtené"**
 ```bash
-katastr tracking confirm V-123/2026-701 --all
+katastr-cli tracking confirm V-123/2026-701 --all
 ```
 
 **User: "Přejmenuj V-123/2026-701 na Novákovi" / "změň označení V-123/... na ..."**
 ```bash
-katastr tracking set-label V-123/2026-701 "Novákovi"
-# To clear: katastr tracking set-label V-123/2026-701 ""
+katastr-cli tracking set-label V-123/2026-701 "Novákovi"
+# To clear: katastr-cli tracking set-label V-123/2026-701 ""
 ```
 
 **User: "Zkontroluj všechna moje řízení teď"**
 ```bash
-katastr tracking check
+katastr-cli tracking check
 ```
 
 **User: "Nastav mi API klíč ABCD1234..."**
 ```bash
-katastr settings set ABCD1234...
+katastr-cli settings set ABCD1234...
 # Validates against ČÚZK before saving.
 ```
 
 ---
 
-## `katastr tracking` — proceeding monitoring
+## `katastr-cli tracking` — proceeding monitoring
 
-Stateful tracker. State is stored in `~/.cdx/apps/katastr/rizeni/`. A single central cron automation (`0 8 * * 1`) runs `katastr tracking check` every Monday 8:00 to refresh all tracked proceedings.
+Stateful tracker. State is stored in `~/.cdx/apps/katastr/rizeni/`. A single central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
 
 ```bash
 # Start tracking — verifies the proceeding exists in ČÚZK and saves baseline
-katastr tracking add V-123/2026-701
-katastr tracking add V-123/2026-701 --label "Novákovi"
+katastr-cli tracking add V-123/2026-701
+katastr-cli tracking add V-123/2026-701 --label "Novákovi"
 
 # List all tracked
-katastr tracking list
+katastr-cli tracking list
 
 # Show full state of a tracked proceeding (JSON)
-katastr tracking show V-123/2026-701
+katastr-cli tracking show V-123/2026-701
 
 # Check for changes (call ČÚZK and diff against stored state)
-katastr tracking check                  # all tracked proceedings
-katastr tracking check V-123/2026-701   # one specific
+katastr-cli tracking check                  # all tracked proceedings
+katastr-cli tracking check V-123/2026-701   # one specific
 
 # Mark detected changes as read
-katastr tracking confirm V-123/2026-701              # all unread
-katastr tracking confirm V-123/2026-701 --all        # explicit
-katastr tracking confirm V-123/2026-701 --change 0   # specific by index
+katastr-cli tracking confirm V-123/2026-701              # all unread
+katastr-cli tracking confirm V-123/2026-701 --all        # explicit
+katastr-cli tracking confirm V-123/2026-701 --change 0   # specific by index
 
 # Set or change the user-friendly label of a tracked proceeding
-katastr tracking set-label V-123/2026-701 "Novákovi"
-katastr tracking set-label V-123/2026-701 ""    # clear
+katastr-cli tracking set-label V-123/2026-701 "Novákovi"
+katastr-cli tracking set-label V-123/2026-701 ""    # clear
 
 # Stop tracking
-katastr tracking remove V-123/2026-701
+katastr-cli tracking remove V-123/2026-701
 ```
 
 ### Proceeding number format
@@ -146,12 +146,12 @@ katastr tracking remove V-123/2026-701
 
 ---
 
-## `katastr api` — raw ČÚZK REST API access
+## `katastr-cli api` — raw ČÚZK REST API access
 
-The ČÚZK REST API KN base is `https://api-kn.cuzk.gov.cz`. The API is GET-only and returns JSON. The `katastr api get` command handles auth, errors and JSON output.
+The ČÚZK REST API KN base is `https://api-kn.cuzk.gov.cz`. The API is GET-only and returns JSON. The `katastr-cli api get` command handles auth, errors and JSON output.
 
 ```bash
-katastr api get "<PATH>"
+katastr-cli api get "<PATH>"
 ```
 
 ### Response envelope
@@ -165,10 +165,10 @@ Most endpoints return:
 ### Sanity checks
 
 ```bash
-katastr api get "/api/v1/AplikacniSluzby/Health"          # public, doesn't validate API key
-katastr api get "/api/v1/AplikacniSluzby/StavUctu"        # validates the key
-katastr api get "/api/v1/AplikacniSluzby/AktualnostDat"
-katastr api get "/api/v1/AplikacniSluzby/ProvozniInformace"
+katastr-cli api get "/api/v1/AplikacniSluzby/Health"          # public, doesn't validate API key
+katastr-cli api get "/api/v1/AplikacniSluzby/StavUctu"        # validates the key
+katastr-cli api get "/api/v1/AplikacniSluzby/AktualnostDat"
+katastr-cli api get "/api/v1/AplikacniSluzby/ProvozniInformace"
 ```
 
 ### Known enums
@@ -209,8 +209,8 @@ Inputs:
 - `TypParcely` usually `PKN`
 
 ```bash
-katastr api get "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
-katastr api get "/api/v1/Parcely/<ID>"
+katastr-cli api get "/api/v1/Parcely/Vyhledani?KodKatastralnihoUzemi=638790&TypParcely=PKN&DruhCislovaniParcely=2&KmenoveCisloParcely=545"
+katastr-cli api get "/api/v1/Parcely/<ID>"
 ```
 
 What to read from parcel detail:
@@ -225,7 +225,7 @@ What to read from parcel detail:
 If you have `lv.id`:
 
 ```bash
-katastr api get "/api/v1/LV/<LV_ID>"
+katastr-cli api get "/api/v1/LV/<LV_ID>"
 ```
 
 Available: `rizeniPlomby` at LV level, lists/counts of `parcely`, `stavby`, `jednotky`.
@@ -234,12 +234,12 @@ Not available: owners and full rights/restrictions sections.
 #### Neighbors & spatial queries
 
 ```bash
-katastr api get "/api/v1/Parcely/SousedniParcely/<PARCEL_ID>"
+katastr-cli api get "/api/v1/Parcely/SousedniParcely/<PARCEL_ID>"
 ```
 
 Polygon search (EPSG:5514 / EPSG:5513, meters):
 ```bash
-katastr api get "/api/v1/Parcely/Polygon?SeznamSouradnic=%5B%7B%22x%22%3A-494110.17%2C%22y%22%3A-1116432.13%7D%2C...%5D"
+katastr-cli api get "/api/v1/Parcely/Polygon?SeznamSouradnic=%5B%7B%22x%22%3A-494110.17%2C%22y%22%3A-1116432.13%7D%2C...%5D"
 ```
 
 Trick: read `definicniBod` from `Parcely/{id}` or `Stavby/{id}` and build a square polygon around it (±25/50/100 m) to get "okolí".
@@ -248,7 +248,7 @@ Trick: read `definicniBod` from `Parcely/{id}` or `Stavby/{id}` and build a squa
 
 REST API KN does not accept free-text addresses. Use the RUIAN address point code:
 
-1. Resolve address via VDP RUIAN fulltext (separate service, NOT via `katastr` — use `curl` here as an exception):
+1. Resolve address via VDP RUIAN fulltext (separate service, NOT via `katastr-cli` — use `curl` here as an exception):
    ```bash
    curl -fsS \
      -H "X-Requested-With: XMLHttpRequest" \
@@ -258,69 +258,69 @@ REST API KN does not accept free-text addresses. Use the RUIAN address point cod
    ```
 2. Take `polozky[0].kod`, then:
    ```bash
-   katastr api get "/api/v1/Stavby/AdresniMisto/<RUIAN_KOD>"
+   katastr-cli api get "/api/v1/Stavby/AdresniMisto/<RUIAN_KOD>"
    ```
 
 Returns building info with `parcely[]`, `lv.cislo`, `definicniBod`, `jednotky`. To fetch full building detail:
 ```bash
-katastr api get "/api/v1/Stavby/<STAVBA_ID>"
+katastr-cli api get "/api/v1/Stavby/<STAVBA_ID>"
 ```
 
 #### Units (apartments / non-residential)
 
 ```bash
-katastr api get "/api/v1/Jednotky/Vyhledani?KodCastiObce=<KOD>&TypStavby=1&CisloDomovni=<CP>&CisloJednotky=<CJ>"
-katastr api get "/api/v1/Jednotky/<JEDNOTKA_ID>"
+katastr-cli api get "/api/v1/Jednotky/Vyhledani?KodCastiObce=<KOD>&TypStavby=1&CisloDomovni=<CP>&CisloJednotky=<CJ>"
+katastr-cli api get "/api/v1/Jednotky/<JEDNOTKA_ID>"
 ```
 
 #### Proceedings (basic signal, not full legal extract)
 
 By proceeding ID:
 ```bash
-katastr api get "/api/v1/Rizeni/<RIZENI_ID>"
+katastr-cli api get "/api/v1/Rizeni/<RIZENI_ID>"
 ```
 
-By official identifier (for one-shot lookup of NOT-tracked proceedings; use `katastr tracking show` for tracked ones):
+By official identifier (for one-shot lookup of NOT-tracked proceedings; use `katastr-cli tracking show` for tracked ones):
 ```bash
-katastr api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=<CISLO>&Rok=<ROK>&KodPracoviste=<KOD>"
-katastr api get "/api/v1/Rizeni/PrijateDne?TypRizeni=V&KodPracoviste=<KOD>&DatumPrijeti=2026-02-13"
+katastr-cli api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=<CISLO>&Rok=<ROK>&KodPracoviste=<KOD>"
+katastr-cli api get "/api/v1/Rizeni/PrijateDne?TypRizeni=V&KodPracoviste=<KOD>&DatumPrijeti=2026-02-13"
 ```
 
 #### Code lists (decode codes for reports)
 
 ```bash
-katastr api get "/api/v1/CiselnikyUzemnichJednotek/Obce"
-katastr api get "/api/v1/CiselnikyUzemnichJednotek/KatastralniUzemi"
-katastr api get "/api/v1/CiselnikyUzemnichJednotek/CastiObci"
-katastr api get "/api/v1/CiselnikyISKN/DruhyPozemku"
-katastr api get "/api/v1/CiselnikyISKN/TypyStavby"
-katastr api get "/api/v1/CiselnikyISKN/TypyJednotky"
-katastr api get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiStavby"
-katastr api get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiParcely"
-katastr api get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiJednotky"
-katastr api get "/api/v1/CiselnikyISKN/ZpusobyOchrany"
-katastr api get "/api/v1/CiselnikyISKN/Pracoviste"
+katastr-cli api get "/api/v1/CiselnikyUzemnichJednotek/Obce"
+katastr-cli api get "/api/v1/CiselnikyUzemnichJednotek/KatastralniUzemi"
+katastr-cli api get "/api/v1/CiselnikyUzemnichJednotek/CastiObci"
+katastr-cli api get "/api/v1/CiselnikyISKN/DruhyPozemku"
+katastr-cli api get "/api/v1/CiselnikyISKN/TypyStavby"
+katastr-cli api get "/api/v1/CiselnikyISKN/TypyJednotky"
+katastr-cli api get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiStavby"
+katastr-cli api get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiParcely"
+katastr-cli api get "/api/v1/CiselnikyISKN/ZpusobyVyuzitiJednotky"
+katastr-cli api get "/api/v1/CiselnikyISKN/ZpusobyOchrany"
+katastr-cli api get "/api/v1/CiselnikyISKN/Pracoviste"
 ```
 
 ---
 
-## `katastr settings` — API key management
+## `katastr-cli settings` — API key management
 
 ```bash
-katastr settings show         # show configured key (masked) or "not configured"
-katastr settings set <KEY>    # validate against ČÚZK and persist
-katastr settings test         # test current key against ČÚZK
+katastr-cli settings show         # show configured key (masked) or "not configured"
+katastr-cli settings set <KEY>    # validate against ČÚZK and persist
+katastr-cli settings test         # test current key against ČÚZK
 ```
 
-The key is obtained by the user from the ČÚZK customer portal (free, requires Identita občana or remote-access account). It's stored in `~/.cdx/apps/katastr/.env`. The same file is read by all `katastr` subcommands and by the UI component.
+The key is obtained by the user from the ČÚZK customer portal (free, requires Identita občana or remote-access account). It's stored in `~/.cdx/apps/katastr/.env`. The same file is read by all `katastr-cli` subcommands and by the UI component.
 
-If the user reports problems with `katastr` calls returning "API klíč ... není nastaven" or "... byl odmítnut":
-1. `katastr settings test` to diagnose
-2. If 401/403 → ask for a new key and `katastr settings set <NEW_KEY>`
+If the user reports problems with `katastr-cli` calls returning "API klíč ... není nastaven" or "... byl odmítnut":
+1. `katastr-cli settings test` to diagnose
+2. If 401/403 → ask for a new key and `katastr-cli settings set <NEW_KEY>`
 3. If network error → tell user ČÚZK API is unreachable, retry later
 
 ---
 
 ## UI component
 
-The user-facing UI is at route `/katastr` (Doplňky → Katastr). It shows the table of tracked proceedings, allows adding/removing/refreshing them, and exposes API key management via the gear icon. When you (AI) make tracking changes through `katastr tracking add/remove/confirm`, they appear in the UI on the next refresh — no extra step needed.
+The user-facing UI is at route `/katastr` (Doplňky → Katastr). It shows the table of tracked proceedings, allows adding/removing/refreshing them, and exposes API key management via the gear icon. When you (AI) make tracking changes through `katastr-cli tracking add/remove/confirm`, they appear in the UI on the next refresh — no extra step needed.

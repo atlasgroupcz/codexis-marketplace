@@ -27,7 +27,7 @@ def get(path: str) -> dict:
         raise ApiKeyMissingError(
             "API klíč pro Katastr není nastaven. "
             "Nastavte ho v UI (Doplňky → Katastr → ⚙) nebo přes "
-            "`katastr settings set <KEY>`."
+            "`katastr-cli settings set <KEY>`."
         )
 
     url = CUZK_BASE + path if path.startswith("/") else CUZK_BASE + "/" + path

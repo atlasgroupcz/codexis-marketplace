@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""katastr — unified CLI for ČÚZK lookups, tracking and settings.
+"""katastr-cli — unified CLI for ČÚZK lookups, tracking and settings.
 
 Usage:
-    katastr tracking add <CISLO> [--label "..."]
-    katastr tracking list
-    katastr tracking show <CISLO>
-    katastr tracking check [<CISLO>]
-    katastr tracking confirm <CISLO> [--all | --change <INDEX>]
-    katastr tracking remove <CISLO>
-    katastr tracking set-label <CISLO> <LABEL>
+    katastr-cli tracking add <CISLO> [--label "..."]
+    katastr-cli tracking list
+    katastr-cli tracking show <CISLO>
+    katastr-cli tracking check [<CISLO>]
+    katastr-cli tracking confirm <CISLO> [--all | --change <INDEX>]
+    katastr-cli tracking remove <CISLO>
+    katastr-cli tracking set-label <CISLO> <LABEL>
 
-    katastr api get <PATH>
+    katastr-cli api get <PATH>
 
-    katastr settings show
-    katastr settings set <KEY>
-    katastr settings test
+    katastr-cli settings show
+    katastr-cli settings set <KEY>
+    katastr-cli settings test
 """
 
 import argparse
@@ -201,7 +201,7 @@ def cmd_settings_test(args):
 
 def build_parser():
     p = argparse.ArgumentParser(
-        prog="katastr",
+        prog="katastr-cli",
         description="ČÚZK lookups, tracking and settings.",
     )
     sub = p.add_subparsers(dest="namespace", required=True)

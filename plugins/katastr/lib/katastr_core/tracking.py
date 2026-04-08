@@ -26,7 +26,7 @@ AUTOMATION_MARKER = os.path.join(
 CDXCTL_BIN = "cdxctl"
 AUTOMATION_TITLE = "Hlídač katastrálních řízení"
 AUTOMATION_CRON = "0 8 * * 1"
-AUTOMATION_COMMAND = "katastr tracking check"
+AUTOMATION_COMMAND = "katastr-cli tracking check"
 
 # TYPE-NUMBER/YEAR-WORKPLACE, e.g. V-123/2026-701
 RIZENI_PATTERN = re.compile(

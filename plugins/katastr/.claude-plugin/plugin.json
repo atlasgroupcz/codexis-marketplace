@@ -12,9 +12,9 @@
     "rizeni"
   ],
   "license": "PROPRIETARY",
-  "postInstall": "sudo install -d /usr/local/share/katastr/lib && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr\" /usr/local/bin/katastr",
-  "postUninstall": "sudo rm -f /usr/local/bin/katastr && sudo rm -rf /usr/local/share/katastr",
-  "onUpdate": "sudo install -d /usr/local/share/katastr/lib && sudo rm -rf /usr/local/share/katastr/lib/katastr_core && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr\" /usr/local/bin/katastr",
+  "postInstall": "sudo install -d /usr/local/share/katastr/lib && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
+  "postUninstall": "sudo rm -f /usr/local/bin/katastr-cli && sudo rm -rf /usr/local/share/katastr",
+  "onUpdate": "sudo install -d /usr/local/share/katastr/lib && sudo rm -rf /usr/local/share/katastr/lib/katastr_core && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
   "skills": "./skills",
   "components": "./components"
 }
