@@ -1,0 +1,62 @@
+{
+  "common": {
+    "back": "Back",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "proceedings": {
+    "title": "Tracked Cadastral Proceedings",
+    "empty": "No proceedings tracked yet. Add the first one above, or tell me in chat: \"track proceeding V-123/2026-701\".",
+    "addLabel": "Enter proceeding number to track:",
+    "add": "Add",
+    "adding": "Adding...",
+    "addError": "Failed to add proceeding.",
+    "checkAll": "Refresh",
+    "checking": "Refreshing...",
+    "checkResultNone": "Refresh complete, no new changes.",
+    "checkResultChanges": "Refresh complete, {{count}} new changes found.",
+    "checkResultErrors": "Refresh complete: {{newChanges}} new changes, {{errors}} errors.",
+    "colNumber": "Proceeding No.",
+    "colLabel": "Label",
+    "colStav": "Status",
+    "colOperations": "Operations",
+    "colUhrada": "Payment",
+    "unconfirmedChangesBadge": "{{count}} unconfirmed",
+    "updated": "Updated: {{date}}",
+    "remove": "Remove",
+    "confirmRemove": "Confirm remove?",
+    "datumPrijeti": "Date Received",
+    "lastCheck": "Last Check",
+    "noOperations": "No operations performed.",
+    "operation": "Operation",
+    "operationDate": "Date",
+    "changeHistory": "Change History",
+    "uhradaChanged": "Payment changed",
+    "unreadChanges": "{{count}} unread changes",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all read ({{count}})",
+    "readOn": "read on {{date}}",
+    "addLabelHint": "add label",
+    "labelPlaceholder": "e.g. Novák family"
+  },
+  "settings": {
+    "title": "API Key Settings",
+    "description": "Katastr requires a ČÚZK API key.",
+    "currentKey": "Current API key",
+    "newLabel": "Enter ČÚZK API key",
+    "replaceLabel": "Enter new ČÚZK API key",
+    "placeholder": "Paste API key",
+    "save": "Save",
+    "saving": "Saving...",
+    "savedSuccess": "API key validated and saved.",
+    "saveError": "Failed to save key.",
+    "deleteKey": "Remove key",
+    "deleting": "Removing...",
+    "confirmDelete": "Really remove the stored API key?"
+  },
+  "apiKeyBanner": {
+    "title": "ČÚZK API key not configured",
+    "text": "This module requires a ČÚZK API key. Without it no proceedings can be added or tracked.",
+    "action": "Set API key"
+  }
+}

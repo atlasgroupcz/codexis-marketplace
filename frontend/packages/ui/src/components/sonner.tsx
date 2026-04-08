@@ -8,7 +8,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { Toaster as Sonner  } from "sonner"
+import { Toaster as Sonner, toast } from "sonner"
 import type {ToasterProps} from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -38,4 +38,4 @@ const Toaster = ({ ...props }: ToasterProps) => {
   )
 }
 
-export { Toaster }
+export { Toaster, toast }
