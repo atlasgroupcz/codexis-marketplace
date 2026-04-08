@@ -1,0 +1,62 @@
+{
+  "common": {
+    "back": "Späť",
+    "retry": "Skúsiť znova",
+    "close": "Zavrieť"
+  },
+  "proceedings": {
+    "title": "Sledované katastrálne konania",
+    "empty": "Zatiaľ nesledujete žiadne konania. Pridajte prvé hore vo formulári, alebo mi napíšte do chatu „sleduj konanie V-123/2026-701\".",
+    "addLabel": "Vložte číslo konania na sledovanie:",
+    "add": "Pridať",
+    "adding": "Pridávam...",
+    "addError": "Nepodarilo sa pridať konanie.",
+    "checkAll": "Aktualizovať",
+    "checking": "Aktualizujem...",
+    "checkResultNone": "Kontrola dokončená, žiadne nové zmeny.",
+    "checkResultChanges": "Kontrola dokončená, nájdené {{count}} nové zmeny.",
+    "checkResultErrors": "Kontrola dokončená: {{newChanges}} nových zmien, {{errors}} chýb.",
+    "colNumber": "Číslo konania",
+    "colLabel": "Označenie",
+    "colStav": "Stav",
+    "colOperations": "Vykonané operácie",
+    "colUhrada": "Úhrada",
+    "unconfirmedChangesBadge": "{{count}} nepotvrdené",
+    "updated": "Aktualizované: {{date}}",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "datumPrijeti": "Dátum prijatia",
+    "lastCheck": "Posledná kontrola",
+    "noOperations": "Žiadne vykonané operácie.",
+    "operation": "Operácia",
+    "operationDate": "Dátum vykonania",
+    "changeHistory": "História zmien",
+    "uhradaChanged": "Zmena úhrady",
+    "unreadChanges": "{{count}} neprečítaných zmien",
+    "markRead": "Označiť prečítané",
+    "markAllRead": "Označiť všetko prečítané ({{count}})",
+    "readOn": "prečítané {{date}}",
+    "addLabelHint": "pridať označenie",
+    "labelPlaceholder": "Napr. Novákovci"
+  },
+  "settings": {
+    "title": "Nastavenie API kľúča",
+    "description": "Pre fungovanie katastra je potrebný API kľúč ČÚZK.",
+    "currentKey": "Aktuálny API kľúč",
+    "newLabel": "Zadajte API kľúč ČÚZK",
+    "replaceLabel": "Zadať nový API kľúč ČÚZK",
+    "placeholder": "Vložte API kľúč",
+    "save": "Uložiť",
+    "saving": "Ukladám...",
+    "savedSuccess": "API kľúč bol overený a uložený.",
+    "saveError": "Nepodarilo sa uložiť kľúč.",
+    "deleteKey": "Odstrániť kľúč",
+    "deleting": "Odstraňujem...",
+    "confirmDelete": "Naozaj odstrániť uložený API kľúč?"
+  },
+  "apiKeyBanner": {
+    "title": "API kľúč ČÚZK nie je nastavený",
+    "text": "Pre prevádzku tohto modulu je nutné nastaviť API kľúč ČÚZK. Bez neho nemožno pridávať ani sledovať žiadne konania.",
+    "action": "Nastaviť kľúč"
+  }
+}

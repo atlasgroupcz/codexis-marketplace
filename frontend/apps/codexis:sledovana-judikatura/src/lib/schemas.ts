@@ -49,7 +49,6 @@ export const topicSchema = z.object({
   name: z.string(),
   notes: z.array(z.string()).optional().default([]),
   areas: z.array(topicAreaSchema).optional().default([]),
-  filters: z.record(z.string(), z.unknown()).optional().default({}),
   created_at: z.string().optional().default(''),
   last_check_at: z.string().nullable().optional(),
 })

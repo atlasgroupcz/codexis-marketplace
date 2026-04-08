@@ -125,3 +125,8 @@ tmp/
 # Plugin runtime binaries are versioned artifacts.
 !plugins/*/bin/
 !plugins/*/bin/**
+
+# Python bytecode caches (must come after plugin bin un-ignore above)
+__pycache__/
+**/__pycache__/
+*.pyc

@@ -2,7 +2,7 @@
 """cdx-sledovana-judikatura – track case law topics via AI-driven CODEXIS search.
 
 Usage:
-    cdx-sledovana-judikatura init <name> [--notes "text"] [--filters '{"soud":["Nejvyšší soud"]}']
+    cdx-sledovana-judikatura init <name> [--notes "text"]
     cdx-sledovana-judikatura list
     cdx-sledovana-judikatura show <uuid>
     cdx-sledovana-judikatura delete <uuid>
@@ -124,22 +124,51 @@ def print_json(obj):
     print(json.dumps(obj, indent=2, ensure_ascii=False))
 
 
+def load_reports_summary(topic_uuid):
+    """Return a list of report summary dicts for a topic, sorted by report_id."""
+    rd = reports_dir(topic_uuid)
+    if not os.path.isdir(rd):
+        return []
+    summaries = []
+    for rf in sorted(os.listdir(rd)):
+        if not rf.endswith(".json"):
+            continue
+        try:
+            with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
+                r = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            continue
+        summaries.append({
+            "report_id": rf.replace(".json", ""),
+            "checked_at": r.get("checked_at"),
+            "period_from": r.get("period_from"),
+            "period_to": r.get("period_to"),
+            "found_count": r.get("found_count", 0),
+            "confirmed_on": r.get("confirmed_on"),
+        })
+    return summaries
+
+
 # ── commands ─────────────────────────────────────────────────────────────────
 
-def cmd_init(name, notes=None, filters=None):
-    """Create a new tracked topic."""
+def cmd_init(name, notes=None):
+    """Create a new tracked topic.
+
+    Prints the new UUID on stdout (so shell capture `UUID=$(... init ...)` works
+    directly), and a human-readable status line on stderr.
+    """
     topic_uuid = str(uuid_mod.uuid4())
     data = {
         "uuid": topic_uuid,
         "name": name,
         "notes": [notes] if notes else [],
         "areas": [],
-        "filters": filters or {},
         "created_at": now_utc(),
         "last_check_at": None,
     }
     save_topic(topic_uuid, data)
-    print_json(data)
+    print(topic_uuid)
+    print(f"OK: téma '{name}' vytvořeno", file=sys.stderr)
 
 
 def cmd_list():
@@ -148,63 +177,73 @@ def cmd_list():
     if not topics:
         print("Žádná sledovaná témata.")
         return
-    result = []
     for t_uuid, data in topics:
-        # count reports
-        rd = reports_dir(t_uuid)
-        report_count = 0
-        unconfirmed = 0
-        if os.path.isdir(rd):
-            for rf in os.listdir(rd):
-                if rf.endswith(".json"):
-                    report_count += 1
-                    try:
-                        with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
-                            r = json.load(f)
-                        if not r.get("confirmed_on"):
-                            unconfirmed += 1
-                    except (json.JSONDecodeError, OSError):
-                        pass
-        result.append({
-            "uuid": t_uuid,
-            "name": data.get("name", ""),
-            "areas": len(data.get("areas", [])),
-            "notes": len(data.get("notes", [])),
-            "created_at": data.get("created_at"),
-            "last_check_at": data.get("last_check_at"),
-            "total_reports": report_count,
-            "unconfirmed_reports": unconfirmed,
-        })
-    print_json(result)
+        summaries = load_reports_summary(t_uuid)
+        unconfirmed = sum(1 for s in summaries if not s.get("confirmed_on"))
+        short_uuid = t_uuid[:8]
+        name = data.get("name", "")
+        areas = len(data.get("areas", []))
+        notes = len(data.get("notes", []))
+        total = len(summaries)
+        last_check = data.get("last_check_at") or "nikdy"
+        print(f"  {short_uuid}  {name}")
+        report_status = f"{total} report{'ů' if total != 1 else ''}"
+        if unconfirmed:
+            report_status += f" ({unconfirmed} nepotvrzen{'o' if unconfirmed == 1 else 'é'})"
+        print(f"    {areas} oblast{'í' if areas != 1 else ''}, {notes} poznámk{'a' if notes == 1 else 'y' if notes < 5 else ''}, {report_status}")
+        print(f"    Poslední kontrola: {last_check}")
+        print()
 
 
 def cmd_show(partial_uuid):
     """Show full topic state including reports summary."""
     full_uuid, data = require_topic(partial_uuid)
 
-    # add reports summary
-    rd = reports_dir(full_uuid)
-    report_list = []
-    if os.path.isdir(rd):
-        for rf in sorted(os.listdir(rd)):
-            if rf.endswith(".json"):
-                try:
-                    with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
-                        r = json.load(f)
-                    report_list.append({
-                        "report_id": rf.replace(".json", ""),
-                        "checked_at": r.get("checked_at"),
-                        "period_from": r.get("period_from"),
-                        "period_to": r.get("period_to"),
-                        "found_count": r.get("found_count", 0),
-                        "confirmed_on": r.get("confirmed_on"),
-                    })
-                except (json.JSONDecodeError, OSError):
-                    pass
+    print(f"Téma: {data.get('name', '')}")
+    print(f"UUID: {full_uuid}")
+    print(f"Vytvořeno: {data.get('created_at', '?')}")
+    print(f"Poslední kontrola: {data.get('last_check_at') or 'nikdy'}")
+    automation_id = data.get("automation_id")
+    if automation_id:
+        print(f"Automatizace: {automation_id}")
 
-    output = dict(data)
-    output["reports"] = report_list
-    print_json(output)
+    notes = data.get("notes", [])
+    print()
+    print(f"Poznámky ({len(notes)}):")
+    if not notes:
+        print("  (žádné)")
+    else:
+        for i, n in enumerate(notes):
+            print(f"  [{i}] {n}")
+
+    areas = data.get("areas", [])
+    print()
+    print(f"Oblasti ({len(areas)}):")
+    if not areas:
+        print("  (žádné)")
+    else:
+        for i, a in enumerate(areas):
+            baseline = a.get("baseline_summary")
+            mark = "[ok]" if baseline else "[bez baseline]"
+            print(f"  [{i}] {mark} {a.get('name', '')}")
+            if baseline:
+                # show first ~120 chars of baseline so AI sees it exists
+                snippet = baseline.replace("\n", " ").strip()
+                if len(snippet) > 120:
+                    snippet = snippet[:117] + "..."
+                print(f"      baseline: {snippet}")
+
+    summaries = load_reports_summary(full_uuid)
+    print()
+    print(f"Reporty ({len(summaries)}):")
+    if not summaries:
+        print("  (žádné)")
+    else:
+        for s in summaries:
+            confirmed = "[potvrzeno]" if s.get("confirmed_on") else "[nepotvrzeno]"
+            period_to = s.get("period_to") or "?"
+            found = s.get("found_count", 0)
+            print(f"  {s.get('report_id')} {confirmed} (do {period_to}, nalezeno {found})")
 
 
 def cmd_delete(partial_uuid):
@@ -312,8 +351,8 @@ def cmd_area_list(partial_uuid):
         print("Žádné podoblasti.")
         return
     for i, a in enumerate(areas):
-        baseline = "✓ baseline" if a.get("baseline_summary") else "⚠ bez baseline"
-        print(f"  [{i}] {a.get('name', '')} ({baseline})")
+        baseline = "[ok]" if a.get("baseline_summary") else "[bez baseline]"
+        print(f"  [{i}] {baseline} {a.get('name', '')}")
 
 
 def cmd_area_set_baseline(partial_uuid, index, summary):
@@ -367,33 +406,21 @@ def cmd_save_report(partial_uuid, file_path=None):
     save_topic(full_uuid, data)
 
     print(f"OK: report '{report_id}' uložen")
-    print_json(report)
 
 
 def cmd_list_reports(partial_uuid):
     """List all reports for a topic."""
     full_uuid, _ = require_topic(partial_uuid)
-    rd = reports_dir(full_uuid)
-    if not os.path.isdir(rd):
+    summaries = load_reports_summary(full_uuid)
+    if not summaries:
         print("Žádné reporty.")
         return
-    reports = []
-    for rf in sorted(os.listdir(rd)):
-        if rf.endswith(".json"):
-            try:
-                with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
-                    r = json.load(f)
-                reports.append({
-                    "report_id": rf.replace(".json", ""),
-                    "checked_at": r.get("checked_at"),
-                    "period_from": r.get("period_from"),
-                    "period_to": r.get("period_to"),
-                    "found_count": r.get("found_count", 0),
-                    "confirmed_on": r.get("confirmed_on"),
-                })
-            except (json.JSONDecodeError, OSError):
-                pass
-    print_json(reports)
+    for s in summaries:
+        confirmed = "[potvrzeno]" if s.get("confirmed_on") else "[nepotvrzeno]"
+        period_from = s.get("period_from") or "?"
+        period_to = s.get("period_to") or "?"
+        found = s.get("found_count", 0)
+        print(f"  {s.get('report_id')}  ({period_from} -> {period_to})  nalezeno: {found}  {confirmed}")
 
 
 def cmd_show_report(partial_uuid, report_id):
@@ -439,26 +466,18 @@ def main():
 
     if command == "init":
         if len(sys.argv) < 3:
-            print(f"ERROR: Použití: {BIN_NAME} init <název tématu> [--notes \"text\"] [--filters '{{}}']")
+            print(f"ERROR: Použití: {BIN_NAME} init <název tématu> [--notes \"text\"]")
             sys.exit(1)
         name = sys.argv[2]
         notes = None
-        filters = None
         i = 3
         while i < len(sys.argv):
             if sys.argv[i] == "--notes" and i + 1 < len(sys.argv):
                 notes = sys.argv[i + 1]
                 i += 2
-            elif sys.argv[i] == "--filters" and i + 1 < len(sys.argv):
-                try:
-                    filters = json.loads(sys.argv[i + 1])
-                except json.JSONDecodeError:
-                    print(f"ERROR: --filters musí být platný JSON")
-                    sys.exit(1)
-                i += 2
             else:
                 i += 1
-        cmd_init(name, notes=notes, filters=filters)
+        cmd_init(name, notes=notes)
 
     elif command == "list":
         cmd_list()
@@ -547,20 +566,15 @@ def main():
         if len(sys.argv) < 3:
             print(f"ERROR: Použití: {BIN_NAME} save-report <uuid> [--file report.json]")
             sys.exit(1)
+        partial_uuid = sys.argv[2]
         file_path = None
-        if len(sys.argv) >= 5 and sys.argv[3] == "--file":
-            file_path = sys.argv[4]
-            partial_uuid = sys.argv[2]
-        elif len(sys.argv) >= 4 and sys.argv[3] == "--file":
-            print(f"ERROR: chybí cesta k souboru po --file")
-            sys.exit(1)
-        else:
-            partial_uuid = sys.argv[2]
-            # check for --file anywhere
-            for idx in range(3, len(sys.argv) - 1):
-                if sys.argv[idx] == "--file":
-                    file_path = sys.argv[idx + 1]
-                    break
+        i = 3
+        while i < len(sys.argv):
+            if sys.argv[i] == "--file" and i + 1 < len(sys.argv):
+                file_path = sys.argv[i + 1]
+                i += 2
+            else:
+                i += 1
         cmd_save_report(partial_uuid, file_path=file_path)
 
     elif command == "list-reports":
