@@ -1,4 +1,5 @@
 {
+  "uuid": "87975c97-617b-4393-9fb8-921c1ff7b70e",
   "name": "codexis-plugins",
   "owner": {
     "name": "ATLAS GROUP",
@@ -6,60 +7,70 @@
   },
   "plugins": [
     {
+      "uuid": "c5d7d6ce-6107-4688-b69a-7a04babc480f",
       "name": "codexis",
       "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
       "source": "./plugins/codexis",
       "category": "legal"
     },
     {
+      "uuid": "ad89bba6-3a8c-456d-adbb-a78d0f1da359",
       "name": "cdx-sk",
       "description": "Slovak legal database — legislation, general courts, supreme & constitutional court decisions",
       "source": "./plugins/cdx-sk",
       "category": "legal"
     },
     {
+      "uuid": "81a06344-5b2b-4c55-a0d0-e7943b988f86",
       "name": "visualization",
       "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
       "source": "./plugins/visualization",
       "category": "visualization"
     },
     {
+      "uuid": "32520e57-efd7-47bc-8053-b97cbc9ce304",
       "name": "katastr",
       "description": "Katastr nemovitostí ČR - property registry lookup and cadastral data access",
       "source": "./plugins/katastr",
       "category": "legal"
     },
     {
+      "uuid": "7f153c8b-28a8-4837-9b1c-edf502604b98",
       "name": "playwright",
       "description": "Playwright MCP (fork) configured with --no-sandbox for Chromium under bwrap.",
       "source": "./plugins/playwright",
       "category": "development"
     },
     {
+      "uuid": "3d8ea3de-e4cc-46cf-bc6c-faf72026a3cc",
       "name": "ocr",
       "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
       "source": "./plugins/ocr",
       "category": "document-processing"
     },
     {
+      "uuid": "4d7e6ced-f344-438f-9d12-141ac694fe65",
       "name": "video-analyze",
       "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
       "source": "./plugins/video-analyze",
       "category": "media"
     },
     {
+      "uuid": "366eb4b7-2713-43e3-9660-2a982b7992ae",
       "name": "presentation",
       "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
       "source": "./plugins/presentation",
       "category": "document-processing"
     },
     {
+      "uuid": "6424383b-d36a-4946-af8d-09b7755fad57",
       "name": "cdx-cz-spp",
       "description": "Czech municipal regulations (sbirkapp.gov.cz) — municipal decrees, ordinances, and local legal acts",
       "source": "./plugins/cdx-cz-spp",
       "category": "legal"
     },
     {
+      "uuid": "bc2d2aff-84c6-49e4-8f2b-fed6ff316de8",
       "name": "cdx-at",
       "description": "Austrian legal database (RIS) — legislation, court decisions, and legal information",
       "source": "./plugins/cdx-at",

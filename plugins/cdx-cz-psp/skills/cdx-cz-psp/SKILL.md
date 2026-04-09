@@ -1,4 +1,5 @@
 ---
+uuid: 59dbdfcc-047f-41fd-97f0-fc958c85cf0c
 name: cdx-cz-psp
 description: This skill should be invoked whenever user needs Czech parliamentary information — legislative proposals (bills, amendments), parliamentary documents (reports, interpellations, EU docs) from the Czech Parliament (PSP) system.
 version: 1.0.0

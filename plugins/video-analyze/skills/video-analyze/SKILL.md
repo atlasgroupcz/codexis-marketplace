@@ -1,4 +1,5 @@
 ---
+uuid: 3e29a143-11b7-4567-b417-7a40c5471404
 name: video-analyze
 description: >-
   Analyze video and audio files using Gemini multimodal models.

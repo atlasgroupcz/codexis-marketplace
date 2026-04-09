@@ -1,4 +1,5 @@
 ---
+uuid: bee1eceb-1dad-4445-8a63-c34c2bd56b9a
 name: visualize
 description: >-
   Create interactive data visualizations: charts (bar, line, area, pie), graphs (network, citation, relationship),

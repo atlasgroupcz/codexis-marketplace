@@ -1,4 +1,5 @@
 ---
+uuid: 6da16057-ae63-42ca-a1bf-0541a80da14a
 name: cdx-cz-spp
 description: This skill should be invoked whenever user needs Czech municipal regulations — ordinances, decrees, and other local legal acts from sbirkapp.gov.cz (Sbírka právních předpisů).
 version: 2.1.0

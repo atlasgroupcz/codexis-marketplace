@@ -1,4 +1,5 @@
 ---
+uuid: a26db6f3-54c7-46e4-8881-f39edfb75f19
 name: presentation
 description: >-
   Generate PowerPoint presentations (PPTX) using python-pptx.
