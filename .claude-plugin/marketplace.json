@@ -70,6 +70,13 @@
       "category": "legal"
     },
     {
+      "uuid": "ffdd45fa-e3b0-4cd3-a8bb-d4749f3360ec",
+      "name": "cdx-cz-psp",
+      "description": "Czech Parliament (PSP) database API access for parliamentary documents (CZPSPDOK) and legislative proposals (CZPSPPRE)",
+      "source": "./plugins/cdx-cz-psp",
+      "category": "legal"
+    },
+    {
       "uuid": "bc2d2aff-84c6-49e4-8f2b-fed6ff316de8",
       "name": "cdx-at",
       "description": "Austrian legal database (RIS) — legislation, court decisions, and legal information",
