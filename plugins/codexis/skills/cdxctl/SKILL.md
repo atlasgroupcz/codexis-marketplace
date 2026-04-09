@@ -59,10 +59,10 @@ cdxctl automation trigger <id>
 cdxctl marketplace list
 
 # Add a git marketplace
-cdxctl marketplace add --source "https://github.com/org/repo" --type git --ref "main"
+cdxctl marketplace add --source "https://github.com/org/repo" --source-type git --ref "main"
 
 # Add a local marketplace
-cdxctl marketplace add --source "/path/to/local/dir" --type local
+cdxctl marketplace add --source "/path/to/local/dir" --source-type local
 
 # Remove a marketplace by ID
 cdxctl marketplace remove <id>
@@ -193,12 +193,12 @@ Extract structured data from files in a folder. Define columns (what to extract)
 cdxctl tabular status ~/invoices
 
 # Add columns (what data to extract from each file)
-cdxctl tabular add-column ~/invoices --name "Invoice Number" --type text --description "The invoice number or ID"
-cdxctl tabular add-column ~/invoices --name "Date" --type date --description "Invoice date"
-cdxctl tabular add-column ~/invoices --name "Total" --type currency --description "Total amount on the invoice"
-cdxctl tabular add-column ~/invoices --name "Paid" --type boolean --description "Whether the invoice has been paid"
-cdxctl tabular add-column ~/invoices --name "Line Items" --type list --description "List of items on the invoice"
-cdxctl tabular add-column ~/invoices --name "Priority" --type tag \
+cdxctl tabular add-column ~/invoices --name "Invoice Number" --col-type text --description "The invoice number or ID"
+cdxctl tabular add-column ~/invoices --name "Date" --col-type date --description "Invoice date"
+cdxctl tabular add-column ~/invoices --name "Total" --col-type currency --description "Total amount on the invoice"
+cdxctl tabular add-column ~/invoices --name "Paid" --col-type boolean --description "Whether the invoice has been paid"
+cdxctl tabular add-column ~/invoices --name "Line Items" --col-type list --description "List of items on the invoice"
+cdxctl tabular add-column ~/invoices --name "Priority" --col-type tag \
     --description "Invoice priority" \
     --option "high:RED" --option "medium:YELLOW" --option "low:GREEN"
 

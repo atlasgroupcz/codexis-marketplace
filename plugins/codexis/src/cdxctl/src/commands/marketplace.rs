@@ -21,12 +21,11 @@ pub fn add(
     git_ref: Option<&str>,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let mut input = json!({
-        "sourceType": source_type.to_uppercase(),
-    });
+    let mut input = json!({});
 
     match source_type.to_uppercase().as_str() {
         "GIT" => {
+            input["sourceType"] = json!("GIT");
             input["gitUrl"] = json!(source);
             if let Some(r) = git_ref {
                 input["gitRef"] = json!(r);
@@ -55,7 +54,12 @@ pub fn remove(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<
         .get("removeMarketplace")
         .cloned()
         .unwrap_or(Value::Null);
-    print_output(&result, format);
+    
+    if result.is_null() {
+        print_output(&json!({ "deleted": false, "error": "Marketplace not found or could not be removed" }), format);
+    } else {
+        print_output(&json!({ "deleted": true, "marketplace": result }), format);
+    }
     Ok(())
 }
 

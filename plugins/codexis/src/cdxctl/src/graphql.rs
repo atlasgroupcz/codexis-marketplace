@@ -384,12 +384,16 @@ mod tests {
 pub const NOTIFICATIONS_QUERY: &str = r#"
     query Notifications {
         notifications {
-            id
-            message
-            action
-            seen
-            confirmed
-            createdAt
+            items {
+                id
+                message
+                action
+                link
+                seen
+                confirmed
+                createdAt
+            }
+            totalItems
         }
     }
 "#;
@@ -401,6 +405,8 @@ pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
             message
             action
             link
+            seen
+            confirmed
             createdAt
         }
     }

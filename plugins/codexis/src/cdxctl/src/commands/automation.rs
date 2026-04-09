@@ -115,78 +115,66 @@ pub fn update(
         })
         .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation not found: {id}")]))?;
 
-    // Build merged input — use provided values or fall back to current
-    let merged_title = title
-        .map(String::from)
-        .or_else(|| {
-            current
-                .get("title")
-                .and_then(|v| v.as_str())
-                .map(String::from)
-        })
-        .unwrap_or_default();
-    let merged_cron = cron
-        .map(String::from)
-        .or_else(|| {
-            current
-                .get("cron")
-                .and_then(|v| v.as_str())
-                .map(String::from)
-        })
-        .unwrap_or_default();
-    let merged_prompt = prompt
-        .map(String::from)
-        .or_else(|| {
-            current
-                .get("prompt")
-                .and_then(|v| v.as_str())
-                .map(String::from)
-        })
-        .unwrap_or_default();
+    let auto_type = current
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("AGENT");
 
     let mut input = json!({
-        "title": merged_title,
-        "cron": merged_cron,
-        "prompt": merged_prompt,
+        "type": auto_type,
+        "title": title.map(String::from).or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
+        "cron": cron.map(String::from).or_else(|| current.get("cron").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
+        "enabled": json!(enabled.or_else(|| current.get("enabled").and_then(|v| v.as_bool())).unwrap_or(true)),
+        "description": description.map(String::from).or_else(|| current.get("description").and_then(|v| v.as_str()).map(String::from)),
     });
 
-    // Optional fields: use provided or fall back to current
-    input["description"] = match description {
-        Some(d) => json!(d),
-        None => current.get("description").cloned().unwrap_or(Value::Null),
-    };
+    if auto_type == "COMMAND" {
+        input["command"] = current.get("command").cloned().unwrap_or(Value::Null);
+    } else {
+        input["prompt"] = prompt
+            .map(String::from)
+            .or_else(|| {
+                current
+                    .get("prompt")
+                    .and_then(|v| v.as_str())
+                    .map(String::from)
+            })
+            .map(|s| json!(s))
+            .unwrap_or(Value::Null);
 
-    input["agentFullName"] = match agent {
-        Some(a) => json!(a),
-        None => current.get("agentFullName").cloned().unwrap_or(Value::Null),
-    };
+        input["agentFullName"] = agent
+            .map(String::from)
+            .or_else(|| {
+                current
+                    .get("agentFullName")
+                    .and_then(|v| v.as_str())
+                    .map(String::from)
+            })
+            .map(|s| json!(s))
+            .unwrap_or(Value::Null);
 
-    input["skillFullNames"] = match skills {
-        Some(s) => json!(s),
-        None => current
-            .get("skillFullNames")
-            .cloned()
-            .unwrap_or(Value::Null),
-    };
+        input["skillFullNames"] = match skills {
+            Some(s) => json!(s),
+            None => current
+                .get("skillFullNames")
+                .cloned()
+                .unwrap_or(Value::Null),
+        };
 
-    input["maxTurns"] = match max_turns {
-        Some(t) => json!(t),
-        None => current.get("maxTurns").cloned().unwrap_or(json!(20)),
-    };
+        input["maxTurns"] = json!(max_turns.or_else(|| current.get("maxTurns").and_then(|v| v.as_u64()).map(|v| v as u32)).unwrap_or(20));
+    }
 
-    input["enabled"] = match enabled {
-        Some(e) => json!(e),
-        None => current.get("enabled").cloned().unwrap_or(json!(true)),
-    };
-
-    input["workDir"] = match work_dir {
-        Some(d) => json!(d),
-        None => current
-            .get("workDirPathInfo")
-            .and_then(|p| p.get("absolutePath"))
-            .cloned()
-            .unwrap_or(Value::Null),
-    };
+    input["workDir"] = work_dir
+        .map(String::from)
+        .or_else(|| {
+            current
+                .get("workDirPathInfo")
+                .and_then(|p| p.get("absolutePath"))
+                .and_then(|v| v.as_str())
+                .map(String::from)
+        })
+        .map(|s| json!(s))
+        .unwrap_or(Value::Null);
 
     let data = client.execute(
         graphql::UPDATE_AUTOMATION,

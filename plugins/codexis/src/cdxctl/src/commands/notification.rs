@@ -1,3 +1,4 @@
+use super::resolve_node_id;
 use crate::client::GraphQLClient;
 use crate::error::CdxctlError;
 use crate::graphql;
@@ -42,6 +43,7 @@ pub fn list(
     let data = client.execute(graphql::NOTIFICATIONS_QUERY, json!({}))?;
     let notifications = data
         .get("notifications")
+        .and_then(|n| n.get("items"))
         .cloned()
         .unwrap_or(Value::Array(vec![]));
 
@@ -52,7 +54,7 @@ pub fn list(
                     .into_iter()
                     .filter(|n| {
                         n.get("seen")
-                            .map(|v| v.is_null() || v == false)
+                            .map(|v| v.is_null())
                             .unwrap_or(true)
                     })
                     .collect();
@@ -69,9 +71,10 @@ pub fn list(
 }
 
 pub fn seen(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
+    let node_id = resolve_node_id(id, "Notification");
     let data = client.execute(
         graphql::MARK_NOTIFICATIONS_SEEN_MUTATION,
-        json!({ "ids": [id] }),
+        json!({ "ids": [node_id] }),
     )?;
     let result = data
         .get("markNotificationsSeen")
@@ -86,9 +89,10 @@ pub fn confirm(
     id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let node_id = resolve_node_id(id, "Notification");
     let data = client.execute(
         graphql::MARK_NOTIFICATION_CONFIRMED_MUTATION,
-        json!({ "id": id }),
+        json!({ "id": node_id }),
     )?;
     let result = data
         .get("markNotificationConfirmed")
