@@ -87,6 +87,7 @@ mutation TriggerAutomation($id: ID!) {
 pub const GET_MARKETPLACES: &str = r#"
 query GetMarketplaces {
     marketplaces {
+        id
         name
         description
         owner { name email }
@@ -97,6 +98,7 @@ query GetMarketplaces {
         pluginCount
         error
         plugins {
+            id
             name
             description
             version
@@ -110,6 +112,7 @@ query GetMarketplaces {
 pub const ADD_MARKETPLACE: &str = r#"
 mutation AddMarketplace($input: MarketplaceSourceInput!) {
     addMarketplace(input: $input) {
+        id
         name
         description
         source { source url path ref }
@@ -120,22 +123,23 @@ mutation AddMarketplace($input: MarketplaceSourceInput!) {
 "#;
 
 pub const REMOVE_MARKETPLACE: &str = r#"
-mutation RemoveMarketplace($name: String!) {
-    removeMarketplace(name: $name) {
+mutation RemoveMarketplace($id: ID!) {
+    removeMarketplace(id: $id) {
+        id
         name
     }
 }
 "#;
 
 pub const UPDATE_MARKETPLACE: &str = r#"
-mutation UpdateMarketplace($marketplace: String!) {
-    updateMarketplace(marketplace: $marketplace) {
+mutation UpdateMarketplace($id: ID!) {
+    updateMarketplace(id: $id) {
         marketplace
         previousCommit
         newCommit
         status
         error
-        updatedPlugins { name version marketplace }
+        updatedPlugins { id name version marketplace }
     }
 }
 "#;
@@ -148,7 +152,7 @@ mutation UpdateAllMarketplaces {
         newCommit
         status
         error
-        updatedPlugins { name version marketplace }
+        updatedPlugins { id name version marketplace }
     }
 }
 "#;
@@ -156,7 +160,7 @@ mutation UpdateAllMarketplaces {
 // ==================== Plugins ====================
 
 pub const GET_INSTALLED_PLUGINS: &str = r#"
-query GetInstalledPlugins($marketplace: String!) {
+query GetInstalledPlugins($marketplace: ID!) {
     installedPlugins(marketplace: $marketplace) {
         id
         name
@@ -171,7 +175,7 @@ query GetInstalledPlugins($marketplace: String!) {
 "#;
 
 pub const GET_AVAILABLE_PLUGINS: &str = r#"
-query GetAvailablePlugins($marketplace: String) {
+query GetAvailablePlugins($marketplace: ID) {
     availablePlugins(marketplace: $marketplace) {
         id
         name

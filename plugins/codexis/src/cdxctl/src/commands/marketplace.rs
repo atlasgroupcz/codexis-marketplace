@@ -49,8 +49,8 @@ pub fn add(
     Ok(())
 }
 
-pub fn remove(client: &GraphQLClient, name: &str, format: OutputFormat) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::REMOVE_MARKETPLACE, json!({ "name": name }))?;
+pub fn remove(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
+    let data = client.execute(graphql::REMOVE_MARKETPLACE, json!({ "id": id }))?;
     let result = data
         .get("removeMarketplace")
         .cloned()
@@ -61,12 +61,12 @@ pub fn remove(client: &GraphQLClient, name: &str, format: OutputFormat) -> Resul
 
 pub fn update(
     client: &GraphQLClient,
-    name: Option<&str>,
+    id: Option<&str>,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    match name {
-        Some(n) => {
-            let data = client.execute(graphql::UPDATE_MARKETPLACE, json!({ "marketplace": n }))?;
+    match id {
+        Some(i) => {
+            let data = client.execute(graphql::UPDATE_MARKETPLACE, json!({ "id": i }))?;
             let result = data
                 .get("updateMarketplace")
                 .cloned()

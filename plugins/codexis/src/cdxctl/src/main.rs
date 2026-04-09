@@ -166,13 +166,13 @@ enum MarketplaceCommands {
     },
     /// Remove a marketplace
     Remove {
-        /// Marketplace name
-        name: String,
+        /// Marketplace ID
+        id: String,
     },
     /// Update marketplace(s) — pull latest from git
     Update {
-        /// Marketplace name (omit to update all)
-        name: Option<String>,
+        /// Marketplace ID (omit to update all)
+        id: Option<String>,
     },
 }
 
@@ -180,7 +180,7 @@ enum MarketplaceCommands {
 enum PluginCommands {
     /// List plugins
     List {
-        /// Filter by marketplace name
+        /// Filter by marketplace ID
         #[arg(long)]
         marketplace: Option<String>,
         /// Show available (not installed) plugins
@@ -189,21 +189,13 @@ enum PluginCommands {
     },
     /// Install a plugin
     Install {
-        /// Marketplace name
-        #[arg(long)]
-        marketplace: String,
-        /// Plugin name
-        #[arg(long)]
-        name: String,
+        /// Plugin ID
+        id: String,
     },
     /// Uninstall a plugin
     Uninstall {
-        /// Marketplace name
-        #[arg(long)]
-        marketplace: String,
-        /// Plugin name
-        #[arg(long)]
-        name: String,
+        /// Plugin ID
+        id: String,
     },
 }
 
@@ -455,11 +447,11 @@ fn main() {
                 git_ref.as_deref(),
                 format,
             ),
-            MarketplaceCommands::Remove { name } => {
-                commands::marketplace::remove(&client, &name, format)
+            MarketplaceCommands::Remove { id } => {
+                commands::marketplace::remove(&client, &id, format)
             }
-            MarketplaceCommands::Update { name } => {
-                commands::marketplace::update(&client, name.as_deref(), format)
+            MarketplaceCommands::Update { id } => {
+                commands::marketplace::update(&client, id.as_deref(), format)
             }
         },
         Commands::Plugin { command } => match command {
@@ -467,11 +459,11 @@ fn main() {
                 marketplace,
                 available,
             } => commands::plugin::list(&client, marketplace.as_deref(), available, format),
-            PluginCommands::Install { marketplace, name } => {
-                commands::plugin::install(&client, &marketplace, &name, format)
+            PluginCommands::Install { id } => {
+                commands::plugin::install(&client, &id, format)
             }
-            PluginCommands::Uninstall { marketplace, name } => {
-                commands::plugin::uninstall(&client, &marketplace, &name, format)
+            PluginCommands::Uninstall { id } => {
+                commands::plugin::uninstall(&client, &id, format)
             }
         },
         Commands::Agent { command } => match command {

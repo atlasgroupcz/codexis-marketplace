@@ -37,13 +37,11 @@ pub fn list(
 
 pub fn install(
     client: &GraphQLClient,
-    marketplace: &str,
-    name: &str,
+    id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let input = json!({
-        "marketplace": marketplace,
-        "name": name,
+        "id": id,
     });
     let data = client.execute(graphql::INSTALL_PLUGIN, json!({ "input": input }))?;
     let result = data.get("installPlugin").cloned().unwrap_or(Value::Null);
@@ -53,13 +51,11 @@ pub fn install(
 
 pub fn uninstall(
     client: &GraphQLClient,
-    marketplace: &str,
-    name: &str,
+    id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let input = json!({
-        "marketplace": marketplace,
-        "name": name,
+        "id": id,
     });
     let data = client.execute(graphql::UNINSTALL_PLUGIN, json!({ "input": input }))?;
     let result = data.get("uninstallPlugin").cloned().unwrap_or(Value::Null);
