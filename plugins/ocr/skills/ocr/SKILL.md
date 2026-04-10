@@ -7,8 +7,6 @@ description: >-
   images (PNG, JPG, TIFF, BMP, GIF, WEBP), ZIP archives.
   Triggers on "ocr", "convert to markdown", "read PDF", "extract text from document",
   "convert document", "read this file" (for binary files).
-metadata:
-  skill-visibility: model
 allowed-tools: shell
 ---
 

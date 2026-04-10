@@ -5,8 +5,6 @@ description: >-
   Generate PowerPoint presentations (PPTX) using python-pptx.
   Triggers on "presentation", "prezentace", "slides", "slideshow",
   "powerpoint", "pptx", "udělej prezentaci", "create slides", "make a presentation".
-metadata:
-  skill-visibility: user
 allowed-tools: shell
 ---
 

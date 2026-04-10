@@ -1,0 +1,11 @@
+{
+  "skills": ["cdx-at:cdx-at"],
+  "post_install": [
+    { "type": "executable", "path": "/usr/local/bin/cdx-at" },
+    { "type": "executable", "path": "/usr/local/bin/cdx-at-link-rewriter" }
+  ],
+  "post_uninstall": [
+    { "type": "absent", "path": "/usr/local/bin/cdx-at" },
+    { "type": "absent", "path": "/usr/local/bin/cdx-at-link-rewriter" }
+  ]
+}

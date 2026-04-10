@@ -35,13 +35,6 @@
       "category": "legal"
     },
     {
-      "uuid": "7f153c8b-28a8-4837-9b1c-edf502604b98",
-      "name": "playwright",
-      "description": "Playwright MCP (fork) configured with --no-sandbox for Chromium under bwrap.",
-      "source": "./plugins/playwright",
-      "category": "development"
-    },
-    {
       "uuid": "3d8ea3de-e4cc-46cf-bc6c-faf72026a3cc",
       "name": "ocr",
       "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
