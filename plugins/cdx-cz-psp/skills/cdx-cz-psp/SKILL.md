@@ -94,6 +94,12 @@ Every document reference in user-facing output MUST be a clickable attachment li
 - Search results include a ready-made `pageUrl` field — use it directly as the link target. It is a complete `cdx-cz-psp://` URL with `#page=N` already built in.
 - When `pageUrl` is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link without `#page` rather than omitting the link.
 
+### Do Not Use includeAllAssets=true on /meta
+
+By default, `/meta` returns only the primary content files (content_1.pdf, content_1.docx). Some documents — especially state budgets — have 50+ attachment files across multiple sub-prints.
+
+Calling `/meta?includeAllAssets=true` returns the full list and can produce very large responses. Only use it when the user explicitly needs the complete file listing.
+
 ## Reference Files
 
 - **`references/search-czpspdok.md`** — Czech parliamentary documents search: reports, interpellations, EU docs, committee assignments
