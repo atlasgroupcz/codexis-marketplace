@@ -8,6 +8,11 @@ use crate::core::error::CliError;
 pub(crate) enum ResourceSchemaKind {
     Meta,
     Text,
+    Toc,
+    Parts,
+    Related,
+    RelatedCounts,
+    History,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -172,6 +177,9 @@ fn format_rendered_document(rendered: &RenderedSchemaDocument) -> Result<String,
 fn load_shared_schema_bundle(kind: ResourceSchemaKind) -> Result<&'static str, CliError> {
     match kind {
         ResourceSchemaKind::Text => Ok(include_str!("../schemas/resource/text.bundle.json")),
+        ResourceSchemaKind::RelatedCounts => Ok(include_str!(
+            "../schemas/resource/related-counts.bundle.json"
+        )),
         _ => Err(CliError::InvalidStoredSchema(format!(
             "/{} is source-aware, not shared",
             resource_endpoint_name(kind)
@@ -190,9 +198,31 @@ fn load_source_aware_schema_bundle(
         (ResourceSchemaKind::Meta, SchemaSource::Czpsppre) => {
             Ok(include_str!("../schemas/resource/meta-czpsppre.bundle.json"))
         }
+        (ResourceSchemaKind::Toc, SchemaSource::Czpspdok) => {
+            Ok(include_str!("../schemas/resource/toc-czpspdok.bundle.json"))
+        }
+        (ResourceSchemaKind::Toc, SchemaSource::Czpsppre) => {
+            Ok(include_str!("../schemas/resource/toc-czpsppre.bundle.json"))
+        }
+        (ResourceSchemaKind::Parts, SchemaSource::Czpspdok) => {
+            Ok(include_str!("../schemas/resource/parts-czpspdok.bundle.json"))
+        }
+        (ResourceSchemaKind::Parts, SchemaSource::Czpsppre) => {
+            Ok(include_str!("../schemas/resource/parts-czpsppre.bundle.json"))
+        }
+        (ResourceSchemaKind::Related, SchemaSource::Czpspdok) => {
+            Ok(include_str!("../schemas/resource/related-czpspdok.bundle.json"))
+        }
+        (ResourceSchemaKind::Related, SchemaSource::Czpsppre) => {
+            Ok(include_str!("../schemas/resource/related-czpsppre.bundle.json"))
+        }
+        (ResourceSchemaKind::History, SchemaSource::Czpsppre) => {
+            Ok(include_str!("../schemas/resource/history-czpsppre.bundle.json"))
+        }
         _ => Err(CliError::InvalidStoredSchema(format!(
-            "/{} is not source-aware",
-            resource_endpoint_name(kind)
+            "the /{} endpoint is not available for {} documents",
+            resource_endpoint_name(kind),
+            source.source_code()
         ))),
     }
 }
@@ -355,7 +385,7 @@ fn collect_direct_referenced_schema_names(schema: &Value, names: &mut BTreeSet<S
     }
 }
 
-fn simplify_query_parameters(_kind: ResourceSchemaKind, operations: &[Value]) -> Vec<String> {
+fn simplify_query_parameters(kind: ResourceSchemaKind, operations: &[Value]) -> Vec<String> {
     let mut unique = BTreeMap::<String, String>::new();
 
     for operation in operations {
@@ -388,12 +418,26 @@ fn simplify_query_parameters(_kind: ResourceSchemaKind, operations: &[Value]) ->
                 .and_then(Value::as_str)
                 .map(compact_text)
                 .unwrap_or_else(|| "No description.".to_string());
-            let rendered = format!("{label}: {description}");
+            let rendered = simplify_query_parameter_text(kind, name, &label, &description);
             unique.entry(label.clone()).or_insert(rendered);
         }
     }
 
     unique.into_values().collect()
+}
+
+fn simplify_query_parameter_text(
+    kind: ResourceSchemaKind,
+    name: &str,
+    label: &str,
+    description: &str,
+) -> String {
+    match (kind, name) {
+        (ResourceSchemaKind::Text, "part") => {
+            format!("{label}: optional TOC node ids; return only selected parts.")
+        }
+        _ => format!("{label}: {description}"),
+    }
 }
 
 fn compact_text(value: &str) -> String {
@@ -404,6 +448,11 @@ fn resource_endpoint_name(kind: ResourceSchemaKind) -> &'static str {
     match kind {
         ResourceSchemaKind::Meta => "meta",
         ResourceSchemaKind::Text => "text",
+        ResourceSchemaKind::Toc => "toc",
+        ResourceSchemaKind::Parts => "parts",
+        ResourceSchemaKind::Related => "related",
+        ResourceSchemaKind::RelatedCounts => "related/counts",
+        ResourceSchemaKind::History => "history",
     }
 }
 
@@ -411,6 +460,11 @@ fn resource_endpoint_label(kind: ResourceSchemaKind) -> &'static str {
     match kind {
         ResourceSchemaKind::Meta => "Metadata",
         ResourceSchemaKind::Text => "Text",
+        ResourceSchemaKind::Toc => "Table of contents",
+        ResourceSchemaKind::Parts => "Parts",
+        ResourceSchemaKind::Related => "Related documents",
+        ResourceSchemaKind::RelatedCounts => "Related counts",
+        ResourceSchemaKind::History => "Legislative history",
     }
 }
 
@@ -425,6 +479,17 @@ fn resource_output_description(kind: ResourceSchemaKind) -> &'static str {
     match kind {
         ResourceSchemaKind::Meta => "Metadata for one document.",
         ResourceSchemaKind::Text => "Rendered document text.",
+        ResourceSchemaKind::Toc => {
+            "Table of contents with stable part ids and line ranges aligned with /text output."
+        }
+        ResourceSchemaKind::Parts => "Document parts with content.",
+        ResourceSchemaKind::Related => "Related documents plus paging metadata.",
+        ResourceSchemaKind::RelatedCounts => {
+            "Per-relation-type counts for the current related-document scope."
+        }
+        ResourceSchemaKind::History => {
+            "Legislative process history — stages, votes, committee readings, and outcomes."
+        }
     }
 }
 
@@ -487,15 +552,19 @@ fn render_resource_intro(
 
 impl ResourceSchemaKind {
     fn is_source_aware(self) -> bool {
-        matches!(self, Self::Meta)
+        matches!(
+            self,
+            Self::Meta | Self::Toc | Self::Parts | Self::Related | Self::History
+        )
     }
 
     fn available_sources(self) -> Vec<SchemaSource> {
         match self {
-            Self::Meta => vec![
+            Self::Meta | Self::Toc | Self::Parts | Self::Related => vec![
                 SchemaSource::Czpspdok,
                 SchemaSource::Czpsppre,
             ],
+            Self::History => vec![SchemaSource::Czpsppre],
             _ => vec![],
         }
     }
@@ -566,5 +635,81 @@ mod tests {
             assert!(intro.contains("Endpoint: /meta"));
             assert!(intro.contains(source.source_code()));
         }
+    }
+
+    #[test]
+    fn related_counts_schema_is_shared() {
+        let output = render_resource_schema(ResourceSchemaKind::RelatedCounts, None).unwrap();
+        let (intro, _schema) = split_rendered_schema_document(&output).unwrap();
+
+        assert!(intro.contains("Endpoint: /related/counts"));
+    }
+
+    #[test]
+    fn toc_renders_for_both_sources() {
+        for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
+            let output =
+                render_resource_schema(ResourceSchemaKind::Toc, Some(source)).unwrap();
+            let (intro, _) = split_rendered_schema_document(&output).unwrap();
+
+            assert!(intro.contains("Endpoint: /toc"));
+            assert!(intro.contains(source.source_code()));
+        }
+    }
+
+    #[test]
+    fn parts_renders_for_both_sources() {
+        for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
+            let output =
+                render_resource_schema(ResourceSchemaKind::Parts, Some(source)).unwrap();
+            let (intro, _) = split_rendered_schema_document(&output).unwrap();
+
+            assert!(intro.contains("Endpoint: /parts"));
+            assert!(intro.contains(source.source_code()));
+        }
+    }
+
+    #[test]
+    fn related_renders_for_both_sources() {
+        for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
+            let output =
+                render_resource_schema(ResourceSchemaKind::Related, Some(source)).unwrap();
+            let (intro, _) = split_rendered_schema_document(&output).unwrap();
+
+            assert!(intro.contains("Endpoint: /related"));
+            assert!(intro.contains(source.source_code()));
+        }
+    }
+
+    #[test]
+    fn history_renders_for_czpsppre_only() {
+        let output =
+            render_resource_schema(ResourceSchemaKind::History, Some(SchemaSource::Czpsppre))
+                .unwrap();
+        let (intro, _) = split_rendered_schema_document(&output).unwrap();
+
+        assert!(intro.contains("Endpoint: /history"));
+        assert!(intro.contains("CZPSPPRE"));
+    }
+
+    #[test]
+    fn history_rejects_czpspdok() {
+        let result =
+            render_resource_schema(ResourceSchemaKind::History, Some(SchemaSource::Czpspdok));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn generic_toc_schema_lists_subcommands() {
+        let output = render_resource_schema(ResourceSchemaKind::Toc, None).unwrap();
+        assert!(output.contains("cdx-cz-psp schema toc CZPSPDOK"));
+        assert!(output.contains("cdx-cz-psp schema toc CZPSPPRE"));
+    }
+
+    #[test]
+    fn generic_history_schema_lists_only_czpsppre() {
+        let output = render_resource_schema(ResourceSchemaKind::History, None).unwrap();
+        assert!(output.contains("cdx-cz-psp schema history CZPSPPRE"));
+        assert!(!output.contains("CZPSPDOK"));
     }
 }

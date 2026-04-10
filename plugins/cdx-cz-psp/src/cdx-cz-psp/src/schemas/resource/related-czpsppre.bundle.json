@@ -1,0 +1,88 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-04-10T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-psp://doc/<DOC_ID>/related"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/psp/preleg/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get law changes",
+      "description": "Retrieve laws changed by a legislative proposal (amendments, repeals).",
+      "operationId": "getPrelegRelated",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZPSPPRE1234"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Filter by change type",
+          "required": false,
+          "schema": { "type": "string", "enum": ["AMENDS", "REPEALS", "OTHER"] }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (default: 20, max: 100)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Law changes",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PspCzPrelegRelatedResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "PspCzPrelegRelatedResponse": {
+        "type": "object",
+        "description": "Law changes response",
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "Law changes",
+            "items": { "$ref": "#/components/schemas/PspCzPrelegRelatedItem" }
+          },
+          "totalResults": { "type": "integer", "format": "int64", "description": "Total number of law changes" },
+          "offset": { "type": "integer", "format": "int32", "description": "Pagination offset" },
+          "limit": { "type": "integer", "format": "int32", "description": "Page size" }
+        }
+      },
+      "PspCzPrelegRelatedItem": {
+        "type": "object",
+        "description": "Law change item",
+        "properties": {
+          "lawId": { "type": "string", "description": "Law identifier" },
+          "changeType": { "type": "string", "description": "Type of change", "enum": ["AMENDS", "REPEALS", "OTHER"] },
+          "lawTitle": { "type": "string", "description": "Full law title" },
+          "sincePrint": { "type": "string", "description": "Since which print number" }
+        }
+      }
+    }
+  }
+}

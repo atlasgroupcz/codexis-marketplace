@@ -2,7 +2,7 @@
 uuid: 59dbdfcc-047f-41fd-97f0-fc958c85cf0c
 name: cdx-cz-psp
 description: This skill should be invoked whenever user needs Czech parliamentary information — legislative proposals (bills, amendments), parliamentary documents (reports, interpellations, EU docs) from the Czech Parliament (PSP) system.
-version: 1.0.0
+version: 2.1.0
 ---
 
 # Czech Parliament Database (cdx-cz-psp)
@@ -34,8 +34,8 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 **IMPORTANT:** All document links in user-facing output MUST use the `cdx-cz-psp://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CDX_CZ_PSP_API_URL` for link construction.
 
-When citing documents, link to **attachment** URLs: `[Title](cdx-cz-psp://doc/{id}/attachment/{filename})`.
-Get the filename from the `/meta` response (assets array).
+When citing documents, link to **attachment** URLs: `[Title](cdx-cz-psp://doc/{id}/attachment/{filename}#page=N)`.
+Search results include a `pageUrl` field with the complete attachment URL (including `#page=N`) — use it directly. If `pageUrl` is absent, get the filename from `/meta` assets.
 
 Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
 
@@ -73,7 +73,7 @@ If title is unavailable, use press number or a descriptive fallback — never th
 
 **Correct:**
 ```
-[Novela zákona o daních z příjmů (tisk 123)](cdx-cz-psp://doc/CZPSPPRE1234/attachment/content_1.pdf)
+[Novela zákona o daních z příjmů (tisk 123)](cdx-cz-psp://doc/CZPSPPRE1234/attachment/content_1.pdf#page=3)
 
 [Písemná interpelace ve věci dopravní infrastruktury](cdx-cz-psp://doc/CZPSPDOK5678/attachment/content_1.pdf)
 ```
@@ -91,8 +91,8 @@ https://search.example.com/api/CZ/psp/preleg/doc/CZPSPPRE1234 — wrong, resolve
 
 Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
 
-- Get the filename from `/meta` assets.
-- If `/meta` hasn't been fetched yet, fetch it to get the attachment filename before presenting the document to the user.
+- Search results include a ready-made `pageUrl` field — use it directly as the link target. It is a complete `cdx-cz-psp://` URL with `#page=N` already built in.
+- When `pageUrl` is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link without `#page` rather than omitting the link.
 
 ## Reference Files
 

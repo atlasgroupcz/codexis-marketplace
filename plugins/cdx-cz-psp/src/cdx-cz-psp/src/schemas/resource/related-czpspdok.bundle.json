@@ -1,0 +1,78 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-04-10T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-psp://doc/<DOC_ID>/related"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/psp/dokumenty/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get referenced laws",
+      "description": "Retrieve laws referenced in a parliamentary document.",
+      "operationId": "getDokumentyRelated",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZPSPDOK1234"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (default: 20, max: 100)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Referenced laws",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PspCzDokumentyRelatedResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "PspCzDokumentyRelatedResponse": {
+        "type": "object",
+        "description": "Referenced laws response",
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "Referenced laws",
+            "items": { "$ref": "#/components/schemas/PspCzDokumentyRelatedItem" }
+          },
+          "totalResults": { "type": "integer", "format": "int64", "description": "Total number of referenced laws" },
+          "offset": { "type": "integer", "format": "int32", "description": "Pagination offset" },
+          "limit": { "type": "integer", "format": "int32", "description": "Page size" }
+        }
+      },
+      "PspCzDokumentyRelatedItem": {
+        "type": "object",
+        "description": "Referenced law item",
+        "properties": {
+          "lawId": { "type": "string", "description": "Law identifier/reference" }
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ Examples:
   cdx-cz-psp search CZPSPPRE --query \"daně\" --type \"Vládní návrh zákona\" --limit 5
   cdx-cz-psp get cdx-cz-psp://doc/CZPSPDOK1234/meta
   cdx-cz-psp get cdx-cz-psp://doc/CZPSPPRE5678/text
+  cdx-cz-psp get 'cdx-cz-psp://doc/CZPSPPRE1/related?type=AMENDS&limit=10'
   cdx-cz-psp get cdx-cz-psp://resolve/CZPSPDOK1234
 
 Detailed source help:
@@ -26,11 +27,12 @@ Detailed source help:
   cdx-cz-psp search [CZPSPDOK|CZPSPPRE] --help
 
 Endpoint schema help:
-  cdx-cz-psp schema [meta|text]
+  cdx-cz-psp schema [meta|text|toc|parts|related|related/counts|history]
   cdx-cz-psp schema meta [CZPSPDOK|CZPSPPRE]
 
 Common get resource suffixes:
-  /meta, /text, /attachment/<FILE>";
+  /meta, /toc, /text, /parts
+  /related, /related/counts, /history (CZPSPPRE only)";
 
 #[derive(Parser, Debug)]
 #[command(
@@ -90,6 +92,53 @@ enum ResourceSchemaCommand {
 
     #[command(about = "Output schema for /text")]
     Text,
+
+    #[command(
+        about = "Output schema for /toc",
+        subcommand_value_name = "DATA_SOURCE",
+        subcommand_help_heading = "Schema sources"
+    )]
+    Toc {
+        #[command(subcommand)]
+        source: Option<SchemaSourceCommand>,
+    },
+
+    #[command(
+        about = "Output schema for /parts",
+        subcommand_value_name = "DATA_SOURCE",
+        subcommand_help_heading = "Schema sources"
+    )]
+    Parts {
+        #[command(subcommand)]
+        source: Option<SchemaSourceCommand>,
+    },
+
+    #[command(
+        about = "Output schema for /related",
+        subcommand_value_name = "DATA_SOURCE",
+        subcommand_help_heading = "Schema sources"
+    )]
+    Related {
+        #[command(subcommand)]
+        source: Option<SchemaSourceCommand>,
+    },
+
+    #[command(
+        name = "related/counts",
+        visible_alias = "related-counts",
+        about = "Output schema for /related/counts"
+    )]
+    RelatedCounts,
+
+    #[command(
+        about = "Output schema for /history (CZPSPPRE only)",
+        subcommand_value_name = "DATA_SOURCE",
+        subcommand_help_heading = "Schema sources"
+    )]
+    History {
+        #[command(subcommand)]
+        source: Option<SchemaSourceCommand>,
+    },
 }
 
 impl ResourceSchemaCommand {
@@ -97,13 +146,22 @@ impl ResourceSchemaCommand {
         match self {
             Self::Meta { .. } => ResourceSchemaKind::Meta,
             Self::Text => ResourceSchemaKind::Text,
+            Self::Toc { .. } => ResourceSchemaKind::Toc,
+            Self::Parts { .. } => ResourceSchemaKind::Parts,
+            Self::Related { .. } => ResourceSchemaKind::Related,
+            Self::RelatedCounts => ResourceSchemaKind::RelatedCounts,
+            Self::History { .. } => ResourceSchemaKind::History,
         }
     }
 
     fn schema_source(&self) -> Option<SchemaSource> {
         match self {
             Self::Meta { source } => source.as_ref().map(SchemaSourceCommand::kind),
-            Self::Text => None,
+            Self::Toc { source } => source.as_ref().map(SchemaSourceCommand::kind),
+            Self::Parts { source } => source.as_ref().map(SchemaSourceCommand::kind),
+            Self::Related { source } => source.as_ref().map(SchemaSourceCommand::kind),
+            Self::History { source } => source.as_ref().map(SchemaSourceCommand::kind),
+            Self::Text | Self::RelatedCounts => None,
         }
     }
 }
@@ -369,6 +427,7 @@ mod tests {
         assert!(help.contains("CZPSPPRE"));
         assert!(help.contains("cdx-cz-psp search CZPSPDOK --query"));
         assert!(help.contains("cdx-cz-psp get cdx-cz-psp://doc/CZPSPDOK1234/meta"));
+        assert!(help.contains("cdx-cz-psp schema [meta|text|toc|parts|related|related/counts|history]"));
     }
 
     #[test]
@@ -381,5 +440,102 @@ mod tests {
         assert!(help.contains("Data sources:"));
         assert!(help.contains("CZPSPDOK"));
         assert!(help.contains("CZPSPPRE"));
+    }
+
+    #[test]
+    fn cli_parses_schema_related_counts_command() {
+        let cli = Cli::try_parse_from(["cdx-cz-psp", "schema", "related/counts"]).unwrap();
+
+        match cli.command {
+            Commands::Schema {
+                endpoint: ResourceSchemaCommand::RelatedCounts,
+            } => {}
+            _ => panic!("expected schema related/counts command"),
+        }
+    }
+
+    #[test]
+    fn cli_accepts_schema_related_counts_alias() {
+        let cli = Cli::try_parse_from(["cdx-cz-psp", "schema", "related-counts"]).unwrap();
+
+        match cli.command {
+            Commands::Schema {
+                endpoint: ResourceSchemaCommand::RelatedCounts,
+            } => {}
+            _ => panic!("expected schema related/counts command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_schema_toc_with_source() {
+        let cli = Cli::try_parse_from(["cdx-cz-psp", "schema", "toc", "CZPSPPRE"]).unwrap();
+
+        match cli.command {
+            Commands::Schema {
+                endpoint:
+                    ResourceSchemaCommand::Toc {
+                        source: Some(SchemaSourceCommand::Czpsppre),
+                    },
+            } => {}
+            _ => panic!("expected schema toc CZPSPPRE command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_schema_parts_with_source() {
+        let cli = Cli::try_parse_from(["cdx-cz-psp", "schema", "parts", "CZPSPDOK"]).unwrap();
+
+        match cli.command {
+            Commands::Schema {
+                endpoint:
+                    ResourceSchemaCommand::Parts {
+                        source: Some(SchemaSourceCommand::Czpspdok),
+                    },
+            } => {}
+            _ => panic!("expected schema parts CZPSPDOK command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_schema_history_with_source() {
+        let cli = Cli::try_parse_from(["cdx-cz-psp", "schema", "history", "CZPSPPRE"]).unwrap();
+
+        match cli.command {
+            Commands::Schema {
+                endpoint:
+                    ResourceSchemaCommand::History {
+                        source: Some(SchemaSourceCommand::Czpsppre),
+                    },
+            } => {}
+            _ => panic!("expected schema history CZPSPPRE command"),
+        }
+    }
+
+    #[test]
+    fn schema_help_lists_expected_endpoint_subcommands() {
+        let mut command = Cli::command();
+        let schema = command.find_subcommand_mut("schema").unwrap();
+        let help = schema.render_long_help().to_string();
+
+        assert!(help.contains("<ENDPOINT>"));
+        assert!(help.contains("Schema endpoints:"));
+        assert!(help.contains("meta"));
+        assert!(help.contains("text"));
+        assert!(help.contains("toc"));
+        assert!(help.contains("parts"));
+        assert!(help.contains("related"));
+        assert!(help.contains("related/counts"));
+        assert!(help.contains("history"));
+    }
+
+    #[test]
+    fn get_help_mentions_document_resources() {
+        let mut command = Cli::command();
+        let get = command.find_subcommand_mut("get").unwrap();
+        let help = get.render_long_help().to_string();
+
+        assert!(help.contains("cdx-cz-psp://doc/<DOC_ID>/toc"));
+        assert!(help.contains("cdx-cz-psp://doc/<DOC_ID>/related/counts"));
+        assert!(help.contains("cdx-cz-psp://doc/<DOC_ID>/history"));
     }
 }
