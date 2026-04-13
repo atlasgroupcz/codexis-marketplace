@@ -93,7 +93,7 @@ export function DocumentList({ onSelectDocument }: DocumentListProps) {
   }
 
   return (
-    <div className="space-y-3 p-6">
+    <div className="space-y-4 p-6">
       <AddHint />
       <h1 className="text-xl font-semibold">{t('followedDocs.title')}</h1>
 

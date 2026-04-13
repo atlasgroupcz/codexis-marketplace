@@ -1,15 +1,21 @@
 import { Skeleton } from '@workspace/ui/components/skeleton'
 
-export function LoadingSkeleton() {
+export function ListSkeleton() {
   return (
     <div className="space-y-4 p-6">
-      <Skeleton className="h-8 w-64" />
-      <Skeleton className="h-4 w-48" />
-      <div className="space-y-3 pt-4">
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
-      </div>
+      {Array.from({ length: 3 }, (_, i) => (
+        <div key={i} className="flex items-center gap-4 rounded-xl border p-4">
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+      ))}
     </div>
   )
 }
+
+/** @deprecated Use ListSkeleton instead */
+export const LoadingSkeleton = ListSkeleton

@@ -70,9 +70,8 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
           {t('judikatura.back')}
         </Button>
         <Button
-          variant={confirmRemove ? 'destructive' : 'ghost'}
+          variant={confirmRemove ? 'destructive' : 'outline'}
           size="sm"
-          className={confirmRemove ? '' : 'text-muted-foreground hover:text-destructive'}
           onClick={handleDelete}
           disabled={removing}
           data-testid="delete-topic"
