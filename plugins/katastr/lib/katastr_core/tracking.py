@@ -347,7 +347,21 @@ def list_all() -> list:
         state = _load_state_file(name)
         if state is not None:
             results.append(state)
-    results.sort(key=lambda s: s.get("added_on", ""), reverse=True)
+    def _sort_key(s):
+        changes = s.get("changes", [])
+        unconfirmed = [c for c in changes if not c.get("confirmed_on")]
+        latest_unconfirmed = max(
+            (c.get("detected_on", "") for c in unconfirmed), default=""
+        )
+        latest_change = max(
+            (c.get("detected_on", "") for c in changes), default=""
+        )
+        # tier: 2 = unconfirmed, 1 = has changes, 0 = no changes
+        tier = 2 if unconfirmed else (1 if changes else 0)
+        activity = latest_unconfirmed if unconfirmed else latest_change
+        return (tier, activity, s.get("added_on", ""))
+
+    results.sort(key=_sort_key, reverse=True)
     return results
 
 
