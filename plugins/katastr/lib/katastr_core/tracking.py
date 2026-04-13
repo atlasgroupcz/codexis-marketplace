@@ -20,9 +20,6 @@ from .exceptions import (
 
 _USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "katastr", "rizeni")
-AUTOMATION_MARKER = os.path.join(
-    _USER_HOME, ".cdx", "apps", "katastr", ".automation_setup"
-)
 CDXCTL_BIN = "cdxctl"
 AUTOMATION_TITLE = "Hlídač katastrálních řízení"
 AUTOMATION_CRON = "0 8 * * 1"
@@ -192,14 +189,11 @@ def _detect_changes(old_state: dict, new_data: dict) -> Optional[dict]:
 
 
 def ensure_automation() -> bool:
-    """Ensure the central cron automation exists. Idempotent and gated.
+    """Ensure the central cron automation exists. Idempotent.
 
-    Uses a marker file to skip the (slow) cdxctl call after the first
-    successful setup. Returns True if newly created, False otherwise.
+    Always checks via cdxctl whether the automation exists and creates it
+    if missing. Returns True if newly created, False otherwise.
     """
-    if os.path.isfile(AUTOMATION_MARKER):
-        return False
-
     try:
         result = subprocess.run(
             [CDXCTL_BIN, "automation", "list"],
@@ -224,7 +218,6 @@ def ensure_automation() -> bool:
     )
 
     if already_exists:
-        _mark_automation_setup()
         return False
 
     try:
@@ -246,19 +239,9 @@ def ensure_automation() -> bool:
             text=True,
             timeout=15,
         )
-        _mark_automation_setup()
         return True
     except Exception:
         return False
-
-
-def _mark_automation_setup() -> None:
-    try:
-        os.makedirs(os.path.dirname(AUTOMATION_MARKER), exist_ok=True)
-        with open(AUTOMATION_MARKER, "w", encoding="utf-8") as f:
-            f.write(now_utc() + "\n")
-    except OSError:
-        pass
 
 
 # ── high-level operations ────────────────────────────────────────────────────
