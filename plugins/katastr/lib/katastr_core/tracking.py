@@ -353,12 +353,13 @@ def list_all() -> list:
         latest_unconfirmed = max(
             (c.get("detected_on", "") for c in unconfirmed), default=""
         )
-        latest_change = max(
-            (c.get("detected_on", "") for c in changes), default=""
+        latest_confirmed = max(
+            (c.get("confirmed_on", "") for c in changes if c.get("confirmed_on")),
+            default="",
         )
         # tier: 2 = unconfirmed, 1 = has changes, 0 = no changes
         tier = 2 if unconfirmed else (1 if changes else 0)
-        activity = latest_unconfirmed if unconfirmed else latest_change
+        activity = latest_unconfirmed if unconfirmed else latest_confirmed
         return (tier, activity, s.get("added_on", ""))
 
     results.sort(key=_sort_key, reverse=True)
