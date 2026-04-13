@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Info, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Badge } from '@workspace/ui/components/badge'
@@ -19,8 +19,9 @@ interface DocumentDetailProps {
 export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useDocumentDetail(uuid)
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [newNote, setNewNote] = useState('')
@@ -39,7 +40,19 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
 
   const { document } = data
 
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
+    }
+  }, [])
+
   const handleRemove = (): void => {
+    if (!confirmRemove) {
+      setConfirmRemove(true)
+      confirmTimerRef.current = setTimeout(() => setConfirmRemove(false), 3000)
+      return
+    }
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
     setRemoving(true)
     postAction('remove', uuid)
       .then(() => onBack())
@@ -54,41 +67,17 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
           {t('followedDocs.back')}
         </Button>
         <Button
-          variant="ghost"
+          variant={confirmRemove ? 'destructive' : 'ghost'}
           size="sm"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => setShowRemoveConfirm(!showRemoveConfirm)}
+          className={confirmRemove ? '' : 'text-muted-foreground hover:text-destructive'}
+          onClick={handleRemove}
+          disabled={removing}
+          data-testid="remove-document"
         >
           <Trash2 className="size-4" />
-          {t('followedDocs.removeTracking')}
+          {confirmRemove ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
         </Button>
       </div>
-
-      {showRemoveConfirm && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/50">
-          <p className="text-sm font-medium">{t('followedDocs.removeConfirmTitle')}</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {t('followedDocs.removeConfirmText', { name: document.name })}
-          </p>
-          <div className="mt-3 flex gap-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={removing}
-              onClick={handleRemove}
-            >
-              {t('followedDocs.removeConfirmButton')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRemoveConfirm(false)}
-            >
-              {t('followedDocs.cancel')}
-            </Button>
-          </div>
-        </div>
-      )}
 
       <div className="space-y-2">
         <h1 className="text-xl font-semibold">{document.name}</h1>

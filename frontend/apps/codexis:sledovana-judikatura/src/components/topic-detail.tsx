@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Trash2, Plus, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
@@ -19,8 +19,9 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useTopicDetail(uuid)
   const [noteText, setNoteText] = useState('')
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   if (loading && !data) return <LoadingSkeleton />
   if (error) return <ErrorMessage error={error} onRetry={refetch} />
@@ -29,7 +30,19 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
   const topic = data.topic
   const reports = data.reports
 
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
+    }
+  }, [])
+
   const handleDelete = () => {
+    if (!confirmRemove) {
+      setConfirmRemove(true)
+      confirmTimerRef.current = setTimeout(() => setConfirmRemove(false), 3000)
+      return
+    }
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
     setRemoving(true)
     postAction({ action: 'delete', uuid })
       .then(() => onBack())
@@ -57,41 +70,17 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
           {t('judikatura.back')}
         </Button>
         <Button
-          variant="ghost"
+          variant={confirmRemove ? 'destructive' : 'ghost'}
           size="sm"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => setShowRemoveConfirm(!showRemoveConfirm)}
+          className={confirmRemove ? '' : 'text-muted-foreground hover:text-destructive'}
+          onClick={handleDelete}
+          disabled={removing}
+          data-testid="delete-topic"
         >
           <Trash2 className="size-4" />
-          {t('judikatura.deleteTopic')}
+          {confirmRemove ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
         </Button>
       </div>
-
-      {showRemoveConfirm && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/50">
-          <p className="text-sm font-medium">{t('judikatura.deleteConfirmTitle')}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t('judikatura.deleteConfirmText')}
-          </p>
-          <div className="mt-3 flex gap-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={removing}
-              onClick={handleDelete}
-            >
-              {t('judikatura.confirm')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRemoveConfirm(false)}
-            >
-              {t('judikatura.cancel')}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Title */}
       <div>

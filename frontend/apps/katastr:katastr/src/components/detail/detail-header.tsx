@@ -30,6 +30,7 @@ export function DetailHeader({
 
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (editingLabel) {
@@ -63,11 +64,19 @@ export function DetailHeader({
     })
   }
 
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
+    }
+  }, [])
+
   const handleRemove = () => {
     if (!confirmRemove) {
       setConfirmRemove(true)
+      confirmTimerRef.current = setTimeout(() => setConfirmRemove(false), 3000)
       return
     }
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
     setRemoving(true)
     removeProceeding(uuid)
       .then(() => onDeleted())
