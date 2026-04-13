@@ -1,7 +1,7 @@
 {
   "name": "cdx-cz-psp",
   "version": "1.0.0",
-  "description": "Czech Parliament (PSP) database API access for parliamentary documents (CZPSPDOK) and legislative proposals (CZPSPPRE)",
+  "description": "Czech Parliament database API access for parliamentary reports, interpellations, EU documents, and legislative bill tracking with full process history",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"

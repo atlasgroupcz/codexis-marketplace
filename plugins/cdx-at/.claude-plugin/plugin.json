@@ -1,7 +1,7 @@
 {
   "name": "cdx-at",
   "version": "1.0.0",
-  "description": "Austrian legal database API access for federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), and other publications (Sonstige)",
+  "description": "Austrian legal database (RIS) API access for federal legislation (Bundesrecht), court decisions (Judikatur), state legislation (Landesrecht), ministerial decrees (Sonstige), and consolidated law provisions with historical versions",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
