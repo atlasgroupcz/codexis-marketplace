@@ -26,6 +26,12 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
   const [newGroupName, setNewGroupName] = useState('')
   const [newNote, setNewNote] = useState('')
 
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
+    }
+  }, [])
+
   if (loading && !data) {
     return <DetailSkeleton />
   }
@@ -39,12 +45,6 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
   }
 
   const { document } = data
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    }
-  }, [])
 
   const handleRemove = (): void => {
     if (!confirmRemove) {

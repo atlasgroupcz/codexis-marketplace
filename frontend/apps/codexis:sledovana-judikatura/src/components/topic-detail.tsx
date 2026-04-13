@@ -23,18 +23,18 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
   const [removing, setRemoving] = useState(false)
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
+    }
+  }, [])
+
   if (loading && !data) return <LoadingSkeleton />
   if (error) return <ErrorMessage error={error} onRetry={refetch} />
   if (!data) return null
 
   const topic = data.topic
   const reports = data.reports
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    }
-  }, [])
 
   const handleDelete = () => {
     if (!confirmRemove) {
