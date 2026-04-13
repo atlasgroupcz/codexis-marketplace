@@ -77,7 +77,7 @@ export function DetailHeader({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+        <Button variant="ghost" size="sm" onClick={onBack} data-testid="back-to-list">
           <ArrowLeft className="size-4" />
           {t('common.back')}
         </Button>
