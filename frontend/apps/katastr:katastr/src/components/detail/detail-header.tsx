@@ -120,6 +120,7 @@ export function DetailHeader({
         size="sm"
         onClick={handleRemove}
         disabled={removing}
+        data-testid="remove-proceeding"
       >
         <Trash2 className="size-4" />
         {confirmRemove ? t('proceedings.confirmRemove') : t('proceedings.remove')}
