@@ -42,6 +42,10 @@ def get(path: str) -> dict:
             raise ApiKeyInvalidError(
                 f"API klíč pro Katastr byl odmítnut (HTTP {e.code})."
             )
-        raise ApiHttpError(e.code, f"ČÚZK API vrátilo HTTP {e.code} pro {path}")
+        body = e.read().decode("utf-8", errors="replace").strip()
+        detail = f": {body}" if body else ""
+        raise ApiHttpError(
+            e.code, f"ČÚZK API vrátilo HTTP {e.code} pro {path}{detail}"
+        )
     except urllib.error.URLError as e:
         raise ApiNetworkError(f"Nepodařilo se kontaktovat ČÚZK API: {e.reason}")

@@ -1,307 +1,251 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""CGI handler for the sledovana-judikatura plugin component.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="${HOME}/.cdx/apps/sledovana-judikatura"
-QUERY_STRING_VALUE="${QUERY_STRING:-}"
-HTTP_ACCEPT_VALUE="${HTTP_ACCEPT:-}"
-REQUEST_METHOD_VALUE="${REQUEST_METHOD:-GET}"
-ENTRYPOINT="${SCRIPT_DIR}/index.html"
+GET requests with `Accept: application/json` (or `?uuid=`) return JSON;
+otherwise the SPA shell (index.html) is served.
+POST requests are JSON action dispatchers.
 
-# POST requests are always JSON actions.
-if [ "$REQUEST_METHOD_VALUE" = "POST" ]; then
-  serve_json=true
-else
-  serve_json=false
-  case "${HTTP_ACCEPT_VALUE}" in
-    *application/json*) serve_json=true ;;
-  esac
-  case "${QUERY_STRING_VALUE}" in
-    *uuid=*) serve_json=true ;;
-  esac
+State lives in $CDX_USER_HOME/.cdx/apps/sledovana-judikatura/ (managed by
+sledovana_judikatura_core).
+"""
 
-  if [ "$serve_json" = "false" ] && [ -f "$ENTRYPOINT" ]; then
-    printf 'Content-Type: text/html; charset=utf-8\n\n'
-    cat "$ENTRYPOINT"
-    exit 0
-  fi
-fi
-
-if ! command -v python3 >/dev/null 2>&1; then
-  printf 'Status: 500 Internal Server Error\n'
-  printf 'Content-Type: application/json; charset=utf-8\n\n'
-  cat <<'JSON'
-{
-  "error": "python3 runtime is required for sledovana-judikatura component"
-}
-JSON
-  exit 0
-fi
-
-CONTENT_LENGTH_VALUE="${CONTENT_LENGTH:-0}"
-STDIN_BODY=""
-if [ "$REQUEST_METHOD_VALUE" = "POST" ] && [ "$CONTENT_LENGTH_VALUE" -gt 0 ] 2>/dev/null; then
-  IFS= read -r -N "$CONTENT_LENGTH_VALUE" STDIN_BODY || true
-fi
-
-python3 - "$APP_DIR" "$QUERY_STRING_VALUE" "$REQUEST_METHOD_VALUE" "$STDIN_BODY" <<'PY'
-import datetime
 import json
 import os
+import re
 import sys
 import urllib.parse
+from pathlib import Path
 
-app_dir = sys.argv[1]
-query_string = sys.argv[2]
-request_method = sys.argv[3]
-request_body = sys.argv[4] if len(sys.argv) > 4 else ""
+HERE = Path(__file__).resolve().parent
+PLUGIN_DIR = HERE.parent.parent
+LIB_DIR = PLUGIN_DIR / "lib"
+ENTRYPOINT = HERE / "index.html"
+
+sys.path.insert(0, str(LIB_DIR))
+
+try:
+    from sledovana_judikatura_core import state, tracking
+    from sledovana_judikatura_core.exceptions import (
+        NoteIndexError,
+        ReportNotFoundError,
+        TopicError,
+        TopicNotFoundError,
+    )
+except ImportError as e:
+    sys.stdout.write("Status: 500 Internal Server Error\r\n")
+    sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n\r\n")
+    sys.stdout.write(json.dumps({"error": f"sledovana_judikatura_core import failed: {e}"}))
+    sys.exit(0)
 
 
-def emit(payload, status=None):
+# ── output helpers ──────────────────────────────────────────────────────────
+
+
+def emit_json(payload, status=None):
     if status:
-        print(f"Status: {status}")
-    print("Content-Type: application/json; charset=utf-8")
-    print()
-    print(json.dumps(payload, indent=2, ensure_ascii=False))
+        sys.stdout.write(f"Status: {status}\r\n")
+    sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n")
+    sys.stdout.write("Cache-Control: no-store\r\n\r\n")
+    sys.stdout.write(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def emit_html():
+    sys.stdout.write("Content-Type: text/html; charset=utf-8\r\n")
+    sys.stdout.write("Cache-Control: no-store\r\n\r\n")
+    sys.stdout.write(ENTRYPOINT.read_text(encoding="utf-8"))
 
 
 def now_utc():
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    import datetime
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
+
+
+SAFE_ID_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
 def validate_id(value):
-    """Reject path traversal attempts."""
-    import re
-    if not value or not re.match(r'^[a-zA-Z0-9_-]+$', value):
-        emit({"error": f"Invalid identifier: {value}"}, status="400 Bad Request")
-        sys.exit(0)
-    return value
-
-
-def load_topic(topic_uuid):
-    path = os.path.join(app_dir, topic_uuid, "topic.json")
-    if not os.path.isfile(path):
-        return None
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return None
-
-
-def load_reports(topic_uuid):
-    reports_dir = os.path.join(app_dir, topic_uuid, "reports")
-    reports = []
-    if not os.path.isdir(reports_dir):
-        return reports
-    for rf in sorted(os.listdir(reports_dir)):
-        if not rf.endswith(".json"):
-            continue
-        try:
-            with open(os.path.join(reports_dir, rf), "r", encoding="utf-8") as f:
-                r = json.load(f)
-            reports.append(r)
-        except (json.JSONDecodeError, OSError):
-            pass
-    return reports
-
-
-def load_report(topic_uuid, report_id):
-    path = os.path.join(app_dir, topic_uuid, "reports", f"{report_id}.json")
-    if not os.path.isfile(path):
-        return None
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return None
-
-
-def all_topics():
-    topics = []
-    if not os.path.isdir(app_dir):
-        return topics
-    for name in sorted(os.listdir(app_dir)):
-        topic = load_topic(name)
-        if topic:
-            reports = load_reports(name)
-            unconfirmed = sum(1 for r in reports if not r.get("confirmed_on"))
-            topics.append({
-                "uuid": name,
-                "name": topic.get("name", ""),
-                "areas": len(topic.get("areas", [])),
-                "notes": len(topic.get("notes", [])),
-                "created_at": topic.get("created_at"),
-                "last_check_at": topic.get("last_check_at"),
-                "total_reports": len(reports),
-                "unconfirmed_reports": unconfirmed,
-            })
-    return topics
-
-
-# ── Parse query string ───────────────────────────────────────────────────────
-
-params = urllib.parse.parse_qs(query_string)
-topic_uuid = params.get("uuid", [None])[0]
-report_id = params.get("report", [None])[0]
-if topic_uuid:
-    validate_id(topic_uuid)
-if report_id:
-    validate_id(report_id)
-
-# ── Handle POST actions ──────────────────────────────────────────────────────
-
-if request_method == "POST":
-    try:
-        body = json.loads(request_body) if request_body else {}
-    except json.JSONDecodeError:
-        emit({"error": "Invalid JSON body"}, status="400 Bad Request")
+    """Reject path-traversal attempts. Emits 400 + exits on failure."""
+    if not value or not SAFE_ID_RE.match(value):
+        emit_json({"error": f"Invalid identifier: {value}"}, status="400 Bad Request")
         sys.exit(0)
 
+
+# ── POST dispatch ───────────────────────────────────────────────────────────
+
+
+def handle_post(body):
     action = body.get("action", "")
 
     if action == "confirm_report":
-        uuid = body.get("uuid")
-        rid = body.get("report_id")
-        if not uuid or not rid:
-            emit({"error": "uuid and report_id required"}, status="400 Bad Request")
-            sys.exit(0)
-        validate_id(uuid)
-        validate_id(rid)
-        report = load_report(uuid, rid)
-        if not report:
-            emit({"error": "Report not found"}, status="404 Not Found")
-            sys.exit(0)
-        report["confirmed_on"] = now_utc()
-        report_path = os.path.join(app_dir, uuid, "reports", f"{rid}.json")
-        with open(report_path, "w", encoding="utf-8") as f:
-            json.dump(report, f, indent=2, ensure_ascii=False)
-            f.write("\n")
-        emit({"ok": True, "confirmed_on": report["confirmed_on"]})
-        sys.exit(0)
+        topic_uuid = body.get("uuid")
+        report_id = body.get("report_id")
+        if not topic_uuid or not report_id:
+            emit_json(
+                {"error": "uuid and report_id required"},
+                status="400 Bad Request",
+            )
+            return
+        validate_id(topic_uuid)
+        validate_id(report_id)
+        try:
+            confirmed_on = tracking.confirm_report(topic_uuid, report_id)
+        except (TopicNotFoundError, ReportNotFoundError):
+            emit_json({"error": "Report not found"}, status="404 Not Found")
+            return
+        emit_json({"ok": True, "confirmed_on": confirmed_on})
+        return
 
-    elif action == "delete":
-        uuid = body.get("uuid")
-        if not uuid:
-            emit({"error": "uuid required"}, status="400 Bad Request")
-            sys.exit(0)
-        validate_id(uuid)
-        import shutil
-        import subprocess
-        # Delete associated automation if stored
-        topic = load_topic(uuid)
-        if topic:
-            automation_id = topic.get("automation_id")
-            if automation_id:
-                try:
-                    subprocess.run(
-                        ["cdxctl", "automation", "delete", automation_id],
-                        capture_output=True, text=True, timeout=15,
-                    )
-                except Exception:
-                    pass
-        topic_path = os.path.join(app_dir, uuid)
-        if os.path.isdir(topic_path):
-            shutil.rmtree(topic_path)
-        emit({"ok": True})
-        sys.exit(0)
+    if action == "delete":
+        topic_uuid = body.get("uuid")
+        if not topic_uuid:
+            emit_json({"error": "uuid required"}, status="400 Bad Request")
+            return
+        validate_id(topic_uuid)
+        try:
+            tracking.delete(topic_uuid)
+        except TopicNotFoundError:
+            emit_json({"error": "Topic not found"}, status="404 Not Found")
+            return
+        emit_json({"ok": True})
+        return
 
-    elif action == "note_add":
-        uuid = body.get("uuid")
-        text = body.get("text", "")
-        if not uuid or not text:
-            emit({"error": "uuid and text required"}, status="400 Bad Request")
-            sys.exit(0)
-        validate_id(uuid)
-        topic = load_topic(uuid)
-        if not topic:
-            emit({"error": "Topic not found"}, status="404 Not Found")
-            sys.exit(0)
-        notes = topic.get("notes", [])
-        notes.append(text)
-        topic["notes"] = notes
-        topic_path = os.path.join(app_dir, uuid, "topic.json")
-        with open(topic_path, "w", encoding="utf-8") as f:
-            json.dump(topic, f, indent=2, ensure_ascii=False)
-            f.write("\n")
-        emit({"ok": True})
-        sys.exit(0)
+    if action == "note_add":
+        topic_uuid = body.get("uuid")
+        text = (body.get("text") or "").strip()
+        if not topic_uuid or not text:
+            emit_json({"error": "uuid and text required"}, status="400 Bad Request")
+            return
+        validate_id(topic_uuid)
+        try:
+            tracking.note_add(topic_uuid, text)
+        except TopicNotFoundError:
+            emit_json({"error": "Topic not found"}, status="404 Not Found")
+            return
+        emit_json({"ok": True})
+        return
 
-    elif action == "note_remove":
-        uuid = body.get("uuid")
+    if action == "note_remove":
+        topic_uuid = body.get("uuid")
         index = body.get("index")
-        if not uuid or index is None or not isinstance(index, int):
-            emit({"error": "uuid and index (int) required"}, status="400 Bad Request")
-            sys.exit(0)
-        validate_id(uuid)
-        topic = load_topic(uuid)
-        if not topic:
-            emit({"error": "Topic not found"}, status="404 Not Found")
-            sys.exit(0)
-        notes = topic.get("notes", [])
-        if 0 <= index < len(notes):
-            notes.pop(index)
-            topic["notes"] = notes
-            topic_path = os.path.join(app_dir, uuid, "topic.json")
-            with open(topic_path, "w", encoding="utf-8") as f:
-                json.dump(topic, f, indent=2, ensure_ascii=False)
-                f.write("\n")
-        emit({"ok": True})
-        sys.exit(0)
+        if not topic_uuid or not isinstance(index, int):
+            emit_json(
+                {"error": "uuid and index (int) required"},
+                status="400 Bad Request",
+            )
+            return
+        validate_id(topic_uuid)
+        try:
+            tracking.note_remove(topic_uuid, index)
+        except TopicNotFoundError:
+            emit_json({"error": "Topic not found"}, status="404 Not Found")
+            return
+        except NoteIndexError as e:
+            emit_json({"error": str(e)}, status="400 Bad Request")
+            return
+        emit_json({"ok": True})
+        return
 
-    else:
-        emit({"error": f"Unknown action: {action}"}, status="400 Bad Request")
-        sys.exit(0)
+    emit_json({"error": f"Unknown action: {action}"}, status="400 Bad Request")
 
-# ── Handle GET requests ──────────────────────────────────────────────────────
 
-if topic_uuid and report_id:
-    # Report detail view
-    report = load_report(topic_uuid, report_id)
-    if not report:
-        emit({"error": "Report not found"}, status="404 Not Found")
-        sys.exit(0)
-    topic = load_topic(topic_uuid)
-    emit({
-        "mode": "report",
-        "generated_at": now_utc(),
-        "topic": {
-            "uuid": topic_uuid,
-            "name": topic.get("name", "") if topic else "",
-        },
-        "report": report,
-    })
+# ── GET dispatch ────────────────────────────────────────────────────────────
 
-elif topic_uuid:
-    # Topic detail view
-    topic = load_topic(topic_uuid)
-    if not topic:
-        emit({"error": "Topic not found"}, status="404 Not Found")
-        sys.exit(0)
-    reports = load_reports(topic_uuid)
-    report_summaries = []
-    for r in reports:
-        report_summaries.append({
-            "report_id": r.get("report_id", ""),
-            "checked_at": r.get("checked_at"),
-            "period_from": r.get("period_from"),
-            "period_to": r.get("period_to"),
-            "found_count": r.get("found_count", 0),
-            "confirmed_on": r.get("confirmed_on"),
+
+def handle_get(query_string):
+    params = urllib.parse.parse_qs(query_string)
+    topic_uuid = params.get("uuid", [None])[0]
+    report_id = params.get("report", [None])[0]
+    if topic_uuid:
+        validate_id(topic_uuid)
+    if report_id:
+        validate_id(report_id)
+
+    if topic_uuid and report_id:
+        report = state.load_report(topic_uuid, report_id)
+        if report is None:
+            emit_json({"error": "Report not found"}, status="404 Not Found")
+            return
+        topic = state.load_topic(topic_uuid) or {}
+        emit_json({
+            "mode": "report",
+            "generated_at": now_utc(),
+            "topic": {"uuid": topic_uuid, "name": topic.get("name", "")},
+            "report": report,
         })
-    emit({
-        "mode": "detail",
-        "generated_at": now_utc(),
-        "topic": topic,
-        "reports": report_summaries,
-    })
+        return
 
-else:
-    # Overview — list all topics
-    topics = all_topics()
-    emit({
+    if topic_uuid:
+        topic = state.load_topic(topic_uuid)
+        if topic is None:
+            emit_json({"error": "Topic not found"}, status="404 Not Found")
+            return
+        emit_json({
+            "mode": "detail",
+            "generated_at": now_utc(),
+            "topic": topic,
+            "reports": state.report_summaries(topic_uuid),
+        })
+        return
+
+    overview = []
+    for t in tracking.list_all():
+        overview.append({
+            "uuid": t["uuid"],
+            "name": t["name"],
+            "areas": len(t["areas"]),
+            "notes": len(t["notes"]),
+            "created_at": t["created_at"],
+            "last_check_at": t["last_check_at"],
+            "total_reports": t["total_reports"],
+            "unconfirmed_reports": t["unconfirmed_reports"],
+        })
+    emit_json({
         "mode": "overview",
         "generated_at": now_utc(),
-        "topics": topics,
+        "topics": overview,
     })
-PY
+
+
+# ── entrypoint ──────────────────────────────────────────────────────────────
+
+
+def main():
+    method = os.environ.get("REQUEST_METHOD", "GET").upper()
+    accept = os.environ.get("HTTP_ACCEPT", "")
+    query_string = os.environ.get("QUERY_STRING", "")
+
+    wants_json = (
+        method == "POST"
+        or "application/json" in accept
+        or "uuid=" in query_string
+    )
+
+    if not wants_json and ENTRYPOINT.is_file():
+        emit_html()
+        return
+
+    try:
+        if method == "POST":
+            content_length = int(os.environ.get("CONTENT_LENGTH") or 0)
+            raw = sys.stdin.read(content_length) if content_length > 0 else ""
+            try:
+                body = json.loads(raw) if raw else {}
+            except json.JSONDecodeError:
+                emit_json({"error": "Invalid JSON body"}, status="400 Bad Request")
+                return
+            handle_post(body)
+        else:
+            handle_get(query_string)
+    except TopicError as e:
+        emit_json({"error": str(e)}, status="500 Internal Server Error")
+    except Exception as e:  # noqa: BLE001 — last-resort guard
+        emit_json(
+            {"error": f"Internal error: {e}"},
+            status="500 Internal Server Error",
+        )
+
+
+if __name__ == "__main__":
+    main()

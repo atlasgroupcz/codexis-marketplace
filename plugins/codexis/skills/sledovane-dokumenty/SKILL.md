@@ -15,6 +15,21 @@ Track changes in Czech legislation by monitoring CODEXIS documents for new versi
 
 **IMPORTANT:** If `cdx-sledovane-dokumenty` outputs an ERROR, stop immediately and report it to the user. Do not retry or guess.
 
+## Output Format
+
+`cdx-sledovane-dokumenty` has three kinds of output. Pick the right way to consume each — mixing them up (e.g. `grep` on JSON, or `jq` on plaintext) will fail.
+
+- **`list`, `check`, `group list`, `note list`, `related list`, `related types`** — human-readable plain text. Read it directly. **Do not parse with `sed` or `grep`** — the layout is for humans, not machines. Summarize what you see for the user.
+
+- **`add`, `remove`, `confirm`, `group add`, `group remove`, `group delete`, `note add`, `note remove`, `related add`, `related remove`** — a single `OK: ...` line on success or `ERROR: ...` on failure. No parsing needed; the whole output is the status.
+
+- **`show`** — structured JSON (full state including diffs and related baselines). Read it directly, or filter with `jq` for a specific field. Never with `sed`/`grep`.
+
+  ```bash
+  cdx-sledovane-dokumenty show CR13986 | jq '.changes[-1]'
+  cdx-sledovane-dokumenty show CR13986 | jq '.notes'
+  ```
+
 ## Commands
 
 ```bash

@@ -1,6 +1,6 @@
 {
   "name": "katastr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Katastr nemovitostí ČR",
   "author": {
     "name": "ATLAS GROUP",
@@ -12,6 +12,7 @@
     "rizeni"
   ],
   "license": "PROPRIETARY",
+  "dependencies": ["codexis"],
   "postInstall": "sudo install -d /usr/local/share/katastr/lib && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
   "postUninstall": "sudo rm -f /usr/local/bin/katastr-cli && sudo rm -rf /usr/local/share/katastr",
   "onUpdate": "sudo install -d /usr/local/share/katastr/lib && sudo rm -rf /usr/local/share/katastr/lib/katastr_core && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",

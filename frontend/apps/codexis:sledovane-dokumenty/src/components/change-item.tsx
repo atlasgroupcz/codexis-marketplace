@@ -61,9 +61,11 @@ export function ChangeItem({ change, changeIndex, uuid, onMutate }: ChangeItemPr
         <span>
           {t('followedDocs.detected', { date: formatDateTime(change.detected_on) })}
         </span>
-        <span>
-          {t('followedDocs.effective', { date: formatDate(change.effective_on) })}
-        </span>
+        {change.effective_on && (
+          <span>
+            {t('followedDocs.effective', { date: formatDate(change.effective_on) })}
+          </span>
+        )}
       </div>
 
       {change.description_md && (

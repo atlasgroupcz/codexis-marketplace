@@ -31,7 +31,8 @@ export type Amendment = z.infer<typeof amendmentSchema>
 export const changeSchema = z.object({
   source_documents: z.array(sourceDocumentSchema),
   detected_on: z.string(),
-  effective_on: z.string(),
+  // related_change has no legal effective date — omitted by backend.
+  effective_on: z.string().optional(),
   change_type: changeTypeSchema,
   description_md: z.string(),
   confirmed_on: z.string().nullable(),
