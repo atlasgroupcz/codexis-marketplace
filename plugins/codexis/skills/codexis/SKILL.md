@@ -61,6 +61,8 @@ All CODEXIS documents are in Czech.
 ## Common workflows
 - deep-dive Czech LAW change assessment workflow: `references/czech-law-change-assessment.md`
 - for caselaw/judikatura research see `references/judikatura.md`
+- for Czech tax questions (procesní vrstva, rozcestník): `references/dane.md`
+- for Czech personal income tax (DPFO): `references/dane-prijmy-fo.md`
 
 ## Governing Regime First
 
