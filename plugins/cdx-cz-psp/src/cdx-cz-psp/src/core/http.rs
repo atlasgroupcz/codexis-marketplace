@@ -13,16 +13,17 @@ const ID_PREFIXES: &[(&str, &str)] = &[
 
 pub(crate) fn execute_search_request(
     base_url: &str,
+    auth_header: Option<&str>,
     source_code: &str,
     payload: &str,
     dry_run: bool,
     sort: Option<&str>,
     order: Option<&str>,
 ) -> Result<(), CliError> {
-    let curl_args = build_search_curl_args(base_url, source_code, payload, sort, order);
+    let curl_args = build_search_curl_args(base_url, auth_header, source_code, payload, sort, order);
 
     if dry_run {
-        println!("{}", format_command("curl", &curl_args));
+        println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
         return Ok(());
     }
 
@@ -32,13 +33,14 @@ pub(crate) fn execute_search_request(
 
 pub(crate) fn execute_get_request(
     base_url: &str,
+    auth_header: Option<&str>,
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    let curl_args = build_get_curl_args(base_url, resource)?;
+    let curl_args = build_get_curl_args(base_url, auth_header, resource)?;
 
     if dry_run {
-        println!("{}", format_command("curl", &curl_args));
+        println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
         return Ok(());
     }
 
@@ -100,30 +102,41 @@ fn write_stdout(rendered: &str) -> Result<(), CliError> {
 
 fn build_search_curl_args(
     base_url: &str,
+    auth_header: Option<&str>,
     source_code: &str,
     payload: &str,
     sort: Option<&str>,
     order: Option<&str>,
 ) -> Vec<String> {
-    vec![
+    let mut args = vec![
         "-sS".to_string(),
         "--fail-with-body".to_string(),
-        "-X".to_string(),
-        "POST".to_string(),
-        "-H".to_string(),
-        "Content-Type: application/json".to_string(),
-        build_search_url(base_url, source_code, sort, order),
-        "-d".to_string(),
-        payload.to_string(),
-    ]
+    ];
+    if let Some(header) = auth_header {
+        args.push("-H".to_string());
+        args.push(header.to_string());
+    }
+    args.push("-X".to_string());
+    args.push("POST".to_string());
+    args.push("-H".to_string());
+    args.push("Content-Type: application/json".to_string());
+    args.push(build_search_url(base_url, source_code, sort, order));
+    args.push("-d".to_string());
+    args.push(payload.to_string());
+    args
 }
 
-fn build_get_curl_args(base_url: &str, resource: &str) -> Result<Vec<String>, CliError> {
-    Ok(vec![
+fn build_get_curl_args(base_url: &str, auth_header: Option<&str>, resource: &str) -> Result<Vec<String>, CliError> {
+    let mut args = vec![
         "-sS".to_string(),
         "--fail-with-body".to_string(),
-        build_cdx_url(base_url, resource)?,
-    ])
+    ];
+    if let Some(header) = auth_header {
+        args.push("-H".to_string());
+        args.push(header.to_string());
+    }
+    args.push(build_cdx_url(base_url, resource)?);
+    Ok(args)
 }
 
 fn build_search_url(
@@ -264,6 +277,40 @@ fn lookup_display_id_prefix(id: &str) -> Result<&'static str, String> {
     Err(format!("Unknown display ID prefix in: {id}"))
 }
 
+fn redact_curl_args(args: &[String]) -> Vec<String> {
+    args.iter()
+        .map(|arg| {
+            if is_authorization_header(arg) {
+                redact_authorization_header(arg)
+            } else {
+                arg.clone()
+            }
+        })
+        .collect()
+}
+
+fn is_authorization_header(value: &str) -> bool {
+    value
+        .trim_start()
+        .to_ascii_lowercase()
+        .starts_with("authorization:")
+}
+
+fn redact_authorization_header(header: &str) -> String {
+    let value = header
+        .split_once(':')
+        .map(|(_, value)| value.trim())
+        .unwrap_or_default();
+
+    if value.to_ascii_lowercase().starts_with("bearer ") {
+        "Authorization: Bearer <redacted>".to_string()
+    } else if let Some((scheme, _)) = value.split_once(' ') {
+        format!("Authorization: {scheme} <redacted>")
+    } else {
+        "Authorization: <redacted>".to_string()
+    }
+}
+
 fn format_command(program: &str, args: &[String]) -> String {
     let mut rendered = Vec::with_capacity(args.len() + 1);
     rendered.push(shell_escape(program));
@@ -310,6 +357,7 @@ mod tests {
     fn search_curl_args_are_built_as_post_json_request() {
         let args = build_search_curl_args(
             BASE,
+            None,
             "CZPSPDOK",
             r#"{"query":"interpelace","limit":5}"#,
             None,
@@ -336,6 +384,7 @@ mod tests {
     fn search_url_includes_sort_and_order_query_params() {
         let args = build_search_curl_args(
             BASE,
+            None,
             "CZPSPPRE",
             r#"{"query":"test"}"#,
             Some("date"),
@@ -351,7 +400,7 @@ mod tests {
     #[test]
     fn get_curl_args_translate_cdx_cz_psp_resource_to_api_url() {
         let args =
-            build_get_curl_args(BASE, "cdx-cz-psp://doc/CZPSPDOK1234/meta").unwrap();
+            build_get_curl_args(BASE, None, "cdx-cz-psp://doc/CZPSPDOK1234/meta").unwrap();
 
         assert_eq!(
             args,
@@ -366,9 +415,55 @@ mod tests {
     #[test]
     fn get_curl_args_reject_non_cdx_cz_psp_urls() {
         let error =
-            build_get_curl_args(BASE, "https://example.com/doc/1").unwrap_err();
+            build_get_curl_args(BASE, None, "https://example.com/doc/1").unwrap_err();
 
         assert!(matches!(error, CliError::InvalidCdxUrl(_)));
+    }
+
+    #[test]
+    fn search_curl_args_include_auth_header_when_present() {
+        let args = build_search_curl_args(
+            BASE,
+            Some("Authorization: Bearer token"),
+            "CZPSPDOK",
+            r#"{"query":"test"}"#,
+            None,
+            None,
+        );
+
+        assert_eq!(args[2], "-H");
+        assert_eq!(args[3], "Authorization: Bearer token");
+    }
+
+    #[test]
+    fn get_curl_args_include_auth_header_when_present() {
+        let args = build_get_curl_args(
+            BASE,
+            Some("Authorization: Bearer token"),
+            "cdx-cz-psp://doc/CZPSPDOK1234/meta",
+        )
+        .unwrap();
+
+        assert_eq!(args[2], "-H");
+        assert_eq!(args[3], "Authorization: Bearer token");
+    }
+
+    #[test]
+    fn dry_run_output_redacts_authorization_header() {
+        let rendered = format_command(
+            "curl",
+            &redact_curl_args(&[
+                "-H".to_string(),
+                "Authorization: Bearer super-secret-token".to_string(),
+                "-d".to_string(),
+                r#"{"query":"test"}"#.to_string(),
+            ]),
+        );
+
+        assert_eq!(
+            rendered,
+            "curl -H 'Authorization: Bearer <redacted>' -d '{\"query\":\"test\"}'"
+        );
     }
 
     // --- URL resolution tests ---

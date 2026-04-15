@@ -255,6 +255,7 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
     let payload = source.build_payload()?;
     execute_search_request(
         &config.base_url,
+        config.auth_header.as_deref(),
         source.source_code(),
         &payload,
         source.dry_run(),
@@ -265,7 +266,7 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
     let config = Config::load()?;
-    execute_get_request(&config.base_url, &args.resource, args.dry_run)
+    execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
 }
 
 fn execute_schema(endpoint: ResourceSchemaCommand) -> Result<(), CliError> {

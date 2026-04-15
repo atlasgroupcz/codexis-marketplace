@@ -6,21 +6,25 @@ use std::path::PathBuf;
 use crate::core::error::CliError;
 
 pub(crate) const CDX_AT_API_URL_ENV: &str = "CDX_AT_API_URL";
+pub(crate) const CDX_API_JWT_AUTH_ENV: &str = "CDX_API_JWT_AUTH";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
 pub(crate) const CDX_ENV_FILE_DISPLAY_PATH: &str = "~/.cdx/.env";
 
 pub(crate) struct Config {
     pub(crate) base_url: String,
+    pub(crate) auth_header: Option<String>,
 }
 
 impl Config {
     pub(crate) fn load() -> Result<Self, CliError> {
         let env_file = load_env_file_from_home();
         let base_url = resolve_config_value(CDX_AT_API_URL_ENV, env_file.as_ref());
+        let jwt_auth = resolve_config_value(CDX_API_JWT_AUTH_ENV, env_file.as_ref());
 
         match base_url {
             Some(url) => Ok(Self {
                 base_url: url.trim_end_matches('/').to_string(),
+                auth_header: jwt_auth.map(|v| to_authorization_header(&v)),
             }),
             None => Err(CliError::MissingConfig(CDX_AT_API_URL_ENV)),
         }
@@ -119,6 +123,35 @@ fn normalize_config_value(value: String) -> Option<String> {
     }
 }
 
+fn to_authorization_header(jwt_auth: &str) -> String {
+    if starts_with_ignore_ascii_case(jwt_auth, "authorization:") {
+        return jwt_auth.trim().to_string();
+    }
+    if starts_with_ignore_ascii_case(jwt_auth, "bearer ") {
+        return format!("Authorization: {}", jwt_auth.trim());
+    }
+    if looks_like_jwt(jwt_auth) {
+        return format!("Authorization: Bearer {}", jwt_auth.trim());
+    }
+    format!("Authorization: {}", jwt_auth.trim())
+}
+
+fn starts_with_ignore_ascii_case(value: &str, prefix: &str) -> bool {
+    value.len() >= prefix.len() && value[..prefix.len()].eq_ignore_ascii_case(prefix)
+}
+
+fn looks_like_jwt(value: &str) -> bool {
+    let value = value.trim();
+    if value.is_empty() || value.contains(' ') {
+        return false;
+    }
+    let mut parts = value.split('.');
+    match (parts.next(), parts.next(), parts.next(), parts.next()) {
+        (Some(a), Some(b), Some(c), None) => !a.is_empty() && !b.is_empty() && !c.is_empty(),
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,6 +221,38 @@ export OTHER_VAR="some value"
 
         let value = resolve_config_value_for_test(None, CDX_AT_API_URL_ENV, Some(&env_file));
         assert_eq!(value, Some("https://file.example.com/api".to_string()));
+    }
+
+    #[test]
+    fn authorization_header_passes_through_full_header() {
+        assert_eq!(
+            to_authorization_header("Authorization: Bearer abc"),
+            "Authorization: Bearer abc"
+        );
+    }
+
+    #[test]
+    fn authorization_header_wraps_bearer_value() {
+        assert_eq!(
+            to_authorization_header("Bearer abc"),
+            "Authorization: Bearer abc"
+        );
+    }
+
+    #[test]
+    fn authorization_header_wraps_raw_jwt() {
+        assert_eq!(
+            to_authorization_header("a.b.c"),
+            "Authorization: Bearer a.b.c"
+        );
+    }
+
+    #[test]
+    fn authorization_header_wraps_other_scheme() {
+        assert_eq!(
+            to_authorization_header("Basic xyz"),
+            "Authorization: Basic xyz"
+        );
     }
 
     fn resolve_config_value_for_test(
