@@ -6,17 +6,19 @@ import os
 import re
 import shutil
 import subprocess
-import tempfile
+import urllib.error
 import uuid as uuid_mod
 from typing import Optional
 
 from . import api_client
 from .exceptions import (
     InvalidProceedingNumberError,
+    KatastrError,
     ProceedingAlreadyTrackedError,
     ProceedingNotFoundError,
     ProceedingNotTrackedError,
 )
+from .fs import atomic_replace
 
 _USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "katastr", "rizeni")
@@ -107,21 +109,10 @@ def _load_state_file(dir_name: str) -> Optional[dict]:
 
 def _save_state(cislo_rizeni: str, state: dict) -> None:
     """Atomically write state.json (tmp file + rename)."""
-    d = os.path.join(APP_DIR, _dir_name(cislo_rizeni))
-    os.makedirs(d, exist_ok=True)
-    target = _state_path(cislo_rizeni)
-    fd, tmp = tempfile.mkstemp(prefix="state.", suffix=".json", dir=d)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2, ensure_ascii=False)
-            f.write("\n")
-        os.replace(tmp, target)
-    except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
+    def _write(f):
+        json.dump(state, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    atomic_replace(_state_path(cislo_rizeni), _write)
 
 
 def _load_state(cislo_rizeni: str) -> Optional[dict]:
@@ -312,14 +303,16 @@ def set_label(cislo_rizeni: str, label: str) -> dict:
 
 
 def remove(cislo_rizeni: str) -> None:
-    """Stop tracking a proceeding."""
+    """Stop tracking a proceeding. Rename-then-rmtree keeps a crash recoverable."""
     canonical = normalize_number(cislo_rizeni)
     if _load_state(canonical) is None:
         raise ProceedingNotTrackedError(
             f"Řízení {canonical} není sledováno."
         )
     target = os.path.join(APP_DIR, _dir_name(canonical))
-    shutil.rmtree(target)
+    trash = f"{target}.deleted-{uuid_mod.uuid4().hex}"
+    os.rename(target, trash)
+    shutil.rmtree(trash, ignore_errors=True)
 
 
 def show(cislo_rizeni: str) -> dict:
@@ -395,7 +388,7 @@ def check_one(cislo_rizeni: str) -> dict:
     parsed = parse_proceeding_number(canonical)
     try:
         data = fetch_from_cuzk(parsed)
-    except Exception as e:
+    except (KatastrError, urllib.error.URLError) as e:
         return {
             "cislo_rizeni": canonical,
             "ok": False,
@@ -434,7 +427,7 @@ def check_all() -> list:
     for state in list_all():
         try:
             results.append(check_one(state["cislo_rizeni"]))
-        except Exception as e:
+        except (KatastrError, urllib.error.URLError) as e:
             results.append(
                 {
                     "cislo_rizeni": state.get("cislo_rizeni", "?"),

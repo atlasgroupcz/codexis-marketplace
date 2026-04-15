@@ -5,37 +5,17 @@ shared with the legacy `kn` tool and the HTTP backend.
 """
 
 import os
-import tempfile
 import urllib.error
 import urllib.request
 
 from .exceptions import ApiKeyInvalidError, ApiHttpError, ApiNetworkError
+from .fs import atomic_replace
 
 _USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
 ENV_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "katastr")
 ENV_FILE = os.path.join(ENV_DIR, ".env")
 CUZK_BASE = "https://api-kn.cuzk.gov.cz"
 HEALTH_CHECK_PATH = "/api/v1/AplikacniSluzby/StavUctu"
-
-
-def _atomic_write(path: str, content: str, mode: int = 0o600) -> None:
-    """Write content to path atomically. Restricts file mode (default 0600)."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    fd, tmp = tempfile.mkstemp(
-        prefix=os.path.basename(path) + ".",
-        dir=os.path.dirname(path),
-    )
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(content)
-        os.chmod(tmp, mode)
-        os.replace(tmp, path)
-    except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
 
 
 def read_api_key() -> str:
@@ -54,7 +34,7 @@ def read_api_key() -> str:
 
 def write_api_key(key: str) -> None:
     """Write API key to disk atomically with mode 0600 (no validation)."""
-    _atomic_write(ENV_FILE, f"API_KEY={key}\n", mode=0o600)
+    atomic_replace(ENV_FILE, lambda f: f.write(f"API_KEY={key}\n"), mode=0o600)
 
 
 def mask_key(key: str) -> str:

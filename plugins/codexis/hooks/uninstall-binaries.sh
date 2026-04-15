@@ -19,3 +19,13 @@ remove_binary "cdx-link-rewriter"
 remove_binary "cdx-sledovane-dokumenty"
 remove_binary "cdx-sledovana-judikatura"
 remove_binary "cdxctl"
+
+# Remove the plugin-owned share directory (matches katastr's full-nuke pattern).
+SHARE_DIR="/usr/local/share/codexis"
+if [[ -d "${SHARE_DIR}" ]]; then
+  if [[ -w "${SHARE_DIR}" ]]; then
+    rm -rf "${SHARE_DIR}"
+  else
+    sudo rm -rf "${SHARE_DIR}"
+  fi
+fi

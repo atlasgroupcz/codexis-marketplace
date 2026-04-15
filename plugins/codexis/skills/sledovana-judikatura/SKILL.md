@@ -94,7 +94,7 @@ Notes store **user interests and report format preferences** — things that hel
 - "formát: tabulka + shrnutí pro advokáta, HR, EN management"
 - "jsem samostatný advokát, pracovní právo"
 
-Do NOT store email addresses or frequency in notes. Email and frequency belong in the automation (cron schedule + prompt).
+Do NOT store check frequency in notes — that belongs in the automation cron schedule.
 
 ## How It Works
 
@@ -227,7 +227,6 @@ When running a periodic check:
    - Generate report with `period_from` = last check, `period_to` = now
    - Save: `cdx-sledovana-judikatura save-report <uuid> --file report.json`
    - Update baseline if the judicial view has shifted: `cdx-sledovana-judikatura area set-baseline <uuid> <index> "<updated summary>"`
-   - Send email notification if configured
 5. If nothing new — do not create a report, but update the last check timestamp: `cdx-sledovana-judikatura touch <uuid>`
 
 ## Storage

@@ -12,6 +12,24 @@ A single tool — **`katastr-cli`** — wraps the entire ČÚZK REST API KN plus
 
 **IMPORTANT:** If `katastr-cli` outputs an `ERROR:` line, stop immediately and report it to the user. Do not retry blindly or guess workarounds.
 
+## Output Format
+
+`katastr-cli` has three kinds of output. Pick the right way to consume each — mixing them up (e.g. `grep` on JSON, or `jq` on plaintext) will fail.
+
+- **`tracking list`, `tracking check`** — human-readable plain text. Read it directly. **Do not parse with `sed` or `grep`** — the layout is for humans, not machines. Summarize what you see for the user.
+
+- **`tracking add`, `tracking confirm`, `tracking remove`, `tracking set-label`, `settings set`, `settings test`** — a single `OK: ...` line on success or `ERROR: ...` on failure. No parsing needed; the whole output is the status.
+
+- **`tracking show`, `api get <PATH>`** — structured JSON. Read it directly, or filter with `jq` for a specific field. Never with `sed`/`grep`.
+
+  ```bash
+  katastr-cli tracking show V-123/2026-701 | jq '.stav'
+  katastr-cli tracking show V-123/2026-701 | jq '.changes | map(select(.confirmed_on == null))'
+  katastr-cli api get "/api/v1/Parcely/Vyhledani?..." | jq '.data[0].id'
+  ```
+
+Errors from ČÚZK are forwarded verbatim in the `ERROR:` line (including the API response body), so if you see something like `HTTP 400 … Neznámý TypRizeni: PD`, treat the message as authoritative — don't retry the same parameter, adjust or ask the user.
+
 ## Three namespaces
 
 ```bash
