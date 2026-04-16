@@ -1,7 +1,7 @@
 ---
 uuid: e5c6de23-bcb5-48b7-a845-8d8c472ff220
 name: codexis-ucetnictvi
-version: 1.0.0
+version: 2.1.0
 description: Use when the user's question relates to Czech accounting, or when the answer may depend on an accounting rule even if framed around something else — účetnictví, účetní jednotka, závěrka, rozvaha, výsledovka, příloha závěrky, vybraná účetní jednotka, účetní období, kategorie účetních jednotek (mikro/malá/střední/velká), oceňování, odpisy, rezervy, opravné položky, inventarizace, daňová evidence, archivace, účetní doklad, kniha, zákon č. 563/1991 Sb., vyhláška 500/2002 / 501/2002 / 502/2002 / 504/2002 / 410/2009 Sb., ČÚS, IFRS, or any Czech accounting standard. Activate also when the user does not name účetnictví explicitly but their situation requires accounting treatment (reporting, valuation, period-end, capitalization vs. expense, recognition, record-keeping). Standalone authoritative skill — bundles general CODEXIS methodology with Czech accounting reasoning; no need to load general codexis.
 ---
 

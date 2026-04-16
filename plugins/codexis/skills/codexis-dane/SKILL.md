@@ -1,7 +1,7 @@
 ---
 uuid: f2c4412e-d6c4-462b-9ca5-0b94048be8cb
 name: codexis-dane
-version: 1.0.0
+version: 3.2.0
 description: Use when the user's question relates to Czech tax law, or when the answer may depend on a tax rule even if framed around something else — daň z příjmů (DPFO/DPPO), DPH, spotřební daně, daň silniční, daň z nemovitých věcí, daňový řád, daňové přiznání, srážková/zálohová daň, výdajový paušál, paušální daň, OSVČ, DPP/DPČ, plátce, poplatník, dvojí zdanění, prodej nemovitosti, prodej podílu, dědění, darování, příjmy ze zahraničí, kryptoměny, investiční příjmy, pronájem, honoráře, § ZDP/ZDPH/DŘ, zákon č. 586/1992 / 235/2004 / 280/2009 / 353/2003 / 338/1992 Sb., or any § in a Czech tax statute. Activate also when the user does not name a tax but their situation has tax consequences (income events, transactions, ownership changes, cross-border flows, business obligations). Standalone authoritative skill — bundles general CODEXIS methodology with Czech tax-law reasoning framework; no need to load the general codexis skill.
 ---
 
@@ -142,6 +142,39 @@ Každou daňovou otázku procházej těmito aspekty, ne vždy jsou všechny rele
 
 Hmotněprávní pravidlo (kdo, kolik, z čeho) odděluj od procesní povinnosti (kdo podává, kdy, jak). Neodvozuj jedno z druhého automaticky.
 
+## Procesní vrstva (daňový řád § 135–155)
+
+Kdykoli má odpověď praktický procesní rozměr (ať je hmotněprávní daň jakákoli), projdi krátce tyto úrovně:
+
+1. **Povinnost podat** tvrzení — zda hmotněprávní zákon ukládá podací povinnost a za jakých podmínek.
+2. **Fakultativní podání** — podle § 135 daňového řádu lze řádné daňové tvrzení podat i tehdy, když hmotněprávní povinnost nevznikla. Má smysl zmínit vždy, když má ekonomický efekt (vratka, uplatnění nároků).
+3. **Lhůty pro podání** — § 136 daňového řádu (základní lhůta, prodloužení, elektronická forma).
+4. **Přeplatek a jeho vrácení** — § 154 daňového řádu (co je přeplatek, započtení) a § 155 (žádost o vrácení, lhůty pro vydání).
+
+**Klíčové pravidlo:** Když odpověď končí závěrem „povinnost podat nevzniká", nezastav se tam. Připoj krátký dodatek: „Přiznání lze podat i dobrovolně podle § 135 daňového řádu, pokud by mohlo přinést uplatnění ročních nároků nebo vrácení přeplatku podle § 154–155 daňového řádu." Konkrétní výhodnost plyne z hmotněprávních nároků dané daně (u DPFO typicky § 15 / § 35ba / § 35c ZDP — viz sekce DPFO níže).
+
+### Upřesňující otázky (nekonkrétní dotaz)
+
+- „Chcete vědět jen to, zda máte povinnost podat přiznání, nebo i to, zda má smysl ho podat, i když povinnost nevznikne?" — otevře fakultativní větev.
+- „Máte za rok něco, co se uplatňuje až v přiznání nebo co by mohlo vést k vratce — typicky slevy, nezdanitelné části nebo zaplacené zálohy?" — otevírá přeplatek/nároky.
+- „Které daně se vás konkrétně týkají — příjmy FO, příjmy PO, DPH, nemovitosti, spotřební?" — otevírá volbu dílčího režimu.
+
+### cdx-cli recept pro DŘ
+
+```bash
+cdx-cli get cdx://cz_law/280/2009/versions                   # verze daňového řádu
+cdx-cli get 'cdx://doc/<verze>/text?part=paragraf135'        # řádné tvrzení
+cdx-cli get 'cdx://doc/<verze>/text?part=paragraf154'        # přeplatek
+```
+
+Při citaci statutární lhůty zachovej operativní kvalifikátory („nejpozději", „do", „po uplynutí") — jejich vypuštění mění právní význam.
+
+### Procesní anti-patterny
+
+- **Odpovědět binárně „povinnost je / není"** a přehlédnout, že procesně lze podat i dobrovolně.
+- **Slučovat roviny** — „kdo je subjekt / kdy se posuzuje / kdo je povinen jednat / do kdy" rozlišuj, neslévej je do jedné věty.
+- **Nepřepínat mezi hmotným a procesním zákonem** — hmotný zákon (ZDP/ZDPH) určuje *co* se zdaňuje; procesní (DŘ) určuje *jak* se tvrdí, v jaké lhůtě a jak vracet přeplatek. Kompletní odpověď propojí obojí.
+
 ## Pravidla právního uvažování
 
 Odpovídej nejdříve pozitivním operativním pravidlem pro přesně dotázanou věc. Výjimkami, negativním vymezením nebo carve-outy začínej jen tehdy, jsou-li samy předmětem dotazu.
@@ -204,5 +237,8 @@ Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj
 
 ## Related references
 
-- Deep-dive LAW change assessment: load `references/czech-law-change-assessment.md` (jen u dotazů na novely a version boundaries).
+Procesní vrstva (DŘ § 135–155) je inlined výše. Následující reference Read tool callem načti, když řešíš odpovídající doménu:
+
+- **Daň z příjmů fyzických osob (DPFO)** — `references/dane-prijmy-fo.md`. Použij, kdykoli uživatel řeší zdanění fyzické osoby (zaměstnání, OSVČ, nájem, investice, ostatní příjmy, paušální vs skutečné výdaje, slevy na dani a daňové zvýhodnění, daňové přiznání FO). Obsahuje 6-vrstvý workflow (klasifikace → výpočet → evidence → odčitatelné → sazba → slevy), mapu §§ ZDP a DPFO anti-patterny.
+- Deep-dive LAW change assessment: `references/czech-law-change-assessment.md` (jen u dotazů na novely a version boundaries).
 - Judikatura research: `references/judikatura.md` (rare primary source pro daně).
