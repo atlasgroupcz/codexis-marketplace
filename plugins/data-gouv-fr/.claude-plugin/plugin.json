@@ -1,0 +1,12 @@
+{
+  "name": "data-gouv-fr",
+  "version": "1.0.0",
+  "description": "French government open data (data.gouv.fr) — search and explore datasets, query tabular data, and discover APIs from the national Open Data platform",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["data-gouv", "france", "open-data", "government", "datasets", "api"],
+  "license": "MIT",
+  "skills": "./skills"
+}

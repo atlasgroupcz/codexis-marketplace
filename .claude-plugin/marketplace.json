@@ -75,6 +75,13 @@
       "description": "Austrian legal database (RIS) — federal and state legislation, court decisions, ministerial decrees, and consolidated law history",
       "source": "./plugins/cdx-at",
       "category": "legal"
+    },
+    {
+      "uuid": "e397b2f1-505e-4b2e-b6ed-df181fd2b9f2",
+      "name": "data-gouv-fr",
+      "description": "French government open data (data.gouv.fr) — search datasets, query tabular data, and discover public APIs from France's national Open Data platform",
+      "source": "./plugins/data-gouv-fr",
+      "category": "open-data"
     }
   ]
 }
