@@ -5,14 +5,14 @@ description: Use when the user asks to create, list, update, or delete custom/lo
 version: 1.4.0
 i18n:
   cs:
-    displayName: "Správa platformy (cdxctl)"
-    summary: "Správa vlastních agentů, dovedností, automatizací, marketplace a doplňků přes CLI `cdxctl`."
+    displayName: "Správa platformy"
+    summary: "Vytváření a správa vlastních agentů, dovedností, automatizací a doplňků přímo z konverzace."
   en:
-    displayName: "Platform Management (cdxctl)"
-    summary: "Manage custom agents, skills, automations, marketplaces, and plugins via the `cdxctl` CLI."
+    displayName: "Platform Management"
+    summary: "Create and manage custom agents, skills, automations, and plugins directly from chat."
   sk:
-    displayName: "Správa platformy (cdxctl)"
-    summary: "Správa vlastných agentov, zručností, automatizácií, marketplace a doplnkov cez CLI `cdxctl`."
+    displayName: "Správa platformy"
+    summary: "Vytváranie a správa vlastných agentov, zručností, automatizácií a doplnkov priamo z konverzácie."
 ---
 
 # cdxctl — Platform Management CLI
