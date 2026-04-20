@@ -297,7 +297,7 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
 
 
 def load_expected(plugin_dir: Path) -> dict | None:
-    expected_path = plugin_dir / "tests" / "expected.json"
+    expected_path = plugin_dir / "acceptance" / "expected.json"
     if expected_path.is_file():
         return json.loads(expected_path.read_text())
     return None
