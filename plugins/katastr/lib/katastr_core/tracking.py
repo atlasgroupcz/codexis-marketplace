@@ -18,7 +18,7 @@ from .exceptions import (
     ProceedingNotFoundError,
     ProceedingNotTrackedError,
 )
-from .fs import atomic_replace
+from .fs import atomic_write_json
 
 _USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "katastr", "rizeni")
@@ -109,10 +109,7 @@ def _load_state_file(dir_name: str) -> Optional[dict]:
 
 def _save_state(cislo_rizeni: str, state: dict) -> None:
     """Atomically write state.json (tmp file + rename)."""
-    def _write(f):
-        json.dump(state, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-    atomic_replace(_state_path(cislo_rizeni), _write)
+    atomic_write_json(_state_path(cislo_rizeni), state)
 
 
 def _load_state(cislo_rizeni: str) -> Optional[dict]:
@@ -179,12 +176,8 @@ def _detect_changes(old_state: dict, new_data: dict) -> Optional[dict]:
 # ── automation ───────────────────────────────────────────────────────────────
 
 
-def ensure_automation() -> bool:
-    """Ensure the central cron automation exists. Idempotent.
-
-    Always checks via cdxctl whether the automation exists and creates it
-    if missing. Returns True if newly created, False otherwise.
-    """
+def ensure_automation() -> None:
+    """Ensure the central cron automation exists. Idempotent, non-fatal on failure."""
     try:
         result = subprocess.run(
             [CDXCTL_BIN, "automation", "list"],
@@ -193,23 +186,21 @@ def ensure_automation() -> bool:
             timeout=15,
         )
         if result.returncode != 0:
-            return False
+            return
         automations = json.loads(result.stdout)
     except Exception:
-        return False  # non-fatal — automation is a convenience
+        return
 
     if not isinstance(automations, list):
-        return False
+        return
 
-    already_exists = any(
-        isinstance(a, dict)
-        and a.get("type") == "COMMAND"
-        and a.get("command") == AUTOMATION_COMMAND
-        for a in automations
-    )
-
-    if already_exists:
-        return False
+    for a in automations:
+        if (
+            isinstance(a, dict)
+            and a.get("type") == "COMMAND"
+            and a.get("command") == AUTOMATION_COMMAND
+        ):
+            return
 
     try:
         subprocess.run(
@@ -230,9 +221,8 @@ def ensure_automation() -> bool:
             text=True,
             timeout=15,
         )
-        return True
     except Exception:
-        return False
+        return
 
 
 # ── high-level operations ────────────────────────────────────────────────────

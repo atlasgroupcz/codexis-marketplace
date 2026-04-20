@@ -8,11 +8,20 @@ Directory layout under APP_DIR:
             <report_id>.json
 """
 
+import datetime
 import json
 import os
 import tempfile
 
-APP_DIR = os.path.expanduser("~/.cdx/apps/sledovana-judikatura")
+_USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
+APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "sledovana-judikatura")
+
+
+def now_utc():
+    """Current UTC timestamp in ISO 8601 'Z' form."""
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
 
 
 # ── atomic writes ────────────────────────────────────────────────────────────

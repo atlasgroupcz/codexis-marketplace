@@ -5,7 +5,6 @@ paths, uuid resolution) lives in state.py so this module focuses on business
 rules and sequencing.
 """
 
-import datetime
 import json
 import os
 import shutil
@@ -22,14 +21,9 @@ from .exceptions import (
     ReportSourceError,
     TopicNotFoundError,
 )
+from .state import now_utc
 
 CDXCTL_BIN = "cdxctl"
-
-
-def now_utc():
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
 
 
 def _require_topic(partial_uuid):
@@ -269,7 +263,7 @@ def save_report(partial_uuid, file_path=None, stream=None):
 
     report_id = report.get("report_id")
     if not report_id:
-        report_id = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+        report_id = now_utc()[:10]
         report["report_id"] = report_id
 
     state.save_report(full_uuid, report_id, report)

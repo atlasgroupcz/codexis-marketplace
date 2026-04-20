@@ -1,5 +1,6 @@
 """Filesystem utilities shared between settings (API key) and tracking (state)."""
 
+import json
 import os
 import tempfile
 
@@ -26,3 +27,11 @@ def atomic_replace(path, write_fn, mode=None):
         except OSError:
             pass
         raise
+
+
+def atomic_write_json(path, data):
+    """Atomically write `data` as pretty-printed JSON to `path`."""
+    def _write(f):
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    atomic_replace(path, _write)
