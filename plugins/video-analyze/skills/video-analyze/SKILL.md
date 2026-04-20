@@ -8,6 +8,16 @@ description: >-
   Triggers on "analyze video", "what is in this video", "describe video",
   "video summary", "watch this video", "transcribe video".
 allowed-tools: shell
+i18n:
+  cs:
+    displayName: "Analýza videí"
+    summary: "Analýza obsahu videí (MP4, YouTube a další) pomocí multimodálního modelu Gemini."
+  en:
+    displayName: "Video Analysis"
+    summary: "Analyze video content (MP4, YouTube and more) using Gemini multimodal models."
+  sk:
+    displayName: "Analýza videí"
+    summary: "Analýza obsahu videí (MP4, YouTube a ďalšie) pomocou multimodálneho modelu Gemini."
 ---
 
 # Video & Audio Analysis

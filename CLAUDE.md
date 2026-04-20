@@ -122,6 +122,59 @@ Example (from codexis plugin):
 "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cli\" /usr/local/bin/cdx-cli && sudo cp \"${PLUGIN_DIR}/bin/cdx-link-rewriter\" /usr/local/bin/cdx-link-rewriter && sudo cp \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" /usr/local/bin/cdx-sledovane-dokumenty && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl"
 ```
 
+## Localization (i18n)
+
+Every `marketplace.json` / `plugin.json` / `component.json` and every top-level
+`SKILL.md` frontmatter carries an `i18n` block with localized display strings
+for the CDX daemon UI. Technical identifiers (`name`, `id`) stay
+kebab-case and are **never** translated — only user-facing strings are.
+
+### JSON manifests
+
+```json
+{
+  "name": "codexis",
+  "description": "...",
+  "tags": ["legal", "czech"],
+  "i18n": {
+    "cs": {
+      "displayName": "CODEXIS — Česká legislativa",
+      "description": "Přístup k databázi CODEXIS...",
+      "tagLabels": { "legal": "Právo", "czech": "Česko" }
+    },
+    "en": { "displayName": "...", "description": "...", "tagLabels": { ... } },
+    "sk": { "displayName": "...", "description": "...", "tagLabels": { ... } }
+  }
+}
+```
+
+For `component.json` the same pattern applies with `displayName` + `description`.
+
+### Markdown frontmatter (`SKILL.md`, agents)
+
+The top-level `description` stays as the **LLM trigger text** — never translate it.
+User-facing short text lives under `i18n.<lang>.summary`.
+
+```yaml
+---
+name: codexis
+description: "This skill should be invoked whenever user needs Czech legal research..."   # AI trigger
+version: 2.1.0
+i18n:
+  cs:
+    displayName: "CODEXIS — Legislativa ČR"
+    summary: "Vyhledávání v české a evropské legislativě."
+  en:
+    displayName: "CODEXIS — Czech Legislation"
+    summary: "Search Czech and EU legislation."
+  sk:
+    displayName: "CODEXIS — Česká legislatíva"
+    summary: "Vyhľadávanie v českej a európskej legislatíve."
+---
+```
+
+Supported languages: `cs`, `en`, `sk`. Fallback chain in the daemon: `i18n[current] → i18n.en → description` (or technical `name` for titles).
+
 ## A2UI Visualization Schema
 
 Visualization skills use the A2UI schema format:
