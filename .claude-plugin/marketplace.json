@@ -7,16 +7,16 @@
   },
   "i18n": {
     "cs": {
-      "displayName": "Marketplace ATLAS GROUP",
-      "description": "Oficiální marketplace doplňků ATLAS GROUP — právní databáze, státní registry, zpracování dokumentů a vizualizace dat."
+      "displayName": "Doplňky ATLAS GROUP",
+      "description": "Oficiální sbírka doplňků ATLAS GROUP — právní databáze, státní registry, zpracování dokumentů a vizualizace dat."
     },
     "en": {
       "displayName": "ATLAS GROUP Marketplace",
       "description": "Official ATLAS GROUP plugin marketplace — legal databases, public registries, document processing, and data visualization."
     },
     "sk": {
-      "displayName": "Marketplace ATLAS GROUP",
-      "description": "Oficiálny marketplace doplnkov ATLAS GROUP — právne databázy, štátne registre, spracovanie dokumentov a vizualizácia dát."
+      "displayName": "Doplnky ATLAS GROUP",
+      "description": "Oficiálna zbierka doplnkov ATLAS GROUP — právne databázy, štátne registre, spracovanie dokumentov a vizualizácia dát."
     }
   },
   "plugins": [
@@ -28,18 +28,18 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "CODEXIS — Česká legislativa",
-          "description": "Přístup k databázi CODEXIS — česká a evropská legislativa, judikatura, odborná literatura a vzory smluv.",
+          "displayName": "CODEXIS — Právní databáze",
+          "description": "Přístup k databázi CODEXIS — česká, slovenská a evropská legislativa, judikatura, odborná literatura a vzory smluv.",
           "tagLabels": { "legal": "Právo", "czech": "Česko", "legislation": "Legislativa", "case-law": "Judikatura", "european": "Evropa" }
         },
         "en": {
-          "displayName": "CODEXIS — Czech Legislation",
-          "description": "Access to the CODEXIS database — Czech and European legislation, case law, legal literature, and contract templates.",
+          "displayName": "CODEXIS — Legal Database",
+          "description": "Access to the CODEXIS database — Czech, Slovak, and EU legislation, case law, legal literature, and contract templates.",
           "tagLabels": { "legal": "Law", "czech": "Czech Republic", "legislation": "Legislation", "case-law": "Case Law", "european": "European Union" }
         },
         "sk": {
-          "displayName": "CODEXIS — Česká legislatíva",
-          "description": "Prístup k databáze CODEXIS — česká a európska legislatíva, judikatúra, odborná literatúra a vzory zmlúv.",
+          "displayName": "CODEXIS — Právna databáza",
+          "description": "Prístup k databáze CODEXIS — česká, slovenská a európska legislatíva, judikatúra, odborná literatúra a vzory zmlúv.",
           "tagLabels": { "legal": "Právo", "czech": "Česko", "legislation": "Legislatíva", "case-law": "Judikatúra", "european": "Európa" }
         }
       }
