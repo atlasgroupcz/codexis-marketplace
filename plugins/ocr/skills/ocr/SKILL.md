@@ -8,6 +8,16 @@ description: >-
   Triggers on "ocr", "convert to markdown", "read PDF", "extract text from document",
   "convert document", "read this file" (for binary files).
 allowed-tools: shell
+i18n:
+  cs:
+    displayName: "OCR dokumentů"
+    summary: "Převod dokumentů (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pro další AI zpracování."
+  en:
+    displayName: "Document OCR"
+    summary: "Convert documents (PDF, DOCX, PPTX, images, ZIP) to Markdown for downstream AI processing."
+  sk:
+    displayName: "OCR dokumentov"
+    summary: "Prevod dokumentov (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pre ďalšie AI spracovanie."
 ---
 
 # OCR — Document to Markdown Conversion

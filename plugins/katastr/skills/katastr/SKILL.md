@@ -2,6 +2,16 @@
 uuid: 6fb435d1-5a14-4a9a-88bc-f0e3a3cd03c2
 name: katastr
 description: Český katastr nemovitostí (ČÚZK REST API KN). Use for both ad-hoc lookups (parcels, buildings, units, addresses, owners via LV, plomby/řízení signals) and tracked monitoring of cadastral proceedings (vklad/záznam status with automatic change detection). Triggers on "katastr", "parcela", "stavba", "list vlastnictví", "LV", "vklad", "záznam", "plomba", "řízení katastr", "sleduj řízení", "hlídej vklad".
+i18n:
+  cs:
+    displayName: "Katastr nemovitostí ČR"
+    summary: "Vyhledávání parcel, staveb, listů vlastnictví a sledování řízení (vklad/záznam) v katastru ČR."
+  en:
+    displayName: "Czech Property Registry"
+    summary: "Look up parcels, buildings, title deeds and track cadastral proceedings in the Czech Property Registry."
+  sk:
+    displayName: "Kataster nehnuteľností ČR"
+    summary: "Vyhľadávanie parciel, stavieb, listov vlastníctva a sledovanie konaní (vklad/záznam) v katastri ČR."
 ---
 
 # Katastr nemovitostí ČR

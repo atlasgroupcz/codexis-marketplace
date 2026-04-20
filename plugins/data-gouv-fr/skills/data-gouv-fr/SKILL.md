@@ -3,6 +3,16 @@ uuid: 74ddfc4a-3218-4262-9fd5-73d5ec8c886b
 name: data-gouv-fr
 description: This skill should be invoked whenever the user needs French government open data — searching datasets, exploring resources, querying tabular data, or discovering public APIs from data.gouv.fr, the French national Open Data platform.
 version: 1.0.0
+i18n:
+  cs:
+    displayName: "Francouzská otevřená data"
+    summary: "Vyhledávání datasetů, dotazy nad tabulkami a veřejné API z francouzského portálu data.gouv.fr."
+  en:
+    displayName: "French Open Data"
+    summary: "Search datasets, query tabular data and discover public APIs on France's data.gouv.fr portal."
+  sk:
+    displayName: "Francúzske otvorené dáta"
+    summary: "Vyhľadávanie datasetov, dopyty nad tabuľkami a verejné API z francúzskeho portálu data.gouv.fr."
 ---
 
 # French Government Open Data (data.gouv.fr)

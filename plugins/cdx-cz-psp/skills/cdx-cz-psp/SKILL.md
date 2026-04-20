@@ -3,6 +3,16 @@ uuid: 59dbdfcc-047f-41fd-97f0-fc958c85cf0c
 name: cdx-cz-psp
 description: This skill should be invoked whenever user needs Czech parliamentary information — legislative proposals (bills, amendments), parliamentary documents (reports, interpellations, EU docs) from the Czech Parliament (PSP) system.
 version: 2.1.0
+i18n:
+  cs:
+    displayName: "Poslanecká sněmovna ČR"
+    summary: "Parlamentní tisky, interpelace, evropské dokumenty a sledování legislativních návrhů v PSP ČR."
+  en:
+    displayName: "Czech Parliament"
+    summary: "Parliamentary papers, interpellations, EU documents and legislative bill tracking from the Czech Chamber of Deputies."
+  sk:
+    displayName: "Poslanecká snemovňa ČR"
+    summary: "Parlamentné tlače, interpelácie, európske dokumenty a sledovanie legislatívnych návrhov v PSP ČR."
 ---
 
 # Czech Parliament Database (cdx-cz-psp)

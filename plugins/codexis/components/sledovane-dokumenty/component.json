@@ -5,5 +5,19 @@
   "route": "sledovane-dokumenty",
   "description": "Sledujte zmeny legislativy a souvisejicich dokumentu podle CODEXIS ID.",
   "entrypoint": "index.html",
-  "binary": "sledovane"
+  "binary": "sledovane",
+  "i18n": {
+    "cs": {
+      "displayName": "Sledované dokumenty",
+      "description": "Sledujte změny legislativy a souvisejících dokumentů podle CODEXIS ID."
+    },
+    "en": {
+      "displayName": "Document Tracker",
+      "description": "Track changes in legislation and related documents by CODEXIS ID."
+    },
+    "sk": {
+      "displayName": "Sledované dokumenty",
+      "description": "Sledujte zmeny legislatívy a súvisiacich dokumentov podľa CODEXIS ID."
+    }
+  }
 }

@@ -2,6 +2,16 @@
 uuid: f2c4412e-d6c4-462b-9ca5-0b94048be8cb
 name: codexis-dane
 version: 3.2.0
+i18n:
+  cs:
+    displayName: "CODEXIS — Daně ČR"
+    summary: "Česká daňová legislativa a praxe — DPH, daň z příjmů, daňový řád, vyhlášky a judikatura."
+  en:
+    displayName: "CODEXIS — Czech Tax Law"
+    summary: "Czech tax legislation and practice — VAT, income tax, tax code, decrees, and case law."
+  sk:
+    displayName: "CODEXIS — Dane ČR"
+    summary: "Česká daňová legislatíva a prax — DPH, daň z príjmov, daňový poriadok, vyhlášky a judikatúra."
 description: Use when the user's question relates to Czech tax law, or when the answer may depend on a tax rule even if framed around something else — daň z příjmů (DPFO/DPPO), DPH, spotřební daně, daň silniční, daň z nemovitých věcí, daňový řád, daňové přiznání, srážková/zálohová daň, výdajový paušál, paušální daň, OSVČ, DPP/DPČ, plátce, poplatník, dvojí zdanění, prodej nemovitosti, prodej podílu, dědění, darování, příjmy ze zahraničí, kryptoměny, investiční příjmy, pronájem, honoráře, § ZDP/ZDPH/DŘ, zákon č. 586/1992 / 235/2004 / 280/2009 / 353/2003 / 338/1992 Sb., or any § in a Czech tax statute. Activate also when the user does not name a tax but their situation has tax consequences (income events, transactions, ownership changes, cross-border flows, business obligations). Standalone authoritative skill — bundles general CODEXIS methodology with Czech tax-law reasoning framework; no need to load the general codexis skill.
 ---
 
