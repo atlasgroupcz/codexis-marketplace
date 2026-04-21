@@ -147,3 +147,28 @@ def run_step_assertions(expect: dict, result: dict, captured: dict) -> None:
         _assert_tool_calls(expect["tool_calls"], result["tool_calls"], captured)
     _assert_output(expect, result["text"], captured)
     # capture and judge are handled by the caller (Task 8, Task 9)
+
+
+from jsonpath_ng.ext import parse as _jp_parse
+
+
+def apply_captures(captures: dict | None, result: dict) -> dict:
+    """Evaluate jsonpath expressions against the step result and return {name: value}.
+
+    Raises AssertionFailure if any jsonpath resolves to nothing.
+    """
+    if not captures:
+        return {}
+    out: dict = {}
+    for name, path in captures.items():
+        try:
+            expr = _jp_parse(path)
+        except Exception as e:
+            raise AssertionFailure(f"capture {name!r}: invalid jsonpath {path!r}: {e}") from e
+        matches = [m.value for m in expr.find(result)]
+        if not matches:
+            raise AssertionFailure(
+                f"capture {name!r}: jsonpath {path!r} did not resolve against result"
+            )
+        out[name] = matches[0]
+    return out

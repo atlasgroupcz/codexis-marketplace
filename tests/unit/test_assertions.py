@@ -161,3 +161,37 @@ def test_tool_calls_substitutes_vars_in_input_contains():
                              "input": {"id": "auto_7"}, "output": {}}]),
         {"auto_id": "auto_7"},
     )
+
+
+from _assertions import apply_captures
+
+
+def test_capture_extracts_from_tool_output():
+    captured = apply_captures(
+        {"aid": "$.tool_calls[0].output.id"},
+        _result(tool_calls=[{"name": "x", "input": {}, "output": {"id": "auto_9"}}]),
+    )
+    assert captured == {"aid": "auto_9"}
+
+
+def test_capture_multiple_values():
+    captured = apply_captures(
+        {"aid": "$.tool_calls[0].output.id", "first_text": "$.text"},
+        _result(text="hello", tool_calls=[
+            {"name": "x", "input": {}, "output": {"id": "auto_9"}},
+        ]),
+    )
+    assert captured == {"aid": "auto_9", "first_text": "hello"}
+
+
+def test_capture_unresolved_path_raises():
+    with pytest.raises(AssertionFailure, match="did not resolve"):
+        apply_captures(
+            {"aid": "$.tool_calls[5].output.id"},
+            _result(tool_calls=[]),
+        )
+
+
+def test_capture_no_captures_returns_empty():
+    assert apply_captures(None, _result(text="x")) == {}
+    assert apply_captures({}, _result(text="x")) == {}
