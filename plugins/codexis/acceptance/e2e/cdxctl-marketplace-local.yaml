@@ -1,23 +1,25 @@
 name: cdxctl-marketplace-local
 description: Verify cdxctl can add a LOCAL marketplace (directory on disk) and remove it.
 
-# Covers `cdxctl marketplace add --source-type local` and `marketplace remove`.
-# Sidesteps the runner's own marketplace (codexis-plugins from GIT) by using a
-# different marketplace name + local source. Uses a scratch directory in /tmp.
+# The runner uploads a minimal marketplace folder into the VM before the chat
+# starts, so the test itself is strictly about cdxctl — not about having the
+# AI create setup files. See `setup:` below.
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-mkt-{{ run_id }}
+      files:
+        - path: .claude-plugin/marketplace.json
+          content: |
+            {"name": "ee-mkt-{{ run_id }}", "uuid": "00000000-0000-0000-0000-{{ run_id }}{{ run_id }}{{ run_id }}", "plugins": []}
 
 steps:
-  - prompt: |
-      Create a minimal local marketplace inside the VM:
-        1. mkdir -p /tmp/ee-mkt-{{ run_id }}/.claude-plugin
-        2. Write this JSON to /tmp/ee-mkt-{{ run_id }}/.claude-plugin/marketplace.json:
-             {"name": "ee-mkt-{{ run_id }}", "uuid": "00000000-0000-0000-0000-{{ run_id }}{{ run_id }}{{ run_id }}", "plugins": []}
-        3. Then run:  cdxctl marketplace add --source /tmp/ee-mkt-{{ run_id }} --source-type local
-      Do all three steps without asking for confirmation.
+  - prompt: "Using cdxctl, add the local marketplace located at /home/codexis/ee-mkt-{{ run_id }} (use --source-type local)."
     expect:
       tool_call:
         name: shell
-        input_matches: "marketplace add"
-      tool_calls_max: 5   # mkdir + write json + cdxctl add
+        input_matches: "marketplace add.{0,200}--source-type local"
+      tool_calls_max: 3
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"

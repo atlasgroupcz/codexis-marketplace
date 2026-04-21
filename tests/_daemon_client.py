@@ -6,6 +6,7 @@ import base64
 import json
 import time
 import urllib.request
+import uuid
 from typing import Any
 
 
@@ -232,6 +233,56 @@ class DaemonClient:
     def get_tool_chain(self, node_id: str) -> dict:
         data = self.gql_data(_Q_GET_TOOL_CHAIN, {"id": node_id})
         return data["node"] or {}
+
+    # -------------------------------------------------- file upload
+    def upload_folder(self, destination: str,
+                      files: list[tuple[str, bytes | str]]) -> dict:
+        """POST /rest/files/upload-folder — places files preserving folder structure.
+
+        `destination` is a path inside the VM (e.g. '/home/codexis/ee-mkt-xyz').
+        `files` is a list of (relative_path, content) — content can be bytes
+        or str. Uses a hand-rolled multipart/form-data body so the test suite
+        doesn't pick up `requests` as a dependency.
+        """
+        boundary = "----ee2e" + uuid.uuid4().hex
+        body = bytearray()
+
+        def _field(name: str, value: str) -> None:
+            body.extend(f"--{boundary}\r\n".encode())
+            body.extend(
+                f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode()
+            )
+            body.extend(value.encode())
+            body.extend(b"\r\n")
+
+        def _file(name: str, filename: str, content: bytes) -> None:
+            body.extend(f"--{boundary}\r\n".encode())
+            body.extend(
+                f'Content-Disposition: form-data; name="{name}"; '
+                f'filename="{filename}"\r\n'.encode()
+            )
+            body.extend(b"Content-Type: application/octet-stream\r\n\r\n")
+            body.extend(content)
+            body.extend(b"\r\n")
+
+        _field("destination", destination)
+        for rel, content in files:
+            if isinstance(content, str):
+                content = content.encode()
+            _file("files", rel, content)
+            _field("relativePaths", rel)
+        body.extend(f"--{boundary}--\r\n".encode())
+
+        req = urllib.request.Request(
+            f"{self.base_url}/rest/files/upload-folder",
+            data=bytes(body),
+            headers={
+                "Authorization": self.auth_header,
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return json.loads(resp.read())
 
     def run_single_shot_chat(self, prompt: str, model: str | None = None,
                              poll_interval_s: float = 2.0,

@@ -139,6 +139,30 @@ def remove_marketplace(client: DaemonClient, mkt_node_id: str, r: Results) -> No
 
 
 # ---------------------------------------------------------------------------
+# Optional setup block: runner places fixtures/folders before chat starts.
+# Supported kinds:
+#   upload:
+#     destination: <vm path>
+#     files:
+#       - path: <relative/path>
+#         content: <string>     # literal content (templated with captured vars)
+# ---------------------------------------------------------------------------
+def _run_setup(client: DaemonClient, setup: list[dict], captured: dict) -> None:
+    from _assertions import substitute
+    for i, action in enumerate(setup):
+        if "upload" not in action:
+            raise ValueError(f"setup[{i}]: unknown kind, expected 'upload', got {list(action)!r}")
+        block = action["upload"]
+        destination = substitute(block["destination"], captured)
+        files = []
+        for f in block.get("files") or []:
+            rel = substitute(f["path"], captured)
+            content = substitute(f["content"], captured)
+            files.append((rel, content))
+        client.upload_folder(destination, files)
+
+
+# ---------------------------------------------------------------------------
 # One YAML = one multi-turn chat test
 # ---------------------------------------------------------------------------
 def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
@@ -156,6 +180,22 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
         r.fail(f"{plugin_name}/{test_name}: no steps defined")
         return
 
+    # All-letters run_id: some daemon validators (e.g. agent/skill names) only allow
+    # lowercase letters and hyphens, so avoid digits.
+    captured: dict = {
+        "run_id": "".join(secrets.choice("abcdefghijklmnop") for _ in range(4)),
+        **builtin_vars,
+    }
+
+    # Run optional `setup:` block BEFORE the chat starts. The runner (not the AI)
+    # puts fixture files/folders into place so each step can focus on actually
+    # testing the plugin rather than on scaffolding. See _run_setup() below.
+    try:
+        _run_setup(client, spec.get("setup") or [], captured)
+    except Exception as e:
+        r.fail(f"{plugin_name}/{test_name}: setup failed: {e}")
+        return
+
     runner = ChatRunner(
         client,
         poll_interval_s=args.poll_interval_s,
@@ -163,12 +203,6 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
     )
     runner.start()
 
-    # All-letters run_id: some daemon validators (e.g. agent/skill names) only allow
-    # lowercase letters and hyphens, so avoid digits.
-    captured: dict = {
-        "run_id": "".join(secrets.choice("abcdefghijklmnop") for _ in range(4)),
-        **builtin_vars,
-    }
     recorded: list[dict] = []
     failure: str | None = None
 
