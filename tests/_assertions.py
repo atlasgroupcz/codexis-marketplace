@@ -73,3 +73,77 @@ def matches_subset(expected: Any, actual: Any, path: str = "") -> str | None:
     if expected == actual:
         return None
     return f"at {path or '<root>'}: value mismatch — expected {expected!r}, got {actual!r}"
+
+
+class AssertionFailure(AssertionError):
+    """Rich test failure raised by run_step_assertions."""
+
+
+def _substitute_deep(value: Any, vars_: dict) -> Any:
+    """Recursively substitute {{var}} in string leaves of a nested structure."""
+    if isinstance(value, str):
+        return substitute(value, vars_)
+    if isinstance(value, dict):
+        return {k: _substitute_deep(v, vars_) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_substitute_deep(v, vars_) for v in value]
+    return value
+
+
+def _assert_output(expect: dict, text: str, vars_: dict) -> None:
+    if "output_contains" in expect:
+        needle = substitute(expect["output_contains"], vars_)
+        if needle not in text:
+            raise AssertionFailure(
+                f"output_contains failed: {needle!r} not in {text!r}"
+            )
+    if "output_not_contains" in expect:
+        needle = substitute(expect["output_not_contains"], vars_)
+        if needle in text:
+            raise AssertionFailure(
+                f"output_not_contains failed: {needle!r} IS in {text!r}"
+            )
+    if "output_matches" in expect:
+        pattern = substitute(expect["output_matches"], vars_)
+        if not re.search(pattern, text):
+            raise AssertionFailure(
+                f"output_matches failed: /{pattern}/ did not match {text!r}"
+            )
+
+
+def _assert_tool_calls(expected_list: list[dict], actual_calls: list[dict], vars_: dict) -> None:
+    # Empty list = strict "no tool calls"
+    if not expected_list:
+        if actual_calls:
+            names = [c.get("name") for c in actual_calls]
+            raise AssertionFailure(f"expected no tool calls, got {names}")
+        return
+
+    cursor = 0
+    for i, expected in enumerate(expected_list):
+        want_name = expected.get("name")
+        want_input = _substitute_deep(expected.get("input_contains", {}), vars_)
+        matched_at = None
+        for j in range(cursor, len(actual_calls)):
+            call = actual_calls[j]
+            if call.get("name") != want_name:
+                continue
+            err = matches_subset(want_input, call.get("input") or {})
+            if err is None:
+                matched_at = j
+                break
+        if matched_at is None:
+            raise AssertionFailure(
+                f"tool_calls[{i}] ({want_name}): no matching call found "
+                f"in actual calls from index {cursor} onward. "
+                f"Actual: {actual_calls!r}"
+            )
+        cursor = matched_at + 1
+
+
+def run_step_assertions(expect: dict, result: dict, captured: dict) -> None:
+    """Run every assertion declared in `expect` against the parsed step `result`."""
+    if "tool_calls" in expect:
+        _assert_tool_calls(expect["tool_calls"], result["tool_calls"], captured)
+    _assert_output(expect, result["text"], captured)
+    # capture and judge are handled by the caller (Task 8, Task 9)
