@@ -69,7 +69,7 @@ cdxctl automation trigger <id>
 cdxctl marketplace list
 
 # Add a git marketplace
-cdxctl marketplace add --source "https://github.com/org/repo" --source-type git --ref "main"
+cdxctl marketplace add --source "https://github.com/org/repo" --source-type git --git-ref "main"
 
 # Add a local marketplace
 cdxctl marketplace add --source "/path/to/local/dir" --source-type local

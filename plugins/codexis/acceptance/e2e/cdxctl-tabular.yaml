@@ -4,24 +4,19 @@ description: Verify cdxctl can define columns, run tabular extraction against fi
 # Tabular extraction workflow:
 #   DRAFT state → add columns → start → RUNNING → DONE → rows with cell values
 #
-# This test uses ONE small file and ONE column so the backend AI extraction
-# completes in well under two minutes. Still costs real LLM tokens on the
-# daemon side — this is the most expensive cdxctl test.
+# Uses ONE small file and ONE column so the backend AI extraction finishes
+# quickly. The runner uploads the fixture file before the chat starts so
+# the test focuses strictly on cdxctl tabular commands.
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-tab-{{ run_id }}
+      files:
+        - path: invoice.txt
+          content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
 
 steps:
-  - prompt: |
-      Set up a scratch folder for tabular extraction:
-        1. mkdir -p /tmp/ee-tab-{{ run_id }}
-        2. Write the following content to /tmp/ee-tab-{{ run_id }}/invoice.txt
-           (exactly this text, single line):
-             Customer: John Doe. Invoice total: $250. Paid in full.
-    expect:
-      tool_call:
-        name: shell
-        input_matches: "ee-tab-{{ run_id }}"
-      tool_calls_max: 3     # mkdir + write file
-
-  - prompt: "Using cdxctl, add a column to the tabular extraction at /tmp/ee-tab-{{ run_id }}: name='customer', col-type=text, description='The customer full name from the invoice'."
+  - prompt: "Using cdxctl, add a column to the tabular extraction at /home/codexis/ee-tab-{{ run_id }}: name='customer', col-type=text, description='The customer full name from the invoice'."
     expect:
       tool_call:
         name: shell
@@ -30,11 +25,11 @@ steps:
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
         variables:
-          f: "/tmp/ee-tab-{{ run_id }}"
+          f: "/home/codexis/ee-tab-{{ run_id }}"
         jsonpath: "$.tabularExtraction.columns[*].name"
         contains: "customer"
 
-  - prompt: "Using cdxctl, start the tabular extraction on /tmp/ee-tab-{{ run_id }}, then poll `cdxctl tabular status /tmp/ee-tab-{{ run_id }}` every ~5 seconds until the status is DONE (or 120 seconds elapse). Tell me when it's done."
+  - prompt: "Using cdxctl, start the tabular extraction on /home/codexis/ee-tab-{{ run_id }}, then poll `cdxctl tabular status /home/codexis/ee-tab-{{ run_id }}` every ~5 seconds until the status is DONE (or 120 seconds elapse). Tell me when it's done."
     expect:
       tool_call:
         name: shell
@@ -43,11 +38,11 @@ steps:
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
         variables:
-          f: "/tmp/ee-tab-{{ run_id }}"
+          f: "/home/codexis/ee-tab-{{ run_id }}"
         jsonpath: "$.tabularExtraction.status"
         equals: "DONE"
 
-  - prompt: "Using cdxctl, fetch the tabular results for /tmp/ee-tab-{{ run_id }} and tell me the extracted customer value."
+  - prompt: "Using cdxctl, fetch the tabular results for /home/codexis/ee-tab-{{ run_id }} and tell me the extracted customer value."
     expect:
       tool_call:
         name: shell
@@ -58,6 +53,6 @@ steps:
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { rows { fileName status } } }'
         variables:
-          f: "/tmp/ee-tab-{{ run_id }}"
+          f: "/home/codexis/ee-tab-{{ run_id }}"
         jsonpath: "$.tabularExtraction.rows[*].status"
         matches: "DONE"
