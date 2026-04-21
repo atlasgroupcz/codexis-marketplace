@@ -1,0 +1,62 @@
+name: cdxctl-automation-update
+description: Verify cdxctl can partially update an existing automation's fields.
+
+steps:
+  - prompt: "Using cdxctl, create an automation with title e2e-upd-{{ run_id }}, cron '0 0 1 1 *', and command 'echo initial'. Just create it."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "automation create-command"
+      response:
+        matches: "(?i)created|added"
+      state:
+        graphql: "{ automations { title cron command enabled } }"
+        jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          cron: "0 0 1 1 *"
+          command: "echo initial"
+          enabled: true
+
+  - prompt: "Using cdxctl, update the automation titled e2e-upd-{{ run_id }}: change the title to e2e-upd-{{ run_id }}-v2 and the cron to '0 0 2 2 *'. Find its ID first if you need to."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "automation update"
+      response:
+        matches: "(?i)updated|changed|modified"
+      state:
+        - graphql: "{ automations { title cron command enabled } }"
+          jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')]"
+          count: 1
+          matches_subset:
+            cron: "0 0 2 2 *"
+            command: "echo initial"
+            enabled: true
+        - graphql: "{ automations { title } }"
+          jsonpath: "$.automations[*].title"
+          not_contains: "e2e-upd-{{ run_id }}"   # old title is gone
+
+  - prompt: "Using cdxctl, disable (enabled=false) the automation titled e2e-upd-{{ run_id }}-v2."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "automation update.{0,500}enabled"
+      response:
+        matches: "(?i)disabled|updated|enabled: false"
+      state:
+        graphql: "{ automations { title enabled } }"
+        jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')].enabled"
+        equals: false
+
+  - prompt: "Using cdxctl, delete the automation titled e2e-upd-{{ run_id }}-v2. Find its ID first."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "automation delete"
+      response:
+        matches: "(?i)delet|remov"
+      state:
+        graphql: "{ automations { title } }"
+        jsonpath: "$.automations[*].title"
+        not_contains: "e2e-upd-{{ run_id }}-v2"

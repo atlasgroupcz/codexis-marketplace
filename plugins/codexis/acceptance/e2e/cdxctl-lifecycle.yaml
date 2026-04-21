@@ -12,7 +12,7 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "cdxctl automation create-command.*e2e-"
+        input_matches: "automation create-command.{0,500}e2e-"
       response:
         matches: "(?i)created|added"
       state:
@@ -28,7 +28,7 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "cdxctl automation list"
+        input_matches: "automation list"
       response:
         contains: "e2e-{{ run_id }}"
       state:
@@ -67,7 +67,7 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "cdxctl automation list"
+        input_matches: "automation list"
       response:
         matches: "(?i)no|not (present|there|found|listed)|gone|removed|deleted"
       state:

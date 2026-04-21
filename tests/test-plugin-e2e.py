@@ -62,11 +62,15 @@ def _all_plugins_with_e2e() -> list[str]:
     )
 
 
-def _yaml_files_for(plugin: str) -> list[Path]:
+def _yaml_files_for(plugin: str, yaml_filter: str = "") -> list[Path]:
     d = MARKETPLACE_ROOT / "plugins" / plugin / "acceptance" / "e2e"
     if not d.is_dir():
         return []
-    return sorted(d.glob("*.yaml"))
+    files = sorted(d.glob("*.yaml"))
+    if yaml_filter:
+        wanted = {n.strip() for n in yaml_filter.split(",") if n.strip()}
+        files = [f for f in files if f.stem in wanted or any(w in f.stem for w in wanted)]
+    return files
 
 
 def pick_plugins(args: argparse.Namespace, r: Results) -> list[str]:
@@ -158,7 +162,9 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
     )
     runner.start()
 
-    captured: dict = {"run_id": secrets.token_hex(2)}
+    # All-letters run_id: some daemon validators (e.g. agent/skill names) only allow
+    # lowercase letters and hyphens, so avoid digits.
+    captured: dict = {"run_id": "".join(secrets.choice("abcdefghijklmnop") for _ in range(4))}
     recorded: list[dict] = []
     failure: str | None = None
 
@@ -195,7 +201,7 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
                 transcript_dir: Path, r: Results) -> None:
     name = plugin["name"]
     plugin_id = plugin["id"]
-    yamls = _yaml_files_for(name)
+    yamls = _yaml_files_for(name, args.yaml)
 
     r.section(f"Plugin: {name}")
     if not yamls:
@@ -238,6 +244,9 @@ def main() -> int:
                     help="Run every plugin that has acceptance/e2e/ (override default)")
     mx.add_argument("--only", default="",
                     help="Comma-separated plugin names (override default)")
+    parser.add_argument("--yaml", default="",
+                        help="Comma-separated YAML stem names/substrings to filter which "
+                             "plugin test cases run (e.g. 'agent,skill'); applied after --only")
     parser.add_argument("--transcript-dir", default="test-results/transcripts",
                         help="Where to write failure transcripts")
     parser.add_argument("--poll-interval-s", type=float, default=2.0,

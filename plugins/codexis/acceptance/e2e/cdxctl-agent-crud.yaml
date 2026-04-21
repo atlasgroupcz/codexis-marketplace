@@ -1,0 +1,50 @@
+name: cdxctl-agent-crud
+description: Verify cdxctl can create, update, and delete a custom local agent from stdin.
+
+steps:
+  - prompt: |
+      Using cdxctl, create a new custom local agent from stdin with:
+        - name: ee-agent-{{ run_id }}
+        - description: "E2E test agent — initial description"
+        - tools: Read, Bash
+        - maxTurns: 8
+        - body: "You are a custom e2e test agent."
+      Create it now via stdin without asking for confirmation.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent create.{0,200}--stdin"
+      response:
+        matches: "(?i)created|added"
+      state:
+        graphql: "{ agents { name description editable deletable sourceKind } }"
+        jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          description: "E2E test agent — initial description"
+          editable: true
+          deletable: true
+
+  - prompt: "Using cdxctl, update the agent named ee-agent-{{ run_id }} so its description becomes 'E2E test agent — updated'. Use --stdin with the updated markdown."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent update"
+      response:
+        matches: "(?i)updated|changed|modified"
+      state:
+        graphql: "{ agents { name description } }"
+        jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
+        equals: "E2E test agent — updated"
+
+  - prompt: "Using cdxctl, delete the agent named ee-agent-{{ run_id }}."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent delete"
+      response:
+        matches: "(?i)delet|remov"
+      state:
+        graphql: "{ agents { name } }"
+        jsonpath: "$.agents[*].name"
+        not_contains: "ee-agent-{{ run_id }}"
