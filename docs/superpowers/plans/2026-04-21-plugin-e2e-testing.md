@@ -1689,11 +1689,13 @@ def test_plugin_e2e(request, daemon_client, installed_plugin,
 
 - [ ] **Step 2: Sanity-check collection with zero YAMLs**
 
+`pytest_addoption` must live in a `conftest.py` — it is not recognized when declared in a collected test module. Put the option registration in a new `tests/conftest.py` alongside `test-plugin-e2e.py`; the rest of the file (fixtures, `pytest_generate_tests`, the `test_plugin_e2e` function) stays in `test-plugin-e2e.py`.
+
 Run:
 ```bash
 pytest tests/test-plugin-e2e.py --collect-only -q --only=nonexistent
 ```
-Expected: pytest collects 0 tests, exits 5 (no tests collected). No import errors.
+Expected behaviour: pytest collects one synthetic `test_plugin_e2e[NOTSET]` item (pytest 8+ behaviour for an empty `parametrize`) which is reported as SKIPPED with message "got empty parameter set". Exit code 0. No import errors.
 
 - [ ] **Step 3: Check `--help` shows the new options**
 
