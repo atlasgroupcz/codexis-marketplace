@@ -25,6 +25,18 @@ steps:
           editable: true
           deletable: true
 
+  - prompt: "Using cdxctl, list ONLY the editable/custom agents (not the built-in plugin agents). Tell me the names you see."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent list.{0,100}--editable-only"
+      response:
+        contains: "ee-agent-{{ run_id }}"
+      state:
+        graphql: "{ agents { name editable } }"
+        jsonpath: "$.agents[?(@.editable == true)].name"
+        contains: "ee-agent-{{ run_id }}"
+
   - prompt: "Using cdxctl, update the agent named ee-agent-{{ run_id }} so its description becomes 'E2E test agent — updated'. Use --stdin with the updated markdown."
     expect:
       tool_call:

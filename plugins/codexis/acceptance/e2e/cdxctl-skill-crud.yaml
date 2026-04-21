@@ -23,6 +23,18 @@ steps:
           editable: true
           deletable: true
 
+  - prompt: "Using cdxctl, list ONLY the editable/custom skills (not the built-in plugin skills). Tell me the names you see."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill list.{0,100}--editable-only"
+      response:
+        contains: "ee-skill-{{ run_id }}"
+      state:
+        graphql: "{ skills { name editable } }"
+        jsonpath: "$.skills[?(@.editable == true)].name"
+        contains: "ee-skill-{{ run_id }}"
+
   - prompt: "Using cdxctl, update the skill named ee-skill-{{ run_id }} so its description becomes 'E2E test skill — updated'. Use --stdin with the updated markdown."
     expect:
       tool_call:
