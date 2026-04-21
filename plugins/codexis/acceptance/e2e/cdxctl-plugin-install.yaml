@@ -1,0 +1,46 @@
+name: cdxctl-plugin-install
+description: Verify cdxctl can install and uninstall a plugin against the daemon.
+
+# Uses {{ marketplace_id }} — a built-in var set by the runner to the Relay node
+# ID of the marketplace being tested. We install data-gouv-fr (a small plugin
+# with no binaries, fast install) and then uninstall it.
+#
+# NOTE: the runner's own setup/teardown only touches the `codexis` plugin, so
+# data-gouv-fr install/uninstall is isolated from the runner's state management.
+
+steps:
+  - prompt: "Using cdxctl, list the plugins available (not yet installed) in the codexis-plugins marketplace. Use `cdxctl plugin list --available`. Tell me if data-gouv-fr is among them."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "plugin list.{0,100}--available"
+      response:
+        contains: "data-gouv-fr"
+
+  - prompt: "Using cdxctl, install the plugin named data-gouv-fr. Find its ID from the available list first."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "plugin install"
+      response:
+        matches: "(?i)installed|added"
+      state:
+        graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
+        variables:
+          m: "{{ marketplace_id }}"
+        jsonpath: "$.installedPlugins[*].name"
+        contains: "data-gouv-fr"
+
+  - prompt: "Using cdxctl, uninstall the plugin named data-gouv-fr. Find its ID first."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "plugin uninstall"
+      response:
+        matches: "(?i)uninstalled|removed"
+      state:
+        graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
+        variables:
+          m: "{{ marketplace_id }}"
+        jsonpath: "$.installedPlugins[*].name"
+        not_contains: "data-gouv-fr"

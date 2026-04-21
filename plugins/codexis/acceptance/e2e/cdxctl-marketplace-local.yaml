@@ -1,0 +1,49 @@
+name: cdxctl-marketplace-local
+description: Verify cdxctl can add a LOCAL marketplace (directory on disk) and remove it.
+
+# Covers `cdxctl marketplace add --source-type local` and `marketplace remove`.
+# Sidesteps the runner's own marketplace (codexis-plugins from GIT) by using a
+# different marketplace name + local source. Uses a scratch directory in /tmp.
+
+steps:
+  - prompt: |
+      Create a minimal local marketplace inside the VM:
+        1. mkdir -p /tmp/ee-mkt-{{ run_id }}/.claude-plugin
+        2. Write this JSON to /tmp/ee-mkt-{{ run_id }}/.claude-plugin/marketplace.json:
+             {"name": "ee-mkt-{{ run_id }}", "uuid": "00000000-0000-0000-0000-{{ run_id }}{{ run_id }}{{ run_id }}", "plugins": []}
+        3. Then run:  cdxctl marketplace add --source /tmp/ee-mkt-{{ run_id }} --source-type local
+      Do all three steps without asking for confirmation.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "marketplace add"
+      response:
+        matches: "(?i)added|created|registered"
+      state:
+        graphql: "{ marketplaces { name } }"
+        jsonpath: "$.marketplaces[*].name"
+        contains: "ee-mkt-{{ run_id }}"
+
+  - prompt: "Using cdxctl, list all marketplaces and tell me whether ee-mkt-{{ run_id }} is present."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "marketplace list"
+      response:
+        contains: "ee-mkt-{{ run_id }}"
+      state:
+        graphql: "{ marketplaces { name } }"
+        jsonpath: "$.marketplaces[*].name"
+        contains: "ee-mkt-{{ run_id }}"
+
+  - prompt: "Using cdxctl, remove the marketplace named ee-mkt-{{ run_id }}. Find its ID first."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "marketplace remove"
+      response:
+        matches: "(?i)remov|delet"
+      state:
+        graphql: "{ marketplaces { name } }"
+        jsonpath: "$.marketplaces[*].name"
+        not_contains: "ee-mkt-{{ run_id }}"

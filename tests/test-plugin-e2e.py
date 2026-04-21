@@ -142,7 +142,8 @@ def remove_marketplace(client: DaemonClient, mkt_node_id: str, r: Results) -> No
 # One YAML = one multi-turn chat test
 # ---------------------------------------------------------------------------
 def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
-             transcript_dir: Path, args: argparse.Namespace, r: Results) -> None:
+             transcript_dir: Path, args: argparse.Namespace, r: Results,
+             builtin_vars: dict) -> None:
     spec = yaml.safe_load(yaml_path.read_text())
     test_name = spec.get("name") or yaml_path.stem
 
@@ -164,7 +165,10 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
 
     # All-letters run_id: some daemon validators (e.g. agent/skill names) only allow
     # lowercase letters and hyphens, so avoid digits.
-    captured: dict = {"run_id": "".join(secrets.choice("abcdefghijklmnop") for _ in range(4))}
+    captured: dict = {
+        "run_id": "".join(secrets.choice("abcdefghijklmnop") for _ in range(4)),
+        **builtin_vars,
+    }
     recorded: list[dict] = []
     failure: str | None = None
 
@@ -198,7 +202,7 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
 
 
 def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
-                transcript_dir: Path, r: Results) -> None:
+                transcript_dir: Path, r: Results, builtin_vars: dict) -> None:
     name = plugin["name"]
     plugin_id = plugin["id"]
     yamls = _yaml_files_for(name, args.yaml)
@@ -217,7 +221,7 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
 
     try:
         for yaml_path in yamls:
-            run_yaml(client, name, yaml_path, transcript_dir, args, r)
+            run_yaml(client, name, yaml_path, transcript_dir, args, r, builtin_vars)
     finally:
         r.log("Uninstalling…")
         try:
@@ -274,6 +278,10 @@ def main() -> int:
 
     our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)
     mkt_plugins_by_name = {p["name"]: p for p in our_mkt.get("plugins", [])}
+    builtin_vars = {
+        "marketplace_id": our_mkt["id"],
+        "marketplace_name": our_mkt["name"],
+    }
 
     try:
         for name in plugin_names:
@@ -281,7 +289,7 @@ def main() -> int:
             if plugin is None:
                 r.skip(f"{name}: not found in marketplace listing")
                 continue
-            test_plugin(client, plugin, args, transcript_dir, r)
+            test_plugin(client, plugin, args, transcript_dir, r, builtin_vars)
     finally:
         remove_marketplace(client, our_mkt["id"], r)
 
