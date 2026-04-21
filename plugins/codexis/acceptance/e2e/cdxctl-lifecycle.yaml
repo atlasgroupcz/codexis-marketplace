@@ -8,7 +8,7 @@ description: Verify cdxctl creates, triggers, and deletes an automation with cor
 # Fail-fast: first failing axis stops the chat and writes a transcript.
 
 steps:
-  - prompt: "Using cdxctl, create an automation with title e2e-{{ run_id }}, cron '* * * * *', and command 'echo hello'. Just create it — do not ask for confirmation."
+  - prompt: "Using cdxctl, create an automation with title e2e-{{ run_id }}, cron '0 0 1 1 *' (once a year), and command 'echo hello'. Just create it — do not ask for confirmation."
     expect:
       tool_call:
         name: shell
@@ -20,7 +20,7 @@ steps:
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
         count: 1
         matches_subset:
-          cron: "* * * * *"
+          cron: "0 0 1 1 *"
           command: "echo hello"
           enabled: true
 
@@ -44,9 +44,12 @@ steps:
       response:
         matches: "(?i)trigger|invoke|complete|ran|started|executed"
       state:
-        graphql: "{ automations { title lastRun { status } } }"
-        jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun.status"
-        equals: "COMPLETED"
+        graphql: "{ automations { title lastRun { status trigger errorMessage } } }"
+        jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun"
+        matches_subset:
+          status: "COMPLETED"
+          trigger: "MANUAL"
+          errorMessage: null
 
   - prompt: "Using cdxctl, delete the automation with title e2e-{{ run_id }}. Find its ID first if you need to."
     expect:
