@@ -36,9 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _assertions import (
     AssertionFailure,
-    apply_captures,
-    run_judge,
-    run_step_assertions,
+    run_step_checks,
     substitute,
 )
 from _chat_runner import ChatRunner
@@ -177,10 +175,7 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
 
         expect = step.get("expect") or {}
         try:
-            run_step_assertions(expect, result, captured)
-            if "judge" in expect:
-                run_judge(expect["judge"], result, client)
-            captured.update(apply_captures(expect.get("capture"), result))
+            run_step_checks(expect, result, captured, client)
             recorded.append({"prompt": prompt, "result": result, "status": "PASS"})
         except (AssertionFailure, AssertionError) as e:
             failure = f"step {i}: {e}"

@@ -60,10 +60,16 @@ class ChatRunner:
         self.chat_id = info["chatId"]
 
     def step(self, prompt: str) -> dict:
-        """Send one user message and return parsed {text, tool_calls}."""
+        """Send one user message and return parsed {text, tool_calls}.
+
+        Tool calls the model made during this turn don't appear inline as
+        ToolMessagePart in the chat response — they live in separate ToolChain
+        nodes referenced by ThinkingMessagePart.toolChainId. We fetch each
+        referenced ToolChain and merge its ToolMessageParts into tool_calls.
+        """
         if self.chat_node_id is None:
             raise ChatError("ChatRunner.start() not called")
-        self.client.send_message(self.chat_id, prompt)
+        self.client.send_message(self.chat_node_id, prompt)
         deadline = time.monotonic() + self.poll_timeout_s
         while True:
             chat = self.client.get_chat(self.chat_node_id)
@@ -73,8 +79,31 @@ class ChatRunner:
             if status == "READY":
                 msgs = chat.get("messages") or []
                 if msgs:
-                    return parse_assistant_message(msgs[-1])
+                    return self._parse_turn(msgs[-1])
             if time.monotonic() >= deadline:
                 raise ChatError(f"Chat poll timeout after {self.poll_timeout_s}s")
             if self.poll_interval_s > 0:
                 time.sleep(self.poll_interval_s)
+
+    def _parse_turn(self, last_msg: dict) -> dict:
+        result = parse_assistant_message(last_msg)
+        for part in last_msg.get("parts") or []:
+            if part.get("__typename") != "ThinkingMessagePart":
+                continue
+            chain_id = part.get("toolChainId")
+            if not chain_id:
+                continue
+            try:
+                chain = self.client.get_tool_chain(chain_id)
+            except Exception:
+                continue
+            for chain_msg in chain.get("messages") or []:
+                for p in chain_msg.get("parts") or []:
+                    if p.get("__typename") != "ToolMessagePart":
+                        continue
+                    result["tool_calls"].append({
+                        "name": p.get("toolName"),
+                        "input": _parse_json_or_str(p.get("input")),
+                        "output": _parse_json_or_str(p.get("output")),
+                    })
+        return result

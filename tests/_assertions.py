@@ -189,6 +189,217 @@ def run_judge(judge_spec: dict, result: dict, client: Any) -> None:
 from jsonpath_ng.ext import parse as _jp_parse
 
 
+# ---------------------------------------------------------------------------
+# Three-axis step checks: tool_call + response + state
+#
+# Each step's `expect:` block may contain any of the three axes. Every axis
+# present is asserted; absent axes are skipped. Fail-fast: the first axis to
+# fail raises AssertionFailure and the caller aborts the chat.
+# ---------------------------------------------------------------------------
+
+
+def _check_tool_call(spec: dict, tool_calls: list[dict], vars_: dict) -> None:
+    """Assert that at least one tool call matches the spec.
+
+    `spec`: {name: str, input_matches?: regex}
+    """
+    want_name = spec.get("name")
+    want_input_regex = spec.get("input_matches")
+    if want_input_regex is not None:
+        want_input_regex = substitute(want_input_regex, vars_)
+    for call in tool_calls:
+        if want_name is not None and call.get("name") != want_name:
+            continue
+        if want_input_regex is not None:
+            input_blob = json.dumps(call.get("input"), ensure_ascii=False)
+            if not re.search(want_input_regex, input_blob):
+                continue
+        return  # matched
+    raise AssertionFailure(
+        f"tool_call axis failed: no call matched {spec!r}. "
+        f"Actual calls: {[c.get('name') for c in tool_calls]!r}"
+    )
+
+
+def _check_response(spec: dict, text: str, vars_: dict) -> None:
+    """Assert on the assistant's final text.
+
+    `spec`: {matches?: regex, contains?: substring, not_contains?: substring}
+    """
+    if "matches" in spec:
+        pattern = substitute(spec["matches"], vars_)
+        if not re.search(pattern, text):
+            raise AssertionFailure(
+                f"response axis failed: regex /{pattern}/ did not match {text!r}"
+            )
+    if "contains" in spec:
+        needle = substitute(spec["contains"], vars_)
+        if needle not in text:
+            raise AssertionFailure(
+                f"response axis failed: {needle!r} not in {text!r}"
+            )
+    if "not_contains" in spec:
+        needle = substitute(spec["not_contains"], vars_)
+        if needle in text:
+            raise AssertionFailure(
+                f"response axis failed: {needle!r} unexpectedly in {text!r}"
+            )
+
+
+def _check_state_graphql(spec: dict, client: Any, vars_: dict) -> None:
+    """Assert on daemon state via a GraphQL query.
+
+    Fields: graphql (str), variables? (dict), jsonpath? (str extractor),
+    and any of: contains, not_contains, equals, matches, count.
+    Without `jsonpath`, the entire response data dict is treated as a
+    single-element list.
+    """
+    query = substitute(spec["graphql"], vars_)
+    gql_vars = {k: substitute(v, vars_) if isinstance(v, str) else v
+                for k, v in (spec.get("variables") or {}).items()}
+    try:
+        data = client.gql_data(query, gql_vars)
+    except Exception as e:
+        raise AssertionFailure(f"state.graphql: query failed: {e}") from e
+
+    if "jsonpath" in spec:
+        expr = _jp_parse(substitute(spec["jsonpath"], vars_))
+        extracted = [m.value for m in expr.find(data)]
+    else:
+        extracted = [data]
+
+    if "count" in spec and len(extracted) != spec["count"]:
+        raise AssertionFailure(
+            f"state.graphql: count was {len(extracted)}, expected {spec['count']}. "
+            f"Extracted: {extracted!r}"
+        )
+    if "contains" in spec:
+        needle = substitute(spec["contains"], vars_)
+        if needle not in [str(v) for v in extracted]:
+            raise AssertionFailure(f"state.graphql: {needle!r} not in {extracted!r}")
+    if "not_contains" in spec:
+        needle = substitute(spec["not_contains"], vars_)
+        if needle in [str(v) for v in extracted]:
+            raise AssertionFailure(f"state.graphql: {needle!r} unexpectedly in {extracted!r}")
+    if "equals" in spec:
+        expected = spec["equals"]
+        if isinstance(expected, str):
+            expected = substitute(expected, vars_)
+        if not extracted or extracted[0] != expected:
+            raise AssertionFailure(
+                f"state.graphql: first value was "
+                f"{extracted[0] if extracted else 'none'!r}, expected {expected!r}"
+            )
+    if "matches" in spec:
+        pattern = substitute(spec["matches"], vars_)
+        if not any(re.search(pattern, str(v)) for v in extracted):
+            raise AssertionFailure(
+                f"state.graphql: no extracted value matched /{pattern}/. "
+                f"Extracted: {extracted!r}"
+            )
+    if "matches_subset" in spec:
+        if not extracted:
+            raise AssertionFailure(
+                "state.graphql: matches_subset needs at least one extracted value, got none"
+            )
+        expected_subset = _substitute_deep(spec["matches_subset"], vars_)
+        err = matches_subset(expected_subset, extracted[0])
+        if err:
+            raise AssertionFailure(f"state.graphql: matches_subset failed — {err}")
+
+
+def _check_state_file(spec: dict, client: Any, vars_: dict) -> None:
+    """Assert on a daemon-visible filesystem entry via getEntry.
+
+    Fields: file (path), type (file|dir|executable|absent — default: file).
+    Leverages the same getEntry API test-marketplace.py uses.
+    """
+    path = substitute(spec["file"], vars_)
+    kind = spec.get("type", "file")
+    entry = client.get_entry(path)
+    if kind == "absent":
+        if entry is not None:
+            raise AssertionFailure(f"state.file: {path} unexpectedly exists")
+    elif kind == "file":
+        if not entry or not entry.get("isFile"):
+            raise AssertionFailure(f"state.file: {path} missing or not a file")
+    elif kind == "dir":
+        if not entry or not entry.get("isDirectory"):
+            raise AssertionFailure(f"state.file: {path} missing or not a directory")
+    elif kind == "executable":
+        if not entry or not entry.get("isFile") or not entry.get("executable"):
+            raise AssertionFailure(f"state.file: {path} missing or not executable")
+    else:
+        raise ValueError(f"state.file: unknown type {kind!r}")
+
+
+def _check_state_tool_output(spec: dict, result: dict, vars_: dict) -> None:
+    """Assert on the raw output of the most recent tool call in the current turn.
+
+    For API-fetcher plugins whose value is the tool's JSON response, not the
+    model's summary. Fields: tool_output (either str regex or a dict with
+    matches/contains/not_contains).
+    """
+    tool_calls = result.get("tool_calls") or []
+    if not tool_calls:
+        raise AssertionFailure("state.tool_output: no tool calls in this turn")
+    blob = json.dumps(tool_calls[-1].get("output"), ensure_ascii=False)
+    if isinstance(spec, str):
+        pattern = substitute(spec, vars_)
+        if not re.search(pattern, blob):
+            raise AssertionFailure(
+                f"state.tool_output: /{pattern}/ did not match last tool's output"
+            )
+        return
+    if "matches" in spec:
+        pattern = substitute(spec["matches"], vars_)
+        if not re.search(pattern, blob):
+            raise AssertionFailure(
+                f"state.tool_output: /{pattern}/ did not match last tool's output"
+            )
+    if "contains" in spec:
+        needle = substitute(spec["contains"], vars_)
+        if needle not in blob:
+            raise AssertionFailure(f"state.tool_output: {needle!r} not in last tool's output")
+    if "not_contains" in spec:
+        needle = substitute(spec["not_contains"], vars_)
+        if needle in blob:
+            raise AssertionFailure(f"state.tool_output: {needle!r} unexpectedly in last tool's output")
+
+
+def _check_state_single(spec: dict, client: Any, result: dict, vars_: dict) -> None:
+    if "graphql" in spec:
+        _check_state_graphql(spec, client, vars_)
+    elif "file" in spec:
+        _check_state_file(spec, client, vars_)
+    elif "tool_output" in spec:
+        _check_state_tool_output(spec["tool_output"], result, vars_)
+    else:
+        raise ValueError(
+            f"state axis needs one of: graphql, file, tool_output. Got keys: {list(spec)!r}"
+        )
+
+
+def _check_state(spec, client: Any, result: dict, vars_: dict) -> None:
+    """State axis. `spec` may be a dict (single check) or a list of dicts (all must pass)."""
+    checks = spec if isinstance(spec, list) else [spec]
+    for check in checks:
+        _check_state_single(check, client, result, vars_)
+
+
+def run_step_checks(expect: dict, result: dict, captured: dict, client: Any) -> None:
+    """Run the three axes (tool_call, response, state). Fail fast on the first.
+
+    Skips any axis not present in `expect`. Raises AssertionFailure on mismatch.
+    """
+    if "tool_call" in expect:
+        _check_tool_call(expect["tool_call"], result.get("tool_calls") or [], captured)
+    if "response" in expect:
+        _check_response(expect["response"], result.get("text") or "", captured)
+    if "state" in expect:
+        _check_state(expect["state"], client, result, captured)
+
+
 def apply_captures(captures: dict | None, result: dict) -> dict:
     """Evaluate jsonpath expressions against the step result and return {name: value}.
 

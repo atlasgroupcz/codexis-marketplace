@@ -1,47 +1,73 @@
 name: cdxctl-automation-lifecycle
-description: Verify cdxctl can create, list, invoke, and delete an automation end-to-end.
+description: Verify cdxctl creates, triggers, and deletes an automation with correct fields, end-to-end.
 
-# NOTE: The `subcommand` / `name` / `id` keys in input_contains below are an
-# educated guess based on typical cdxctl CLI shape. The first time this test
-# runs against a real daemon it will almost certainly need adjustment — the
-# failure transcript (test-results/transcripts/codexis/...) shows the actual
-# tool-call trace; update input_contains to match what the skill really
-# receives. This YAML documents the intended behaviour.
+# Each step is evaluated on three axes that must ALL pass:
+#   - tool_call: did the model invoke the right tool with the right command?
+#   - response:  did the assistant narrate the outcome consistently?
+#   - state:     does the daemon's ground truth (via GraphQL) match expectation?
+# Fail-fast: first failing axis stops the chat and writes a transcript.
 
 steps:
-  - prompt: "Using cdxctl, create an automation named e2e-{{ run_id }} that runs the shell command 'echo hello'."
+  - prompt: "Using cdxctl, create an automation with title e2e-{{ run_id }}, cron '* * * * *', and command 'echo hello'. Just create it — do not ask for confirmation."
     expect:
-      tool_calls:
-        - name: cdxctl
-          input_contains:
-            subcommand: "create"
-            name: "~/^e2e-/"
-      capture:
-        automationId: "$.tool_calls[0].output.id"
+      tool_call:
+        name: shell
+        input_matches: "cdxctl automation create-command.*e2e-"
+      response:
+        matches: "(?i)created|added"
+      state:
+        graphql: "{ automations { title cron command enabled } }"
+        jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          cron: "* * * * *"
+          command: "echo hello"
+          enabled: true
 
-  - prompt: "Using cdxctl, list all automations and tell me which ones exist."
+  - prompt: "Using cdxctl, list my automations and tell me the title of the one you just created."
     expect:
-      tool_calls:
-        - name: cdxctl
-          input_contains: { subcommand: "list" }
-      output_contains: "{{ automationId }}"
+      tool_call:
+        name: shell
+        input_matches: "cdxctl automation list"
+      response:
+        contains: "e2e-{{ run_id }}"
+      state:
+        graphql: "{ automations { title } }"
+        jsonpath: "$.automations[*].title"
+        contains: "e2e-{{ run_id }}"
 
-  - prompt: "Using cdxctl, invoke the automation with id {{ automationId }}."
+  - prompt: "Using cdxctl, trigger the automation whose title is e2e-{{ run_id }}. Find its ID first if you need to."
     expect:
-      tool_calls:
-        - name: cdxctl
-          input_contains:
-            subcommand: "invoke"
-            id: "{{ automationId }}"
+      tool_call:
+        name: shell
+        input_matches: "trigger"
+      response:
+        matches: "(?i)trigger|invoke|complete|ran|started|executed"
+      state:
+        graphql: "{ automations { title lastRun { status } } }"
+        jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun.status"
+        equals: "COMPLETED"
 
-  - prompt: "Using cdxctl, delete the automation with id {{ automationId }}."
+  - prompt: "Using cdxctl, delete the automation with title e2e-{{ run_id }}. Find its ID first if you need to."
     expect:
-      tool_calls:
-        - name: cdxctl
-          input_contains:
-            subcommand: "delete"
-            id: "{{ automationId }}"
+      tool_call:
+        name: shell
+        input_matches: "delete|remove"
+      response:
+        matches: "(?i)delet|remov"
+      state:
+        graphql: "{ automations { title } }"
+        jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
+        count: 0
 
-  - prompt: "Using cdxctl, list automations again and confirm the one I just deleted is gone."
+  - prompt: "Using cdxctl, list automations once more. Is any automation titled e2e-{{ run_id }} still present? Answer clearly."
     expect:
-      output_not_contains: "{{ automationId }}"
+      tool_call:
+        name: shell
+        input_matches: "cdxctl automation list"
+      response:
+        matches: "(?i)no|not (present|there|found|listed)|gone|removed|deleted"
+      state:
+        graphql: "{ automations { title } }"
+        jsonpath: "$.automations[*].title"
+        not_contains: "e2e-{{ run_id }}"

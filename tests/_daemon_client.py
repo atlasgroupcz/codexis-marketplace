@@ -103,6 +103,25 @@ query GetChat($id: ID!) {
 }
 """
 
+_Q_GET_TOOL_CHAIN = """
+query GetToolChain($id: ID!) {
+    node(id: $id) {
+        ... on ToolChain {
+            toolCount
+            messages {
+                __typename
+                parts {
+                    __typename
+                    ... on ToolMessagePart {
+                        toolCallId toolName input output state
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
 
 class DaemonClient:
     def __init__(self, base_url: str, token: str) -> None:
@@ -210,12 +229,16 @@ class DaemonClient:
         data = self.gql_data(_Q_GET_CHAT, {"id": node_id})
         return data["node"] or {}
 
+    def get_tool_chain(self, node_id: str) -> dict:
+        data = self.gql_data(_Q_GET_TOOL_CHAIN, {"id": node_id})
+        return data["node"] or {}
+
     def run_single_shot_chat(self, prompt: str, model: str | None = None,
                              poll_interval_s: float = 2.0,
                              poll_timeout_s: float = 120.0) -> str:
         """Start a fresh chat, send one prompt, return the assistant's final text."""
         info = self.new_chat(model)
-        self.send_message(info["chatId"], prompt)
+        self.send_message(info["id"], prompt)
         deadline = time.monotonic() + poll_timeout_s
         while True:
             chat = self.get_chat(info["id"])
