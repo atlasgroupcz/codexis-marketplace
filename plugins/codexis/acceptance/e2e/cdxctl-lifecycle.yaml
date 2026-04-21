@@ -1,0 +1,47 @@
+name: cdxctl-automation-lifecycle
+description: Verify cdxctl can create, list, invoke, and delete an automation end-to-end.
+
+# NOTE: The `subcommand` / `name` / `id` keys in input_contains below are an
+# educated guess based on typical cdxctl CLI shape. The first time this test
+# runs against a real daemon it will almost certainly need adjustment — the
+# failure transcript (test-results/transcripts/codexis/...) shows the actual
+# tool-call trace; update input_contains to match what the skill really
+# receives. This YAML documents the intended behaviour.
+
+steps:
+  - prompt: "Using cdxctl, create an automation named e2e-{{ run_id }} that runs the shell command 'echo hello'."
+    expect:
+      tool_calls:
+        - name: cdxctl
+          input_contains:
+            subcommand: "create"
+            name: "~/^e2e-/"
+      capture:
+        automationId: "$.tool_calls[0].output.id"
+
+  - prompt: "Using cdxctl, list all automations and tell me which ones exist."
+    expect:
+      tool_calls:
+        - name: cdxctl
+          input_contains: { subcommand: "list" }
+      output_contains: "{{ automationId }}"
+
+  - prompt: "Using cdxctl, invoke the automation with id {{ automationId }}."
+    expect:
+      tool_calls:
+        - name: cdxctl
+          input_contains:
+            subcommand: "invoke"
+            id: "{{ automationId }}"
+
+  - prompt: "Using cdxctl, delete the automation with id {{ automationId }}."
+    expect:
+      tool_calls:
+        - name: cdxctl
+          input_contains:
+            subcommand: "delete"
+            id: "{{ automationId }}"
+
+  - prompt: "Using cdxctl, list automations again and confirm the one I just deleted is gone."
+    expect:
+      output_not_contains: "{{ automationId }}"
