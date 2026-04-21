@@ -57,6 +57,9 @@ dev = [
     "jsonpath-ng>=1.6",
 ]
 
+[tool.setuptools]
+py-modules = []
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "plugins"]
 python_files = ["test_*.py", "test-*.py"]
@@ -64,6 +67,8 @@ addopts = "-ra --import-mode=importlib"
 ```
 
 Why `test-*.py`: the existing `test-marketplace.py` uses a hyphen. We keep that pattern; pytest supports multiple globs.
+
+Why `[tool.setuptools] py-modules = []`: without it, setuptools auto-discovers both `plugins/` and `frontend/` as Python packages and errors out with "multiple top-level packages discovered". We're not distributing any Python code from this repo — this is a metadata-only project for the pytest suite — so we tell setuptools there are no modules to install.
 
 - [ ] **Step 2: Install dev deps**
 
