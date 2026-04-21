@@ -133,9 +133,11 @@ Keep every string and method body byte-identical to the original to avoid regres
 
 - [ ] **Step 2: Update `tests/test-marketplace.py` to import from the new module**
 
-Remove the `DaemonClient` class, the `encode_node_id` function, and the seven GraphQL query constants from `tests/test-marketplace.py`. In their place, add:
+Remove the `DaemonClient` class, the `encode_node_id` function, and the seven GraphQL query constants from `tests/test-marketplace.py`. In their place, add (immediately after the existing top-of-file imports):
 
 ```python
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from _daemon_client import (
     DaemonClient,
     encode_node_id,
@@ -149,7 +151,7 @@ from _daemon_client import (
 )
 ```
 
-Because pytest uses `--import-mode=importlib`, `tests/_daemon_client.py` is importable by sibling files without `__init__.py`.
+The `sys.path.insert` line is necessary: when pytest collects `test-marketplace.py` (it matches the `test-*.py` glob), it imports the file but does NOT put the test file's directory on `sys.path`. Without the insertion the bare `from _daemon_client import ...` raises `ModuleNotFoundError`. When the script is invoked directly (`python3 tests/test-marketplace.py …`) the line is a no-op because the directory is already on `sys.path[0]`. Same pattern is used in Task 11.
 
 - [ ] **Step 3: Sanity-check the refactor**
 
