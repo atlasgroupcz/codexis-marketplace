@@ -93,6 +93,30 @@ class DaemonClient:
         )
         return data["node"] or {}
 
+    def run_single_shot_chat(self, prompt: str, model: str | None = None,
+                             poll_interval_s: float = 2.0,
+                             poll_timeout_s: float = 120.0) -> str:
+        """Start a fresh chat, send one prompt, return the assistant's final text."""
+        import time
+        info = self.new_chat(model)
+        self.send_message(info["chatId"], prompt)
+        deadline = time.monotonic() + poll_timeout_s
+        while True:
+            chat = self.get_chat(info["id"])
+            status = chat.get("status")
+            if status == "ERROR":
+                raise RuntimeError(f"judge chat ERROR: {chat}")
+            if status == "READY" and chat.get("messages"):
+                msg = chat["messages"][-1]
+                parts = msg.get("parts") or []
+                return "".join(
+                    p.get("content") or "" for p in parts
+                    if p.get("__typename") == "TextMessagePart"
+                )
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"judge chat timed out after {poll_timeout_s}s")
+            time.sleep(poll_interval_s)
+
 
 ADD_MARKETPLACE = """
 mutation AddMarketplace($input: MarketplaceSourceInput!) {

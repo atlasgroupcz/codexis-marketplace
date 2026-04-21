@@ -149,6 +149,43 @@ def run_step_assertions(expect: dict, result: dict, captured: dict) -> None:
     # capture and judge are handled by the caller (Task 8, Task 9)
 
 
+_JUDGE_TEMPLATE = """You are grading whether an AI assistant's response satisfies a rubric.
+
+RUBRIC:
+{rubric}
+
+ASSISTANT'S FINAL TEXT:
+{text}
+
+TOOL CALLS MADE DURING THIS TURN (JSON):
+{tool_calls_json}
+
+Reply with ONLY a compact JSON object of the form:
+{{"pass": <true|false>, "reason": "<one sentence>"}}
+"""
+
+
+def run_judge(judge_spec: dict, result: dict, client: Any) -> None:
+    """Invoke an LLM judge via `client.run_single_shot_chat(prompt) -> str`.
+
+    Raises AssertionFailure if the judge returns pass=false or malformed JSON.
+    """
+    rubric = judge_spec.get("rubric") or ""
+    prompt = _JUDGE_TEMPLATE.format(
+        rubric=rubric,
+        text=result.get("text", ""),
+        tool_calls_json=json.dumps(result.get("tool_calls", []), ensure_ascii=False),
+    )
+    raw = client.run_single_shot_chat(prompt)
+    try:
+        verdict = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise AssertionFailure(f"judge reply was not JSON: {raw!r}") from e
+    if not verdict.get("pass"):
+        reason = verdict.get("reason") or "(no reason given)"
+        raise AssertionFailure(f"judge rejected: {reason}")
+
+
 from jsonpath_ng.ext import parse as _jp_parse
 
 

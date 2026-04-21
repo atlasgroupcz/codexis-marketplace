@@ -195,3 +195,46 @@ def test_capture_unresolved_path_raises():
 def test_capture_no_captures_returns_empty():
     assert apply_captures(None, _result(text="x")) == {}
     assert apply_captures({}, _result(text="x")) == {}
+
+
+from _assertions import run_judge
+
+
+class FakeJudgeClient:
+    def __init__(self, scripted_reply: str):
+        self.scripted_reply = scripted_reply
+        self.last_prompt: str | None = None
+
+    def run_single_shot_chat(self, prompt: str) -> str:
+        self.last_prompt = prompt
+        return self.scripted_reply
+
+
+def test_judge_passes():
+    fake = FakeJudgeClient('{"pass": true, "reason": "matches rubric"}')
+    run_judge(
+        judge_spec={"rubric": "response must mention zákon"},
+        result=_result(text="zákon je..."),
+        client=fake,
+    )
+    assert "zákon" in (fake.last_prompt or "")
+
+
+def test_judge_fails_with_reason():
+    fake = FakeJudgeClient('{"pass": false, "reason": "missing citation"}')
+    with pytest.raises(AssertionFailure, match="missing citation"):
+        run_judge(
+            judge_spec={"rubric": "response must cite Art. 123"},
+            result=_result(text="no citation here"),
+            client=fake,
+        )
+
+
+def test_judge_rejects_malformed_reply():
+    fake = FakeJudgeClient("not json")
+    with pytest.raises(AssertionFailure, match="judge reply"):
+        run_judge(
+            judge_spec={"rubric": "whatever"},
+            result=_result(text="x"),
+            client=fake,
+        )
