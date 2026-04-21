@@ -6,9 +6,8 @@ use std::path::PathBuf;
 use crate::core::error::CliError;
 
 pub(crate) const CDX_SK_API_URL_ENV: &str = "CDX_SK_API_URL";
-pub(crate) const CDX_DAEMON_AUTH_ENV: &str = "CDX_DAEMON_AUTH";
+pub(crate) const CDX_API_JWT_AUTH_ENV: &str = "CDX_API_JWT_AUTH";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
-const CDX_DAEMON_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.daemon.env";
 pub(crate) const CDX_ENV_FILE_DISPLAY_PATH: &str = "~/.cdx/.env";
 
 pub(crate) struct Config {
@@ -19,10 +18,8 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn load() -> Result<Self, CliError> {
         let env_file = load_env_file(CDX_ENV_FILE_RELATIVE_PATH);
-        let daemon_env_file = load_env_file(CDX_DAEMON_ENV_FILE_RELATIVE_PATH);
         let base_url = resolve_config_value(CDX_SK_API_URL_ENV, env_file.as_ref());
-        let jwt_auth = resolve_config_value(CDX_DAEMON_AUTH_ENV, daemon_env_file.as_ref())
-            .or_else(|| resolve_config_value(CDX_DAEMON_AUTH_ENV, env_file.as_ref()));
+        let jwt_auth = resolve_config_value(CDX_API_JWT_AUTH_ENV, env_file.as_ref());
 
         match base_url {
             Some(url) => Ok(Self {
@@ -224,6 +221,15 @@ export OTHER_VAR="some value"
 
         let value = resolve_config_value_for_test(None, CDX_SK_API_URL_ENV, Some(&env_file));
         assert_eq!(value, Some("https://file.example.com/api".to_string()));
+    }
+
+    #[test]
+    fn resolve_jwt_auth_uses_env_file_when_process_env_is_missing() {
+        let mut env_file = HashMap::new();
+        env_file.insert(CDX_API_JWT_AUTH_ENV.to_string(), "Bearer from-file".to_string());
+
+        let value = resolve_config_value_for_test(None, CDX_API_JWT_AUTH_ENV, Some(&env_file));
+        assert_eq!(value, Some("Bearer from-file".to_string()));
     }
 
     #[test]

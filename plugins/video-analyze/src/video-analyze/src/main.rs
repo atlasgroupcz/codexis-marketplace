@@ -42,7 +42,7 @@ fn main() {
         }
         let source = &args[1];
         let api_key = load_api_key();
-        let daemon_auth = load_daemon_auth();
+        let daemon_auth = load_api_jwt_auth();
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
@@ -79,7 +79,7 @@ fn main() {
         let source = &args[0];
         let query = args[1..].join(" ");
         let api_key = load_api_key();
-        let daemon_auth = load_daemon_auth();
+        let daemon_auth = load_api_jwt_auth();
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
@@ -154,12 +154,18 @@ fn load_api_key() -> String {
     std::process::exit(2);
 }
 
-fn load_daemon_auth() -> String {
+fn load_api_jwt_auth() -> String {
+    if let Ok(val) = env::var("CDX_API_JWT_AUTH") {
+        if !val.is_empty() {
+            return val;
+        }
+    }
+
     let home = env::var("HOME").unwrap_or_else(|_| "/home/codexis".to_string());
-    let env_file = format!("{}/.cdx/.daemon.env", home);
+    let env_file = format!("{}/.cdx/.env", home);
     if let Ok(content) = fs::read_to_string(&env_file) {
         for line in content.lines() {
-            if let Some(val) = line.strip_prefix("CDX_DAEMON_AUTH=") {
+            if let Some(val) = line.strip_prefix("CDX_API_JWT_AUTH=") {
                 let val = val.trim();
                 if !val.is_empty() {
                     return val.to_string();
@@ -167,12 +173,7 @@ fn load_daemon_auth() -> String {
             }
         }
     }
-    if let Ok(val) = env::var("CDX_DAEMON_AUTH") {
-        if !val.is_empty() {
-            return val;
-        }
-    }
-    eprintln!("error: CDX_DAEMON_AUTH not found in ~/.cdx/.daemon.env or environment");
+    eprintln!("error: CDX_API_JWT_AUTH not found in ~/.cdx/.env or environment");
     std::process::exit(2);
 }
 

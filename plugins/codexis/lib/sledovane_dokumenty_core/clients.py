@@ -9,7 +9,7 @@ from .exceptions import CdxClientError, LlmDaemonError
 
 CDX_CLI_BIN = "cdx-cli"
 DEFAULT_DAEMON_URL = "http://localhost:8086"
-DAEMON_ENV_FILE = os.path.expanduser("~/.cdx/.daemon.env")
+CDX_ENV_FILE = os.path.expanduser("~/.cdx/.env")
 
 
 # ── cdx-cli wrapper ──────────────────────────────────────────────────────────
@@ -178,16 +178,16 @@ def fetch_related_counts(codexis_id):
 # ── LLM daemon client ────────────────────────────────────────────────────────
 
 
-def load_daemon_auth():
-    """Load CDX_DAEMON_AUTH from env or ~/.cdx/.daemon.env."""
-    val = os.environ.get("CDX_DAEMON_AUTH", "")
+def load_api_jwt_auth():
+    """Load CDX_API_JWT_AUTH from env or ~/.cdx/.env."""
+    val = os.environ.get("CDX_API_JWT_AUTH", "")
     if val:
         return val
     try:
-        with open(DAEMON_ENV_FILE) as f:
+        with open(CDX_ENV_FILE) as f:
             for line in f:
-                if line.startswith("CDX_DAEMON_AUTH="):
-                    val = line[len("CDX_DAEMON_AUTH="):].strip()
+                if line.startswith("CDX_API_JWT_AUTH="):
+                    val = line[len("CDX_API_JWT_AUTH="):].strip()
                     if val:
                         return val
     except OSError:
@@ -202,7 +202,7 @@ def llm_extract(text, query):
     and retry next check cycle.
     """
     daemon_url = os.environ.get("CDX_DAEMON_URL", DEFAULT_DAEMON_URL)
-    daemon_auth = load_daemon_auth()
+    daemon_auth = load_api_jwt_auth()
     if not daemon_auth:
         return None
 
