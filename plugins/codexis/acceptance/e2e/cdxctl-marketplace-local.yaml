@@ -17,8 +17,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "marketplace add"
-      response:
-        matches: "(?i)added|created|registered"
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"
@@ -41,8 +39,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "marketplace remove"
-      response:
-        matches: "(?i)remov|delet"
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"

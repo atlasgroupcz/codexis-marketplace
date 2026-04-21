@@ -1,7 +1,7 @@
 name: cdxctl-notification-lifecycle
-description: Verify cdxctl creates a notification, and that seen/confirmed transitions actually persist in the daemon.
+description: Verify cdxctl creates a notification and the seen/confirmed transitions persist in the daemon.
 
-# Notification state transitions:
+# State transitions:
 #   created         → seen=null,   confirmed=null
 #   after `seen`    → seen=<ts>,   confirmed=null
 #   after `confirm` → seen=<ts>,   confirmed=<ts>
@@ -12,8 +12,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification create"
-      response:
-        matches: "(?i)created|added"
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')]"
@@ -39,8 +37,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification seen"
-      response:
-        matches: "(?i)seen|marked"
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].seen"
@@ -51,8 +47,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification confirm"
-      response:
-        matches: "(?i)confirmed"
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].confirmed"

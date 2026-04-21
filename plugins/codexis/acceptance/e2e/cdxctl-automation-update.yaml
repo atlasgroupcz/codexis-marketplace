@@ -7,8 +7,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation create-command"
-      response:
-        matches: "(?i)created|added"
       state:
         graphql: "{ automations { title cron command enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}')]"
@@ -23,8 +21,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation update"
-      response:
-        matches: "(?i)updated|changed|modified"
       state:
         - graphql: "{ automations { title cron command enabled } }"
           jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')]"
@@ -42,8 +38,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation update.{0,500}enabled"
-      response:
-        matches: "(?i)disabled|updated|enabled: false"
       state:
         graphql: "{ automations { title enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')].enabled"
@@ -54,8 +48,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation delete"
-      response:
-        matches: "(?i)delet|remov"
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[*].title"

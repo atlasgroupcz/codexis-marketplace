@@ -1,11 +1,11 @@
 name: cdxctl-automation-command
 description: Verify cdxctl creates, triggers, and deletes a COMMAND-type automation (shell command on cron) with correct fields, end-to-end.
 
-# Each step is evaluated on three axes that must ALL pass:
-#   - tool_call: did the model invoke the right tool with the right command?
-#   - response:  did the assistant narrate the outcome consistently?
-#   - state:     does the daemon's ground truth (via GraphQL) match expectation?
-# Fail-fast: first failing axis stops the chat and writes a transcript.
+# Per-step axes:
+#   tool_call — did the AI invoke the right cdxctl subcommand?
+#   state     — does the daemon's ground truth match? (primary oracle)
+#   response  — only on list/answer steps where the response text IS the product;
+#               omitted for pure mutations (state proves the outcome).
 
 steps:
   - prompt: "Using cdxctl, create an automation with title e2e-{{ run_id }}, cron '0 0 1 1 *' (once a year), and command 'echo hello'. Just create it — do not ask for confirmation."
@@ -13,8 +13,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation create-command.{0,500}e2e-"
-      response:
-        matches: "(?i)created|added"
       state:
         graphql: "{ automations { title cron command enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
@@ -41,8 +39,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "trigger"
-      response:
-        matches: "(?i)trigger|invoke|complete|ran|started|executed"
       state:
         graphql: "{ automations { title lastRun { status trigger errorMessage } } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun"
@@ -56,8 +52,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "delete|remove"
-      response:
-        matches: "(?i)delet|remov"
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
@@ -69,7 +63,7 @@ steps:
         name: shell
         input_matches: "automation list"
       response:
-        matches: "(?i)no|not (present|there|found|listed)|gone|removed|deleted"
+        contains: "e2e-{{ run_id }}"    # AI names what it's answering about
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[*].title"

@@ -22,8 +22,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "plugin install"
-      response:
-        matches: "(?i)installed|added"
       state:
         graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
         variables:
@@ -36,8 +34,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "plugin uninstall"
-      response:
-        matches: "(?i)uninstalled|removed"
       state:
         graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
         variables:

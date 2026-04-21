@@ -1,0 +1,39 @@
+name: cdxctl-skill-from-file
+description: Verify cdxctl creates a skill via the --file path (distinct from --stdin).
+
+steps:
+  - prompt: |
+      I want to create a custom skill. Here is the desired SKILL.md content:
+      ---
+      name: ee-fs-{{ run_id }}
+      description: "E2E test skill (from file)"
+      ---
+
+      # Instructions
+
+      This is an E2E from-file test skill.
+
+      Write this content to /tmp/ee-fs-{{ run_id }}/SKILL.md first (creating
+      the directory if needed), then use cdxctl to register it as a new skill.
+      Do not ask for confirmation.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill create.{0,200}--file"   # must be --file, not --stdin
+      state:
+        graphql: "{ skills { name description editable } }"
+        jsonpath: "$.skills[?(@.name == 'ee-fs-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          description: "E2E test skill (from file)"
+          editable: true
+
+  - prompt: "Using cdxctl, delete the skill named ee-fs-{{ run_id }}."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill delete"
+      state:
+        graphql: "{ skills { name } }"
+        jsonpath: "$.skills[*].name"
+        not_contains: "ee-fs-{{ run_id }}"

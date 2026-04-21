@@ -14,8 +14,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "agent create.{0,200}--stdin"
-      response:
-        matches: "(?i)created|added"
       state:
         graphql: "{ agents { name description editable deletable sourceKind } }"
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
@@ -42,8 +40,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "agent update"
-      response:
-        matches: "(?i)updated|changed|modified"
       state:
         graphql: "{ agents { name description } }"
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
@@ -54,8 +50,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "agent delete"
-      response:
-        matches: "(?i)delet|remov"
       state:
         graphql: "{ agents { name } }"
         jsonpath: "$.agents[*].name"

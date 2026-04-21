@@ -12,8 +12,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "skill create.{0,200}--stdin"
-      response:
-        matches: "(?i)created|added"
       state:
         graphql: "{ skills { name description editable deletable sourceKind } }"
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')]"
@@ -40,8 +38,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "skill update"
-      response:
-        matches: "(?i)updated|changed|modified"
       state:
         graphql: "{ skills { name description } }"
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
@@ -52,8 +48,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "skill delete"
-      response:
-        matches: "(?i)delet|remov"
       state:
         graphql: "{ skills { name } }"
         jsonpath: "$.skills[*].name"

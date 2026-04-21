@@ -1,13 +1,9 @@
 name: cdxctl-automation-ai
-description: Verify cdxctl creates an AI-agent automation (type=AI) using the explorer agent.
+description: Verify cdxctl creates an AGENT-type automation (using the explorer agent).
 
-# This tests `cdxctl automation create` (the AI-agent variant, distinct from
-# `create-command` already covered in cdxctl-lifecycle.yaml). The AI variant
-# requires --agent <id>; we use the pre-installed `explorer` agent.
-#
-# We deliberately do NOT trigger this automation — a trigger runs the prompt
-# through a real LLM, which costs real tokens and takes real time. Create +
-# state verification + delete is enough to prove the AI create path works.
+# Tests the AI-agent variant of automation create (distinct from create-command
+# in cdxctl-automation-command.yaml). Uses the pre-installed `explorer` agent.
+# Does NOT trigger — triggering would run the prompt through a real LLM.
 
 steps:
   - prompt: "Using cdxctl, list the available agents and tell me the full name and ID of the explorer agent."
@@ -33,9 +29,7 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "automation create[^-]"   # matches 'automation create' but NOT 'automation create-command'
-      response:
-        matches: "(?i)created|added"
+        input_matches: "automation create[^-]"   # 'automation create' but NOT 'automation create-command'
       state:
         graphql: "{ automations { title type agentFullName prompt maxTurns enabled } }"
         jsonpath: "$.automations[?(@.title == 'ee-ai-{{ run_id }}')]"
@@ -52,8 +46,6 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation delete"
-      response:
-        matches: "(?i)delet|remov"
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[*].title"
