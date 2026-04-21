@@ -1,5 +1,5 @@
-name: cdxctl-automation-lifecycle
-description: Verify cdxctl creates, triggers, and deletes an automation with correct fields, end-to-end.
+name: cdxctl-automation-command
+description: Verify cdxctl creates, triggers, and deletes a COMMAND-type automation (shell command on cron) with correct fields, end-to-end.
 
 # Each step is evaluated on three axes that must ALL pass:
 #   - tool_call: did the model invoke the right tool with the right command?
