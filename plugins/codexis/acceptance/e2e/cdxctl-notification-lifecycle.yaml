@@ -12,6 +12,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification create"
+      tool_calls_max: 3
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')]"
@@ -25,6 +26,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification list"
+      tool_calls_max: 3
       response:
         contains: "e2e-notif-{{ run_id }}"
       state:
@@ -37,6 +39,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification seen"
+      tool_calls_max: 5
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].seen"
@@ -47,6 +50,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "notification confirm"
+      tool_calls_max: 5
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].confirmed"

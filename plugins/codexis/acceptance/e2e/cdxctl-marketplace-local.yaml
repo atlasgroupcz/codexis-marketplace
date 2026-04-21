@@ -17,6 +17,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "marketplace add"
+      tool_calls_max: 5   # mkdir + write json + cdxctl add
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"
@@ -27,6 +28,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "marketplace list"
+      tool_calls_max: 3
       response:
         contains: "ee-mkt-{{ run_id }}"
       state:
@@ -39,6 +41,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "marketplace remove"
+      tool_calls_max: 5
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"

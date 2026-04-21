@@ -24,6 +24,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "agent create.{0,200}--file"   # must be --file, not --stdin
+      tool_calls_max: 4    # write file + create; allow slack
       state:
         graphql: "{ agents { name description editable } }"
         jsonpath: "$.agents[?(@.name == 'ee-fa-{{ run_id }}')]"
@@ -37,6 +38,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "agent delete"
+      tool_calls_max: 3
       state:
         graphql: "{ agents { name } }"
         jsonpath: "$.agents[*].name"

@@ -387,13 +387,34 @@ def _check_state(spec, client: Any, result: dict, vars_: dict) -> None:
         _check_state_single(check, client, result, vars_)
 
 
+def _check_tool_calls_count(expect: dict, tool_calls: list) -> None:
+    """Bound the total number of tool calls the model made in this turn.
+
+    `expect` may contain `tool_calls_min` and/or `tool_calls_max` (int).
+    Catches an AI that is too passive (min) or too wasteful (max).
+    """
+    n = len(tool_calls)
+    if "tool_calls_min" in expect and n < expect["tool_calls_min"]:
+        raise AssertionFailure(
+            f"tool_calls_min failed: got {n} call(s), expected >= {expect['tool_calls_min']}. "
+            f"Names: {[c.get('name') for c in tool_calls]}"
+        )
+    if "tool_calls_max" in expect and n > expect["tool_calls_max"]:
+        raise AssertionFailure(
+            f"tool_calls_max failed: got {n} call(s), expected <= {expect['tool_calls_max']}. "
+            f"Names: {[c.get('name') for c in tool_calls]}"
+        )
+
+
 def run_step_checks(expect: dict, result: dict, captured: dict, client: Any) -> None:
-    """Run the three axes (tool_call, response, state). Fail fast on the first.
+    """Run the axes (tool_call, tool_calls_min/max, response, state). Fail fast.
 
     Skips any axis not present in `expect`. Raises AssertionFailure on mismatch.
     """
     if "tool_call" in expect:
         _check_tool_call(expect["tool_call"], result.get("tool_calls") or [], captured)
+    if "tool_calls_min" in expect or "tool_calls_max" in expect:
+        _check_tool_calls_count(expect, result.get("tool_calls") or [])
     if "response" in expect:
         _check_response(expect["response"], result.get("text") or "", captured)
     if "state" in expect:

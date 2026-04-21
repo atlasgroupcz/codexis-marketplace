@@ -11,6 +11,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "agent list"
+      tool_calls_max: 3
       response:
         contains: "explorer"
       state:
@@ -30,6 +31,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation create[^-]"   # 'automation create' but NOT 'automation create-command'
+      tool_calls_max: 3
       state:
         graphql: "{ automations { title type agentFullName prompt maxTurns enabled } }"
         jsonpath: "$.automations[?(@.title == 'ee-ai-{{ run_id }}')]"
@@ -46,6 +48,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "automation delete"
+      tool_calls_max: 5
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[*].title"

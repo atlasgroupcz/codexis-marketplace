@@ -14,6 +14,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "plugin list.{0,100}--available"
+      tool_calls_max: 3
       response:
         contains: "data-gouv-fr"
 
@@ -22,6 +23,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "plugin install"
+      tool_calls_max: 5
       state:
         graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
         variables:
@@ -34,6 +36,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "plugin uninstall"
+      tool_calls_max: 5
       state:
         graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
         variables:

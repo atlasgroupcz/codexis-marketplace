@@ -19,12 +19,14 @@ steps:
       tool_call:
         name: shell
         input_matches: "ee-tab-{{ run_id }}"
+      tool_calls_max: 3     # mkdir + write file
 
   - prompt: "Using cdxctl, add a column to the tabular extraction at /tmp/ee-tab-{{ run_id }}: name='customer', col-type=text, description='The customer full name from the invoice'."
     expect:
       tool_call:
         name: shell
         input_matches: "tabular add-column"
+      tool_calls_max: 3
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
         variables:
@@ -37,6 +39,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "tabular start"
+      tool_calls_max: 30    # polling: start + ~20 status checks at 5s intervals
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
         variables:
@@ -49,6 +52,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "tabular results"
+      tool_calls_max: 3
       response:
         matches: "(?i)john"
       state:

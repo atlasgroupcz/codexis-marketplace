@@ -20,6 +20,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "skill create.{0,200}--file"   # must be --file, not --stdin
+      tool_calls_max: 4    # mkdir + write + create; allow slack
       state:
         graphql: "{ skills { name description editable } }"
         jsonpath: "$.skills[?(@.name == 'ee-fs-{{ run_id }}')]"
@@ -33,6 +34,7 @@ steps:
       tool_call:
         name: shell
         input_matches: "skill delete"
+      tool_calls_max: 3
       state:
         graphql: "{ skills { name } }"
         jsonpath: "$.skills[*].name"
