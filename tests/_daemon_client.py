@@ -51,6 +51,48 @@ class DaemonClient:
         data = self.gql_data(GET_ENTRY, {"path": path})
         return data.get("getEntry")
 
+    def new_chat(self, model: str | None = None) -> dict:
+        data = self.gql_data(
+            "mutation NewChat($model: ChatModel) { newChat(model: $model) { id chatId status } }",
+            {"model": model},
+        )
+        return data["newChat"]
+
+    def send_message(self, chat_id: str, message: str) -> dict:
+        data = self.gql_data(
+            """mutation SendMessage($chatId: ID!, $message: String!) {
+                 sendMessage(chatId: $chatId, message: $message) {
+                   chatId
+                   ... on SendMessageProcessing { executionId }
+                   ... on SendMessageError { message }
+                 }
+               }""",
+            {"chatId": chat_id, "message": message},
+        )
+        return data["sendMessage"]
+
+    def get_chat(self, node_id: str) -> dict:
+        data = self.gql_data(
+            """query GetChat($id: ID!) {
+                 node(id: $id) {
+                   ... on ChatInfo {
+                     id chatId status
+                     messages {
+                       __typename id status
+                       parts {
+                         __typename partId
+                         ... on TextMessagePart { content }
+                         ... on ThinkingMessagePart { toolCount toolChainId thinkingState: state }
+                         ... on ToolMessagePart { toolCallId toolName input output }
+                       }
+                     }
+                   }
+                 }
+               }""",
+            {"id": node_id},
+        )
+        return data["node"] or {}
+
 
 ADD_MARKETPLACE = """
 mutation AddMarketplace($input: MarketplaceSourceInput!) {

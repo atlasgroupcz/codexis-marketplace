@@ -83,3 +83,88 @@ def test_non_json_tool_output_kept_as_string():
     tc = parse_assistant_message(msg)["tool_calls"][0]
     assert tc["input"] == {"cmd": "ls"}
     assert tc["output"] == "file1\nfile2\n"
+
+
+import pytest
+from _chat_runner import ChatRunner, ChatError
+
+
+class FakeDaemon:
+    """Minimal fake of the GraphQL surface ChatRunner uses."""
+    def __init__(self, scripted_messages: list[dict]):
+        self._messages = scripted_messages
+        self._cursor = -1  # index into _messages for next assistant reply
+        self.sent: list[str] = []
+        self.chat_node_id = "Q2hhdElkOnh5eg=="  # base64 of "ChatId:xyz"
+        self.poll_count = 0
+
+    def new_chat(self, model=None):
+        return {"id": self.chat_node_id, "chatId": "xyz", "status": "READY"}
+
+    def send_message(self, chat_id, message):
+        self.sent.append(message)
+        self._cursor += 1
+        return {"chatId": chat_id, "executionId": f"exec-{self._cursor}"}
+
+    def get_chat(self, node_id):
+        self.poll_count += 1
+        # Pretend status is PROCESSING for the first poll, READY thereafter.
+        status = "READY" if self.poll_count >= 2 else "PROCESSING"
+        return {
+            "id": node_id,
+            "chatId": "xyz",
+            "status": status,
+            "messages": [self._messages[self._cursor]] if self._cursor >= 0 and status == "READY" else [],
+        }
+
+
+def _msg(text="ok", tool_calls=()):
+    parts = [
+        {"__typename": "ToolMessagePart", "toolCallId": f"tc{i}", "toolName": tc["name"],
+         "input": "{}", "output": "{}"}
+        for i, tc in enumerate(tool_calls)
+    ]
+    parts.append({"__typename": "TextMessagePart", "partId": "p", "content": text})
+    return {"__typename": "ChatMessage", "id": "m", "status": "READY", "parts": parts}
+
+
+def test_chat_runner_sends_and_receives_one_turn():
+    fake = FakeDaemon([_msg(text="hello back")])
+    runner = ChatRunner(fake, poll_interval_s=0, poll_timeout_s=5)
+    runner.start()
+    result = runner.step("hi")
+    assert result["text"] == "hello back"
+    assert fake.sent == ["hi"]
+
+
+def test_chat_runner_preserves_chat_across_steps():
+    fake = FakeDaemon([_msg(text="r1"), _msg(text="r2")])
+    runner = ChatRunner(fake, poll_interval_s=0, poll_timeout_s=5)
+    runner.start()
+    r1 = runner.step("a")
+    r2 = runner.step("b")
+    assert r1["text"] == "r1"
+    assert r2["text"] == "r2"
+    assert fake.sent == ["a", "b"]
+
+
+def test_chat_runner_times_out_on_stuck_processing():
+    class Stuck(FakeDaemon):
+        def get_chat(self, node_id):
+            return {"id": node_id, "chatId": "xyz", "status": "PROCESSING", "messages": []}
+    fake = Stuck([])
+    runner = ChatRunner(fake, poll_interval_s=0, poll_timeout_s=0.01)
+    runner.start()
+    with pytest.raises(ChatError, match="timeout"):
+        runner.step("hi")
+
+
+def test_chat_runner_raises_on_error_status():
+    class Erroring(FakeDaemon):
+        def get_chat(self, node_id):
+            return {"id": node_id, "chatId": "xyz", "status": "ERROR", "messages": []}
+    fake = Erroring([])
+    runner = ChatRunner(fake, poll_interval_s=0, poll_timeout_s=5)
+    runner.start()
+    with pytest.raises(ChatError, match="ERROR"):
+        runner.step("hi")
