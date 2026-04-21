@@ -28,7 +28,6 @@ import argparse
 import json
 import secrets
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -44,76 +43,17 @@ from _assertions import (
 )
 from _chat_runner import ChatRunner
 from _changed_plugins import get_changed_plugins
-from _daemon_client import (
-    ADD_MARKETPLACE,
-    INSTALL_PLUGIN,
-    REMOVE_MARKETPLACE,
-    UNINSTALL_PLUGIN,
-    DaemonClient,
-    encode_node_id,
-)
+from _daemon_client import DaemonClient
+from _output import Results
 from _transcript import write_transcript
 
 
-# ---------------------------------------------------------------------------
-# Output
-# ---------------------------------------------------------------------------
-class C:
-    R = "\033[0;31m"
-    G = "\033[0;32m"
-    Y = "\033[1;33m"
-    B = "\033[0;36m"
-    BOLD = "\033[1m"
-    N = "\033[0m"
-
-
-@dataclass
-class Results:
-    passed: int = 0
-    failed: int = 0
-    skipped: int = 0
-    errors: list[str] = field(default_factory=list)
-
-    def ok(self, msg: str) -> None:
-        self.passed += 1
-        print(f"{C.G}  ✓{C.N} {msg}")
-
-    def fail(self, msg: str) -> None:
-        self.failed += 1
-        self.errors.append(msg)
-        print(f"{C.R}  ✗{C.N} {msg}")
-
-    def skip(self, msg: str) -> None:
-        self.skipped += 1
-        print(f"{C.Y}  ⊘{C.N} {msg}")
-
-    def section(self, msg: str) -> None:
-        print(f"\n{C.BOLD}━━━ {msg} ━━━{C.N}")
-
-    def log(self, msg: str) -> None:
-        print(f"{C.B}[E2E]{C.N} {msg}")
-
-    def summary(self) -> int:
-        self.section("Results")
-        print(f"  {C.G}Passed:  {self.passed}{C.N}")
-        print(f"  {C.R}Failed:  {self.failed}{C.N}")
-        print(f"  {C.Y}Skipped: {self.skipped}{C.N}")
-        if self.errors:
-            print(f"\n{C.R}{C.BOLD}FAILURES:{C.N}")
-            for e in self.errors:
-                print(f"  {C.R}✗{C.N} {e}")
-            print()
-            return 1
-        print(f"\n{C.G}{C.BOLD}All plugin e2e tests passed!{C.N}")
-        return 0
+MARKETPLACE_ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
 # Plugin selection
 # ---------------------------------------------------------------------------
-MARKETPLACE_ROOT = Path(__file__).resolve().parent.parent
-
-
 def _all_plugins_with_e2e() -> list[str]:
     plugins_dir = MARKETPLACE_ROOT / "plugins"
     if not plugins_dir.is_dir():
@@ -140,7 +80,6 @@ def pick_plugins(args: argparse.Namespace, r: Results) -> list[str]:
         names = _all_plugins_with_e2e()
         r.log(f"--all: {len(names)} plugin(s) with acceptance/e2e/")
         return names
-    # Default: --changed vs --base-ref
     names = get_changed_plugins(args.base_ref, MARKETPLACE_ROOT)
     r.log(f"--changed vs {args.base_ref}: {len(names)} plugin(s)")
     return names
@@ -168,32 +107,19 @@ def preflight(client: DaemonClient, r: Results) -> dict:
     return manifest
 
 
-def add_marketplace(client: DaemonClient, args: argparse.Namespace,
+def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
                     manifest: dict, r: Results) -> dict:
     r.section("Add marketplace (GIT)")
     mkt_name = manifest["name"]
-    mkt_uuid = manifest.get("uuid", "")
-    variables = {
-        "input": {"sourceType": "GIT", "gitUrl": args.git_url, "gitRef": args.git_ref}
-    }
-    r.log(f"Git URL: {args.git_url}  ref: {args.git_ref}")
+    r.log(f"Git URL: {git_url}  ref: {git_ref}")
 
     try:
-        data = client.gql_data(ADD_MARKETPLACE, variables)
+        marketplaces = client.add_marketplace_idempotent(git_url, git_ref, manifest)
     except RuntimeError as e:
-        if "already configured" in str(e).lower():
-            r.log("Marketplace already exists, removing first…")
-            try:
-                client.gql_data(REMOVE_MARKETPLACE,
-                                {"id": encode_node_id("Marketplace", mkt_uuid)})
-            except Exception:
-                pass
-            data = client.gql_data(ADD_MARKETPLACE, variables)
-        else:
-            r.fail(f"Failed to add marketplace: {e}")
-            sys.exit(1)
+        r.fail(f"Failed to add marketplace: {e}")
+        sys.exit(1)
 
-    our = next((m for m in data["addMarketplace"] if m["name"] == mkt_name), None)
+    our = next((m for m in marketplaces if m["name"] == mkt_name), None)
     if not our:
         r.fail(f"Marketplace {mkt_name!r} not found in response")
         sys.exit(1)
@@ -204,7 +130,7 @@ def add_marketplace(client: DaemonClient, args: argparse.Namespace,
 def remove_marketplace(client: DaemonClient, mkt_node_id: str, r: Results) -> None:
     r.section("Remove marketplace")
     try:
-        client.gql_data(REMOVE_MARKETPLACE, {"id": mkt_node_id})
+        client.remove_marketplace(mkt_node_id)
         r.ok("Marketplace removed")
     except RuntimeError as e:
         r.fail(f"Failed to remove marketplace: {e}")
@@ -283,7 +209,7 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
 
     r.log("Installing…")
     try:
-        client.gql_data(INSTALL_PLUGIN, {"input": {"id": plugin_id}})
+        client.install_plugin(plugin_id)
     except RuntimeError as e:
         r.fail(f"{name}: install failed: {e}")
         return
@@ -294,7 +220,7 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
     finally:
         r.log("Uninstalling…")
         try:
-            client.gql_data(UNINSTALL_PLUGIN, {"input": {"id": plugin_id}})
+            client.uninstall_plugin(plugin_id)
         except RuntimeError as e:
             r.fail(f"{name}: uninstall failed: {e}")
 
@@ -342,7 +268,7 @@ def main() -> int:
         r.log("No plugins to test — done.")
         return r.summary()
 
-    our_mkt = add_marketplace(client, args, manifest, r)
+    our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)
     mkt_plugins_by_name = {p["name"]: p for p in our_mkt.get("plugins", [])}
 
     try:

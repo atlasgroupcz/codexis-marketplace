@@ -9,10 +9,10 @@ Usage:
   python3 tests/test-marketplace.py --daemon URL --token JWT --git-url URL --git-ref REF
 
 Example:
-  python3 tests/test-marketplace.py \
-    --daemon http://localhost:8086 \
-    --token eyJhbGci... \
-    --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \
+  python3 tests/test-marketplace.py \\
+    --daemon http://localhost:8086 \\
+    --token eyJhbGci... \\
+    --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \\
     --git-ref main
 """
 
@@ -21,81 +21,19 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _daemon_client import (
-    DaemonClient,
-    encode_node_id,
-    ADD_MARKETPLACE,
-    REMOVE_MARKETPLACE,
-    LIST_MARKETPLACES,
-    INSTALL_PLUGIN,
-    UNINSTALL_PLUGIN,
-    SKILLS,
-    GET_ENTRY,
-)
-
-
-# ---------------------------------------------------------------------------
-# Output
-# ---------------------------------------------------------------------------
-class C:
-    R = "\033[0;31m"
-    G = "\033[0;32m"
-    Y = "\033[1;33m"
-    B = "\033[0;36m"
-    BOLD = "\033[1m"
-    N = "\033[0m"
-
-
-@dataclass
-class Results:
-    passed: int = 0
-    failed: int = 0
-    errors: list[str] = field(default_factory=list)
-
-    def ok(self, msg: str) -> None:
-        self.passed += 1
-        print(f"{C.G}  ✓{C.N} {msg}")
-
-    def fail(self, msg: str) -> None:
-        self.failed += 1
-        self.errors.append(msg)
-        print(f"{C.R}  ✗{C.N} {msg}")
-
-    def skip(self, msg: str) -> None:
-        print(f"{C.Y}  ⊘{C.N} {msg}")
-
-    def section(self, msg: str) -> None:
-        print(f"\n{C.BOLD}━━━ {msg} ━━━{C.N}")
-
-    def log(self, msg: str) -> None:
-        print(f"{C.B}[TEST]{C.N} {msg}")
-
-    def summary(self) -> int:
-        self.section("Results")
-        print(f"  {C.G}Passed:  {self.passed}{C.N}")
-        print(f"  {C.R}Failed:  {self.failed}{C.N}")
-        print()
-        if self.errors:
-            print(f"{C.R}{C.BOLD}FAILURES:{C.N}")
-            for e in self.errors:
-                print(f"  {C.R}✗{C.N} {e}")
-            print()
-            return 1
-        print(f"{C.G}{C.BOLD}All checks passed!{C.N}")
-        return 0
-
+from _daemon_client import DaemonClient
+from _output import Results
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def check_assertions(assertions: list[dict], install_path: str, client: DaemonClient, r: Results) -> None:
+def check_assertions(assertions: list[dict], install_path: str,
+                     client: DaemonClient, r: Results) -> None:
     for a in assertions:
         atype = a.get("type", "")
         path = a.get("path", "").replace("$PLUGIN_DIR", install_path)
@@ -128,6 +66,12 @@ def check_assertions(assertions: list[dict], install_path: str, client: DaemonCl
                 r.fail(f"{path} still exists")
 
 
+def load_expected(plugin_dir: Path) -> dict | None:
+    expected_path = plugin_dir / "acceptance" / "expected.json"
+    if expected_path.is_file():
+        return json.loads(expected_path.read_text())
+    return None
+
 
 # ---------------------------------------------------------------------------
 # Test steps
@@ -153,30 +97,19 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
     return manifest
 
 
-def add_marketplace(client: DaemonClient, git_url: str, git_ref: str, manifest: dict, r: Results) -> dict:
+def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
+                    manifest: dict, r: Results) -> dict:
     r.section("Add marketplace (GIT)")
-
     mkt_name = manifest["name"]
-    mkt_uuid = manifest.get("uuid", "")
-    variables: dict[str, Any] = {"input": {"sourceType": "GIT", "gitUrl": git_url, "gitRef": git_ref}}
-
     r.log(f"Git URL: {git_url}  ref: {git_ref}")
 
     try:
-        data = client.gql_data(ADD_MARKETPLACE, variables)
+        marketplaces = client.add_marketplace_idempotent(git_url, git_ref, manifest)
     except RuntimeError as e:
-        if "already configured" in str(e).lower():
-            r.log("Marketplace already exists, removing first...")
-            try:
-                client.gql_data(REMOVE_MARKETPLACE, {"id": encode_node_id("Marketplace", mkt_uuid)})
-            except Exception:
-                pass
-            data = client.gql_data(ADD_MARKETPLACE, variables)
-        else:
-            r.fail(f"Failed to add marketplace: {e}")
-            sys.exit(1)
+        r.fail(f"Failed to add marketplace: {e}")
+        sys.exit(1)
 
-    our_mkt = next((m for m in data["addMarketplace"] if m["name"] == mkt_name), None)
+    our_mkt = next((m for m in marketplaces if m["name"] == mkt_name), None)
     if not our_mkt:
         r.fail(f"Marketplace '{mkt_name}' not found in response")
         sys.exit(1)
@@ -194,8 +127,8 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
     r.section("Validate marketplace listing")
 
     mkt_name = manifest["name"]
-    data = client.gql_data(LIST_MARKETPLACES)
-    if any(m["name"] == mkt_name for m in data["marketplaces"]):
+    marketplaces = client.list_marketplaces()
+    if any(m["name"] == mkt_name for m in marketplaces):
         r.ok("Marketplace appears in listing")
     else:
         r.fail("Marketplace not found in listing")
@@ -207,13 +140,6 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
             r.ok(f"Plugin '{name}' listed")
         else:
             r.fail(f"Plugin '{name}' missing from marketplace (check source path)")
-
-
-def load_expected(plugin_dir: Path) -> dict | None:
-    expected_path = plugin_dir / "acceptance" / "expected.json"
-    if expected_path.is_file():
-        return json.loads(expected_path.read_text())
-    return None
 
 
 def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: Results) -> None:
@@ -231,12 +157,12 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     # --- Install ---
     r.log("Installing...")
     try:
-        data = client.gql_data(INSTALL_PLUGIN, {"input": {"id": plugin_id}})
+        installed_list = client.install_plugin(plugin_id)
     except RuntimeError as e:
         r.fail(f"Install failed: {e}")
         return
 
-    installed = next((p for p in data["installPlugin"] if p["name"] == name), None)
+    installed = next((p for p in installed_list if p["name"] == name), None)
     if not installed:
         r.fail("Not in installed list after install")
         return
@@ -265,8 +191,8 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     expected_skills = (expected or {}).get("skills", []) or [s["fullName"] for s in skills]
     if expected_skills:
         try:
-            skills_data = client.gql_data(SKILLS)
-            available = {s["fullName"] for s in skills_data["skills"]}
+            skills_list = client.list_skills()
+            available = {s["fullName"] for s in skills_list}
             for qname in expected_skills:
                 if qname in available:
                     r.ok(f"Skill '{qname}' available")
@@ -283,12 +209,12 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     # --- Uninstall ---
     r.log("Uninstalling...")
     try:
-        data = client.gql_data(UNINSTALL_PLUGIN, {"input": {"id": plugin_id}})
+        remaining = client.uninstall_plugin(plugin_id)
     except RuntimeError as e:
         r.fail(f"Uninstall failed: {e}")
         return
 
-    if not any(p["name"] == name for p in data["uninstallPlugin"]):
+    if not any(p["name"] == name for p in remaining):
         r.ok("Removed from installed list")
     else:
         r.fail("Still in installed list after uninstall")
@@ -309,12 +235,12 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
 def remove_marketplace(client: DaemonClient, mkt_node_id: str, mkt_name: str, r: Results) -> None:
     r.section("Remove marketplace")
     try:
-        client.gql_data(REMOVE_MARKETPLACE, {"id": mkt_node_id})
+        client.remove_marketplace(mkt_node_id)
     except RuntimeError as e:
         r.fail(f"Failed to remove marketplace: {e}")
 
-    data = client.gql_data(LIST_MARKETPLACES)
-    if not any(m["name"] == mkt_name for m in data["marketplaces"]):
+    marketplaces = client.list_marketplaces()
+    if not any(m["name"] == mkt_name for m in marketplaces):
         r.ok("Marketplace removed from listing")
     else:
         r.fail("Marketplace still in listing after removal")
