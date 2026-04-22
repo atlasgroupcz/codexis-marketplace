@@ -1,0 +1,31 @@
+name: cdx-sk-search
+description: Verify the cdx-sk skill performs a court-case search and fetches a specific paragraph of Slovak law.
+
+# Mirrors codexis-search for the Slovak legal database (e-Zbierka + courts).
+# Two steps:
+#   1. Case-law search (forces `cdx-sk search`; unpredictable IDs).
+#   2. Specific paragraph fetch from Občiansky zákonník (40/1964 Zb.) —
+#      §3 ("dobrými mravmi") is a stable statutory marker.
+
+steps:
+  - prompt: "Nájdi mi nejaké rozhodnutia Najvyššieho súdu SR o náhrade škody."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-sk search"
+      tool_calls_min: 1
+      tool_calls_max: 5
+      response:
+        # Slovak supreme-court decisions typically mention one or both.
+        matches: "(?i)Najvyšš[ií]|náhrad"
+
+  - prompt: "Ako znie §3 Občianskeho zákonníka (40/1964 Zb.)?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-sk"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        # §3 of SK Občiansky zákonník is the famous "dobré mravy" paragraph.
+        matches: "(?i)dobr(ými|ými|ymi)?\\s*mravmi|dobrými mravmi"
