@@ -16,7 +16,7 @@ setup:
           content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
 
 steps:
-  - prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' — celé jméno zákazníka z faktury."
+  - prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' — celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
     expect:
       tool_call:
         name: shell
@@ -34,9 +34,9 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "tabular[^a-z]+start"   # shell form or Python list form (['tabular','start',...])
+        input_matches: "tabular[^a-z]+start"   # shell form or Python list form
       tool_calls_min: 1
-      tool_calls_max: 8   # AI typically wraps start+poll loop inside a single script call
+      tool_calls_max: 8
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
         variables:
