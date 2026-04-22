@@ -36,6 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _assertions import (
     AssertionFailure,
+    do_graphql_captures,
     run_step_checks,
     substitute,
 )
@@ -220,6 +221,9 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
         expect = step.get("expect") or {}
         try:
             run_step_checks(expect, result, captured, client)
+            # Step passed — run captures (if any) to make values available
+            # to subsequent steps as {{ name }}.
+            captured.update(do_graphql_captures(step.get("capture"), client, captured))
             recorded.append({"prompt": prompt, "result": result, "status": "PASS"})
         except (AssertionFailure, AssertionError) as e:
             failure = f"step {i}: {e}"

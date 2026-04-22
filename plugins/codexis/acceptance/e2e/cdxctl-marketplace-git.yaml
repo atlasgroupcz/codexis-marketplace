@@ -16,6 +16,12 @@ steps:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"
         contains: "claude-plugins-official"
+    # Capture the dynamic marketplace ID so later steps can query
+    # installedPlugins(marketplace: $id).
+    capture:
+      official_mkt_id:
+        graphql: "{ marketplaces { id name } }"
+        jsonpath: "$.marketplaces[?(@.name == 'claude-plugins-official')].id"
 
   - prompt: "Jaké mám marketplace? Je tam claude-plugins-official?"
     expect:
@@ -39,7 +45,13 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 8
       response:
-        contains: "superpowers"   # AI confirms what it installed
+        contains: "superpowers"
+      state:
+        graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
+        variables:
+          m: "{{ official_mkt_id }}"
+        jsonpath: "$.installedPlugins[*].name"
+        contains: "superpowers"
 
   - prompt: "Odinstaluj plugin superpowers."
     expect:
@@ -51,8 +63,10 @@ steps:
       response:
         contains: "superpowers"
       state:
-        graphql: "{ marketplaces { name plugins { name } } }"
-        jsonpath: "$.marketplaces[?(@.name == 'claude-plugins-official')].plugins[*].name"
+        graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
+        variables:
+          m: "{{ official_mkt_id }}"
+        jsonpath: "$.installedPlugins[*].name"
         not_contains: "superpowers"
 
   - prompt: "Odeber marketplace claude-plugins-official."

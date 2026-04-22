@@ -426,6 +426,35 @@ def run_step_checks(expect: dict, result: dict, captured: dict, client: Any) -> 
         _check_state(expect["state"], client, result, captured)
 
 
+def do_graphql_captures(spec: dict | None, client: Any, vars_: dict) -> dict:
+    """Run GraphQL queries and capture values via jsonpath into named vars.
+
+    `spec` shape: { "<var_name>": { "graphql": "...", "variables"?: {...}, "jsonpath": "..." } }
+    Returns { "<var_name>": captured_value }. Later steps can use `{{ <var_name> }}`
+    in prompts, graphql queries, jsonpaths, and variable values.
+    """
+    out: dict = {}
+    for name, sub in (spec or {}).items():
+        query = substitute(sub["graphql"], vars_)
+        gql_vars = {k: substitute(v, vars_) if isinstance(v, str) else v
+                    for k, v in (sub.get("variables") or {}).items()}
+        try:
+            data = client.gql_data(query, gql_vars)
+        except Exception as e:
+            raise AssertionFailure(f"capture {name!r}: query failed: {e}") from e
+        if "jsonpath" in sub:
+            expr = _jp_parse(substitute(sub["jsonpath"], vars_))
+            matches = [m.value for m in expr.find(data)]
+            if not matches:
+                raise AssertionFailure(
+                    f"capture {name!r}: jsonpath {sub['jsonpath']!r} matched nothing"
+                )
+            out[name] = matches[0]
+        else:
+            out[name] = data
+    return out
+
+
 def apply_captures(captures: dict | None, result: dict) -> dict:
     """Evaluate jsonpath expressions against the step result and return {name: value}.
 
