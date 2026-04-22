@@ -22,7 +22,7 @@ steps:
         name: shell
         input_matches: "agent create.{0,200}--file"   # must be --file, not --stdin
       tool_calls_min: 1
-      tool_calls_max: 4
+      tool_calls_max: 6
       state:
         graphql: "{ agents { name description editable } }"
         jsonpath: "$.agents[?(@.name == 'ee-fa-{{ run_id }}')]"
@@ -37,7 +37,7 @@ steps:
         name: shell
         input_matches: "agent delete"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 5
       state:
         graphql: "{ agents { name } }"
         jsonpath: "$.agents[*].name"

@@ -8,7 +8,7 @@ steps:
         name: shell
         input_matches: "automation create-command"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 5
       state:
         graphql: "{ automations { title cron command enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}')]"

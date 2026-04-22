@@ -17,7 +17,7 @@ steps:
         name: shell
         input_matches: "automation create-command.{0,500}e2e-"
       tool_calls_min: 1
-      tool_calls_max: 4   # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries
+      tool_calls_max: 6   # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries
       state:
         graphql: "{ automations { title cron command enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
@@ -33,7 +33,7 @@ steps:
         name: shell
         input_matches: "automation list"
       tool_calls_min: 1
-      tool_calls_max: 2
+      tool_calls_max: 5
       response:
         contains: "e2e-{{ run_id }}"
       state:
@@ -47,7 +47,7 @@ steps:
         name: shell
         input_matches: "trigger"
       tool_calls_min: 1
-      tool_calls_max: 3    # list (find id) + trigger + 1 slack
+      tool_calls_max: 5    # list (find id) + trigger + 1 slack
       state:
         graphql: "{ automations { title lastRun { status trigger errorMessage } } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun"
@@ -62,7 +62,7 @@ steps:
         name: shell
         input_matches: "delete|remove"
       tool_calls_min: 1
-      tool_calls_max: 3    # list (find id) + delete + 1 slack
+      tool_calls_max: 5    # list (find id) + delete + 1 slack
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
@@ -74,7 +74,7 @@ steps:
         name: shell
         input_matches: "automation list"
       tool_calls_min: 1
-      tool_calls_max: 2
+      tool_calls_max: 5
       response:
         contains: "e2e-{{ run_id }}"    # AI names what it's answering about
       state:

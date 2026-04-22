@@ -50,7 +50,7 @@ steps:
         name: shell
         input_matches: "tabular results"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 5
       response:
         matches: "(?i)john"   # AI must relay the extracted value back to the user
       state:

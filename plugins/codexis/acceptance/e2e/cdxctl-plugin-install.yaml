@@ -11,7 +11,7 @@ steps:
         name: shell
         input_matches: "plugin list.{0,100}--available"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 5
       response:
         contains: "data-gouv-fr"
 

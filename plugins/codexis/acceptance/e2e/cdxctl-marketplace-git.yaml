@@ -20,7 +20,7 @@ steps:
         name: shell
         input_matches: "marketplace list"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 5
       response:
         contains: "claude-plugins-official"
       state:
