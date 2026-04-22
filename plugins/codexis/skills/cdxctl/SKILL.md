@@ -1,7 +1,7 @@
 ---
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
-description: Platform admin via cdxctl. Use for in-app oznámení/notifikace (NOT notify-send/dbus), automatizace, tabulární extrakce dat do tabulky, marketplaces, plugins, custom agents, dovednosti.
+description: Platform admin via cdxctl. Use for in-app oznámení/notifikace (NOT notify-send/dbus), automatizace, tabulární extrakce dat do tabulky, marketplaces, plugins, vlastní agenti, dovednosti.
 version: 1.4.0
 i18n:
   cs:

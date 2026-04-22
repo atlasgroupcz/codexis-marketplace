@@ -16,13 +16,13 @@ setup:
           content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
 
 steps:
-  - prompt: "Ve složce /home/codexis/ee-tab-{{ run_id }} mám faktury. Chci z nich extrahovat do tabulky sloupec 'customer' (typ text) — celé jméno zákazníka z faktury."
+  - prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' — celé jméno zákazníka z faktury."
     expect:
       tool_call:
         name: shell
         input_matches: "tabular add-column"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 9   # AI explores (CODEXIS.md, memory, folder, sample) before loading skill + add-column
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
         variables:

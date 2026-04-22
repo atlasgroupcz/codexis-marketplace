@@ -25,7 +25,7 @@ steps:
         name: shell
         input_matches: "cdx-cli"
       tool_calls_min: 1
-      tool_calls_max: 4   # CR/SK needs versioned ID → versions + toc + text; +1 slack for URL-format retries
+      tool_calls_max: 6   # AI often retries URL formats (cz_law/current/, doc/baseID/toc) before landing on versioned ID
       response:
         # §10 NOZ opens with "Nelze-li právní případ rozhodnout na základě
         # výslovného ustanovení" — a phrase unique across the civil code.
