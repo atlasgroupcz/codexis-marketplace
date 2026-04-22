@@ -72,6 +72,14 @@ Ambiguous — check tracked state first.
 
 **Never add a proceeding to tracking without explicit user intent.** Adding requires "sleduj/hlídej/přidej/začni hlídat" or an affirmative answer to the offer above.
 
+**The user asks for "nejnovější řízení" / "co se dnes podalo" at a given KP:**
+→ Use `/api/v1/Rizeni/PrijateDne`, but call it **once per TypRizeni** — the endpoint accepts only `V`, `Z`, `PGP` (it rejects `PD`/`ZPV`). Merge the three lists, sort by `datumPrijeti` desc, take the requested N.
+```bash
+for t in V Z PGP; do
+  katastr-cli api get "/api/v1/Rizeni/PrijateDne?TypRizeni=$t&KodPracoviste=<KOD>&DatumPrijeti=<YYYY-MM-DD>"
+done
+```
+
 **The user wants to set/check/test API key?**
 → `katastr-cli settings set <KEY>` / `katastr-cli settings show` / `katastr-cli settings test`
 
