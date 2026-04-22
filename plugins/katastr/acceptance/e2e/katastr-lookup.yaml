@@ -1,16 +1,18 @@
 name: katastr-lookup
-description: Verify the katastr skill can look up a real Czech cadastre parcel and return the correct size.
+description: Verify the katastr skill covers three typical lookup flows against a real stable parcel — basic info, owner (LV), and protection status.
 
-# Deterministic target: parcel 1 in cadastral area Moravská Ostrava
-# (ČÚZK kod 713520). Chosen because it's a stable cultural heritage
-# site (nemovitá kulturní památka) that:
-#   - Area 990 m²
-#   - Type "zastavěná plocha a nádvoří" (built-up area with yard)
-#   - Has číslo popisné 1
-# API key is already configured in the VM at ~/.cdx/apps/katastr/.env.
+# Deterministic target: parcel č. 1 in k.ú. Moravská Ostrava (ČÚZK 713520).
+# Stable cultural-heritage parcel with known stable attributes:
+#   - výměra 990 m²
+#   - druh pozemku: zastavěná plocha a nádvoří
+#   - budova s č.p. 1 stojí na ní
+#   - LV 12069
+#   - ochrana: nemovitá kulturní památka
+# API key pre-configured in VM at ~/.cdx/apps/katastr/.env.
 
 steps:
-  - prompt: "Najdi mi parcelu č. 1 v katastrálním území Moravská Ostrava. Jakou má výměru?"
+  # 1. basic lookup — verify area and land-type in the same response
+  - prompt: "Najdi mi parcelu č. 1 v katastrálním území Moravská Ostrava. Jakou má výměru a druh pozemku?"
     expect:
       tool_call:
         name: shell
@@ -18,4 +20,27 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 8
       response:
-        matches: "990"   # area in m²; deterministic stable value
+        # Both facts must be in the reply (order-independent).
+        matches: "(?s)990.{0,400}zastav|zastav.{0,400}990"
+
+  # 2. owner / LV — follow-up question in the same chat
+  - prompt: "A jaké je list vlastnictví (LV) této parcely?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "katastr-cli"
+      tool_calls_min: 1
+      tool_calls_max: 5
+      response:
+        contains: "12069"
+
+  # 3. protection status — another follow-up
+  - prompt: "Je ta parcela nějak chráněná? Třeba památkově?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "katastr-cli"
+      tool_calls_min: 1
+      tool_calls_max: 5
+      response:
+        matches: "(?i)kulturní[ -]?památka"
