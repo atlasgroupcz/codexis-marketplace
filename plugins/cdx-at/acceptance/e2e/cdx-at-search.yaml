@@ -7,13 +7,13 @@ description: Verify the cdx-at skill performs case-law search and fetches Austri
 #      the Austrian civil code — must be returned as a hit.
 
 steps:
-  - prompt: "Finde mir einige OGH-Entscheidungen zu Schadenersatz."
+  - prompt: "Finde mir 3 OGH-Entscheidungen zu Schadenersatz. Nur eine kurze Liste, keine Detailabrufe."
     expect:
       tool_call:
         name: shell
         input_matches: "cdx-at search"
       tool_calls_min: 1
-      tool_calls_max: 10
+      tool_calls_max: 8   # explicit scope to list, not fetch doc metas
       response:
         matches: "(?i)OGH|Oberster Gerichtshof|Schadenersatz"
 

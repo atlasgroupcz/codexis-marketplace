@@ -1,4 +1,4 @@
-name: cdx-sk-search
+nname: cdx-sk-search
 description: Verify the cdx-sk skill performs a court-case search and fetches a specific paragraph of Slovak law.
 
 # Mirrors codexis-search for the Slovak legal database (e-Zbierka + courts).
@@ -14,7 +14,7 @@ steps:
         name: shell
         input_matches: "cdx-sk search"
       tool_calls_min: 1
-      tool_calls_max: 10   # AI often does --help + multiple query variants + fetch
+      tool_calls_max: 5
       response:
         # Slovak supreme-court decisions typically mention one or both.
         matches: "(?i)Najvyšš[ií]|náhrad"
