@@ -25,9 +25,9 @@ describe('DocumentDetail', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Zakonik prace' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' })).toBeInTheDocument()
     })
-    expect(screen.getByText('cdx://doc/A10001')).toBeInTheDocument()
+    expect(screen.getByText('cdx://doc/CR13986')).toBeInTheDocument()
   })
 
   it('renders changes', async () => {
@@ -46,7 +46,7 @@ describe('DocumentDetail', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('Text zakona byl novelizovan v casti pracovni doby.'),
+        screen.getByText('Novela zákoníku práce v oblasti pracovní doby a dovolené.'),
       ).toBeInTheDocument()
     })
   })
@@ -66,7 +66,7 @@ describe('DocumentDetail', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('\u00a7 123')).toBeInTheDocument()
+      expect(screen.getByText('\u00a7 89')).toBeInTheDocument()
     })
     expect(screen.getByText('\u00a7 2991')).toBeInTheDocument()
   })
@@ -87,7 +87,7 @@ describe('DocumentDetail', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Zakonik prace' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' })).toBeInTheDocument()
     })
 
     await user.click(screen.getByRole('button', { name: /back/i }))
