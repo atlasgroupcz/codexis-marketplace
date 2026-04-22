@@ -1,7 +1,7 @@
 ---
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
-description: Platform CLI (cdxctl). Use for custom agents, skills, automations, plugins, marketplaces, in-app notifications (NOT notify-send/dbus), tabular extraction. Never manual files or OS tools.
+description: Load this FIRST for custom agents, skills, automations, plugins, marketplaces, in-app notifications (NOT notify-send/dbus), tabular extraction. Use cdxctl CLI — never manual files or OS tools.
 version: 1.4.0
 i18n:
   cs:
