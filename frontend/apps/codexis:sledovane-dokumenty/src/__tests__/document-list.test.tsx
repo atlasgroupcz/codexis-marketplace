@@ -24,10 +24,10 @@ describe('DocumentList', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
-      expect(screen.getByText('Zakonik prace')).toBeInTheDocument()
+      expect(screen.getByText('Zákoník práce (262/2006 Sb.)')).toBeInTheDocument()
     })
-    expect(screen.getByText('Obcansky zakonik')).toBeInTheDocument()
-    expect(screen.getByText('Spravni rad')).toBeInTheDocument()
+    expect(screen.getByText('Občanský zákoník (89/2012 Sb.)')).toBeInTheDocument()
+    expect(screen.getByText('Zákon o DPH (235/2004 Sb.)')).toBeInTheDocument()
   })
 
   it('shows unconfirmed badge with count', async () => {
@@ -43,7 +43,7 @@ describe('DocumentList', () => {
     renderApp(<DocumentList onSelectDocument={onSelectDocument} />)
 
     await waitFor(() => {
-      expect(screen.getByText('Zakonik prace')).toBeInTheDocument()
+      expect(screen.getByText('Zákoník práce (262/2006 Sb.)')).toBeInTheDocument()
     })
   })
 
@@ -61,10 +61,10 @@ describe('DocumentList', () => {
     renderApp(<DocumentList onSelectDocument={onSelectDocument} />)
 
     await waitFor(() => {
-      expect(screen.getByText('Zakonik prace')).toBeInTheDocument()
+      expect(screen.getByText('Zákoník práce (262/2006 Sb.)')).toBeInTheDocument()
     })
 
-    await user.click(screen.getByText('Zakonik prace'))
+    await user.click(screen.getByText('Zákoník práce (262/2006 Sb.)'))
     expect(onSelectDocument).toHaveBeenCalledWith('2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d')
   })
 

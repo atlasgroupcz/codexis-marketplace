@@ -12,7 +12,7 @@ describe('overviewResponseSchema', () => {
     const result = overviewResponseSchema.parse(overviewFixture)
     expect(result.mode).toBe('overview')
     expect(result.tracked_documents).toHaveLength(3)
-    expect(result.tracked_documents[0].name).toBe('Zakonik prace')
+    expect(result.tracked_documents[0].name).toBe('Zákoník práce (262/2006 Sb.)')
   })
 
   it('rejects response with wrong mode', () => {
@@ -46,7 +46,7 @@ describe('detailResponseSchema', () => {
   it('parses valid detail response without parts', () => {
     const result = detailResponseSchema.parse(detailFixture)
     expect(result.mode).toBe('detail')
-    expect(result.document.name).toBe('Zakonik prace')
+    expect(result.document.name).toBe('Zákoník práce (262/2006 Sb.)')
     expect(result.document.changes).toHaveLength(1)
     expect(result.document.parts).toHaveLength(0)
   })
@@ -54,7 +54,7 @@ describe('detailResponseSchema', () => {
   it('parses valid detail response with parts', () => {
     const result = detailResponseSchema.parse(detailWithPartsFixture)
     expect(result.document.parts).toHaveLength(2)
-    expect(result.document.parts[0].label).toBe('\u00a7 123')
+    expect(result.document.parts[0].label).toBe('\u00a7 89')
   })
 
   it('parses nullable confirmed_on', () => {
