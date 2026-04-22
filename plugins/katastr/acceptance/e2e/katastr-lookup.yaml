@@ -1,0 +1,21 @@
+name: katastr-lookup
+description: Verify the katastr skill can look up a real Czech cadastre parcel and return the correct size.
+
+# Deterministic target: parcel 1 in cadastral area Moravská Ostrava
+# (ČÚZK kod 713520). Chosen because it's a stable cultural heritage
+# site (nemovitá kulturní památka) that:
+#   - Area 990 m²
+#   - Type "zastavěná plocha a nádvoří" (built-up area with yard)
+#   - Has číslo popisné 1
+# API key is already configured in the VM at ~/.cdx/apps/katastr/.env.
+
+steps:
+  - prompt: "Najdi mi parcelu č. 1 v katastrálním území Moravská Ostrava. Jakou má výměru?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "katastr-cli"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "990"   # area in m²; deterministic stable value
