@@ -34,47 +34,17 @@ describe('fetchOverview', () => {
     await expect(fetchOverview()).rejects.toThrow('HTTP 404')
   })
 
-  it('falls back to local sample data on HTTP 500', async () => {
+  it('propagates HTTP 500 as error', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              trackedDocuments: [
-                {
-                  uuid: 'sample-1',
-                  codexisId: 'cdx://doc/SAMPLE',
-                  name: 'Sample',
-                  added_on: '2026-01-01T00:00:00Z',
-                  tracking_type: 'all',
-                  parts: [],
-                  changes: [
-                    {
-                      source_documents: [],
-                      detected_on: '2026-01-01T00:00:00Z',
-                      effective_on: '2026-01-01',
-                      change_type: 'document_change',
-                      description_md: 'x',
-                      confirmed_on: null,
-                    },
-                  ],
-                },
-              ],
-            }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      }),
     )
 
-    const result = await fetchOverview()
-    expect(result.mode).toBe('overview')
-    expect(result.tracked_documents[0].uuid).toBe('sample-1')
+    await expect(fetchOverview()).rejects.toThrow('HTTP 500')
   })
 
   it('throws on invalid response shape', async () => {
@@ -117,46 +87,16 @@ describe('fetchDetail', () => {
     expect(calledUrl).toContain('uuid=test-uuid')
   })
 
-  it('falls back to local sample data detail on HTTP 500', async () => {
+  it('propagates HTTP 500 as error', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              trackedDocuments: [
-                {
-                  uuid: 'fallback-uuid',
-                  codexisId: 'cdx://doc/SAMPLE',
-                  name: 'Sample',
-                  added_on: '2026-01-01T00:00:00Z',
-                  tracking_type: 'all',
-                  parts: [],
-                  changes: [
-                    {
-                      source_documents: [],
-                      detected_on: '2026-01-01T00:00:00Z',
-                      effective_on: '2026-01-01',
-                      change_type: 'document_change',
-                      description_md: 'x',
-                      confirmed_on: null,
-                    },
-                  ],
-                },
-              ],
-            }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      }),
     )
 
-    const result = await fetchDetail('fallback-uuid')
-    expect(result.mode).toBe('detail')
-    expect(result.document.uuid).toBe('fallback-uuid')
+    await expect(fetchDetail('any-uuid')).rejects.toThrow('HTTP 500')
   })
 })
