@@ -1,5 +1,8 @@
 name: cdxctl-marketplace-git
-description: Verify cdxctl can add a GIT-sourced marketplace and remove it, using the public Anthropic claude-plugins-official repo.
+description: Full cdxctl marketplace + plugin lifecycle — add a git marketplace (anthropic/claude-plugins-official), install a plugin (superpowers) from it, uninstall, remove marketplace.
+
+# One cohesive lifecycle. Uses the public claude-plugins-official marketplace
+# so nothing from our own marketplace gets polluted with install state.
 
 steps:
   - prompt: "Přidej mi prosím marketplace z tohohle gitu: https://github.com/anthropics/claude-plugins-official.git (větev main)."
@@ -27,6 +30,30 @@ steps:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"
         contains: "claude-plugins-official"
+
+  - prompt: "Nainstaluj mi z marketplace claude-plugins-official plugin superpowers."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "plugin install"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        contains: "superpowers"   # AI confirms what it installed
+
+  - prompt: "Odinstaluj plugin superpowers."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "plugin uninstall"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        contains: "superpowers"
+      state:
+        graphql: "{ marketplaces { name plugins { name } } }"
+        jsonpath: "$.marketplaces[?(@.name == 'claude-plugins-official')].plugins[*].name"
+        not_contains: "superpowers"
 
   - prompt: "Odeber marketplace claude-plugins-official."
     expect:

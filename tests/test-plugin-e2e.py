@@ -329,6 +329,17 @@ def main() -> int:
         "marketplace_name": our_mkt["name"],
     }
 
+    # Pre-clean: uninstall every plugin in our marketplace that might be left
+    # over from a prior crashed run. Tests that install/uninstall side plugins
+    # (e.g. cdxctl-plugin-install installs data-gouv-fr) fail incorrectly when
+    # the side plugin is already installed and AI sees "already installed".
+    r.log("Pre-clean: uninstalling any stale plugins…")
+    for p in mkt_plugins_by_name.values():
+        try:
+            client.uninstall_plugin(p["id"])
+        except RuntimeError:
+            pass
+
     try:
         for name in plugin_names:
             plugin = mkt_plugins_by_name.get(name)

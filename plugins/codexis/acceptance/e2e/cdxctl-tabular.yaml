@@ -22,7 +22,7 @@ steps:
         name: shell
         input_matches: "tabular add-column"
       tool_calls_min: 1
-      tool_calls_max: 11   # memory/docs + folder ls + sample read + status + add-column
+      tool_calls_max: 13   # high-variance exploration; includes occasional spawn_agent
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
         variables:
