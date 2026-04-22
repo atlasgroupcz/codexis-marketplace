@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Vrstva_11" data-name="Vrstva 11" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #0052b4;
+      }
+
+      .cls-2 {
+        fill: #d80027;
+      }
+
+      .cls-3 {
+        fill: #f0f0f0;
+      }
+
+      .cls-4 {
+        fill: #dff2ff;
+      }
+    </style>
+  </defs>
+  <rect class="cls-4" x="0" y="0" width="300" height="300"/>
+  <g>
+    <circle class="cls-3" cx="150.27" cy="150.03" r="99.68"/>
+    <path class="cls-2" d="M249.95,150.03c0-42.86-27.05-79.4-65.01-93.48v186.97c37.96-14.08,65.01-50.62,65.01-93.48Z"/>
+    <path class="cls-1" d="M50.59,150.03c0,42.86,27.05,79.4,65.01,93.48V56.55c-37.96,14.08-65.01,50.62-65.01,93.48Z"/>
+  </g>
+</svg>
