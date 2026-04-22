@@ -17,7 +17,7 @@ def render_transcript(test_name: str, steps: list[dict]) -> str:
         for tc in result.get("tool_calls") or []:
             input_json = json.dumps(tc.get("input"), ensure_ascii=False)
             output_json = json.dumps(tc.get("output"), ensure_ascii=False)
-            lines.append(f"Tool call: {tc.get('name')}({input_json})")
+            lines.append(f"Tool call [{tc.get('id')}]: {tc.get('name')}({input_json})")
             lines.append(f"  → {output_json}")
         text = result.get("text") or ""
         if text:

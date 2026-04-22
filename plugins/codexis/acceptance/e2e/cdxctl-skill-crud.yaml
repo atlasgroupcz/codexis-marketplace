@@ -3,15 +3,21 @@ description: Verify cdxctl can create, update, and delete a custom skill from st
 
 steps:
   - prompt: |
-      Using cdxctl, create a new custom skill from stdin with:
-        - name: ee-skill-{{ run_id }}
-        - description: "E2E test skill — initial description"
-        - body: "# Instructions\n\nThis is an e2e test skill."
-      Create it now via stdin without asking for confirmation.
+      Vytvoř mi vlastní dovednost (skill) s tímhle obsahem:
+
+      ---
+      name: ee-skill-{{ run_id }}
+      description: "E2E test skill — initial description"
+      ---
+
+      # Instructions
+
+      This is an e2e test skill.
     expect:
       tool_call:
         name: shell
         input_matches: "skill create.{0,200}--stdin"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ skills { name description editable deletable sourceKind } }"
@@ -22,11 +28,12 @@ steps:
           editable: true
           deletable: true
 
-  - prompt: "Using cdxctl, list ONLY the editable/custom skills (not the built-in plugin skills). Tell me the names you see."
+  - prompt: "Jaké mám vlastní dovednosti? Jen ty upravitelné, ne ty z pluginů."
     expect:
       tool_call:
         name: shell
         input_matches: "skill list.{0,100}--editable-only"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         contains: "ee-skill-{{ run_id }}"
@@ -35,22 +42,24 @@ steps:
         jsonpath: "$.skills[?(@.editable == true)].name"
         contains: "ee-skill-{{ run_id }}"
 
-  - prompt: "Using cdxctl, update the skill named ee-skill-{{ run_id }} so its description becomes 'E2E test skill — updated'. Use --stdin with the updated markdown."
+  - prompt: "U dovednosti ee-skill-{{ run_id }} změň popis na 'E2E test skill — updated'."
     expect:
       tool_call:
         name: shell
         input_matches: "skill update"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ skills { name description } }"
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
         equals: "E2E test skill — updated"
 
-  - prompt: "Using cdxctl, delete the skill named ee-skill-{{ run_id }}."
+  - prompt: "Smaž dovednost ee-skill-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "skill delete"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ skills { name } }"

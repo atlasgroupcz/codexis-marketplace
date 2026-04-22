@@ -1,7 +1,7 @@
 ---
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
-description: Use when the user asks to create, list, update, or delete custom/local agents or skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, extract tabular data from files in a folder, or create, list, and manage notifications. Provides the cdxctl CLI for platform management operations.
+description: Platform admin via cdxctl. Use for in-app oznámení/notifikace (NOT notify-send/dbus), automatizace, tabulární extrakce dat do tabulky, marketplaces, plugins, custom agents, dovednosti.
 version: 1.4.0
 i18n:
   cs:

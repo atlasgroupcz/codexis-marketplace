@@ -1,27 +1,25 @@
 name: cdxctl-marketplace-git
 description: Verify cdxctl can add a GIT-sourced marketplace and remove it, using the public Anthropic claude-plugins-official repo.
 
-# Covers `cdxctl marketplace add --source-type git` and `marketplace remove`.
-# Different URL than the runner's own marketplace (codexis-plugins), so it
-# doesn't collide. No setup needed — git clone happens on the daemon side.
-
 steps:
-  - prompt: "Using cdxctl, add a git marketplace from https://github.com/anthropics/claude-plugins-official.git at ref main, with --source-type git."
+  - prompt: "Přidej mi prosím marketplace z tohohle gitu: https://github.com/anthropics/claude-plugins-official.git (větev main)."
     expect:
       tool_call:
         name: shell
         input_matches: "marketplace add.{0,300}--source-type git"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"
         contains: "claude-plugins-official"
 
-  - prompt: "Using cdxctl, list all marketplaces and tell me whether claude-plugins-official is present."
+  - prompt: "Jaké mám marketplace? Je tam claude-plugins-official?"
     expect:
       tool_call:
         name: shell
         input_matches: "marketplace list"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         contains: "claude-plugins-official"
@@ -30,11 +28,12 @@ steps:
         jsonpath: "$.marketplaces[*].name"
         contains: "claude-plugins-official"
 
-  - prompt: "Using cdxctl, remove the marketplace named claude-plugins-official. Find its ID first."
+  - prompt: "Odeber marketplace claude-plugins-official."
     expect:
       tool_call:
         name: shell
         input_matches: "marketplace remove"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "{ marketplaces { name } }"

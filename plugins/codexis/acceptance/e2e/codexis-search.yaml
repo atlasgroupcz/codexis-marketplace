@@ -1,0 +1,33 @@
+name: codexis-search
+description: Verify the codexis skill answers Czech legal questions correctly in chat — case-law search and a specific-paragraph lookup.
+
+# Eval-style test for a read-only skill. The product the user sees is the
+# AI's chat response, so `response:` is the primary assertion. `tool_call`
+# + `tool_calls_min: 1` guard against training-data hallucination (AI must
+# actually invoke cdx-cli, not answer from memory).
+
+steps:
+  - prompt: "Najdi nějaká rozhodnutí Nejvyššího soudu o náhradě škody."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-cli search"
+      tool_calls_min: 1
+      tool_calls_max: 2   # one search; +1 slack for a narrow retry
+      response:
+        # Any genuine JD hit renders a JD-prefixed doc ID in the reply;
+        # "náhrad" covers cases where the AI paraphrases without the raw ID.
+        matches: "(?i)\\bJD\\d+|náhrad"
+
+  - prompt: "Jak zní §10 NOZ?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-cli"
+      tool_calls_min: 1
+      tool_calls_max: 4   # CR/SK needs versioned ID → versions + toc + text; +1 slack for URL-format retries
+      response:
+        # §10 NOZ opens with "Nelze-li právní případ rozhodnout na základě
+        # výslovného ustanovení" — a phrase unique across the civil code.
+        # An honest answer quotes or closely paraphrases this.
+        matches: "výslovného ustanovení|Nelze-li právní případ"

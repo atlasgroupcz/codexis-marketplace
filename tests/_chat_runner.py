@@ -33,6 +33,7 @@ def parse_assistant_message(msg: dict) -> dict:
             text_parts.append(part.get("content") or "")
         elif typ == "ToolMessagePart":
             tool_calls.append({
+                "id": part.get("toolCallId"),
                 "name": part.get("toolName"),
                 "input": _parse_json_or_str(part.get("input")),
                 "output": _parse_json_or_str(part.get("output")),
@@ -102,6 +103,7 @@ class ChatRunner:
                     if p.get("__typename") != "ToolMessagePart":
                         continue
                     result["tool_calls"].append({
+                        "id": p.get("toolCallId"),
                         "name": p.get("toolName"),
                         "input": _parse_json_or_str(p.get("input")),
                         "output": _parse_json_or_str(p.get("output")),

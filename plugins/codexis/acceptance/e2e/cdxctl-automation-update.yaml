@@ -2,11 +2,12 @@ name: cdxctl-automation-update
 description: Verify cdxctl can partially update an existing automation's fields.
 
 steps:
-  - prompt: "Using cdxctl, create an automation with title e2e-upd-{{ run_id }}, cron '0 0 1 1 *', and command 'echo initial'. Just create it."
+  - prompt: "Vytvoř automatizaci e2e-upd-{{ run_id }}, která 1. ledna jednou ročně spustí 'echo initial'."
     expect:
       tool_call:
         name: shell
         input_matches: "automation create-command"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ automations { title cron command enabled } }"
@@ -17,11 +18,12 @@ steps:
           command: "echo initial"
           enabled: true
 
-  - prompt: "Using cdxctl, update the automation titled e2e-upd-{{ run_id }}: change the title to e2e-upd-{{ run_id }}-v2 and the cron to '0 0 2 2 *'. Find its ID first if you need to."
+  - prompt: "U automatizace e2e-upd-{{ run_id }} změň název na e2e-upd-{{ run_id }}-v2 a cron na '0 0 2 2 *'."
     expect:
       tool_call:
         name: shell
         input_matches: "automation update"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         - graphql: "{ automations { title cron command enabled } }"
@@ -35,22 +37,24 @@ steps:
           jsonpath: "$.automations[*].title"
           not_contains: "e2e-upd-{{ run_id }}"   # old title is gone
 
-  - prompt: "Using cdxctl, disable (enabled=false) the automation titled e2e-upd-{{ run_id }}-v2."
+  - prompt: "Automatizaci e2e-upd-{{ run_id }}-v2 vypni."
     expect:
       tool_call:
         name: shell
         input_matches: "automation update.{0,500}enabled"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "{ automations { title enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')].enabled"
         equals: false
 
-  - prompt: "Using cdxctl, delete the automation titled e2e-upd-{{ run_id }}-v2. Find its ID first."
+  - prompt: "Smaž automatizaci e2e-upd-{{ run_id }}-v2."
     expect:
       tool_call:
         name: shell
         input_matches: "automation delete"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "{ automations { title } }"

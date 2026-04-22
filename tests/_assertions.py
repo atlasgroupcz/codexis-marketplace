@@ -388,20 +388,25 @@ def _check_state(spec, client: Any, result: dict, vars_: dict) -> None:
 
 
 def _check_tool_calls_count(expect: dict, tool_calls: list) -> None:
-    """Bound the total number of tool calls the model made in this turn.
+    """Bound the number of *work* tool calls the model made in this turn.
 
     `expect` may contain `tool_calls_min` and/or `tool_calls_max` (int).
     Catches an AI that is too passive (min) or too wasteful (max).
+
+    Skill-loading calls (`name == "skill"`) are excluded — loading a skill
+    is context gathering the AI should always do, not part of the work
+    budget. They still show up in the `tool_call` axis for explicit matching.
     """
-    n = len(tool_calls)
+    budget = [c for c in tool_calls if c.get("name") != "skill"]
+    n = len(budget)
     if "tool_calls_min" in expect and n < expect["tool_calls_min"]:
         raise AssertionFailure(
-            f"tool_calls_min failed: got {n} call(s), expected >= {expect['tool_calls_min']}. "
+            f"tool_calls_min failed: got {n} work call(s), expected >= {expect['tool_calls_min']}. "
             f"Names: {[c.get('name') for c in tool_calls]}"
         )
     if "tool_calls_max" in expect and n > expect["tool_calls_max"]:
         raise AssertionFailure(
-            f"tool_calls_max failed: got {n} call(s), expected <= {expect['tool_calls_max']}. "
+            f"tool_calls_max failed: got {n} work call(s), expected <= {expect['tool_calls_max']}. "
             f"Names: {[c.get('name') for c in tool_calls]}"
         )
 

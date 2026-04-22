@@ -6,14 +6,18 @@ description: Verify cdxctl creates, triggers, and deletes a COMMAND-type automat
 #   state     — does the daemon's ground truth match? (primary oracle)
 #   response  — only on list/answer steps where the response text IS the product;
 #               omitted for pure mutations (state proves the outcome).
+#
+# Prompts are natural Czech-user language. No mentions of cdxctl or flags —
+# the AI has to route via the skill description on its own.
 
 steps:
-  - prompt: "Using cdxctl, create an automation with title e2e-{{ run_id }}, cron '0 0 1 1 *' (once a year), and command 'echo hello'. Just create it — do not ask for confirmation."
+  - prompt: "Vytvoř automatizaci e2e-{{ run_id }}, která 1. ledna jednou ročně spustí 'echo hello'."
     expect:
       tool_call:
         name: shell
         input_matches: "automation create-command.{0,500}e2e-"
-      tool_calls_max: 3
+      tool_calls_min: 1
+      tool_calls_max: 4   # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries
       state:
         graphql: "{ automations { title cron command enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
@@ -23,12 +27,13 @@ steps:
           command: "echo hello"
           enabled: true
 
-  - prompt: "Using cdxctl, list my automations and tell me the title of the one you just created."
+  - prompt: "Jaké mám automatizace?"
     expect:
       tool_call:
         name: shell
         input_matches: "automation list"
-      tool_calls_max: 3
+      tool_calls_min: 1
+      tool_calls_max: 2
       response:
         contains: "e2e-{{ run_id }}"
       state:
@@ -36,12 +41,13 @@ steps:
         jsonpath: "$.automations[*].title"
         contains: "e2e-{{ run_id }}"
 
-  - prompt: "Using cdxctl, trigger the automation whose title is e2e-{{ run_id }}. Find its ID first if you need to."
+  - prompt: "Spusť teď automatizaci e2e-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "trigger"
-      tool_calls_max: 5    # often needs: skill load + list (find id) + trigger
+      tool_calls_min: 1
+      tool_calls_max: 3    # list (find id) + trigger + 1 slack
       state:
         graphql: "{ automations { title lastRun { status trigger errorMessage } } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun"
@@ -50,23 +56,25 @@ steps:
           trigger: "MANUAL"
           errorMessage: null
 
-  - prompt: "Using cdxctl, delete the automation with title e2e-{{ run_id }}. Find its ID first if you need to."
+  - prompt: "Smaž automatizaci e2e-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "delete|remove"
-      tool_calls_max: 5    # may need list+delete
+      tool_calls_min: 1
+      tool_calls_max: 3    # list (find id) + delete + 1 slack
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
         count: 0
 
-  - prompt: "Using cdxctl, list automations once more. Is any automation titled e2e-{{ run_id }} still present? Answer clearly."
+  - prompt: "Je automatizace e2e-{{ run_id }} ještě naplánovaná?"
     expect:
       tool_call:
         name: shell
         input_matches: "automation list"
-      tool_calls_max: 3
+      tool_calls_min: 1
+      tool_calls_max: 2
       response:
         contains: "e2e-{{ run_id }}"    # AI names what it's answering about
       state:

@@ -16,11 +16,12 @@ setup:
           content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
 
 steps:
-  - prompt: "Using cdxctl, add a column to the tabular extraction at /home/codexis/ee-tab-{{ run_id }}: name='customer', col-type=text, description='The customer full name from the invoice'."
+  - prompt: "Ve složce /home/codexis/ee-tab-{{ run_id }} mám faktury. Chci z nich extrahovat do tabulky sloupec 'customer' (typ text) — celé jméno zákazníka z faktury."
     expect:
       tool_call:
         name: shell
         input_matches: "tabular add-column"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
@@ -29,11 +30,12 @@ steps:
         jsonpath: "$.tabularExtraction.columns[*].name"
         contains: "customer"
 
-  - prompt: "Using cdxctl, start the tabular extraction on /home/codexis/ee-tab-{{ run_id }}, then poll `cdxctl tabular status /home/codexis/ee-tab-{{ run_id }}` every ~5 seconds until the status is DONE (or 120 seconds elapse). Tell me when it's done."
+  - prompt: "Spusť extrakci nad /home/codexis/ee-tab-{{ run_id }} a počkej, až bude hotová (pollni status každých ~5 sekund, maximálně 120 s). Řekni mi, až bude DONE."
     expect:
       tool_call:
         name: shell
         input_matches: "tabular start"
+      tool_calls_min: 1
       tool_calls_max: 30    # polling: start + ~20 status checks at 5s intervals
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
@@ -42,11 +44,12 @@ steps:
         jsonpath: "$.tabularExtraction.status"
         equals: "DONE"
 
-  - prompt: "Using cdxctl, fetch the tabular results for /home/codexis/ee-tab-{{ run_id }} and tell me the extracted customer value."
+  - prompt: "Ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} — jaká hodnota vyšla ve sloupci customer?"
     expect:
       tool_call:
         name: shell
         input_matches: "tabular results"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         matches: "(?i)john"

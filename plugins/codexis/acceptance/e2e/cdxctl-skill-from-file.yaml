@@ -3,7 +3,10 @@ description: Verify cdxctl creates a skill via the --file path (distinct from --
 
 steps:
   - prompt: |
-      I want to create a custom skill. Here is the desired SKILL.md content:
+      Tady je obsah SKILL.md pro moji novou dovednost. Vytvoř adresář
+      /tmp/ee-fs-{{ run_id }}/, ulož tam SKILL.md a tu dovednost pak
+      zaregistruj ze souboru:
+
       ---
       name: ee-fs-{{ run_id }}
       description: "E2E test skill (from file)"
@@ -12,15 +15,12 @@ steps:
       # Instructions
 
       This is an E2E from-file test skill.
-
-      Write this content to /tmp/ee-fs-{{ run_id }}/SKILL.md first (creating
-      the directory if needed), then use cdxctl to register it as a new skill.
-      Do not ask for confirmation.
     expect:
       tool_call:
         name: shell
         input_matches: "skill create.{0,200}--file"   # must be --file, not --stdin
-      tool_calls_max: 4    # mkdir + write + create; allow slack
+      tool_calls_min: 1
+      tool_calls_max: 4
       state:
         graphql: "{ skills { name description editable } }"
         jsonpath: "$.skills[?(@.name == 'ee-fs-{{ run_id }}')]"
@@ -29,11 +29,12 @@ steps:
           description: "E2E test skill (from file)"
           editable: true
 
-  - prompt: "Using cdxctl, delete the skill named ee-fs-{{ run_id }}."
+  - prompt: "Smaž dovednost ee-fs-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "skill delete"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ skills { name } }"

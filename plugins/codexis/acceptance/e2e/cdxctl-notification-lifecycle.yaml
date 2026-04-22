@@ -7,11 +7,12 @@ description: Verify cdxctl creates a notification and the seen/confirmed transit
 #   after `confirm` → seen=<ts>,   confirmed=<ts>
 
 steps:
-  - prompt: "Using cdxctl, create a notification with the message 'e2e-notif-{{ run_id }}'."
+  - prompt: "Vytvoř mi oznámení s textem 'e2e-notif-{{ run_id }}'."
     expect:
       tool_call:
         name: shell
         input_matches: "notification create"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
@@ -21,11 +22,12 @@ steps:
           seen: null
           confirmed: null
 
-  - prompt: "Using cdxctl, list notifications and confirm the one containing 'e2e-notif-{{ run_id }}' is present."
+  - prompt: "Jaká mám oznámení? Je tam to s textem 'e2e-notif-{{ run_id }}'?"
     expect:
       tool_call:
         name: shell
         input_matches: "notification list"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         contains: "e2e-notif-{{ run_id }}"
@@ -34,24 +36,26 @@ steps:
         jsonpath: "$.notifications.items[*].message"
         contains: "e2e-notif-{{ run_id }}"
 
-  - prompt: "Using cdxctl, find the notification whose message contains 'e2e-notif-{{ run_id }}' and mark it as seen. Find its ID first."
+  - prompt: "Označ oznámení 'e2e-notif-{{ run_id }}' jako přečtené."
     expect:
       tool_call:
         name: shell
         input_matches: "notification seen"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].seen"
-        matches: "\\d{4}-\\d{2}-\\d{2}"   # seen is now a DateTime, not null
+        matches: "\\d{4}-\\d{2}-\\d{2}"
 
-  - prompt: "Using cdxctl, find the notification whose message contains 'e2e-notif-{{ run_id }}' and mark it as confirmed."
+  - prompt: "A teď to oznámení 'e2e-notif-{{ run_id }}' potvrď."
     expect:
       tool_call:
         name: shell
         input_matches: "notification confirm"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "{ notifications { items { message seen confirmed } } }"
         jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].confirmed"
-        matches: "\\d{4}-\\d{2}-\\d{2}"   # confirmed is now a DateTime, not null
+        matches: "\\d{4}-\\d{2}-\\d{2}"

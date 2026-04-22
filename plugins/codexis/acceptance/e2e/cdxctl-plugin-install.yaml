@@ -1,28 +1,26 @@
 name: cdxctl-plugin-install
 description: Verify cdxctl can install and uninstall a plugin against the daemon.
 
-# Uses {{ marketplace_id }} — a built-in var set by the runner to the Relay node
-# ID of the marketplace being tested. We install data-gouv-fr (a small plugin
-# with no binaries, fast install) and then uninstall it.
-#
-# NOTE: the runner's own setup/teardown only touches the `codexis` plugin, so
-# data-gouv-fr install/uninstall is isolated from the runner's state management.
+# {{ marketplace_id }} is set by the runner to the Relay node ID of our
+# marketplace. We install data-gouv-fr (small, no binaries, fast) then uninstall.
 
 steps:
-  - prompt: "Using cdxctl, list the plugins available (not yet installed) in the codexis-plugins marketplace. Use `cdxctl plugin list --available`. Tell me if data-gouv-fr is among them."
+  - prompt: "Jaké pluginy jsou dostupné v marketplace codexis-plugins, ale ještě nejsou nainstalovaný? Je tam data-gouv-fr?"
     expect:
       tool_call:
         name: shell
         input_matches: "plugin list.{0,100}--available"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         contains: "data-gouv-fr"
 
-  - prompt: "Using cdxctl, install the plugin named data-gouv-fr. Find its ID from the available list first."
+  - prompt: "Nainstaluj plugin data-gouv-fr."
     expect:
       tool_call:
         name: shell
         input_matches: "plugin install"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
@@ -31,11 +29,12 @@ steps:
         jsonpath: "$.installedPlugins[*].name"
         contains: "data-gouv-fr"
 
-  - prompt: "Using cdxctl, uninstall the plugin named data-gouv-fr. Find its ID first."
+  - prompt: "Odinstaluj plugin data-gouv-fr."
     expect:
       tool_call:
         name: shell
         input_matches: "plugin uninstall"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"

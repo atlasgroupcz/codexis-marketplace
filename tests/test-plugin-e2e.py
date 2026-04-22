@@ -254,8 +254,12 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
         return
 
     try:
-        for yaml_path in yamls:
-            run_yaml(client, name, yaml_path, transcript_dir, args, r, builtin_vars)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=len(yamls)) as pool:
+            futs = [pool.submit(run_yaml, client, name, y, transcript_dir, args, r, builtin_vars)
+                    for y in yamls]
+            for f in futs:
+                f.result()
     finally:
         r.log("Uninstalling…")
         try:

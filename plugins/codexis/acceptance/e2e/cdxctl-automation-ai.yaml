@@ -1,16 +1,16 @@
 name: cdxctl-automation-ai
 description: Verify cdxctl creates an AGENT-type automation (using the explorer agent).
 
-# Tests the AI-agent variant of automation create (distinct from create-command
-# in cdxctl-automation-command.yaml). Uses the pre-installed `explorer` agent.
+# Tests the AI-agent variant of automation create (distinct from create-command).
 # Does NOT trigger — triggering would run the prompt through a real LLM.
 
 steps:
-  - prompt: "Using cdxctl, list the available agents and tell me the full name and ID of the explorer agent."
+  - prompt: "Jaké mám agenty? Řekni mi full name a ID agenta explorer."
     expect:
       tool_call:
         name: shell
         input_matches: "agent list"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         contains: "explorer"
@@ -20,17 +20,14 @@ steps:
         contains: "explorer"
 
   - prompt: |
-      Using cdxctl, create an AI-agent automation with:
-        - title: ee-ai-{{ run_id }}
-        - cron: '0 0 1 1 *'
-        - prompt: "Describe the current working directory."
-        - agent: explorer
-        - max-turns: 5
-      Use the `automation create` command (not create-command). Just create it, don't ask for confirmation.
+      Vytvoř AI automatizaci, která agentem explorer jednou ročně 1. ledna spustí
+      prompt "Describe the current working directory." — nastav max-turns na 5 a
+      pojmenuj to ee-ai-{{ run_id }}.
     expect:
       tool_call:
         name: shell
         input_matches: "automation create[^-]"   # 'automation create' but NOT 'automation create-command'
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ automations { title type agentFullName prompt maxTurns enabled } }"
@@ -43,11 +40,12 @@ steps:
           maxTurns: 5
           enabled: true
 
-  - prompt: "Using cdxctl, delete the automation titled ee-ai-{{ run_id }}. Find its ID first if you need to."
+  - prompt: "Smaž automatizaci ee-ai-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "automation delete"
+      tool_calls_min: 1
       tool_calls_max: 5
       state:
         graphql: "{ automations { title } }"

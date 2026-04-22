@@ -3,17 +3,21 @@ description: Verify cdxctl can create, update, and delete a custom local agent f
 
 steps:
   - prompt: |
-      Using cdxctl, create a new custom local agent from stdin with:
-        - name: ee-agent-{{ run_id }}
-        - description: "E2E test agent — initial description"
-        - tools: Read, Bash
-        - maxTurns: 8
-        - body: "You are a custom e2e test agent."
-      Create it now via stdin without asking for confirmation.
+      Vytvoř mi vlastního lokálního agenta s tímhle obsahem:
+
+      ---
+      name: ee-agent-{{ run_id }}
+      description: "E2E test agent — initial description"
+      tools: Read, Bash
+      maxTurns: 8
+      ---
+
+      You are a custom e2e test agent.
     expect:
       tool_call:
         name: shell
         input_matches: "agent create.{0,200}--stdin"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ agents { name description editable deletable sourceKind } }"
@@ -24,11 +28,12 @@ steps:
           editable: true
           deletable: true
 
-  - prompt: "Using cdxctl, list ONLY the editable/custom agents (not the built-in plugin agents). Tell me the names you see."
+  - prompt: "Jaké mám vlastní agenty? Jen ty upravitelné, ne ty z pluginů."
     expect:
       tool_call:
         name: shell
         input_matches: "agent list.{0,100}--editable-only"
+      tool_calls_min: 1
       tool_calls_max: 3
       response:
         contains: "ee-agent-{{ run_id }}"
@@ -37,22 +42,24 @@ steps:
         jsonpath: "$.agents[?(@.editable == true)].name"
         contains: "ee-agent-{{ run_id }}"
 
-  - prompt: "Using cdxctl, update the agent named ee-agent-{{ run_id }} so its description becomes 'E2E test agent — updated'. Use --stdin with the updated markdown."
+  - prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent — updated'."
     expect:
       tool_call:
         name: shell
         input_matches: "agent update"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ agents { name description } }"
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
         equals: "E2E test agent — updated"
 
-  - prompt: "Using cdxctl, delete the agent named ee-agent-{{ run_id }}."
+  - prompt: "Smaž agenta ee-agent-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "agent delete"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ agents { name } }"

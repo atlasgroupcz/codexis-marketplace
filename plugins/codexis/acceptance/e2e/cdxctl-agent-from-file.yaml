@@ -1,14 +1,14 @@
 name: cdxctl-agent-from-file
 description: Verify cdxctl creates an agent via the --file path (distinct from --stdin).
 
-# The skill doc describes both `cdxctl agent create --stdin` and
-# `cdxctl agent create --file <path>`. When content already lives on disk,
-# --file is the idiomatic choice — a bug would be the AI shelling out
-# `cat FILE | cdxctl agent create --stdin` instead.
+# When content already lives on disk, --file is the idiomatic choice — a bug
+# would be the AI shelling out `cat FILE | cdxctl agent create --stdin`.
 
 steps:
   - prompt: |
-      I want to create a custom local agent. Here is the desired agent markdown:
+      Uloženě mám tohle jako markdown agenta, ulož to prosím do
+      /tmp/ee-fa-{{ run_id }}.md a zaregistruj ten soubor jako nového agenta:
+
       ---
       name: ee-fa-{{ run_id }}
       description: "E2E test agent (from file)"
@@ -17,14 +17,12 @@ steps:
       ---
 
       You are an E2E from-file test agent.
-
-      Write this content to the file /tmp/ee-fa-{{ run_id }}.md first, then use
-      cdxctl to register it as a new agent. Do not ask for confirmation.
     expect:
       tool_call:
         name: shell
         input_matches: "agent create.{0,200}--file"   # must be --file, not --stdin
-      tool_calls_max: 4    # write file + create; allow slack
+      tool_calls_min: 1
+      tool_calls_max: 4
       state:
         graphql: "{ agents { name description editable } }"
         jsonpath: "$.agents[?(@.name == 'ee-fa-{{ run_id }}')]"
@@ -33,11 +31,12 @@ steps:
           description: "E2E test agent (from file)"
           editable: true
 
-  - prompt: "Using cdxctl, delete the agent named ee-fa-{{ run_id }}."
+  - prompt: "Smaž agenta ee-fa-{{ run_id }}."
     expect:
       tool_call:
         name: shell
         input_matches: "agent delete"
+      tool_calls_min: 1
       tool_calls_max: 3
       state:
         graphql: "{ agents { name } }"
