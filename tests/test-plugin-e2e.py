@@ -146,19 +146,30 @@ def remove_marketplace(client: DaemonClient, mkt_node_id: str, r: Results) -> No
 #     destination: <vm path>
 #     files:
 #       - path: <relative/path>
-#         content: <string>     # literal content (templated with captured vars)
+#         content: <string>             # inline text (templated with vars)
+#         # OR:
+#         source: <path-relative-to-yaml>   # read raw bytes from disk (binary)
 # ---------------------------------------------------------------------------
-def _run_setup(client: DaemonClient, setup: list[dict], captured: dict) -> None:
+def _run_setup(client: DaemonClient, setup: list[dict], captured: dict,
+               yaml_dir: Path) -> None:
     from _assertions import substitute
     for i, action in enumerate(setup):
         if "upload" not in action:
             raise ValueError(f"setup[{i}]: unknown kind, expected 'upload', got {list(action)!r}")
         block = action["upload"]
         destination = substitute(block["destination"], captured)
-        files = []
+        files: list[tuple[str, bytes | str]] = []
         for f in block.get("files") or []:
             rel = substitute(f["path"], captured)
-            content = substitute(f["content"], captured)
+            if "content" in f:
+                content: bytes | str = substitute(f["content"], captured)
+            elif "source" in f:
+                src = yaml_dir / substitute(f["source"], captured)
+                content = src.read_bytes()
+            else:
+                raise ValueError(
+                    f"setup[{i}] file {rel!r}: needs either 'content' or 'source'"
+                )
             files.append((rel, content))
         client.upload_folder(destination, files)
 
@@ -192,7 +203,7 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
     # puts fixture files/folders into place so each step can focus on actually
     # testing the plugin rather than on scaffolding. See _run_setup() below.
     try:
-        _run_setup(client, spec.get("setup") or [], captured)
+        _run_setup(client, spec.get("setup") or [], captured, yaml_path.parent)
     except Exception as e:
         r.fail(f"{plugin_name}/{test_name}: setup failed: {e}")
         return

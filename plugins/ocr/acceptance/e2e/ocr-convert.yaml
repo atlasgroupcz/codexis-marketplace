@@ -1,37 +1,26 @@
 name: ocr-convert
-description: Verify the ocr skill converts a document to markdown and the AI relays the extracted content to the user.
+description: Verify the ocr skill extracts text from a rasterized image (no text layer) and the AI relays the extracted content to the user.
 
-# Fixture: a small HTML file with known content uploaded before the chat.
-# HTML is the simplest OCR-supported format to generate deterministically —
-# real OCR features (image-to-text, PDF layout) are exercised by the `ocr`
-# binary internally.
+# Fixture: a PNG rendered with PIL containing the distinctive string
+# "123456 test of ocr 987" — no text layer, pure pixels. The `ocr` binary
+# must actually OCR the image; a shortcut reader would return nothing.
 
 setup:
   - upload:
       destination: /home/codexis/ee-ocr-{{ run_id }}
       files:
-        - path: invoice.html
-          content: |
-            <!DOCTYPE html>
-            <html>
-              <head><title>E2E Test Invoice</title></head>
-              <body>
-                <h1>E2E Test Invoice</h1>
-                <p>Customer: Alfonso Rochambeau</p>
-                <p>Total: 4712.99 EUR</p>
-                <p>Invoice date: 2026-04-22</p>
-              </body>
-            </html>
+        - path: ocr-test.png
+          source: ../fixtures/ocr-test.png   # binary from repo
 
 steps:
-  - prompt: "Převeď mi dokument /home/codexis/ee-ocr-{{ run_id }}/invoice.html do markdownu. Řekni mi, komu je faktura vystavená a jaká je částka."
+  - prompt: "V /home/codexis/ee-ocr-{{ run_id }}/ocr-test.png je obrázek s nějakým textem — rozpoznej ho a řekni mi, co je na obrázku napsáno."
     expect:
       tool_call:
         name: shell
-        input_matches: "\\bocr\\s+.*invoice\\.html"
+        input_matches: "\\bocr\\s+.*ocr-test\\.png"
       tool_calls_min: 1
-      tool_calls_max: 8   # ocr + unzip + readFile + relay
+      tool_calls_max: 10   # ocr + unzip + readFile + relay
       response:
-        # Both customer name and total must reach the user (not just "done").
-        # Distinctive surname makes it impossible to false-positive.
-        matches: "(?s)Rochambeau.{0,200}4712|4712.{0,200}Rochambeau"
+        # Distinctive number strings from the image. If OCR works, the
+        # AI's reply will include both; no realistic way to false-positive.
+        matches: "(?s)123456.{0,200}987|987.{0,200}123456"
