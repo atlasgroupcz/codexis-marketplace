@@ -60,7 +60,7 @@ steps:
         name: shell
         input_matches: "skill delete"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 5   # cdxctl skill delete leaves empty dir; AI verifies + rmdir's it
       state:
         graphql: "{ skills { name } }"
         jsonpath: "$.skills[*].name"
