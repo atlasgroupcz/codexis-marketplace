@@ -1,17 +1,14 @@
 name: data-gouv-fr-search
-description: Verify the data-gouv-fr skill searches French government open-data datasets (SIRENE — French company registry, a stable flagship dataset).
+description: Verify the data-gouv-fr skill searches French government open-data datasets (SIRENE — French company registry, a flagship stable dataset).
 
-# data-gouv-fr is served via a remote MCP server (mcp.data.gouv.fr),
-# so the tool_call name is an MCP tool (e.g. mcp__data-gouv-fr__search_datasets),
-# not a shell command. First run may need loose assertions to discover the
-# exact tool-name pattern; will tighten after.
+# Served via an HTTP MCP server at mcp.data.gouv.fr. The tool call name
+# surfaced by the daemon is '<server>__<tool>' — no mcp__ prefix.
 
 steps:
   - prompt: "Najdi mi na data.gouv.fr datasety související se SIRENE (francouzský registr firem)."
     expect:
       tool_call:
-        # Match any MCP tool call from the data-gouv-fr server
-        name: "mcp__data-gouv-fr__search_datasets"
+        name: "data-gouv-fr__search_datasets"
       tool_calls_min: 1
       tool_calls_max: 6
       response:
