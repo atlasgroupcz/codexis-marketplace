@@ -8,7 +8,7 @@ steps:
         name: shell
         input_matches: "marketplace add.{0,300}--source-type git"
       tool_calls_min: 1
-      tool_calls_max: 3
+      tool_calls_max: 8   # may need flag discovery + retry
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"

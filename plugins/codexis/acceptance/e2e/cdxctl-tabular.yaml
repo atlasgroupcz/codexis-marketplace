@@ -22,7 +22,7 @@ steps:
         name: shell
         input_matches: "tabular add-column"
       tool_calls_min: 1
-      tool_calls_max: 9   # AI explores (CODEXIS.md, memory, folder, sample) before loading skill + add-column
+      tool_calls_max: 15  # heavy exploration possible (memory/docs/folder/sample) before skill + add-column
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
         variables:
@@ -51,14 +51,11 @@ steps:
         input_matches: "tabular results"
       tool_calls_min: 1
       tool_calls_max: 3
+      response:
+        matches: "(?i)john"   # AI must relay the extracted value back to the user
       state:
-        # Check the raw cdxctl output rather than the AI's narration — sometimes
-        # the AI returns empty text even after a clean tool call, and that
-        # shouldn't fail the test.
-        - tool_output:
-            matches: "(?i)john"
-        - graphql: 'query($f: String!){ tabularExtraction(folder: $f) { rows { fileName status } } }'
-          variables:
-            f: "/home/codexis/ee-tab-{{ run_id }}"
-          jsonpath: "$.tabularExtraction.rows[*].status"
-          matches: "DONE|ERROR"   # cdxctl returned rows; extraction backend may flake on specific files
+        graphql: 'query($f: String!){ tabularExtraction(folder: $f) { rows { fileName status } } }'
+        variables:
+          f: "/home/codexis/ee-tab-{{ run_id }}"
+        jsonpath: "$.tabularExtraction.rows[*].status"
+        matches: "DONE|ERROR"   # cdxctl returned rows; extraction backend may flake on specific files

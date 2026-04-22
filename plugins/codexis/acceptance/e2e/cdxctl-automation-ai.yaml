@@ -17,7 +17,7 @@ steps:
         name: shell
         input_matches: "automation create[^-]"   # 'automation create' but NOT 'automation create-command'
       tool_calls_min: 1
-      tool_calls_max: 6   # agent list (for explorer's ID) + automation create + slack for retries
+      tool_calls_max: 9   # agent list + create + possible retries + memory read/write
       state:
         graphql: "{ automations { title type agentFullName prompt maxTurns enabled } }"
         jsonpath: "$.automations[?(@.title == 'ee-ai-{{ run_id }}')]"
