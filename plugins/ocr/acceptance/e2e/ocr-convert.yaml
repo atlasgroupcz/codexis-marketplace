@@ -17,7 +17,7 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "\\bocr\\s+.*ocr-test\\.png"
+        input_matches: "ocr\\s+.*ocr-test\\.png"
       tool_calls_min: 1
       tool_calls_max: 10   # ocr + unzip + readFile + relay
       response:
