@@ -3,22 +3,11 @@ description: Verify cdxctl creates an AGENT-type automation (using the explorer 
 
 # Tests the AI-agent variant of automation create (distinct from create-command).
 # Does NOT trigger — triggering would run the prompt through a real LLM.
+#
+# The daemon surfaces available agent names in the AI's system prompt, so we
+# skip an explicit "list agents" step and go straight to create + delete.
 
 steps:
-  - prompt: "Jaké mám agenty? Řekni mi full name a ID agenta explorer."
-    expect:
-      tool_call:
-        name: shell
-        input_matches: "agent list"
-      tool_calls_min: 1
-      tool_calls_max: 3
-      response:
-        contains: "explorer"
-      state:
-        graphql: "{ agents { fullName } }"
-        jsonpath: "$.agents[*].fullName"
-        contains: "explorer"
-
   - prompt: |
       Vytvoř AI automatizaci, která agentem explorer jednou ročně 1. ledna spustí
       prompt "Describe the current working directory." — nastav max-turns na 5 a
