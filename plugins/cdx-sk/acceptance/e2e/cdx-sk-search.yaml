@@ -17,7 +17,7 @@ steps:
       tool_calls_max: 5
       response:
         # Real SKNUS doc links prove the search returned actual hits.
-        matches: "cdx-sk://doc/SKNUS\\d+"
+        matches: "/doc/SKNUS\\d+"
 
   - prompt: "Ako znie §3 Občianskeho zákonníka (40/1964 Zb.)?"
     expect:

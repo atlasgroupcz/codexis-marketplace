@@ -16,7 +16,7 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 10
       response:
-        matches: "cdx-cz-psp://doc/CZPSPDOK\\d+"
+        matches: "/doc/CZPSPDOK\\d+"
 
   - prompt: "A jaké tam máme vládní návrhy zákonů k DPH?"
     expect:
@@ -26,4 +26,4 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 8
       response:
-        matches: "cdx-cz-psp://doc/CZPSPPRE\\d+"
+        matches: "/doc/CZPSPPRE\\d+"

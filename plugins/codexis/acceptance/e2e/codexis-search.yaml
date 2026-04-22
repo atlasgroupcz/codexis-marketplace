@@ -17,7 +17,7 @@ steps:
       response:
         # Real JD doc link proves the search returned hits (immune to
         # "nenašel jsem rozhodnutí o náhradě" false-positives).
-        matches: "cdx://doc/JD\\d+"
+        matches: "/doc/JD\\d+"   # matches both cdx://doc/… and resolved URL
 
   - prompt: "Jak zní §10 NOZ?"
     expect:

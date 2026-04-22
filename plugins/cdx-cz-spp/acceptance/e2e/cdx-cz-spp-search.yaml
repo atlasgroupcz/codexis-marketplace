@@ -15,11 +15,11 @@ steps:
       response:
         # Presence of a real doc link proves search actually returned hits —
         # immune to "nenašel jsem žádné" false-positives.
-        matches: "cdx-cz-spp://doc/CZSB\\d+"
+        matches: "/doc/CZSB\\d+"
 
   - prompt: "A nějaké aktuálně platné obecní vyhlášky — stačí pár příkladů."
     expect:
       # Natural follow-up — may be answered from step-1 chat context.
       tool_calls_max: 8
       response:
-        matches: "cdx-cz-spp://doc/CZSB\\d+"
+        matches: "/doc/CZSB\\d+"

@@ -17,7 +17,7 @@ steps:
       response:
         # Real ATJD doc links — proves the search returned real hits,
         # not just a confirmation that AI understood the topic.
-        matches: "cdx-at://doc/ATJD\\d+"
+        matches: "/doc/ATJD\\d+"
 
   - prompt: "Najdi mi rakouský občanský zákoník (ABGB)."
     expect:
@@ -28,4 +28,4 @@ steps:
       tool_calls_max: 8
       response:
         # ABGB is in ATBR (Bundesrecht) — real hits mean real link.
-        matches: "cdx-at://doc/ATBR\\d+"
+        matches: "/doc/ATBR\\d+"
