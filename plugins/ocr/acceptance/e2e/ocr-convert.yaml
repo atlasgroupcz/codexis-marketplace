@@ -13,7 +13,7 @@ setup:
           source: ../fixtures/ocr-test.png   # binary from repo
 
 steps:
-  - prompt: "V /home/codexis/ee-ocr-{{ run_id }}/ocr-test.png je obrázek s nějakým textem — rozpoznej ho a řekni mi, co je na obrázku napsáno."
+  - prompt: "Udělej mi OCR na obrázku /home/codexis/ee-ocr-{{ run_id }}/ocr-test.png — co je tam napsáno?"
     expect:
       tool_call:
         name: shell
