@@ -15,9 +15,9 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 5   # one search; +1 slack for a narrow retry
       response:
-        # Any genuine JD hit renders a JD-prefixed doc ID in the reply;
-        # "náhrad" covers cases where the AI paraphrases without the raw ID.
-        matches: "(?i)\\bJD\\d+|náhrad"
+        # Real JD doc link proves the search returned hits (immune to
+        # "nenašel jsem rozhodnutí o náhradě" false-positives).
+        matches: "cdx://doc/JD\\d+"
 
   - prompt: "Jak zní §10 NOZ?"
     expect:

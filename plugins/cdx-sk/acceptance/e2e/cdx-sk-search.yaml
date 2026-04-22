@@ -16,8 +16,8 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 5
       response:
-        # Slovak supreme-court decisions typically mention one or both.
-        matches: "(?i)Najvyšš[ií]|náhrad"
+        # Real SKNUS doc links prove the search returned actual hits.
+        matches: "cdx-sk://doc/SKNUS\\d+"
 
   - prompt: "Ako znie §3 Občianskeho zákonníka (40/1964 Zb.)?"
     expect:
