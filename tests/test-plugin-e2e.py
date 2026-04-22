@@ -247,6 +247,14 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
         return
 
     r.log("Installing…")
+    # Uninstall first (ignore errors) to guarantee postInstall fires fresh.
+    # Without this, a plugin left installed from a prior crashed run causes
+    # the next install_plugin to no-op — leaving PATH / binaries in a stale
+    # state and making every AI call pay for binary discovery overhead.
+    try:
+        client.uninstall_plugin(plugin_id)
+    except RuntimeError:
+        pass
     try:
         client.install_plugin(plugin_id)
     except RuntimeError as e:

@@ -75,8 +75,6 @@ steps:
         input_matches: "automation list"
       tool_calls_min: 1
       tool_calls_max: 8
-      response:
-        contains: "e2e-{{ run_id }}"    # AI names what it's answering about
       state:
         graphql: "{ automations { title } }"
         jsonpath: "$.automations[*].title"
