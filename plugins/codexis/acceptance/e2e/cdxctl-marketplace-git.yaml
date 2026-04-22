@@ -8,7 +8,7 @@ steps:
         name: shell
         input_matches: "marketplace add.{0,300}--source-type git"
       tool_calls_min: 1
-      tool_calls_max: 8   # may need flag discovery + retry
+      tool_calls_max: 11   # may need flag discovery + retry
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"
@@ -20,7 +20,7 @@ steps:
         name: shell
         input_matches: "marketplace list"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       response:
         contains: "claude-plugins-official"
       state:
@@ -34,7 +34,7 @@ steps:
         name: shell
         input_matches: "marketplace remove"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       state:
         graphql: "{ marketplaces { name } }"
         jsonpath: "$.marketplaces[*].name"

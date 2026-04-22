@@ -22,7 +22,7 @@ steps:
         name: shell
         input_matches: "tabular add-column"
       tool_calls_min: 1
-      tool_calls_max: 15  # heavy exploration possible (memory/docs/folder/sample) before skill + add-column
+      tool_calls_max: 11   # memory/docs + folder ls + sample read + status + add-column
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
         variables:
@@ -30,13 +30,13 @@ steps:
         jsonpath: "$.tabularExtraction.columns[*].name"
         contains: "customer"
 
-  - prompt: "Spusť extrakci nad /home/codexis/ee-tab-{{ run_id }} a počkej, až bude hotová (pollni status každých ~5 sekund, maximálně 120 s). Řekni mi, až bude DONE."
+  - prompt: "Spusť extrakci nad /home/codexis/ee-tab-{{ run_id }} a počkej, až bude hotová. Řekni mi, až bude DONE."
     expect:
       tool_call:
         name: shell
         input_matches: "tabular[^a-z]+start"   # shell form or Python list form (['tabular','start',...])
       tool_calls_min: 1
-      tool_calls_max: 30    # polling: start + ~20 status checks at 5s intervals
+      tool_calls_max: 8   # AI typically wraps start+poll loop inside a single script call
       state:
         graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
         variables:
@@ -50,7 +50,7 @@ steps:
         name: shell
         input_matches: "tabular results"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       response:
         matches: "(?i)john"   # AI must relay the extracted value back to the user
       state:

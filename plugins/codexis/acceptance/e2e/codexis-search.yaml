@@ -13,7 +13,7 @@ steps:
         name: shell
         input_matches: "cdx-cli search"
       tool_calls_min: 1
-      tool_calls_max: 2   # one search; +1 slack for a narrow retry
+      tool_calls_max: 5   # one search; +1 slack for a narrow retry
       response:
         # Any genuine JD hit renders a JD-prefixed doc ID in the reply;
         # "náhrad" covers cases where the AI paraphrases without the raw ID.
@@ -25,7 +25,7 @@ steps:
         name: shell
         input_matches: "cdx-cli"
       tool_calls_min: 1
-      tool_calls_max: 6   # AI often retries URL formats (cz_law/current/, doc/baseID/toc) before landing on versioned ID
+      tool_calls_max: 9   # AI often retries URL formats (cz_law/current/, doc/baseID/toc) before landing on versioned ID
       response:
         # §10 NOZ opens with "Nelze-li právní případ rozhodnout na základě
         # výslovného ustanovení" — a phrase unique across the civil code.

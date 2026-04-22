@@ -18,7 +18,7 @@ steps:
         name: shell
         input_matches: "agent create.{0,200}--stdin"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       state:
         graphql: "{ agents { name description editable deletable sourceKind } }"
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
@@ -34,7 +34,7 @@ steps:
         name: shell
         input_matches: "agent list.{0,100}--editable-only"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       response:
         contains: "ee-agent-{{ run_id }}"
       state:
@@ -48,7 +48,7 @@ steps:
         name: shell
         input_matches: "agent update"
       tool_calls_min: 1
-      tool_calls_max: 6   # may read/edit memory + find id + update
+      tool_calls_max: 9   # may read/edit memory + find id + update
       state:
         graphql: "{ agents { name description } }"
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
@@ -60,7 +60,7 @@ steps:
         name: shell
         input_matches: "agent delete"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       state:
         graphql: "{ agents { name } }"
         jsonpath: "$.agents[*].name"

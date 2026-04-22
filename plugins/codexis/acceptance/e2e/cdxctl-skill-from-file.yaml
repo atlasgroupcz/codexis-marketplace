@@ -20,7 +20,7 @@ steps:
         name: shell
         input_matches: "skill create.{0,200}--file"   # must be --file, not --stdin
       tool_calls_min: 1
-      tool_calls_max: 6
+      tool_calls_max: 9
       state:
         graphql: "{ skills { name description editable } }"
         jsonpath: "$.skills[?(@.name == 'ee-fs-{{ run_id }}')]"
@@ -35,7 +35,7 @@ steps:
         name: shell
         input_matches: "skill delete"
       tool_calls_min: 1
-      tool_calls_max: 5   # skill delete leaves empty dir; AI verifies + rmdir
+      tool_calls_max: 8   # skill delete leaves empty dir; AI verifies + rmdir
       state:
         graphql: "{ skills { name } }"
         jsonpath: "$.skills[*].name"

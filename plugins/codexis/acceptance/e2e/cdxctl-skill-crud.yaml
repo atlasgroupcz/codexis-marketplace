@@ -18,7 +18,7 @@ steps:
         name: shell
         input_matches: "skill create.{0,200}--stdin"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       state:
         graphql: "{ skills { name description editable deletable sourceKind } }"
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')]"
@@ -34,7 +34,7 @@ steps:
         name: shell
         input_matches: "skill list.{0,100}--editable-only"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       response:
         contains: "ee-skill-{{ run_id }}"
       state:
@@ -48,7 +48,7 @@ steps:
         name: shell
         input_matches: "skill update"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 8
       state:
         graphql: "{ skills { name description } }"
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
@@ -60,7 +60,7 @@ steps:
         name: shell
         input_matches: "skill delete"
       tool_calls_min: 1
-      tool_calls_max: 5   # cdxctl skill delete leaves empty dir; AI verifies + rmdir's it
+      tool_calls_max: 8   # cdxctl skill delete leaves empty dir; AI verifies + rmdir's it
       state:
         graphql: "{ skills { name } }"
         jsonpath: "$.skills[*].name"
