@@ -10,7 +10,7 @@ steps:
       tool_call:
         name: "data-gouv-fr__search_datasets"
       tool_calls_min: 1
-      tool_calls_max: 6
+      tool_calls_max: 10   # AI does multiple query variants + doc-info fetches
       response:
         # Real data.gouv.fr dataset URLs are of the form
         # https://www.data.gouv.fr/fr/datasets/<slug>/ — presence proves real hits.
