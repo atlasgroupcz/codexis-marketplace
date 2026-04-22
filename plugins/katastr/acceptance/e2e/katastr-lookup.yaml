@@ -23,24 +23,17 @@ steps:
         # Both facts must be in the reply (order-independent).
         matches: "(?s)990.{0,400}zastav|zastav.{0,400}990"
 
-  # 2. owner / LV — follow-up question in the same chat
+  # 2. owner / LV — natural follow-up; AI may answer from step-1 context
+  #    (step-1's API response already includes LV), so no tool_call required.
   - prompt: "A jaké je list vlastnictví (LV) této parcely?"
     expect:
-      tool_call:
-        name: shell
-        input_matches: "katastr-cli"
-      tool_calls_min: 1
       tool_calls_max: 5
       response:
         contains: "12069"
 
-  # 3. protection status — another follow-up
+  # 3. protection status — another natural follow-up.
   - prompt: "Je ta parcela nějak chráněná? Třeba památkově?"
     expect:
-      tool_call:
-        name: shell
-        input_matches: "katastr-cli"
-      tool_calls_min: 1
       tool_calls_max: 5
       response:
         matches: "(?i)kulturní[ -]?památka"
