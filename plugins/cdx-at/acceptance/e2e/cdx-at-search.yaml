@@ -1,0 +1,28 @@
+name: cdx-at-search
+description: Verify the cdx-at skill performs case-law search and fetches Austrian federal legislation.
+
+# Austrian legal DB (RIS). Two steps:
+#   1. Case-law search on ATJD (Judikatur) for "Schadenersatz" (damages).
+#   2. Legislation lookup — ABGB (Allgemeines bürgerliches Gesetzbuch) is
+#      the Austrian civil code — must be returned as a hit.
+
+steps:
+  - prompt: "Finde mir einige OGH-Entscheidungen zu Schadenersatz."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-at search"
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        matches: "(?i)OGH|Oberster Gerichtshof|Schadenersatz"
+
+  - prompt: "Najdi mi rakouský občanský zákoník (ABGB)."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-at"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?i)ABGB|Allgemeines bürgerliches Gesetzbuch"

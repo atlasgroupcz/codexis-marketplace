@@ -1,0 +1,29 @@
+name: cdx-cz-psp-search
+description: Verify the cdx-cz-psp skill can search Czech parliamentary documents and legislative proposals.
+
+# Czech Parliament (psp.cz). Two sources:
+#   CZPSPDOK — reports, interpellations, EU docs
+#   CZPSPPRE — legislative proposals (bills)
+# Interpellations about taxes ("daně") are a perennial topic — always
+# hits plenty of results.
+
+steps:
+  - prompt: "Najdi mi parlamentní dokumenty k interpelacím o daních."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-cz-psp search"
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        matches: "(?i)interpelac|daň|daní"
+
+  - prompt: "A jaké tam máme vládní návrhy zákonů k DPH?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-cz-psp"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?i)DPH|daň z přidané hodnoty"
