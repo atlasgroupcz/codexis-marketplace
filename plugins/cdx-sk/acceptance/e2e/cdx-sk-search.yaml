@@ -14,7 +14,7 @@ steps:
         name: shell
         input_matches: "cdx-sk search"
       tool_calls_min: 1
-      tool_calls_max: 5
+      tool_calls_max: 10   # AI often does --help + multiple query variants + fetch
       response:
         # Slovak supreme-court decisions typically mention one or both.
         matches: "(?i)Najvyšš[ií]|náhrad"
