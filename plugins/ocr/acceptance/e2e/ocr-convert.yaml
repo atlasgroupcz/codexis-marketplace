@@ -1,0 +1,37 @@
+name: ocr-convert
+description: Verify the ocr skill converts a document to markdown and the AI relays the extracted content to the user.
+
+# Fixture: a small HTML file with known content uploaded before the chat.
+# HTML is the simplest OCR-supported format to generate deterministically —
+# real OCR features (image-to-text, PDF layout) are exercised by the `ocr`
+# binary internally.
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-ocr-{{ run_id }}
+      files:
+        - path: invoice.html
+          content: |
+            <!DOCTYPE html>
+            <html>
+              <head><title>E2E Test Invoice</title></head>
+              <body>
+                <h1>E2E Test Invoice</h1>
+                <p>Customer: Alfonso Rochambeau</p>
+                <p>Total: 4712.99 EUR</p>
+                <p>Invoice date: 2026-04-22</p>
+              </body>
+            </html>
+
+steps:
+  - prompt: "Převeď mi dokument /home/codexis/ee-ocr-{{ run_id }}/invoice.html do markdownu. Řekni mi, komu je faktura vystavená a jaká je částka."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "\\bocr\\s+.*invoice\\.html"
+      tool_calls_min: 1
+      tool_calls_max: 8   # ocr + unzip + readFile + relay
+      response:
+        # Both customer name and total must reach the user (not just "done").
+        # Distinctive surname makes it impossible to false-positive.
+        matches: "(?s)Rochambeau.{0,200}4712|4712.{0,200}Rochambeau"
