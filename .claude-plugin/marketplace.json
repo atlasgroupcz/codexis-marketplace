@@ -1,69 +1,288 @@
 {
+  "uuid": "87975c97-617b-4393-9fb8-921c1ff7b70e",
   "name": "codexis-plugins",
   "owner": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
   },
+  "i18n": {
+    "cs": {
+      "displayName": "Doplňky ATLAS GROUP",
+      "description": "Oficiální sbírka doplňků ATLAS GROUP — právní databáze, státní registry, zpracování dokumentů a vizualizace dat."
+    },
+    "en": {
+      "displayName": "ATLAS GROUP Marketplace",
+      "description": "Official ATLAS GROUP plugin marketplace — legal databases, public registries, document processing, and data visualization."
+    },
+    "sk": {
+      "displayName": "Doplnky ATLAS GROUP",
+      "description": "Oficiálna zbierka doplnkov ATLAS GROUP — právne databázy, štátne registre, spracovanie dokumentov a vizualizácia dát."
+    }
+  },
   "plugins": [
     {
+      "uuid": "c5d7d6ce-6107-4688-b69a-7a04babc480f",
       "name": "codexis",
       "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
       "source": "./plugins/codexis",
-      "category": "legal"
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "CODEXIS — Právní databáze",
+          "description": "Přístup k databázi CODEXIS — česká, slovenská a evropská legislativa, judikatura, odborná literatura a vzory smluv.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "legislation": "Legislativa", "case-law": "Judikatura", "european": "Evropa" }
+        },
+        "en": {
+          "displayName": "CODEXIS — Legal Database",
+          "description": "Access to the CODEXIS database — Czech, Slovak, and EU legislation, case law, legal literature, and contract templates.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "legislation": "Legislation", "case-law": "Case Law", "european": "European Union" }
+        },
+        "sk": {
+          "displayName": "CODEXIS — Právna databáza",
+          "description": "Prístup k databáze CODEXIS — česká, slovenská a európska legislatíva, judikatúra, odborná literatúra a vzory zmlúv.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "legislation": "Legislatíva", "case-law": "Judikatúra", "european": "Európa" }
+        }
+      }
     },
     {
+      "uuid": "ad89bba6-3a8c-456d-adbb-a78d0f1da359",
       "name": "cdx-sk",
       "description": "Slovak legal database — legislation, general courts, supreme & constitutional court decisions",
       "source": "./plugins/cdx-sk",
-      "category": "legal"
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Slovenská legislativa",
+          "description": "Slovenská legislativa (e-Zbierka), rozhodnutí obecných soudů, Nejvyššího soudu a Ústavního soudu SR.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislativa", "case-law": "Judikatura" }
+        },
+        "en": {
+          "displayName": "Slovak Legislation",
+          "description": "Slovak legislation (e-Zbierka), general court decisions, Supreme Court and Constitutional Court rulings.",
+          "tagLabels": { "legal": "Law", "slovak": "Slovakia", "legislation": "Legislation", "case-law": "Case Law" }
+        },
+        "sk": {
+          "displayName": "Slovenská legislatíva",
+          "description": "Slovenská legislatíva (e-Zbierka), rozhodnutia všeobecných súdov, Najvyššieho súdu a Ústavného súdu SR.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
+        }
+      }
     },
     {
+      "uuid": "81a06344-5b2b-4c55-a0d0-e7943b988f86",
       "name": "visualization",
       "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
       "source": "./plugins/visualization",
-      "category": "visualization"
+      "category": "visualization",
+      "i18n": {
+        "cs": {
+          "displayName": "Vizualizace dat",
+          "description": "Vizualizace dat pomocí D3.js — grafy, časové osy, stromy, kalendáře, mapy, kanban a tabulky. Ideální pro právní data.",
+          "tagLabels": { "visualization": "Vizualizace", "chart": "Grafy", "timeline": "Časová osa", "map": "Mapa", "legal": "Právo" }
+        },
+        "en": {
+          "displayName": "Data Visualization",
+          "description": "D3.js-powered data visualization — charts, timelines, trees, calendars, maps, kanban boards and tables. Tailored for legal data.",
+          "tagLabels": { "visualization": "Visualization", "chart": "Charts", "timeline": "Timeline", "map": "Map", "legal": "Law" }
+        },
+        "sk": {
+          "displayName": "Vizualizácia dát",
+          "description": "Vizualizácia dát pomocou D3.js — grafy, časové osi, stromy, kalendáre, mapy, kanban a tabuľky. Ideálne pre právne dáta.",
+          "tagLabels": { "visualization": "Vizualizácia", "chart": "Grafy", "timeline": "Časová os", "map": "Mapa", "legal": "Právo" }
+        }
+      }
     },
     {
+      "uuid": "32520e57-efd7-47bc-8053-b97cbc9ce304",
       "name": "katastr",
       "description": "Katastr nemovitostí ČR - property registry lookup and cadastral data access",
       "source": "./plugins/katastr",
-      "category": "legal"
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Katastr nemovitostí ČR",
+          "description": "Vyhledávání a čtení dat z Katastru nemovitostí České republiky — parcely, listy vlastnictví, mapové podklady.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "cadastre": "Katastr", "property": "Nemovitosti" }
+        },
+        "en": {
+          "displayName": "Czech Property Registry",
+          "description": "Search and read the Czech Property Registry (Katastr nemovitostí) — parcels, title deeds, cadastral maps.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "cadastre": "Cadastre", "property": "Property" }
+        },
+        "sk": {
+          "displayName": "Kataster nehnuteľností ČR",
+          "description": "Vyhľadávanie a čítanie dát z Katastru nehnuteľností Českej republiky — parcely, listy vlastníctva, mapové podklady.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "cadastre": "Kataster", "property": "Nehnuteľnosti" }
+        }
+      }
     },
     {
-      "name": "playwright",
-      "description": "Playwright MCP (fork) configured with --no-sandbox for Chromium under bwrap.",
-      "source": "./plugins/playwright",
-      "category": "development"
-    },
-    {
+      "uuid": "3d8ea3de-e4cc-46cf-bc6c-faf72026a3cc",
       "name": "ocr",
       "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
       "source": "./plugins/ocr",
-      "category": "document-processing"
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "OCR dokumentů",
+          "description": "Převod dokumentů (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocí OCR — připraveno pro další AI zpracování.",
+          "tagLabels": { "document-processing": "Zpracování dokumentů", "ocr": "OCR", "pdf": "PDF" }
+        },
+        "en": {
+          "displayName": "Document OCR",
+          "description": "Convert documents (PDF, DOCX, PPTX, XLSX, images, ZIP) into Markdown via OCR — ready for downstream AI processing.",
+          "tagLabels": { "document-processing": "Document Processing", "ocr": "OCR", "pdf": "PDF" }
+        },
+        "sk": {
+          "displayName": "OCR dokumentov",
+          "description": "Prevod dokumentov (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocou OCR — pripravené pre ďalšie AI spracovanie.",
+          "tagLabels": { "document-processing": "Spracovanie dokumentov", "ocr": "OCR", "pdf": "PDF" }
+        }
+      }
     },
     {
+      "uuid": "4d7e6ced-f344-438f-9d12-141ac694fe65",
       "name": "video-analyze",
       "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
       "source": "./plugins/video-analyze",
-      "category": "media"
+      "category": "media",
+      "i18n": {
+        "cs": {
+          "displayName": "Analýza videí",
+          "description": "Analýza obsahu videí pomocí modelu Gemini — přepisy, shrnutí a rozbor z YouTube odkazů i lokálních souborů.",
+          "tagLabels": { "media": "Média", "video": "Video", "ai": "AI" }
+        },
+        "en": {
+          "displayName": "Video Analysis",
+          "description": "Video content analysis powered by Gemini — transcripts, summaries, and insights from YouTube links or local files.",
+          "tagLabels": { "media": "Media", "video": "Video", "ai": "AI" }
+        },
+        "sk": {
+          "displayName": "Analýza videí",
+          "description": "Analýza obsahu videí pomocou modelu Gemini — prepisy, zhrnutia a rozbor z YouTube odkazov i lokálnych súborov.",
+          "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
+        }
+      }
     },
     {
+      "uuid": "366eb4b7-2713-43e3-9660-2a982b7992ae",
       "name": "presentation",
       "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
       "source": "./plugins/presentation",
-      "category": "document-processing"
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "Tvorba prezentací",
+          "description": "Generování prezentací ve formátu PowerPoint (PPTX) z textových podkladů pomocí knihovny python-pptx.",
+          "tagLabels": { "document-processing": "Zpracování dokumentů", "presentation": "Prezentace", "pptx": "PowerPoint" }
+        },
+        "en": {
+          "displayName": "Presentation Generator",
+          "description": "Generate PowerPoint (PPTX) presentations from text briefs using python-pptx.",
+          "tagLabels": { "document-processing": "Document Processing", "presentation": "Presentations", "pptx": "PowerPoint" }
+        },
+        "sk": {
+          "displayName": "Tvorba prezentácií",
+          "description": "Generovanie prezentácií vo formáte PowerPoint (PPTX) z textových podkladov pomocou knižnice python-pptx.",
+          "tagLabels": { "document-processing": "Spracovanie dokumentov", "presentation": "Prezentácie", "pptx": "PowerPoint" }
+        }
+      }
     },
     {
+      "uuid": "6424383b-d36a-4946-af8d-09b7755fad57",
       "name": "cdx-cz-spp",
       "description": "Czech municipal regulations (sbirkapp.gov.cz) — municipal decrees, ordinances, and local legal acts",
       "source": "./plugins/cdx-cz-spp",
-      "category": "legal"
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Obecní předpisy ČR",
+          "description": "Sbírka právních předpisů obcí, měst a krajů České republiky (sbirkapp.gov.cz) — vyhlášky, nařízení a místní akty.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "municipal": "Obce", "legislation": "Legislativa" }
+        },
+        "en": {
+          "displayName": "Czech Municipal Regulations",
+          "description": "Czech municipal, city, and regional regulations collection (sbirkapp.gov.cz) — decrees, ordinances, and local legal acts.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "municipal": "Municipalities", "legislation": "Legislation" }
+        },
+        "sk": {
+          "displayName": "Obecné predpisy ČR",
+          "description": "Zbierka právnych predpisov obcí, miest a krajov Českej republiky (sbirkapp.gov.cz) — vyhlášky, nariadenia a miestne akty.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "municipal": "Obce", "legislation": "Legislatíva" }
+        }
+      }
     },
     {
+      "uuid": "ffdd45fa-e3b0-4cd3-a8bb-d4749f3360ec",
+      "name": "cdx-cz-psp",
+      "description": "Czech Parliament — parliamentary reports, interpellations, EU documents, and legislative bill tracking",
+      "source": "./plugins/cdx-cz-psp",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Poslanecká sněmovna ČR",
+          "description": "Parlamentní tisky, interpelace, evropské dokumenty a sledování legislativního procesu v Poslanecké sněmovně ČR.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "parliament": "Parlament", "legislation": "Legislativa" }
+        },
+        "en": {
+          "displayName": "Czech Parliament",
+          "description": "Parliamentary papers, interpellations, EU documents, and legislative bill tracking from the Czech Chamber of Deputies.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "parliament": "Parliament", "legislation": "Legislation" }
+        },
+        "sk": {
+          "displayName": "Poslanecká snemovňa ČR",
+          "description": "Parlamentné tlače, interpelácie, európske dokumenty a sledovanie legislatívneho procesu v Poslaneckej snemovni ČR.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "parliament": "Parlament", "legislation": "Legislatíva" }
+        }
+      }
+    },
+    {
+      "uuid": "bc2d2aff-84c6-49e4-8f2b-fed6ff316de8",
       "name": "cdx-at",
-      "description": "Austrian legal database (RIS) — legislation, court decisions, and legal information",
+      "description": "Austrian legal database (RIS) — federal and state legislation, court decisions, ministerial decrees, and consolidated law history",
       "source": "./plugins/cdx-at",
-      "category": "legal"
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Rakouská legislativa (RIS)",
+          "description": "Rakouský právní informační systém RIS — spolková a zemská legislativa, rozhodnutí soudů, ministerské vyhlášky a historie předpisů.",
+          "tagLabels": { "legal": "Právo", "austrian": "Rakousko", "legislation": "Legislativa", "case-law": "Judikatura" }
+        },
+        "en": {
+          "displayName": "Austrian Legislation (RIS)",
+          "description": "Austrian Legal Information System (RIS) — federal and state legislation, court decisions, ministerial decrees, and consolidated law history.",
+          "tagLabels": { "legal": "Law", "austrian": "Austria", "legislation": "Legislation", "case-law": "Case Law" }
+        },
+        "sk": {
+          "displayName": "Rakúska legislatíva (RIS)",
+          "description": "Rakúsky právny informačný systém RIS — spolková a krajinská legislatíva, rozhodnutia súdov, ministerské vyhlášky a história predpisov.",
+          "tagLabels": { "legal": "Právo", "austrian": "Rakúsko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
+        }
+      }
+    },
+    {
+      "uuid": "e397b2f1-505e-4b2e-b6ed-df181fd2b9f2",
+      "name": "data-gouv-fr",
+      "description": "French government open data (data.gouv.fr) — search datasets, query tabular data, and discover public APIs from France's national Open Data platform",
+      "source": "./plugins/data-gouv-fr",
+      "category": "open-data",
+      "i18n": {
+        "cs": {
+          "displayName": "Francouzská otevřená data",
+          "description": "Francouzský národní portál otevřených dat (data.gouv.fr) — vyhledávání datasetů, dotazy nad tabulkami a objevování veřejných API.",
+          "tagLabels": { "open-data": "Otevřená data", "french": "Francie", "api": "API" }
+        },
+        "en": {
+          "displayName": "French Open Data",
+          "description": "France's national Open Data portal (data.gouv.fr) — search datasets, query tabular data, and discover public APIs.",
+          "tagLabels": { "open-data": "Open Data", "french": "France", "api": "API" }
+        },
+        "sk": {
+          "displayName": "Francúzske otvorené dáta",
+          "description": "Francúzsky národný portál otvorených dát (data.gouv.fr) — vyhľadávanie datasetov, dopyty nad tabuľkami a objavovanie verejných API.",
+          "tagLabels": { "open-data": "Otvorené dáta", "french": "Francúzsko", "api": "API" }
+        }
+      }
     }
   ]
 }
