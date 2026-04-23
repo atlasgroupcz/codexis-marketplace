@@ -1,0 +1,738 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T15:10:22Z",
+  "cdxPatterns": [
+    "cdx://doc/<DOC_ID>/meta",
+    "cdx://cz_law/<NUM>/<YEAR>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/rest/cdx-api/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Returns metadata for a document. The response contains source-specific metadata in the corresponding field (cr, sk, jd, es, eu, lt, vs, comment) based on the document type.",
+      "operationId": "getDocumentMetadata",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document identifier",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CR13986_2026_01_01"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentMetadataResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Document not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentMetadataResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/rest/cdx-api/cz_law/{lawNumber}/{lawYear}/meta",
+      "method": "get",
+      "summary": "Get Czech law metadata (by law number and year)",
+      "description": "Resolves Czech legislation by law number/year (e.g. 262/2006 Sb.) to the current/nearest valid time version and returns its metadata. Same output format as GET /doc/{docId}/meta.",
+      "operationId": "getCzLawMetadata",
+      "parameters": [
+        {
+          "name": "lawNumber",
+          "in": "path",
+          "description": "Number of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 262
+        },
+        {
+          "name": "lawYear",
+          "in": "path",
+          "description": "Year of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 2006
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentMetadataResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Law not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentMetadataResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CommentMetadataApiDto": {
+        "type": "object",
+        "description": "Liberis comment document metadata",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "description": "Comment ID",
+            "example": "LIBERIS_COMMENT_123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Comment title"
+          },
+          "partName": {
+            "type": "string",
+            "description": "Comment part name"
+          },
+          "bookId": {
+            "type": "string",
+            "description": "Book ID"
+          },
+          "editionId": {
+            "type": "string",
+            "description": "Edition ID"
+          },
+          "validFromDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid from date"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Access tags",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CrMainApiDto": {
+        "type": "object",
+        "description": "Czech legislation document (CR) - filtered fields for API response",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "CR123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "docType": {
+            "type": "string",
+            "description": "Document type",
+            "example": "Zákon"
+          },
+          "docNumber": {
+            "type": "string",
+            "description": "Document number",
+            "example": "262/2006"
+          },
+          "source": {
+            "type": "string",
+            "description": "Source",
+            "example": "Sbírka zákonů"
+          },
+          "castka": {
+            "type": "string",
+            "description": "Collection issue (částka)",
+            "example": "84/2006"
+          },
+          "authors": {
+            "type": "array",
+            "description": "Authors",
+            "items": {
+              "type": "string"
+            }
+          },
+          "schvaleno": {
+            "type": "string",
+            "format": "date",
+            "description": "Approval date (schváleno)"
+          },
+          "platnyOd": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid from date (platný od)"
+          },
+          "ucinnyOd": {
+            "type": "string",
+            "format": "date",
+            "description": "Effective from date (účinný od)"
+          },
+          "zruseno": {
+            "type": "string",
+            "format": "date",
+            "description": "Cancelled date (zrušeno)"
+          },
+          "note": {
+            "type": "string",
+            "description": "Note"
+          }
+        }
+      },
+      "CrTimecutApiDto": {
+        "type": "object",
+        "description": "Czech legislation timecut (specific version) - filtered fields for API response",
+        "properties": {
+          "timecutId": {
+            "type": "string",
+            "description": "Timecut ID (version identifier)",
+            "example": "CR123456_2024-01-01"
+          },
+          "docId": {
+            "type": "string",
+            "description": "Parent document ID",
+            "example": "CR123456"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid from date for this version"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid to date for this version"
+          },
+          "derogation": {
+            "type": "boolean",
+            "description": "Whether this version is a derogation (cancellation)"
+          }
+        }
+      },
+      "CrVersionApiDto": {
+        "type": "object",
+        "description": "Czech legislation document version (CR) - contains base document info and specific timecut",
+        "properties": {
+          "main": {
+            "$ref": "#/components/schemas/CrMainApiDto",
+            "description": "Base document information"
+          },
+          "timecut": {
+            "$ref": "#/components/schemas/CrTimecutApiDto",
+            "description": "Specific timecut (version) returned by search"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "Search match snippet from document content (HTML)"
+          },
+          "nameSnippet": {
+            "type": "string",
+            "description": "Search match snippet from document title (HTML)"
+          }
+        }
+      },
+      "DocumentMetadataResponse": {
+        "type": "object",
+        "description": "Document metadata response - contains metadata for any supported document type",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "CR13986_2026_01_01"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source type",
+            "enum": [
+              "CR",
+              "SK",
+              "JD",
+              "ES",
+              "EU",
+              "LT",
+              "VS",
+              "COMMENT"
+            ],
+            "example": "CR"
+          },
+          "cr": {
+            "$ref": "#/components/schemas/CrVersionApiDto",
+            "description": "CR (Czech legislation) document metadata"
+          },
+          "sk": {
+            "$ref": "#/components/schemas/SkVersionApiDto",
+            "description": "SK (Slovak legislation) document metadata"
+          },
+          "jd": {
+            "$ref": "#/components/schemas/JdMetadataApiDto",
+            "description": "JD (Czech case law) document metadata"
+          },
+          "es": {
+            "$ref": "#/components/schemas/EsMetadataApiDto",
+            "description": "ES (EU Court of Justice decisions) document metadata"
+          },
+          "eu": {
+            "$ref": "#/components/schemas/EuMetadataApiDto",
+            "description": "EU (EU legislation) document metadata"
+          },
+          "lt": {
+            "$ref": "#/components/schemas/LtMetadataApiDto",
+            "description": "LT (Literature) document metadata"
+          },
+          "vs": {
+            "$ref": "#/components/schemas/VsMetadataApiDto",
+            "description": "VS (Contract templates) document metadata"
+          },
+          "comment": {
+            "$ref": "#/components/schemas/CommentMetadataApiDto",
+            "description": "COMMENT (Liberis commentaries) document metadata"
+          }
+        }
+      },
+      "EsMetadataApiDto": {
+        "type": "object",
+        "description": "EU Court of Justice decision (ES) metadata",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "ES123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "docType": {
+            "type": "string",
+            "description": "Document type",
+            "example": "Rozsudek"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Creation date"
+          },
+          "releaseDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Release date"
+          },
+          "court": {
+            "type": "string",
+            "description": "Court name"
+          },
+          "city": {
+            "type": "string",
+            "description": "City"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Subject matter"
+          },
+          "celex": {
+            "type": "string",
+            "description": "CELEX identifier"
+          },
+          "ecli": {
+            "type": "string",
+            "description": "ECLI identifier"
+          }
+        }
+      },
+      "EuMetadataApiDto": {
+        "type": "object",
+        "description": "EU legislation document (EU) metadata",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "EU123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "docType": {
+            "type": "string",
+            "description": "Document type"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Creation date"
+          },
+          "sourceUveu": {
+            "type": "string",
+            "description": "Source in EU Official Journal"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Legal domain"
+          },
+          "celex": {
+            "type": "string",
+            "description": "CELEX identifier"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid from date"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid to date"
+          },
+          "approvalDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Approval date"
+          },
+          "docNumber": {
+            "type": "string",
+            "description": "Document number"
+          },
+          "authors": {
+            "type": "array",
+            "description": "Authors",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isAmendment": {
+            "type": "boolean",
+            "description": "Whether this document is an amendment"
+          }
+        }
+      },
+      "JdMetadataApiDto": {
+        "type": "object",
+        "description": "Czech case law document (JD) metadata",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "JD123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "legalSentence": {
+            "type": "string",
+            "description": "Legal sentence / summary"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Creation date"
+          },
+          "releaseDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Release date"
+          },
+          "court": {
+            "type": "string",
+            "description": "Court name",
+            "example": "Nejvyšší soud"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source"
+          },
+          "city": {
+            "type": "string",
+            "description": "City",
+            "example": "Brno"
+          },
+          "docType": {
+            "type": "string",
+            "description": "Document type",
+            "example": "Rozsudek"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Legal domain"
+          },
+          "spZns": {
+            "type": "array",
+            "description": "Case numbers (spisové značky)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cislaJednaci": {
+            "type": "array",
+            "description": "Reference numbers (čísla jednací)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sbirkoveCislo": {
+            "type": "string",
+            "description": "Collection number (sbírkové číslo)"
+          },
+          "ecli": {
+            "type": "string",
+            "description": "ECLI identifier"
+          },
+          "note": {
+            "type": "string",
+            "description": "Note"
+          },
+          "derogated": {
+            "type": "boolean",
+            "description": "Whether the decision has been derogated"
+          }
+        }
+      },
+      "LtMetadataApiDto": {
+        "type": "object",
+        "description": "Literature document (LT) metadata",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "LT123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "docType": {
+            "type": "string",
+            "description": "Document type"
+          },
+          "litType": {
+            "type": "string",
+            "description": "Literature type"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source"
+          },
+          "publishingHouse": {
+            "type": "string",
+            "description": "Publishing house"
+          },
+          "docNumber": {
+            "type": "string",
+            "description": "Document number"
+          },
+          "issn": {
+            "type": "string",
+            "description": "ISSN"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language"
+          },
+          "authors": {
+            "type": "array",
+            "description": "Authors",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Creation date"
+          },
+          "note": {
+            "type": "string",
+            "description": "Note"
+          }
+        }
+      },
+      "SkMainApiDto": {
+        "type": "object",
+        "description": "Slovak legislation document (SK) - filtered fields for API response",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "SK123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "docType": {
+            "type": "string",
+            "description": "Document type"
+          },
+          "source": {
+            "type": "string",
+            "description": "Document source"
+          },
+          "docNumber": {
+            "type": "string",
+            "description": "Document number"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Issue number (číslo částky)"
+          },
+          "vyhlaseno": {
+            "type": "string",
+            "format": "date",
+            "description": "Publication date (vyhlášeno)"
+          },
+          "schvaleno": {
+            "type": "string",
+            "format": "date",
+            "description": "Approval date (schváleno)"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author"
+          }
+        }
+      },
+      "SkTimecutApiDto": {
+        "type": "object",
+        "description": "Slovak legislation timecut (specific version) - filtered fields for API response",
+        "properties": {
+          "timecutId": {
+            "type": "string",
+            "description": "Timecut ID (version identifier)",
+            "example": "SK123456_2024-01-01"
+          },
+          "docId": {
+            "type": "string",
+            "description": "Parent document ID",
+            "example": "SK123456"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid from date for this version"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "description": "Valid to date for this version"
+          }
+        }
+      },
+      "SkVersionApiDto": {
+        "type": "object",
+        "description": "Slovak legislation document version (SK) - contains base document info and specific timecut",
+        "properties": {
+          "main": {
+            "$ref": "#/components/schemas/SkMainApiDto",
+            "description": "Base document information"
+          },
+          "timecut": {
+            "$ref": "#/components/schemas/SkTimecutApiDto",
+            "description": "Specific timecut (version) returned by search"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "Search match snippet from document content (HTML)"
+          },
+          "nameSnippet": {
+            "type": "string",
+            "description": "Search match snippet from document title (HTML)"
+          }
+        }
+      },
+      "VsMetadataApiDto": {
+        "type": "object",
+        "description": "Contract template document (VS) metadata",
+        "properties": {
+          "docId": {
+            "type": "string",
+            "description": "Document ID",
+            "example": "VS123456"
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category"
+          },
+          "law": {
+            "type": "string",
+            "description": "Related law"
+          },
+          "keyWords": {
+            "type": "string",
+            "description": "Keywords"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Comment"
+          },
+          "explanations": {
+            "type": "string",
+            "description": "Explanations"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Creation date"
+          },
+          "actual": {
+            "type": "boolean",
+            "description": "Whether the template is current/actual"
+          }
+        }
+      }
+    }
+  }
+}

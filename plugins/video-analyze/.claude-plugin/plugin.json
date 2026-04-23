@@ -14,6 +14,24 @@
     "multimedia"
   ],
   "license": "PROPRIETARY",
+  "tags": ["media", "video", "ai"],
+  "i18n": {
+    "cs": {
+      "displayName": "Analýza videí",
+      "description": "Analýza obsahu videí pomocí modelu Gemini — přepisy, shrnutí a rozbor z YouTube odkazů i lokálních souborů.",
+      "tagLabels": { "media": "Média", "video": "Video", "ai": "AI" }
+    },
+    "en": {
+      "displayName": "Video Analysis",
+      "description": "Video content analysis powered by Gemini — transcripts, summaries, and insights from YouTube links or local files.",
+      "tagLabels": { "media": "Media", "video": "Video", "ai": "AI" }
+    },
+    "sk": {
+      "displayName": "Analýza videí",
+      "description": "Analýza obsahu videí pomocou modelu Gemini — prepisy, zhrnutia a rozbor z YouTube odkazov i lokálnych súborov.",
+      "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
+    }
+  },
   "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
   "postUninstall": "sudo rm -f /usr/local/bin/video-analyze",
   "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",

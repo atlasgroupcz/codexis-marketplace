@@ -1,6 +1,6 @@
 {
   "name": "codexis",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
   "author": {
     "name": "ATLAS GROUP",
@@ -20,6 +20,24 @@
     "api"
   ],
   "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "legislation", "case-law", "european"],
+  "i18n": {
+    "cs": {
+      "displayName": "CODEXIS — Právní databáze",
+      "description": "Přístup k databázi CODEXIS — česká, slovenská a evropská legislativa, judikatura, odborná literatura a vzory smluv.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "legislation": "Legislativa", "case-law": "Judikatura", "european": "Evropa" }
+    },
+    "en": {
+      "displayName": "CODEXIS — Legal Database",
+      "description": "Access to the CODEXIS database — Czech, Slovak, and EU legislation, case law, legal literature, and contract templates.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "legislation": "Legislation", "case-law": "Case Law", "european": "European Union" }
+    },
+    "sk": {
+      "displayName": "CODEXIS — Právna databáza",
+      "description": "Prístup k databáze CODEXIS — česká, slovenská a európska legislatíva, judikatúra, odborná literatúra a vzory zmlúv.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "legislation": "Legislatíva", "case-law": "Judikatúra", "european": "Európa" }
+    }
+  },
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",

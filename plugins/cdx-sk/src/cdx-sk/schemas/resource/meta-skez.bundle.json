@@ -1,0 +1,162 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/meta",
+    "cdx-sk://law/SK/<NUM>/<YEAR>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ezbierka/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for an e-Zbierka document by document ID.",
+      "operationId": "getMeta",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKEZ1234"
+        },
+        {
+          "name": "includeAllAssets",
+          "in": "query",
+          "description": "If true, return all assets; if false (default), only assets for the current timecut",
+          "required": false,
+          "schema": { "type": "boolean", "default": false }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaMetaResponse" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/SK/ezbierka/law/{number}/{year}/meta",
+      "method": "get",
+      "summary": "Get law metadata",
+      "description": "Resolve a law by number/year and return its document metadata.",
+      "operationId": "getLawMeta",
+      "parameters": [
+        {
+          "name": "number",
+          "in": "path",
+          "description": "Law number",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 40
+        },
+        {
+          "name": "year",
+          "in": "path",
+          "description": "Law year",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 1964
+        },
+        {
+          "name": "includeAllAssets",
+          "in": "query",
+          "description": "If true, return all assets; if false (default), only assets for the current timecut",
+          "required": false,
+          "schema": { "type": "boolean", "default": false }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaMetaResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "EzbierkaMetaResponse": {
+        "type": "object",
+        "description": "Document record metadata for e-Zbierka regulations",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "SKEZ1234" },
+          "metadata": { "$ref": "#/components/schemas/EzbierkaMetadataResponse" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "EzbierkaMetadataResponse": {
+        "type": "object",
+        "description": "e-Zbierka main regulation metadata with resolved law links",
+        "properties": {
+          "cisloPredpisu": { "type": "string", "description": "Regulation number" },
+          "nazov": { "type": "string", "description": "Title" },
+          "typ": { "type": "string", "description": "Regulation type" },
+          "autor": { "type": "string", "description": "Author" },
+          "datumSchvalenia": { "type": "string", "description": "Approval date" },
+          "datumVyhlasenia": { "type": "string", "description": "Publication date" },
+          "pravnaOblast": {
+            "type": "array",
+            "description": "Legal areas",
+            "items": { "type": "string" }
+          },
+          "zakonRok": { "type": "string", "description": "Law year" },
+          "zakonCislo": { "type": "string", "description": "Law number" },
+          "vykonavaciePredpisy": {
+            "type": "array",
+            "description": "Implementing regulations with resolved cdx-sk:// links",
+            "items": { "$ref": "#/components/schemas/RelatedRegulationResponse" }
+          },
+          "predpisMeni": {
+            "type": "array",
+            "description": "Regulations this law amends",
+            "items": { "$ref": "#/components/schemas/RelatedRegulationResponse" }
+          },
+          "predpisJeMeneny": {
+            "type": "array",
+            "description": "Regulations that amend this law",
+            "items": { "$ref": "#/components/schemas/RelatedRegulationResponse" }
+          },
+          "predpisRusi": {
+            "type": "array",
+            "description": "Regulations this law repeals",
+            "items": { "$ref": "#/components/schemas/RelatedRegulationResponse" }
+          }
+        }
+      },
+      "RelatedRegulationResponse": {
+        "type": "object",
+        "description": "Resolved related regulation reference",
+        "properties": {
+          "cislo": { "type": "string", "description": "Regulation number", "example": "233/1995" },
+          "nazov": { "type": "string", "description": "Regulation title" },
+          "docUrl": { "type": "string", "description": "cdx-sk:// link to the related regulation" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-sk:// link to download this attachment" }
+        }
+      }
+    }
+  }
+}

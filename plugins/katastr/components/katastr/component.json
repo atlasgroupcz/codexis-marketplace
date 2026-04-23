@@ -1,0 +1,23 @@
+{
+  "id": "katastr",
+  "title": "Katastr - Sledovaná řízení",
+  "icon": "assets/icon.png",
+  "route": "katastr",
+  "description": "Sledujte stav katastrálních řízení s automatickou kontrolou změn.",
+  "entrypoint": "index.html",
+  "binary": "katastr",
+  "i18n": {
+    "cs": {
+      "displayName": "Katastr — sledovaná řízení",
+      "description": "Sledujte stav katastrálních řízení (vklad, záznam, plomba) s automatickou kontrolou změn."
+    },
+    "en": {
+      "displayName": "Cadastre — Tracked Proceedings",
+      "description": "Track the status of Czech cadastral proceedings (entry, record, lien) with automatic change detection."
+    },
+    "sk": {
+      "displayName": "Kataster — sledované konania",
+      "description": "Sledujte stav katastrálnych konaní (vklad, záznam, plomba) s automatickou kontrolou zmien."
+    }
+  }
+}

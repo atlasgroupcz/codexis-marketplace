@@ -1,0 +1,90 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-at://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/AT/sonstige/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for an Austrian miscellaneous legal document by document ID. Returns the raw DomainMetadata object.",
+      "operationId": "getMeta_3",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ATSO1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RisSonstigeMetadata" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RisSonstigeMetadata": {
+        "type": "object",
+        "description": "Metadata for Austrian miscellaneous legal document records",
+        "properties": {
+          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "url": { "type": "string", "description": "Source URL" },
+          "documentNumber": { "type": "string", "description": "Document number" },
+          "application": { "type": "string", "description": "Sub-application" },
+          "shortTitle": { "type": "string", "description": "Short title" },
+          "title": { "type": "string", "description": "Full title" },
+          "authority": { "type": "string", "description": "Issuing authority" },
+          "submitter": { "type": "string", "description": "Submitter" },
+          "publicationDate": { "type": "string", "description": "Publication date" },
+          "approvalDate": { "type": "string", "description": "Approval date" },
+          "ministry": { "type": "string", "description": "Ministry" },
+          "department": { "type": "string", "description": "Department" },
+          "fileNumbers": {
+            "type": "array",
+            "description": "File numbers",
+            "items": { "type": "string" }
+          },
+          "publicationReference": { "type": "string", "description": "Publication reference" },
+          "documentType": { "type": "string", "description": "Document type" },
+          "sessionDate": { "type": "string", "description": "Session date" },
+          "sessionNumber": { "type": "string", "description": "Session number" },
+          "legislativePeriod": { "type": "string", "description": "Legislative period" },
+          "shortDescription": { "type": "string", "description": "Short description" },
+          "gazetteNumber": { "type": "string", "description": "Gazette number" },
+          "decisionBody": { "type": "string", "description": "Decision body" },
+          "decisionDate": { "type": "string", "description": "Decision date" },
+          "decisionFileNumber": { "type": "string", "description": "Decision file number" },
+          "lastModified": { "type": "string", "description": "Last modified date" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "description": "Asset file reference",
+        "properties": {
+          "file": { "type": "string", "description": "Internal filename" },
+          "originalName": { "type": "string", "description": "Original filename from source" }
+        }
+      }
+    }
+  }
+}

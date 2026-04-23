@@ -1,7 +1,18 @@
 ---
+uuid: e8dcfc20-9582-42d6-81c8-d8c9aeec145a
 name: cdx-sk
 description: This skill should be invoked whenever user needs Slovak law or legal information — legislation from e-Zbierka, general court decisions, or supreme/constitutional court decisions.
 version: 2.1.0
+i18n:
+  cs:
+    displayName: "Slovenská legislativa"
+    summary: "Slovenská legislativa (e-Zbierka) a rozhodnutí obecných, Nejvyššího a Ústavního soudu SR."
+  en:
+    displayName: "Slovak Legislation"
+    summary: "Slovak legislation (e-Zbierka) plus general, Supreme and Constitutional Court decisions."
+  sk:
+    displayName: "Slovenská legislatíva"
+    summary: "Slovenská legislatíva (e-Zbierka) a rozhodnutia všeobecných, Najvyššieho a Ústavného súdu SR."
 ---
 
 # Slovak Legal Database (cdx-sk)

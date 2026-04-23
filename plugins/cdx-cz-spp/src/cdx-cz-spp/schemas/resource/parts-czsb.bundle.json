@@ -1,0 +1,71 @@
+{
+  "endpoint": "parts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-spp://doc/<DOC_ID>/parts"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/sbirkapp/doc/{docId}/parts",
+      "method": "get",
+      "summary": "Get navigable document parts",
+      "description": "List navigable parts (headings) available in a Sbirkapp document.",
+      "operationId": "getParts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZSB1234"
+        },
+        {
+          "name": "file",
+          "in": "query",
+          "description": "Specific content file to retrieve parts from (e.g. content_1.pdf). Defaults to content_1 if omitted.",
+          "required": false,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Part list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SbirkappPartsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "SbirkappPartsResponse": {
+        "type": "object",
+        "description": "Navigable parts for a sbirkapp document",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "parts": {
+            "type": "array",
+            "description": "Available parts",
+            "items": { "$ref": "#/components/schemas/SbirkappPartItem" }
+          }
+        }
+      },
+      "SbirkappPartItem": {
+        "type": "object",
+        "description": "Navigable document part (heading extracted from markdown)",
+        "properties": {
+          "id": { "type": "string", "description": "Part ID (anchor)" },
+          "heading": { "type": "string", "description": "Part heading" },
+          "level": { "type": "integer", "format": "int32", "description": "Heading level (1-6)" }
+        }
+      }
+    }
+  }
+}

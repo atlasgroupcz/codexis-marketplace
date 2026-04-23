@@ -1,0 +1,104 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/related"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/najvyssi-ustavny-sud/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get related documents",
+      "description": "Retrieve documents related to a court decision (e.g. referenced laws).",
+      "operationId": "getRelated_2",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKNUS1234"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Relation type filter",
+          "required": true,
+          "schema": { "type": "string", "enum": ["IMPLEMENTING", "AMENDS", "AMENDED_BY", "REPEALS", "REFERENCING_DECISION", "REFERENCED_LAW"] }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (default: 20, max: 100)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "description": "Sort field",
+          "required": false,
+          "schema": { "type": "string", "enum": ["relevance", "title", "date"] }
+        },
+        {
+          "name": "order",
+          "in": "query",
+          "description": "Sort order",
+          "required": false,
+          "schema": { "type": "string", "enum": ["asc", "desc"] }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Related documents",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RelatedResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RelatedResponse": {
+        "type": "object",
+        "description": "Paginated list of related documents",
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "Related documents",
+            "items": { "$ref": "#/components/schemas/RelatedItem" }
+          },
+          "totalResults": { "type": "integer", "format": "int64", "description": "Total number of related documents" },
+          "offset": { "type": "integer", "format": "int32", "description": "Pagination offset" },
+          "limit": { "type": "integer", "format": "int32", "description": "Page size" }
+        }
+      },
+      "RelatedItem": {
+        "type": "object",
+        "description": "A related document",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "domain": { "type": "string", "description": "Source domain/index" },
+          "title": { "type": "string", "description": "Document title" },
+          "recordId": { "type": "string", "description": "Record ID" },
+          "docUrl": { "type": "string", "description": "Link to document metadata endpoint" },
+          "relationType": { "type": "string", "description": "Relation type", "enum": ["IMPLEMENTING", "AMENDS", "AMENDED_BY", "REPEALS", "REFERENCING_DECISION", "REFERENCED_LAW"] }
+        }
+      }
+    }
+  }
+}

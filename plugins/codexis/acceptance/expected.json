@@ -1,0 +1,25 @@
+{
+  "skills": [
+    "codexis:codexis",
+    "codexis:cdxctl",
+    "codexis:sledovana-judikatura",
+    "codexis:sledovane-dokumenty"
+  ],
+  "post_install": [
+    { "type": "executable", "path": "/usr/local/bin/cdx-cli" },
+    { "type": "executable", "path": "/usr/local/bin/cdx-link-rewriter" },
+    { "type": "executable", "path": "/usr/local/bin/cdx-sledovane-dokumenty" },
+    { "type": "executable", "path": "/usr/local/bin/cdx-sledovana-judikatura" },
+    { "type": "executable", "path": "/usr/local/bin/cdxctl" },
+    { "type": "dir",        "path": "/usr/local/share/codexis/lib/sledovane_dokumenty_core" },
+    { "type": "dir",        "path": "/usr/local/share/codexis/lib/sledovana_judikatura_core" }
+  ],
+  "post_uninstall": [
+    { "type": "absent", "path": "/usr/local/bin/cdx-cli" },
+    { "type": "absent", "path": "/usr/local/bin/cdx-link-rewriter" },
+    { "type": "absent", "path": "/usr/local/bin/cdx-sledovane-dokumenty" },
+    { "type": "absent", "path": "/usr/local/bin/cdx-sledovana-judikatura" },
+    { "type": "absent", "path": "/usr/local/bin/cdxctl" },
+    { "type": "absent", "path": "/usr/local/share/codexis" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "skills": ["cdx-sk:cdx-sk"],
+  "post_install": [
+    { "type": "executable", "path": "/usr/local/bin/cdx-sk" },
+    { "type": "executable", "path": "/usr/local/bin/cdx-sk-link-rewriter" }
+  ],
+  "post_uninstall": [
+    { "type": "absent", "path": "/usr/local/bin/cdx-sk" },
+    { "type": "absent", "path": "/usr/local/bin/cdx-sk-link-rewriter" }
+  ]
+}

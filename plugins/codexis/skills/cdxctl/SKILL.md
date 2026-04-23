@@ -1,7 +1,18 @@
 ---
+uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 description: Use when the user asks to create, list, update, or delete custom/local agents or skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, extract tabular data from files in a folder, or create, list, and manage notifications. Provides the cdxctl CLI for platform management operations.
 version: 1.4.0
+i18n:
+  cs:
+    displayName: "Správa platformy"
+    summary: "Vytváření a správa vlastních agentů, dovedností, automatizací a doplňků přímo z konverzace."
+  en:
+    displayName: "Platform Management"
+    summary: "Create and manage custom agents, skills, automations, and plugins directly from chat."
+  sk:
+    displayName: "Správa platformy"
+    summary: "Vytváranie a správa vlastných agentov, zručností, automatizácií a doplnkov priamo z konverzácie."
 ---
 
 # cdxctl — Platform Management CLI
@@ -20,9 +31,9 @@ cdxctl automation create \
     --cron "0 9 * * *" \
     --prompt "Generate a daily summary report" \
     --description "Runs every morning at 9 AM" \
-    --agent "plugin:agent-name" \
-    --skill "plugin:skill-a" \
-    --skill "plugin:skill-b" \
+    --agent "<id>" \
+    --skill "<id>" \
+    --skill "<id>" \
     --max-turns 10 \
     --work-dir "/home/user/project"
 
@@ -58,16 +69,16 @@ cdxctl automation trigger <id>
 cdxctl marketplace list
 
 # Add a git marketplace
-cdxctl marketplace add --source "https://github.com/org/repo" --type git --ref "main"
+cdxctl marketplace add --source "https://github.com/org/repo" --source-type git --ref "main"
 
 # Add a local marketplace
-cdxctl marketplace add --source "/path/to/local/dir" --type local
+cdxctl marketplace add --source "/path/to/local/dir" --source-type local
 
-# Remove a marketplace by name
-cdxctl marketplace remove <name>
+# Remove a marketplace by ID
+cdxctl marketplace remove <id>
 
-# Update one marketplace (git pull)
-cdxctl marketplace update <name>
+# Update one marketplace (git pull) by ID
+cdxctl marketplace update <id>
 
 # Update all marketplaces
 cdxctl marketplace update
@@ -76,18 +87,18 @@ cdxctl marketplace update
 ## Plugins
 
 ```bash
-# List installed plugins for a marketplace
-cdxctl plugin list --marketplace "marketplace-name"
+# List installed plugins for a marketplace ID
+cdxctl plugin list --marketplace <id>
 
 # List available (not yet installed) plugins
 cdxctl plugin list --available
-cdxctl plugin list --marketplace "marketplace-name" --available
+cdxctl plugin list --marketplace <id> --available
 
-# Install a plugin
-cdxctl plugin install --marketplace "marketplace-name" --name "plugin-name"
+# Install a plugin by ID
+cdxctl plugin install <id>
 
-# Uninstall a plugin
-cdxctl plugin uninstall --marketplace "marketplace-name" --name "plugin-name"
+# Uninstall a plugin by ID
+cdxctl plugin uninstall <id>
 ```
 
 ## Agents
@@ -117,13 +128,13 @@ You are a custom local agent.
 EOF
 
 # Update an existing agent from a file
-cdxctl agent update <id-or-name> --file /path/to/local-agent.md
+cdxctl agent update <id> --file /path/to/local-agent.md
 
 # Update an existing agent from stdin
-cat /path/to/local-agent.md | cdxctl agent update <id-or-name> --stdin
+cat /path/to/local-agent.md | cdxctl agent update <id> --stdin
 
 # Delete an editable custom/local agent
-cdxctl agent delete <id-or-name>
+cdxctl agent delete <id>
 ```
 
 **IDs:** `cdxctl agent update` and `cdxctl agent delete` accept the GraphQL `id` from `cdxctl agent list`, a base64 Node ID, or a raw local agent name like `my-agent`.
@@ -131,7 +142,7 @@ cdxctl agent delete <id-or-name>
 **Recommended agent workflow:**
 1. Run `cdxctl agent list --editable-only` to find the target agent and its `sourcePath.absolutePath`.
 2. Read or edit the markdown file in the shell.
-3. Apply the change with `cdxctl agent update <id-or-name> --file <path>` or pipe the markdown with `--stdin`.
+3. Apply the change with `cdxctl agent update <id> --file <path>` or pipe the markdown with `--stdin`.
 4. Use `cdxctl agent create` for new local agents and `cdxctl agent delete` for removal.
 
 ## Skills
@@ -161,22 +172,27 @@ Describe what the agent should do.
 EOF
 
 # Update an existing skill from a file
-cdxctl skill update <id-or-name> --file /path/to/SKILL.md
+cdxctl skill update <id> --file /path/to/SKILL.md
 
 # Update an existing skill from stdin
-cat /path/to/SKILL.md | cdxctl skill update <id-or-name> --stdin
+cat /path/to/SKILL.md | cdxctl skill update <id> --stdin
 
 # Delete an editable custom skill
-cdxctl skill delete <id-or-name>
+cdxctl skill delete <id>
 ```
 
 **IDs:** `cdxctl skill update` and `cdxctl skill delete` accept the GraphQL `id` from `cdxctl skill list`, a base64 Node ID, or a raw skill name like `my-skill`.
 
+**Current SKILL.md format:** For existing skills, preserve the `uuid` when editing. For new skills, you don't need to include it, it gets generated automatically.
+
 **Recommended agent workflow:**
-1. Run `cdxctl skill list --editable-only` to find the target skill and its `sourcePath.absolutePath`.
-2. Read or edit the `SKILL.md` file in the shell.
-3. Apply the change with `cdxctl skill update <id-or-name> --file <path>` or pipe the markdown with `--stdin`.
-4. Use `cdxctl skill create` for new custom skills and `cdxctl skill delete` for removal.
+1. Run `cdxctl skill list --editable-only` to find the target skill.
+2. Read the current `SKILL.md` only for reference.
+3. Prepare updated content in a temporary file or via stdin.
+4. Do not edit the real skill file directly.
+5. Do not manually change `uuid`; preserve it only if already present.
+6. Run `cdxctl skill update <id-or-name> --file <temp-path>` or use `--stdin`.
+7. Use `cdxctl skill create` for new skills and `cdxctl skill delete` for removal.
 
 ## Tabular Extraction
 
@@ -187,12 +203,12 @@ Extract structured data from files in a folder. Define columns (what to extract)
 cdxctl tabular status ~/invoices
 
 # Add columns (what data to extract from each file)
-cdxctl tabular add-column ~/invoices --name "Invoice Number" --type text --description "The invoice number or ID"
-cdxctl tabular add-column ~/invoices --name "Date" --type date --description "Invoice date"
-cdxctl tabular add-column ~/invoices --name "Total" --type currency --description "Total amount on the invoice"
-cdxctl tabular add-column ~/invoices --name "Paid" --type boolean --description "Whether the invoice has been paid"
-cdxctl tabular add-column ~/invoices --name "Line Items" --type list --description "List of items on the invoice"
-cdxctl tabular add-column ~/invoices --name "Priority" --type tag \
+cdxctl tabular add-column ~/invoices --name "Invoice Number" --col-type text --description "The invoice number or ID"
+cdxctl tabular add-column ~/invoices --name "Date" --col-type date --description "Invoice date"
+cdxctl tabular add-column ~/invoices --name "Total" --col-type currency --description "Total amount on the invoice"
+cdxctl tabular add-column ~/invoices --name "Paid" --col-type boolean --description "Whether the invoice has been paid"
+cdxctl tabular add-column ~/invoices --name "Line Items" --col-type list --description "List of items on the invoice"
+cdxctl tabular add-column ~/invoices --name "Priority" --col-type tag \
     --description "Invoice priority" \
     --option "high:RED" --option "medium:YELLOW" --option "low:GREEN"
 

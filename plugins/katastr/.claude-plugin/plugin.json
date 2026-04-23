@@ -1,5 +1,6 @@
 {
   "name": "katastr",
+  "version": "1.1.0",
   "description": "Katastr nemovitostí ČR",
   "author": {
     "name": "ATLAS GROUP",
@@ -7,9 +8,32 @@
   },
   "keywords": [
     "katastr",
-    "nemovitosti"
+    "nemovitosti",
+    "rizeni"
   ],
   "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "cadastre", "property"],
+  "i18n": {
+    "cs": {
+      "displayName": "Katastr nemovitostí ČR",
+      "description": "Vyhledávání a čtení dat z Katastru nemovitostí České republiky — parcely, listy vlastnictví, mapové podklady.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "cadastre": "Katastr", "property": "Nemovitosti" }
+    },
+    "en": {
+      "displayName": "Czech Property Registry",
+      "description": "Search and read the Czech Property Registry (Katastr nemovitostí) — parcels, title deeds, cadastral maps.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "cadastre": "Cadastre", "property": "Property" }
+    },
+    "sk": {
+      "displayName": "Kataster nehnuteľností ČR",
+      "description": "Vyhľadávanie a čítanie dát z Katastru nehnuteľností Českej republiky — parcely, listy vlastníctva, mapové podklady.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "cadastre": "Kataster", "property": "Nehnuteľnosti" }
+    }
+  },
+  "dependencies": ["codexis"],
+  "postInstall": "sudo install -d /usr/local/share/katastr/lib && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
+  "postUninstall": "sudo rm -f /usr/local/bin/katastr-cli && sudo rm -rf /usr/local/share/katastr",
+  "onUpdate": "sudo install -d /usr/local/share/katastr/lib && sudo rm -rf /usr/local/share/katastr/lib/katastr_core && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
   "skills": "./skills",
   "components": "./components"
 }

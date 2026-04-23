@@ -1,4 +1,5 @@
 ---
+uuid: bee1eceb-1dad-4445-8a63-c34c2bd56b9a
 name: visualize
 description: >-
   Create interactive data visualizations: charts (bar, line, area, pie), graphs (network, citation, relationship),
@@ -8,6 +9,16 @@ description: >-
   Triggers on "visualize", "visualization", "chart", "graph", "timeline", "Gantt", "resource schedule",
   "tree", "calendar", "schedule", "appointments", "flowchart", "workflow", "grid", "table", "kanban", "board",
   "map", "location", "diagram", "plot", "display data", "show data", "render", "draw".
+i18n:
+  cs:
+    displayName: "Vizualizace dat"
+    summary: "Interaktivní grafy, časové osy, stromy, kalendáře, mapy, kanban a tabulky pro právní i obecná data."
+  en:
+    displayName: "Data Visualization"
+    summary: "Interactive charts, timelines, trees, calendars, maps, kanban boards and tables — tailored for legal and general data."
+  sk:
+    displayName: "Vizualizácia dát"
+    summary: "Interaktívne grafy, časové osi, stromy, kalendáre, mapy, kanban a tabuľky pre právne i všeobecné dáta."
 ---
 
 # Visualization Router

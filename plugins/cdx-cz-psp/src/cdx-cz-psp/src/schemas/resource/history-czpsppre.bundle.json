@@ -1,0 +1,70 @@
+{
+  "endpoint": "history",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-04-10T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-psp://doc/<DOC_ID>/history"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/psp/preleg/doc/{docId}/history",
+      "method": "get",
+      "summary": "Get legislative process history",
+      "description": "Retrieve the legislative process history for a proposal — stages, votes, committee readings, and outcomes.",
+      "operationId": "getPrelegHistory",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID (CZPSPPRE prefix)",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZPSPPRE1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Legislative history",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PspCzPrelegHistoryResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "PspCzPrelegHistoryResponse": {
+        "type": "object",
+        "description": "Legislative process history for a proposal",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "items": {
+            "type": "array",
+            "description": "History items in chronological order",
+            "items": { "$ref": "#/components/schemas/PspCzPrelegHistoryItem" }
+          }
+        }
+      },
+      "PspCzPrelegHistoryItem": {
+        "type": "object",
+        "description": "Legislative process history item",
+        "properties": {
+          "stage": { "type": "string", "description": "Legislative stage name (e.g. 1. čtení, 2. čtení, Senát)" },
+          "status": { "type": "string", "description": "Current status of this stage" },
+          "description": { "type": "string", "description": "Detailed description of this step" },
+          "date": { "type": "string", "description": "Date of this event" },
+          "links": {
+            "type": "array",
+            "description": "Related URLs/links",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

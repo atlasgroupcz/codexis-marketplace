@@ -1,0 +1,151 @@
+{
+  "endpoint": "versions",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T15:10:22Z",
+  "cdxPatterns": [
+    "cdx://doc/<DOC_ID>/versions",
+    "cdx://cz_law/<NUM>/<YEAR>/versions"
+  ],
+  "operations": [
+    {
+      "path": "/rest/cdx-api/doc/{docId}/versions",
+      "method": "get",
+      "summary": "Get document versions",
+      "description": "Returns all available time versions for a document, sorted from latest to oldest. Usually only CR (Czech legislation) and EU documents have multiple versions. For other document types, returns a single-item list with the document itself. Supports both full version ID (CR13986_2026_01_01) and short notation (CR13986).",
+      "operationId": "getDocumentVersions",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document identifier (full or short notation)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CR13986_2026_01_01"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "List of document versions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DocVersionListItem"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Document not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DocVersionListItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/rest/cdx-api/cz_law/{lawNumber}/{lawYear}/versions",
+      "method": "get",
+      "summary": "Get Czech law versions (by law number and year)",
+      "description": "Resolves Czech legislation by law number/year (e.g. 262/2006 Sb.) and returns all available time versions. Same output format as GET /doc/{docId}/versions.",
+      "operationId": "getCzLawVersions",
+      "parameters": [
+        {
+          "name": "lawNumber",
+          "in": "path",
+          "description": "Number of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 262
+        },
+        {
+          "name": "lawYear",
+          "in": "path",
+          "description": "Year of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 2006
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "List of document versions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DocVersionListItem"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Law not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DocVersionListItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "DocVersionListItem": {
+        "type": "object",
+        "description": "Document version summary",
+        "properties": {
+          "versionId": {
+            "type": "string",
+            "description": "Version identifier",
+            "example": "CR13986_2026_01_01"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Version valid from date",
+            "example": "2026-01-01"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "description": "Version valid to date (null if current)",
+            "example": "2026-12-31"
+          },
+          "amendmentDocIds": {
+            "type": "array",
+            "description": "List of amending regulation document IDs (novelizujici predpisy)",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

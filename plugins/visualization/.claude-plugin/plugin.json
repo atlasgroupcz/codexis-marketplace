@@ -23,5 +23,23 @@
     "law"
   ],
   "license": "PROPRIETARY",
+  "tags": ["visualization", "chart", "timeline", "map", "legal"],
+  "i18n": {
+    "cs": {
+      "displayName": "Vizualizace dat",
+      "description": "Vizualizace dat pomocí D3.js — grafy, časové osy, stromy, kalendáře, mapy, kanban a tabulky. Ideální pro právní data.",
+      "tagLabels": { "visualization": "Vizualizace", "chart": "Grafy", "timeline": "Časová osa", "map": "Mapa", "legal": "Právo" }
+    },
+    "en": {
+      "displayName": "Data Visualization",
+      "description": "D3.js-powered data visualization — charts, timelines, trees, calendars, maps, kanban boards and tables. Tailored for legal data.",
+      "tagLabels": { "visualization": "Visualization", "chart": "Charts", "timeline": "Timeline", "map": "Map", "legal": "Law" }
+    },
+    "sk": {
+      "displayName": "Vizualizácia dát",
+      "description": "Vizualizácia dát pomocou D3.js — grafy, časové osi, stromy, kalendáre, mapy, kanban a tabuľky. Ideálne pre právne dáta.",
+      "tagLabels": { "visualization": "Vizualizácia", "chart": "Grafy", "timeline": "Časová os", "map": "Mapa", "legal": "Právo" }
+    }
+  },
   "skills": "./skills"
 }

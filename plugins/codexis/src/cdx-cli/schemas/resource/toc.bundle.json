@@ -1,0 +1,167 @@
+{
+  "endpoint": "toc",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "https://beta.next.codexis.cz/rest/v3/api-docs",
+  "fetchedAt": "2026-03-18T15:10:22Z",
+  "cdxPatterns": [
+    "cdx://doc/<DOC_ID>/toc",
+    "cdx://cz_law/<NUM>/<YEAR>/toc"
+  ],
+  "operations": [
+    {
+      "path": "/rest/cdx-api/doc/{docId}/toc",
+      "method": "get",
+      "summary": "Get document ToC with line numbers",
+      "description": "Returns the Table of Contents for a document with line numbers corresponding to the text returned by /doc/{docId}/text endpoint. Use startLine and endLine to extract specific sections using head/tail commands: `head -n {endLine} doc.txt | tail -n +{startLine}`",
+      "operationId": "getDocumentToc",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document identifier",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CR13986_2026_01_01"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "ToC items with line numbers",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TocItemWithLines"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Document or ToC not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TocItemWithLines"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/rest/cdx-api/cz_law/{lawNumber}/{lawYear}/toc",
+      "method": "get",
+      "summary": "Get Czech law ToC with line numbers (by law number and year)",
+      "description": "Resolves Czech legislation by law number/year (e.g. 262/2006 Sb.) to the current/nearest valid time version and returns its ToC. Same output format as GET /doc/{docId}/toc.",
+      "operationId": "getCzLawToc",
+      "parameters": [
+        {
+          "name": "lawNumber",
+          "in": "path",
+          "description": "Number of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 262
+        },
+        {
+          "name": "lawYear",
+          "in": "path",
+          "description": "Year of the law",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": 2006
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "ToC items with line numbers",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TocItemWithLines"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Law not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TocItemWithLines"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "TocItemWithLines": {
+        "type": "object",
+        "description": "Table of Contents item with line number information for text extraction",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the ToC item",
+            "example": "ČÁST PRVNÍ - Obecná ustanovení"
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "Subtitle with section range",
+            "example": "§ 1 - § 654"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Nesting level in the ToC hierarchy (1 = top level)",
+            "example": 1
+          },
+          "elementId": {
+            "type": "string",
+            "description": "Element identifier used as anchor in the document text",
+            "example": "CAST1"
+          },
+          "startLine": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Line number where this section starts (1-based). Null if anchor not found in text.",
+            "example": 15
+          },
+          "endLine": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Line number where this section ends (inclusive, next section start - 1). Null if anchor not found.",
+            "example": 2450
+          },
+          "children": {
+            "type": "array",
+            "description": "Child ToC items nested under this item",
+            "items": {
+              "$ref": "#/components/schemas/TocItemWithLines"
+            }
+          }
+        }
+      }
+    }
+  }
+}

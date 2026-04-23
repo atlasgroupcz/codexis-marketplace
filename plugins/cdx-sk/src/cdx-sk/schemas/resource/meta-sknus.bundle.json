@@ -1,0 +1,111 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/najvyssi-ustavny-sud/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for a court decision by document ID.",
+      "operationId": "getMeta_2",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKNUS1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NajvyssiUstavnySudMetaResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "NajvyssiUstavnySudMetaResponse": {
+        "type": "object",
+        "description": "Document record metadata for Supreme and Constitutional Court decisions",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "SKNUS1234" },
+          "metadata": { "$ref": "#/components/schemas/NajvyssiUstavnySudMetadataResponse" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "NajvyssiUstavnySudMetadataResponse": {
+        "type": "object",
+        "description": "Supreme/Constitutional Court decision metadata with resolved law links",
+        "properties": {
+          "nazovRozhodnutia": { "type": "string", "description": "Decision title" },
+          "sud": { "type": "string", "description": "Court name" },
+          "typRozhodnutia": { "$ref": "#/components/schemas/DecisionType" },
+          "charakteristikaRozhodnutia": { "type": "string", "description": "Decision characteristics" },
+          "oblastPravnejUpravy": {
+            "type": "array",
+            "description": "Legal areas",
+            "items": { "type": "string" }
+          },
+          "spisovaZnacka": { "type": "string", "description": "Case number" },
+          "datumRozhodnutia": { "type": "string", "description": "Decision date" },
+          "ecli": { "type": "string", "description": "ECLI identifier" },
+          "datumPodania": { "type": "string", "description": "Filing date" },
+          "menaSudcov": { "type": "string", "description": "Judge names" },
+          "predmetKonania": { "type": "string", "description": "Subject of proceedings" },
+          "cisloPojednavania": { "type": "string", "description": "Hearing number" },
+          "popisRozhodnutia": { "type": "string", "description": "Decision description" },
+          "typKonania": { "type": "string", "description": "Proceeding type" },
+          "typRokovania": { "type": "string", "description": "Hearing type" },
+          "vazbyNaPredpisZbierky": {
+            "type": "array",
+            "description": "Referenced laws with resolved cdx-sk:// links",
+            "items": { "$ref": "#/components/schemas/LawBindingResponse" }
+          },
+          "profilRozhodnutia": { "type": "string", "description": "Decision profile" }
+        }
+      },
+      "DecisionType": {
+        "type": "object",
+        "description": "Decision type reference",
+        "properties": {
+          "nazov": { "type": "string", "description": "Type name" },
+          "kod": { "type": "string", "description": "Type code" }
+        }
+      },
+      "LawBindingResponse": {
+        "type": "object",
+        "description": "Resolved law binding reference",
+        "properties": {
+          "menovka": { "type": "string", "description": "Law label", "example": "zakon c. 233/1995 Z.z. SS109" },
+          "docUrl": { "type": "string", "description": "cdx-sk:// link to the referenced law" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-sk:// link to download this attachment" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-spp://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/sbirkapp/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for a Sbirkapp document by document ID.",
+      "operationId": "getMeta",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZSB1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SbirkappMetaResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "SbirkappMetaResponse": {
+        "type": "object",
+        "description": "Sbirkapp document metadata",
+        "properties": {
+          "docId": { "type": "string", "description": "Display document ID" },
+          "hlavniTyp": { "type": "string", "description": "Main document type (pp = pravni predpis, oa = opatreni obecne povahy)" },
+          "nazev": { "type": "string", "description": "Document title" },
+          "druhPredpisu": { "type": "string", "description": "Document type" },
+          "cisloPredpisu": { "type": "string", "description": "Document number" },
+          "publikujici": { "type": "string", "description": "Publisher" },
+          "idDs": { "type": "string", "description": "Data box ID" },
+          "ico": { "type": "string", "description": "Company ID (ICO)" },
+          "oblastPravniUpravy": { "type": "string", "description": "Legal area" },
+          "zakonneZmocneni": { "type": "string", "description": "Legal authorization" },
+          "datumVydani": { "type": "string", "description": "Issue date" },
+          "datumZverejneni": { "type": "string", "description": "Publication date" },
+          "datumNabytiUcinnosti": { "type": "string", "description": "Effective date" },
+          "platnost": { "type": "string", "description": "Validity status" },
+          "verze": { "type": "string", "description": "Version" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          },
+          "links": { "type": "object", "description": "HATEOAS links" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-cz-spp:// link to download this attachment" }
+        }
+      }
+    }
+  }
+}

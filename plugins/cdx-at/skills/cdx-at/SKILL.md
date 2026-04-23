@@ -1,7 +1,18 @@
 ---
+uuid: 43dc8c25-4d0b-4983-a0f6-2b0bde63a852
 name: cdx-at
 description: This skill should be invoked whenever user needs Austrian law or legal information — federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), or other publications (Sonstige) from the RIS system.
 version: 2.1.0
+i18n:
+  cs:
+    displayName: "Rakouská legislativa (RIS)"
+    summary: "Rakouský RIS — spolková a zemská legislativa, judikatura, historické konsolidované předpisy."
+  en:
+    displayName: "Austrian Legislation (RIS)"
+    summary: "Austria's RIS — federal and state legislation, case law, and historical consolidated law norms."
+  sk:
+    displayName: "Rakúska legislatíva (RIS)"
+    summary: "Rakúsky RIS — spolková a krajinská legislatíva, judikatúra, historické konsolidované predpisy."
 ---
 
 # Austrian Legal Database (cdx-at)

@@ -1,6 +1,6 @@
 {
   "name": "cdx-sk",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Slovak legal database API access for legislation (e-Zbierka), general court decisions, and supreme/constitutional court decisions",
   "author": {
     "name": "ATLAS GROUP",
@@ -8,6 +8,24 @@
   },
   "keywords": ["cdx-sk", "legal", "law", "legislation", "slovak", "judiciary", "case-law", "court", "api"],
   "license": "PROPRIETARY",
+  "tags": ["legal", "slovak", "legislation", "case-law"],
+  "i18n": {
+    "cs": {
+      "displayName": "Slovenská legislativa",
+      "description": "Slovenská legislativa (e-Zbierka), rozhodnutí obecných soudů, Nejvyššího soudu a Ústavního soudu SR.",
+      "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislativa", "case-law": "Judikatura" }
+    },
+    "en": {
+      "displayName": "Slovak Legislation",
+      "description": "Slovak legislation (e-Zbierka), general court decisions, Supreme Court and Constitutional Court rulings.",
+      "tagLabels": { "legal": "Law", "slovak": "Slovakia", "legislation": "Legislation", "case-law": "Case Law" }
+    },
+    "sk": {
+      "displayName": "Slovenská legislatíva",
+      "description": "Slovenská legislatíva (e-Zbierka), rozhodnutia všeobecných súdov, Najvyššieho súdu a Ústavného súdu SR.",
+      "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
+    }
+  },
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",

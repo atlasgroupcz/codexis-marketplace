@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""katastr-cli — unified CLI for ČÚZK lookups, tracking and settings.
+
+Usage:
+    katastr-cli tracking add <CISLO> [--label "..."]
+    katastr-cli tracking list
+    katastr-cli tracking show <CISLO>
+    katastr-cli tracking check [<CISLO>]
+    katastr-cli tracking confirm <CISLO> [--all | --change <INDEX>]
+    katastr-cli tracking remove <CISLO>
+    katastr-cli tracking set-label <CISLO> <LABEL>
+
+    katastr-cli api get <PATH>
+
+    katastr-cli settings show
+    katastr-cli settings set <KEY>
+    katastr-cli settings test
+"""
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+# Add the bundled library to sys.path. Works whether the binary is installed
+# in /usr/local/bin/ (with lib next to it) or run in-place from the plugin dir.
+HERE = Path(__file__).resolve().parent
+CANDIDATES = [
+    HERE.parent / "lib",                       # plugin in-place: bin/.. /lib
+    Path("/usr/local/share/katastr/lib"),      # post-install location
+]
+for p in CANDIDATES:
+    if (p / "katastr_core").is_dir():
+        sys.path.insert(0, str(p))
+        break
+
+try:
+    from katastr_core import settings, tracking, api_client
+    from katastr_core.exceptions import KatastrError
+except ImportError as e:
+    print(f"ERROR: katastr_core library not found: {e}", file=sys.stderr)
+    sys.exit(2)
+
+
+# ── output helpers ───────────────────────────────────────────────────────────
+
+
+def err(msg):
+    print(f"ERROR: {msg}", file=sys.stderr)
+
+
+def info(msg):
+    print(msg)
+
+
+def fmt_state_short(state):
+    label = state.get("label", "")
+    label_str = f" ({label})" if label else ""
+    stav = state.get("stav", "?")
+    ops = len(state.get("provedene_operace", []))
+    changes = state.get("changes", [])
+    unconfirmed = sum(1 for c in changes if not c.get("confirmed_on"))
+    badge = f" • {unconfirmed} nepřečtených změn" if unconfirmed else ""
+    return (
+        f"  {state.get('cislo_rizeni', '?')}{label_str}\n"
+        f"    Stav: {stav}\n"
+        f"    Operací: {ops}, Změn: {len(changes)}{badge}"
+    )
+
+
+# ── tracking commands ────────────────────────────────────────────────────────
+
+
+def cmd_tracking_add(args):
+    state = tracking.add(args.cislo, label=args.label)
+    info(f"OK: Řízení {state['cislo_rizeni']} přidáno ke sledování.")
+    info(f"  Stav: {state['stav']}")
+    info(f"  Operací: {len(state['provedene_operace'])}")
+    if state["label"]:
+        info(f"  Označení: {state['label']}")
+
+
+def cmd_tracking_list(args):
+    proceedings = tracking.list_all()
+    if not proceedings:
+        info("Žádná sledovaná řízení.")
+        return
+    info(f"Sledovaná řízení ({len(proceedings)}):\n")
+    for state in proceedings:
+        info(fmt_state_short(state))
+        info("")
+
+
+def cmd_tracking_show(args):
+    state = tracking.show(args.cislo)
+    print(json.dumps(state, indent=2, ensure_ascii=False))
+
+
+def cmd_tracking_check(args):
+    if args.cislo:
+        results = [tracking.check_one(args.cislo)]
+    else:
+        results = tracking.check_all()
+
+    if not results:
+        info("Žádná sledovaná řízení ke kontrole.")
+        return
+
+    total_changes = 0
+    for r in results:
+        cislo = r["cislo_rizeni"]
+        if not r["ok"]:
+            info(f"  {cislo}: CHYBA — {r['error']}")
+            continue
+        change = r["change"]
+        if not change:
+            info(f"  {cislo}: beze změn")
+            continue
+        total_changes += 1
+        info(f"  {cislo}: 1 nová změna")
+        if change.get("old_stav") != change.get("new_stav"):
+            info(f"    Stav: {change['old_stav']} → {change['new_stav']}")
+        for op in change.get("new_operations", []):
+            info(
+                f"    Nová operace: {op.get('nazev', '?')} "
+                f"({op.get('datumProvedeni', '')})"
+            )
+        if change.get("stav_uhrady_changed"):
+            info(
+                f"    Úhrada: {change.get('old_stav_uhrady') or '---'} "
+                f"→ {change.get('new_stav_uhrady') or '---'}"
+            )
+    info(
+        f"\nKontrola dokončena. Celkem {total_changes} nových změn "
+        f"u {len(results)} řízení."
+    )
+
+
+def cmd_tracking_confirm(args):
+    if args.change is not None and args.all:
+        err("Použij buď --all NEBO --change <INDEX>, ne obojí.")
+        sys.exit(1)
+    marked = tracking.confirm(args.cislo, change_index=args.change)
+    if marked == 0:
+        info("Žádné nepřečtené změny.")
+    else:
+        info(f"OK: Označeno jako přečteno: {marked} změn")
+
+
+def cmd_tracking_remove(args):
+    canonical = tracking.normalize_number(args.cislo)
+    tracking.remove(canonical)
+    info(f"OK: Řízení {canonical} odstraněno ze sledování.")
+
+
+def cmd_tracking_set_label(args):
+    state = tracking.set_label(args.cislo, args.label)
+    if args.label:
+        info(f"OK: Označení řízení {state['cislo_rizeni']} nastaveno na: {args.label}")
+    else:
+        info(f"OK: Označení řízení {state['cislo_rizeni']} odstraněno.")
+
+
+# ── api commands ─────────────────────────────────────────────────────────────
+
+
+def cmd_api_get(args):
+    result = api_client.get(args.path)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+# ── settings commands ────────────────────────────────────────────────────────
+
+
+def cmd_settings_show(args):
+    if not settings.is_configured():
+        info("API klíč není nastaven.")
+        return
+    info(f"API klíč: {settings.mask_key(settings.read_api_key())} (configured)")
+
+
+def cmd_settings_set(args):
+    settings.set_api_key(args.key)
+    info(
+        f"OK: API klíč byl ověřen u ČÚZK a uložen "
+        f"({settings.mask_key(args.key.strip())})."
+    )
+
+
+def cmd_settings_test(args):
+    if not settings.is_configured():
+        err("API klíč není nastaven.")
+        sys.exit(1)
+    settings.validate_key(settings.read_api_key())
+    info("OK: API klíč funguje (ČÚZK odpovědělo).")
+
+
+# ── argparse plumbing ────────────────────────────────────────────────────────
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="katastr-cli",
+        description="ČÚZK lookups, tracking and settings.",
+    )
+    sub = p.add_subparsers(dest="namespace", required=True)
+
+    # ─── tracking ────
+    tr = sub.add_parser("tracking", help="Track cadastral proceedings")
+    tr_sub = tr.add_subparsers(dest="cmd", required=True)
+
+    p_add = tr_sub.add_parser("add", help="Start tracking a proceeding")
+    p_add.add_argument("cislo", help="Proceeding number, e.g. V-123/2026-701")
+    p_add.add_argument("--label", help="Optional user-friendly label", default="")
+    p_add.set_defaults(func=cmd_tracking_add)
+
+    p_list = tr_sub.add_parser("list", help="List all tracked proceedings")
+    p_list.set_defaults(func=cmd_tracking_list)
+
+    p_tr_show = tr_sub.add_parser("show", help="Show full state of a tracked proceeding")
+    p_tr_show.add_argument("cislo")
+    p_tr_show.set_defaults(func=cmd_tracking_show)
+
+    p_check = tr_sub.add_parser("check", help="Check for changes")
+    p_check.add_argument(
+        "cislo",
+        nargs="?",
+        help="Specific proceeding (default: all)",
+    )
+    p_check.set_defaults(func=cmd_tracking_check)
+
+    p_conf = tr_sub.add_parser("confirm", help="Mark changes as read")
+    p_conf.add_argument("cislo")
+    p_conf.add_argument(
+        "--all",
+        action="store_true",
+        help="Mark all unconfirmed changes (default if --change is not given)",
+    )
+    p_conf.add_argument(
+        "--change",
+        type=int,
+        metavar="INDEX",
+        help="Mark only this specific change (0-based index)",
+    )
+    p_conf.set_defaults(func=cmd_tracking_confirm)
+
+    p_rm = tr_sub.add_parser("remove", help="Stop tracking a proceeding")
+    p_rm.add_argument("cislo")
+    p_rm.set_defaults(func=cmd_tracking_remove)
+
+    p_label = tr_sub.add_parser(
+        "set-label",
+        help="Set or change the user-friendly label of a tracked proceeding",
+    )
+    p_label.add_argument(
+        "cislo",
+        help="Proceeding number, e.g. V-123/2026-701",
+    )
+    p_label.add_argument(
+        "label",
+        help='New label string (use "" to clear)',
+    )
+    p_label.set_defaults(func=cmd_tracking_set_label)
+
+    # ─── api ────
+    api = sub.add_parser("api", help="Raw ČÚZK API access")
+    api_sub = api.add_subparsers(dest="cmd", required=True)
+
+    p_get = api_sub.add_parser("get", help="GET request to ČÚZK")
+    p_get.add_argument(
+        "path",
+        help='ČÚZK API path, e.g. "/api/v1/Parcely/12345"',
+    )
+    p_get.set_defaults(func=cmd_api_get)
+
+    # ─── settings ────
+    st = sub.add_parser("settings", help="Manage ČÚZK API key")
+    st_sub = st.add_subparsers(dest="cmd", required=True)
+
+    p_st_show = st_sub.add_parser("show", help="Show masked API key status")
+    p_st_show.set_defaults(func=cmd_settings_show)
+
+    p_set = st_sub.add_parser("set", help="Validate and store API key")
+    p_set.add_argument("key", help="ČÚZK API key")
+    p_set.set_defaults(func=cmd_settings_set)
+
+    p_test = st_sub.add_parser("test", help="Test current API key against ČÚZK")
+    p_test.set_defaults(func=cmd_settings_test)
+
+    return p
+
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
+    try:
+        args.func(args)
+    except KatastrError as e:
+        err(str(e))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

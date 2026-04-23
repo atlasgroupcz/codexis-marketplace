@@ -13,5 +13,23 @@
     "pptx"
   ],
   "license": "PROPRIETARY",
+  "tags": ["document-processing", "presentation", "pptx"],
+  "i18n": {
+    "cs": {
+      "displayName": "Tvorba prezentací",
+      "description": "Generování prezentací ve formátu PowerPoint (PPTX) z textových podkladů pomocí knihovny python-pptx.",
+      "tagLabels": { "document-processing": "Zpracování dokumentů", "presentation": "Prezentace", "pptx": "PowerPoint" }
+    },
+    "en": {
+      "displayName": "Presentation Generator",
+      "description": "Generate PowerPoint (PPTX) presentations from text briefs using python-pptx.",
+      "tagLabels": { "document-processing": "Document Processing", "presentation": "Presentations", "pptx": "PowerPoint" }
+    },
+    "sk": {
+      "displayName": "Tvorba prezentácií",
+      "description": "Generovanie prezentácií vo formáte PowerPoint (PPTX) z textových podkladov pomocou knižnice python-pptx.",
+      "tagLabels": { "document-processing": "Spracovanie dokumentov", "presentation": "Prezentácie", "pptx": "PowerPoint" }
+    }
+  },
   "skills": "./skills"
 }

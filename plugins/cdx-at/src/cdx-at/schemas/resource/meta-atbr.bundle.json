@@ -1,0 +1,87 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-at://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/AT/bundesrecht/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for an Austrian federal legislation (BGBl) document by document ID. Returns the raw DomainMetadata object.",
+      "operationId": "getMeta",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ATBR1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RisBundesrechtMetadata" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RisBundesrechtMetadata": {
+        "type": "object",
+        "description": "Metadata for Austrian federal legislation (BGBl) records",
+        "properties": {
+          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "url": { "type": "string", "description": "Source URL" },
+          "documentNumber": { "type": "string", "description": "Document number" },
+          "shortTitle": { "type": "string", "description": "Short title" },
+          "title": { "type": "string", "description": "Full title" },
+          "gazetteNumber": { "type": "string", "description": "Gazette number (BGBl)" },
+          "part": { "type": "string", "description": "BGBl part (I, II, III)" },
+          "publicationDate": { "type": "string", "description": "Publication date" },
+          "documentType": { "type": "string", "description": "Document type" },
+          "authority": { "type": "string", "description": "Issuing authority" },
+          "submitter": { "type": "string", "description": "Submitter" },
+          "eli": { "type": "string", "description": "European Legislation Identifier" },
+          "legislativePeriod": { "type": "string", "description": "Legislative period" },
+          "celexNumbers": {
+            "type": "array",
+            "description": "CELEX numbers",
+            "items": { "type": "string" }
+          },
+          "nationalCouncilDate": { "type": "string", "description": "National council date" },
+          "nationalCouncilSession": { "type": "string", "description": "National council session" },
+          "governmentProposal": { "type": "string", "description": "Government proposal" },
+          "nationalCouncilCommitteeReport": { "type": "string", "description": "National council committee report" },
+          "federalCouncilDate": { "type": "string", "description": "Federal council date" },
+          "federalCouncilSession": { "type": "string", "description": "Federal council session" },
+          "federalCouncilCommitteeReport": { "type": "string", "description": "Federal council committee report" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "description": "Asset file reference",
+        "properties": {
+          "file": { "type": "string", "description": "Internal filename" },
+          "originalName": { "type": "string", "description": "Original filename from source" }
+        }
+      }
+    }
+  }
+}

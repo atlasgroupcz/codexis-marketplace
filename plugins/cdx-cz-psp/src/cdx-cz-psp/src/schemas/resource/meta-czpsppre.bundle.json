@@ -1,0 +1,102 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-04-01T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-psp://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/psp/preleg/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for a Czech Parliament legislative proposal by document ID.",
+      "operationId": "getMeta",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZPSPPRE5678"
+        },
+        {
+          "name": "includeAllAssets",
+          "in": "query",
+          "description": "If true, return all assets; if false (default), return only the primary content files (content_1.pdf and content_1.docx). Some documents have 50+ assets.",
+          "required": false,
+          "schema": { "type": "boolean" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PspCzPrelegMetadata" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "PspCzPrelegMetadata": {
+        "type": "object",
+        "description": "Metadata for Czech Parliament legislative proposals",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "title": { "type": "string", "description": "Short title" },
+          "fullTitle": { "type": "string", "description": "Full title" },
+          "type": { "type": "string", "description": "Document type (e.g. Vládní návrh zákona)" },
+          "electionPeriod": { "type": "integer", "description": "Election period number" },
+          "pressNumber": { "type": "string", "description": "Print/press number" },
+          "submitter": { "type": "string", "description": "Submitter (e.g. Vláda)" },
+          "submissionDate": { "type": "string", "description": "Submission date" },
+          "currentState": { "type": "string", "description": "Current legislative state" },
+          "stateClass": { "type": "string", "description": "State class (approved, unapproved, lightgray, in_progress)" },
+          "sbirkaNumber": { "type": "string", "description": "Publication number in Sbírka zákonů" },
+          "sbirkaDate": { "type": "string", "description": "Publication date in Sbírka zákonů" },
+          "odokUrl": { "type": "string", "description": "eKLEP/ODOK reference URL" },
+          "senatUrl": { "type": "string", "description": "Senate print URL" },
+          "eurovocDescriptors": {
+            "type": "array",
+            "description": "EUROVOC descriptor keywords",
+            "items": { "type": "string" }
+          },
+          "subPrints": {
+            "type": "array",
+            "description": "Sub-prints/documents",
+            "items": { "$ref": "#/components/schemas/SubPrint" }
+          },
+          "assets": {
+            "type": "array",
+            "description": "Attachments",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "SubPrint": {
+        "type": "object",
+        "properties": {
+          "printNumber": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "url": { "type": "string" },
+          "pdfUrl": { "type": "string" }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string", "description": "Internal filename" },
+          "originalName": { "type": "string", "description": "Original filename from source" }
+        }
+      }
+    }
+  }
+}

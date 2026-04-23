@@ -1,0 +1,30 @@
+{
+  "name": "data-gouv-fr",
+  "version": "1.0.0",
+  "description": "French government open data (data.gouv.fr) — search and explore datasets, query tabular data, and discover APIs from the national Open Data platform",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["data-gouv", "france", "open-data", "government", "datasets", "api"],
+  "license": "MIT",
+  "tags": ["open-data", "french", "api"],
+  "i18n": {
+    "cs": {
+      "displayName": "Francouzská otevřená data",
+      "description": "Francouzský národní portál otevřených dat (data.gouv.fr) — vyhledávání datasetů, dotazy nad tabulkami a objevování veřejných API.",
+      "tagLabels": { "open-data": "Otevřená data", "french": "Francie", "api": "API" }
+    },
+    "en": {
+      "displayName": "French Open Data",
+      "description": "France's national Open Data portal (data.gouv.fr) — search datasets, query tabular data, and discover public APIs.",
+      "tagLabels": { "open-data": "Open Data", "french": "France", "api": "API" }
+    },
+    "sk": {
+      "displayName": "Francúzske otvorené dáta",
+      "description": "Francúzsky národný portál otvorených dát (data.gouv.fr) — vyhľadávanie datasetov, dopyty nad tabuľkami a objavovanie verejných API.",
+      "tagLabels": { "open-data": "Otvorené dáta", "french": "Francúzsko", "api": "API" }
+    }
+  },
+  "skills": "./skills"
+}

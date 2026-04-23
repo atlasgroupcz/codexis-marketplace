@@ -14,6 +14,24 @@
     "conversion"
   ],
   "license": "PROPRIETARY",
+  "tags": ["document-processing", "ocr", "pdf"],
+  "i18n": {
+    "cs": {
+      "displayName": "OCR dokumentů",
+      "description": "Převod dokumentů (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocí OCR — připraveno pro další AI zpracování.",
+      "tagLabels": { "document-processing": "Zpracování dokumentů", "ocr": "OCR", "pdf": "PDF" }
+    },
+    "en": {
+      "displayName": "Document OCR",
+      "description": "Convert documents (PDF, DOCX, PPTX, XLSX, images, ZIP) into Markdown via OCR — ready for downstream AI processing.",
+      "tagLabels": { "document-processing": "Document Processing", "ocr": "OCR", "pdf": "PDF" }
+    },
+    "sk": {
+      "displayName": "OCR dokumentov",
+      "description": "Prevod dokumentov (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocou OCR — pripravené pre ďalšie AI spracovanie.",
+      "tagLabels": { "document-processing": "Spracovanie dokumentov", "ocr": "OCR", "pdf": "PDF" }
+    }
+  },
   "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
   "postUninstall": "sudo rm -f /usr/local/bin/ocr",
   "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",

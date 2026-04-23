@@ -1,0 +1,92 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-spp://doc/<DOC_ID>/related"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/sbirkapp/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get related documents",
+      "description": "Retrieve documents related to a Sbirkapp document (amending, amended by, implementing, cancelling).",
+      "operationId": "getRelated",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZSB1234"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Relation type filter",
+          "required": false,
+          "schema": { "type": "string", "enum": ["CANCELS", "CANCELLED_BY", "AMENDS", "AMENDED_BY", "IMPLEMENTS", "IMPLEMENTED_BY", "OTHER"] }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (default: 20, max: 100)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Related documents",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SbirkappRelatedResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "SbirkappRelatedResponse": {
+        "type": "object",
+        "description": "Related documents response",
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "Related documents",
+            "items": { "$ref": "#/components/schemas/SbirkappRelatedItem" }
+          },
+          "totalResults": { "type": "integer", "format": "int64", "description": "Total number of related documents" },
+          "offset": { "type": "integer", "format": "int32", "description": "Pagination offset" },
+          "limit": { "type": "integer", "format": "int32", "description": "Page size" }
+        }
+      },
+      "SbirkappRelatedItem": {
+        "type": "object",
+        "description": "Related document item",
+        "properties": {
+          "sourceId": { "type": "string", "description": "Source site document ID (sbirkapp internal)" },
+          "nazev": { "type": "string", "description": "Document title" },
+          "cisloPredpisu": { "type": "string", "description": "Document number" },
+          "relationshipLabel": { "type": "string", "description": "Original Czech relationship description" },
+          "relationType": { "type": "string", "description": "Typed relation", "enum": ["CANCELS", "CANCELLED_BY", "AMENDS", "AMENDED_BY", "IMPLEMENTS", "IMPLEMENTED_BY", "OTHER"] },
+          "direction": { "type": "string", "description": "Direction: references or referencedBy" },
+          "datumUcinnosti": { "type": "string", "description": "Effective date" },
+          "datumVyhlaseni": { "type": "string", "description": "Publication date" }
+        }
+      }
+    }
+  }
+}

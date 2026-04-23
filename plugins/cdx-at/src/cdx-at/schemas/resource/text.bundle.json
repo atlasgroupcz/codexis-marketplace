@@ -1,0 +1,47 @@
+{
+  "endpoint": "text",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-at://doc/<DOC_ID>/text"
+  ],
+  "operations": [
+    {
+      "path": "/api/AT/bundesrecht/doc/{docId}/text",
+      "method": "get",
+      "summary": "Get document text",
+      "description": "Retrieve the full text of an Austrian federal legislation document as plain text.",
+      "operationId": "getText",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ATBR1234"
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "description": "Optional page number",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document text",
+          "content": {
+            "text/plain": {}
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}

@@ -5,5 +5,19 @@
   "route": "sledovana-judikatura",
   "description": "Sledujte novou judikaturu podle tématu s pravidelným AI reportem.",
   "entrypoint": "index.html",
-  "binary": "judikatura"
+  "binary": "judikatura",
+  "i18n": {
+    "cs": {
+      "displayName": "Sledovaná judikatura",
+      "description": "Sledujte novou judikaturu podle tématu s pravidelným AI reportem o trendech."
+    },
+    "en": {
+      "displayName": "Case Law Monitor",
+      "description": "Monitor new case law by topic with periodic AI-generated trend reports."
+    },
+    "sk": {
+      "displayName": "Sledovaná judikatúra",
+      "description": "Sledujte novú judikatúru podľa témy s pravidelným AI reportom o trendoch."
+    }
+  }
 }

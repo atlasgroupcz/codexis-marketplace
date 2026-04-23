@@ -1,0 +1,102 @@
+{
+  "endpoint": "versions",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/versions",
+    "cdx-sk://law/SK/<NUM>/<YEAR>/versions"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ezbierka/doc/{docId}/versions",
+      "method": "get",
+      "summary": "Get document versions",
+      "description": "List all available versions (timecuts) of an e-Zbierka document, sorted latest to oldest.",
+      "operationId": "getVersions",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKEZ1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Version list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaVersionsResponse" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/SK/ezbierka/law/{number}/{year}/versions",
+      "method": "get",
+      "summary": "Get law versions",
+      "description": "Resolve a law by number/year and return its available versions (timecuts).",
+      "operationId": "getLawVersions",
+      "parameters": [
+        {
+          "name": "number",
+          "in": "path",
+          "description": "Law number",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 40
+        },
+        {
+          "name": "year",
+          "in": "path",
+          "description": "Law year",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 1964
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Version list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaVersionsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "EzbierkaVersionsResponse": {
+        "type": "object",
+        "description": "Available versions (timecuts) of an ezbierka document",
+        "properties": {
+          "versions": {
+            "type": "array",
+            "description": "List of versions, sorted latest to oldest",
+            "items": { "$ref": "#/components/schemas/EzbierkaVersionItem" }
+          },
+          "docUrl": { "type": "string", "description": "Link to document metadata endpoint" }
+        }
+      },
+      "EzbierkaVersionItem": {
+        "type": "object",
+        "description": "A single version (timecut) of a law",
+        "properties": {
+          "versionId": { "type": "string", "description": "Version identifier (use as timecutId parameter)", "example": "1964_40_2025-01-01" },
+          "validFrom": { "type": "string", "description": "Version valid from date", "example": "2025-01-01" },
+          "validTo": { "type": "string", "description": "Version valid to date (null if currently valid)" },
+          "iri": { "type": "string", "description": "IRI of this version" },
+          "vyhlasene": { "type": "boolean", "description": "Whether this is the 'vyhlasene' (as-published) version" }
+        }
+      }
+    }
+  }
+}

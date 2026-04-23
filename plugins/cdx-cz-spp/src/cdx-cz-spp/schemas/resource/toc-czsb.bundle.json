@@ -1,0 +1,71 @@
+{
+  "endpoint": "toc",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-spp://doc/<DOC_ID>/toc"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/sbirkapp/doc/{docId}/toc",
+      "method": "get",
+      "summary": "Get document table of contents (from headings)",
+      "description": "Retrieve the table of contents extracted from document headings.",
+      "operationId": "getToc",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZSB1234"
+        },
+        {
+          "name": "file",
+          "in": "query",
+          "description": "Specific content file to retrieve TOC from (e.g. content_1.pdf). Defaults to content_1 if omitted.",
+          "required": false,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "TOC items",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SbirkappTocResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "SbirkappTocResponse": {
+        "type": "object",
+        "description": "Table of contents for a sbirkapp document",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "toc": {
+            "type": "array",
+            "description": "TOC items in document order",
+            "items": { "$ref": "#/components/schemas/SbirkappTocItem" }
+          }
+        }
+      },
+      "SbirkappTocItem": {
+        "type": "object",
+        "description": "Table of contents item extracted from document headings",
+        "properties": {
+          "level": { "type": "integer", "format": "int32", "description": "Heading level (1-6)" },
+          "text": { "type": "string", "description": "Heading text" },
+          "anchor": { "type": "string", "description": "Anchor ID for linking to this section" }
+        }
+      }
+    }
+  }
+}

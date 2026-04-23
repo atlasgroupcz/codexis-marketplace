@@ -1,12 +1,21 @@
 ---
+uuid: a26db6f3-54c7-46e4-8881-f39edfb75f19
 name: presentation
 description: >-
   Generate PowerPoint presentations (PPTX) using python-pptx.
   Triggers on "presentation", "prezentace", "slides", "slideshow",
   "powerpoint", "pptx", "udělej prezentaci", "create slides", "make a presentation".
-metadata:
-  skill-visibility: user
 allowed-tools: shell
+i18n:
+  cs:
+    displayName: "Tvorba prezentací"
+    summary: "Generování prezentací PowerPoint (PPTX) z textových podkladů pomocí python-pptx."
+  en:
+    displayName: "Presentation Generator"
+    summary: "Generate PowerPoint (PPTX) presentations from text briefs using python-pptx."
+  sk:
+    displayName: "Tvorba prezentácií"
+    summary: "Generovanie prezentácií PowerPoint (PPTX) z textových podkladov pomocou python-pptx."
 ---
 
 # Presentation Generator (PPTX)

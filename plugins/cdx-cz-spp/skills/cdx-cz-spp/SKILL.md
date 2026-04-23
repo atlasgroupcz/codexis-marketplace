@@ -1,7 +1,18 @@
 ---
+uuid: 6da16057-ae63-42ca-a1bf-0541a80da14a
 name: cdx-cz-spp
 description: This skill should be invoked whenever user needs Czech municipal regulations — ordinances, decrees, and other local legal acts from sbirkapp.gov.cz (Sbírka právních předpisů).
 version: 2.1.0
+i18n:
+  cs:
+    displayName: "Obecní předpisy ČR"
+    summary: "Obecně závazné vyhlášky, nařízení a místní právní akty obcí a krajů ze sbirkapp.gov.cz."
+  en:
+    displayName: "Czech Municipal Regulations"
+    summary: "Generally binding ordinances, decrees, and local legal acts from Czech municipalities (sbirkapp.gov.cz)."
+  sk:
+    displayName: "Obecné predpisy ČR"
+    summary: "Všeobecne záväzné vyhlášky, nariadenia a miestne právne akty českých obcí a krajov (sbirkapp.gov.cz)."
 ---
 
 # Czech Municipal Regulations (cdx-cz-spp)

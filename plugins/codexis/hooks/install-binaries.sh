@@ -48,3 +48,26 @@ install_binary "$(select_binary_source "cdx-link-rewriter")" "cdx-link-rewriter"
 install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"
 install_binary "$(select_binary_source "cdxctl")" "cdxctl"
+
+# Install shared core library used by CLI and CGI handler.
+SHARED_LIB_DIR="/usr/local/share/codexis/lib"
+install_lib() {
+  local module_name="$1"
+  local source_path="${PLUGIN_DIR}/lib/${module_name}"
+  if [[ ! -d "${source_path}" ]]; then
+    return
+  fi
+  if [[ -d "${SHARED_LIB_DIR}" && -w "${SHARED_LIB_DIR}" ]]; then
+    install -d "${SHARED_LIB_DIR}"
+    rm -rf "${SHARED_LIB_DIR}/${module_name}"
+    cp -r "${source_path}" "${SHARED_LIB_DIR}/${module_name}"
+  else
+    sudo install -d "${SHARED_LIB_DIR}"
+    sudo rm -rf "${SHARED_LIB_DIR}/${module_name}"
+    sudo cp -r "${source_path}" "${SHARED_LIB_DIR}/${module_name}"
+  fi
+  echo "Installed ${module_name} -> ${SHARED_LIB_DIR}/${module_name}"
+}
+
+install_lib "sledovane_dokumenty_core"
+install_lib "sledovana_judikatura_core"

@@ -1,0 +1,9 @@
+{
+  "skills": ["video-analyze:video-analyze"],
+  "post_install": [
+    { "type": "executable", "path": "/usr/local/bin/video-analyze" }
+  ],
+  "post_uninstall": [
+    { "type": "absent", "path": "/usr/local/bin/video-analyze" }
+  ]
+}

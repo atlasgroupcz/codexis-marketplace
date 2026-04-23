@@ -1,0 +1,105 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/vseobecne-sudy/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for a court decision by document ID.",
+      "operationId": "getMeta_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKVS1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VseobecneSudyMetaResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "VseobecneSudyMetaResponse": {
+        "type": "object",
+        "description": "Document record metadata for general court decisions",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "SKVS1234" },
+          "metadata": { "$ref": "#/components/schemas/VseobecneSudyMetadataResponse" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "VseobecneSudyMetadataResponse": {
+        "type": "object",
+        "description": "General court decision metadata with resolved law links",
+        "properties": {
+          "title": { "type": "string", "description": "Decision title" },
+          "identifikacneCislo": { "type": "string", "description": "Identification number" },
+          "spisovaZnacka": { "type": "string", "description": "Case number (spisova znacka)" },
+          "povodnaSpisovaZnacka": { "type": "string", "description": "Original case number" },
+          "datumVydania": { "type": "string", "description": "Decision date" },
+          "sud": { "$ref": "#/components/schemas/CourtRef" },
+          "povodnySud": { "$ref": "#/components/schemas/CourtRef" },
+          "sudca": { "$ref": "#/components/schemas/CourtRef" },
+          "formaRozhodnutia": { "type": "string", "description": "Decision form" },
+          "povaha": { "type": "string", "description": "Nature" },
+          "oblast": { "type": "string", "description": "Legal area" },
+          "podOblast": { "type": "string", "description": "Legal sub-area" },
+          "ecli": { "type": "string", "description": "ECLI identifier" },
+          "odkazovanePredpisy": {
+            "type": "array",
+            "description": "Referenced laws with resolved cdx-sk:// links",
+            "items": { "$ref": "#/components/schemas/ReferencedLawResponse" }
+          }
+        }
+      },
+      "CourtRef": {
+        "type": "object",
+        "description": "Court or judge reference",
+        "properties": {
+          "id": { "type": "string", "description": "Reference ID" },
+          "nazov": { "type": "string", "description": "Name" }
+        }
+      },
+      "ReferencedLawResponse": {
+        "type": "object",
+        "description": "Resolved referenced law",
+        "properties": {
+          "cislo": { "type": "string", "description": "Law number", "example": "233/1995" },
+          "nazov": { "type": "string", "description": "Law title" },
+          "docUrl": { "type": "string", "description": "cdx-sk:// link to the referenced law" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-sk:// link to download this attachment" }
+        }
+      }
+    }
+  }
+}

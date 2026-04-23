@@ -1,0 +1,47 @@
+{
+  "endpoint": "related-counts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-04-10T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-psp://doc/<DOC_ID>/related/counts"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/psp/{domain}/doc/{docId}/related/counts",
+      "method": "get",
+      "summary": "Get relation type counts",
+      "description": "Get counts of related documents grouped by relation type. CZPSPDOK returns REFERENCES count; CZPSPPRE returns counts by change type (AMENDS, REPEALS, OTHER).",
+      "operationId": "getRelatedCounts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZPSPPRE1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Relation type counts",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Counts keyed by relation type. CZPSPDOK keys: REFERENCES. CZPSPPRE keys: AMENDS, REPEALS, OTHER.",
+                "additionalProperties": { "type": "integer", "format": "int64" },
+                "example": { "AMENDS": 5, "REPEALS": 1, "OTHER": 2 }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}

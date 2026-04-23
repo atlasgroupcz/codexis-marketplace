@@ -19,1194 +19,269 @@ Usage:
     cdx-sledovane-dokumenty related remove <codexisId> <type>
     cdx-sledovane-dokumenty related list <codexisId>
     cdx-sledovane-dokumenty related types <codexisId>
-
-Examples:
-    cdx-sledovane-dokumenty add CR13986
-    cdx-sledovane-dokumenty add CR26785 --parts paragraf89,paragraf2991
-    cdx-sledovane-dokumenty list
-    cdx-sledovane-dokumenty check
-    cdx-sledovane-dokumenty check CR13986
-    cdx-sledovane-dokumenty confirm CR13986
-    cdx-sledovane-dokumenty show CR26785
-    cdx-sledovane-dokumenty group add CR13986 Pracovní právo
-    cdx-sledovane-dokumenty group remove CR13986 Pracovní právo
-    cdx-sledovane-dokumenty group list
-    cdx-sledovane-dokumenty group delete Pracovní právo
-    cdx-sledovane-dokumenty note add CR13986 "zajímá mě pracovní doba"
-    cdx-sledovane-dokumenty note list CR13986
-    cdx-sledovane-dokumenty note remove CR13986 0
-    cdx-sledovane-dokumenty related types CR13986
-    cdx-sledovane-dokumenty related add CR13986 PROVADECI_PREDPIS
-    cdx-sledovane-dokumenty related add CR13986 JUDIKATURA
-    cdx-sledovane-dokumenty related remove CR13986 JUDIKATURA
-    cdx-sledovane-dokumenty related list CR13986
 """
 
-import datetime
-import difflib
+import argparse
 import json
 import os
-import re
-import subprocess
 import sys
-import unicodedata
-import uuid
+from pathlib import Path
 
-FOLLOWED_DIR = os.path.expanduser("~/.cdx/apps/sledovane-dokumenty")
-GROUPS_PATH = os.path.join(FOLLOWED_DIR, "groups.json")
-CDX_CLI_BIN = "cdx-cli"
-CDXCTL_BIN = "cdxctl"
-TRACKING_BIN = "cdx-sledovane-dokumenty"
-MAX_OUTPUT = 6000
-DEFAULT_DAEMON_URL = "http://localhost:8086"
-DAEMON_ENV_FILE = os.path.expanduser("~/.cdx/.daemon.env")
+HERE = Path(__file__).resolve().parent
+CANDIDATES = [
+    HERE.parent / "lib",                                  # plugin in-place: bin/.. /lib
+    Path("/usr/local/share/codexis/lib"),                 # post-install location
+]
+for p in CANDIDATES:
+    if (p / "sledovane_dokumenty_core").is_dir():
+        sys.path.insert(0, str(p))
+        break
 
-
-def load_daemon_auth():
-    """Load CDX_DAEMON_AUTH from environment or ~/.cdx/.daemon.env (same as cdxctl, ocr, video-analyze)."""
-    val = os.environ.get("CDX_DAEMON_AUTH", "")
-    if val:
-        return val
-    try:
-        with open(DAEMON_ENV_FILE) as f:
-            for line in f:
-                if line.startswith("CDX_DAEMON_AUTH="):
-                    val = line[len("CDX_DAEMON_AUTH="):].strip()
-                    if val:
-                        return val
-    except OSError:
-        pass
-    return ""
-
-
-def now_utc():
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-
-
-def state_dir(codexis_id):
-    return os.path.join(FOLLOWED_DIR, codexis_id)
-
-
-def state_path(codexis_id):
-    return os.path.join(state_dir(codexis_id), "state.json")
-
-
-def load_state(codexis_id):
-    path = state_path(codexis_id)
-    if not os.path.isfile(path):
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_state(codexis_id, state):
-    d = state_dir(codexis_id)
-    os.makedirs(d, exist_ok=True)
-    with open(state_path(codexis_id), "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-
-
-def slugify(name):
-    """Convert group name to a URL-friendly id."""
-    nfkd = unicodedata.normalize("NFKD", name)
-    ascii_str = nfkd.encode("ascii", "ignore").decode("ascii").lower()
-    slug = re.sub(r"[^a-z0-9]+", "-", ascii_str).strip("-")
-    return slug or "skupina"
-
-
-def load_groups():
-    """Load groups.json, return [] if missing."""
-    if not os.path.isfile(GROUPS_PATH):
-        return []
-    try:
-        with open(GROUPS_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, list) else []
-    except (json.JSONDecodeError, OSError):
-        return []
-
-
-def save_groups(groups):
-    """Write groups list to groups.json."""
-    os.makedirs(FOLLOWED_DIR, exist_ok=True)
-    with open(GROUPS_PATH, "w", encoding="utf-8") as f:
-        json.dump(groups, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-
-
-def find_group(groups, name):
-    """Find group by name (case-insensitive). Returns (index, group) or (-1, None)."""
-    for i, g in enumerate(groups):
-        if g.get("name", "").lower() == name.lower():
-            return i, g
-    return -1, None
-
-
-
-def cdx_get(path):
-    """Call cdx-cli get and return parsed JSON or raw text. Returns None on error."""
-    result = subprocess.run(
-        [CDX_CLI_BIN, "get", path],
-        capture_output=True, text=True, timeout=30,
+try:
+    from sledovane_dokumenty_core import (
+        clients,
+        related as related_mod,
+        state,
+        tracking,
     )
-    if result.returncode != 0:
-        print(f"ERROR: cdx-cli get failed for {path}: {result.stderr.strip()}")
-        return None
-    stdout = result.stdout.strip()
-    try:
-        data = json.loads(stdout)
-    except json.JSONDecodeError:
-        return stdout
-    # Detect API-level errors returned in a JSON body.
-    if isinstance(data, dict) and "error" in data:
-        print(f"ERROR: CODEXIS API error for {path}: {data['error']}")
-        if "Authorization" in data.get("error", ""):
-            has_jwt = "CDX_API_JWT_AUTH" in os.environ
-            has_url = "CODEXIS_API_URL" in os.environ
-            print(f"  CDX_API_JWT_AUTH set: {has_jwt}, CODEXIS_API_URL set: {has_url}")
-        return None
-    return data
-
-
-def cdx_get_text(path):
-    """Call cdx-cli get and return raw text (for /text endpoints). Returns None on error."""
-    result = subprocess.run(
-        [CDX_CLI_BIN, "get", path],
-        capture_output=True, text=True, timeout=30,
+    from sledovane_dokumenty_core.exceptions import (
+        CdxClientError,
+        DocumentError,
     )
-    if result.returncode != 0:
-        print(f"ERROR: cdx-cli get failed for {path}: {result.stderr.strip()}")
-        return None
-    stdout = result.stdout.strip()
-    # Detect JSON error responses even when expecting text
-    if stdout.startswith("{"):
-        try:
-            data = json.loads(stdout)
-            if isinstance(data, dict) and "error" in data:
-                print(f"ERROR: CODEXIS API error for {path}: {data['error']}")
-                return None
-        except json.JSONDecodeError:
-            pass
-    return result.stdout
+except ImportError as e:
+    print(f"ERROR: sledovane_dokumenty_core library not found: {e}", file=sys.stderr)
+    sys.exit(2)
 
 
-def get_versions(codexis_id):
-    """Get version list for a document."""
-    return cdx_get(f"cdx://doc/{codexis_id}/versions")
+def err(msg):
+    print(f"ERROR: {msg}")
 
 
-def get_meta(codexis_id):
-    """Get document metadata."""
-    return cdx_get(f"cdx://doc/{codexis_id}/meta")
+def print_progress(msg):
+    print(msg, flush=True)
 
 
-def get_latest_version_id(versions):
-    """Get the latest version ID from versions list."""
-    if not versions or not isinstance(versions, list):
-        return None
-    return versions[0].get("versionId")
+# ── core commands ────────────────────────────────────────────────────────────
 
 
-def get_doc_name(meta):
-    """Extract human-readable name from metadata."""
-    if not isinstance(meta, dict):
-        return None
-    cr = meta.get("cr", {})
-    main = cr.get("main", {})
-    return main.get("title")
+def cmd_add(args):
+    parts = None
+    if args.parts:
+        parts = [p.strip() for p in args.parts.split(",") if p.strip()]
+    s = tracking.add(args.codexis_id, parts=parts)
+    print(f"OK: Sledování zahájeno pro {s['name']} ({s['codexisId']}).")
+    print(f"  Aktuální verze: {s['baseline_version_id']}")
+    if s.get("parts"):
+        print(f"  Sledované části: {', '.join(s['parts'])}")
 
 
-def extract_section(text, element_id):
-    """Extract a section from document text using [?part=elementId] markers."""
-    lines = text.split("\n")
-    capture = False
-    result = []
-    marker = f"[?part={element_id}]"
-    for line in lines:
-        if line.strip() == marker:
-            capture = True
-            continue
-        if capture:
-            if line.strip().startswith("[?part="):
-                break
-            result.append(line)
-    return "\n".join(result).strip()
+def cmd_remove(args):
+    s = tracking.remove(args.codexis_id)
+    print(f"OK: Sledování ukončeno pro {s.get('name', args.codexis_id)}.")
 
 
-def extract_part_ids(text):
-    """Extract all [?part=...] element IDs from document text."""
-    return re.findall(r"^\s*\[\?part=([^\]]+)\]", text, re.MULTILINE)
-
-
-def build_per_section_changes(old_text, new_text):
-    """Build per-section word-level changes for AI summary.
-
-    Splits already-fetched old/new text by [?part=...] markers,
-    diffs each section separately. Returns only changed sections with titles.
-    """
-    part_ids = extract_part_ids(new_text)
-    if not part_ids:
-        return None  # Fallback to full-text diff
-
-    section_changes = []
-    for pid in part_ids:
-        old_s = normalize_text(extract_section(old_text, pid))
-        new_s = normalize_text(extract_section(new_text, pid))
-        if old_s == new_s:
-            continue
-        section_changes.append(f"### {pid}\nSTARÉ ZNĚNÍ:\n{old_s}\n\nNOVÉ ZNĚNÍ:\n{new_s}")
-
-    if not section_changes:
-        return None
-    return "\n\n".join(section_changes)
-
-
-def compute_diff(old_text, new_text, label=""):
-    """Compute unified diff between two texts."""
-    old_lines = old_text.splitlines(keepends=True)
-    new_lines = new_text.splitlines(keepends=True)
-    diff = difflib.unified_diff(
-        old_lines, new_lines,
-        fromfile=f"old {label}".strip(),
-        tofile=f"new {label}".strip(),
-        lineterm="",
-    )
-    return "".join(diff).strip()
-
-
-def ensure_check_automation():
-    """Ensure the periodic COMMAND automation exists via cdxctl."""
-    desired_command = f"{TRACKING_BIN} check"
-
-    try:
-        result = subprocess.run(
-            [CDXCTL_BIN, "automation", "list"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode != 0:
-            return
-        automations = json.loads(result.stdout)
-    except Exception:
-        return  # non-fatal — automation is a convenience, not critical
-
-    if not isinstance(automations, list):
-        return
-
-    for automation in automations:
-        if not isinstance(automation, dict):
-            continue
-        if automation.get("type") != "COMMAND":
-            continue
-
-        command = automation.get("command")
-        if not isinstance(command, str):
-            continue
-
-        if command == desired_command:
-            return
-
-    try:
-        subprocess.run(
-            [
-                CDXCTL_BIN, "automation", "create-command",
-                "--title", "Sledované dokumenty – kontrola změn",
-                "--cron", "0 8 * * 1",
-                "--command", desired_command,
-                "--description", "Pravidelná kontrola sledovaných dokumentů v CODEXIS.",
-            ],
-            capture_output=True, text=True, timeout=15,
-        )
-    except Exception:
-        pass  # non-fatal — automation is a convenience, not critical
-
-
-def llm_extract(text, query):
-    """Call /rest/llm/extract on the daemon."""
-    daemon_url = os.environ.get("CDX_DAEMON_URL", DEFAULT_DAEMON_URL)
-    daemon_auth = load_daemon_auth()
-    if not daemon_auth:
-        return None
-    import tempfile
-    tmp_path = None
-    try:
-        # Write text to temp file to avoid curl -F truncation with special chars
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            f.write(text)
-            tmp_path = f.name
-        result = subprocess.run(
-            [
-                "curl", "-sS", "-X", "POST",
-                f"{daemon_url}/rest/llm/extract",
-                "-H", f"Authorization: {daemon_auth}",
-                "-F", f"text=<{tmp_path}",
-                "-F", f"query={query}",
-            ],
-            capture_output=True, text=True, timeout=120,
-        )
-        if result.returncode != 0:
-            return None
-        data = json.loads(result.stdout)
-        return data.get("response")
-    except Exception:
-        return None
-    finally:
-        if tmp_path:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
-
-
-def extract_word_changes(old_text, new_text, context_words=10):
-    """Extract word-level changes with surrounding context for AI summary."""
-    import difflib as dl
-    old_words = old_text.split()
-    new_words = new_text.split()
-    sm = dl.SequenceMatcher(None, old_words, new_words)
-    changes = []
-    for op, i1, i2, j1, j2 in sm.get_opcodes():
-        if op == "equal":
-            continue
-        # Context before
-        ctx_start_old = max(0, i1 - context_words)
-        ctx_start_new = max(0, j1 - context_words)
-        before = " ".join(old_words[ctx_start_old:i1])
-        # Context after
-        ctx_end_old = min(len(old_words), i2 + context_words)
-        ctx_end_new = min(len(new_words), j2 + context_words)
-        after_old = " ".join(old_words[i2:ctx_end_old])
-        after_new = " ".join(new_words[j2:ctx_end_new])
-        after = after_old or after_new
-        removed = " ".join(old_words[i1:i2])
-        added = " ".join(new_words[j1:j2])
-        if op == "replace":
-            changes.append(f"...{before} [-{removed}-] [+{added}+] {after}...")
-        elif op == "delete":
-            changes.append(f"...{before} [-{removed}-] {after}...")
-        elif op == "insert":
-            changes.append(f"...{before} [+{added}+] {after}...")
-    return "\n\n".join(changes)
-
-
-def strip_changes_in_time(text):
-    """Remove <changes_in_time>...</changes_in_time> blocks from text."""
-    return re.sub(r"<changes_in_time>.*?</changes_in_time>", "", text, flags=re.DOTALL).strip()
-
-
-def normalize_cdx_links(text):
-    """Normalize cdx://doc/ version IDs so link-only changes don't appear in diff."""
-    return re.sub(r"(cdx://doc/[A-Z]+\d+)_\d{4}_\d{2}_\d{2}", r"\1", text)
-
-
-def strip_part_markers(text):
-    """Remove [?part=...] marker lines and resolve markdown links to plain text."""
-    # Remove [?part=...] lines (may have leading whitespace)
-    text = re.sub(r"^\s*\[\?part=[^\]]*\]\s*$", "", text, flags=re.MULTILINE)
-    # [link text](cdx://...) → link text (all cdx:// markdown links)
-    text = re.sub(r"\[([^\]]+?)\]\(cdx://[^)]*\)", r"\1", text)
-    # Remove leftover "(anchor in this document)" from link text
-    text = re.sub(r"\s*\(anchor in this document\)", "", text)
-    return text
-
-
-def normalize_text(text):
-    """Strip temporal changes, normalize links, and remove part markers."""
-    return strip_part_markers(normalize_cdx_links(strip_changes_in_time(text)))
-
-
-# ── Related documents helpers ─────────────────────────────────────────────
-
-def related_baseline_path(codexis_id, relation_type):
-    """Return path to baseline file for a given relation type."""
-    return os.path.join(state_dir(codexis_id), f"related_{relation_type}.json")
-
-
-def load_related_baseline(codexis_id, relation_type):
-    """Load baseline doc IDs for a relation type. Returns dict or None."""
-    path = related_baseline_path(codexis_id, relation_type)
-    if not os.path.isfile(path):
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_related_baseline(codexis_id, relation_type, doc_ids, total_count=None):
-    """Save baseline doc IDs for a relation type."""
-    d = state_dir(codexis_id)
-    os.makedirs(d, exist_ok=True)
-    data = {
-        "type": relation_type,
-        "captured_at": now_utc(),
-        "total_count": total_count if total_count is not None else len(doc_ids),
-        "doc_ids": sorted(doc_ids),
-    }
-    path = related_baseline_path(codexis_id, relation_type)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-
-
-def fetch_all_related_ids(codexis_id, relation_type):
-    """Fetch ALL related doc IDs for a type (paginated). Returns sorted list or None on error."""
-    all_ids = []
-    offset = 0
-    limit = 100
-    while True:
-        data = cdx_get(f"cdx://doc/{codexis_id}/related?type={relation_type}&limit={limit}&offset={offset}")
-        if data is None:
-            return None
-        if not isinstance(data, dict):
-            return None
-        results = data.get("results", [])
-        if not results:
-            break
-        for item in results:
-            doc_id = item.get("docId") if isinstance(item, dict) else item
-            if doc_id:
-                all_ids.append(str(doc_id))
-        total = data.get("totalResults", 0)
-        offset += limit
-        if offset >= total:
-            break
-    return sorted(set(all_ids))
-
-
-def fetch_related_counts(codexis_id):
-    """Fetch related document counts by type. Returns list of {type, typeName, count} or None."""
-    data = cdx_get(f"cdx://doc/{codexis_id}/related/counts")
-    if data is None:
-        return None
-    # API returns {"docId": "...", "counts": [...]}
-    if isinstance(data, dict):
-        counts = data.get("counts", [])
-        # Normalize field names: API uses "name" but we use "typeName" internally
-        result = []
-        for item in counts:
-            result.append({
-                "type": item.get("type"),
-                "typeName": item.get("name", item.get("typeName", item.get("type"))),
-                "count": item.get("count", 0),
-            })
-        return result
-    if isinstance(data, list):
-        return data
-    return None
-
-
-def capture_related_baselines(codexis_id, types):
-    """Download and save baselines for given relation types. Returns dict of type->count."""
-    results = {}
-    for rtype in types:
-        doc_ids = fetch_all_related_ids(codexis_id, rtype)
-        if doc_ids is None:
-            print(f"    WARN: nepodařilo se stáhnout related pro typ {rtype}")
-            results[rtype] = 0
-            continue
-        save_related_baseline(codexis_id, rtype, doc_ids)
-        results[rtype] = len(doc_ids)
-        print(f"    {rtype}: {len(doc_ids)} dokumentů")
-    return results
-
-
-def fetch_doc_title(doc_id):
-    """Fetch title for a single document. Returns string or doc_id on failure."""
-    base_id = doc_id.split("_")[0] if "_" in doc_id else doc_id
-    meta = get_meta(base_id)
-    if meta:
-        title = get_doc_name(meta)
-        if title:
-            return title
-    return doc_id
-
-
-def delete_related_baselines(codexis_id, types=None):
-    """Delete baseline files for given types (or all if types is None)."""
-    d = state_dir(codexis_id)
-    if not os.path.isdir(d):
-        return
-    if types is None:
-        for fname in os.listdir(d):
-            if fname.startswith("related_") and fname.endswith(".json"):
-                os.remove(os.path.join(d, fname))
-    else:
-        for rtype in types:
-            path = related_baseline_path(codexis_id, rtype)
-            if os.path.isfile(path):
-                os.remove(path)
-
-
-# ── Related type display names ────────────────────────────────────────────
-
-RELATED_TYPE_NAMES = {
-    "SOUVISEJICI_LEGISLATIVA_CR": "Související legislativa ČR",
-    "PROVADECI_PREDPIS": "Prováděcí předpis",
-    "PASIVNI_NOVELA": "Pasivní novela",
-    "AKTIVNI_DEROGACE": "Aktivní derogace",
-    "SOUVISEJICI_LEGISLATIVA_EU": "Související legislativa EU",
-    "JUDIKATURA": "Judikatura",
-    "ODBORNY_CLANEK": "Odborný článek",
-    "KOMENTAROVE_DILO": "Komentářové dílo",
-}
-
-
-def get_related_type_name(relation_type, counts_data=None):
-    """Get human-readable name for a relation type."""
-    if counts_data:
-        for item in counts_data:
-            if item.get("type") == relation_type:
-                return item.get("typeName", relation_type)
-    return RELATED_TYPE_NAMES.get(relation_type, relation_type)
-
-
-# ── Commands ──────────────────────────────────────────────────────────────
-
-def cmd_add(codexis_id, parts=None):
-    existing = load_state(codexis_id)
-    if existing:
-        print(f"ERROR: {codexis_id} je už sledován.")
-        sys.exit(1)
-
-    # Verify document exists
-    meta = get_meta(codexis_id)
-    if meta is None:
-        print(f"ERROR: Nepodařilo se ověřit dokument {codexis_id}.")
-        sys.exit(1)
-    name = get_doc_name(meta)
-    if not name:
-        print(f"ERROR: Dokument {codexis_id} nebyl nalezen v CODEXIS.")
-        sys.exit(1)
-
-    # Get current version as baseline
-    versions = get_versions(codexis_id)
-    latest_version_id = get_latest_version_id(versions)
-    if not latest_version_id:
-        print(f"ERROR: Nepodařilo se získat verze pro {codexis_id}.")
-        sys.exit(1)
-
-    state = {
-        "uuid": str(uuid.uuid4()),
-        "codexisId": codexis_id,
-        "name": name,
-        "parts": parts or [],
-        "added_on": now_utc(),
-        "baseline_version_id": latest_version_id,
-        "last_known_version_id": latest_version_id,
-        "last_check_at": now_utc(),
-        "changes": [],
-    }
-
-    save_state(codexis_id, state)
-    print(f"OK: Sledování zahájeno pro {name} ({codexis_id}).")
-    print(f"  Aktuální verze: {latest_version_id}")
-    if parts:
-        print(f"  Sledované části: {', '.join(parts)}")
-
-    # Ensure periodic check automation exists
-    ensure_check_automation()
-
-
-def cmd_remove(codexis_id):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
-        sys.exit(1)
-
-    import shutil
-    shutil.rmtree(state_dir(codexis_id))
-    # Clean up group memberships
-    groups = load_groups()
-    for group in groups:
-        members = group.get("members", [])
-        if codexis_id in members:
-            members.remove(codexis_id)
-    save_groups(groups)
-    print(f"OK: Sledování ukončeno pro {s.get('name', codexis_id)}.")
-
-
-def cmd_list():
-    if not os.path.isdir(FOLLOWED_DIR):
+def cmd_list(args):
+    docs = tracking.list_all()
+    if not docs:
         print("Žádné sledované dokumenty.")
         return
-
-    entries = []
-    for name in sorted(os.listdir(FOLLOWED_DIR)):
-        s = load_state(name)
-        if not s:
-            continue
+    for s in docs:
+        cid = s.get("codexisId", "?")
         changes = s.get("changes", [])
         unconfirmed = [c for c in changes if not c.get("confirmed_on")]
-        status = "bez změn"
         if unconfirmed:
             status = f"NOVÁ ZMĚNA ({len(unconfirmed)} nepotvrzená/é)"
         elif changes:
             status = f"potvrzeno ({len(changes)} změn v historii)"
-        # Build related tracking info
-        related_info = None
-        rt = s.get("related_tracking", {})
+        else:
+            status = "bez změn"
+        print(f"  {cid}  {s.get('name', '')}")
+        print(
+            f"    Baseline: {s.get('baseline_version_id')}  "
+            f"Aktuální: {s.get('last_known_version_id')}"
+        )
+        print(f"    Poslední kontrola: {s.get('last_check_at')}  Stav: {status}")
+        rt = s.get("related_tracking") or {}
         if rt.get("enabled"):
             parts_info = []
-            cid = s.get("codexisId", name)
             for rtype in rt.get("types", []):
-                baseline = load_related_baseline(cid, rtype)
-                count = baseline.get("total_count", len(baseline.get("doc_ids", []))) if baseline else "?"
+                baseline = state.load_related_baseline(cid, rtype)
+                count = (
+                    baseline.get("total_count", len(baseline.get("doc_ids", [])))
+                    if baseline else "?"
+                )
                 parts_info.append(f"{rtype} ({count})")
             if parts_info:
-                related_info = ", ".join(parts_info)
-        entries.append({
-            "codexisId": s.get("codexisId"),
-            "name": s.get("name"),
-            "baseline": s.get("baseline_version_id"),
-            "current": s.get("last_known_version_id"),
-            "last_check": s.get("last_check_at"),
-            "status": status,
-            "related_info": related_info,
-        })
-
-    if not entries:
-        print("Žádné sledované dokumenty.")
-        return
-
-    for e in entries:
-        print(f"  {e['codexisId']}  {e['name']}")
-        print(f"    Baseline: {e['baseline']}  Aktuální: {e['current']}")
-        print(f"    Poslední kontrola: {e['last_check']}  Stav: {e['status']}")
-        if e.get("related_info"):
-            print(f"    Související: {e['related_info']}")
+                print(f"    Související: {', '.join(parts_info)}")
         print()
 
 
-def generate_summary(codexis_id, name, old_vid, new_vid, parts, user_notes):
-    """Fetch texts, build word changes, call llm_extract. Returns summary or None."""
-    if parts:
-        all_old = []
-        all_new = []
-        for part_id in parts:
-            old_text = cdx_get_text(f"cdx://doc/{old_vid}/text?part={part_id}")
-            new_text = cdx_get_text(f"cdx://doc/{new_vid}/text?part={part_id}")
-            if old_text is None or new_text is None:
-                return None
-            all_old.append(normalize_text(old_text))
-            all_new.append(normalize_text(new_text))
-        word_changes = extract_word_changes("\n\n".join(all_old), "\n\n".join(all_new), context_words=30)
-    else:
-        old_text = cdx_get_text(f"cdx://doc/{old_vid}/text")
-        new_text = cdx_get_text(f"cdx://doc/{new_vid}/text")
-        if old_text is None or new_text is None:
-            return None
-        word_changes = build_per_section_changes(old_text, new_text)
-        if not word_changes:
-            old_clean = normalize_text(old_text)
-            new_clean = normalize_text(new_text)
-            word_changes = extract_word_changes(old_clean, new_clean, context_words=30)
-
-    if not word_changes:
-        return None
-
-    prompt = (
-        f"Shrň věcné změny v předpisu '{name}'. "
-        "Vstup obsahuje sekce se STARÝM a NOVÝM ZNĚNÍM. "
-        "Popiš POUZE skutečné změny v textu zákona. "
-        "Přeskoč sekce kde se změnily jen poznámky autora, čísla vyhlášek nebo sdělení. "
-        "Odpověz česky, stručně, plynulým textem."
-    )
-    if user_notes:
-        notes_text = "; ".join(user_notes)
-        prompt += (
-            f"\n\nUživatele zvláště zajímá: {notes_text}. "
-            "Pokud se změny týkají těchto témat, zdůrazni to."
-        )
-    return llm_extract(word_changes, prompt)
-
-
-def summarize_pending_changes():
-    """Generate AI summaries for all changes with summary_pending=true."""
-    if not os.path.isdir(FOLLOWED_DIR):
-        return
-    for cid in sorted(os.listdir(FOLLOWED_DIR)):
-        s = load_state(cid)
-        if not s:
-            continue
-        name = s.get("name", cid)
-        parts = s.get("parts", [])
-        changed = False
-        for change in s.get("changes", []):
-            if not change.get("summary_pending"):
-                continue
-            old_vid = change.get("old_version_id")
-            new_vid = change.get("new_version_id")
-            if not old_vid or not new_vid:
-                continue
-            print(f"  {name}: generating summary ({old_vid} -> {new_vid})")
-            summary = generate_summary(cid, name, old_vid, new_vid, parts, s.get("user_notes", []))
-            if summary:
-                change["description_md"] = summary
-                change["summary_pending"] = False
-                changed = True
-                print(f"  {name}: summary done")
-        if changed:
-            save_state(cid, s)
-
-
-def compute_version_diff(baseline_vid, latest_vid, parts):
-    """Fetch texts and compute diff between two versions. Returns list of diff parts."""
-    diff_parts = []
-    if parts:
-        for part_id in parts:
-            old_text = cdx_get_text(f"cdx://doc/{baseline_vid}/text?part={part_id}")
-            new_text = cdx_get_text(f"cdx://doc/{latest_vid}/text?part={part_id}")
-            if old_text is None or new_text is None:
-                continue
-            old_clean = normalize_text(old_text)
-            new_clean = normalize_text(new_text)
-            if old_clean != new_clean:
-                diff = compute_diff(old_clean, new_clean, label=part_id)
-                diff_parts.append({"part": part_id, "diff": diff})
-                print(f"    {part_id}: změněn")
-            else:
-                print(f"    {part_id}: beze změn")
-    else:
-        old_text = cdx_get_text(f"cdx://doc/{baseline_vid}/text")
-        new_text = cdx_get_text(f"cdx://doc/{latest_vid}/text")
-        if old_text is None or new_text is None:
-            return diff_parts
-        old_clean = normalize_text(old_text)
-        new_clean = normalize_text(new_text)
-        if old_clean != new_clean:
-            diff = compute_diff(old_clean, new_clean)
-            diff_parts.append({"part": "full", "diff": diff})
-    return diff_parts
-
-
-def find_version_info(versions, version_id):
-    """Find a version entry by versionId. Returns dict or None."""
-    for v in versions:
-        if v.get("versionId") == version_id:
-            return v
-    return None
-
-
-def resolve_amendments(versions, latest_vid):
-    """Resolve amendment IDs to {id, name} dicts."""
-    version_info = find_version_info(versions, latest_vid)
-    amendment_ids = version_info.get("amendmentDocIds", []) if version_info else []
-    amendments = []
-    for aid in amendment_ids:
-        base_id = aid.split("_")[0] if "_" in aid else aid
-        meta = get_meta(base_id)
-        title = get_doc_name(meta) if meta else None
-        if not title:
-            title = aid
-        amendments.append({"id": aid, "name": title})
-    return amendments
-
-
-def build_compare_url(baseline_vid, latest_vid):
-    """Build CODEXIS comparison URL."""
-    return (
-        f"https://next.codexis.cz/porovnat"
-        f"?sourceDocId={baseline_vid}"
-        f"&targetDocId={latest_vid}"
-        f"&puvodniZneni={baseline_vid}"
-        f"&viewType=INSIDE"
-        f"&changesOnly=true"
-    )
-
-
-def cmd_check(codexis_id=None):
-    if not os.path.isdir(FOLLOWED_DIR):
-        print("Žádné sledované dokumenty.")
-        return
-
-    ids = [codexis_id] if codexis_id else sorted(os.listdir(FOLLOWED_DIR))
-    changes_found = 0
-
-    # Phase 1: Detect new versions
-    for cid in ids:
-        s = load_state(cid)
-        if not s:
-            if codexis_id:
-                print(f"ERROR: {cid} není sledován.")
-                sys.exit(1)
-            continue
-
-        name = s.get("name", cid)
-        baseline_vid = s.get("baseline_version_id")
-        versions = get_versions(cid)
-        latest_vid = get_latest_version_id(versions)
-
-        if not latest_vid:
-            print(f"  {cid}: nepodařilo se získat verze")
-            continue
-
-        s["last_check_at"] = now_utc()
-        s["last_known_version_id"] = latest_vid
-
-        if latest_vid == baseline_vid:
-            save_state(cid, s)
-            print(f"  {name}: beze změn (verze {latest_vid})")
-            continue
-
-        # Skip if already detected
-        changes = s.get("changes", [])
-        if any(c.get("old_version_id") == baseline_vid and c.get("new_version_id") == latest_vid for c in changes):
-            save_state(cid, s)
-            print(f"  {name}: změna již zaznamenána ({baseline_vid} -> {latest_vid})")
-            continue
-
-        print(f"  {name}: NOVÁ VERZE {latest_vid} (baseline: {baseline_vid})")
-        changes_found += 1
-
-        version_info = find_version_info(versions, latest_vid)
-        changes.append({
-            "detected_on": now_utc(),
-            "effective_on": version_info.get("validFrom") if version_info else None,
-            "new_version_id": latest_vid,
-            "old_version_id": baseline_vid,
-            "amendments": resolve_amendments(versions, latest_vid),
-            "description_md": "",
-            "compare_url": build_compare_url(baseline_vid, latest_vid),
-            "diffs": compute_version_diff(baseline_vid, latest_vid, s.get("parts", [])),
-            "confirmed_on": None,
-            "summary_pending": True,
-        })
-        s["changes"] = changes
-        save_state(cid, s)
-
-    # Phase 1.5: Detect related document changes
-    for cid in ids:
-        s = load_state(cid)
-        if not s:
-            continue
-        rt = s.get("related_tracking", {})
-        if not rt.get("enabled"):
-            continue
-
-        name = s.get("name", cid)
-        tracked_types = rt.get("types", [])
-        changes = s.get("changes", [])
-
-        for rtype in tracked_types:
-            baseline = load_related_baseline(cid, rtype)
-            if baseline is None:
-                continue
-            baseline_ids = set(baseline.get("doc_ids", []))
-
-            current_ids_list = fetch_all_related_ids(cid, rtype)
-            if current_ids_list is None:
-                print(f"  {name}: nepodařilo se stáhnout related {rtype}")
-                continue
-            current_ids = set(current_ids_list)
-
-            added_ids = current_ids - baseline_ids
-            removed_ids = baseline_ids - current_ids
-
-            if not added_ids and not removed_ids:
-                continue
-
-            changes_found += 1
-            type_name = get_related_type_name(rtype)
-
-            # Fetch titles for added/removed docs (limit to 10 to avoid API overload)
-            added_docs = []
-            for did in sorted(added_ids)[:10]:
-                added_docs.append({"docId": did, "title": fetch_doc_title(did)})
-            if len(added_ids) > 10:
-                added_docs.append({"docId": "...", "title": f"a dalších {len(added_ids) - 10}"})
-
-            removed_docs = []
-            for did in sorted(removed_ids)[:10]:
-                removed_docs.append({"docId": did, "title": fetch_doc_title(did)})
-            if len(removed_ids) > 10:
-                removed_docs.append({"docId": "...", "title": f"a dalších {len(removed_ids) - 10}"})
-
-            # Build description with document names and links
-            codexis_base = os.environ.get("CODEXIS_BASE_URL", "https://next.codexis.cz")
-            desc_lines = []
-            if added_docs:
-                desc_lines.append(f"**Přidáno {len(added_ids)}** dokumentů typu {type_name}:")
-                for doc in added_docs:
-                    if doc["docId"] == "...":
-                        desc_lines.append(f"- {doc['title']}")
-                    else:
-                        desc_lines.append(f"- [{doc['title']}]({codexis_base}/doc/{doc['docId']})")
-            if removed_docs:
-                if desc_lines:
-                    desc_lines.append("")
-                desc_lines.append(f"**Odebráno {len(removed_ids)}** dokumentů typu {type_name}:")
-                for doc in removed_docs:
-                    if doc["docId"] == "...":
-                        desc_lines.append(f"- {doc['title']}")
-                    else:
-                        desc_lines.append(f"- [{doc['title']}]({codexis_base}/doc/{doc['docId']})")
-            description_md = "\n".join(desc_lines)
-
-            # Build source_documents for UI
-            source_documents = []
-            for doc in added_docs:
-                if doc["docId"] != "...":
-                    source_documents.append({
-                        "codexisId": f"cdx://doc/{doc['docId']}",
-                        "name": doc["title"],
-                    })
-
-            change_entry = {
-                "change_type": "related_change",
-                "relation_type": rtype,
-                "relation_type_name": type_name,
-                "added_docs": added_docs,
-                "removed_docs": removed_docs,
-                "source_documents": source_documents,
-                "description_md": description_md,
-                "detected_on": now_utc(),
-                "confirmed_on": None,
-            }
-            changes.append(change_entry)
-            print(f"  {name}: ZMĚNA v {type_name} (+{len(added_ids)}, -{len(removed_ids)})")
-
-            # Update baseline
-            save_related_baseline(cid, rtype, current_ids_list)
-
-        rt["last_check_at"] = now_utc()
-        s["related_tracking"] = rt
-        s["changes"] = changes
-        save_state(cid, s)
-
-    # Phase 2: Generate AI summaries for all pending changes
-    summarize_pending_changes()
-
-    if changes_found == 0:
+def cmd_check(args):
+    result = tracking.check(args.codexis_id, printer=print_progress)
+    if result["changes_found"] == 0 and not result["errors"]:
         print("Žádné nové změny.")
 
 
-def cmd_confirm(codexis_id):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
-        sys.exit(1)
-
-    changes = s.get("changes", [])
-    unconfirmed = [c for c in changes if not c.get("confirmed_on")]
-    if not unconfirmed:
-        print(f"{codexis_id}: žádná nepotvrzená změna.")
-        return
-
-    # Confirm all unconfirmed changes and move baseline
-    confirmed_at = now_utc()
-    for c in unconfirmed:
-        c["confirmed_on"] = confirmed_at
-
-    s["baseline_version_id"] = s["last_known_version_id"]
-    s["changes"] = changes
-    save_state(codexis_id, s)
-    print(f"OK: {len(unconfirmed)} změna/y potvrzena pro {s.get('name', codexis_id)}. Baseline posunuta na {s['baseline_version_id']}.")
-
-
-def cmd_show(codexis_id):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
-        sys.exit(1)
-
-    output = json.dumps(s, indent=2, ensure_ascii=False)
-    if len(output) > MAX_OUTPUT:
-        print(output[:MAX_OUTPUT])
-        print(f"\n... (zkráceno, {len(output)} znaků celkem)")
+def cmd_confirm(args):
+    marked = tracking.confirm(args.codexis_id)
+    s = state.load_state(args.codexis_id)
+    name = s.get("name", args.codexis_id) if s else args.codexis_id
+    if marked == 0:
+        print(f"{args.codexis_id}: žádná nepotvrzená změna.")
     else:
-        print(output)
+        print(
+            f"OK: {marked} změna/y potvrzena pro {name}. "
+            f"Baseline posunuta na {s['baseline_version_id']}."
+        )
 
 
-# ── Group commands ────────────────────────────────────────────────────────
-
-def cmd_group_add(codexis_id, group_name):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
-        sys.exit(1)
-
-    groups = load_groups()
-    idx, group = find_group(groups, group_name)
-    if group is None:
-        group = {"id": slugify(group_name), "name": group_name, "members": []}
-        groups.append(group)
-        idx = len(groups) - 1
-
-    members = group.get("members", [])
-    if codexis_id in members:
-        print(f"{codexis_id} je již ve skupině '{group_name}'.")
-        return
-
-    members.append(codexis_id)
-    group["members"] = members
-    groups[idx] = group
-    save_groups(groups)
-    print(f"OK: {s.get('name', codexis_id)} přidán do skupiny '{group_name}'.")
+def cmd_show(args):
+    s = tracking.show(args.codexis_id)
+    print(json.dumps(s, indent=2, ensure_ascii=False))
 
 
-def cmd_group_remove(codexis_id, group_name):
-    groups = load_groups()
-    idx, group = find_group(groups, group_name)
-    if group is None:
-        print(f"ERROR: Skupina '{group_name}' neexistuje.")
-        sys.exit(1)
+# ── groups ───────────────────────────────────────────────────────────────────
 
-    members = group.get("members", [])
-    if codexis_id not in members:
-        print(f"ERROR: {codexis_id} není ve skupině '{group_name}'.")
-        sys.exit(1)
 
-    members.remove(codexis_id)
-    group["members"] = members
-    groups[idx] = group
-    save_groups(groups)
-    s = load_state(codexis_id)
-    name = s.get("name", codexis_id) if s else codexis_id
+def cmd_group_add(args):
+    group_name = " ".join(args.name)
+    result = tracking.group_add(args.codexis_id, group_name)
+    s = state.load_state(args.codexis_id)
+    name = s.get("name", args.codexis_id) if s else args.codexis_id
+    if result == "already":
+        print(f"{args.codexis_id} je již ve skupině '{group_name}'.")
+    else:
+        print(f"OK: {name} přidán do skupiny '{group_name}'.")
+
+
+def cmd_group_remove(args):
+    group_name = " ".join(args.name)
+    tracking.group_remove(args.codexis_id, group_name)
+    s = state.load_state(args.codexis_id)
+    name = s.get("name", args.codexis_id) if s else args.codexis_id
     print(f"OK: {name} odebrán ze skupiny '{group_name}'.")
 
 
-def cmd_group_list():
-    groups = load_groups()
+def cmd_group_delete(args):
+    group_name = " ".join(args.name)
+    tracking.group_delete(group_name)
+    print(f"OK: Skupina '{group_name}' smazána.")
+
+
+def cmd_group_list(args):
+    groups = tracking.groups_list()
     if not groups:
         print("Žádné skupiny.")
         return
-
     for g in groups:
         members = g.get("members", [])
         print(f"  {g.get('name')} ({g.get('id')}) — {len(members)} dokumentů")
         for cid in members:
-            s = load_state(cid)
+            s = state.load_state(cid)
             name = s.get("name", cid) if s else cid
             print(f"    {cid}  {name}")
         print()
 
 
-def cmd_group_delete(group_name):
-    groups = load_groups()
-    idx, group = find_group(groups, group_name)
-    if group is None:
-        print(f"ERROR: Skupina '{group_name}' neexistuje.")
-        sys.exit(1)
-
-    groups.pop(idx)
-    save_groups(groups)
-    print(f"OK: Skupina '{group_name}' smazána.")
+# ── notes ────────────────────────────────────────────────────────────────────
 
 
-# ── Notes ─────────────────────────────────────────────────────────────────
-
-def cmd_note_add(codexis_id, text):
-    s = load_state(codexis_id)
-    if s is None:
-        print(f"ERROR: Dokument {codexis_id} není sledován.")
-        sys.exit(1)
-    notes = s.get("user_notes", [])
-    notes.append(text)
-    s["user_notes"] = notes
-    save_state(codexis_id, s)
-    print(f"OK: Poznámka přidána k {codexis_id}.")
+def cmd_note_add(args):
+    text = " ".join(args.text)
+    tracking.note_add(args.codexis_id, text)
+    print(f"OK: Poznámka přidána k {args.codexis_id}.")
 
 
-def cmd_note_list(codexis_id):
-    s = load_state(codexis_id)
-    if s is None:
-        print(f"ERROR: Dokument {codexis_id} není sledován.")
-        sys.exit(1)
-    notes = s.get("user_notes", [])
+def cmd_note_list(args):
+    notes = tracking.note_list(args.codexis_id)
+    s = state.load_state(args.codexis_id)
+    name = s.get("name", args.codexis_id) if s else args.codexis_id
     if not notes:
-        print(f"Žádné poznámky pro {codexis_id}.")
+        print(f"Žádné poznámky pro {args.codexis_id}.")
         return
-    name = s.get("name", codexis_id)
-    print(f"Poznámky pro {name} ({codexis_id}):")
+    print(f"Poznámky pro {name} ({args.codexis_id}):")
     for i, note in enumerate(notes):
         print(f"  [{i}] {note}")
 
 
-def cmd_note_remove(codexis_id, index):
-    s = load_state(codexis_id)
+def cmd_note_remove(args):
+    removed = tracking.note_remove(args.codexis_id, args.index)
+    print(f"OK: Poznámka [{args.index}] odstraněna: {removed}")
+
+
+# ── related ──────────────────────────────────────────────────────────────────
+
+
+def cmd_related_add(args):
+    s = state.load_state(args.codexis_id)
     if s is None:
-        print(f"ERROR: Dokument {codexis_id} není sledován.")
+        err(f"{args.codexis_id} není sledován. Nejdříve přidejte: add {args.codexis_id}")
         sys.exit(1)
-    notes = s.get("user_notes", [])
-    if index < 0 or index >= len(notes):
-        print(f"ERROR: Neplatný index {index}. Dokument má {len(notes)} poznámek.")
-        sys.exit(1)
-    removed = notes.pop(index)
-    s["user_notes"] = notes
-    save_state(codexis_id, s)
-    print(f"OK: Poznámka [{index}] odstraněna: {removed}")
-
-
-# ── Related documents commands ─────────────────────────────────────────────
-
-def cmd_related_add(codexis_id, relation_type):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován. Nejdříve přidejte: {TRACKING_BIN} add {codexis_id}")
-        sys.exit(1)
-
-    rt = s.get("related_tracking", {})
-    existing_types = rt.get("types", []) if rt.get("enabled") else []
-
-    if relation_type in existing_types:
-        print(f"{relation_type} už je sledováno pro {codexis_id}.")
+    existing = (s.get("related_tracking") or {}).get("types", []) if (
+        s.get("related_tracking") or {}
+    ).get("enabled") else []
+    if args.type in existing:
+        print(f"{args.type} už je sledováno pro {args.codexis_id}.")
         return
-
-    print(f"Přidávám sledování {relation_type} pro {s.get('name', codexis_id)}...")
-    capture_related_baselines(codexis_id, [relation_type])
-
-    merged_types = existing_types + [relation_type]
-    s["related_tracking"] = {
-        "enabled": True,
-        "types": merged_types,
-        "last_check_at": rt.get("last_check_at", now_utc()),
-    }
-    save_state(codexis_id, s)
-    print(f"OK: Sledované typy: {', '.join(merged_types)}")
+    print(f"Přidávám sledování {args.type} pro {s.get('name', args.codexis_id)}...")
+    related_mod.enable_tracking(args.codexis_id, args.type)
+    s = state.load_state(args.codexis_id)
+    types = (s.get("related_tracking") or {}).get("types", [])
+    print(f"OK: Sledované typy: {', '.join(types)}")
 
 
-def cmd_related_remove(codexis_id, relation_type):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
+def cmd_related_remove(args):
+    s = state.load_state(args.codexis_id)
+    if s is None:
+        err(f"{args.codexis_id} není sledován.")
         sys.exit(1)
-
-    rt = s.get("related_tracking", {})
-    existing_types = rt.get("types", [])
-
-    if relation_type not in existing_types:
-        print(f"ERROR: {relation_type} není sledováno pro {codexis_id}.")
+    existing = (s.get("related_tracking") or {}).get("types", [])
+    if args.type not in existing:
+        err(f"{args.type} není sledováno pro {args.codexis_id}.")
         sys.exit(1)
-
-    delete_related_baselines(codexis_id, [relation_type])
-    remaining = [t for t in existing_types if t != relation_type]
-    s["related_tracking"] = {
-        "enabled": bool(remaining),
-        "types": remaining,
-        "last_check_at": rt.get("last_check_at"),
-    }
-    save_state(codexis_id, s)
+    related_mod.disable_tracking(args.codexis_id, args.type)
+    s = state.load_state(args.codexis_id)
+    remaining = (s.get("related_tracking") or {}).get("types", [])
     if remaining:
-        print(f"OK: {relation_type} odebráno. Zbývající typy: {', '.join(remaining)}")
+        print(f"OK: {args.type} odebráno. Zbývající typy: {', '.join(remaining)}")
     else:
-        print(f"OK: {relation_type} odebráno. Sledování related vypnuto.")
+        print(f"OK: {args.type} odebráno. Sledování related vypnuto.")
 
 
-def cmd_related_types(codexis_id):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
+def cmd_related_list(args):
+    s = state.load_state(args.codexis_id)
+    if s is None:
+        err(f"{args.codexis_id} není sledován.")
         sys.exit(1)
+    name = s.get("name", args.codexis_id)
+    rt = s.get("related_tracking") or {}
+    print(f"Related tracking pro {name} ({args.codexis_id}):")
+    if not rt.get("enabled"):
+        print("  Stav: VYPNUTO")
+        return
+    print("  Stav: ZAPNUTO")
+    print(f"  Poslední kontrola: {rt.get('last_check_at', 'N/A')}")
+    print("  Sledované typy:")
+    for rtype in rt.get("types", []):
+        baseline = state.load_related_baseline(args.codexis_id, rtype)
+        if baseline:
+            count = baseline.get("total_count", len(baseline.get("doc_ids", [])))
+            captured = baseline.get("captured_at", "?")
+            print(f"    {rtype}: {count} dokumentů (baseline z {captured})")
+        else:
+            print(f"    {rtype}: bez baseline")
 
-    counts = fetch_related_counts(codexis_id)
-    if counts is None:
-        print(f"ERROR: Nepodařilo se získat typy related pro {codexis_id}.")
+
+def cmd_related_types(args):
+    s = state.load_state(args.codexis_id)
+    if s is None:
+        err(f"{args.codexis_id} není sledován.")
         sys.exit(1)
-
-    name = s.get("name", codexis_id)
-    rt = s.get("related_tracking", {})
+    counts = clients.fetch_related_counts(args.codexis_id)
+    name = s.get("name", args.codexis_id)
+    rt = s.get("related_tracking") or {}
     tracked_types = rt.get("types", []) if rt.get("enabled") else []
-
-    print(f"Typy souvisejících dokumentů pro {name} ({codexis_id}):")
+    print(f"Typy souvisejících dokumentů pro {name} ({args.codexis_id}):")
     print()
     for item in counts:
         rtype = item.get("type", "?")
@@ -1217,165 +292,103 @@ def cmd_related_types(codexis_id):
     print()
 
 
-def cmd_related_list(codexis_id):
-    s = load_state(codexis_id)
-    if not s:
-        print(f"ERROR: {codexis_id} není sledován.")
-        sys.exit(1)
-
-    name = s.get("name", codexis_id)
-    rt = s.get("related_tracking", {})
-
-    print(f"Related tracking pro {name} ({codexis_id}):")
-    if not rt.get("enabled"):
-        print("  Stav: VYPNUTO")
-        return
-
-    print("  Stav: ZAPNUTO")
-    print(f"  Poslední kontrola: {rt.get('last_check_at', 'N/A')}")
-    print(f"  Sledované typy:")
-    for rtype in rt.get("types", []):
-        baseline = load_related_baseline(codexis_id, rtype)
-        if baseline:
-            count = baseline.get("total_count", len(baseline.get("doc_ids", [])))
-            captured = baseline.get("captured_at", "?")
-            print(f"    {rtype}: {count} dokumentů (baseline z {captured})")
-        else:
-            print(f"    {rtype}: bez baseline")
+# ── argparse plumbing ────────────────────────────────────────────────────────
 
 
-# ── Main ──────────────────────────────────────────────────────────────────
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="cdx-sledovane-dokumenty",
+        description="Track Czech legislation changes via CODEXIS API.",
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    pa = sub.add_parser("add", help="Start tracking a document")
+    pa.add_argument("codexis_id")
+    pa.add_argument("--parts", help="Comma-separated [?part=...] element IDs")
+    pa.set_defaults(func=cmd_add)
+
+    pr = sub.add_parser("remove", help="Stop tracking")
+    pr.add_argument("codexis_id")
+    pr.set_defaults(func=cmd_remove)
+
+    pl = sub.add_parser("list", help="List all tracked documents")
+    pl.set_defaults(func=cmd_list)
+
+    pc = sub.add_parser("check", help="Check for changes")
+    pc.add_argument("codexis_id", nargs="?")
+    pc.set_defaults(func=cmd_check)
+
+    pcf = sub.add_parser("confirm", help="Confirm changes + advance baseline")
+    pcf.add_argument("codexis_id")
+    pcf.set_defaults(func=cmd_confirm)
+
+    ps = sub.add_parser("show", help="Show full state as JSON")
+    ps.add_argument("codexis_id")
+    ps.set_defaults(func=cmd_show)
+
+    pg = sub.add_parser("group", help="Manage groups")
+    pg_sub = pg.add_subparsers(dest="sub", required=True)
+    pga = pg_sub.add_parser("add")
+    pga.add_argument("codexis_id")
+    pga.add_argument("name", nargs="+")
+    pga.set_defaults(func=cmd_group_add)
+    pgr = pg_sub.add_parser("remove")
+    pgr.add_argument("codexis_id")
+    pgr.add_argument("name", nargs="+")
+    pgr.set_defaults(func=cmd_group_remove)
+    pgl = pg_sub.add_parser("list")
+    pgl.set_defaults(func=cmd_group_list)
+    pgd = pg_sub.add_parser("delete")
+    pgd.add_argument("name", nargs="+")
+    pgd.set_defaults(func=cmd_group_delete)
+
+    pn = sub.add_parser("note", help="Manage user notes")
+    pn_sub = pn.add_subparsers(dest="sub", required=True)
+    pna = pn_sub.add_parser("add")
+    pna.add_argument("codexis_id")
+    pna.add_argument("text", nargs="+")
+    pna.set_defaults(func=cmd_note_add)
+    pnl = pn_sub.add_parser("list")
+    pnl.add_argument("codexis_id")
+    pnl.set_defaults(func=cmd_note_list)
+    pnr = pn_sub.add_parser("remove")
+    pnr.add_argument("codexis_id")
+    pnr.add_argument("index", type=int)
+    pnr.set_defaults(func=cmd_note_remove)
+
+    prel = sub.add_parser("related", help="Manage related-document tracking")
+    prel_sub = prel.add_subparsers(dest="sub", required=True)
+    prela = prel_sub.add_parser("add")
+    prela.add_argument("codexis_id")
+    prela.add_argument("type")
+    prela.set_defaults(func=cmd_related_add)
+    prelr = prel_sub.add_parser("remove")
+    prelr.add_argument("codexis_id")
+    prelr.add_argument("type")
+    prelr.set_defaults(func=cmd_related_remove)
+    prell = prel_sub.add_parser("list")
+    prell.add_argument("codexis_id")
+    prell.set_defaults(func=cmd_related_list)
+    prelt = prel_sub.add_parser("types")
+    prelt.add_argument("codexis_id")
+    prelt.set_defaults(func=cmd_related_types)
+
+    return p
+
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
-        print(__doc__.strip())
-        sys.exit(0)
-
-    command = sys.argv[1]
-
-    if command == "add":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} add <codexisId> [--parts p1,p2] [--related [--types T1,T2]]")
-            sys.exit(1)
-        codexis_id = sys.argv[2]
-        parts = None
-        if "--parts" in sys.argv:
-            idx = sys.argv.index("--parts")
-            if idx + 1 < len(sys.argv):
-                parts = [p.strip() for p in sys.argv[idx + 1].split(",") if p.strip()]
-        cmd_add(codexis_id, parts)
-
-    elif command == "remove":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} remove <codexisId>")
-            sys.exit(1)
-        cmd_remove(sys.argv[2])
-
-    elif command == "list":
-        cmd_list()
-
-    elif command == "check":
-        codexis_id = sys.argv[2] if len(sys.argv) > 2 else None
-        cmd_check(codexis_id)
-
-    elif command == "confirm":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} confirm <codexisId>")
-            sys.exit(1)
-        cmd_confirm(sys.argv[2])
-
-    elif command == "show":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí codexisId. Použití: {TRACKING_BIN} show <codexisId>")
-            sys.exit(1)
-        cmd_show(sys.argv[2])
-
-    elif command == "group":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí akce. Použití: {TRACKING_BIN} group <add|remove|list|delete> ...")
-            sys.exit(1)
-        sub = sys.argv[2]
-        if sub == "add":
-            if len(sys.argv) < 5:
-                print(f"ERROR: Použití: {TRACKING_BIN} group add <codexisId> <název skupiny>")
-                sys.exit(1)
-            cmd_group_add(sys.argv[3], " ".join(sys.argv[4:]))
-        elif sub == "remove":
-            if len(sys.argv) < 5:
-                print(f"ERROR: Použití: {TRACKING_BIN} group remove <codexisId> <název skupiny>")
-                sys.exit(1)
-            cmd_group_remove(sys.argv[3], " ".join(sys.argv[4:]))
-        elif sub == "list":
-            cmd_group_list()
-        elif sub == "delete":
-            if len(sys.argv) < 4:
-                print(f"ERROR: Použití: {TRACKING_BIN} group delete <název skupiny>")
-                sys.exit(1)
-            cmd_group_delete(" ".join(sys.argv[3:]))
-        else:
-            print(f"ERROR: neznámá akce skupiny '{sub}'. Použijte: add, remove, list, delete")
-            sys.exit(1)
-
-    elif command == "note":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí akce. Použití: {TRACKING_BIN} note <add|list|remove> ...")
-            sys.exit(1)
-        sub = sys.argv[2]
-        if sub == "add":
-            if len(sys.argv) < 5:
-                print(f"ERROR: Použití: {TRACKING_BIN} note add <codexisId> <text>")
-                sys.exit(1)
-            cmd_note_add(sys.argv[3], " ".join(sys.argv[4:]))
-        elif sub == "list":
-            if len(sys.argv) < 4:
-                print(f"ERROR: Použití: {TRACKING_BIN} note list <codexisId>")
-                sys.exit(1)
-            cmd_note_list(sys.argv[3])
-        elif sub == "remove":
-            if len(sys.argv) < 5:
-                print(f"ERROR: Použití: {TRACKING_BIN} note remove <codexisId> <index>")
-                sys.exit(1)
-            try:
-                index = int(sys.argv[4])
-            except ValueError:
-                print(f"ERROR: index musí být číslo, dostal '{sys.argv[4]}'")
-                sys.exit(1)
-            cmd_note_remove(sys.argv[3], index)
-        else:
-            print(f"ERROR: neznámá akce '{sub}'. Použijte: add, list, remove")
-            sys.exit(1)
-
-    elif command == "related":
-        if len(sys.argv) < 3:
-            print(f"ERROR: chybí akce. Použití: {TRACKING_BIN} related <add|remove|list|types> ...")
-            sys.exit(1)
-        sub = sys.argv[2]
-        if sub == "add":
-            if len(sys.argv) < 5:
-                print(f"ERROR: Použití: {TRACKING_BIN} related add <codexisId> <type>")
-                sys.exit(1)
-            cmd_related_add(sys.argv[3], sys.argv[4])
-        elif sub == "remove":
-            if len(sys.argv) < 5:
-                print(f"ERROR: Použití: {TRACKING_BIN} related remove <codexisId> <type>")
-                sys.exit(1)
-            cmd_related_remove(sys.argv[3], sys.argv[4])
-        elif sub == "list":
-            if len(sys.argv) < 4:
-                print(f"ERROR: Použití: {TRACKING_BIN} related list <codexisId>")
-                sys.exit(1)
-            cmd_related_list(sys.argv[3])
-        elif sub == "types":
-            if len(sys.argv) < 4:
-                print(f"ERROR: Použití: {TRACKING_BIN} related types <codexisId>")
-                sys.exit(1)
-            cmd_related_types(sys.argv[3])
-        else:
-            print(f"ERROR: neznámá akce '{sub}'. Použijte: add, remove, list, types")
-            sys.exit(1)
-
-    else:
-        print(f"ERROR: neznámý příkaz '{command}'. Použijte {TRACKING_BIN} --help")
+    parser = build_parser()
+    args = parser.parse_args()
+    try:
+        args.func(args)
+    except DocumentError as e:
+        err(str(e))
+        sys.exit(1)
+    except CdxClientError as e:
+        err(str(e))
+        sys.exit(1)
+    except IndexError as e:
+        err(str(e))
         sys.exit(1)
 
 

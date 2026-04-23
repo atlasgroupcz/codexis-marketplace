@@ -1,0 +1,33 @@
+{
+  "name": "cdx-cz-psp",
+  "version": "1.1.0",
+  "description": "Czech Parliament database API access for parliamentary reports, interpellations, EU documents, and legislative bill tracking with full process history",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-cz-psp", "legal", "law", "legislation", "czech", "parliament", "psp", "api"],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "parliament", "legislation"],
+  "i18n": {
+    "cs": {
+      "displayName": "Poslanecká sněmovna ČR",
+      "description": "Parlamentní tisky, interpelace, evropské dokumenty a sledování legislativního procesu v Poslanecké sněmovně ČR.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "parliament": "Parlament", "legislation": "Legislativa" }
+    },
+    "en": {
+      "displayName": "Czech Parliament",
+      "description": "Parliamentary papers, interpellations, EU documents, and legislative bill tracking from the Czech Chamber of Deputies.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "parliament": "Parliament", "legislation": "Legislation" }
+    },
+    "sk": {
+      "displayName": "Poslanecká snemovňa ČR",
+      "description": "Parlamentné tlače, interpelácie, európske dokumenty a sledovanie legislatívneho procesu v Poslaneckej snemovni ČR.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "parliament": "Parlament", "legislation": "Legislatíva" }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}

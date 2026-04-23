@@ -1,7 +1,18 @@
 ---
+uuid: 1c427cf8-4d37-4304-b2e1-fbabf245dae4
 name: sledovane-dokumenty
 description: Track changes in Czech legislation via CODEXIS. Use when user wants to monitor laws, track amendments, or check for legislative changes.
 version: 1.0.0
+i18n:
+  cs:
+    displayName: "Sledované dokumenty"
+    summary: "Sledování změn v české legislativě přes CODEXIS — upozornění na novelizace a srovnání verzí."
+  en:
+    displayName: "Document Tracker"
+    summary: "Monitor changes in Czech legislation via CODEXIS — amendment alerts and version diffs."
+  sk:
+    displayName: "Sledované dokumenty"
+    summary: "Sledovanie zmien v českej legislatíve cez CODEXIS — upozornenia na novelizácie a porovnanie verzií."
 ---
 
 # Sledované dokumenty — Document Tracking
@@ -13,6 +24,21 @@ Track changes in Czech legislation by monitoring CODEXIS documents for new versi
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovane-dokumenty` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
 **IMPORTANT:** If `cdx-sledovane-dokumenty` outputs an ERROR, stop immediately and report it to the user. Do not retry or guess.
+
+## Output Format
+
+`cdx-sledovane-dokumenty` has three kinds of output. Pick the right way to consume each — mixing them up (e.g. `grep` on JSON, or `jq` on plaintext) will fail.
+
+- **`list`, `check`, `group list`, `note list`, `related list`, `related types`** — human-readable plain text. Read it directly. **Do not parse with `sed` or `grep`** — the layout is for humans, not machines. Summarize what you see for the user.
+
+- **`add`, `remove`, `confirm`, `group add`, `group remove`, `group delete`, `note add`, `note remove`, `related add`, `related remove`** — a single `OK: ...` line on success or `ERROR: ...` on failure. No parsing needed; the whole output is the status.
+
+- **`show`** — structured JSON (full state including diffs and related baselines). Read it directly, or filter with `jq` for a specific field. Never with `sed`/`grep`.
+
+  ```bash
+  cdx-sledovane-dokumenty show CR13986 | jq '.changes[-1]'
+  cdx-sledovane-dokumenty show CR13986 | jq '.notes'
+  ```
 
 ## Commands
 

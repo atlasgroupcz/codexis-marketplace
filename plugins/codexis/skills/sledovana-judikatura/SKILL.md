@@ -1,7 +1,18 @@
 ---
+uuid: 5cdb1ccf-e079-49a9-a618-a3f3bb60dc20
 name: sledovana-judikatura
 description: Track case law topics and generate periodic reports. Use when user wants to monitor new jurisprudence, track judicial decisions, or get regular case law summaries. Triggers on "sleduj judikaturu", "judikatura", "nová rozhodnutí", "case law monitoring", "soudní rozhodnutí".
 version: 1.0.0
+i18n:
+  cs:
+    displayName: "Sledovaná judikatura"
+    summary: "Pravidelné sledování nové judikatury podle tématu s AI reporty o trendech a dopadech."
+  en:
+    displayName: "Case Law Monitor"
+    summary: "Periodic tracking of new case law by topic with AI-generated reports on trends and impact."
+  sk:
+    displayName: "Sledovaná judikatúra"
+    summary: "Pravidelné sledovanie novej judikatúry podľa témy s AI reportmi o trendoch a dopadoch."
 ---
 
 # Sledovaná judikatura — Case Law Monitoring
@@ -15,6 +26,22 @@ Monitor Czech (and European) case law by topic. AI searches for new judicial dec
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovana-judikatura` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
 **IMPORTANT:** If `cdx-sledovana-judikatura` outputs an ERROR, stop immediately and report it to the user. Do not retry or guess.
+
+## Output Format
+
+`cdx-sledovana-judikatura` outputs are designed for shell composition, not parsing:
+
+- **`init`** prints the new topic UUID on stdout (one line) and a status message on stderr. Capture with shell substitution directly:
+  ```bash
+  UUID=$(cdx-sledovana-judikatura init "Náhrada škody")
+  ```
+  Do **not** parse the output with `sed`/`grep`/`jq` — there is nothing to parse, the UUID is the entire stdout.
+
+- **`list`**, **`show`**, **`list-reports`**, **`area list`**, **`note list`** print human-readable plain text. Read them visually; do not pipe them to parsers.
+
+- **Action commands** (`area add`, `note add`, `set-baseline`, `delete`, `confirm-report`, `set-automation`, `touch`, `save-report`) print a single `OK: ...` line on success or `ERROR: ...` on failure.
+
+- **`show-report`** is the only command that prints structured JSON, because the report itself is structured data (decisions table + summaries) the user wants to consume programmatically.
 
 ## State Management Commands
 
@@ -77,7 +104,7 @@ Notes store **user interests and report format preferences** — things that hel
 - "formát: tabulka + shrnutí pro advokáta, HR, EN management"
 - "jsem samostatný advokát, pracovní právo"
 
-Do NOT store email addresses or frequency in notes. Email and frequency belong in the automation (cron schedule + prompt).
+Do NOT store check frequency in notes — that belongs in the automation cron schedule.
 
 ## How It Works
 
@@ -90,12 +117,24 @@ User provides a topic description, e.g.:
 
 ### Step 2: Initialize topic and identify sub-areas
 
-1. Create the topic: `cdx-sledovana-judikatura init "<topic name>" --notes "<user's specific interests>"`
-2. Assess whether the topic is broad enough to split into sub-areas:
-   - If yes — identify 3–7 key sub-areas and add each: `cdx-sledovana-judikatura area add <uuid> "<area name>"`
+Capture the new UUID from `init` directly with shell substitution and reuse it
+for subsequent commands. Example end-to-end pattern:
+
+```bash
+UUID=$(cdx-sledovana-judikatura init "Náhrada škody" --notes "samostatný advokát, zajímá mě role GDPR")
+cdx-sledovana-judikatura area add "$UUID" "Odpovědnost za vady výrobku"
+cdx-sledovana-judikatura area add "$UUID" "Náhrada nemajetkové újmy"
+cdx-sledovana-judikatura area add "$UUID" "Promlčení nároků"
+cdx-sledovana-judikatura note add "$UUID" "formát: tabulka + shrnutí pro advokáta"
+```
+
+Decisions you make in this step:
+
+1. Whether the topic is broad enough to split into sub-areas:
+   - If yes — identify 3–7 key sub-areas and `area add` each
    - If no — work with the topic as a whole (no areas needed)
    - If unclear — ask the user whether to split or how to divide it
-3. Save any user-specific notes: profession, perspective, what matters most
+2. What user-specific notes to save (profession, perspective, format preferences) via `--notes` on `init` and/or `note add`
 
 ### Step 3: Build baseline (initial analysis)
 
@@ -157,41 +196,18 @@ cdx-sledovana-judikatura save-report <uuid> --file /tmp/judikatura_report.json
 
 ### Step 5: Set up automation
 
-Create a monthly automation that runs an AI agent to check for new case law. After creating the automation, store its ID in the topic so that deleting the topic also removes the automation.
+Create a monthly automation that runs an AI agent to check for new case law. `cdxctl automation create` prints the created automation as JSON, so extract the ID with `jq -r .id` and store it on the topic — that way deleting the topic also removes the automation.
 
 ```bash
-# Create the automation (captures the output to extract the ID)
-cdxctl automation create \
-    --title "Sledovaná judikatura – <topic name>" \
+AUTO_ID=$(cdxctl automation create \
+    --title "Sledovaná judikatura – Náhrada škody" \
     --cron "0 8 1 * *" \
-    --prompt "Check the tracked case law topic <uuid> (<topic name>). Load the topic state with cdx-sledovana-judikatura show <uuid>. Search CODEXIS for new judicial decisions since the last check using cdx-cli search JD. Compare findings against the baseline summaries. Generate a report and save it with cdx-sledovana-judikatura save-report. If email is configured, send a notification via cdxctl notification create." \
+    --prompt "Check the tracked case law topic $UUID. Load the topic state with cdx-sledovana-judikatura show $UUID. Search CODEXIS for new judicial decisions since last_check_at using cdx-cli search JD. Compare findings against the baseline summaries. Generate a report and save it with cdx-sledovana-judikatura save-report." \
     --skill "codexis:sledovana-judikatura" \
     --skill "codexis:codexis" \
-    --max-turns 30
+    --max-turns 30 | jq -r .id)
 
-# Store the automation ID from the output above
-cdx-sledovana-judikatura set-automation <topic-uuid> <automation-id>
-```
-
-### Step 6: Email notifications
-
-If the user wants email reports, set up notification delivery after each report:
-
-```bash
-# Write report body to temp file (markdown format)
-cat > /tmp/judikatura_email.md << 'EMAIL_EOF'
-# Sledovaná judikatura – <topic name>
-Report za období ...
-
-<formatted report content>
-EMAIL_EOF
-
-cdxctl notification create \
-    --title "Sledovaná judikatura – <topic name>" \
-    --body "Nový report judikatury je k dispozici." \
-    --email-to "user@example.com" \
-    --email-subject "Sledovaná judikatura – <topic name> – report <date>" \
-    --email-body-file /tmp/judikatura_email.md
+cdx-sledovana-judikatura set-automation "$UUID" "$AUTO_ID"
 ```
 
 ## Tailoring Reports to User
@@ -221,7 +237,6 @@ When running a periodic check:
    - Generate report with `period_from` = last check, `period_to` = now
    - Save: `cdx-sledovana-judikatura save-report <uuid> --file report.json`
    - Update baseline if the judicial view has shifted: `cdx-sledovana-judikatura area set-baseline <uuid> <index> "<updated summary>"`
-   - Send email notification if configured
 5. If nothing new — do not create a report, but update the last check timestamp: `cdx-sledovana-judikatura touch <uuid>`
 
 ## Storage

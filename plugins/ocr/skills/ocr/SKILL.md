@@ -1,4 +1,5 @@
 ---
+uuid: 5c685f5d-ab83-464b-97df-45d5e9ca98e3
 name: ocr
 description: >-
   Convert binary documents to markdown using OCR / document conversion.
@@ -6,9 +7,17 @@ description: >-
   images (PNG, JPG, TIFF, BMP, GIF, WEBP), ZIP archives.
   Triggers on "ocr", "convert to markdown", "read PDF", "extract text from document",
   "convert document", "read this file" (for binary files).
-metadata:
-  skill-visibility: model
 allowed-tools: shell
+i18n:
+  cs:
+    displayName: "OCR dokumentů"
+    summary: "Převod dokumentů (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pro další AI zpracování."
+  en:
+    displayName: "Document OCR"
+    summary: "Convert documents (PDF, DOCX, PPTX, images, ZIP) to Markdown for downstream AI processing."
+  sk:
+    displayName: "OCR dokumentov"
+    summary: "Prevod dokumentov (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pre ďalšie AI spracovanie."
 ---
 
 # OCR — Document to Markdown Conversion

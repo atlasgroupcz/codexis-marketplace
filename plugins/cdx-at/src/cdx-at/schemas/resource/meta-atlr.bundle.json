@@ -1,0 +1,73 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-at://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/AT/landesrecht/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for an Austrian state legislation (LGBl) document by document ID. Returns the raw DomainMetadata object.",
+      "operationId": "getMeta_2",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ATLR1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RisLandesrechtMetadata" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RisLandesrechtMetadata": {
+        "type": "object",
+        "description": "Metadata for Austrian state legislation (LGBl) records",
+        "properties": {
+          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "url": { "type": "string", "description": "Source URL" },
+          "documentNumber": { "type": "string", "description": "Document number" },
+          "shortTitle": { "type": "string", "description": "Short title" },
+          "title": { "type": "string", "description": "Full title" },
+          "gazetteNumber": { "type": "string", "description": "Gazette number (LGBl)" },
+          "publicationDate": { "type": "string", "description": "Publication date" },
+          "state": { "type": "string", "description": "Austrian state (Bundesland)" },
+          "documentType": { "type": "string", "description": "Document type" },
+          "authority": { "type": "string", "description": "Issuing authority" },
+          "eli": { "type": "string", "description": "European Legislation Identifier" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "description": "Asset file reference",
+        "properties": {
+          "file": { "type": "string", "description": "Internal filename" },
+          "originalName": { "type": "string", "description": "Original filename from source" }
+        }
+      }
+    }
+  }
+}

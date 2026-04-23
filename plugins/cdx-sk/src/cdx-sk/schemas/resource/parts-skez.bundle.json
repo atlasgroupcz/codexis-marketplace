@@ -1,0 +1,98 @@
+{
+  "endpoint": "parts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/parts",
+    "cdx-sk://law/SK/<NUM>/<YEAR>/parts"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ezbierka/doc/{docId}/parts",
+      "method": "get",
+      "summary": "Get available paragraphs",
+      "description": "List paragraph identifiers (part IDs) available in an e-Zbierka document version. Use these IDs as the 'part' parameter in the /text endpoint.",
+      "operationId": "getParts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKEZ1234"
+        },
+        {
+          "name": "timecutId",
+          "in": "query",
+          "description": "Defaults to currently valid version.",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "description": "Filter parts by id or oznacenie (case-insensitive substring match)",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (max: 500)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Part list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EzbierkaPartsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "EzbierkaPartsResponse": {
+        "type": "object",
+        "description": "Available parts (paragraphs) in an ezbierka document version",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "domain": { "type": "string", "description": "Domain identifier" },
+          "timecutId": { "type": "string", "description": "Version (timecut) ID" },
+          "totalParts": { "type": "integer", "format": "int32", "description": "Total number of parts" },
+          "parts": {
+            "type": "array",
+            "description": "Available paragraphs",
+            "items": { "$ref": "#/components/schemas/EzbierkaPartItem" }
+          }
+        }
+      },
+      "EzbierkaPartItem": {
+        "type": "object",
+        "description": "A section (content unit) in an ezbierka document",
+        "properties": {
+          "id": { "type": "string", "description": "Section identifier (use as 'part' parameter)", "example": "paragraf-1" },
+          "oznacenie": { "type": "string", "description": "Section designation", "example": "SS 123" },
+          "nadpis": { "type": "string", "description": "Section heading (may be null)" },
+          "textUrl": { "type": "string", "description": "cdx-sk:// link to retrieve this section's text" },
+          "attachmentUrl": { "type": "string", "description": "cdx-sk:// link to the PDF attachment at the page where this section starts" }
+        }
+      }
+    }
+  }
+}

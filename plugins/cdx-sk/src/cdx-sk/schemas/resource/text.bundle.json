@@ -1,0 +1,102 @@
+{
+  "endpoint": "text",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/text",
+    "cdx-sk://law/SK/<NUM>/<YEAR>/text"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ezbierka/doc/{docId}/text",
+      "method": "get",
+      "summary": "Get document text",
+      "description": "Retrieve full text or specific paragraphs of an e-Zbierka document version as plain text. Supports multi-value part parameter: ?part=a&part=b or ?part=a,b",
+      "operationId": "getText",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKEZ1234"
+        },
+        {
+          "name": "timecutId",
+          "in": "query",
+          "description": "Defaults to currently valid version. Falls back to latest by validFrom if none currently valid.",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "If omitted, returns full text. Supports multiple values: ?part=a&part=b or ?part=a,b",
+          "required": false,
+          "schema": { "type": "array", "items": { "type": "string" } }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document text",
+          "content": {
+            "text/plain": {}
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/SK/ezbierka/law/{number}/{year}/text",
+      "method": "get",
+      "summary": "Get law text",
+      "description": "Resolve a law by number/year and return its full text or specific paragraphs as plain text.",
+      "operationId": "getLawText",
+      "parameters": [
+        {
+          "name": "number",
+          "in": "path",
+          "description": "Law number",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 40
+        },
+        {
+          "name": "year",
+          "in": "path",
+          "description": "Law year",
+          "required": true,
+          "schema": { "type": "integer" },
+          "example": 1964
+        },
+        {
+          "name": "timecutId",
+          "in": "query",
+          "description": "Defaults to currently valid version.",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "If omitted, returns full text. Supports multiple values.",
+          "required": false,
+          "schema": { "type": "array", "items": { "type": "string" } }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document text",
+          "content": {
+            "text/plain": {}
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}

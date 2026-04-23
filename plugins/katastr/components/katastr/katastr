@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Fast path: browser navigation (Accept contains text/html) serves SPA shell
+# directly with cat, bypassing Python startup (~50ms → ~5ms). Everything else
+# — JSON dispatches, POST actions, ambiguous Accept — goes through Python,
+# which inherits stdin untouched via exec.
+if [ "${REQUEST_METHOD:-GET}" = "GET" ] && [[ "${HTTP_ACCEPT:-}" == *"text/html"* ]]; then
+    printf 'Content-Type: text/html; charset=utf-8\r\n'
+    printf 'Cache-Control: no-store\r\n'
+    printf '\r\n'
+    cat "${SCRIPT_DIR}/index.html"
+    exit 0
+fi
+
+exec python3 "${SCRIPT_DIR}/katastr.py" "$@"

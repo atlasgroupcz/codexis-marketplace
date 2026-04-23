@@ -1,0 +1,81 @@
+{
+  "endpoint": "versions",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-cz-spp://doc/<DOC_ID>/versions"
+  ],
+  "operations": [
+    {
+      "path": "/api/CZ/sbirkapp/doc/{docId}/versions",
+      "method": "get",
+      "summary": "Get document version history",
+      "description": "List all available versions of a Sbirkapp document, sorted newest first.",
+      "operationId": "getVersions",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CZSB1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Version list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SbirkappVersionsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "SbirkappVersionsResponse": {
+        "type": "object",
+        "description": "Sbirkapp document version history",
+        "properties": {
+          "docId": { "type": "string", "description": "Display document ID" },
+          "versions": {
+            "type": "array",
+            "description": "Version list (newest first)",
+            "items": { "$ref": "#/components/schemas/SbirkappVersionItem" }
+          }
+        }
+      },
+      "SbirkappVersionItem": {
+        "type": "object",
+        "description": "A historical version of a sbirkapp document",
+        "properties": {
+          "versionNum": { "type": "string", "description": "Version number" },
+          "nazev": { "type": "string", "description": "Document title for this version" },
+          "metadata": {
+            "type": "object",
+            "description": "Version metadata (normalized camelCase keys to values)",
+            "additionalProperties": { "type": "string" }
+          },
+          "assets": {
+            "type": "array",
+            "description": "Attachments for this version with cdx-cz-spp download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-cz-spp:// link to download this attachment" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "endpoint": "parts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-03-23T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/parts"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/vseobecne-sudy/doc/{docId}/parts",
+      "method": "get",
+      "summary": "Get available sections",
+      "description": "List section identifiers available in a court decision. Use these IDs as the 'part' parameter in the /text endpoint.",
+      "operationId": "getParts_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKVS1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Section list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VseobecneSudyPartsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "VseobecneSudyPartsResponse": {
+        "type": "object",
+        "description": "Available sections in a court decision",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "domain": { "type": "string", "description": "Domain identifier" },
+          "parts": {
+            "type": "array",
+            "description": "Available sections",
+            "items": { "$ref": "#/components/schemas/VseobecneSudyPartItem" }
+          }
+        }
+      },
+      "VseobecneSudyPartItem": {
+        "type": "object",
+        "description": "A section in a court decision",
+        "properties": {
+          "id": { "type": "string", "description": "Section identifier", "example": "section-1" },
+          "oznacenie": { "type": "string", "description": "Section designation", "example": "Vyrok" },
+          "textUrl": { "type": "string", "description": "cdx-sk:// link to retrieve this section's text" }
+        }
+      }
+    }
+  }
+}
