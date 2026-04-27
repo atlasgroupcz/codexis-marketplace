@@ -1,15 +1,23 @@
+use super::encode_node_id;
 use crate::client::GraphQLClient;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
 use serde_json::{json, Value};
 
+/// Wrap a sandbox folder path into the daemon-encoded `TabularExtraction` Node id.
+/// The daemon's `requireExtractionFolder` decodes this back to the underlying folder.
+fn folder_to_node_id(folder: &str) -> String {
+    encode_node_id("TabularExtraction", folder)
+}
+
 pub fn status(
     client: &GraphQLClient,
     folder: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "folder": folder }))?;
+    let id = folder_to_node_id(folder);
+    let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "id": id }))?;
     let result = data
         .get("tabularExtraction")
         .cloned()
@@ -27,43 +35,44 @@ pub fn add_column(
     tag_options: &[String],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let id = folder_to_node_id(folder);
     let (query, vars) = match col_type.to_lowercase().as_str() {
         "text" => (
             graphql::ADD_TEXT_COLUMN,
-            json!({ "folder": folder, "name": name, "description": description }),
+            json!({ "id": id, "name": name, "description": description }),
         ),
         "boolean" | "bool" => (
             graphql::ADD_BOOLEAN_COLUMN,
-            json!({ "folder": folder, "name": name, "description": description }),
+            json!({ "id": id, "name": name, "description": description }),
         ),
         "date" => (
             graphql::ADD_DATE_COLUMN,
-            json!({ "folder": folder, "name": name, "description": description }),
+            json!({ "id": id, "name": name, "description": description }),
         ),
         "number" => (
             graphql::ADD_NUMBER_COLUMN,
-            json!({ "folder": folder, "name": name, "description": description }),
+            json!({ "id": id, "name": name, "description": description }),
         ),
         "currency" => (
             graphql::ADD_CURRENCY_COLUMN,
-            json!({ "folder": folder, "name": name, "description": description }),
+            json!({ "id": id, "name": name, "description": description }),
         ),
         "list" => (
             graphql::ADD_LIST_COLUMN,
-            json!({ "folder": folder, "name": name, "description": description }),
+            json!({ "id": id, "name": name, "description": description }),
         ),
         "tag" => {
             let options = parse_tag_options(tag_options)?;
             (
                 graphql::ADD_TAG_COLUMN,
-                json!({ "folder": folder, "name": name, "description": description, "options": options }),
+                json!({ "id": id, "name": name, "description": description, "options": options }),
             )
         }
         "tags" => {
             let options = parse_tag_options(tag_options)?;
             (
                 graphql::ADD_TAGS_COLUMN,
-                json!({ "folder": folder, "name": name, "description": description, "options": options }),
+                json!({ "id": id, "name": name, "description": description, "options": options }),
             )
         }
         _ => {
@@ -74,7 +83,6 @@ pub fn add_column(
     };
 
     let data = client.execute(query, vars)?;
-    // The mutation name varies, just get the first field from data
     let result = data
         .as_object()
         .and_then(|obj| obj.values().next())
@@ -90,9 +98,10 @@ pub fn remove_column(
     column_id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let id = folder_to_node_id(folder);
     let data = client.execute(
         graphql::REMOVE_TABULAR_COLUMN,
-        json!({ "folder": folder, "columnId": column_id }),
+        json!({ "id": id, "columnId": column_id }),
     )?;
     let result = data
         .get("removeTabularColumn")
@@ -107,10 +116,8 @@ pub fn start(
     folder: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(
-        graphql::START_TABULAR_EXTRACTION,
-        json!({ "folder": folder }),
-    )?;
+    let id = folder_to_node_id(folder);
+    let data = client.execute(graphql::START_TABULAR_EXTRACTION, json!({ "id": id }))?;
     let result = data
         .get("startTabularExtraction")
         .cloned()
@@ -124,13 +131,13 @@ pub fn results(
     folder: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "folder": folder }))?;
+    let id = folder_to_node_id(folder);
+    let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "id": id }))?;
     let extraction = data
         .get("tabularExtraction")
         .cloned()
         .unwrap_or(Value::Null);
 
-    // For results, flatten rows into a more readable format
     if let Some(rows) = extraction.get("rows").and_then(|r| r.as_array()) {
         let flat_rows: Vec<Value> = rows
             .iter()
