@@ -50,13 +50,13 @@ pub fn add(
 
 pub fn remove(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::REMOVE_MARKETPLACE, json!({ "id": id }))?;
-    let result = data
-        .get("removeMarketplace")
-        .cloned()
-        .unwrap_or(Value::Null);
-    
+    let result = data.get("deleteNode").cloned().unwrap_or(Value::Null);
+
     if result.is_null() {
-        print_output(&json!({ "deleted": false, "error": "Marketplace not found or could not be removed" }), format);
+        print_output(
+            &json!({ "deleted": false, "error": "Marketplace not found or could not be removed" }),
+            format,
+        );
     } else {
         print_output(&json!({ "deleted": true, "marketplace": result }), format);
     }
