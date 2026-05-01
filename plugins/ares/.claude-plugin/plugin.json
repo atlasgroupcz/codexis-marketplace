@@ -1,0 +1,42 @@
+{
+  "name": "ares",
+  "version": "0.1.0",
+  "description": "Czech business registry (ARES) — IČO lookup, company search, business register, trade licence and VAT payer status",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "ares",
+    "ico",
+    "obchodni-rejstrik",
+    "zivnostensky-rejstrik",
+    "registr",
+    "czech",
+    "company",
+    "vat"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "registry", "company"],
+  "i18n": {
+    "cs": {
+      "displayName": "ARES — registr ekonomických subjektů",
+      "description": "Český registr ekonomických subjektů ARES — vyhledávání firem podle IČO/názvu, výpis z obchodního rejstříku, RES, živnostenského rejstříku a registru plátců DPH.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "company": "Firmy" }
+    },
+    "en": {
+      "displayName": "ARES — Czech Business Registry",
+      "description": "Czech business registry ARES — company lookup by ICO/name, business register, statistical register, trade licence registry and VAT payer registry.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "company": "Companies" }
+    },
+    "sk": {
+      "displayName": "ARES — register ekonomických subjektov",
+      "description": "Český register ekonomických subjektov ARES — vyhľadávanie firiem podľa IČO/názvu, výpis z obchodného registra, RES, živnostenského registra a registra platcov DPH.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "company": "Firmy" }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}
