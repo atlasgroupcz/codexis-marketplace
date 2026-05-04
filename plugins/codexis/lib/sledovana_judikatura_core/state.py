@@ -13,7 +13,7 @@ import json
 import os
 import tempfile
 
-_USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
+_USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "sledovana-judikatura")
 
 

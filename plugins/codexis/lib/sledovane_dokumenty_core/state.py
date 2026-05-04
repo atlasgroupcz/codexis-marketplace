@@ -11,7 +11,7 @@ import re
 import tempfile
 import unicodedata
 
-_USER_HOME = os.environ.get("CDX_USER_HOME") or os.path.expanduser("~")
+_USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "sledovane-dokumenty")
 GROUPS_PATH = os.path.join(APP_DIR, "groups.json")
 

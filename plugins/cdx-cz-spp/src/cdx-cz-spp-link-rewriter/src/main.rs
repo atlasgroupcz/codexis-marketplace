@@ -31,10 +31,10 @@ fn extract_url_path(url: &str) -> &str {
 }
 
 fn main() {
-    let base_url = match std::env::var("CDX_CZ_SPP_API_URL") {
+    let base_url = match std::env::var("CODEXIS_PUBLIC_CZ_SPP_API_URL") {
         Ok(value) if !value.trim().is_empty() => value.trim().to_string(),
         _ => {
-            eprintln!("CDX_CZ_SPP_API_URL must be set (e.g., export CDX_CZ_SPP_API_URL=\"https://search.example.com/api\")");
+            eprintln!("CODEXIS_PUBLIC_CZ_SPP_API_URL must be set (e.g., export CODEXIS_PUBLIC_CZ_SPP_API_URL=\"https://search.example.com/api\")");
             std::process::exit(2);
         }
     };
