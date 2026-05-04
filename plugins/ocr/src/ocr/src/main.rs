@@ -21,7 +21,7 @@ fn percent_encode(input: &[u8]) -> String {
 }
 
 fn load_api_jwt_auth() -> String {
-    if let Ok(val) = env::var("CDX_API_JWT_AUTH") {
+    if let Ok(val) = env::var("CODEXIS_USER_API_TOKEN") {
         if !val.is_empty() {
             return val;
         }
@@ -31,7 +31,7 @@ fn load_api_jwt_auth() -> String {
     let env_file = format!("{}/.cdx/.env", home);
     if let Ok(content) = fs::read_to_string(&env_file) {
         for line in content.lines() {
-            if let Some(val) = line.strip_prefix("CDX_API_JWT_AUTH=") {
+            if let Some(val) = line.strip_prefix("CODEXIS_USER_API_TOKEN=") {
                 let val = val.trim();
                 if !val.is_empty() {
                     return val.to_string();
@@ -39,7 +39,7 @@ fn load_api_jwt_auth() -> String {
             }
         }
     }
-    eprintln!("error: CDX_API_JWT_AUTH not found in ~/.cdx/.env or environment");
+    eprintln!("error: CODEXIS_USER_API_TOKEN not found in ~/.cdx/.env or environment");
     std::process::exit(2);
 }
 

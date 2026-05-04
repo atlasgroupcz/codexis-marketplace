@@ -5,7 +5,7 @@ GET requests with `Accept: application/json` (or `?settings`/`?uuid=`)
 return JSON; everything else serves the SPA shell (index.html).
 POST requests are JSON action dispatchers.
 
-State lives in $CDX_USER_HOME/.cdx/apps/katastr/ (managed by katastr_core).
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/katastr/ (managed by katastr_core).
 """
 
 import json

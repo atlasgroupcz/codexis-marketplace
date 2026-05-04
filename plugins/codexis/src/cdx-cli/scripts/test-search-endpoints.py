@@ -4,7 +4,7 @@
 
 This script:
 - uses the built ./cdx-cli binary directly
-- forces CODEXIS_API_URL=http://localhost:8080
+- forces CODEXIS_PUBLIC_API_URL=http://localhost:8080
 - expects auth config via environment or ~/.cdx/.env
 - checks all search sources with source-specific example queries
 - verifies STRING_CHOICE and BOOLEAN facets using the exact returned facet keys
@@ -70,7 +70,7 @@ def main() -> int:
     auth_source = detect_auth_source()
     if auth_source is None:
         print("Missing auth configuration.")
-        print("Expected CDX_API_JWT_AUTH in the environment or in ~/.cdx/.env")
+        print("Expected CODEXIS_USER_API_TOKEN in the environment or in ~/.cdx/.env")
         return 1
 
     print("Search endpoint smoke test")
@@ -243,11 +243,11 @@ def search_payload(query: str, extra_fields: dict[str, Any]) -> dict[str, Any]:
 
 
 def detect_auth_source() -> str | None:
-    if os.environ.get("CDX_API_JWT_AUTH", "").strip():
+    if os.environ.get("CODEXIS_USER_API_TOKEN", "").strip():
         return "environment"
 
     env_vars = read_env_file(ENV_FILE)
-    if env_vars.get("CDX_API_JWT_AUTH", "").strip():
+    if env_vars.get("CODEXIS_USER_API_TOKEN", "").strip():
         return str(ENV_FILE)
 
     return None
@@ -277,7 +277,7 @@ def read_env_file(path: Path) -> dict[str, str]:
 
 def run_cli(args: list[str], payload: dict[str, Any] | None = None) -> dict[str, Any]:
     env = os.environ.copy()
-    env["CODEXIS_API_URL"] = API_URL
+    env["CODEXIS_PUBLIC_API_URL"] = API_URL
 
     input_text = None
     if payload is not None:

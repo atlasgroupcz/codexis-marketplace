@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::fs;
 
 const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
-const CDX_API_JWT_AUTH_ENV: &str = "CDX_API_JWT_AUTH";
+const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
 
 pub struct GraphQLClient {
@@ -14,7 +14,7 @@ pub struct GraphQLClient {
 
 impl GraphQLClient {
     pub fn new() -> Self {
-        let url = std::env::var("CDXCTL_API_URL").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+        let url = std::env::var("CODEXIS_PUBLIC_DAEMON_URL").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
         let auth = load_api_jwt_auth();
         GraphQLClient {
             url,
@@ -69,7 +69,7 @@ impl GraphQLClient {
 }
 
 fn load_api_jwt_auth() -> String {
-    if let Ok(val) = std::env::var(CDX_API_JWT_AUTH_ENV) {
+    if let Ok(val) = std::env::var(CODEXIS_USER_API_TOKEN_ENV) {
         if !val.is_empty() {
             return normalize_authorization_value(&val);
         }
@@ -79,7 +79,7 @@ fn load_api_jwt_auth() -> String {
     let env_file = format!("{}/{}", home, CDX_ENV_FILE_RELATIVE_PATH);
     if let Ok(content) = fs::read_to_string(&env_file) {
         for line in content.lines() {
-            if let Some(val) = line.strip_prefix(&format!("{CDX_API_JWT_AUTH_ENV}=")) {
+            if let Some(val) = line.strip_prefix(&format!("{CODEXIS_USER_API_TOKEN_ENV}=")) {
                 let val = val.trim();
                 if !val.is_empty() {
                     return normalize_authorization_value(val);
@@ -87,7 +87,7 @@ fn load_api_jwt_auth() -> String {
             }
         }
     }
-    eprintln!("error: CDX_API_JWT_AUTH not found in ~/.cdx/.env or environment");
+    eprintln!("error: CODEXIS_USER_API_TOKEN not found in ~/.cdx/.env or environment");
     std::process::exit(2);
 }
 

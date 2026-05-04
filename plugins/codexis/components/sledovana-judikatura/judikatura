@@ -5,7 +5,7 @@ GET requests with `Accept: application/json` (or `?uuid=`) return JSON;
 otherwise the SPA shell (index.html) is served.
 POST requests are JSON action dispatchers.
 
-State lives in $CDX_USER_HOME/.cdx/apps/sledovana-judikatura/ (managed by
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sledovana-judikatura/ (managed by
 sledovana_judikatura_core).
 """
 

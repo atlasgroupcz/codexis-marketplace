@@ -5,8 +5,8 @@ use std::path::PathBuf;
 
 use crate::core::error::CliError;
 
-pub(crate) const CDX_AT_API_URL_ENV: &str = "CDX_AT_API_URL";
-pub(crate) const CDX_API_JWT_AUTH_ENV: &str = "CDX_API_JWT_AUTH";
+pub(crate) const CODEXIS_PUBLIC_AT_API_URL_ENV: &str = "CODEXIS_PUBLIC_AT_API_URL";
+pub(crate) const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
 pub(crate) const CDX_ENV_FILE_DISPLAY_PATH: &str = "~/.cdx/.env";
 
@@ -18,15 +18,15 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn load() -> Result<Self, CliError> {
         let env_file = load_env_file(CDX_ENV_FILE_RELATIVE_PATH);
-        let base_url = resolve_config_value(CDX_AT_API_URL_ENV, env_file.as_ref());
-        let jwt_auth = resolve_config_value(CDX_API_JWT_AUTH_ENV, env_file.as_ref());
+        let base_url = resolve_config_value(CODEXIS_PUBLIC_AT_API_URL_ENV, env_file.as_ref());
+        let jwt_auth = resolve_config_value(CODEXIS_USER_API_TOKEN_ENV, env_file.as_ref());
 
         match base_url {
             Some(url) => Ok(Self {
                 base_url: url.trim_end_matches('/').to_string(),
                 auth_header: jwt_auth.map(|v| to_authorization_header(&v)),
             }),
-            None => Err(CliError::MissingConfig(CDX_AT_API_URL_ENV)),
+            None => Err(CliError::MissingConfig(CODEXIS_PUBLIC_AT_API_URL_ENV)),
         }
     }
 }
@@ -160,14 +160,14 @@ mod tests {
     fn env_parser_supports_plain_and_exported_values() {
         let parsed = parse_env_file(
             r#"
-CDX_AT_API_URL=https://search.example.com/api
+CODEXIS_PUBLIC_AT_API_URL=https://search.example.com/api
 export OTHER_VAR="some value"
 # comment
 "#,
         );
 
         assert_eq!(
-            parsed.get(CDX_AT_API_URL_ENV),
+            parsed.get(CODEXIS_PUBLIC_AT_API_URL_ENV),
             Some(&"https://search.example.com/api".to_string())
         );
         assert_eq!(
@@ -178,9 +178,9 @@ export OTHER_VAR="some value"
 
     #[test]
     fn env_parser_unescapes_double_quoted_values() {
-        let parsed = parse_env_file(r#"CDX_AT_API_URL="https://example.com/\"api\"""#);
+        let parsed = parse_env_file(r#"CODEXIS_PUBLIC_AT_API_URL="https://example.com/\"api\"""#);
         assert_eq!(
-            parsed.get(CDX_AT_API_URL_ENV),
+            parsed.get(CODEXIS_PUBLIC_AT_API_URL_ENV),
             Some(&"https://example.com/\"api\"".to_string())
         );
     }
@@ -189,13 +189,13 @@ export OTHER_VAR="some value"
     fn resolve_config_value_prefers_process_env_and_rejects_empty_values() {
         let mut env_file = HashMap::new();
         env_file.insert(
-            CDX_AT_API_URL_ENV.to_string(),
+            CODEXIS_PUBLIC_AT_API_URL_ENV.to_string(),
             "https://from-file.example.com/api".to_string(),
         );
 
         let value = resolve_config_value_for_test(
             Some("https://from-env.example.com/api"),
-            CDX_AT_API_URL_ENV,
+            CODEXIS_PUBLIC_AT_API_URL_ENV,
             Some(&env_file),
         );
         assert_eq!(
@@ -204,7 +204,7 @@ export OTHER_VAR="some value"
         );
 
         let value =
-            resolve_config_value_for_test(Some("   "), CDX_AT_API_URL_ENV, Some(&env_file));
+            resolve_config_value_for_test(Some("   "), CODEXIS_PUBLIC_AT_API_URL_ENV, Some(&env_file));
         assert_eq!(
             value,
             Some("https://from-file.example.com/api".to_string())
@@ -215,20 +215,20 @@ export OTHER_VAR="some value"
     fn resolve_config_value_uses_env_file_when_process_env_is_missing() {
         let mut env_file = HashMap::new();
         env_file.insert(
-            CDX_AT_API_URL_ENV.to_string(),
+            CODEXIS_PUBLIC_AT_API_URL_ENV.to_string(),
             "https://file.example.com/api".to_string(),
         );
 
-        let value = resolve_config_value_for_test(None, CDX_AT_API_URL_ENV, Some(&env_file));
+        let value = resolve_config_value_for_test(None, CODEXIS_PUBLIC_AT_API_URL_ENV, Some(&env_file));
         assert_eq!(value, Some("https://file.example.com/api".to_string()));
     }
 
     #[test]
     fn resolve_jwt_auth_uses_env_file_when_process_env_is_missing() {
         let mut env_file = HashMap::new();
-        env_file.insert(CDX_API_JWT_AUTH_ENV.to_string(), "Bearer from-file".to_string());
+        env_file.insert(CODEXIS_USER_API_TOKEN_ENV.to_string(), "Bearer from-file".to_string());
 
-        let value = resolve_config_value_for_test(None, CDX_API_JWT_AUTH_ENV, Some(&env_file));
+        let value = resolve_config_value_for_test(None, CODEXIS_USER_API_TOKEN_ENV, Some(&env_file));
         assert_eq!(value, Some("Bearer from-file".to_string()));
     }
 
