@@ -32,8 +32,8 @@
       "tagLabels": { "document-processing": "Spracovanie dokumentov", "ocr": "OCR", "pdf": "PDF" }
     }
   },
-  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
-  "postUninstall": "sudo rm -f /usr/local/bin/ocr",
-  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/ocr\" /usr/local/bin/ocr",
+  "postInstall": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/ocr\" \"${HOME}/.local/bin/ocr\"",
+  "postUninstall": "rm -f \"${HOME}/.local/bin/ocr\"",
+  "onUpdate": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/ocr\" \"${HOME}/.local/bin/ocr\"",
   "skills": "./skills"
 }

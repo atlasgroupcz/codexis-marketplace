@@ -32,8 +32,8 @@
       "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
     }
   },
-  "postInstall": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
-  "postUninstall": "sudo rm -f /usr/local/bin/video-analyze",
-  "onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/video-analyze\" /usr/local/bin/video-analyze",
+  "postInstall": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/video-analyze\" \"${HOME}/.local/bin/video-analyze\"",
+  "postUninstall": "rm -f \"${HOME}/.local/bin/video-analyze\"",
+  "onUpdate": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/video-analyze\" \"${HOME}/.local/bin/video-analyze\"",
   "skills": "./skills"
 }

@@ -45,8 +45,8 @@ echo '<a href="cdx://doc/CR10">doc</a>' | cdx-link-rewriter
 ## Integration with cdx-daemon
 
 This binary is shipped inside the codexis plugin and declared as an onRender
-hook in `hooks/hooks.json`. The plugin install/update lifecycle copies the
-binary to `/usr/local/bin`, and the backend resolves it from `PATH`:
+hook in `hooks/hooks.json`. The plugin install/update lifecycle installs the
+binary to `${HOME}/.local/bin`, and the backend resolves it from `PATH`:
 
 ```json
 {

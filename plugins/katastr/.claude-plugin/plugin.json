@@ -31,9 +31,9 @@
     }
   },
   "dependencies": ["codexis"],
-  "postInstall": "sudo install -d /usr/local/share/katastr/lib && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
-  "postUninstall": "sudo rm -f /usr/local/bin/katastr-cli && sudo rm -rf /usr/local/share/katastr",
-  "onUpdate": "sudo install -d /usr/local/share/katastr/lib && sudo rm -rf /usr/local/share/katastr/lib/katastr_core && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" /usr/local/share/katastr/lib/katastr_core && sudo cp \"${PLUGIN_DIR}/bin/katastr-cli\" /usr/local/bin/katastr-cli",
+  "postInstall": "install -d \"${HOME}/.local/share/katastr/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/katastr/lib/katastr_core\" && cp -r \"${PLUGIN_DIR}/lib/katastr_core\" \"${HOME}/.local/share/katastr/lib/katastr_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/katastr-cli\" \"${HOME}/.local/bin/katastr-cli\"",
+  "postUninstall": "rm -f \"${HOME}/.local/bin/katastr-cli\" && rm -rf \"${HOME}/.local/share/katastr\"",
+  "onUpdate": "install -d \"${HOME}/.local/share/katastr/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/katastr/lib/katastr_core\" && cp -r \"${PLUGIN_DIR}/lib/katastr_core\" \"${HOME}/.local/share/katastr/lib/katastr_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/katastr-cli\" \"${HOME}/.local/bin/katastr-cli\"",
   "skills": "./skills",
   "components": "./components"
 }

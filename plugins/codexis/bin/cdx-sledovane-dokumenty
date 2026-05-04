@@ -30,7 +30,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CANDIDATES = [
     HERE.parent / "lib",                                  # plugin in-place: bin/.. /lib
-    Path("/usr/local/share/codexis/lib"),                 # post-install location
+    Path.home() / ".local/share/codexis/lib",             # user-local install (XDG)
+    Path("/usr/local/share/codexis/lib"),                 # legacy system install
 ]
 for p in CANDIDATES:
     if (p / "sledovane_dokumenty_core").is_dir():

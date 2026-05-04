@@ -3,7 +3,7 @@ set -euo pipefail
 
 PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
-TARGET_BIN_DIR="${TARGET_BIN_DIR:-/usr/local/bin}"
+TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
 install_binary() {
   local source_name="$1"

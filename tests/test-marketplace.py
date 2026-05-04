@@ -130,9 +130,16 @@ def encode_node_id(type_name: str, identifier: str) -> str:
 
 
 def check_assertions(assertions: list[dict], install_path: str, client: DaemonClient, r: Results) -> None:
+    # cdx guest VM runs as the `codexis` user; install_path looks like
+    # /home/codexis/.cdx/plugins/<id> so we treat /home/codexis as $HOME.
+    home_dir = "/home/codexis"
     for a in assertions:
         atype = a.get("type", "")
-        path = a.get("path", "").replace("$PLUGIN_DIR", install_path)
+        path = (
+            a.get("path", "")
+            .replace("$PLUGIN_DIR", install_path)
+            .replace("$HOME", home_dir)
+        )
         entry = client.get_entry(path)
 
         if atype == "executable":
