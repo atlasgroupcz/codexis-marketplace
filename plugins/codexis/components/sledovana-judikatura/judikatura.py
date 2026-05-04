@@ -5,7 +5,7 @@ GET returns JSON data; POST dispatches JSON actions. HTML shell
 (index.html) is served by the sibling `judikatura` bash wrapper's
 fast path; this module only runs for JSON requests.
 
-State lives in $CDX_USER_HOME/.cdx/apps/sledovana-judikatura/ (managed by
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sledovana-judikatura/ (managed by
 sledovana_judikatura_core).
 """
 

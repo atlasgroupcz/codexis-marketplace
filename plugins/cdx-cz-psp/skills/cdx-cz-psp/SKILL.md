@@ -42,7 +42,7 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-cz-psp://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CDX_CZ_PSP_API_URL` for link construction.
+**IMPORTANT:** All document links in user-facing output MUST use the `cdx-cz-psp://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PUBLIC_CZ_PSP_API_URL` for link construction.
 
 When citing documents, link to **attachment** URLs: `[Title](cdx-cz-psp://doc/{id}/attachment/{filename}#page=N)`.
 Search results include a `pageUrl` field with the complete attachment URL (including `#page=N`) — use it directly. If `pageUrl` is absent, get the filename from `/meta` assets.
@@ -56,7 +56,7 @@ Never include any of the following in user-facing text:
 - Raw document IDs (e.g., `CZPSPDOK1234`, `CZPSPPRE5678`)
 - Raw search prefixes (e.g., `CZPSPDOK`, `CZPSPPRE`)
 - Resolved HTTP URLs (e.g., `https://search.example.com/api/CZ/psp/dokumenty/doc/...`)
-- Environment variable names (e.g., `$CDX_CZ_PSP_API_URL`)
+- Environment variable names (e.g., `$CODEXIS_PUBLIC_CZ_PSP_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
 ### Human-Readable Source Names

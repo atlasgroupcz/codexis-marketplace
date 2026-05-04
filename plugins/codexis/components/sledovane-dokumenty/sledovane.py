@@ -6,7 +6,7 @@ notes / groups). HTML shell (index.html) is served by the sibling
 `sledovane` bash wrapper's fast path; this module only runs for JSON
 requests.
 
-State lives in $CDX_USER_HOME/.cdx/apps/sledovane-dokumenty/ (managed by
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sledovane-dokumenty/ (managed by
 sledovane_dokumenty_core).
 """
 
