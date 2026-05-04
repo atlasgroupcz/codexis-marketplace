@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET_BIN_DIR="${TARGET_BIN_DIR:-/usr/local/bin}"
+TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
 remove_binary() {
   local binary_name="$1"
@@ -21,7 +21,7 @@ remove_binary "cdx-sledovana-judikatura"
 remove_binary "cdxctl"
 
 # Remove the plugin-owned share directory (matches katastr's full-nuke pattern).
-SHARE_DIR="/usr/local/share/codexis"
+SHARE_DIR="${HOME}/.local/share/codexis"
 if [[ -d "${SHARE_DIR}" ]]; then
   if [[ -w "${SHARE_DIR}" ]]; then
     rm -rf "${SHARE_DIR}"

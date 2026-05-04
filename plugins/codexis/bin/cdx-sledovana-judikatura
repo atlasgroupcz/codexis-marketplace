@@ -29,6 +29,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CANDIDATES = [
     HERE.parent / "lib",
+    Path.home() / ".local/share/codexis/lib",
     Path("/usr/local/share/codexis/lib"),
 ]
 for p in CANDIDATES:

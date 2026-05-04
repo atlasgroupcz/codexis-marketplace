@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET_BIN_DIR="${TARGET_BIN_DIR:-/usr/local/bin}"
+TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
 remove_binary() {
   local target_name="$1"
