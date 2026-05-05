@@ -52,11 +52,7 @@ pub fn list(
             Value::Array(arr) => {
                 let filtered: Vec<Value> = arr
                     .into_iter()
-                    .filter(|n| {
-                        n.get("seen")
-                            .map(|v| v.is_null())
-                            .unwrap_or(true)
-                    })
+                    .filter(|n| n.get("seen").map(|v| v.is_null()).unwrap_or(true))
                     .collect();
                 Value::Array(filtered)
             }
@@ -71,17 +67,7 @@ pub fn list(
 }
 
 pub fn seen(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
-    let node_id = resolve_node_id(id, "Notification");
-    let data = client.execute(
-        graphql::MARK_NOTIFICATIONS_SEEN_MUTATION,
-        json!({ "ids": [node_id] }),
-    )?;
-    let result = data
-        .get("markNotificationsSeen")
-        .cloned()
-        .unwrap_or(Value::Null);
-    print_output(&json!({ "markNotificationsSeen": result }), format);
-    Ok(())
+    update_state(client, id, json!({ "seen": true }), format)
 }
 
 pub fn confirm(
@@ -89,15 +75,28 @@ pub fn confirm(
     id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    update_state(client, id, json!({ "confirmed": true }), format)
+}
+
+fn update_state(
+    client: &GraphQLClient,
+    id: &str,
+    state: Value,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
     let node_id = resolve_node_id(id, "Notification");
+    let mut input = state;
+    input["ids"] = json!([node_id]);
+
     let data = client.execute(
-        graphql::MARK_NOTIFICATION_CONFIRMED_MUTATION,
-        json!({ "id": node_id }),
+        graphql::UPDATE_NOTIFICATION_STATE_MUTATION,
+        json!({ "input": input }),
     )?;
-    let result = data
-        .get("markNotificationConfirmed")
-        .cloned()
+    let updated = data
+        .get("updateNotificationState")
+        .and_then(|v| v.as_array())
+        .and_then(|arr| arr.first().cloned())
         .unwrap_or(Value::Null);
-    print_output(&json!({ "markNotificationConfirmed": result }), format);
+    print_output(&updated, format);
     Ok(())
 }

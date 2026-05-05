@@ -17,7 +17,7 @@ query GetAutomations {
         workDirPathInfo { absolutePath displayPath }
         lastRun {
             id
-                status
+            status
             startedAt
             finishedAt
             trigger
@@ -67,7 +67,10 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
 
 pub const DELETE_AUTOMATION: &str = r#"
 mutation DeleteAutomation($id: ID!) {
-    deleteNode(id: $id)
+    deleteNode(id: $id) {
+        id
+        ... on Automation { title }
+    }
 }
 "#;
 
@@ -90,8 +93,6 @@ query GetMarketplaces {
         id
         name
         description
-        owner { name email }
-        metadata { pluginRoot version description }
         source { source url path ref }
         installLocation { absolutePath displayPath }
         lastUpdated
@@ -124,9 +125,9 @@ mutation AddMarketplace($input: MarketplaceSourceInput!) {
 
 pub const REMOVE_MARKETPLACE: &str = r#"
 mutation RemoveMarketplace($id: ID!) {
-    removeMarketplace(id: $id) {
+    deleteNode(id: $id) {
         id
-        name
+        ... on Marketplace { name }
     }
 }
 "#;
@@ -212,7 +213,7 @@ mutation UninstallPlugin($input: PluginInstallInput!) {
 }
 "#;
 
-// ==================== Skills ====================
+// ==================== Agents ====================
 
 pub const GET_AGENTS: &str = r#"
 query GetAgents {
@@ -285,9 +286,14 @@ mutation UpdateAgent($id: ID!, $markdown: String!) {
 
 pub const DELETE_AGENT: &str = r#"
 mutation DeleteAgent($id: ID!) {
-    deleteNode(id: $id)
+    deleteNode(id: $id) {
+        id
+        ... on Agent { name }
+    }
 }
 "#;
+
+// ==================== Skills ====================
 
 pub const GET_SKILLS: &str = r#"
 query GetSkills {
@@ -348,13 +354,18 @@ mutation UpdateSkill($id: ID!, $markdown: String!) {
 
 pub const DELETE_SKILL: &str = r#"
 mutation DeleteSkill($id: ID!) {
-    deleteNode(id: $id)
+    deleteNode(id: $id) {
+        id
+        ... on Skill { name }
+    }
 }
 "#;
 
 #[cfg(test)]
 mod tests {
-    use super::{CREATE_AGENT, DELETE_AGENT, GET_AGENTS, UPDATE_AGENT};
+    use super::{
+        CREATE_AGENT, DELETE_AGENT, GET_AGENTS, REMOVE_MARKETPLACE, UPDATE_AGENT,
+    };
 
     #[test]
     fn agent_queries_target_canonical_agent_api() {
@@ -377,30 +388,20 @@ mod tests {
             assert!(query.contains("disallowedTools"));
         }
     }
+
+    #[test]
+    fn marketplace_remove_uses_generic_delete_node() {
+        assert!(REMOVE_MARKETPLACE.contains("deleteNode(id: $id)"));
+        assert!(REMOVE_MARKETPLACE.contains("on Marketplace"));
+    }
 }
 
 // ==================== Notifications ====================
 
 pub const NOTIFICATIONS_QUERY: &str = r#"
-    query Notifications {
-        notifications {
-            items {
-                id
-                message
-                action
-                link
-                seen
-                confirmed
-                createdAt
-            }
-            totalItems
-        }
-    }
-"#;
-
-pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
-    mutation CreateNotification($input: CreateNotificationInput!) {
-        createNotification(input: $input) {
+query Notifications {
+    notifications {
+        items {
             id
             message
             action
@@ -409,27 +410,46 @@ pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
             confirmed
             createdAt
         }
+        totalItems
+        unseenCount
     }
+}
 "#;
 
-pub const MARK_NOTIFICATIONS_SEEN_MUTATION: &str = r#"
-    mutation MarkNotificationsSeen($ids: [ID!]!) {
-        markNotificationsSeen(ids: $ids)
+pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
+mutation CreateNotification($input: CreateNotificationInput!) {
+    createNotification(input: $input) {
+        id
+        message
+        action
+        link
+        seen
+        confirmed
+        createdAt
     }
+}
 "#;
 
-pub const MARK_NOTIFICATION_CONFIRMED_MUTATION: &str = r#"
-    mutation MarkNotificationConfirmed($id: ID!) {
-        markNotificationConfirmed(id: $id)
+pub const UPDATE_NOTIFICATION_STATE_MUTATION: &str = r#"
+mutation UpdateNotificationState($input: UpdateNotificationStateInput!) {
+    updateNotificationState(input: $input) {
+        id
+        message
+        seen
+        confirmed
     }
+}
 "#;
 
 // ==================== Tabular Extraction ====================
+//
+// All tabular ops take a `TabularExtraction` Node id (encoded from the folder
+// path) — see commands::tabular::folder_to_node_id.
 
 pub const GET_TABULAR_EXTRACTION: &str = r#"
-query GetTabularExtraction($folder: String!) {
-    tabularExtraction(folder: $folder) {
-        folder
+query GetTabularExtraction($id: ID!) {
+    tabularExtraction(id: $id) {
+        id
         status
         progress { totalFiles extractedFiles startedAt elapsedSeconds }
         columns {
@@ -459,9 +479,9 @@ query GetTabularExtraction($folder: String!) {
 "#;
 
 pub const ADD_TEXT_COLUMN: &str = r#"
-mutation AddTextTabularColumn($folder: String!, $name: String!, $description: String) {
-    addTextTabularColumn(folder: $folder, name: $name, description: $description) {
-        folder
+mutation AddTextTabularColumn($id: ID!, $name: String!, $description: String) {
+    addTextTabularColumn(id: $id, name: $name, description: $description) {
+        id
         columns { id name description __typename }
         status
     }
@@ -469,9 +489,9 @@ mutation AddTextTabularColumn($folder: String!, $name: String!, $description: St
 "#;
 
 pub const ADD_BOOLEAN_COLUMN: &str = r#"
-mutation AddBooleanTabularColumn($folder: String!, $name: String!, $description: String) {
-    addBooleanTabularColumn(folder: $folder, name: $name, description: $description) {
-        folder
+mutation AddBooleanTabularColumn($id: ID!, $name: String!, $description: String) {
+    addBooleanTabularColumn(id: $id, name: $name, description: $description) {
+        id
         columns { id name description __typename }
         status
     }
@@ -479,9 +499,9 @@ mutation AddBooleanTabularColumn($folder: String!, $name: String!, $description:
 "#;
 
 pub const ADD_DATE_COLUMN: &str = r#"
-mutation AddDateTabularColumn($folder: String!, $name: String!, $description: String) {
-    addDateTabularColumn(folder: $folder, name: $name, description: $description) {
-        folder
+mutation AddDateTabularColumn($id: ID!, $name: String!, $description: String) {
+    addDateTabularColumn(id: $id, name: $name, description: $description) {
+        id
         columns { id name description __typename }
         status
     }
@@ -489,9 +509,9 @@ mutation AddDateTabularColumn($folder: String!, $name: String!, $description: St
 "#;
 
 pub const ADD_NUMBER_COLUMN: &str = r#"
-mutation AddNumberTabularColumn($folder: String!, $name: String!, $description: String) {
-    addNumberTabularColumn(folder: $folder, name: $name, description: $description) {
-        folder
+mutation AddNumberTabularColumn($id: ID!, $name: String!, $description: String) {
+    addNumberTabularColumn(id: $id, name: $name, description: $description) {
+        id
         columns { id name description __typename }
         status
     }
@@ -499,9 +519,9 @@ mutation AddNumberTabularColumn($folder: String!, $name: String!, $description: 
 "#;
 
 pub const ADD_CURRENCY_COLUMN: &str = r#"
-mutation AddCurrencyTabularColumn($folder: String!, $name: String!, $description: String) {
-    addCurrencyTabularColumn(folder: $folder, name: $name, description: $description) {
-        folder
+mutation AddCurrencyTabularColumn($id: ID!, $name: String!, $description: String) {
+    addCurrencyTabularColumn(id: $id, name: $name, description: $description) {
+        id
         columns { id name description __typename }
         status
     }
@@ -509,9 +529,9 @@ mutation AddCurrencyTabularColumn($folder: String!, $name: String!, $description
 "#;
 
 pub const ADD_LIST_COLUMN: &str = r#"
-mutation AddListTabularColumn($folder: String!, $name: String!, $description: String) {
-    addListTabularColumn(folder: $folder, name: $name, description: $description) {
-        folder
+mutation AddListTabularColumn($id: ID!, $name: String!, $description: String) {
+    addListTabularColumn(id: $id, name: $name, description: $description) {
+        id
         columns { id name description __typename }
         status
     }
@@ -519,9 +539,9 @@ mutation AddListTabularColumn($folder: String!, $name: String!, $description: St
 "#;
 
 pub const ADD_TAG_COLUMN: &str = r#"
-mutation AddTagTabularColumn($folder: String!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
-    addTagTabularColumn(folder: $folder, name: $name, description: $description, options: $options) {
-        folder
+mutation AddTagTabularColumn($id: ID!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
+    addTagTabularColumn(id: $id, name: $name, description: $description, options: $options) {
+        id
         columns { id name description __typename }
         status
     }
@@ -529,9 +549,9 @@ mutation AddTagTabularColumn($folder: String!, $name: String!, $description: Str
 "#;
 
 pub const ADD_TAGS_COLUMN: &str = r#"
-mutation AddTagsTabularColumn($folder: String!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
-    addTagsTabularColumn(folder: $folder, name: $name, description: $description, options: $options) {
-        folder
+mutation AddTagsTabularColumn($id: ID!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
+    addTagsTabularColumn(id: $id, name: $name, description: $description, options: $options) {
+        id
         columns { id name description __typename }
         status
     }
@@ -539,9 +559,9 @@ mutation AddTagsTabularColumn($folder: String!, $name: String!, $description: St
 "#;
 
 pub const REMOVE_TABULAR_COLUMN: &str = r#"
-mutation RemoveTabularColumn($folder: String!, $columnId: ID!) {
-    removeTabularColumn(folder: $folder, columnId: $columnId) {
-        folder
+mutation RemoveTabularColumn($id: ID!, $columnId: ID!) {
+    removeTabularColumn(id: $id, columnId: $columnId) {
+        id
         columns { id name description __typename }
         status
     }
@@ -549,9 +569,9 @@ mutation RemoveTabularColumn($folder: String!, $columnId: ID!) {
 "#;
 
 pub const START_TABULAR_EXTRACTION: &str = r#"
-mutation StartTabularExtraction($folder: String!) {
-    startTabularExtraction(folder: $folder) {
-        folder
+mutation StartTabularExtraction($id: ID!) {
+    startTabularExtraction(id: $id) {
+        id
         status
         progress { totalFiles extractedFiles startedAt elapsedSeconds }
         columns { id name description __typename }

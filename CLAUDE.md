@@ -113,14 +113,16 @@ The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the p
 
 ### Executables / Binaries
 
-Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to copy these binaries to a system PATH location (e.g. `/usr/local/bin/`) on install/update and remove them on uninstall.
+Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to install these binaries into the user-local `${HOME}/.local/bin/` location on install/update and remove them on uninstall. The cdx guest VM has `${HOME}/.local/bin` on `PATH` (both for interactive login shells and for the `cdx-remote-exec` service), so no `sudo` and no system-wide writes are needed.
 
 Example (from codexis plugin):
 ```json
-"postInstall": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cli\" /usr/local/bin/cdx-cli && sudo cp \"${PLUGIN_DIR}/bin/cdx-link-rewriter\" /usr/local/bin/cdx-link-rewriter && sudo cp \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" /usr/local/bin/cdx-sledovane-dokumenty && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl",
-"postUninstall": "sudo rm -f /usr/local/bin/cdx-cli /usr/local/bin/cdx-link-rewriter /usr/local/bin/cdx-sledovane-dokumenty /usr/local/bin/cdxctl",
-"onUpdate": "sudo cp \"${PLUGIN_DIR}/bin/cdx-cli\" /usr/local/bin/cdx-cli && sudo cp \"${PLUGIN_DIR}/bin/cdx-link-rewriter\" /usr/local/bin/cdx-link-rewriter && sudo cp \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" /usr/local/bin/cdx-sledovane-dokumenty && sudo cp \"${PLUGIN_DIR}/bin/cdxctl\" /usr/local/bin/cdxctl"
+"postInstall": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-link-rewriter\" \"${HOME}/.local/bin/cdx-link-rewriter\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\"",
+"postUninstall": "rm -f \"${HOME}/.local/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-link-rewriter\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdxctl\"",
+"onUpdate": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-link-rewriter\" \"${HOME}/.local/bin/cdx-link-rewriter\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\""
 ```
+
+For multi-binary plugins, prefer extracting these commands into `hooks/install-binaries.sh` and `hooks/uninstall-binaries.sh` (see the `codexis`, `cdx-sk`, `ares`, `cdx-at`, `cdx-cz-psp`, `cdx-cz-spp` plugins). Those scripts default `TARGET_BIN_DIR` to `${HOME}/.local/bin` and can be overridden via the `TARGET_BIN_DIR` env var if a different prefix is needed.
 
 ## Localization (i18n)
 

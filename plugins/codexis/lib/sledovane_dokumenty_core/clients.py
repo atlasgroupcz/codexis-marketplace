@@ -9,7 +9,7 @@ from .exceptions import CdxClientError, LlmDaemonError
 
 CDX_CLI_BIN = "cdx-cli"
 DEFAULT_DAEMON_URL = "http://localhost:8086"
-DAEMON_ENV_FILE = os.path.expanduser("~/.cdx/.daemon.env")
+CDX_ENV_FILE = os.path.expanduser("~/.cdx/.env")
 
 
 # ── cdx-cli wrapper ──────────────────────────────────────────────────────────
@@ -178,16 +178,16 @@ def fetch_related_counts(codexis_id):
 # ── LLM daemon client ────────────────────────────────────────────────────────
 
 
-def load_daemon_auth():
-    """Load CDX_DAEMON_AUTH from env or ~/.cdx/.daemon.env."""
-    val = os.environ.get("CDX_DAEMON_AUTH", "")
+def load_api_jwt_auth():
+    """Load CODEXIS_USER_API_TOKEN from env or ~/.cdx/.env."""
+    val = os.environ.get("CODEXIS_USER_API_TOKEN", "")
     if val:
         return val
     try:
-        with open(DAEMON_ENV_FILE) as f:
+        with open(CDX_ENV_FILE) as f:
             for line in f:
-                if line.startswith("CDX_DAEMON_AUTH="):
-                    val = line[len("CDX_DAEMON_AUTH="):].strip()
+                if line.startswith("CODEXIS_USER_API_TOKEN="):
+                    val = line[len("CODEXIS_USER_API_TOKEN="):].strip()
                     if val:
                         return val
     except OSError:
@@ -201,8 +201,8 @@ def llm_extract(text, query):
     Returns None rather than raising so callers can mark summaries as pending
     and retry next check cycle.
     """
-    daemon_url = os.environ.get("CDX_DAEMON_URL", DEFAULT_DAEMON_URL)
-    daemon_auth = load_daemon_auth()
+    daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL)
+    daemon_auth = load_api_jwt_auth()
     if not daemon_auth:
         return None
 
@@ -219,7 +219,7 @@ def llm_extract(text, query):
             "-F", f"text=<{tmp_path}",
             "-F", f"query={query}",
         ]
-        chat_id = os.environ.get("CDX_SESSION_ID")
+        chat_id = os.environ.get("CODEXIS_PUBLIC_SESSION_ID")
         if chat_id:
             cmd.extend(["-H", f"X-CDX-Session-Id: {chat_id}"])
         result = subprocess.run(

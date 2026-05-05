@@ -3,7 +3,7 @@ set -euo pipefail
 
 PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
-TARGET_BIN_DIR="${TARGET_BIN_DIR:-/usr/local/bin}"
+TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
 install_binary() {
   local source_name="$1"
@@ -50,7 +50,7 @@ install_binary "cdx-sledovana-judikatura"
 install_binary "$(select_binary_source "cdxctl")" "cdxctl"
 
 # Install shared core library used by CLI and CGI handler.
-SHARED_LIB_DIR="/usr/local/share/codexis/lib"
+SHARED_LIB_DIR="${HOME}/.local/share/codexis/lib"
 install_lib() {
   local module_name="$1"
   local source_path="${PLUGIN_DIR}/lib/${module_name}"

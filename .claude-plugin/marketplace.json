@@ -283,6 +283,30 @@
           "tagLabels": { "open-data": "Otvorené dáta", "french": "Francúzsko", "api": "API" }
         }
       }
+    },
+    {
+      "uuid": "735dc013-d3c8-40ca-acd4-f0ac3f51a178",
+      "name": "ares",
+      "description": "Czech business registry (ARES) — IČO lookup, company search, business register, trade licence and VAT payer status",
+      "source": "./plugins/ares",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "ARES — registr ekonomických subjektů",
+          "description": "Český registr ekonomických subjektů ARES — vyhledávání firem podle IČO/názvu, výpis z obchodního rejstříku, RES, živnostenského rejstříku a registru plátců DPH.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "company": "Firmy" }
+        },
+        "en": {
+          "displayName": "ARES — Czech Business Registry",
+          "description": "Czech business registry ARES — company lookup by ICO/name, business register, statistical register, trade licence registry and VAT payer registry.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "company": "Companies" }
+        },
+        "sk": {
+          "displayName": "ARES — register ekonomických subjektov",
+          "description": "Český register ekonomických subjektov ARES — vyhľadávanie firiem podľa IČO/názvu, výpis z obchodného registra, RES, živnostenského registra a registra platcov DPH.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "company": "Firmy" }
+        }
+      }
     }
   ]
 }

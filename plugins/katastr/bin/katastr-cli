@@ -24,11 +24,12 @@ import sys
 from pathlib import Path
 
 # Add the bundled library to sys.path. Works whether the binary is installed
-# in /usr/local/bin/ (with lib next to it) or run in-place from the plugin dir.
+# in ~/.local/bin/, /usr/local/bin/, or run in-place from the plugin dir.
 HERE = Path(__file__).resolve().parent
 CANDIDATES = [
     HERE.parent / "lib",                       # plugin in-place: bin/.. /lib
-    Path("/usr/local/share/katastr/lib"),      # post-install location
+    Path.home() / ".local/share/katastr/lib",  # user-local install (XDG)
+    Path("/usr/local/share/katastr/lib"),      # legacy system install
 ]
 for p in CANDIDATES:
     if (p / "katastr_core").is_dir():

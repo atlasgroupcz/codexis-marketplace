@@ -20,12 +20,18 @@ fn percent_encode(input: &[u8]) -> String {
     out
 }
 
-fn load_daemon_auth() -> String {
+fn load_api_jwt_auth() -> String {
+    if let Ok(val) = env::var("CODEXIS_USER_API_TOKEN") {
+        if !val.is_empty() {
+            return val;
+        }
+    }
+
     let home = env::var("HOME").unwrap_or_else(|_| "/home/codexis".to_string());
-    let env_file = format!("{}/.cdx/.daemon.env", home);
+    let env_file = format!("{}/.cdx/.env", home);
     if let Ok(content) = fs::read_to_string(&env_file) {
         for line in content.lines() {
-            if let Some(val) = line.strip_prefix("CDX_DAEMON_AUTH=") {
+            if let Some(val) = line.strip_prefix("CODEXIS_USER_API_TOKEN=") {
                 let val = val.trim();
                 if !val.is_empty() {
                     return val.to_string();
@@ -33,12 +39,7 @@ fn load_daemon_auth() -> String {
             }
         }
     }
-    if let Ok(val) = env::var("CDX_DAEMON_AUTH") {
-        if !val.is_empty() {
-            return val;
-        }
-    }
-    eprintln!("error: CDX_DAEMON_AUTH not found in ~/.cdx/.daemon.env or environment");
+    eprintln!("error: CODEXIS_USER_API_TOKEN not found in ~/.cdx/.env or environment");
     std::process::exit(2);
 }
 
@@ -50,7 +51,7 @@ fn main() {
         std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
     }
 
-    let daemon_auth = load_daemon_auth();
+    let daemon_auth = load_api_jwt_auth();
 
     let path = &args[0];
     let encoded_path = percent_encode(path.as_bytes());

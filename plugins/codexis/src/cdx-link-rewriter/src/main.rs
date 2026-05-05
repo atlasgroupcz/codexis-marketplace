@@ -4,10 +4,10 @@ use std::io::{self, Read, Write};
 const HREF_PREFIX: &str = "href=\"cdx://";
 
 fn main() {
-    let base_url = match env::var("CODEXIS_BASE_URL") {
+    let base_url = match env::var("CODEXIS_PUBLIC_BASE_URL") {
         Ok(value) if !value.trim().is_empty() => value.trim().trim_end_matches('/').to_string(),
         _ => {
-            eprintln!("CODEXIS_BASE_URL must be set (e.g., export CODEXIS_BASE_URL=\"https://next.codexis.cz\")");
+            eprintln!("CODEXIS_PUBLIC_BASE_URL must be set (e.g., export CODEXIS_PUBLIC_BASE_URL=\"https://next.codexis.cz\")");
             std::process::exit(2);
         }
     };
