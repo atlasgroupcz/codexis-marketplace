@@ -10,6 +10,11 @@ pub(crate) const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
 pub(crate) const CDX_ENV_FILE_DISPLAY_PATH: &str = "~/.cdx/.env";
 
+// Hardcoded fallback so the binary works without ~/.cdx/.env. The daemon
+// no longer writes the env file by default; process env or a user-managed
+// .env file at the path above still override this default if present.
+const DEFAULT_BASE_URL: &str = "http://192.168.4.56:8081/api";
+
 pub(crate) struct Config {
     pub(crate) base_url: String,
     pub(crate) auth_header: Option<String>,
@@ -18,16 +23,14 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn load() -> Result<Self, CliError> {
         let env_file = load_env_file_from_home();
-        let base_url = resolve_config_value(CODEXIS_PUBLIC_AT_API_URL_ENV, env_file.as_ref());
+        let base_url = resolve_config_value(CODEXIS_PUBLIC_AT_API_URL_ENV, env_file.as_ref())
+            .unwrap_or_else(|| DEFAULT_BASE_URL.to_string());
         let jwt_auth = resolve_config_value(CODEXIS_USER_API_TOKEN_ENV, env_file.as_ref());
 
-        match base_url {
-            Some(url) => Ok(Self {
-                base_url: url.trim_end_matches('/').to_string(),
-                auth_header: jwt_auth.map(|v| to_authorization_header(&v)),
-            }),
-            None => Err(CliError::MissingConfig(CODEXIS_PUBLIC_AT_API_URL_ENV)),
-        }
+        Ok(Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+            auth_header: jwt_auth.map(|v| to_authorization_header(&v)),
+        })
     }
 }
 

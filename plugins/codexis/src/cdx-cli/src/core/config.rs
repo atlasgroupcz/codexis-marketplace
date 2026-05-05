@@ -10,6 +10,12 @@ pub(crate) const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
 pub(crate) const CDX_ENV_FILE_DISPLAY_PATH: &str = "~/.cdx/.env";
 
+// Hardcoded fallback so the binary works without ~/.cdx/.env. The daemon
+// no longer writes the env file by default; process env or a user-managed
+// .env file at the path above still override this default if present.
+const DEFAULT_BASE_URL: &str =
+    "https://cdxx-next-be-main-rest-profidata-main.onprem.agrp.dev";
+
 pub(crate) struct Config {
     pub(crate) base_url: String,
     pub(crate) auth_header: String,
@@ -18,23 +24,19 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn load() -> Result<Self, CliError> {
         let env_file = load_env_file_from_home();
-        let base_url = resolve_config_value(CODEXIS_PUBLIC_API_URL_ENV, env_file.as_ref());
+        let base_url = resolve_config_value(CODEXIS_PUBLIC_API_URL_ENV, env_file.as_ref())
+            .unwrap_or_else(|| DEFAULT_BASE_URL.to_string());
         let jwt_auth = resolve_config_value(CODEXIS_USER_API_TOKEN_ENV, env_file.as_ref());
 
-        let mut missing = Vec::new();
-        if base_url.is_none() {
-            missing.push(CODEXIS_PUBLIC_API_URL_ENV);
-        }
-        if jwt_auth.is_none() {
-            missing.push(CODEXIS_USER_API_TOKEN_ENV);
-        }
-        if !missing.is_empty() {
-            return Err(CliError::MissingConfig(missing));
-        }
+        // base_url has a default; only the auth token is still required.
+        let jwt_auth = match jwt_auth {
+            Some(v) => v,
+            None => return Err(CliError::MissingConfig(vec![CODEXIS_USER_API_TOKEN_ENV])),
+        };
 
         Ok(Self {
-            base_url: base_url.unwrap().trim_end_matches('/').to_string(),
-            auth_header: to_authorization_header(jwt_auth.as_deref().unwrap()),
+            base_url: base_url.trim_end_matches('/').to_string(),
+            auth_header: to_authorization_header(&jwt_auth),
         })
     }
 }
