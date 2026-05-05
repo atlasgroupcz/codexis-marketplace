@@ -2,17 +2,11 @@
 
 from __future__ import annotations
 
-import base64
 import json
 import time
 import urllib.request
 import uuid
 from typing import Any
-
-
-def encode_node_id(type_name: str, identifier: str) -> str:
-    """Build a base64 Relay-style node ID (e.g. for Marketplace lookups)."""
-    return base64.b64encode(f"{type_name}:{identifier}".encode()).decode()
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +27,10 @@ mutation AddMarketplace($input: MarketplaceSourceInput!) {
 
 _Q_REMOVE_MARKETPLACE = """
 mutation RemoveMarketplace($id: ID!) {
-    removeMarketplace(id: $id) { id name }
+    deleteNode(id: $id) {
+        id
+        ... on Marketplace { name }
+    }
 }
 """
 
@@ -180,24 +177,33 @@ class DaemonClient:
 
     def add_marketplace_idempotent(self, git_url: str, git_ref: str,
                                    manifest: dict) -> list[dict]:
-        """Like add_marketplace, but removes any stale copy (matched by uuid
-        from the local manifest) and retries once on 'already configured'."""
+        """Like add_marketplace, but removes any stale copy (matched by name
+        from the local manifest) and retries once on 'already configured'.
+
+        Uses the daemon-issued node id from `list_marketplaces` rather than
+        computing it locally — the daemon's NodeId wire format (protobuf
+        varint + URL-safe base64) isn't worth re-implementing here.
+        """
         try:
             return self.add_marketplace(git_url, git_ref)
         except RuntimeError as e:
             if "already configured" not in str(e).lower():
                 raise
             try:
-                self.remove_marketplace(
-                    encode_node_id("Marketplace", manifest.get("uuid", ""))
+                stale = next(
+                    (m for m in self.list_marketplaces()
+                     if m["name"] == manifest["name"]),
+                    None,
                 )
+                if stale:
+                    self.remove_marketplace(stale["id"])
             except Exception:
                 pass
             return self.add_marketplace(git_url, git_ref)
 
     def remove_marketplace(self, node_id: str) -> dict | None:
         data = self.gql_data(_Q_REMOVE_MARKETPLACE, {"id": node_id})
-        return data.get("removeMarketplace")
+        return data.get("deleteNode")
 
     def list_marketplaces(self) -> list[dict]:
         data = self.gql_data(_Q_LIST_MARKETPLACES)
