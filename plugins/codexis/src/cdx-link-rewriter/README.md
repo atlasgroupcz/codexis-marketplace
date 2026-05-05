@@ -7,7 +7,7 @@ links in chat messages before they reach the frontend.
 
 ## Requirements
 
-- `CODEXIS_PLUGIN_BASE_URL` must be set in the environment (typically in `~/.cdx/.env`)
+- `CODEXIS_PLUGIN_BASE_URL` must be set in the environment (provided by the host via the plugin manifest's `env` block)
 
 Example:
 

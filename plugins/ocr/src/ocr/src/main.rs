@@ -1,6 +1,5 @@
 use std::env;
 use std::fmt::Write;
-use std::fs;
 use std::process::{Command, Stdio};
 
 const OCR_ENDPOINT: &str = "http://localhost:8086/rest/ocr";
@@ -26,20 +25,7 @@ fn load_api_jwt_auth() -> String {
             return val;
         }
     }
-
-    let home = env::var("HOME").unwrap_or_else(|_| "/home/codexis".to_string());
-    let env_file = format!("{}/.cdx/.env", home);
-    if let Ok(content) = fs::read_to_string(&env_file) {
-        for line in content.lines() {
-            if let Some(val) = line.strip_prefix("CODEXIS_USER_API_TOKEN=") {
-                let val = val.trim();
-                if !val.is_empty() {
-                    return val.to_string();
-                }
-            }
-        }
-    }
-    eprintln!("error: CODEXIS_USER_API_TOKEN not found in ~/.cdx/.env or environment");
+    eprintln!("error: CODEXIS_USER_API_TOKEN not set");
     std::process::exit(2);
 }
 

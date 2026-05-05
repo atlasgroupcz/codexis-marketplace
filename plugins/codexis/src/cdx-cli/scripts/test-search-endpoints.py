@@ -5,7 +5,7 @@
 This script:
 - uses the built ./cdx-cli binary directly
 - forces CODEXIS_PLUGIN_API_URL=http://localhost:8080
-- expects auth config via environment or ~/.cdx/.env
+- expects CODEXIS_USER_API_TOKEN in the environment
 - checks all search sources with source-specific example queries
 - verifies STRING_CHOICE and BOOLEAN facets using the exact returned facet keys
 - deliberately skips DATE_RANGE facets
@@ -26,7 +26,6 @@ from typing import Any
 API_URL = "http://localhost:8080"
 ROOT = Path(__file__).resolve().parents[1]
 BINARY = ROOT / "cdx-cli"
-ENV_FILE = Path.home() / ".cdx" / ".env"
 SKIPPED_FACET_TYPES = {"DATE_RANGE"}
 
 
@@ -70,7 +69,7 @@ def main() -> int:
     auth_source = detect_auth_source()
     if auth_source is None:
         print("Missing auth configuration.")
-        print("Expected CODEXIS_USER_API_TOKEN in the environment or in ~/.cdx/.env")
+        print("Expected CODEXIS_USER_API_TOKEN in the environment.")
         return 1
 
     print("Search endpoint smoke test")
@@ -245,34 +244,7 @@ def search_payload(query: str, extra_fields: dict[str, Any]) -> dict[str, Any]:
 def detect_auth_source() -> str | None:
     if os.environ.get("CODEXIS_USER_API_TOKEN", "").strip():
         return "environment"
-
-    env_vars = read_env_file(ENV_FILE)
-    if env_vars.get("CODEXIS_USER_API_TOKEN", "").strip():
-        return str(ENV_FILE)
-
     return None
-
-
-def read_env_file(path: Path) -> dict[str, str]:
-    if not path.exists():
-        return {}
-
-    values: dict[str, str] = {}
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[len("export ") :].strip()
-        if "=" not in line:
-            continue
-        key, raw_value = line.split("=", 1)
-        key = key.strip()
-        raw_value = raw_value.strip()
-        if len(raw_value) >= 2 and raw_value[0] == raw_value[-1] and raw_value[0] in {"'", '"'}:
-            raw_value = raw_value[1:-1]
-        values[key] = raw_value
-    return values
 
 
 def run_cli(args: list[str], payload: dict[str, Any] | None = None) -> dict[str, Any]:
