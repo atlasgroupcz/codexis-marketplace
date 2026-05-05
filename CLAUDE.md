@@ -97,9 +97,21 @@ Documentation and instructions...
   "postInstall": "command to run after plugin installation (e.g. copy binaries from bin/ to system PATH)",
   "postUninstall": "command to run after plugin uninstallation (e.g. remove binaries from system PATH)",
   "onUpdate": "command to run after plugin update (e.g. replace binaries in system PATH)",
-  "skills": "./skills"
+  "skills": "./skills",
+  "env": {
+    "CODEXIS_PLUGIN_<PLUGIN>_<NAME>": "https://example/api"
+  }
 }
 ```
+
+### Plugin-owned environment variables
+
+Declare plugin-owned env vars in `plugin.json` under `env`. The host merges these into every shell process the plugin runs. Do not write env files; do not set them in install hooks.
+
+Naming convention:
+- `CODEXIS_PLUGIN_*` — plugin-owned configuration (URLs, IDs). Each key belongs to exactly one plugin; do not redeclare another plugin's key.
+- `CODEXIS_USER_*` — per-user secrets injected by the host (Codexis API tokens, LiteLLM keys). Plugins are read-only consumers; never log, never embed in builds.
+- `CODEXIS_PUBLIC_*` — host-injected runtime context (daemon URL, user home, session id). Plugins are read-only consumers.
 
 ### Lifecycle Hooks
 

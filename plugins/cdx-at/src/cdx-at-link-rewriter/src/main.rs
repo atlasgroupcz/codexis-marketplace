@@ -35,10 +35,10 @@ fn extract_url_path(url: &str) -> &str {
 }
 
 fn main() {
-    let base_url = match std::env::var("CODEXIS_PUBLIC_AT_API_URL") {
+    let base_url = match std::env::var("CODEXIS_PLUGIN_AT_API_URL") {
         Ok(value) if !value.trim().is_empty() => value.trim().to_string(),
         _ => {
-            eprintln!("CODEXIS_PUBLIC_AT_API_URL must be set (e.g., export CODEXIS_PUBLIC_AT_API_URL=\"https://search.example.com/api\")");
+            eprintln!("CODEXIS_PLUGIN_AT_API_URL must be set (e.g., export CODEXIS_PLUGIN_AT_API_URL=\"https://search.example.com/api\")");
             std::process::exit(2);
         }
     };

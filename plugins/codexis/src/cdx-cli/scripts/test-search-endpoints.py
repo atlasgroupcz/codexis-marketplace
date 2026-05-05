@@ -4,7 +4,7 @@
 
 This script:
 - uses the built ./cdx-cli binary directly
-- forces CODEXIS_PUBLIC_API_URL=http://localhost:8080
+- forces CODEXIS_PLUGIN_API_URL=http://localhost:8080
 - expects auth config via environment or ~/.cdx/.env
 - checks all search sources with source-specific example queries
 - verifies STRING_CHOICE and BOOLEAN facets using the exact returned facet keys
@@ -277,7 +277,7 @@ def read_env_file(path: Path) -> dict[str, str]:
 
 def run_cli(args: list[str], payload: dict[str, Any] | None = None) -> dict[str, Any]:
     env = os.environ.copy()
-    env["CODEXIS_PUBLIC_API_URL"] = API_URL
+    env["CODEXIS_PLUGIN_API_URL"] = API_URL
 
     input_text = None
     if payload is not None:
