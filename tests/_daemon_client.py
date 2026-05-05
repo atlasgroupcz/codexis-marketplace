@@ -119,21 +119,12 @@ query GetChat($id: ID!) {
                 __typename id status
                 ... on AiChatMessage {
                     parts { %s }
-                    toolChain {
-                        id toolCount
-                        messages {
-                            __typename
-                            ... on AiChatMessage {
-                                parts { %s }
-                            }
-                        }
-                    }
                 }
             }
         }
     }
 }
-""" % (_PART_FIELDS, _PART_FIELDS)
+""" % _PART_FIELDS
 
 _Q_GET_TOOL_CHAIN = """
 query GetToolChain($id: ID!) {

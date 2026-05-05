@@ -117,9 +117,7 @@ class ChatRunner:
                 time.sleep(self.poll_interval_s)
 
     def _parse_turn(self, last_msg: dict) -> dict:
-        result = parse_assistant_message(last_msg)
-        chain = last_msg.get("toolChain") or {}
-        for chain_msg in chain.get("messages") or []:
-            chain_result = parse_assistant_message(chain_msg)
-            result["tool_calls"].extend(chain_result["tool_calls"])
-        return result
+        # In the new schema, ToolMessageParts already live inline in
+        # AiChatMessage.parts. The toolChain is the same entries surfaced via
+        # a sibling node — reading both would double-count every tool call.
+        return parse_assistant_message(last_msg)
