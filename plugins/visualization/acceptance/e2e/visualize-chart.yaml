@@ -14,8 +14,10 @@ steps:
   - prompt: "Vykresli mi sloupcový graf populace největších českých měst — Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
     expect:
       tool_call:
-        # Writing the HTML file ultimately goes through shell (cat/tee/python).
-        name: shell
+        # AI uses the typed writeFile tool to drop the HTML output (not shell
+        # cat/tee). The path field carries our pinned filename, so we match
+        # the JSON-encoded input blob on `mesta-…\.html`.
+        name: writeFile
         input_matches: "mesta-.*\\.html"
       tool_calls_min: 1
       # Router→sub-skill workflow needs to read at least references/chart/SKILL.md

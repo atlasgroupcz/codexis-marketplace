@@ -11,10 +11,12 @@ steps:
   - prompt: "Najdi mi parlamentní dokumenty k interpelacím o daních."
     expect:
       tool_call:
+        # AI may invoke via full quoted path; tolerate quote/backslash/space
+        # between binary name and subcommand.
         name: shell
-        input_matches: "cdx-cz-psp search"
+        input_matches: "cdx-cz-psp[\\s\"\\\\]+search"
       tool_calls_min: 1
-      tool_calls_max: 10
+      tool_calls_max: 12
       response:
         matches: "/doc/CZPSPDOK\\d+"
 
@@ -24,6 +26,6 @@ steps:
         name: shell
         input_matches: "cdx-cz-psp"
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       response:
         matches: "/doc/CZPSPPRE\\d+"

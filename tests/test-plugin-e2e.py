@@ -323,6 +323,11 @@ def main() -> int:
                              "outlast the ~30min keycloak TTL otherwise).")
     parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
                         help="oauth2-proxy URL (default: http://localhost:4182)")
+    parser.add_argument("--var", action="append", default=[],
+                        metavar="NAME=VALUE",
+                        help="Inject a template variable available to YAML "
+                             "prompts and setup blocks (e.g. --var "
+                             "katastr_api_key=...). Repeatable.")
     args = parser.parse_args()
 
     transcript_dir = Path(args.transcript_dir)
@@ -352,6 +357,13 @@ def main() -> int:
         "marketplace_id": our_mkt["id"],
         "marketplace_name": our_mkt["name"],
     }
+    # User-supplied --var NAME=VALUE entries become template vars too.
+    for v in args.var:
+        if "=" not in v:
+            r.fail(f"--var must be NAME=VALUE, got {v!r}")
+            continue
+        name, _, value = v.partition("=")
+        builtin_vars[name.strip()] = value
 
     # Pre-clean: uninstall every plugin in our marketplace that might be left
     # over from a prior crashed run. Tests that install/uninstall side plugins

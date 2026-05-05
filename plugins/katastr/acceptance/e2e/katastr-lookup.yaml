@@ -8,7 +8,16 @@ description: Verify the katastr skill covers three typical lookup flows against 
 #   - budova s č.p. 1 stojí na ní
 #   - LV 12069
 #   - ochrana: nemovitá kulturní památka
-# API key pre-configured in VM at ~/.cdx/apps/katastr/.env.
+# API key is supplied at runtime via `--var katastr_api_key=…` and dropped
+# into the per-app env file the CLI reads (lib/katastr_core/settings.py
+# loads API_KEY= from $HOME/.cdx/apps/katastr/.env).
+
+setup:
+  - upload:
+      destination: /home/codexis/.cdx/apps/katastr
+      files:
+        - path: .env
+          content: "API_KEY={{ katastr_api_key }}\n"
 
 steps:
   # 1. basic lookup — verify area and land-type in the same response

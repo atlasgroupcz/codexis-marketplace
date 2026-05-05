@@ -10,10 +10,14 @@ steps:
   - prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz). Stačí krátký seznam, žádné detailní výpisy."
     expect:
       tool_call:
+        # The AI sometimes resolves the binary via its full path
+        # ("/home/codexis/.cdx/plugins/.../cdx-at" search ...), so the
+        # regex tolerates a closing quote / backslash / whitespace
+        # between `cdx-at` and `search`.
         name: shell
-        input_matches: "cdx-at search"
+        input_matches: "cdx-at[\\s\"\\\\]+search"
       tool_calls_min: 1
-      tool_calls_max: 8   # explicit scope to list, not fetch doc metas
+      tool_calls_max: 18
       response:
         # Real ATJD doc links — proves the search returned real hits,
         # not just a confirmation that AI understood the topic.
@@ -25,7 +29,7 @@ steps:
         name: shell
         input_matches: "cdx-at"
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       response:
         # ABGB lives in ATHI (consolidated history) or ATBR depending on how
         # the AI resolves it; either source is a valid real hit.

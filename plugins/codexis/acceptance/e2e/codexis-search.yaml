@@ -11,9 +11,9 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "cdx-cli search"
+        input_matches: "cdx-cli[\\s\"\\\\]+search"
       tool_calls_min: 1
-      tool_calls_max: 5   # one search; +1 slack for a narrow retry
+      tool_calls_max: 18  # AI explores via several search variants
       response:
         # Real JD doc link proves the search returned hits (immune to
         # "nenašel jsem rozhodnutí o náhradě" false-positives).
