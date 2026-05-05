@@ -44,7 +44,7 @@
   "skills": "./skills",
   "components": "./components",
   "env": {
-    "CODEXIS_PLUGIN_BASE_URL": "https://cdxx-next-profidata-main.onprem.agrp.dev",
-    "CODEXIS_PLUGIN_API_URL": "https://cdxx-next-be-main-rest-profidata-main.onprem.agrp.dev"
+    "CODEXIS_PLUGIN_BASE_URL": "https://app.codexis.cz",
+    "CODEXIS_PLUGIN_API_URL": "https://app.codexis.cz"
   }
 }
