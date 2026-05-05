@@ -77,8 +77,7 @@ export CODEXIS_PLUGIN_API_URL="https://app.codexis.cz"
 export CODEXIS_USER_API_TOKEN="Bearer <jwt>"
 ```
 
-If one or both variables are missing from the process environment, `cdx-cli`
-tries `~/.cdx/.env`. Process environment values win over file values.
+Both variables must be set in the process environment (the host provides them via the plugin manifest's `env` block and per-uid credential injection).
 
 ## Build outputs
 

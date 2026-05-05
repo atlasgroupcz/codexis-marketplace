@@ -1,7 +1,6 @@
 use std::fmt;
 use std::io;
 
-use crate::core::config::CDX_ENV_FILE_DISPLAY_PATH;
 
 #[derive(Debug)]
 pub(crate) enum CliError {
@@ -44,7 +43,7 @@ impl fmt::Display for CliError {
         match self {
             Self::MissingConfig(name) => write!(
                 f,
-                "missing required configuration: {name}. Set it in the environment or {CDX_ENV_FILE_DISPLAY_PATH}."
+                "missing required configuration: {name}. Set it in the environment."
             ),
             Self::Io { context, source } => write!(f, "{context}: {source}"),
             Self::InvalidJson(message) => write!(f, "invalid JSON payload: {message}"),
