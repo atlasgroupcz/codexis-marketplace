@@ -35,6 +35,14 @@ from _daemon_client import DaemonClient  # noqa: E402
 from _chat_runner import ChatRunner  # noqa: E402
 
 
+# Sentinel markers used to smuggle structured data from provider to
+# Python assertion through promptfoo's Python wrapper. The wrapper
+# strips `providerResponse` from the assertion context, so the only
+# reliable channel is the `output` string itself.
+TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
+TOOL_CALLS_END = "<<CDX_EVAL_END>>"
+
+
 def _daemon_base_from_graphql(url: str) -> str:
     """`DaemonClient` wants the base URL; promptfoo convention is full GraphQL URL."""
     if url.endswith("/graphql"):
@@ -67,14 +75,20 @@ def call_api(prompt: str, options: dict | None, context: dict | None) -> dict[st
 
     text = (result.get("text") or "").strip()
     tool_calls = result.get("tool_calls") or []
+    # Smuggle tool_calls into the output via a sentinel suffix (see
+    # comment on TOOL_CALLS_SENTINEL above). assertions.py strips and
+    # parses it back out; built-in regex assertions still match against
+    # the text portion above the sentinel.
+    import json
+    suffix = (f"\n\n{TOOL_CALLS_SENTINEL}"
+              f"{json.dumps(tool_calls, ensure_ascii=False)}"
+              f"{TOOL_CALLS_END}")
     return {
-        "output": text,
-        # Provider metadata is preserved on the response object; assertions
-        # (see assertions.py) walk the context to find it across promptfoo
-        # versions. Tool calls are summarized for the LLM grader to see.
+        "output": text + suffix,
+        # Kept for completeness even though Python assertions can't see it.
+        # JS extension hooks (afterEach) and the promptfoo UI still get it.
         "metadata": {
             "tool_calls": tool_calls,
-            "tool_calls_summary": _summarize_for_grader(tool_calls),
             "chat_node_id": runner.chat_node_id,
         },
     }

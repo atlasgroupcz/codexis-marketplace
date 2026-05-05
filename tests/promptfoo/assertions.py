@@ -5,11 +5,10 @@ Two-axis test design:
   - tool_call axis → this module: did the AI invoke a specific tool with
                      args matching a regex over the JSON-encoded input?
 
-Why a custom assertion: promptfoo's standard assertions look at the
-provider's `output` text. For tool_call checks we need the structured
-tool list the provider returns under metadata. We surface that via a
-context-walk that tolerates which-version-of-promptfoo this runs under
-(provider metadata is exposed under different attribute paths over time).
+Tool calls reach this module through a sentinel-bracketed JSON suffix
+appended to the provider's `output`. Promptfoo's Python wrapper strips
+`providerResponse.metadata` from the assertion context, so the output
+string is the only reliable channel. See `provider.py`.
 """
 
 from __future__ import annotations
@@ -18,33 +17,27 @@ import json
 import re
 from typing import Any
 
+# Must match the constants in provider.py.
+TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
+TOOL_CALLS_END = "<<CDX_EVAL_END>>"
+_SENTINEL_RE = re.compile(
+    re.escape(TOOL_CALLS_SENTINEL) + r"(.*?)" + re.escape(TOOL_CALLS_END),
+    re.DOTALL,
+)
 
-def _walk(node: Any, *path: str) -> Any:
-    for key in path:
-        if isinstance(node, dict):
-            node = node.get(key)
-        else:
-            return None
-    return node
 
-
-def _get_tool_calls(context: dict) -> list[dict]:
-    """Find the provider's tool_calls list in the assertion context.
-
-    Promptfoo has surfaced provider metadata at several paths across
-    versions. Try each and return the first list we find.
-    """
-    for path in (
-        ("providerResponse", "metadata", "tool_calls"),
-        ("metadata", "tool_calls"),
-        ("response", "metadata", "tool_calls"),
-        ("test", "metadata", "tool_calls"),
-        ("result", "metadata", "tool_calls"),
-    ):
-        found = _walk(context, *path)
-        if isinstance(found, list):
-            return found
-    return []
+def _extract_tool_calls(output: str) -> list[dict]:
+    """Pull the tool_calls JSON out of the output's sentinel suffix."""
+    if not isinstance(output, str):
+        return []
+    m = _SENTINEL_RE.search(output)
+    if not m:
+        return []
+    try:
+        data = json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return []
+    return data if isinstance(data, list) else []
 
 
 def assert_tool_call(output: str, context: dict) -> dict:
@@ -63,7 +56,7 @@ def assert_tool_call(output: str, context: dict) -> dict:
         return {"pass": False, "score": 0.0,
                 "reason": "assert_tool_call: missing 'tool_name' var"}
 
-    tool_calls = _get_tool_calls(context or {})
+    tool_calls = _extract_tool_calls(output)
     rgx = re.compile(pattern) if pattern else None
 
     saw = [tc.get("name") for tc in tool_calls]
@@ -99,7 +92,7 @@ def assert_tool_count_max(output: str, context: dict) -> dict:
         return {"pass": False, "score": 0.0,
                 "reason": "assert_tool_count_max: missing 'tool_calls_max' var"}
     max_n = int(max_n)
-    tool_calls = _get_tool_calls(context or {})
+    tool_calls = _extract_tool_calls(output)
     work = [tc for tc in tool_calls if tc.get("name") != "skill"]
     if len(work) <= max_n:
         return {"pass": True, "score": 1.0,

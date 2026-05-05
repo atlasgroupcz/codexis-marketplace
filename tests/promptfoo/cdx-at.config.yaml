@@ -10,12 +10,16 @@
 
 description: cdx-at search — Austrian RIS, OGH damages + ABGB lookup
 
+# Single pass-through prompt — each test row supplies its own user
+# message via vars.prompt; the provider opens a fresh chat per row.
+prompts:
+  - "{{ prompt }}"
+
 providers:
-  - id: file://tests/promptfoo/provider.py
+  - id: file://./provider.py
     label: cdx-daemon
     config: {}
 
-# Each test row drives one prompt. The provider opens a fresh chat per row.
 # tool_calls_max is a "did the AI actually use the right tool" signal,
 # not a budget knob. A healthy `cdx-at search` is ~1-2 calls plus skill
 # loads (excluded). If we see >8 work calls, the AI almost certainly
@@ -25,32 +29,30 @@ providers:
 tests:
   - description: OGH-Schadenersatz search returns real ATJD URLs
     vars:
+      prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz)."
       tool_name: shell
       input_regex: 'cdx-at[\s"\\]+search'
       tool_calls_max: 8
-    options:
-      prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz)."
     assert:
       # Structural — the AI actually invoked cdx-at, not just hallucinated.
       - type: python
-        value: file://tests/promptfoo/assertions.py:assert_tool_call
+        value: file://./assertions.py:assert_tool_call
       - type: python
-        value: file://tests/promptfoo/assertions.py:assert_tool_count_max
+        value: file://./assertions.py:assert_tool_count_max
       # Surface — real ATJD doc URLs in the reply prove real hits.
       - type: regex
         value: '/doc/ATJD\d+'
 
   - description: ABGB (Austrian civil code) lookup returns ATBR/ATHI doc
     vars:
+      prompt: "Najdi mi rakouský občanský zákoník (ABGB)."
       tool_name: shell
       input_regex: 'cdx-at'
       tool_calls_max: 8
-    options:
-      prompt: "Najdi mi rakouský občanský zákoník (ABGB)."
     assert:
       - type: python
-        value: file://tests/promptfoo/assertions.py:assert_tool_call
+        value: file://./assertions.py:assert_tool_call
       - type: python
-        value: file://tests/promptfoo/assertions.py:assert_tool_count_max
+        value: file://./assertions.py:assert_tool_count_max
       - type: regex
         value: '/doc/(ATBR|ATHI)\d+'
