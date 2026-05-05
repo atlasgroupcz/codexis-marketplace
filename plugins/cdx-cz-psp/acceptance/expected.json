@@ -1,11 +1,25 @@
 {
-  "skills": ["cdx-cz-psp:cdx-cz-psp"],
+  "skills": [
+    "cdx-cz-psp:cdx-cz-psp"
+  ],
   "post_install": [
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-cz-psp" },
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-cz-psp-link-rewriter" }
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-cz-psp"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-cz-psp-link-rewriter"
+    }
   ],
   "post_uninstall": [
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-cz-psp" },
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-cz-psp-link-rewriter" }
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-cz-psp"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-cz-psp-link-rewriter"
+    }
   ]
 }

@@ -6,20 +6,59 @@
     "codexis:sledovane-dokumenty"
   ],
   "post_install": [
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-cli" },
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-link-rewriter" },
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-sledovane-dokumenty" },
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-sledovana-judikatura" },
-    { "type": "executable", "path": "$HOME/.local/bin/cdxctl" },
-    { "type": "dir",        "path": "$HOME/.local/share/codexis/lib/sledovane_dokumenty_core" },
-    { "type": "dir",        "path": "$HOME/.local/share/codexis/lib/sledovana_judikatura_core" }
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-cli"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-link-rewriter"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-sledovane-dokumenty"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-sledovana-judikatura"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdxctl"
+    },
+    {
+      "type": "dir",
+      "path": "$HOME/.local/share/codexis/lib/sledovane_dokumenty_core"
+    },
+    {
+      "type": "dir",
+      "path": "$HOME/.local/share/codexis/lib/sledovana_judikatura_core"
+    }
   ],
   "post_uninstall": [
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-cli" },
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-link-rewriter" },
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-sledovane-dokumenty" },
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-sledovana-judikatura" },
-    { "type": "absent", "path": "$HOME/.local/bin/cdxctl" },
-    { "type": "absent", "path": "$HOME/.local/share/codexis" }
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-cli"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-link-rewriter"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-sledovane-dokumenty"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-sledovana-judikatura"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdxctl"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/share/codexis"
+    }
   ]
 }

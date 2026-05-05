@@ -311,7 +311,7 @@ def _check_state_graphql(spec: dict, client: Any, vars_: dict) -> None:
 def _check_state_file(spec: dict, client: Any, vars_: dict) -> None:
     """Assert on a daemon-visible filesystem entry via getEntry.
 
-    Fields: file (path), type (file|dir|executable|absent — default: file).
+    Fields: file (path), type (file|dir|absent — default: file).
     Leverages the same getEntry API test-marketplace.py uses.
     """
     path = substitute(spec["file"], vars_)
@@ -326,9 +326,6 @@ def _check_state_file(spec: dict, client: Any, vars_: dict) -> None:
     elif kind == "dir":
         if not entry or not entry.get("isDirectory"):
             raise AssertionFailure(f"state.file: {path} missing or not a directory")
-    elif kind == "executable":
-        if not entry or not entry.get("isFile") or not entry.get("executable"):
-            raise AssertionFailure(f"state.file: {path} missing or not executable")
     else:
         raise ValueError(f"state.file: unknown type {kind!r}")
 

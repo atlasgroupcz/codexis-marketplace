@@ -1,0 +1,28 @@
+name: visualize-chart
+description: Verify the visualize router picks the chart type, reads its sub-skill files, and produces an HTML file at the requested path.
+
+# The visualization plugin is a router with 10 sub-types. Testing one
+# representative type (chart — bar) exercises the full router→sub-skill→
+# template→write workflow. State.file is the strong oracle: an HTML file
+# exists at the user-requested path means the whole pipeline ran.
+#
+# Deterministic data: 4 Czech cities + their populations (rounded to ths).
+# The AI doesn't need to look anything up, so the run won't depend on
+# external state.
+
+steps:
+  - prompt: "Vykresli mi sloupcový graf populace největších českých měst — Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
+    expect:
+      tool_call:
+        # Writing the HTML file ultimately goes through shell (cat/tee/python).
+        name: shell
+        input_matches: "mesta-.*\\.html"
+      tool_calls_min: 1
+      # Router→sub-skill workflow needs to read at least references/chart/SKILL.md
+      # and template.html before writing. Allow some headroom for retries.
+      tool_calls_max: 12
+      state:
+        file: /home/codexis/mesta-{{ run_id }}.html
+        type: file
+      response:
+        contains: ".html"

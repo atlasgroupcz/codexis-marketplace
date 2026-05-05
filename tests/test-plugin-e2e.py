@@ -117,14 +117,13 @@ def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
     r.log(f"Git URL: {git_url}  ref: {git_ref}")
 
     try:
-        marketplaces = client.add_marketplace_idempotent(git_url, git_ref, manifest)
+        our = client.add_marketplace_idempotent(git_url, git_ref, manifest)
     except RuntimeError as e:
         r.fail(f"Failed to add marketplace: {e}")
         sys.exit(1)
 
-    our = next((m for m in marketplaces if m["name"] == mkt_name), None)
-    if not our:
-        r.fail(f"Marketplace {mkt_name!r} not found in response")
+    if not our or our.get("name") != mkt_name:
+        r.fail(f"Marketplace {mkt_name!r} not in response: {our!r}")
         sys.exit(1)
     r.ok("Marketplace added")
     return our

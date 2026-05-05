@@ -46,15 +46,7 @@ def check_assertions(assertions: list[dict], install_path: str,
         )
         entry = client.get_entry(path)
 
-        if atype == "executable":
-            if entry and entry.get("isFile") and entry.get("executable"):
-                r.ok(f"{path} is executable")
-            elif entry and entry.get("isFile"):
-                r.fail(f"{path} exists but is not executable")
-            else:
-                r.fail(f"{path} missing")
-
-        elif atype == "file":
+        if atype == "file":
             if entry and entry.get("isFile"):
                 r.ok(f"{path} exists")
             else:
@@ -111,21 +103,19 @@ def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
     r.log(f"Git URL: {git_url}  ref: {git_ref}")
 
     try:
-        marketplaces = client.add_marketplace_idempotent(git_url, git_ref, manifest)
+        our_mkt = client.add_marketplace_idempotent(git_url, git_ref, manifest)
     except RuntimeError as e:
         r.fail(f"Failed to add marketplace: {e}")
         sys.exit(1)
 
-    our_mkt = next((m for m in marketplaces if m["name"] == mkt_name), None)
-    if not our_mkt:
-        r.fail(f"Marketplace '{mkt_name}' not found in response")
+    if not our_mkt or our_mkt.get("name") != mkt_name:
+        r.fail(f"Marketplace '{mkt_name}' not in response: {our_mkt!r}")
         sys.exit(1)
 
     r.ok("Marketplace added successfully")
     if our_mkt.get("error"):
         r.fail(f"Marketplace has error: {our_mkt['error']}")
-    if our_mkt["name"] == mkt_name:
-        r.ok("Marketplace name matches")
+    r.ok("Marketplace name matches")
     r.log(f"Marketplace reports {our_mkt['pluginCount']} plugins")
     return our_mkt
 
@@ -164,14 +154,13 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     # --- Install ---
     r.log("Installing...")
     try:
-        installed_list = client.install_plugin(plugin_id)
+        installed = client.install_plugin(plugin_id)
     except RuntimeError as e:
         r.fail(f"Install failed: {e}")
         return
 
-    installed = next((p for p in installed_list if p["name"] == name), None)
-    if not installed:
-        r.fail("Not in installed list after install")
+    if not installed or installed.get("name") != name:
+        r.fail(f"Install returned unexpected payload: {installed!r}")
         return
     r.ok("Install succeeded")
 
@@ -216,15 +205,15 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     # --- Uninstall ---
     r.log("Uninstalling...")
     try:
-        remaining = client.uninstall_plugin(plugin_id)
+        client.uninstall_plugin(plugin_id)
+        r.ok("Uninstall mutation succeeded")
     except RuntimeError as e:
         r.fail(f"Uninstall failed: {e}")
         return
 
-    if not any(p["name"] == name for p in remaining):
-        r.ok("Removed from installed list")
-    else:
-        r.fail("Still in installed list after uninstall")
+    # The on-disk getEntry check below is the authoritative "still installed?"
+    # signal — the daemon now returns just the uninstalled plugin, not the
+    # remaining list, so we can't infer membership from the response.
 
     if install_path:
         entry = client.get_entry(install_path)

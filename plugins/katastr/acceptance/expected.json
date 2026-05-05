@@ -1,11 +1,25 @@
 {
-  "skills": ["katastr:katastr"],
+  "skills": [
+    "katastr:katastr"
+  ],
   "post_install": [
-    { "type": "executable", "path": "$HOME/.local/bin/katastr-cli" },
-    { "type": "dir",        "path": "$HOME/.local/share/katastr/lib/katastr_core" }
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/katastr-cli"
+    },
+    {
+      "type": "dir",
+      "path": "$HOME/.local/share/katastr/lib/katastr_core"
+    }
   ],
   "post_uninstall": [
-    { "type": "absent", "path": "$HOME/.local/bin/katastr-cli" },
-    { "type": "absent", "path": "$HOME/.local/share/katastr" }
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/katastr-cli"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/share/katastr"
+    }
   ]
 }

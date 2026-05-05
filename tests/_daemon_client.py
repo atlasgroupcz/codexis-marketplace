@@ -61,64 +61,94 @@ _Q_SKILLS = """
 _Q_GET_ENTRY = """
 query GetEntry($path: String!) {
     getEntry(path: $path) {
-        name isFile isDirectory isSymlink executable
+        name type permissions
     }
 }
 """
 
 _Q_NEW_CHAT = """
 mutation NewChat($model: ChatModel) {
-    newChat(model: $model) { id chatId status }
+    newChat(model: $model) { id status }
 }
 """
 
 _Q_SEND_MESSAGE = """
-mutation SendMessage($chatId: ID!, $message: String!) {
-    sendMessage(chatId: $chatId, message: $message) {
-        chatId
-        ... on SendMessageProcessing { executionId }
-        ... on SendMessageError { message }
+mutation SendMessage($input: SendMessageInput!) {
+    sendMessage(input: $input) {
+        ... on SendMessageProcessing { chatId executionId }
+        ... on SendMessageError { chatId code message }
     }
 }
+"""
+
+# The chat schema is now interface-driven: ToolMessagePart is an interface
+# with one concrete type per tool kind, each carrying its own typed args.
+# We pull the common fields from the interface plus type-specific args via
+# inline fragments. The chat parser synthesizes a stable {name, input, output}
+# shape from these so YAML regexes (input_matches against a JSON blob) keep
+# working across the realign.
+_PART_FIELDS = """
+__typename partId
+... on TextMessagePart { content }
+... on ReasoningMessagePart { content }
+... on ToolMessagePart {
+    toolCallId toolName state
+    output {
+        __typename
+        ... on TextToolOutput { content }
+        ... on ErrorToolOutput { message }
+        ... on ImageToolOutput { mimeType }
+    }
+}
+... on ShellToolMessagePart { command note }
+... on ReadFileToolMessagePart { path offset limit }
+... on WriteFileToolMessagePart { path content }
+... on EditFileToolMessagePart { filePath oldString newString replaceAll }
+... on SkillToolMessagePart { skill resolvedSkillName }
+... on SpawnAgentToolMessagePart { subagentType prompt note maxTurns }
+... on ExtractToolMessagePart { path query schemaName }
 """
 
 _Q_GET_CHAT = """
 query GetChat($id: ID!) {
     node(id: $id) {
-        ... on ChatInfo {
-            id chatId status
+        ... on Chat {
+            id status
             messages {
                 __typename id status
-                parts {
-                    __typename partId
-                    ... on TextMessagePart { content }
-                    ... on ThinkingMessagePart { toolCount toolChainId thinkingState: state }
-                    ... on ToolMessagePart { toolCallId toolName input output }
-                }
-            }
-        }
-    }
-}
-"""
-
-_Q_GET_TOOL_CHAIN = """
-query GetToolChain($id: ID!) {
-    node(id: $id) {
-        ... on ToolChain {
-            toolCount
-            messages {
-                __typename
-                parts {
-                    __typename
-                    ... on ToolMessagePart {
-                        toolCallId toolName input output state
+                ... on AiChatMessage {
+                    parts { %s }
+                    toolChain {
+                        id toolCount
+                        messages {
+                            __typename
+                            ... on AiChatMessage {
+                                parts { %s }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
-"""
+""" % (_PART_FIELDS, _PART_FIELDS)
+
+_Q_GET_TOOL_CHAIN = """
+query GetToolChain($id: ID!) {
+    node(id: $id) {
+        ... on ToolChain {
+            id toolCount
+            messages {
+                __typename
+                ... on AiChatMessage {
+                    parts { %s }
+                }
+            }
+        }
+    }
+}
+""" % _PART_FIELDS
 
 
 class DaemonClient:
@@ -159,12 +189,29 @@ class DaemonClient:
 
     # -------------------------------------------------- filesystem introspection
     def get_entry(self, path: str) -> dict | None:
+        """Returns {name, isFile, isDirectory, isSymlink} or None.
+
+        The daemon's FileEntry now exposes a single `type: EntryType` enum
+        instead of the legacy boolean flags; we translate back. The exec
+        bit is no longer surfaced by the API, so callers should rely on
+        plugin install hooks (which fail loudly on a chmod error) instead
+        of asserting on file mode.
+        """
         data = self.gql_data(_Q_GET_ENTRY, {"path": path})
-        return data.get("getEntry")
+        entry = data.get("getEntry")
+        if not entry:
+            return None
+        kind = entry.get("type")
+        return {
+            "name": entry.get("name"),
+            "isFile": kind == "FILE",
+            "isDirectory": kind == "DIRECTORY",
+            "isSymlink": kind == "SYMLINK",
+        }
 
     # -------------------------------------------------- marketplace CRUD
-    def add_marketplace(self, git_url: str, git_ref: str) -> list[dict]:
-        """Add a GIT-sourced marketplace. Returns the full `addMarketplace` list.
+    def add_marketplace(self, git_url: str, git_ref: str) -> dict:
+        """Add a GIT-sourced marketplace. Returns the single Marketplace object.
 
         Raises RuntimeError if the daemon already has this marketplace —
         use `add_marketplace_idempotent` if you want auto-retry.
@@ -176,7 +223,7 @@ class DaemonClient:
         return data["addMarketplace"]
 
     def add_marketplace_idempotent(self, git_url: str, git_ref: str,
-                                   manifest: dict) -> list[dict]:
+                                   manifest: dict) -> dict:
         """Like add_marketplace, but removes any stale copy (matched by name
         from the local manifest) and retries once on 'already configured'.
 
@@ -210,11 +257,11 @@ class DaemonClient:
         return data["marketplaces"]
 
     # -------------------------------------------------- plugins
-    def install_plugin(self, plugin_id: str) -> list[dict]:
+    def install_plugin(self, plugin_id: str) -> dict:
         data = self.gql_data(_Q_INSTALL_PLUGIN, {"input": {"id": plugin_id}})
         return data["installPlugin"]
 
-    def uninstall_plugin(self, plugin_id: str) -> list[dict]:
+    def uninstall_plugin(self, plugin_id: str) -> dict:
         data = self.gql_data(_Q_UNINSTALL_PLUGIN, {"input": {"id": plugin_id}})
         return data["uninstallPlugin"]
 
@@ -229,7 +276,10 @@ class DaemonClient:
         return data["newChat"]
 
     def send_message(self, chat_id: str, message: str) -> dict:
-        data = self.gql_data(_Q_SEND_MESSAGE, {"chatId": chat_id, "message": message})
+        data = self.gql_data(
+            _Q_SEND_MESSAGE,
+            {"input": {"chatId": chat_id, "message": message}},
+        )
         return data["sendMessage"]
 
     def get_chat(self, node_id: str) -> dict:
