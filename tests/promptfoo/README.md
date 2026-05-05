@@ -37,8 +37,17 @@ What we keep:
 |---|---|---|
 | built-in `regex` / `contains` / `not-contains` | Pattern in the AI's response text | `response.matches` / `response.contains` |
 | `assert_tool_call` | Did the AI invoke a specific tool with matching args? | `tool_call.{name,input_matches}` |
-| `assert_tool_count_max` | Budget: AI used ≤ N work calls (skill loads excluded) | `tool_calls_max` |
+| `assert_tool_count_max` | "Did AI use the right tool?" — see note below | `tool_calls_max` |
 | `assert_state_graphql` | Daemon-side state assertion (e.g. "automation X exists") | `state.graphql` |
+
+**On `tool_calls_max`**: it's not a budget knob; it's a sanity signal.
+A healthy single-search workflow is ~1-2 work calls. If the count balloons
+past 8 on a single-step search, the AI almost certainly fell back to
+`curl`/scraping because our binary errored (PATH issue, auth 401, missing
+env var, etc.). Set the cap to a realistic upper bound for the workflow,
+then trust it — when it fires, investigate the daemon/plugin, don't
+loosen the cap. Prompts should sound like real users; do **not** add
+"only do 1 search please" framing to artificially shrink the count.
 
 `state.graphql` supports the same operators the legacy framework had:
 `count`, `contains`, `not_contains`, `matches`, `equals`, plus optional

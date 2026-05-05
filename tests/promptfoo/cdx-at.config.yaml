@@ -16,6 +16,12 @@ providers:
     config: {}
 
 # Each test row drives one prompt. The provider opens a fresh chat per row.
+# tool_calls_max is a "did the AI actually use the right tool" signal,
+# not a budget knob. A healthy `cdx-at search` is ~1-2 calls plus skill
+# loads (excluded). If we see >8 work calls, the AI almost certainly
+# fell back to curl/scraping — which is a real failure mode worth
+# catching even when the response regex happens to pass.
+
 tests:
   - description: OGH-Schadenersatz search returns real ATJD URLs
     vars:
@@ -23,10 +29,7 @@ tests:
       input_regex: 'cdx-at[\s"\\]+search'
       tool_calls_max: 8
     options:
-      prompt: |
-        Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o
-        náhradě škody (Schadenersatz). Stačí krátký seznam, žádné
-        detailní výpisy.
+      prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz)."
     assert:
       # Structural — the AI actually invoked cdx-at, not just hallucinated.
       - type: python

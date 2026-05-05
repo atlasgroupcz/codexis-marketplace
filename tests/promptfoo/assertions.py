@@ -84,7 +84,15 @@ def assert_tool_call(output: str, context: dict) -> dict:
 
 
 def assert_tool_count_max(output: str, context: dict) -> dict:
-    """Pass if the AI made <= `tool_calls_max` work calls (skill loads excluded)."""
+    """Pass if the AI made <= `tool_calls_max` work calls (skill loads excluded).
+
+    This is a "did the AI actually use the right tool" signal, not a budget
+    knob. Healthy single-search workflows are 1-2 work calls; a count
+    exploding past the cap usually means the AI's intended tool errored
+    (binary not on PATH, auth 401, etc.) and it fell back to curl/scraping.
+    Pick the cap as a realistic upper bound for the workflow, then trust it
+    — when this fires, investigate the daemon/plugin, not the cap.
+    """
     vars_ = (context or {}).get("vars") or {}
     max_n = vars_.get("tool_calls_max")
     if max_n is None:
