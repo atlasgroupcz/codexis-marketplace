@@ -2,6 +2,10 @@
   "skills": [
     "video-analyze:video-analyze"
   ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_LITELLM_BASE_URL",
+    "CODEXIS_USER_LITELLM_API_KEY"
+  ],
   "post_install": [
     {
       "type": "file",

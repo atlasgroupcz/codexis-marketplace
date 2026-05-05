@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.parse
 import urllib.request
 import uuid
 from typing import Any
@@ -339,6 +340,18 @@ class DaemonClient:
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
             return json.loads(resp.read())
+
+    # -------------------------------------------------- file download
+    def download_file(self, path: str) -> bytes:
+        """Fetch a VM-side file's raw bytes via REST.
+
+        Used by test-marketplace.py to read the daemon-managed .env file
+        and verify each plugin's required vars are populated.
+        """
+        url = f"{self.base_url}/rest/files/download?path={urllib.parse.quote(path)}"
+        req = urllib.request.Request(url, headers={"Authorization": self.auth_header})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read()
 
     def run_single_shot_chat(self, prompt: str, model: str | None = None,
                              poll_interval_s: float = 2.0,

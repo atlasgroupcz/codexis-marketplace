@@ -2,6 +2,10 @@
   "skills": [
     "cdx-cz-spp:cdx-cz-spp"
   ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_CZ_SPP_API_URL",
+    "CODEXIS_USER_API_TOKEN"
+  ],
   "post_install": [
     {
       "type": "file",

@@ -5,6 +5,12 @@
     "codexis:sledovana-judikatura",
     "codexis:sledovane-dokumenty"
   ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_API_URL",
+    "CODEXIS_PUBLIC_BASE_URL",
+    "CODEXIS_PUBLIC_DAEMON_URL",
+    "CODEXIS_USER_API_TOKEN"
+  ],
   "post_install": [
     {
       "type": "file",

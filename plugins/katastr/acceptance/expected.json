@@ -2,6 +2,9 @@
   "skills": [
     "katastr:katastr"
   ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_USER_HOME"
+  ],
   "post_install": [
     {
       "type": "file",

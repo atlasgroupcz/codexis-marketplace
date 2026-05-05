@@ -2,6 +2,10 @@
   "skills": [
     "cdx-sk:cdx-sk"
   ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_SK_API_URL",
+    "CODEXIS_USER_API_TOKEN"
+  ],
   "post_install": [
     {
       "type": "file",

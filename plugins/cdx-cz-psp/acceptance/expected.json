@@ -2,6 +2,10 @@
   "skills": [
     "cdx-cz-psp:cdx-cz-psp"
   ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_CZ_PSP_API_URL",
+    "CODEXIS_USER_API_TOKEN"
+  ],
   "post_install": [
     {
       "type": "file",
