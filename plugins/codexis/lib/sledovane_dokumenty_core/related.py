@@ -137,7 +137,7 @@ def detect_changes(codexis_id, relation_type, printer=None):
             {"docId": "...", "title": f"a dalších {len(removed_ids) - 10}"}
         )
 
-    codexis_base = os.environ.get("CODEXIS_PUBLIC_BASE_URL", "https://next.codexis.cz")
+    codexis_base = os.environ.get("CODEXIS_PLUGIN_BASE_URL", "https://next.codexis.cz")
     desc_lines = []
     if added_docs:
         desc_lines.append(f"**Přidáno {len(added_ids)}** dokumentů typu {type_name}:")

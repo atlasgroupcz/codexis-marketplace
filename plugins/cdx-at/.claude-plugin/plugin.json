@@ -29,5 +29,8 @@
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
-  "skills": "./skills"
+  "skills": "./skills",
+  "env": {
+    "CODEXIS_PLUGIN_AT_API_URL": "http://192.168.4.56:8081/api"
+  }
 }

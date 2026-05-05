@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::core::error::CliError;
 
-pub(crate) const CODEXIS_PUBLIC_API_URL_ENV: &str = "CODEXIS_PUBLIC_API_URL";
+pub(crate) const CODEXIS_PLUGIN_API_URL_ENV: &str = "CODEXIS_PLUGIN_API_URL";
 pub(crate) const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 const CDX_ENV_FILE_RELATIVE_PATH: &str = ".cdx/.env";
 pub(crate) const CDX_ENV_FILE_DISPLAY_PATH: &str = "~/.cdx/.env";
@@ -18,12 +18,12 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn load() -> Result<Self, CliError> {
         let env_file = load_env_file_from_home();
-        let base_url = resolve_config_value(CODEXIS_PUBLIC_API_URL_ENV, env_file.as_ref());
+        let base_url = resolve_config_value(CODEXIS_PLUGIN_API_URL_ENV, env_file.as_ref());
         let jwt_auth = resolve_config_value(CODEXIS_USER_API_TOKEN_ENV, env_file.as_ref());
 
         let mut missing = Vec::new();
         if base_url.is_none() {
-            missing.push(CODEXIS_PUBLIC_API_URL_ENV);
+            missing.push(CODEXIS_PLUGIN_API_URL_ENV);
         }
         if jwt_auth.is_none() {
             missing.push(CODEXIS_USER_API_TOKEN_ENV);
@@ -193,14 +193,14 @@ mod tests {
     fn env_parser_supports_plain_and_exported_values() {
         let parsed = parse_env_file(
             r#"
-CODEXIS_PUBLIC_API_URL=https://app.codexis.cz/
+CODEXIS_PLUGIN_API_URL=https://app.codexis.cz/
 export CODEXIS_USER_API_TOKEN="Bearer abc"
 # comment
 "#,
         );
 
         assert_eq!(
-            parsed.get(CODEXIS_PUBLIC_API_URL_ENV),
+            parsed.get(CODEXIS_PLUGIN_API_URL_ENV),
             Some(&"https://app.codexis.cz/".to_string())
         );
         assert_eq!(
@@ -242,11 +242,11 @@ export CODEXIS_USER_API_TOKEN="Bearer abc"
     fn resolve_config_value_uses_env_file_when_process_env_is_missing() {
         let mut env_file = HashMap::new();
         env_file.insert(
-            CODEXIS_PUBLIC_API_URL_ENV.to_string(),
+            CODEXIS_PLUGIN_API_URL_ENV.to_string(),
             "https://file.codexis.test".to_string(),
         );
 
-        let value = resolve_config_value_for_test(None, CODEXIS_PUBLIC_API_URL_ENV, Some(&env_file));
+        let value = resolve_config_value_for_test(None, CODEXIS_PLUGIN_API_URL_ENV, Some(&env_file));
         assert_eq!(value, Some("https://file.codexis.test".to_string()));
     }
 

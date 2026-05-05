@@ -53,10 +53,10 @@ cdx-cli search [JD|CR|EU|ES|SK|LT|VS|COMMENT|ALL] --help
 Search requests are translated into:
 
 ```text
-POST {CODEXIS_PUBLIC_API_URL}/rest/cdx-api/search/<SOURCE>
+POST {CODEXIS_PLUGIN_API_URL}/rest/cdx-api/search/<SOURCE>
 ```
 
-`get` requests translate `cdx://...` to `{CODEXIS_PUBLIC_API_URL}/rest/cdx-api/...`.
+`get` requests translate `cdx://...` to `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/...`.
 Responses are streamed to stdout. The top-level `schema` command prints concise
 endpoint schemas from the `cdx-cli` caller perspective: query parameters plus
 the output shape you get back. For source-specific searches, `availableFilters`
@@ -65,7 +65,7 @@ are hidden by default unless you request facet output explicitly.
 ## Requirements
 
 - `curl` must be available in `PATH`
-- `CODEXIS_PUBLIC_API_URL` must be set
+- `CODEXIS_PLUGIN_API_URL` must be set
 - `CODEXIS_USER_API_TOKEN` must be set
 
 Schema commands do not require API configuration.
@@ -73,7 +73,7 @@ Schema commands do not require API configuration.
 Example:
 
 ```bash
-export CODEXIS_PUBLIC_API_URL="https://app.codexis.cz"
+export CODEXIS_PLUGIN_API_URL="https://app.codexis.cz"
 export CODEXIS_USER_API_TOKEN="Bearer <jwt>"
 ```
 
@@ -145,8 +145,8 @@ Common `get` resource patterns:
 Rules:
 
 - `get` accepts only `cdx://...` URLs and translates them to
-  `{CODEXIS_PUBLIC_API_URL}/rest/cdx-api/...`
-- `cdx://` maps to `{CODEXIS_PUBLIC_API_URL}/rest/cdx-api`
+  `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/...`
+- `cdx://` maps to `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api`
 - a leading slash after `cdx://` is ignored, so `cdx:///doc/CR10/text` works
 - `/versions` is supported for CR documents only
 - `cdx://cz_law/.../text` supports repeated `part` query parameters
