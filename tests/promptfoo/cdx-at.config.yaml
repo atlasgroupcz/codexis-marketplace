@@ -1,0 +1,100 @@
+# promptfoo POC config — port of plugins/cdx-at/acceptance/e2e/cdx-at-search.yaml
+#
+# Intent: prove that promptfoo's `llm-rubric` + Python provider can replace
+# the legacy regex-on-response style with semantically meaningful checks,
+# while keeping our structural tool_call axis via a custom Python assertion.
+#
+# The rubric format mirrors codexis-eval-ops' must_include / may_include /
+# must_not_say convention so we can converge on a single grader prose style
+# across the daemon eval ops and these plugin evals.
+#
+# Run from repo root after exporting CDX_EVAL_AUTH_TOKEN:
+#   npx promptfoo eval -c tests/promptfoo/cdx-at.config.yaml
+
+description: cdx-at search — Austrian RIS, OGH damages + ABGB lookup
+
+providers:
+  - id: file://tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+# Each test row drives one prompt. The provider opens a fresh chat per row.
+tests:
+  - description: OGH-Schadenersatz search returns real ATJD URLs
+    vars:
+      tool_name: shell
+      input_regex: 'cdx-at[\s"\\]+search'
+      tool_calls_max: 8
+    options:
+      prompt: |
+        Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o
+        náhradě škody (Schadenersatz). Stačí krátký seznam, žádné
+        detailní výpisy.
+    assert:
+      # Structural — the AI actually used cdx-at, not just hallucinated.
+      - type: python
+        value: file://tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://tests/promptfoo/assertions.py:assert_tool_count_max
+      # Surface signal — real ATJD URLs in the reply prove real hits.
+      - type: regex
+        value: '/doc/ATJD\d+'
+      # Semantic signal — what was previously impossible to express in a
+      # regex: did the AI actually answer the user's question well?
+      - type: llm-rubric
+        value: |
+          Hodnoť odpověď AI proti následujícímu rubricu.
+
+          MUSÍ zmínit:
+          - 3 (nebo blízko 3) rozhodnutí rakouského Nejvyššího soudu (OGH)
+            týkající se náhrady škody (Schadenersatz).
+          - Stabilní identifikátor pro každé rozhodnutí — buď cdx-at://
+            URL, RIS odkaz, nebo Geschäftszahl/doc id.
+
+          MŮŽE zmínit (bonus):
+          - Stručnou anotaci, čeho se rozhodnutí týkala.
+          - Datum rozhodnutí.
+
+          NESMÍ tvrdit:
+          - Že rozhodnutí pocházejí od jiného soudu než OGH (např. VfGH,
+            VwGH, BVerfG).
+          - Halucinované Geschäftszahl, které nelze ověřit.
+          - Dlouhé citace odůvodnění — uživatel explicitně řekl
+            "žádné detailní výpisy".
+        # Use an Anthropic grader to avoid the OpenAI default; promptfoo
+        # picks up ANTHROPIC_API_KEY from env.
+        provider: anthropic:messages:claude-haiku-4-5
+
+  - description: ABGB (Austrian civil code) lookup returns ATBR/ATHI doc
+    vars:
+      tool_name: shell
+      input_regex: 'cdx-at'
+      tool_calls_max: 8
+    options:
+      prompt: "Najdi mi rakouský občanský zákoník (ABGB)."
+    assert:
+      - type: python
+        value: file://tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: regex
+        value: '/doc/(ATBR|ATHI)\d+'
+      - type: llm-rubric
+        value: |
+          Hodnoť odpověď AI proti následujícímu rubricu.
+
+          MUSÍ zmínit:
+          - Identifikuje rakouský občanský zákoník — ABGB / Allgemeines
+            bürgerliches Gesetzbuch.
+          - Poskytne stabilní odkaz na konsolidované znění (ATHI…) nebo
+            na publikaci v Bundesgesetzblatt (ATBR…).
+
+          MŮŽE zmínit (bonus):
+          - Datum vzniku 1811 / JGS Nr. 946/1811.
+          - Současné účinné znění.
+
+          NESMÍ tvrdit:
+          - Že ABGB je německý BGB.
+          - Že ABGB je český občanský zákoník (NOZ / 89/2012 Sb.).
+          - Halucinované RIS doc id / čísla zákona.
+        provider: anthropic:messages:claude-haiku-4-5
