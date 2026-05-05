@@ -7,7 +7,7 @@ description: Verify the cdx-at skill performs case-law search and fetches Austri
 #      the Austrian civil code — must be returned as a hit.
 
 steps:
-  - prompt: "Finde mir 3 OGH-Entscheidungen zu Schadenersatz. Nur eine kurze Liste, keine Detailabrufe."
+  - prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz). Stačí krátký seznam, žádné detailní výpisy."
     expect:
       tool_call:
         name: shell

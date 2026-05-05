@@ -10,7 +10,7 @@ description: Verify cdxctl creates an AGENT-type automation (using the explorer 
 steps:
   - prompt: |
       Vytvoř AI automatizaci, která agentem explorer jednou ročně 1. ledna spustí
-      prompt "Describe the current working directory." — nastav max-turns na 5 a
+      prompt "Popiš aktuální pracovní adresář." — nastav max-turns na 5 a
       pojmenuj to ee-ai-{{ run_id }}.
     expect:
       tool_call:
@@ -25,7 +25,7 @@ steps:
         matches_subset:
           type: "AGENT"
           agentFullName: "explorer"
-          prompt: "Describe the current working directory."
+          prompt: "Popiš aktuální pracovní adresář."
           maxTurns: 5
           enabled: true
 

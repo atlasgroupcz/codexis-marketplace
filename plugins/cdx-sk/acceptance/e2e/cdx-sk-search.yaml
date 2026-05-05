@@ -1,4 +1,4 @@
-nname: cdx-sk-search
+name: cdx-sk-search
 description: Verify the cdx-sk skill performs a court-case search and fetches a specific paragraph of Slovak law.
 
 # Mirrors codexis-search for the Slovak legal database (e-Zbierka + courts).
@@ -8,7 +8,7 @@ description: Verify the cdx-sk skill performs a court-case search and fetches a 
 #      §3 ("dobrými mravmi") is a stable statutory marker.
 
 steps:
-  - prompt: "Nájdi mi nejaké rozhodnutia Najvyššieho súdu SR o náhrade škody."
+  - prompt: "Najdi mi nějaká rozhodnutí slovenského Nejvyššího soudu o náhradě škody."
     expect:
       tool_call:
         name: shell
@@ -19,7 +19,7 @@ steps:
         # Real SKNUS doc links prove the search returned actual hits.
         matches: "/doc/SKNUS\\d+"
 
-  - prompt: "Ako znie §3 Občianskeho zákonníka (40/1964 Zb.)?"
+  - prompt: "Jak zní §3 slovenského Občianskeho zákonníka (40/1964 Zb.)?"
     expect:
       tool_call:
         name: shell
