@@ -31,14 +31,24 @@ tests:
     vars:
       prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz)."
       tool_name: shell
-      input_regex: 'cdx-at[\s"\\]+search'
+      # Negative lookahead excludes `--help` calls (CLI exploration ≠ work).
+      # We want at least one real search invocation against ATJD.
+      input_regex: 'cdx-at[\s"\\]+search\s+ATJD(?!.*--help)'
       tool_calls_max: 8
+      # Anti-cheat: catch AI scraping RIS directly via curl/wget or via
+      # `python -c "import requests; requests.get('https://ris.bka.gv.at/…')"`.
+      # All cdx-at workflows go through the binary; raw HTTP to RIS is
+      # always scraping, regardless of the language.
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
     assert:
       # Structural — the AI actually invoked cdx-at, not just hallucinated.
       - type: python
         value: file://./assertions.py:assert_tool_call
       - type: python
         value: file://./assertions.py:assert_tool_count_max
+      # Anti-cheat — no curl/wget/requests/urllib/ris.bka.gv.at in any call.
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
       # Surface — real ATJD doc URLs in the reply prove real hits.
       - type: regex
         value: '/doc/ATJD\d+'
@@ -47,12 +57,17 @@ tests:
     vars:
       prompt: "Najdi mi rakouský občanský zákoník (ABGB)."
       tool_name: shell
-      input_regex: 'cdx-at'
+      # AI may resolve via `search ATHI/ATBR` or via `get cdx-at://...`,
+      # but never via `--help`.
+      input_regex: 'cdx-at[\s"\\]+(search\s+(ATBR|ATHI)|get\s+[\\"]?cdx-at://)(?!.*--help)'
       tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call
       - type: python
         value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
       - type: regex
         value: '/doc/(ATBR|ATHI)\d+'

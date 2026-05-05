@@ -76,6 +76,37 @@ def assert_tool_call(output: str, context: dict) -> dict:
                        f"Saw tool names: {saw!r}")}
 
 
+def assert_no_tool_call(output: str, context: dict) -> dict:
+    """Pass if NO tool call's input matches the forbidden regex.
+
+    Anti-cheat axis: catches the AI scraping with `curl`/`wget`/raw
+    `python -c "import urllib"` etc. when it should be using the
+    plugin's binary. Configure via the test's `vars`:
+        forbidden_regex:  str — regex matched against the JSON-encoded
+                          input dict of every captured tool call.
+        forbidden_tool:   optional str — only check calls of this tool
+                          name (default: any tool).
+    """
+    vars_ = (context or {}).get("vars") or {}
+    pattern = vars_.get("forbidden_regex")
+    if not pattern:
+        return {"pass": False, "score": 0.0,
+                "reason": "assert_no_tool_call: missing 'forbidden_regex' var"}
+    only_name = vars_.get("forbidden_tool")
+    rgx = re.compile(pattern)
+    tool_calls = _extract_tool_calls(output)
+    for tc in tool_calls:
+        if only_name and tc.get("name") != only_name:
+            continue
+        blob = json.dumps(tc.get("input") or {}, ensure_ascii=False)
+        if rgx.search(blob):
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"forbidden {tc.get('name')!r} call matched "
+                               f"/{pattern}/: {blob[:200]}")}
+    return {"pass": True, "score": 1.0,
+            "reason": f"no calls matched forbidden /{pattern}/"}
+
+
 def assert_tool_count_max(output: str, context: dict) -> dict:
     """Pass if the AI made <= `tool_calls_max` work calls (skill loads excluded).
 
