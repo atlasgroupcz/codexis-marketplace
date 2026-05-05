@@ -287,10 +287,19 @@ def main() -> int:
     parser.add_argument("--git-ref", required=True, help="Git branch or tag")
     parser.add_argument("--env-path", default="/home/codexis/.cdx/.env",
                         help="VM-side path to the daemon-managed .env file")
+    parser.add_argument("--cookie", default="",
+                        help="Optional _oauth2_proxy cookie value used to "
+                             "auto-refresh the bearer token on 401.")
+    parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
+                        help="oauth2-proxy URL (default: http://localhost:4182)")
     args = parser.parse_args()
 
     marketplace_path = Path(__file__).resolve().parent.parent
-    client = DaemonClient(args.daemon, args.token)
+    refresher = None
+    if args.cookie:
+        from _daemon_client import make_oauth2_proxy_refresher
+        refresher = make_oauth2_proxy_refresher(args.cookie, args.oauth2_proxy)
+    client = DaemonClient(args.daemon, args.token, token_refresher=refresher)
     r = Results()
 
     r.log(f"Daemon: {args.daemon}")

@@ -4,10 +4,31 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
 from typing import Any
+
+
+def make_oauth2_proxy_refresher(cookie: str,
+                                oauth2_proxy_url: str = "http://localhost:4182"):
+    """Return a zero-arg callable that mints a fresh bearer via oauth2-proxy.
+
+    Sends the user's `_oauth2_proxy` session cookie to /oauth2/auth and reads
+    the access token from the X-Auth-Request-Access-Token response header.
+    Used by long-running suites to ride past the keycloak token TTL (~30 min).
+    """
+    auth_url = f"{oauth2_proxy_url.rstrip('/')}/oauth2/auth"
+
+    def _refresh() -> str | None:
+        req = urllib.request.Request(auth_url, headers={"Cookie": cookie})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.headers.get("X-Auth-Request-Access-Token")
+        except Exception:
+            return None
+    return _refresh
 
 
 # ---------------------------------------------------------------------------
@@ -144,11 +165,18 @@ query GetToolChain($id: ID!) {
 
 
 class DaemonClient:
-    def __init__(self, base_url: str, token: str) -> None:
+    def __init__(self, base_url: str, token: str,
+                 token_refresher: "callable | None" = None) -> None:
+        """`token_refresher` is an optional zero-arg callable that returns a
+        fresh bearer token. When set, the client transparently refreshes on
+        HTTP 401 once per failed request — keeps long suites alive past the
+        keycloak access-token TTL (~30 min).
+        """
         self.base_url = base_url.rstrip("/")
         self.graphql_url = f"{self.base_url}/graphql"
         self.health_url = f"{self.base_url}/actuator/health"
         self.auth_header = f"Bearer {token}"
+        self._token_refresher = token_refresher
 
     # -------------------------------------------------- transport
     def health_check(self) -> bool:
@@ -158,6 +186,28 @@ class DaemonClient:
                 return json.loads(resp.read()).get("status") == "UP"
         except Exception:
             return False
+
+    def _refresh_token(self) -> bool:
+        if self._token_refresher is None:
+            return False
+        try:
+            new_token = self._token_refresher()
+        except Exception:
+            return False
+        if not new_token:
+            return False
+        self.auth_header = f"Bearer {new_token}"
+        return True
+
+    def _open(self, req: urllib.request.Request, timeout: float = 120):
+        """urlopen with a single 401-driven token refresh + retry."""
+        try:
+            return urllib.request.urlopen(req, timeout=timeout)
+        except urllib.error.HTTPError as e:
+            if e.code != 401 or not self._refresh_token():
+                raise
+            req.headers["Authorization"] = self.auth_header
+            return urllib.request.urlopen(req, timeout=timeout)
 
     def gql(self, query: str, variables: dict | None = None) -> dict[str, Any]:
         payload = json.dumps({"query": query, "variables": variables or {}}).encode()
@@ -169,7 +219,7 @@ class DaemonClient:
                 "Authorization": self.auth_header,
             },
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with self._open(req, timeout=120) as resp:
             return json.loads(resp.read())
 
     def gql_data(self, query: str, variables: dict | None = None) -> dict[str, Any]:
@@ -329,7 +379,7 @@ class DaemonClient:
                 "Content-Type": f"multipart/form-data; boundary={boundary}",
             },
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with self._open(req, timeout=60) as resp:
             return json.loads(resp.read())
 
     # -------------------------------------------------- file download
@@ -341,7 +391,7 @@ class DaemonClient:
         """
         url = f"{self.base_url}/rest/files/download?path={urllib.parse.quote(path)}"
         req = urllib.request.Request(url, headers={"Authorization": self.auth_header})
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with self._open(req, timeout=30) as resp:
             return resp.read()
 
     def run_single_shot_chat(self, prompt: str, model: str | None = None,

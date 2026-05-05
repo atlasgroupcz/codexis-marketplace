@@ -317,13 +317,23 @@ def main() -> int:
                         help="Chat polling interval seconds (default: 2)")
     parser.add_argument("--poll-timeout-s", type=float, default=600.0,
                         help="Chat polling timeout seconds (default: 600)")
+    parser.add_argument("--cookie", default="",
+                        help="Optional _oauth2_proxy cookie value used to "
+                             "auto-refresh the bearer token on 401 (long suites "
+                             "outlast the ~30min keycloak TTL otherwise).")
+    parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
+                        help="oauth2-proxy URL (default: http://localhost:4182)")
     args = parser.parse_args()
 
     transcript_dir = Path(args.transcript_dir)
     if not transcript_dir.is_absolute():
         transcript_dir = MARKETPLACE_ROOT / transcript_dir
 
-    client = DaemonClient(args.daemon, args.token)
+    refresher = None
+    if args.cookie:
+        from _daemon_client import make_oauth2_proxy_refresher
+        refresher = make_oauth2_proxy_refresher(args.cookie, args.oauth2_proxy)
+    client = DaemonClient(args.daemon, args.token, token_refresher=refresher)
     r = Results()
 
     r.log(f"Daemon: {args.daemon}")
