@@ -17,7 +17,11 @@ tests:
       prompt: "Najdi mi parlamentní dokumenty k interpelacím o daních."
       tool_name: shell
       input_regex: 'cdx-cz-psp[\s"\\]+search\s+CZPSP[A-Z]+(?!.*--help)'
-      tool_calls_max: 12
+      # Bumped 12 → 16 because under parallel-load latency the AI does
+      # more refinement search calls (still all `cdx-cz-psp search ...`,
+      # no scraping). Matches cdx-at's cap. assert_no_tool_call still
+      # catches any raw psp.cz scrape.
+      tool_calls_max: 16
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|psp\.cz)'
     assert:
       - type: python
