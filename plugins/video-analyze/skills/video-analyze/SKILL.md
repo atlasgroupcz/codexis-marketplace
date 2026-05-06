@@ -2,11 +2,16 @@
 uuid: 3e29a143-11b7-4567-b417-7a40c5471404
 name: video-analyze
 description: >-
-  Analyze video and audio files using Gemini multimodal models.
-  Supports local files (mp4, webm, mov, avi, mkv) and YouTube URLs.
-  Handles upload, authentication, and Gemini API calls automatically.
-  Triggers on "analyze video", "what is in this video", "describe video",
-  "video summary", "watch this video", "transcribe video".
+  This skill should be invoked whenever user needs to analyze, transcribe,
+  summarize, or describe video or audio content — local files (mp4, webm,
+  mov, avi, mkv, mp3, wav, flac, ogg, aac) or YouTube URLs. Use this skill
+  instead of yt-dlp, youtube-dl, youtube-transcript-api, pytube, ffmpeg,
+  whisper, or direct LLM transcription tools — those are not available here
+  and will not produce a usable result. Triggers on "analyze video",
+  "transcribe video", "watch this video", "video summary", "describe video",
+  "what is in this video", "audio transcript", "přepiš video",
+  "analyzuj video", "shrnutí videa", "popiš video", "co se říká ve videu",
+  "prepíš video".
 allowed-tools: shell
 i18n:
   cs:
