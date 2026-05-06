@@ -1,0 +1,35 @@
+# Half of the legacy `codexis-search.yaml` — case-law search returns JD docs.
+# Split per-test so the orchestrator parallelizes search and §10 NOZ lookup.
+# See ares-ico.config.yaml for the rationale.
+#
+# (cdxctl-* tests are NOT ported — they need conversation chaining and
+# state.graphql against an auth-broken cdxctl. Park until cdxctl auth fix.)
+
+description: codexis — NS damages search returns real JD doc URLs
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: NS damages search returns real JD doc URLs
+    vars:
+      prompt: "Najdi nějaká rozhodnutí Nejvyššího soudu o náhradě škody."
+      tool_name: shell
+      input_regex: 'cdx-cli[\s"\\]+search\s+[A-Z]+(?!.*--help)'
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsoud\.cz|nssoud\.cz)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: '/doc/JD\d+'

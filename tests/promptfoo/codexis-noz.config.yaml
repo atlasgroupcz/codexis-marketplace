@@ -1,0 +1,31 @@
+# Sibling split of `codexis-search.yaml` — §10 NOZ statute lookup.
+# See codexis-search.config.yaml for the rationale on per-test splits.
+
+description: codexis — §10 NOZ returns the "výslovného ustanovení" paragraph
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: §10 NOZ — fetches the "výslovného ustanovení" paragraph
+    vars:
+      prompt: "Jak zní §10 NOZ?"
+      tool_name: shell
+      input_regex: 'cdx-cli[\s"\\]+(search|get)\b(?!.*--help)'
+      tool_calls_max: 12
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|zakonyprolidi\.cz|psp\.cz)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'výslovného ustanovení|Nelze-li právní případ'

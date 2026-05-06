@@ -1,0 +1,2 @@
+# Per-run sidecars written by setup.py — never commit, regenerated each run.
+*.run_id

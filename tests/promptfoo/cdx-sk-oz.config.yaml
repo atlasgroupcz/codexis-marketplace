@@ -1,0 +1,32 @@
+# Sibling split of `cdx-sk-search.yaml` — Občianskeho zákonníka §3 lookup.
+# See cdx-sk-sknus.config.yaml for the rationale on per-test splits.
+
+description: cdx-sk — §3 Občianskeho zákonníka returns "dobré mravy" paragraph
+target_plugin: cdx-sk
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: §3 Občianskeho zákonníka — fetches the "dobré mravy" paragraph
+    vars:
+      prompt: "Jak zní §3 slovenského Občianskeho zákonníka (40/1964 Zb.)?"
+      tool_name: shell
+      input_regex: 'cdx-sk[\s"\\]+(search|get)\b(?!.*--help)'
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsud\.sk|justice\.gov\.sk|e-zbierka\.sk)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # Note: promptfoo runs JS regex — explicit casing instead of (?i).
+      - type: regex
+        value: '[Dd]obrými\s*mravmi'

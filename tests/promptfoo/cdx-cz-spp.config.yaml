@@ -1,0 +1,30 @@
+# Port of plugins/cdx-cz-spp/acceptance/e2e/cdx-cz-spp-search.yaml
+# Czech municipal regulations (sbírka právních předpisů obcí).
+
+description: cdx-cz-spp — Czech municipal regulation search
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Prague municipal regulations — search returns real doc URLs
+    vars:
+      prompt: "Najdi mi obecně závazné vyhlášky hlavního města Prahy."
+      tool_name: shell
+      input_regex: 'cdx-cz-spp[\s"\\]+search\s+(CZSPP[A-Z]+|[A-Z]+)(?!.*--help)'
+      tool_calls_max: 15
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sbirka\.gov\.cz|mvcr\.cz)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: '/doc/CZSB\d+'

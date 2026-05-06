@@ -1,0 +1,35 @@
+# Sibling split of `ares-lookup.yaml` — VAT-status check. See ares-ico.config.yaml
+# for the rationale on per-test splits.
+
+description: ares — VAT status lookup includes DIČ or AKTIVNI marker
+target_plugin: ares
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: VAT status lookup includes DIČ or AKTIVNI marker
+    vars:
+      # Self-contained — names the company directly so the row works
+      # without context from the IČO-lookup row.
+      prompt: "Je firma ČEZ a.s. (IČO 45274649) plátce DPH?"
+      tool_name: shell
+      input_regex: 'ares-cli[\s"\\]+(detail|search|api\s+get).*45274649(?!.*--help)'
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ares\.gov\.cz/ekonomicke-subjekty)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # DIČ for ČEZ is CZ45274649; AKTIVNI = active VAT registration.
+      # Note: promptfoo runs JS regex — explicit casing instead of (?i).
+      - type: regex
+        value: 'CZ\s?45274649|[Aa][Kk][Tt][Ii][Vv][Nn]'

@@ -1,0 +1,50 @@
+# Half of the legacy `cdx-at-search.yaml` — OGH-Schadenersatz judikatura.
+# Split per-test so the orchestrator parallelizes ATJD search and ABGB
+# lookup. See ares-ico.config.yaml for the rationale.
+
+description: cdx-at — OGH-Schadenersatz search returns real ATJD URLs
+target_plugin: cdx-at
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+# tool_calls_max is a "did the AI actually use the right tool" signal, not
+# a budget knob. A healthy `cdx-at search` is ~1-2 calls plus skill loads
+# (excluded). If we see >16 work calls, the AI almost certainly fell back
+# to curl/scraping — which is a real failure mode worth catching even when
+# the response regex happens to pass.
+
+tests:
+  - description: OGH-Schadenersatz search returns real ATJD URLs
+    vars:
+      # "judikatura" matches what cdx-at serves (Rechtssätze). The earlier
+      # "rozhodnutí" framing sent the AI hunting for full Entscheidungstext
+      # which cdx-at doesn't expose, then it scrapes RIS as fallback.
+      prompt: "Hledám 3 záznamy z rakouské judikatury OGH k tématu Schadenersatz. Krátký seznam stačí."
+      tool_name: shell
+      # Negative lookahead excludes `--help` calls (CLI exploration ≠ work).
+      # We want at least one real search invocation against ATJD.
+      input_regex: 'cdx-at[\s"\\]+search\s+ATJD(?!.*--help)'
+      tool_calls_max: 16
+      # Anti-cheat: catch AI scraping RIS directly via curl/wget or via
+      # `python -c "import requests; requests.get('https://ris.bka.gv.at/…')"`.
+      # All cdx-at workflows go through the binary; raw HTTP to RIS is
+      # always scraping, regardless of the language.
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
+    assert:
+      # Structural — the AI actually invoked cdx-at, not just hallucinated.
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      # Anti-cheat — no curl/wget/requests/urllib/ris.bka.gv.at in any call.
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # Surface — real ATJD doc URLs in the reply prove real hits.
+      - type: regex
+        value: '/doc/ATJD\d+'

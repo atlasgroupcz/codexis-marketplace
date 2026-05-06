@@ -92,24 +92,3 @@ def call_api(prompt: str, options: dict | None, context: dict | None) -> dict[st
             "chat_node_id": runner.chat_node_id,
         },
     }
-
-
-def _summarize_for_grader(tool_calls: list[dict]) -> str:
-    """Compact human-readable summary of tool calls — drops big payloads,
-    special-cases the `skill` loader. Mirrors codexis-eval-ops' helper so
-    the LLM judge can reason about what the AI did without burning tokens
-    on raw 50KB skill instruction dumps.
-    """
-    import json
-    lines: list[str] = []
-    for tc in tool_calls:
-        name = tc.get("name") or "?"
-        if name == "skill":
-            lines.append(f"[skill] (instructions loaded)")
-            continue
-        input_blob = json.dumps(tc.get("input") or {}, ensure_ascii=False)[:500]
-        out = tc.get("output")
-        out_blob = (out if isinstance(out, str)
-                    else json.dumps(out, ensure_ascii=False))[:2000]
-        lines.append(f"[{name}] input: {input_blob}\n  output: {out_blob}")
-    return "\n".join(lines)

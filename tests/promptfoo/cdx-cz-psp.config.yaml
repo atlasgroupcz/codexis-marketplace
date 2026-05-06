@@ -1,0 +1,30 @@
+# Port of plugins/cdx-cz-psp/acceptance/e2e/cdx-cz-psp-search.yaml
+# Czech parliamentary docs (psp.cz) — interpellations + bill proposals.
+
+description: cdx-cz-psp — Czech parliament document search
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Tax-interpellation search returns CZPSPDOK doc URLs
+    vars:
+      prompt: "Najdi mi parlamentní dokumenty k interpelacím o daních."
+      tool_name: shell
+      input_regex: 'cdx-cz-psp[\s"\\]+search\s+CZPSP[A-Z]+(?!.*--help)'
+      tool_calls_max: 12
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|psp\.cz)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: '/doc/CZPSPDOK\d+'

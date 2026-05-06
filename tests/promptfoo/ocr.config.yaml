@@ -1,0 +1,56 @@
+# Port of plugins/ocr/acceptance/e2e/ocr-convert.yaml
+# Verifies the ocr skill extracts text from a scanned PDF (no text layer)
+# and the AI relays the extracted content. Using a PDF instead of a PNG
+# steers the AI toward the ocr tool — with a PNG the model's vision
+# reads the image directly and bypasses the plugin entirely.
+# Fixture is generated from the PIL-rendered PNG via PIL's PDF export
+# (rasterized, single page, no embedded text layer).
+#
+# Run with the setup helper:
+#   tests/promptfoo/setup.py tests/promptfoo/ocr.config.yaml
+#   RUN_ID=$(cat tests/promptfoo/ocr.config.run_id)
+#   npx promptfoo eval -c tests/promptfoo/ocr.config.yaml --var run_id=$RUN_ID
+
+description: ocr — extract text from a scanned PDF (no text layer)
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-ocr-{{ run_id }}
+      files:
+        - path: ocr-test.pdf
+          source: ../../plugins/ocr/acceptance/fixtures/ocr-test.pdf
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: OCR a scanned PDF and relay both distinctive number strings
+    vars:
+      prompt: "Co je napsáno v PDF /home/codexis/ee-ocr-{{ run_id }}/ocr-test.pdf?"
+      tool_name: shell
+      input_regex: 'ocr\s+[\s\S]*ocr-test\.pdf'
+      tool_calls_max: 10
+      # Anti-cheat: forbid the vision-via-PNG escape hatch. When the daemon's
+      # /rest/ocr endpoint returns 500 (current state — `OcrController.ocr`
+      # is a stub), the AI tries `pdftoppm`/`pdftotext`/`tesseract` to extract
+      # the text itself, then `readFile` on the PNG to feed it to its own
+      # vision. Without this guard the test passes spuriously even though
+      # the ocr binary produced nothing. Test stays RED until the daemon-side
+      # stub is implemented.
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|pdftoppm|pdftotext|pdfinfo|pdftoimage|tesseract)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # Both distinctive number strings must appear (order-independent).
+      # Note: JS regex — use [\s\S] in place of (?s).
+      - type: regex
+        value: '123456[\s\S]{0,200}987|987[\s\S]{0,200}123456'

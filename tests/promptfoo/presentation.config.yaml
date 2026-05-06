@@ -1,0 +1,44 @@
+# Port of plugins/presentation/acceptance/e2e/presentation-pptx.yaml
+# Verifies the presentation skill builds a real .pptx file via python-pptx
+# (state.file is the strong oracle; AI confirming the path in chat is
+# the surface signal).
+#
+# Pinned output path uses {{ run_id }} so reruns don't collide. Get
+# run_id from setup.py (no setup block here, but we still want a
+# stable per-run id) — quickest is to just derive one inline.
+#
+#   RUN_ID=$(printf '%s' "$RANDOM$RANDOM" | sha1sum | cut -c1-4)
+#   npx promptfoo eval -c tests/promptfoo/presentation.config.yaml --var run_id=$RUN_ID
+
+description: presentation — generate a small PPTX deck
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: 3-slide PPTX about jaro lands at the requested path
+    vars:
+      prompt: "Udělej mi krátkou 3slide prezentaci o jaru v Praze — titulek, hlavní bod, závěr. Ulož ji jako /home/codexis/jaro-{{ run_id }}.pptx."
+      tool_name: shell
+      input_regex: 'pptx'
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget)\s+http'
+      file: /home/codexis/jaro-{{ run_id }}.pptx
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # Strong oracle — the file actually landed on disk.
+      - type: python
+        value: file://./assertions.py:assert_state_file
+      # Surface — AI confirms the path in the response.
+      - type: regex
+        value: '\.pptx'

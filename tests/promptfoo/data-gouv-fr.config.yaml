@@ -1,0 +1,39 @@
+# Port of plugins/data-gouv-fr/acceptance/e2e/data-gouv-fr-search.yaml
+# French gov open-data — SIRENE business registry datasets.
+#
+# In legacy land we expected the MCP tool name. In practice the AI
+# sometimes uses MCP, sometimes falls back to direct urllib calls to
+# data.gouv.fr's API. We don't have an MCP path-on-PATH equivalent —
+# either is "real work," neither is scraping.
+#
+# So: drop the structural tool_call axis (anything goes), keep the
+# anti-cheat against curl-style html scraping of the SITE (not the API),
+# and rely on the URL pattern in the response as the surface signal.
+
+description: data-gouv-fr — SIRENE dataset search
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: SIRENE dataset search returns real data.gouv.fr URLs
+    vars:
+      prompt: "Najdi mi na data.gouv.fr datasety související se SIRENE (francouzský registr firem)."
+      tool_calls_max: 12
+      # Forbidden: scraping the data.gouv.fr WEBSITE (HTML pages) via
+      # curl/wget. Not forbidden: the AI's `python -c "import urllib;
+      # urlopen(api/...)"` against the JSON API — that's the legitimate
+      # fallback when MCP isn't surfaced.
+      forbidden_regex: '(curl|wget)\s+.*data\.gouv\.fr/fr/'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'data\.gouv\.fr/.{0,50}datasets?'
