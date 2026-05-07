@@ -31,6 +31,6 @@
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "env": {
-    "CODEXIS_PLUGIN_SK_API_URL": "http://192.168.4.55:8081/api"
+    "CODEXIS_PLUGIN_SK_API_URL": "http://10.245.1.70:8081/api"
   }
 }
