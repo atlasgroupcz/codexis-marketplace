@@ -14,14 +14,15 @@ providers:
 tests:
   - description: Tax-interpellation search returns CZPSPDOK doc URLs
     vars:
-      prompt: "Najdi mi parlamentní dokumenty k interpelacím o daních."
+      # "3 dokumenty, krátký seznam stačí" mirrors cdx-at's first prompt —
+      # it tells the AI to stop searching after a small focused result set
+      # instead of iteratively narrowing across the whole CZPSPDOK index.
+      # With this framing the healthy run is ~2 work calls; cap of 8 gives
+      # 4× headroom while keeping the cascade-detection signal sharp.
+      prompt: "Najdi mi 3 parlamentní dokumenty k interpelacím o daních. Krátký seznam stačí."
       tool_name: shell
       input_regex: 'cdx-cz-psp[\s"\\]+search\s+CZPSP[A-Z]+(?!.*--help)'
-      # Bumped 12 → 16 because under parallel-load latency the AI does
-      # more refinement search calls (still all `cdx-cz-psp search ...`,
-      # no scraping). Matches cdx-at's cap. assert_no_tool_call still
-      # catches any raw psp.cz scrape.
-      tool_calls_max: 16
+      tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|psp\.cz)'
     assert:
       - type: python
