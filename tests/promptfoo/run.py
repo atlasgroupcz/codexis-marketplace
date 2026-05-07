@@ -289,16 +289,45 @@ def main() -> int:
                         help="Marketplace git repository URL")
     parser.add_argument("--git-ref", required=True,
                         help="Marketplace git branch or tag")
+    parser.add_argument("--plugin", "--plugins", dest="plugins",
+                        nargs="+", default=[],
+                        help="Plugin name(s) — runs every config whose "
+                             "target_plugin matches. E.g. `--plugin ares` "
+                             "runs ares-ico + ares-dph.")
     parser.add_argument("configs", nargs="*",
-                        help="Config files (default: all *.config.yaml in this dir)")
+                        help="Specific config files (default: all "
+                             "*.config.yaml). Combines with --plugin.")
     args = parser.parse_args()
 
     here = THIS.parent
-    if args.configs:
-        cfgs = [Path(a) if Path(a).is_absolute() else (here / a)
-                for a in args.configs]
+    all_cfgs = sorted(here.glob("*.config.yaml"))
+    if not args.configs and not args.plugins:
+        cfgs = all_cfgs
     else:
-        cfgs = sorted(here.glob("*.config.yaml"))
+        seen: set[Path] = set()
+        cfgs: list[Path] = []
+        for arg in args.configs:
+            p = Path(arg) if Path(arg).is_absolute() else (here / arg)
+            if not p.is_file():
+                print(f"no such config file: {arg!r}", file=sys.stderr)
+                return 2
+            if p not in seen:
+                seen.add(p); cfgs.append(p)
+        if args.plugins:
+            cfgs_by_plugin: dict[str, list[Path]] = {}
+            for c in all_cfgs:
+                name = plugin_name_for(c, yaml.safe_load(c.read_text()))
+                cfgs_by_plugin.setdefault(name, []).append(c)
+            for name in args.plugins:
+                matched = cfgs_by_plugin.get(name, [])
+                if not matched:
+                    print(f"no configs target plugin {name!r} "
+                          f"(known: {sorted(cfgs_by_plugin)})",
+                          file=sys.stderr)
+                    return 2
+                for c in matched:
+                    if c not in seen:
+                        seen.add(c); cfgs.append(c)
     if not cfgs:
         print("no *.config.yaml found", file=sys.stderr)
         return 2
