@@ -9,7 +9,6 @@ from .exceptions import CdxClientError, LlmDaemonError
 
 CDX_CLI_BIN = "cdx-cli"
 DEFAULT_DAEMON_URL = "http://localhost:8086"
-CDX_ENV_FILE = os.path.expanduser("~/.cdx/.env")
 
 
 # ── cdx-cli wrapper ──────────────────────────────────────────────────────────
@@ -179,20 +178,8 @@ def fetch_related_counts(codexis_id):
 
 
 def load_api_jwt_auth():
-    """Load CODEXIS_USER_API_TOKEN from env or ~/.cdx/.env."""
-    val = os.environ.get("CODEXIS_USER_API_TOKEN", "")
-    if val:
-        return val
-    try:
-        with open(CDX_ENV_FILE) as f:
-            for line in f:
-                if line.startswith("CODEXIS_USER_API_TOKEN="):
-                    val = line[len("CODEXIS_USER_API_TOKEN="):].strip()
-                    if val:
-                        return val
-    except OSError:
-        pass
-    return ""
+    """Load CODEXIS_USER_API_TOKEN from the process environment."""
+    return os.environ.get("CODEXIS_USER_API_TOKEN", "").strip()
 
 
 def llm_extract(text, query):

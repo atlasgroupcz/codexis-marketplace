@@ -42,5 +42,9 @@
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
-  "components": "./components"
+  "components": "./components",
+  "env": {
+    "CODEXIS_PLUGIN_BASE_URL": "https://app.codexis.cz",
+    "CODEXIS_PLUGIN_API_URL": "https://app.codexis.cz"
+  }
 }

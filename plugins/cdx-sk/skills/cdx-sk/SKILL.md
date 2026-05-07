@@ -42,7 +42,7 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-sk://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PUBLIC_SK_API_URL` for link construction.
+**IMPORTANT:** All document links in user-facing output MUST use the `cdx-sk://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PLUGIN_SK_API_URL` for link construction.
 
 Every document reference MUST be a clickable attachment link — never plain text. How to build the link depends on the source:
 
@@ -58,7 +58,7 @@ Never include any of the following in user-facing text:
 - Raw document IDs (e.g., `SKEZ1234`, `SKVS5678`, `SKNUS9012`)
 - Raw search prefixes (e.g., `SKEZ`, `SKVS`, `SKNUS`)
 - Resolved HTTP URLs (e.g., `https://search.example.com/api/SK/ezbierka/doc/...`)
-- Environment variable names (e.g., `$CODEXIS_PUBLIC_SK_API_URL`)
+- Environment variable names (e.g., `$CODEXIS_PLUGIN_SK_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
 ### Human-Readable Source Names

@@ -42,7 +42,7 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-at://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PUBLIC_AT_API_URL` for link construction.
+**IMPORTANT:** All document links in user-facing output MUST use the `cdx-at://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PLUGIN_AT_API_URL` for link construction.
 
 When citing documents, link to **attachment** URLs: `[Title](cdx-at://doc/{id}/attachment/{filename})`.
 Get the filename from the `/meta` response (assets array).
@@ -56,7 +56,7 @@ Never include any of the following in user-facing text:
 - Raw document IDs (e.g., `ATBR1234`, `ATJD5678`)
 - Raw search prefixes (e.g., `ATBR`, `ATJD`, `ATHI`)
 - Resolved HTTP URLs (e.g., `https://search.example.com/api/AT/judikatur/doc/...`)
-- Environment variable names (e.g., `$CODEXIS_PUBLIC_AT_API_URL`)
+- Environment variable names (e.g., `$CODEXIS_PLUGIN_AT_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
 ### Human-Readable Source Names
