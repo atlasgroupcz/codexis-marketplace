@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 
 const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
 const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
+const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
 
 pub struct GraphQLClient {
     url: String,
@@ -67,19 +68,38 @@ impl GraphQLClient {
 }
 
 fn load_api_jwt_auth() -> String {
+    if let Some(secret) = read_secret_file() {
+        return ensure_bearer_prefix(&secret);
+    }
     if let Ok(val) = std::env::var(CODEXIS_USER_API_TOKEN_ENV) {
         if !val.is_empty() {
-            return normalize_authorization_value(&val);
+            return ensure_bearer_prefix(&val);
         }
     }
-    eprintln!("error: {CODEXIS_USER_API_TOKEN_ENV} not set");
+    eprintln!("error: no auth available (tried ~/{SECRET_FILE_RELATIVE} and ${CODEXIS_USER_API_TOKEN_ENV})");
     std::process::exit(2);
 }
 
-fn normalize_authorization_value(value: &str) -> String {
-    let trimmed = value.trim();
-    if let Some(stripped) = trimmed.strip_prefix("Authorization:") {
-        return stripped.trim().to_string();
+fn read_secret_file() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let path = std::path::Path::new(&home).join(SECRET_FILE_RELATIVE);
+    let contents = std::fs::read_to_string(&path).ok()?;
+    let trimmed = contents.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
     }
-    trimmed.to_string()
+}
+
+fn ensure_bearer_prefix(value: &str) -> String {
+    let mut s = value.trim();
+    if let Some(stripped) = s.strip_prefix("Authorization:") {
+        s = stripped.trim();
+    }
+    if s.len() >= 7 && s[..7].eq_ignore_ascii_case("Bearer ") {
+        s.to_string()
+    } else {
+        format!("Bearer {s}")
+    }
 }
