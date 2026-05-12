@@ -16,3 +16,8 @@ src/
 /frontend/
 tests/
 acceptance/
+test-results/
+.pytest_cache/
+.claude/
+/docs/
+/pyproject.toml
