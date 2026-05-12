@@ -54,10 +54,22 @@ def _encode_node_id(type_name: str, inner: str) -> str:
     return base64.urlsafe_b64encode(body).decode().rstrip("=")
 
 
-def _resolve_node_id_template(value):
-    """Substitute every ${TypeName:innerId} in a string value with its NodeId."""
+_NUNJUCKS_VAR_RE = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
+
+
+def _resolve_node_id_template(value, vars_: dict | None = None):
+    """Substitute every ${TypeName:innerId} in a string value with its NodeId.
+
+    Promptfoo's Nunjucks pass substitutes `{{ run_id }}` in top-level prompts
+    but does NOT recurse into `vars.variables`, so we re-do that substitution
+    here using `vars_` as the lookup dict. Run before the NodeId match so the
+    outer `}` of `${…:…}` is not confused with the closing `}` of `{{ x }}`.
+    """
     if not isinstance(value, str):
         return value
+    if vars_ is not None:
+        value = _NUNJUCKS_VAR_RE.sub(
+            lambda m: str(vars_.get(m.group(1), m.group(0))), value)
     return _NODE_ID_TEMPLATE_RE.sub(
         lambda m: _encode_node_id(m.group(1), m.group(2)), value)
 
@@ -290,7 +302,7 @@ def assert_state_graphql(output: str, context: dict) -> dict:
     client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
 
     raw_vars = vars_.get("variables") or {}
-    gql_vars = {k: _resolve_node_id_template(v) for k, v in raw_vars.items()}
+    gql_vars = {k: _resolve_node_id_template(v, vars_) for k, v in raw_vars.items()}
     try:
         data = client.gql_data(query, gql_vars)
     except Exception as e:
