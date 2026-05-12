@@ -168,7 +168,7 @@ pub fn update(
         .map(String::from)
         .or_else(|| {
             current
-                .get("workDirPathInfo")
+                .get("workDirPath")
                 .and_then(|p| p.get("absolutePath"))
                 .and_then(|v| v.as_str())
                 .map(String::from)

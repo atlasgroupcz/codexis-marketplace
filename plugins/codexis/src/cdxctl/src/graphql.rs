@@ -14,7 +14,7 @@ query GetAutomations {
         prompt
         enabled
         maxTurns
-        workDirPathInfo { absolutePath displayPath }
+        workDirPath { absolutePath displayPath }
         lastRun {
             id
             status
@@ -41,7 +41,7 @@ mutation CreateAutomation($input: AutomationInput!) {
         prompt
         enabled
         maxTurns
-        workDirPathInfo { absolutePath displayPath }
+        workDirPath { absolutePath displayPath }
     }
 }
 "#;
@@ -60,7 +60,7 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         prompt
         enabled
         maxTurns
-        workDirPathInfo { absolutePath displayPath }
+        workDirPath { absolutePath displayPath }
     }
 }
 "#;
@@ -232,14 +232,14 @@ query GetAgents {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const CREATE_AGENT: &str = r#"
-mutation CreateAgent($markdown: String!) {
+mutation CreateAgent($markdown: Markdown!) {
     createAgent(markdown: $markdown) {
         id
         name
@@ -255,14 +255,14 @@ mutation CreateAgent($markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const UPDATE_AGENT: &str = r#"
-mutation UpdateAgent($id: ID!, $markdown: String!) {
+mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
     updateAgent(id: $id, markdown: $markdown) {
         id
         name
@@ -278,7 +278,7 @@ mutation UpdateAgent($id: ID!, $markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
@@ -308,14 +308,14 @@ query GetSkills {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const CREATE_SKILL: &str = r#"
-mutation CreateSkill($markdown: String!) {
+mutation CreateSkill($markdown: Markdown!) {
     createSkill(markdown: $markdown) {
         id
         name
@@ -327,14 +327,14 @@ mutation CreateSkill($markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const UPDATE_SKILL: &str = r#"
-mutation UpdateSkill($id: ID!, $markdown: String!) {
+mutation UpdateSkill($id: ID!, $markdown: Markdown!) {
     updateSkill(id: $id, markdown: $markdown) {
         id
         name
@@ -346,7 +346,7 @@ mutation UpdateSkill($id: ID!, $markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
@@ -382,7 +382,7 @@ mod tests {
             assert!(query.contains("sourceKind"));
             assert!(query.contains("editable"));
             assert!(query.contains("deletable"));
-            assert!(query.contains("pathInfo { absolutePath displayPath }"));
+            assert!(query.contains("path { absolutePath displayPath }"));
             assert!(query.contains("sourcePath { absolutePath displayPath }"));
             assert!(query.contains("maxTurns"));
             assert!(query.contains("disallowedTools"));
