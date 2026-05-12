@@ -145,19 +145,6 @@ mutation UpdateMarketplace($id: ID!) {
 }
 "#;
 
-pub const UPDATE_ALL_MARKETPLACES: &str = r#"
-mutation UpdateAllMarketplaces {
-    updateAllMarketplaces {
-        marketplace
-        previousCommit
-        newCommit
-        status
-        error
-        updatedPlugins { id name version marketplace }
-    }
-}
-"#;
-
 // ==================== Plugins ====================
 
 pub const GET_INSTALLED_PLUGINS: &str = r#"
@@ -176,14 +163,18 @@ query GetInstalledPlugins($marketplace: ID!) {
 "#;
 
 pub const GET_AVAILABLE_PLUGINS: &str = r#"
-query GetAvailablePlugins($marketplace: ID) {
-    availablePlugins(marketplace: $marketplace) {
+query GetAvailablePlugins {
+    marketplaces {
         id
         name
-        version
-        description
-        homepage
-        marketplace
+        plugins {
+            id
+            name
+            version
+            description
+            category
+            tags
+        }
     }
 }
 "#;
