@@ -21,3 +21,5 @@ test-results/
 .claude/
 /docs/
 /pyproject.toml
+__pycache__/
+*.pyc
