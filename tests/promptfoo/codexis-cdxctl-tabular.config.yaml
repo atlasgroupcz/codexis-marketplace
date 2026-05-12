@@ -1,0 +1,104 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-tabular.yaml
+# cdxctl tabular extraction workflow: add column → start → wait until DONE →
+# read results. Uses ONE small fixture file + ONE column so the backend AI
+# extraction finishes quickly. Setup uploads the fixture before the chat.
+
+description: codexis cdxctl — tabular extraction (add → start → results)
+target_plugin: codexis
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-tab-{{ run_id }}
+      files:
+        - path: invoice.txt
+          content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: tabular add-column registers `customer` in DRAFT state
+    vars:
+      prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' — celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
+      tool_name: shell
+      input_regex: 'tabular\s+add-column'
+      tool_calls_min: 1
+      # high-variance exploration; includes occasional spawn_agent.
+      tool_calls_max: 13
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
+      variables:
+        f: "/home/codexis/ee-tab-{{ run_id }}"
+      jsonpath: "$.tabularExtraction.columns[*].name"
+      contains: "customer"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: tabular start runs to DONE
+    vars:
+      prompt: "Spusť extrakci nad /home/codexis/ee-tab-{{ run_id }} a počkej, až bude hotová. Řekni mi, až bude DONE."
+      tool_name: shell
+      # shell form or Python list form.
+      input_regex: 'tabular[^a-z]+start'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
+      variables:
+        f: "/home/codexis/ee-tab-{{ run_id }}"
+      jsonpath: "$.tabularExtraction.status"
+      equals: "DONE"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: tabular results — AI relays the extracted customer name
+    vars:
+      prompt: "Ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} — jaká hodnota vyšla ve sloupci customer?"
+      tool_name: shell
+      input_regex: 'tabular\s+results'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: 'query($f: String!){ tabularExtraction(folder: $f) { rows { fileName status } } }'
+      variables:
+        f: "/home/codexis/ee-tab-{{ run_id }}"
+      jsonpath: "$.tabularExtraction.rows[*].status"
+      # cdxctl returned rows; extraction backend may flake on specific files.
+      matches: 'DONE|ERROR'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      # Surface — AI must mention the extracted customer name.
+      - type: regex
+        value: '[Jj]ohn'

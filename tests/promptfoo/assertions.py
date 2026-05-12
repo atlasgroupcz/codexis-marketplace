@@ -132,6 +132,28 @@ def assert_tool_count_max(output: str, context: dict) -> dict:
             "reason": f"{len(work)} work calls (> {max_n}). Names: {names}"}
 
 
+def assert_tool_count_min(output: str, context: dict) -> dict:
+    """Pass if the AI made >= `tool_calls_min` work calls (skill loads excluded).
+
+    Used for tests that need to confirm the AI actually did *some* work
+    (e.g. cdxctl skill update must run at least one shell call) — distinct
+    from `assert_tool_call` which checks a regex against a specific call.
+    """
+    vars_ = (context or {}).get("vars") or {}
+    min_n = vars_.get("tool_calls_min")
+    if min_n is None:
+        return {"pass": False, "score": 0.0,
+                "reason": "assert_tool_count_min: missing 'tool_calls_min' var"}
+    min_n = int(min_n)
+    tool_calls = _extract_tool_calls(output)
+    work = [tc for tc in tool_calls if tc.get("name") != "skill"]
+    if len(work) >= min_n:
+        return {"pass": True, "score": 1.0,
+                "reason": f"{len(work)} work calls (≥ {min_n})"}
+    return {"pass": False, "score": 0.0,
+            "reason": f"{len(work)} work calls (< {min_n})"}
+
+
 # ---------------------------------------------------------------------------
 # State-via-filesystem — deterministic side-effect oracle. Asserts on a
 # daemon-visible file/dir AFTER the chat finished (e.g. "the AI saved
@@ -184,3 +206,113 @@ def assert_state_file(output: str, context: dict) -> dict:
                 "reason": f"{path} missing or not a directory"}
     return {"pass": False, "score": 0.0,
             "reason": f"assert_state_file: unknown type {kind!r}"}
+
+
+def assert_state_graphql(output: str, context: dict) -> dict:
+    """Run a GraphQL query against the daemon, assert on the result.
+
+    The deterministic side-effect oracle for state-mutating tests
+    (cdxctl skill/agent/automation/notification CRUD): after the chat,
+    query the daemon for the entity that should now exist (or be gone)
+    and check its fields. Mirrors the legacy harness's `state.graphql`
+    block.
+
+    Configure via the test's `vars`:
+        graphql:        str — query body (promptfoo already substitutes
+                        `{{ run_id }}` / other vars in the YAML).
+        variables:      dict — optional GraphQL variables.
+        jsonpath:       str — optional JSONPath expression to extract values.
+                        Without it, the whole `data` dict is treated as a
+                        one-element list.
+        And one or more of:
+        contains:       str — pass if any extracted value contains it.
+        not_contains:   str — pass if no extracted value contains it.
+        matches:        str — Python regex pass-if-any.
+        equals:         any — pass if the FIRST extracted value equals.
+        count:          int — pass if extracted has exactly this length.
+        subset:         dict — first extracted dict contains all key→value
+                        pairs (legacy `matches_subset`).
+    """
+    import os
+    import re as _re
+    import sys
+    from pathlib import Path
+
+    vars_ = (context or {}).get("vars") or {}
+    query = vars_.get("graphql")
+    if not query:
+        return {"pass": False, "score": 0.0,
+                "reason": "assert_state_graphql: missing 'graphql' var"}
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from _daemon_client import DaemonClient  # noqa
+    graphql_url = os.environ.get(
+        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql")
+    base = (graphql_url[: -len("/graphql")] if graphql_url.endswith("/graphql")
+            else graphql_url.rstrip("/"))
+    client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
+
+    try:
+        data = client.gql_data(query, vars_.get("variables") or {})
+    except Exception as e:
+        return {"pass": False, "score": 0.0,
+                "reason": f"assert_state_graphql: query failed: {e}"}
+
+    extracted: list = [data]
+    jp = vars_.get("jsonpath")
+    if jp:
+        try:
+            from jsonpath_ng.ext import parse as _jp_parse
+            extracted = [m.value for m in _jp_parse(jp).find(data)]
+        except Exception as e:
+            return {"pass": False, "score": 0.0,
+                    "reason": f"assert_state_graphql: jsonpath {jp!r}: {e}"}
+
+    if "count" in vars_:
+        want = int(vars_["count"])
+        if len(extracted) != want:
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"count {len(extracted)} ≠ {want}; "
+                               f"extracted: {extracted!r}")}
+    if "contains" in vars_:
+        needle = vars_["contains"]
+        if not any(needle in str(v) for v in extracted):
+            return {"pass": False, "score": 0.0,
+                    "reason": f"contains {needle!r} not in {extracted!r}"}
+    if "not_contains" in vars_:
+        needle = vars_["not_contains"]
+        if any(needle in str(v) for v in extracted):
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"not_contains {needle!r} unexpectedly "
+                               f"in {extracted!r}")}
+    if "matches" in vars_:
+        pattern = vars_["matches"]
+        if not any(_re.search(pattern, str(v)) for v in extracted):
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"no extracted value matched /{pattern}/. "
+                               f"Extracted: {extracted!r}")}
+    if "equals" in vars_:
+        want = vars_["equals"]
+        if not extracted or extracted[0] != want:
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"first extracted "
+                               f"{extracted[0] if extracted else 'none'!r} "
+                               f"≠ {want!r}")}
+    if "subset" in vars_:
+        want = vars_["subset"]
+        if not extracted:
+            return {"pass": False, "score": 0.0,
+                    "reason": f"subset check: no extracted values"}
+        first = extracted[0]
+        if not isinstance(first, dict):
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"subset check: first extracted is "
+                               f"{type(first).__name__}, want dict")}
+        missing = {k: v for k, v in (want or {}).items()
+                   if first.get(k) != v}
+        if missing:
+            return {"pass": False, "score": 0.0,
+                    "reason": (f"subset mismatch: expected {want!r}, "
+                               f"diff {missing!r} in {first!r}")}
+    return {"pass": True, "score": 1.0,
+            "reason": f"state.graphql ok ({len(extracted)} value(s))"}

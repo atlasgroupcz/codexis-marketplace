@@ -1,0 +1,76 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-skill-from-file.yaml
+# cdxctl skill creation via --file (distinct from --stdin) + cleanup.
+# A regression here would be the AI shelling `cat F | cdxctl skill create --stdin`.
+
+description: codexis cdxctl — skill create via --file
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: skill create --file lands the SKILL.md and registers it
+    vars:
+      prompt: |
+        Tady je obsah SKILL.md pro moji novou dovednost. Vytvoř adresář
+        /tmp/ee-fs-{{ run_id }}/, ulož tam SKILL.md a tu dovednost pak
+        zaregistruj ze souboru:
+
+        ---
+        name: ee-fs-{{ run_id }}
+        description: "E2E test skill (from file)"
+        ---
+
+        # Instructions
+
+        This is an E2E from-file test skill.
+      tool_name: shell
+      input_regex: 'skill\s+create.{0,200}--file'
+      tool_calls_min: 1
+      tool_calls_max: 9
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ skills { name description editable } }"
+      jsonpath: "$.skills[?(@.name == 'ee-fs-{{ run_id }}')]"
+      count: 1
+      subset:
+        description: "E2E test skill (from file)"
+        editable: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: skill delete removes ee-fs-{{run_id}}
+    vars:
+      prompt: "Smaž dovednost ee-fs-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'skill\s+delete'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ skills { name } }"
+      jsonpath: "$.skills[*].name"
+      not_contains: "ee-fs-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

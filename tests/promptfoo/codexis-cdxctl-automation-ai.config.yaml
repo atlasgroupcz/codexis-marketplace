@@ -1,0 +1,72 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-automation-ai.yaml
+# AGENT-type automation (uses the explorer agent) — distinct from
+# create-command. We don't trigger here (would invoke a real LLM).
+
+description: codexis cdxctl — AGENT-type automation create + delete
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: AI automation create lands with explorer agent + correct fields
+    vars:
+      prompt: |
+        Vytvoř AI automatizaci, která agentem explorer jednou ročně 1. ledna spustí
+        prompt "Popiš aktuální pracovní adresář." — nastav max-turns na 5 a
+        pojmenuj to ee-ai-{{ run_id }}.
+      tool_name: shell
+      # 'automation create' but NOT 'automation create-command'.
+      input_regex: 'automation\s+create[^-]'
+      tool_calls_min: 1
+      # agent list + create + possible retries + memory read/write.
+      tool_calls_max: 12
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title type agentFullName prompt maxTurns enabled } }"
+      jsonpath: "$.automations[?(@.title == 'ee-ai-{{ run_id }}')]"
+      count: 1
+      subset:
+        type: "AGENT"
+        agentFullName: "explorer"
+        prompt: "Popiš aktuální pracovní adresář."
+        maxTurns: 5
+        enabled: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation delete removes ee-ai-{{run_id}}
+    vars:
+      prompt: "Smaž automatizaci ee-ai-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'automation\s+delete'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title } }"
+      jsonpath: "$.automations[*].title"
+      not_contains: "ee-ai-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

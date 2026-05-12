@@ -81,10 +81,22 @@ BATCHES: list[list[str]] = [
     ],
     # codexis ships 6 skills (codexis, codexis-dane, codexis-ucetnictvi,
     # cdxctl, sledovana-judikatura, sledovane-dokumenty) — solo install,
-    # but the search + §10 NOZ test rows run in parallel.
+    # but each test row runs in parallel against that single install.
+    # Tests within a single config run serially (Python provider behavior),
+    # which is what we want for cdxctl's create→update→delete sequences.
     [
         "codexis-search.config.yaml",
         "codexis-noz.config.yaml",
+        "codexis-cdxctl-skill-crud.config.yaml",
+        "codexis-cdxctl-skill-from-file.config.yaml",
+        "codexis-cdxctl-agent-crud.config.yaml",
+        "codexis-cdxctl-agent-from-file.config.yaml",
+        "codexis-cdxctl-automation-ai.config.yaml",
+        "codexis-cdxctl-automation-cmd.config.yaml",
+        "codexis-cdxctl-automation-update.config.yaml",
+        "codexis-cdxctl-marketplace.config.yaml",
+        "codexis-cdxctl-notifications.config.yaml",
+        "codexis-cdxctl-tabular.config.yaml",
     ],
     # visualization ships 10 skills (visualize + 9 visualize-* variants).
     # The tested skill `visualize-chart` is alphabetically 3rd, so it stays
