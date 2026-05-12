@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fevent-calendar%2Flib%2Fevent-calendar.min.js"></script>
+  <link rel="stylesheet" href="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fevent-calendar%2Flib%2Fevent-calendar.min.css">
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #timeline {
+      width: 100vw;
+      height: 100vh;
+      padding: 20px;
+    }
+    /* Event Calendar theme integration */
+    .ec {
+      --ec-bg-color: var(--background);
+      --ec-text-color: var(--foreground);
+      --ec-border-color: var(--border);
+      --ec-active-bg-color: var(--accent);
+      --ec-highlight-color: var(--muted);
+      --ec-today-bg-color: var(--accent);
+      --ec-button-bg-color: var(--secondary);
+      --ec-button-text-color: var(--secondary-foreground);
+      --ec-button-active-bg-color: var(--primary);
+      --ec-button-active-text-color: var(--primary-foreground);
+      --ec-event-bg-color: var(--chart-1);
+      --ec-event-text-color: #ffffff;
+      --ec-now-indicator-color: var(--destructive);
+    }
+    .ec-resource {
+      background-color: var(--muted);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="timeline"></div>
+
+  <script>
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('timeline').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    // Parse slotDuration string to Event Calendar format
+    function parseSlotDuration(str) {
+      if (!str) return { days: 1 };
+      const match = str.match(/^(\d+)\s*(day|hour|minute|week|month)s?$/i);
+      if (!match) return { days: 1 };
+      const value = parseInt(match[1], 10);
+      const unit = match[2].toLowerCase();
+      switch (unit) {
+        case 'minute': return { minutes: value };
+        case 'hour': return { hours: value };
+        case 'day': return { days: value };
+        case 'week': return { weeks: value };
+        case 'month': return { months: value };
+        default: return { days: 1 };
+      }
+    }
+
+    // Map view names to Event Calendar format
+    const viewMap = {
+      'resourceTimelineMonth': 'resourceTimelineMonth',
+      'resourceTimelineWeek': 'resourceTimelineWeek',
+      'resourceTimelineDay': 'resourceTimelineDay',
+      'month': 'resourceTimelineMonth',
+      'week': 'resourceTimelineWeek',
+      'day': 'resourceTimelineDay'
+    };
+
+    const defaultView = viewMap[spec.defaultView] || 'resourceTimelineMonth';
+    const slotDuration = parseSlotDuration(spec.slotDuration);
+
+    // Create Event Calendar with ResourceTimeline
+    const ec = EventCalendar.create(document.getElementById('timeline'), {
+      view: defaultView,
+      headerToolbar: {
+        start: 'prev,next today',
+        center: 'title',
+        end: 'resourceTimelineMonth,resourceTimelineWeek,resourceTimelineDay'
+      },
+      slotDuration: slotDuration,
+      resources: spec.resources.map(r => ({
+        id: r.id,
+        title: r.title,
+        eventBackgroundColor: r.color
+      })),
+      events: spec.events.map(e => ({
+        id: e.id,
+        resourceId: e.resourceId,
+        title: e.title,
+        start: e.start,
+        end: e.end,
+        backgroundColor: e.color,
+        extendedProps: {
+          description: e.description
+        }
+      })),
+      // View-only settings
+      editable: false,
+      selectable: false,
+      eventStartEditable: false,
+      eventDurationEditable: false,
+      // Event click handler for description popup
+      eventClick: (info) => {
+        const desc = info.event.extendedProps?.description;
+        if (desc) {
+          alert(`${info.event.title}\n\n${desc}`);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

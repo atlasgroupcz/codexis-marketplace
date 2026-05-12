@@ -1,0 +1,39 @@
+{
+  "name": "video-analyze",
+  "version": "1.0.0",
+  "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "video",
+    "analysis",
+    "gemini",
+    "youtube",
+    "multimedia"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["media", "video", "ai"],
+  "i18n": {
+    "cs": {
+      "displayName": "Analýza videí",
+      "description": "Analýza obsahu videí pomocí modelu Gemini — přepisy, shrnutí a rozbor z YouTube odkazů i lokálních souborů.",
+      "tagLabels": { "media": "Média", "video": "Video", "ai": "AI" }
+    },
+    "en": {
+      "displayName": "Video Analysis",
+      "description": "Video content analysis powered by Gemini — transcripts, summaries, and insights from YouTube links or local files.",
+      "tagLabels": { "media": "Media", "video": "Video", "ai": "AI" }
+    },
+    "sk": {
+      "displayName": "Analýza videí",
+      "description": "Analýza obsahu videí pomocou modelu Gemini — prepisy, zhrnutia a rozbor z YouTube odkazov i lokálnych súborov.",
+      "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
+    }
+  },
+  "postInstall": "sudo mkdir -p \"${HOME}/.local/bin\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/video-analyze\" \"${HOME}/.local/bin/video-analyze\"",
+  "postUninstall": "sudo rm -f \"${HOME}/.local/bin/video-analyze\"",
+  "onUpdate": "sudo mkdir -p \"${HOME}/.local/bin\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/video-analyze\" \"${HOME}/.local/bin/video-analyze\"",
+  "skills": "./skills"
+}

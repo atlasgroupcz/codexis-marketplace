@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fd3.min.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #tree {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .node circle {
+      fill: var(--background);
+      stroke: var(--chart-1);
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .node circle:hover {
+      stroke-width: 3px;
+    }
+    .node.has-children circle {
+      fill: var(--chart-1);
+    }
+    .node text {
+      fill: var(--foreground);
+      font-size: 12px;
+    }
+    .link {
+      fill: none;
+      stroke: var(--muted-foreground);
+      stroke-width: 1.5px;
+    }
+    .tooltip {
+      position: absolute;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 250px;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="tree"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('tree').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    const container = document.getElementById('tree');
+    const tooltip = document.getElementById('tooltip');
+
+    const margin = { top: 40, right: 120, bottom: 40, left: 120 };
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Get options from transformed spec
+    const options = spec.options || {};
+    const collapsible = options.collapsible !== false;
+
+    // Create SVG
+    const svg = d3.select('#tree')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Add zoom
+    svg.call(d3.zoom()
+      .extent([[0, 0], [width, height]])
+      .scaleExtent([0.1, 4])
+      .on('zoom', (event) => g.attr('transform', event.transform)));
+
+    // Create hierarchy from transformed spec
+    const root = d3.hierarchy(spec.hierarchy);
+    root.x0 = height / 2;
+    root.y0 = 0;
+
+    // Tree layout
+    const treeLayout = d3.tree()
+      .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
+
+    // Collapse children initially (except root) if collapsible
+    if (collapsible) {
+      root.children?.forEach(collapse);
+    }
+
+    function collapse(d) {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+      }
+    }
+
+    // Update function
+    function update(source) {
+      const duration = 400;
+      const nodes = root.descendants();
+      const links = root.links();
+
+      // Compute new tree layout
+      treeLayout(root);
+
+      // Normalize for fixed-depth
+      nodes.forEach(d => { d.y = d.depth * 180; });
+
+      // Update nodes
+      const node = g.selectAll('g.node')
+        .data(nodes, d => d.id || (d.id = Math.random()));
+
+      // Enter nodes
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => 'node' + (d._children ? ' has-children' : ''))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => {
+          if (d.children) {
+            d._children = d.children;
+            d.children = null;
+          } else {
+            d.children = d._children;
+            d._children = null;
+          }
+          update(d);
+        })
+        .on('mouseover', (event, d) => {
+          tooltip.textContent = '';
+          const strong = document.createElement('strong');
+          strong.textContent = d.data.name;
+          tooltip.appendChild(strong);
+          if (d.data.meta) {
+            Object.entries(d.data.meta).forEach(([k, v]) => {
+              tooltip.appendChild(document.createElement('br'));
+              const keySpan = document.createElement('span');
+              keySpan.className = 'text-[var(--muted-foreground)]';
+              keySpan.textContent = k + ':';
+              tooltip.appendChild(keySpan);
+              tooltip.appendChild(document.createTextNode(' ' + v));
+            });
+          }
+          if (d.children || d._children) {
+            const count = (d.children || d._children).length;
+            tooltip.appendChild(document.createElement('br'));
+            const countSpan = document.createElement('span');
+            countSpan.className = 'text-[var(--muted-foreground)]';
+            countSpan.textContent = count + ' children';
+            tooltip.appendChild(countSpan);
+          }
+          tooltip.style.opacity = 1;
+        })
+        .on('mousemove', (event) => {
+          tooltip.style.left = (event.pageX + 10) + 'px';
+          tooltip.style.top = (event.pageY - 10) + 'px';
+        })
+        .on('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+
+      nodeEnter.append('circle')
+        .attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -15 : 15)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .text(d => d.data.name);
+
+      // Update nodes
+      const nodeUpdate = nodeEnter.merge(node);
+
+      nodeUpdate.transition()
+        .duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`);
+
+      nodeUpdate.select('circle')
+        .attr('r', 8)
+        .attr('class', d => d._children ? 'has-children' : '');
+
+      nodeUpdate.attr('class', d => 'node' + (d._children ? ' has-children' : ''));
+
+      // Exit nodes
+      const nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr('transform', d => `translate(${source.y},${source.x})`)
+        .remove();
+
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      // Update links
+      const link = g.selectAll('path.link')
+        .data(links, d => d.target.id);
+
+      // Enter links
+      const linkEnter = link.enter().insert('path', 'g')
+        .attr('class', 'link')
+        .attr('d', d => {
+          const o = { x: source.x0, y: source.y0 };
+          return diagonal(o, o);
+        });
+
+      // Update links
+      linkEnter.merge(link).transition()
+        .duration(duration)
+        .attr('d', d => diagonal(d.source, d.target));
+
+      // Exit links
+      link.exit().transition()
+        .duration(duration)
+        .attr('d', d => {
+          const o = { x: source.x, y: source.y };
+          return diagonal(o, o);
+        })
+        .remove();
+
+      // Store positions for transition
+      nodes.forEach(d => {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+    }
+
+    // Diagonal path generator
+    function diagonal(s, d) {
+      return `M ${s.y} ${s.x}
+              C ${(s.y + d.y) / 2} ${s.x},
+                ${(s.y + d.y) / 2} ${d.x},
+                ${d.y} ${d.x}`;
+    }
+
+    // Initial render
+    update(root);
+  </script>
+</body>
+</html>

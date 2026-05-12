@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Finit.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Fa2ui-adapter.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fskills%2Fvisualize%2Freferences%2Fgrid%2Flib%2Fag-grid-community.min.js"></script>
+  <script src="/rest/files/download?path=%2Fhome%2Fcodexis%2F.cdx%2Fplugins%2Fmarketplaces%2Fcodexis-marketplace%2Fplugins%2Fvisualization%2Fshared%2Flib%2Ftailwind-browser.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #grid {
+      width: 100%;
+      height: 100vh;
+    }
+    /* AG Grid Quartz theme overrides */
+    .ag-theme-quartz {
+      --ag-font-family: system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="grid"></div>
+
+  <script>
+    // Process A2UI specification through adapter
+    const rawSpec = {{DATA}};
+    const { data: spec, errors } = A2UIAdapter.process(rawSpec, { lenient: true });
+
+    if (errors.length > 0) {
+      console.error('A2UI Validation Errors:', errors);
+    }
+
+    if (!spec) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'text-red-500 p-4';
+      errorEl.textContent = 'Error: Invalid specification';
+      document.getElementById('grid').appendChild(errorEl);
+      throw new Error('Invalid specification');
+    }
+
+    // Set up grid container with Quartz theme (auto-detects dark mode via data-ag-theme-mode)
+    const gridDiv = document.getElementById('grid');
+    gridDiv.className = 'ag-theme-quartz';
+
+    // Grid options from transformed spec
+    const options = spec.options || {};
+    const gridOptions = {
+      columnDefs: spec.columnDefs.map(col => ({
+        ...col,
+        resizable: true
+      })),
+      rowData: spec.rowData,
+      defaultColDef: {
+        flex: 1,
+        minWidth: 100
+      },
+      animateRows: true,
+      rowSelection: 'multiple',
+      pagination: options.pagination !== false,
+      paginationPageSize: options.pageSize || 25,
+      paginationPageSizeSelector: [10, 25, 50, 100]
+    };
+
+    // Create grid
+    const gridApi = agGrid.createGrid(gridDiv, gridOptions);
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "name": "ocr",
+  "version": "1.0.0",
+  "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "ocr",
+    "pdf",
+    "document",
+    "markdown",
+    "conversion"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["document-processing", "ocr", "pdf"],
+  "i18n": {
+    "cs": {
+      "displayName": "OCR dokumentů",
+      "description": "Převod dokumentů (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocí OCR — připraveno pro další AI zpracování.",
+      "tagLabels": { "document-processing": "Zpracování dokumentů", "ocr": "OCR", "pdf": "PDF" }
+    },
+    "en": {
+      "displayName": "Document OCR",
+      "description": "Convert documents (PDF, DOCX, PPTX, XLSX, images, ZIP) into Markdown via OCR — ready for downstream AI processing.",
+      "tagLabels": { "document-processing": "Document Processing", "ocr": "OCR", "pdf": "PDF" }
+    },
+    "sk": {
+      "displayName": "OCR dokumentov",
+      "description": "Prevod dokumentov (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocou OCR — pripravené pre ďalšie AI spracovanie.",
+      "tagLabels": { "document-processing": "Spracovanie dokumentov", "ocr": "OCR", "pdf": "PDF" }
+    }
+  },
+  "postInstall": "sudo mkdir -p \"${HOME}/.local/bin\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/ocr\" \"${HOME}/.local/bin/ocr\"",
+  "postUninstall": "sudo rm -f \"${HOME}/.local/bin/ocr\"",
+  "onUpdate": "sudo mkdir -p \"${HOME}/.local/bin\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/ocr\" \"${HOME}/.local/bin/ocr\"",
+  "skills": "./skills"
+}
