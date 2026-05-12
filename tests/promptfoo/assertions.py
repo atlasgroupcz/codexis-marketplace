@@ -13,6 +13,7 @@ string is the only reliable channel. See `provider.py`.
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 
@@ -23,6 +24,42 @@ _SENTINEL_RE = re.compile(
     re.escape(TOOL_CALLS_SENTINEL) + r"(.*?)" + re.escape(TOOL_CALLS_END),
     re.DOTALL,
 )
+
+# Matches ${TypeName:innerId} — escape hatch for tests that need a daemon
+# Relay NodeId computed at assertion time. The daemon's tabularExtraction(id)
+# (and similar) takes the encoded form; this template lets YAML say
+# `id: "${TabularExtraction:/home/codexis/ee-tab-{{ run_id }}}"` and have the
+# assertion encode it before sending the GraphQL request.
+_NODE_ID_TEMPLATE_RE = re.compile(r"\$\{([A-Za-z][A-Za-z0-9]*):([^}]+)\}")
+
+
+def _encode_node_id(type_name: str, inner: str) -> str:
+    """Mirror commands::encode_node_id from cdxctl.
+
+    URL-safe base64 (no padding) of `varint(len(typename)) || typename ||
+    varint(len(inner)) || inner`.
+    """
+    def varint(n: int) -> bytes:
+        out = bytearray()
+        while True:
+            b = n & 0x7F
+            n >>= 7
+            if n:
+                out.append(b | 0x80)
+            else:
+                out.append(b)
+                return bytes(out)
+    body = (varint(len(type_name)) + type_name.encode()
+            + varint(len(inner)) + inner.encode())
+    return base64.urlsafe_b64encode(body).decode().rstrip("=")
+
+
+def _resolve_node_id_template(value):
+    """Substitute every ${TypeName:innerId} in a string value with its NodeId."""
+    if not isinstance(value, str):
+        return value
+    return _NODE_ID_TEMPLATE_RE.sub(
+        lambda m: _encode_node_id(m.group(1), m.group(2)), value)
 
 
 def _extract_tool_calls(output: str) -> list[dict]:
@@ -252,8 +289,10 @@ def assert_state_graphql(output: str, context: dict) -> dict:
             else graphql_url.rstrip("/"))
     client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
 
+    raw_vars = vars_.get("variables") or {}
+    gql_vars = {k: _resolve_node_id_template(v) for k, v in raw_vars.items()}
     try:
-        data = client.gql_data(query, vars_.get("variables") or {})
+        data = client.gql_data(query, gql_vars)
     except Exception as e:
         return {"pass": False, "score": 0.0,
                 "reason": f"assert_state_graphql: query failed: {e}"}

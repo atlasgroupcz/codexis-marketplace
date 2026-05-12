@@ -37,6 +37,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 import secrets
@@ -197,8 +198,9 @@ def run_setup(cfg_path: Path) -> tuple[bool, str]:
 
 
 def run_batch(client: DaemonClient,
-              batch_cfgs: list[Path]) -> list[tuple[str, bool]]:
-    """Install batch's plugins, run all configs in parallel, capture outputs."""
+              batch_cfgs: list[Path],
+              config_concurrency: int) -> list[tuple[str, bool]]:
+    """Install batch's plugins, run configs with bounded parallelism."""
     plugin_names = [plugin_name_for(c, yaml.safe_load(c.read_text()))
                     for c in batch_cfgs]
     label = ", ".join(c.name for c in batch_cfgs)
@@ -215,45 +217,47 @@ def run_batch(client: DaemonClient,
             print(f"  ! setup failed for {cfg.name}",
                   file=sys.stderr, flush=True)
 
-    # Spawn evals in parallel for everything that survived setup.
-    procs: list[tuple[Path, subprocess.Popen | None]] = []
-    for cfg in batch_cfgs:
+    # Promptfoo's Python worker has a hardcoded 5-min timeout per call.
+    # We cap our chat poll well below that so chats time out cleanly
+    # (provider returns an error result) instead of letting the worker
+    # die with an orphaned response file — which freezes the whole batch.
+    env = {**os.environ, "CDX_EVAL_POLL_TIMEOUT_S": os.environ.get(
+        "CDX_EVAL_POLL_TIMEOUT_S", "270")}
+
+    def _run_one(cfg: Path) -> tuple[Path, str, bool]:
         ok, run_id = setup_status[cfg.name]
         if not ok:
-            procs.append((cfg, None))
-            continue
+            return cfg, "(setup failed — skipped)\n", False
         cmd = ["npx", "promptfoo", "eval", "-c", str(cfg), "--no-cache"]
         if run_id:
             cmd += ["--var", f"run_id={run_id}"]
-        # Promptfoo's Python worker has a hardcoded 5-min timeout per call.
-        # We cap our chat poll well below that so chats time out cleanly
-        # (provider returns an error result) instead of letting the worker
-        # die with an orphaned response file — which freezes the whole batch.
-        env = {**os.environ, "CDX_EVAL_POLL_TIMEOUT_S": os.environ.get(
-            "CDX_EVAL_POLL_TIMEOUT_S", "270")}
         proc = subprocess.Popen(cmd, cwd=str(cfg.parent),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 env=env,
                                 text=True)
-        procs.append((cfg, proc))
-    n_spawned = sum(1 for _, p in procs if p)
-    print(f"  > spawned {n_spawned} parallel eval(s); "
-          f"waiting for completion...", flush=True)
-
-    # Wait for all and print captured output in submission order — keeps
-    # logs readable while still benefiting from parallel execution.
-    results: list[tuple[str, bool]] = []
-    for cfg, proc in procs:
-        if proc is None:
-            results.append((cfg.name, False))
-            continue
         out, _ = proc.communicate()
-        ok_rc = proc.returncode == 0
-        sys.stdout.write(f"\n--- {cfg.name} ---\n")
-        sys.stdout.write(out)
-        sys.stdout.flush()
-        results.append((cfg.name, ok_rc))
+        return cfg, out, proc.returncode == 0
+
+    n_eligible = sum(1 for c in batch_cfgs if setup_status[c.name][0])
+    workers = max(1, min(config_concurrency, n_eligible)) if n_eligible else 1
+    print(f"  > running {n_eligible} eval(s) with config-concurrency={workers}...",
+          flush=True)
+
+    # Bounded parallel execution. Up to `workers` Popen children alive at any
+    # time — the rest queue up. Mitigates VM fs shell-gate lock contention
+    # when many chats race to start against the same per-user VM.
+    results: list[tuple[str, bool]] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+        # submit in declared order; iterate futures in the same order to keep
+        # logs deterministic.
+        futures = [ex.submit(_run_one, cfg) for cfg in batch_cfgs]
+        for fut in futures:
+            cfg, out, ok_rc = fut.result()
+            sys.stdout.write(f"\n--- {cfg.name} ---\n")
+            sys.stdout.write(out)
+            sys.stdout.flush()
+            results.append((cfg.name, ok_rc))
     return results
 
 
@@ -312,7 +316,15 @@ def main() -> int:
     parser.add_argument("configs", nargs="*",
                         help="Specific config files (default: all "
                              "*.config.yaml). Combines with --plugin.")
+    parser.add_argument("--config-concurrency", type=int, default=3,
+                        help="Max parallel config subprocesses per batch "
+                             "(default: 3). The per-user VM serializes "
+                             "chats on a shell-gate lock; setting this too "
+                             "high causes 30s lock-timeout failures.")
     args = parser.parse_args()
+    if args.config_concurrency < 1:
+        print("--config-concurrency must be >= 1", file=sys.stderr)
+        return 2
 
     here = THIS.parent
     all_cfgs = sorted(here.glob("*.config.yaml"))
@@ -354,7 +366,7 @@ def main() -> int:
     results: list[tuple[str, bool]] = []
     try:
         for batch in batches:
-            results.extend(run_batch(client, batch))
+            results.extend(run_batch(client, batch, args.config_concurrency))
     finally:
         print("\n=== removing marketplace ===", flush=True)
         remove_marketplace(client, our_mkt["id"])
