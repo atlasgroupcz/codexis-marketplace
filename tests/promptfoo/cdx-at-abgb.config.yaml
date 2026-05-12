@@ -1,0 +1,33 @@
+# Sibling split of `cdx-at-search.yaml` — ABGB statute lookup.
+# See cdx-at-ogh.config.yaml for the rationale on per-test splits.
+
+description: cdx-at — ABGB (Austrian civil code) lookup returns ATBR/ATHI doc
+target_plugin: cdx-at
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: ABGB (Austrian civil code) lookup returns ATBR/ATHI doc
+    vars:
+      prompt: "Najdi mi rakouský občanský zákoník (ABGB) — odkaz mi stačí."
+      tool_name: shell
+      # AI may resolve via `search ATHI/ATBR` or via `get cdx-at://...`,
+      # but never via `--help`.
+      input_regex: 'cdx-at[\s"\\]+(search\s+(ATBR|ATHI)|get\s+[\\"]?cdx-at://)(?!.*--help)'
+      tool_calls_max: 16
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: '/doc/(ATBR|ATHI)\d+'

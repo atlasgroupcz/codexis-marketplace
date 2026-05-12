@@ -1,0 +1,114 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-notification-lifecycle.yaml
+# Notification state machine: created (seen=null, confirmed=null) →
+# `seen` (seen=<ts>) → `confirmed` (confirmed=<ts>). Each step verifies
+# the transition persisted in daemon state.
+
+description: codexis cdxctl — notification create + seen + confirm transitions
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: notification create lands with seen=null, confirmed=null
+    vars:
+      prompt: "Vytvoř mi oznámení s textem 'e2e-notif-{{ run_id }}'."
+      tool_name: shell
+      input_regex: 'notification\s+create'
+      tool_calls_min: 1
+      # AI may try OS-notification tools first then self-recover to cdxctl.
+      tool_calls_max: 11
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ notifications { items { message seen confirmed } } }"
+      jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')]"
+      count: 1
+      subset:
+        seen: null
+        confirmed: null
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: notification list surfaces our test message
+    vars:
+      prompt: "Jaká mám oznámení? Je tam to s textem 'e2e-notif-{{ run_id }}'?"
+      tool_name: shell
+      input_regex: 'notification\s+list'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ notifications { items { message } } }"
+      jsonpath: "$.notifications.items[*].message"
+      contains: "e2e-notif-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      - type: regex
+        value: 'e2e-notif-'
+
+  - description: notification seen — `seen` timestamp gets set
+    vars:
+      prompt: "Označ oznámení 'e2e-notif-{{ run_id }}' jako přečtené."
+      tool_name: shell
+      input_regex: 'notification\s+seen'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ notifications { items { message seen confirmed } } }"
+      jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].seen"
+      matches: '\d{4}-\d{2}-\d{2}'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: notification confirm — `confirmed` timestamp gets set
+    vars:
+      prompt: "A teď to oznámení 'e2e-notif-{{ run_id }}' potvrď."
+      tool_name: shell
+      input_regex: 'notification\s+confirm'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ notifications { items { message seen confirmed } } }"
+      jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].confirmed"
+      matches: '\d{4}-\d{2}-\d{2}'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

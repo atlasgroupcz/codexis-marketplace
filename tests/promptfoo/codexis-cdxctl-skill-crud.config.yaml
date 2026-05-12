@@ -1,0 +1,133 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-skill-crud.yaml
+# cdxctl skill lifecycle: create-from-stdin → list → update → delete.
+#
+# Each test row is a fresh single-turn chat. State carries via the
+# daemon-side skill named `ee-skill-{{ run_id }}` (same run_id across
+# tests within this config, so step 2 sees what step 1 created).
+# Tests within this file run SERIALLY (Python-provider behavior),
+# which is what we want for CRUD ordering. This config runs in parallel
+# with the other codexis-* configs in batch 2.
+
+description: codexis cdxctl — skill CRUD via --stdin
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: skill create from stdin lands in daemon's editable skill list
+    vars:
+      prompt: |
+        Vytvoř mi vlastní dovednost (skill) s tímhle obsahem:
+
+        ---
+        name: ee-skill-{{ run_id }}
+        description: "E2E test skill — initial description"
+        ---
+
+        # Instructions
+
+        This is an e2e test skill.
+      tool_name: shell
+      input_regex: 'skill\s+create.{0,200}--stdin'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # State oracle: the new skill is in the daemon's skill registry,
+      # editable + deletable, with the description we asked for.
+      graphql: "{ skills { name description editable deletable sourceKind } }"
+      jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')]"
+      count: 1
+      subset:
+        description: "E2E test skill — initial description"
+        editable: true
+        deletable: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: skill list --editable-only surfaces our test skill
+    vars:
+      prompt: "Jaké mám vlastní dovednosti? Jen ty upravitelné, ne ty z pluginů."
+      tool_name: shell
+      input_regex: 'skill\s+list.{0,100}--editable-only'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ skills { name editable } }"
+      jsonpath: "$.skills[?(@.editable == true)].name"
+      contains: "ee-skill-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      # Surface check — the AI's reply mentions our skill.
+      - type: regex
+        value: 'ee-skill-'
+
+  - description: skill update changes the description
+    vars:
+      prompt: "U dovednosti ee-skill-{{ run_id }} změň popis na 'E2E test skill — updated'."
+      tool_name: shell
+      input_regex: 'skill\s+update'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ skills { name description } }"
+      jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
+      equals: "E2E test skill — updated"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: skill delete removes it from the registry
+    vars:
+      prompt: "Smaž dovednost ee-skill-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'skill\s+delete'
+      tool_calls_min: 1
+      # cdxctl skill delete leaves an empty dir; AI may verify + rmdir.
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ skills { name } }"
+      jsonpath: "$.skills[*].name"
+      not_contains: "ee-skill-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

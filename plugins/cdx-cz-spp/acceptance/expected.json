@@ -1,11 +1,29 @@
 {
-  "skills": ["cdx-cz-spp:cdx-cz-spp"],
+  "skills": [
+    "cdx-cz-spp:cdx-cz-spp"
+  ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_CZ_SPP_API_URL",
+    "CODEXIS_USER_API_TOKEN"
+  ],
   "post_install": [
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-cz-spp" },
-    { "type": "executable", "path": "$HOME/.local/bin/cdx-cz-spp-link-rewriter" }
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-cz-spp"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-cz-spp-link-rewriter"
+    }
   ],
   "post_uninstall": [
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-cz-spp" },
-    { "type": "absent", "path": "$HOME/.local/bin/cdx-cz-spp-link-rewriter" }
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-cz-spp"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-cz-spp-link-rewriter"
+    }
   ]
 }

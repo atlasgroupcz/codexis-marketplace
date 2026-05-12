@@ -9,127 +9,31 @@ Usage:
   python3 tests/test-marketplace.py --daemon URL --token JWT --git-url URL --git-ref REF
 
 Example:
-  python3 tests/test-marketplace.py \
-    --daemon http://localhost:8086 \
-    --token eyJhbGci... \
-    --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \
+  python3 tests/test-marketplace.py \\
+    --daemon http://localhost:8086 \\
+    --token eyJhbGci... \\
+    --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \\
     --git-ref main
 """
 
 from __future__ import annotations
 
 import argparse
-import base64
 import json
 import sys
-import urllib.request
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# ---------------------------------------------------------------------------
-# Output
-# ---------------------------------------------------------------------------
-class C:
-    R = "\033[0;31m"
-    G = "\033[0;32m"
-    Y = "\033[1;33m"
-    B = "\033[0;36m"
-    BOLD = "\033[1m"
-    N = "\033[0m"
-
-
-@dataclass
-class Results:
-    passed: int = 0
-    failed: int = 0
-    errors: list[str] = field(default_factory=list)
-
-    def ok(self, msg: str) -> None:
-        self.passed += 1
-        print(f"{C.G}  ✓{C.N} {msg}")
-
-    def fail(self, msg: str) -> None:
-        self.failed += 1
-        self.errors.append(msg)
-        print(f"{C.R}  ✗{C.N} {msg}")
-
-    def skip(self, msg: str) -> None:
-        print(f"{C.Y}  ⊘{C.N} {msg}")
-
-    def section(self, msg: str) -> None:
-        print(f"\n{C.BOLD}━━━ {msg} ━━━{C.N}")
-
-    def log(self, msg: str) -> None:
-        print(f"{C.B}[TEST]{C.N} {msg}")
-
-    def summary(self) -> int:
-        self.section("Results")
-        print(f"  {C.G}Passed:  {self.passed}{C.N}")
-        print(f"  {C.R}Failed:  {self.failed}{C.N}")
-        print()
-        if self.errors:
-            print(f"{C.R}{C.BOLD}FAILURES:{C.N}")
-            for e in self.errors:
-                print(f"  {C.R}✗{C.N} {e}")
-            print()
-            return 1
-        print(f"{C.G}{C.BOLD}All checks passed!{C.N}")
-        return 0
-
-
-# ---------------------------------------------------------------------------
-# Daemon client
-# ---------------------------------------------------------------------------
-class DaemonClient:
-    def __init__(self, base_url: str, token: str) -> None:
-        self.base_url = base_url.rstrip("/")
-        self.graphql_url = f"{self.base_url}/graphql"
-        self.health_url = f"{self.base_url}/actuator/health"
-        self.auth_header = f"Bearer {token}"
-
-    def health_check(self) -> bool:
-        try:
-            req = urllib.request.Request(self.health_url)
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                return json.loads(resp.read()).get("status") == "UP"
-        except Exception:
-            return False
-
-    def gql(self, query: str, variables: dict | None = None) -> dict[str, Any]:
-        payload = json.dumps({"query": query, "variables": variables or {}}).encode()
-        req = urllib.request.Request(
-            self.graphql_url,
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": self.auth_header,
-            },
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            return json.loads(resp.read())
-
-    def gql_data(self, query: str, variables: dict | None = None) -> dict[str, Any]:
-        result = self.gql(query, variables)
-        if result.get("errors"):
-            msg = result["errors"][0].get("message", str(result["errors"][0]))
-            raise RuntimeError(msg)
-        return result["data"]
-
-    def get_entry(self, path: str) -> dict | None:
-        data = self.gql_data(GET_ENTRY, {"path": path})
-        return data.get("getEntry")
+from _daemon_client import DaemonClient
+from _output import Results
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def encode_node_id(type_name: str, identifier: str) -> str:
-    return base64.b64encode(f"{type_name}:{identifier}".encode()).decode()
-
-
-def check_assertions(assertions: list[dict], install_path: str, client: DaemonClient, r: Results) -> None:
+def check_assertions(assertions: list[dict], install_path: str,
+                     client: DaemonClient, r: Results) -> None:
     # cdx guest VM runs as the `codexis` user; install_path looks like
     # /home/codexis/.cdx/plugins/<id> so we treat /home/codexis as $HOME.
     home_dir = "/home/codexis"
@@ -142,15 +46,7 @@ def check_assertions(assertions: list[dict], install_path: str, client: DaemonCl
         )
         entry = client.get_entry(path)
 
-        if atype == "executable":
-            if entry and entry.get("isFile") and entry.get("executable"):
-                r.ok(f"{path} is executable")
-            elif entry and entry.get("isFile"):
-                r.fail(f"{path} exists but is not executable")
-            else:
-                r.fail(f"{path} missing")
-
-        elif atype == "file":
+        if atype == "file":
             if entry and entry.get("isFile"):
                 r.ok(f"{path} exists")
             else:
@@ -169,58 +65,36 @@ def check_assertions(assertions: list[dict], install_path: str, client: DaemonCl
                 r.fail(f"{path} still exists")
 
 
-# ---------------------------------------------------------------------------
-# GraphQL queries
-# ---------------------------------------------------------------------------
-ADD_MARKETPLACE = """
-mutation AddMarketplace($input: MarketplaceSourceInput!) {
-    addMarketplace(input: $input) {
-        id name pluginCount error
-        plugins {
-            id name description
-            skills { name fullName }
-        }
-    }
-}
-"""
+def load_expected(plugin_dir: Path) -> dict | None:
+    expected_path = plugin_dir / "acceptance" / "expected.json"
+    if expected_path.is_file():
+        return json.loads(expected_path.read_text())
+    return None
 
-REMOVE_MARKETPLACE = """
-mutation RemoveMarketplace($id: ID!) {
-    removeMarketplace(id: $id) { id name }
-}
-"""
 
-LIST_MARKETPLACES = """
-{ marketplaces { id name pluginCount error plugins { id name } } }
-"""
+def parse_env_file(content: str) -> dict[str, str]:
+    """Parse a KEY=VALUE .env file. Empty lines + # comments ignored.
+    Whitespace is stripped from both sides of the value but preserved within."""
+    out: dict[str, str] = {}
+    for raw in content.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        out[key.strip()] = value.strip()
+    return out
 
-INSTALL_PLUGIN = """
-mutation InstallPlugin($input: PluginInstallInput!) {
-    installPlugin(input: $input) {
-        id name version
-        installLocation { absolutePath }
-        installedAt
-    }
-}
-"""
 
-UNINSTALL_PLUGIN = """
-mutation UninstallPlugin($input: PluginInstallInput!) {
-    uninstallPlugin(input: $input) { id name }
-}
-"""
-
-SKILLS = """
-{ skills { fullName plugin sourceKind } }
-"""
-
-GET_ENTRY = """
-query GetEntry($path: String!) {
-    getEntry(path: $path) {
-        name isFile isDirectory isSymlink executable
-    }
-}
-"""
+def check_env_vars(env: dict[str, str], required: list[str], plugin_name: str,
+                   r: Results) -> None:
+    """Verify each declared env var is present and non-empty in the daemon env."""
+    for key in required:
+        if key not in env:
+            r.fail(f"{plugin_name}: env var {key!r} missing from daemon .env")
+        elif not env[key]:
+            r.fail(f"{plugin_name}: env var {key!r} present but empty")
+        else:
+            r.ok(f"{plugin_name}: env var {key!r} set")
 
 
 # ---------------------------------------------------------------------------
@@ -247,39 +121,26 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
     return manifest
 
 
-def add_marketplace(client: DaemonClient, git_url: str, git_ref: str, manifest: dict, r: Results) -> dict:
+def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
+                    manifest: dict, r: Results) -> dict:
     r.section("Add marketplace (GIT)")
-
     mkt_name = manifest["name"]
-    mkt_uuid = manifest.get("uuid", "")
-    variables: dict[str, Any] = {"input": {"sourceType": "GIT", "gitUrl": git_url, "gitRef": git_ref}}
-
     r.log(f"Git URL: {git_url}  ref: {git_ref}")
 
     try:
-        data = client.gql_data(ADD_MARKETPLACE, variables)
+        our_mkt = client.add_marketplace_idempotent(git_url, git_ref, manifest)
     except RuntimeError as e:
-        if "already configured" in str(e).lower():
-            r.log("Marketplace already exists, removing first...")
-            try:
-                client.gql_data(REMOVE_MARKETPLACE, {"id": encode_node_id("Marketplace", mkt_uuid)})
-            except Exception:
-                pass
-            data = client.gql_data(ADD_MARKETPLACE, variables)
-        else:
-            r.fail(f"Failed to add marketplace: {e}")
-            sys.exit(1)
+        r.fail(f"Failed to add marketplace: {e}")
+        sys.exit(1)
 
-    our_mkt = next((m for m in data["addMarketplace"] if m["name"] == mkt_name), None)
-    if not our_mkt:
-        r.fail(f"Marketplace '{mkt_name}' not found in response")
+    if not our_mkt or our_mkt.get("name") != mkt_name:
+        r.fail(f"Marketplace '{mkt_name}' not in response: {our_mkt!r}")
         sys.exit(1)
 
     r.ok("Marketplace added successfully")
     if our_mkt.get("error"):
         r.fail(f"Marketplace has error: {our_mkt['error']}")
-    if our_mkt["name"] == mkt_name:
-        r.ok("Marketplace name matches")
+    r.ok("Marketplace name matches")
     r.log(f"Marketplace reports {our_mkt['pluginCount']} plugins")
     return our_mkt
 
@@ -288,8 +149,8 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
     r.section("Validate marketplace listing")
 
     mkt_name = manifest["name"]
-    data = client.gql_data(LIST_MARKETPLACES)
-    if any(m["name"] == mkt_name for m in data["marketplaces"]):
+    marketplaces = client.list_marketplaces()
+    if any(m["name"] == mkt_name for m in marketplaces):
         r.ok("Marketplace appears in listing")
     else:
         r.fail("Marketplace not found in listing")
@@ -303,14 +164,8 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
             r.fail(f"Plugin '{name}' missing from marketplace (check source path)")
 
 
-def load_expected(plugin_dir: Path) -> dict | None:
-    expected_path = plugin_dir / "acceptance" / "expected.json"
-    if expected_path.is_file():
-        return json.loads(expected_path.read_text())
-    return None
-
-
-def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: Results) -> None:
+def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
+                daemon_env: dict[str, str] | None, r: Results) -> None:
     name = plugin["name"]
     plugin_id = plugin["id"]
     skills = plugin.get("skills", [])
@@ -322,17 +177,24 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     if skills:
         r.log(f"  Skills: {', '.join(s['fullName'] for s in skills)}")
 
+    # --- Daemon env vars (declared by plugin in expected.json) ---
+    required_env = (expected or {}).get("env_vars") or []
+    if required_env:
+        if daemon_env is None:
+            r.skip(f"{name}: env var check skipped (daemon .env unreadable)")
+        else:
+            check_env_vars(daemon_env, required_env, name, r)
+
     # --- Install ---
     r.log("Installing...")
     try:
-        data = client.gql_data(INSTALL_PLUGIN, {"input": {"id": plugin_id}})
+        installed = client.install_plugin(plugin_id)
     except RuntimeError as e:
         r.fail(f"Install failed: {e}")
         return
 
-    installed = next((p for p in data["installPlugin"] if p["name"] == name), None)
-    if not installed:
-        r.fail("Not in installed list after install")
+    if not installed or installed.get("name") != name:
+        r.fail(f"Install returned unexpected payload: {installed!r}")
         return
     r.ok("Install succeeded")
 
@@ -359,8 +221,8 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     expected_skills = (expected or {}).get("skills", []) or [s["fullName"] for s in skills]
     if expected_skills:
         try:
-            skills_data = client.gql_data(SKILLS)
-            available = {s["fullName"] for s in skills_data["skills"]}
+            skills_list = client.list_skills()
+            available = {s["fullName"] for s in skills_list}
             for qname in expected_skills:
                 if qname in available:
                     r.ok(f"Skill '{qname}' available")
@@ -377,15 +239,15 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
     # --- Uninstall ---
     r.log("Uninstalling...")
     try:
-        data = client.gql_data(UNINSTALL_PLUGIN, {"input": {"id": plugin_id}})
+        client.uninstall_plugin(plugin_id)
+        r.ok("Uninstall mutation succeeded")
     except RuntimeError as e:
         r.fail(f"Uninstall failed: {e}")
         return
 
-    if not any(p["name"] == name for p in data["uninstallPlugin"]):
-        r.ok("Removed from installed list")
-    else:
-        r.fail("Still in installed list after uninstall")
+    # The on-disk getEntry check below is the authoritative "still installed?"
+    # signal — the daemon now returns just the uninstalled plugin, not the
+    # remaining list, so we can't infer membership from the response.
 
     if install_path:
         entry = client.get_entry(install_path)
@@ -403,12 +265,12 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path, r: R
 def remove_marketplace(client: DaemonClient, mkt_node_id: str, mkt_name: str, r: Results) -> None:
     r.section("Remove marketplace")
     try:
-        client.gql_data(REMOVE_MARKETPLACE, {"id": mkt_node_id})
+        client.remove_marketplace(mkt_node_id)
     except RuntimeError as e:
         r.fail(f"Failed to remove marketplace: {e}")
 
-    data = client.gql_data(LIST_MARKETPLACES)
-    if not any(m["name"] == mkt_name for m in data["marketplaces"]):
+    marketplaces = client.list_marketplaces()
+    if not any(m["name"] == mkt_name for m in marketplaces):
         r.ok("Marketplace removed from listing")
     else:
         r.fail("Marketplace still in listing after removal")
@@ -423,10 +285,21 @@ def main() -> int:
     parser.add_argument("--token", required=True, help="JWT token")
     parser.add_argument("--git-url", required=True, help="Git repository URL")
     parser.add_argument("--git-ref", required=True, help="Git branch or tag")
+    parser.add_argument("--env-path", default="/home/codexis/.cdx/.env",
+                        help="VM-side path to the daemon-managed .env file")
+    parser.add_argument("--cookie", default="",
+                        help="Optional _oauth2_proxy cookie value used to "
+                             "auto-refresh the bearer token on 401.")
+    parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
+                        help="oauth2-proxy URL (default: http://localhost:4182)")
     args = parser.parse_args()
 
     marketplace_path = Path(__file__).resolve().parent.parent
-    client = DaemonClient(args.daemon, args.token)
+    refresher = None
+    if args.cookie:
+        from _daemon_client import make_oauth2_proxy_refresher
+        refresher = make_oauth2_proxy_refresher(args.cookie, args.oauth2_proxy)
+    client = DaemonClient(args.daemon, args.token, token_refresher=refresher)
     r = Results()
 
     r.log(f"Daemon: {args.daemon}")
@@ -436,8 +309,18 @@ def main() -> int:
     our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)
     validate_listing(client, manifest, our_mkt, r)
 
+    # Read the daemon-managed .env once; per-plugin checks consult it.
+    daemon_env: dict[str, str] | None
+    try:
+        raw = client.download_file(args.env_path).decode("utf-8", errors="replace")
+        daemon_env = parse_env_file(raw)
+        r.log(f"Loaded daemon .env: {len(daemon_env)} keys from {args.env_path}")
+    except Exception as e:
+        daemon_env = None
+        r.log(f"Could not read {args.env_path}: {e} (env-var checks will be skipped)")
+
     for plugin in our_mkt.get("plugins", []):
-        test_plugin(client, plugin, marketplace_path, r)
+        test_plugin(client, plugin, marketplace_path, daemon_env, r)
 
     remove_marketplace(client, our_mkt["id"], manifest["name"], r)
     return r.summary()

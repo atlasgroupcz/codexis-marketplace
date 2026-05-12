@@ -1,0 +1,32 @@
+# Half of the legacy `cdx-sk-search.yaml` — case-law search via SKNUS.
+# Split per-test so the orchestrator parallelizes case-law search and
+# §3 OZ lookup. See ares-ico.config.yaml for the rationale.
+
+description: cdx-sk — NS SR damages search returns real SKNUS doc URLs
+target_plugin: cdx-sk
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: NS SR damages search returns real SKNUS doc URLs
+    vars:
+      prompt: "Najdi mi nějaká rozhodnutí slovenského Nejvyššího soudu o náhradě škody."
+      tool_name: shell
+      input_regex: 'cdx-sk[\s"\\]+search\s+SK[A-Z]+(?!.*--help)'
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsud\.sk|justice\.gov\.sk|e-zbierka\.sk)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: regex
+        value: '/doc/SKNUS\d+'

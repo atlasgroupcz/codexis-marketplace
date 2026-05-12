@@ -1,0 +1,143 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-automation-command.yaml
+# COMMAND-type automation full lifecycle: create → list → trigger → delete →
+# verify-gone. Each step is a fresh chat; state passes via the daemon-side
+# automation named e2e-{{ run_id }}.
+
+description: codexis cdxctl — COMMAND-type automation lifecycle
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: automation create-command stores cron + command + enabled
+    vars:
+      prompt: "Vytvoř automatizaci e2e-{{ run_id }}, která 1. ledna jednou ročně spustí 'echo hello'."
+      tool_name: shell
+      input_regex: 'automation\s+create-command.{0,500}e2e-'
+      tool_calls_min: 1
+      # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries.
+      tool_calls_max: 9
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title cron command enabled } }"
+      jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
+      count: 1
+      subset:
+        cron: "0 0 1 1 *"
+        command: "echo hello"
+        enabled: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation list surfaces e2e-{{run_id}}
+    vars:
+      prompt: "Jaké mám automatizace?"
+      tool_name: shell
+      input_regex: 'automation\s+list'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title } }"
+      jsonpath: "$.automations[*].title"
+      contains: "e2e-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      - type: regex
+        value: 'e2e-'
+
+  - description: automation trigger runs it, lastRun reaches COMPLETED
+    vars:
+      prompt: "Spusť teď automatizaci e2e-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'trigger'
+      tool_calls_min: 1
+      # list (find id) + trigger + 1 slack.
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title lastRun { status trigger errorMessage } } }"
+      jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun"
+      subset:
+        status: "COMPLETED"
+        trigger: "MANUAL"
+        errorMessage: null
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation delete removes e2e-{{run_id}}
+    vars:
+      prompt: "Smaž automatizaci e2e-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'delete|remove'
+      tool_calls_min: 1
+      # list (find id) + delete + 1 slack.
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title } }"
+      jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
+      count: 0
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation list — e2e-{{run_id}} is gone
+    vars:
+      prompt: "Je automatizace e2e-{{ run_id }} ještě naplánovaná?"
+      tool_name: shell
+      input_regex: 'automation\s+list'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title } }"
+      jsonpath: "$.automations[*].title"
+      not_contains: "e2e-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

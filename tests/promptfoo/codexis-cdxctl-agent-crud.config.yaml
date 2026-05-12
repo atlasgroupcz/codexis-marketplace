@@ -1,0 +1,124 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-agent-crud.yaml
+# cdxctl local-agent lifecycle: create-from-stdin → list → update → delete.
+# Same shape as skill-crud, different daemon entity.
+
+description: codexis cdxctl — agent CRUD via --stdin
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: agent create from stdin lands in daemon's editable agent list
+    vars:
+      prompt: |
+        Vytvoř mi vlastního lokálního agenta s tímhle obsahem:
+
+        ---
+        name: ee-agent-{{ run_id }}
+        description: "E2E test agent — initial description"
+        tools: Read, Bash
+        maxTurns: 8
+        ---
+
+        You are a custom e2e test agent.
+      tool_name: shell
+      input_regex: 'agent\s+create.{0,200}--stdin'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ agents { name description editable deletable sourceKind } }"
+      jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
+      count: 1
+      subset:
+        description: "E2E test agent — initial description"
+        editable: true
+        deletable: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: agent list --editable-only surfaces our test agent
+    vars:
+      prompt: "Jaké mám vlastní agenty? Jen ty upravitelné, ne ty z pluginů."
+      tool_name: shell
+      input_regex: 'agent\s+list.{0,100}--editable-only'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ agents { name editable } }"
+      jsonpath: "$.agents[?(@.editable == true)].name"
+      contains: "ee-agent-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      - type: regex
+        value: 'ee-agent-'
+
+  - description: agent update changes the description
+    vars:
+      prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent — updated'."
+      tool_name: shell
+      input_regex: 'agent\s+update'
+      tool_calls_min: 1
+      # AI may need to read/edit memory + find id + update.
+      tool_calls_max: 9
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ agents { name description } }"
+      jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
+      equals: "E2E test agent — updated"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: agent delete removes it from the registry
+    vars:
+      prompt: "Smaž agenta ee-agent-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'agent\s+delete'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ agents { name } }"
+      jsonpath: "$.agents[*].name"
+      not_contains: "ee-agent-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

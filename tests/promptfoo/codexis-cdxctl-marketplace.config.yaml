@@ -1,0 +1,139 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-marketplace-git.yaml
+# cdxctl marketplace + plugin lifecycle: add public marketplace → list →
+# install plugin → uninstall → remove marketplace. Uses anthropic/
+# claude-plugins-official to avoid mutating our own marketplace state.
+
+description: codexis cdxctl — marketplace + plugin lifecycle (claude-plugins-official)
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: marketplace add (git source) — claude-plugins-official appears
+    vars:
+      prompt: "Přidej mi prosím marketplace z tohohle gitu: https://github.com/anthropics/claude-plugins-official.git (větev main)."
+      tool_name: shell
+      input_regex: 'marketplace\s+add.{0,300}--source-type\s+git'
+      tool_calls_min: 1
+      # may need flag discovery + retry.
+      tool_calls_max: 11
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ marketplaces { name } }"
+      jsonpath: "$.marketplaces[*].name"
+      contains: "claude-plugins-official"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: marketplace list — claude-plugins-official surfaces in the list
+    vars:
+      prompt: "Jaké mám marketplace? Je tam claude-plugins-official?"
+      tool_name: shell
+      input_regex: 'marketplace\s+list'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ marketplaces { name } }"
+      jsonpath: "$.marketplaces[*].name"
+      contains: "claude-plugins-official"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      - type: regex
+        value: 'claude-plugins-official'
+
+  - description: plugin install — superpowers from claude-plugins-official
+    vars:
+      prompt: "Nainstaluj mi z marketplace claude-plugins-official plugin superpowers."
+      tool_name: shell
+      input_regex: 'plugin\s+install'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Legacy did `installedPlugins(marketplace: $captured_id)`; here we
+      # check the global installedPlugins list — superpowers is unique
+      # enough (only that marketplace ships it) that name match is fine.
+      graphql: "query { installedPlugins { name } }"
+      jsonpath: "$.installedPlugins[*].name"
+      contains: "superpowers"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+      - type: regex
+        value: 'superpowers'
+
+  - description: plugin uninstall — superpowers leaves the installed list
+    vars:
+      prompt: "Odinstaluj plugin superpowers."
+      tool_name: shell
+      input_regex: 'plugin\s+uninstall'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "query { installedPlugins { name } }"
+      jsonpath: "$.installedPlugins[*].name"
+      not_contains: "superpowers"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: marketplace remove — claude-plugins-official is gone
+    vars:
+      prompt: "Odeber marketplace claude-plugins-official."
+      tool_name: shell
+      input_regex: 'marketplace\s+remove'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ marketplaces { name } }"
+      jsonpath: "$.marketplaces[*].name"
+      not_contains: "claude-plugins-official"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

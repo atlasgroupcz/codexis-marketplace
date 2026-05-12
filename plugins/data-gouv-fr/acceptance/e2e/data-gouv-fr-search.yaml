@@ -1,0 +1,19 @@
+name: data-gouv-fr-search
+description: Verify the data-gouv-fr skill searches French government open-data datasets (SIRENE — French company registry, a flagship stable dataset).
+
+# The skill is hooked up to an HTTP MCP server at mcp.data.gouv.fr,
+# but in practice the AI also reaches data.gouv.fr directly via a
+# Python urllib script when MCP isn't surfaced as a tool. Both paths
+# return real datasets, so we drop the tool_call axis and rely on
+# the URL pattern in the response — that proves a real hit no matter
+# which transport the AI picked.
+
+steps:
+  - prompt: "Najdi mi na data.gouv.fr datasety související se SIRENE (francouzský registr firem)."
+    expect:
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        # Real data.gouv.fr dataset URLs are of the form
+        # https://www.data.gouv.fr/fr/datasets/<slug>/ — presence proves real hits.
+        matches: "data\\.gouv\\.fr/.{0,50}datasets?"

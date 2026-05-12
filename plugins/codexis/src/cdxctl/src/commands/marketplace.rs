@@ -78,12 +78,31 @@ pub fn update(
             print_output(&result, format);
         }
         None => {
-            let data = client.execute(graphql::UPDATE_ALL_MARKETPLACES, json!({}))?;
-            let result = data
-                .get("updateAllMarketplaces")
-                .cloned()
-                .unwrap_or(Value::Array(vec![]));
-            print_output(&result, format);
+            let listing = client.execute(graphql::GET_MARKETPLACES, json!({}))?;
+            let mut results: Vec<Value> = Vec::new();
+            if let Some(marketplaces) = listing.get("marketplaces").and_then(|v| v.as_array()) {
+                for mp in marketplaces {
+                    let mp_id = mp.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    if mp_id.is_empty() {
+                        continue;
+                    }
+                    let mp_name = mp.get("name").cloned().unwrap_or(Value::Null);
+                    match client.execute(graphql::UPDATE_MARKETPLACE, json!({ "id": mp_id })) {
+                        Ok(d) => {
+                            if let Some(r) = d.get("updateMarketplace").cloned() {
+                                results.push(r);
+                            }
+                        }
+                        Err(e) => {
+                            results.push(json!({
+                                "marketplace": mp_name,
+                                "error": format!("{}", e),
+                            }));
+                        }
+                    }
+                }
+            }
+            print_output(&Value::Array(results), format);
         }
     }
     Ok(())

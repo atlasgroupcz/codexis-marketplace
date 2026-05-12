@@ -1,0 +1,74 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-agent-from-file.yaml
+# cdxctl agent creation via --file (distinct from --stdin) + cleanup.
+
+description: codexis cdxctl — agent create via --file
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: agent create --file lands the markdown and registers it
+    vars:
+      prompt: |
+        Uloženě mám tohle jako markdown agenta, ulož to prosím do
+        /tmp/ee-fa-{{ run_id }}.md a zaregistruj ten soubor jako nového agenta:
+
+        ---
+        name: ee-fa-{{ run_id }}
+        description: "E2E test agent (from file)"
+        tools: Read, Bash
+        maxTurns: 6
+        ---
+
+        You are an E2E from-file test agent.
+      tool_name: shell
+      input_regex: 'agent\s+create.{0,200}--file'
+      tool_calls_min: 1
+      tool_calls_max: 9
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ agents { name description editable } }"
+      jsonpath: "$.agents[?(@.name == 'ee-fa-{{ run_id }}')]"
+      count: 1
+      subset:
+        description: "E2E test agent (from file)"
+        editable: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: agent delete removes ee-fa-{{run_id}}
+    vars:
+      prompt: "Smaž agenta ee-fa-{{ run_id }}."
+      tool_name: shell
+      input_regex: 'agent\s+delete'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ agents { name } }"
+      jsonpath: "$.agents[*].name"
+      not_contains: "ee-fa-{{ run_id }}"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

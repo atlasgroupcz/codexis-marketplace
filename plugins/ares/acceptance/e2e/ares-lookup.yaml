@@ -1,0 +1,32 @@
+name: ares-lookup
+description: Verify the ares skill calls ares-cli against the public ARES v3 API and relays the company identification back to the user.
+
+# Deterministic target: ČEZ, a. s. — Czech state-controlled energy utility,
+# IČO 45274649, listed since 1992, exact obchodniJmeno is "ČEZ, a. s." with
+# the comma + space. Address: Duhová 2/1444, 140 00 Praha 4.
+# Picked over ATLAS GROUP itself (27082440 — used in the SKILL examples) so
+# the test doesn't lean on a self-referential demo target.
+
+steps:
+  # 1. Lookup by IČO — verify ares-cli is invoked and the company name surfaces.
+  - prompt: "Co je za firmu IČO 45274649? Stačí mi název a sídlo."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "ares-cli\\s+(detail|api\\s+get)\\s+.*45274649"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        # "ČEZ, a. s." is the canonical obchodniJmeno; "Duhová" anchors the
+        # address. Both must appear (order-independent) for a real hit.
+        matches: "(?s)ČEZ.{0,200}Duhov|Duhov.{0,200}ČEZ"
+
+  # 2. Follow-up about VAT status — natural Czech business question.
+  #    AI may answer from step-1 context (basic detail already includes
+  #    seznamRegistraci) or call again; either is fine.
+  - prompt: "A je ČEZ plátce DPH?"
+    expect:
+      tool_calls_max: 5
+      response:
+        # DIČ for ČEZ is CZ45274649. AKTIVNI = active VAT registration.
+        matches: "(?i)CZ\\s?45274649|aktivn"

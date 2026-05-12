@@ -2,11 +2,16 @@
 uuid: 3e29a143-11b7-4567-b417-7a40c5471404
 name: video-analyze
 description: >-
-  Analyze video and audio files using Gemini multimodal models.
-  Supports local files (mp4, webm, mov, avi, mkv) and YouTube URLs.
-  Handles upload, authentication, and Gemini API calls automatically.
-  Triggers on "analyze video", "what is in this video", "describe video",
-  "video summary", "watch this video", "transcribe video".
+  This skill should be invoked whenever user needs to analyze, transcribe,
+  summarize, or describe video or audio content — local files (mp4, webm,
+  mov, avi, mkv, mp3, wav, flac, ogg, aac) or YouTube URLs. Use this skill
+  instead of yt-dlp, youtube-dl, youtube-transcript-api, pytube, ffmpeg,
+  whisper, or direct LLM transcription tools — those are not available here
+  and will not produce a usable result. Triggers on "analyze video",
+  "transcribe video", "watch this video", "video summary", "describe video",
+  "what is in this video", "audio transcript", "přepiš video",
+  "analyzuj video", "shrnutí videa", "popiš video", "co se říká ve videu",
+  "prepíš video".
 allowed-tools: shell
 i18n:
   cs:
@@ -40,7 +45,7 @@ The command prints the **file path** to stdout (e.g. `.transcripts/meeting.mp4.t
 
 The transcript uses a simple timestamped format with spoken dialogue, scene descriptions, and audio cues. Produced by Gemini Pro.
 
-**Important:** Use a generous shell timeout (e.g. `timeoutMs: 300000`) — transcription of long media can take several minutes.
+**CRITICAL — always pass `timeoutMs: 300000` (5 minutes) to the shell call.** The default 30-second shell timeout is too short for transcription: Gemini upload + multi-pass transcription regularly takes 30s–3min even for short clips, and the daemon will kill the call mid-flight without it. Without `timeoutMs`, the call times out, leaving no transcript file on disk and no useful path on stdout.
 
 ### Step 2: Answer from the transcript
 

@@ -14,7 +14,7 @@ query GetAutomations {
         prompt
         enabled
         maxTurns
-        workDirPathInfo { absolutePath displayPath }
+        workDirPath { absolutePath displayPath }
         lastRun {
             id
             status
@@ -41,7 +41,7 @@ mutation CreateAutomation($input: AutomationInput!) {
         prompt
         enabled
         maxTurns
-        workDirPathInfo { absolutePath displayPath }
+        workDirPath { absolutePath displayPath }
     }
 }
 "#;
@@ -60,7 +60,7 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         prompt
         enabled
         maxTurns
-        workDirPathInfo { absolutePath displayPath }
+        workDirPath { absolutePath displayPath }
     }
 }
 "#;
@@ -145,19 +145,6 @@ mutation UpdateMarketplace($id: ID!) {
 }
 "#;
 
-pub const UPDATE_ALL_MARKETPLACES: &str = r#"
-mutation UpdateAllMarketplaces {
-    updateAllMarketplaces {
-        marketplace
-        previousCommit
-        newCommit
-        status
-        error
-        updatedPlugins { id name version marketplace }
-    }
-}
-"#;
-
 // ==================== Plugins ====================
 
 pub const GET_INSTALLED_PLUGINS: &str = r#"
@@ -176,14 +163,18 @@ query GetInstalledPlugins($marketplace: ID!) {
 "#;
 
 pub const GET_AVAILABLE_PLUGINS: &str = r#"
-query GetAvailablePlugins($marketplace: ID) {
-    availablePlugins(marketplace: $marketplace) {
+query GetAvailablePlugins {
+    marketplaces {
         id
         name
-        version
-        description
-        homepage
-        marketplace
+        plugins {
+            id
+            name
+            version
+            description
+            category
+            tags
+        }
     }
 }
 "#;
@@ -232,14 +223,14 @@ query GetAgents {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const CREATE_AGENT: &str = r#"
-mutation CreateAgent($markdown: String!) {
+mutation CreateAgent($markdown: Markdown!) {
     createAgent(markdown: $markdown) {
         id
         name
@@ -255,14 +246,14 @@ mutation CreateAgent($markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const UPDATE_AGENT: &str = r#"
-mutation UpdateAgent($id: ID!, $markdown: String!) {
+mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
     updateAgent(id: $id, markdown: $markdown) {
         id
         name
@@ -278,7 +269,7 @@ mutation UpdateAgent($id: ID!, $markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
@@ -308,14 +299,14 @@ query GetSkills {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const CREATE_SKILL: &str = r#"
-mutation CreateSkill($markdown: String!) {
+mutation CreateSkill($markdown: Markdown!) {
     createSkill(markdown: $markdown) {
         id
         name
@@ -327,14 +318,14 @@ mutation CreateSkill($markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
 pub const UPDATE_SKILL: &str = r#"
-mutation UpdateSkill($id: ID!, $markdown: String!) {
+mutation UpdateSkill($id: ID!, $markdown: Markdown!) {
     updateSkill(id: $id, markdown: $markdown) {
         id
         name
@@ -346,7 +337,7 @@ mutation UpdateSkill($id: ID!, $markdown: String!) {
         sourceKind
         editable
         deletable
-        pathInfo { absolutePath displayPath }
+        path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
@@ -382,7 +373,7 @@ mod tests {
             assert!(query.contains("sourceKind"));
             assert!(query.contains("editable"));
             assert!(query.contains("deletable"));
-            assert!(query.contains("pathInfo { absolutePath displayPath }"));
+            assert!(query.contains("path { absolutePath displayPath }"));
             assert!(query.contains("sourcePath { absolutePath displayPath }"));
             assert!(query.contains("maxTurns"));
             assert!(query.contains("disallowedTools"));

@@ -1,0 +1,94 @@
+"""Promptfoo Python provider for cdx-daemon chats.
+
+Reuses the existing DaemonClient + ChatRunner from `tests/`, so the
+promptfoo path stays in lockstep with the legacy e2e runner's
+schema knowledge (tool-part interface, FileEntry adapter, etc.).
+
+Auth model matches the cdx-daemon `codexis-eval-ops` provider: caller
+provides a Keycloak-issued bearer token directly (no oauth2-proxy
+cookie magic in the eval path — eval runs are short enough to fit
+inside a single token TTL, and CI uses long-lived service tokens).
+
+Promptfoo invokes `call_api(prompt, options, context)` per test row.
+We open one chat per call (one user turn → one assistant turn),
+return the AI's text as `output` and the structured tool-call list
+as `metadata.tool_calls` for downstream assertions.
+
+Env vars (aligned with codexis-eval-ops):
+    CDX_EVAL_GRAPHQL_URL     daemon GraphQL URL (full URL, with /graphql);
+                             default http://localhost:8086/graphql
+    CDX_EVAL_AUTH_TOKEN      Keycloak access token (required)
+    CDX_EVAL_POLL_TIMEOUT_S  per-chat poll deadline, default 600
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+from typing import Any
+
+# Reuse the legacy runner's tested daemon abstractions. They already
+# speak the latest schema (Chat / AiChatMessage / typed *ToolMessagePart).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _daemon_client import DaemonClient  # noqa: E402
+from _chat_runner import ChatRunner  # noqa: E402
+
+
+# Sentinel markers used to smuggle structured data from provider to
+# Python assertion through promptfoo's Python wrapper. The wrapper
+# strips `providerResponse` from the assertion context, so the only
+# reliable channel is the `output` string itself.
+TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
+TOOL_CALLS_END = "<<CDX_EVAL_END>>"
+
+
+def _daemon_base_from_graphql(url: str) -> str:
+    """`DaemonClient` wants the base URL; promptfoo convention is full GraphQL URL."""
+    if url.endswith("/graphql"):
+        return url[: -len("/graphql")]
+    return url.rstrip("/")
+
+
+def _build_client() -> DaemonClient:
+    graphql_url = os.environ.get(
+        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
+    )
+    token = os.environ.get("CDX_EVAL_AUTH_TOKEN", "")
+    if not token:
+        raise RuntimeError(
+            "CDX_EVAL_AUTH_TOKEN env var is required (Keycloak access token)."
+        )
+    return DaemonClient(_daemon_base_from_graphql(graphql_url), token)
+
+
+def call_api(prompt: str, options: dict | None, context: dict | None) -> dict[str, Any]:
+    """One chat → one prompt → one AI turn. Returns promptfoo response shape."""
+    timeout = float(os.environ.get("CDX_EVAL_POLL_TIMEOUT_S", "600"))
+    runner = ChatRunner(client=_build_client(), poll_interval_s=2.0,
+                        poll_timeout_s=timeout)
+    try:
+        runner.start()
+        result = runner.step(prompt)
+    except Exception as e:
+        return {"output": "", "error": f"{type(e).__name__}: {e}"}
+
+    text = (result.get("text") or "").strip()
+    tool_calls = result.get("tool_calls") or []
+    # Smuggle tool_calls into the output via a sentinel suffix (see
+    # comment on TOOL_CALLS_SENTINEL above). assertions.py strips and
+    # parses it back out; built-in regex assertions still match against
+    # the text portion above the sentinel.
+    import json
+    suffix = (f"\n\n{TOOL_CALLS_SENTINEL}"
+              f"{json.dumps(tool_calls, ensure_ascii=False)}"
+              f"{TOOL_CALLS_END}")
+    return {
+        "output": text + suffix,
+        # Kept for completeness even though Python assertions can't see it.
+        # JS extension hooks (afterEach) and the promptfoo UI still get it.
+        "metadata": {
+            "tool_calls": tool_calls,
+            "chat_node_id": runner.chat_node_id,
+        },
+    }

@@ -130,3 +130,4 @@ tmp/
 __pycache__/
 **/__pycache__/
 *.pyc
+test-results/

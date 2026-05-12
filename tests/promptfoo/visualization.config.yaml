@@ -1,0 +1,40 @@
+# Port of plugins/visualization/acceptance/e2e/visualize-chart.yaml
+# Visualization router → bar chart sub-skill → HTML output. The state.file
+# oracle is the strong signal; the typed `writeFile` tool is what the AI
+# uses to emit the HTML (not `shell`).
+#
+#   RUN_ID=$(printf '%s' "$RANDOM$RANDOM" | sha1sum | cut -c1-4)
+#   npx promptfoo eval -c tests/promptfoo/visualization.config.yaml --var run_id=$RUN_ID
+
+description: visualization — bar chart of CZ city populations
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Bar chart HTML lands at requested path
+    vars:
+      prompt: "Vykresli mi sloupcový graf populace největších českých měst — Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
+      # AI uses the typed writeFile tool (not shell) for the HTML output.
+      tool_name: writeFile
+      input_regex: 'mesta-[\s\S]*\.html'
+      # Router→sub-skill→template-read→write — allow some headroom.
+      tool_calls_max: 14
+      forbidden_regex: '(curl|wget)\s+http'
+      file: /home/codexis/mesta-{{ run_id }}.html
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_file
+      - type: regex
+        value: '\.html'

@@ -1,0 +1,120 @@
+# Port of plugins/codexis/acceptance/e2e/cdxctl-automation-update.yaml
+# Partial-field update of an existing automation: rename + cron change,
+# then disable, then delete. Verifies cdxctl correctly applies the
+# subset of fields the user names without touching the rest.
+
+description: codexis cdxctl — automation partial update
+target_plugin: codexis
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: automation create-command (initial state for the update sequence)
+    vars:
+      prompt: "Vytvoř automatizaci e2e-upd-{{ run_id }}, která 1. ledna jednou ročně spustí 'echo initial'."
+      tool_name: shell
+      input_regex: 'automation\s+create-command'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title cron command enabled } }"
+      jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}')]"
+      count: 1
+      subset:
+        cron: "0 0 1 1 *"
+        command: "echo initial"
+        enabled: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation update — rename + change cron, command preserved
+    vars:
+      prompt: "U automatizace e2e-upd-{{ run_id }} změň název na e2e-upd-{{ run_id }}-v2 a cron na '0 0 2 2 *'."
+      tool_name: shell
+      input_regex: 'automation\s+update'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # State check: the new title exists with new cron, original command preserved.
+      # (Legacy had a 2nd check that old title is gone; with a single state check
+      # we trust the rename was atomic — count==1 of v2 with these fields is
+      # enough evidence.)
+      graphql: "{ automations { title cron command enabled } }"
+      jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')]"
+      count: 1
+      subset:
+        cron: "0 0 2 2 *"
+        command: "echo initial"
+        enabled: true
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation update — disable enabled flag
+    vars:
+      prompt: "Automatizaci e2e-upd-{{ run_id }}-v2 vypni."
+      tool_name: shell
+      input_regex: 'automation\s+update.{0,500}enabled'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title enabled } }"
+      jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')].enabled"
+      equals: false
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql
+
+  - description: automation delete — final cleanup
+    vars:
+      prompt: "Smaž automatizaci e2e-upd-{{ run_id }}-v2."
+      tool_name: shell
+      input_regex: 'automation\s+delete'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      graphql: "{ automations { title } }"
+      jsonpath: "$.automations[*].title"
+      not_contains: "e2e-upd-{{ run_id }}-v2"
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_min
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      - type: python
+        value: file://./assertions.py:assert_state_graphql

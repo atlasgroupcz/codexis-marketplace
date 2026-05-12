@@ -1,7 +1,7 @@
 ---
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
-description: Use when the user asks to create, list, update, or delete custom/local agents or skills, create, list, update, delete, or trigger automations, manage plugin marketplaces (add, remove, update), install or uninstall plugins, extract tabular data from files in a folder, or create, list, and manage notifications. Provides the cdxctl CLI for platform management operations.
+description: Load this FIRST for custom agents, skills, automations, plugins, marketplaces, in-app notifications (NOT notify-send/dbus), tabular extraction. Use cdxctl CLI — never manual files or OS tools.
 version: 1.5.0
 i18n:
   cs:
@@ -69,7 +69,7 @@ cdxctl automation trigger <id>
 cdxctl marketplace list
 
 # Add a git marketplace
-cdxctl marketplace add --source "https://github.com/org/repo" --source-type git --ref "main"
+cdxctl marketplace add --source "https://github.com/org/repo" --source-type git --git-ref "main"
 
 # Add a local marketplace
 cdxctl marketplace add --source "/path/to/local/dir" --source-type local

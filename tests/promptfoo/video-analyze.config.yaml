@@ -1,0 +1,52 @@
+# New test (no legacy counterpart in plugins/video-analyze/acceptance/e2e/).
+# Verifies the video-analyze skill's prescribed two-step workflow:
+#   1. shell:   video-analyze transcript <source>  → prints transcript path
+#   2. readFile: read the printed path             → AI relays content
+#
+# We use a YouTube URL so no fixture upload is needed — the binary's
+# `is_youtube` branch hands the URL straight to Gemini's file API.
+# "Me at the zoo" (jNQXAC9IVRw) is 19s, famous, and will not be deleted;
+# the narrator says "elephant" multiple times → a stable regex oracle.
+#
+#   npx promptfoo eval -c tests/promptfoo/video-analyze.config.yaml
+
+description: video-analyze — transcribe a short YouTube clip and relay content
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Transcribe "Me at the zoo" and surface the elephant reference
+    vars:
+      prompt: "Přepiš mi tohle video a shrň, co se v něm říká: https://www.youtube.com/watch?v=jNQXAC9IVRw"
+      # Strong tool-call signal: AI invoked the prescribed entry point
+      # `video-analyze transcript <source>` (not the direct-query mode,
+      # not `video-analyze --help`).
+      tool_name: shell
+      input_regex: 'video-analyze\s+transcript\s+\S'
+      # skill load + shell (transcript) + readFile + safety margin for any
+      # follow-up shell/readFile. If this fires, the binary likely errored
+      # (Gemini auth, network, rate-limit) and AI fell back to scraping.
+      tool_calls_max: 8
+      # Anti-cheat: catches AI bypasses if `video-analyze` errors —
+      # manual YouTube download (yt-dlp/youtube-dl/pytube),
+      # local audio extraction (ffmpeg), direct LLM transcription
+      # (whisper/openai), or raw HTTP to Gemini.
+      forbidden_regex: '(yt-dlp|youtube-dl|pytube|ffmpeg|whisper|generativelanguage\.googleapis|api\.openai\.com|(curl|wget)\s+.*youtube)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # Surface check — the transcript must mention the distinctive
+      # content. Note: JS regex (no /i flag from Python), so use a
+      # char class for case-insensitive match.
+      - type: regex
+        value: '[Ee]lephant'

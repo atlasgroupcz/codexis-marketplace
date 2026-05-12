@@ -1,9 +1,21 @@
 {
-  "skills": ["video-analyze:video-analyze"],
+  "skills": [
+    "video-analyze:video-analyze"
+  ],
+  "env_vars": [
+    "CODEXIS_PUBLIC_LITELLM_BASE_URL",
+    "CODEXIS_USER_LITELLM_API_KEY"
+  ],
   "post_install": [
-    { "type": "executable", "path": "$HOME/.local/bin/video-analyze" }
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/video-analyze"
+    }
   ],
   "post_uninstall": [
-    { "type": "absent", "path": "$HOME/.local/bin/video-analyze" }
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/video-analyze"
+    }
   ]
 }

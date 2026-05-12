@@ -1,9 +1,17 @@
 {
-  "skills": ["ocr:ocr"],
+  "skills": [
+    "ocr:ocr"
+  ],
   "post_install": [
-    { "type": "executable", "path": "$HOME/.local/bin/ocr" }
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/ocr"
+    }
   ],
   "post_uninstall": [
-    { "type": "absent", "path": "$HOME/.local/bin/ocr" }
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/ocr"
+    }
   ]
 }

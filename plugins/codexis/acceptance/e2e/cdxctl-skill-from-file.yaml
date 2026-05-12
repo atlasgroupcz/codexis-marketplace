@@ -1,0 +1,42 @@
+name: cdxctl-skill-from-file
+description: Verify cdxctl creates a skill via the --file path (distinct from --stdin).
+
+steps:
+  - prompt: |
+      Tady je obsah SKILL.md pro moji novou dovednost. Vytvoř adresář
+      /tmp/ee-fs-{{ run_id }}/, ulož tam SKILL.md a tu dovednost pak
+      zaregistruj ze souboru:
+
+      ---
+      name: ee-fs-{{ run_id }}
+      description: "E2E test skill (from file)"
+      ---
+
+      # Instructions
+
+      This is an E2E from-file test skill.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill create.{0,200}--file"   # must be --file, not --stdin
+      tool_calls_min: 1
+      tool_calls_max: 9
+      state:
+        graphql: "{ skills { name description editable } }"
+        jsonpath: "$.skills[?(@.name == 'ee-fs-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          description: "E2E test skill (from file)"
+          editable: true
+
+  - prompt: "Smaž dovednost ee-fs-{{ run_id }}."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill delete"
+      tool_calls_min: 1
+      tool_calls_max: 8   # skill delete leaves empty dir; AI verifies + rmdir
+      state:
+        graphql: "{ skills { name } }"
+        jsonpath: "$.skills[*].name"
+        not_contains: "ee-fs-{{ run_id }}"

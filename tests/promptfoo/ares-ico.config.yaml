@@ -1,0 +1,44 @@
+# Half of the legacy `ares-lookup.yaml`. Split per-test so the orchestrator
+# can run the two ares cases in parallel — promptfoo's Python provider
+# serializes test rows within a single eval, so one-test-per-config is the
+# unit of concurrency we get cheaply.
+#
+# `target_plugin` tells the orchestrator which plugin to install for this
+# config — required because the filename (ares-ico) no longer matches the
+# plugin name (ares).
+
+description: ares — IČO lookup returns canonical name + address
+target_plugin: ares
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://./provider.py
+    label: cdx-daemon
+    config: {}
+
+# Deterministic target: ČEZ, a. s. — IČO 45274649, exact obchodniJmeno
+# is "ČEZ, a. s." (comma + space), DIČ CZ45274649, address Duhová 2/1444.
+
+tests:
+  - description: ICO lookup returns canonical name + address
+    vars:
+      prompt: "Co je za firmu IČO 45274649? Stačí mi název a sídlo."
+      tool_name: shell
+      # AI may use `detail`, `search --ico`, or `api get`. Any non-help
+      # invocation referencing 45274649 is acceptable.
+      input_regex: 'ares-cli[\s"\\]+(detail|search|api\s+get).*45274649(?!.*--help)'
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ares\.gov\.cz/ekonomicke-subjekty)'
+    assert:
+      - type: python
+        value: file://./assertions.py:assert_tool_call
+      - type: python
+        value: file://./assertions.py:assert_tool_count_max
+      - type: python
+        value: file://./assertions.py:assert_no_tool_call
+      # Both name and address present in the reply (order-independent).
+      # Note: promptfoo runs JS regex — use [\s\S] instead of (?s).
+      - type: regex
+        value: 'ČEZ[\s\S]{0,200}Duhov|Duhov[\s\S]{0,200}ČEZ'
