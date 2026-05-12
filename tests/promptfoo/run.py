@@ -79,11 +79,18 @@ BATCHES: list[list[str]] = [
         "presentation.config.yaml",
         "video-analyze.config.yaml",
     ],
+    # visualization ships 10 skills (visualize + 9 visualize-* variants).
+    # The tested skill `visualize-chart` is alphabetically 3rd, so it stays
+    # visible despite the cap — solo for safety.
+    ["visualization.config.yaml"],
     # codexis ships 6 skills (codexis, codexis-dane, codexis-ucetnictvi,
     # cdxctl, sledovana-judikatura, sledovane-dokumenty) — solo install,
     # but each test row runs in parallel against that single install.
     # Tests within a single config run serially (Python provider behavior),
     # which is what we want for cdxctl's create→update→delete sequences.
+    # Kept last because cdxctl tests are the heaviest + most likely to push
+    # past the orchestrator's JWT TTL; finishing the cheap stuff first means
+    # a JWT expiry hits only the codexis batch's teardown, not earlier results.
     [
         "codexis-search.config.yaml",
         "codexis-noz.config.yaml",
@@ -98,10 +105,6 @@ BATCHES: list[list[str]] = [
         "codexis-cdxctl-notifications.config.yaml",
         "codexis-cdxctl-tabular.config.yaml",
     ],
-    # visualization ships 10 skills (visualize + 9 visualize-* variants).
-    # The tested skill `visualize-chart` is alphabetically 3rd, so it stays
-    # visible despite the cap — solo for safety.
-    ["visualization.config.yaml"],
 ]
 
 
