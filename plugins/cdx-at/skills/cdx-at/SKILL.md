@@ -5,14 +5,14 @@ description: This skill should be invoked whenever user needs Austrian law or le
 version: 2.1.0
 i18n:
   cs:
-    displayName: "Rakouská legislativa (RIS)"
-    summary: "Rakouský RIS — spolková a zemská legislativa, judikatura, historické konsolidované předpisy."
+    displayName: "Rakouské právo (RIS)"
+    summary: "Rakouský RIS — spolková (Bundesrecht) a zemská (Landesrecht) legislativa, judikatura (Judikatur) ze 7 soudů včetně VfGH a VwGH, další úřední publikace (Sonstige) a historické konsolidované předpisy."
   en:
-    displayName: "Austrian Legislation (RIS)"
-    summary: "Austria's RIS — federal and state legislation, case law, and historical consolidated law norms."
+    displayName: "Austrian Legal Database (RIS)"
+    summary: "Austria's RIS — federal (Bundesrecht) and state (Landesrecht) legislation, case law (Judikatur) from 7 courts including VfGH and VwGH, other official publications (Sonstige), and historical consolidated norms."
   sk:
-    displayName: "Rakúska legislatíva (RIS)"
-    summary: "Rakúsky RIS — spolková a krajinská legislatíva, judikatúra, historické konsolidované predpisy."
+    displayName: "Rakúske právo (RIS)"
+    summary: "Rakúsky RIS — spolková (Bundesrecht) a krajinská (Landesrecht) legislatíva, judikatúra (Judikatur) zo 7 súdov vrátane VfGH a VwGH, ďalšie úradné publikácie (Sonstige) a historické konsolidované predpisy."
 ---
 
 # Austrian Legal Database (cdx-at)

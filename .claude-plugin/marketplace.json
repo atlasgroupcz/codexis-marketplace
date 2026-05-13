@@ -47,23 +47,23 @@
     {
       "uuid": "ad89bba6-3a8c-456d-adbb-a78d0f1da359",
       "name": "cdx-sk",
-      "description": "Slovak legal database — legislation, general courts, supreme & constitutional court decisions",
+      "description": "Slovak legal database — e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings",
       "source": "./plugins/cdx-sk",
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Slovenská legislativa",
-          "description": "Slovenská legislativa (e-Zbierka), rozhodnutí obecných soudů, Nejvyššího soudu a Ústavního soudu SR.",
+          "displayName": "Slovenské právo (e-Zbierka a soudy SR)",
+          "description": "Slovenská právní databáze — legislativa z e-Zbierky, rozhodnutí všeobecných soudů (~4,6 mil.) a Nejvyššího a Ústavního soudu SR.",
           "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislativa", "case-law": "Judikatura" }
         },
         "en": {
-          "displayName": "Slovak Legislation",
-          "description": "Slovak legislation (e-Zbierka), general court decisions, Supreme Court and Constitutional Court rulings.",
+          "displayName": "Slovak Legal Database (e-Zbierka & courts)",
+          "description": "Slovak legal database — e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings.",
           "tagLabels": { "legal": "Law", "slovak": "Slovakia", "legislation": "Legislation", "case-law": "Case Law" }
         },
         "sk": {
-          "displayName": "Slovenská legislatíva",
-          "description": "Slovenská legislatíva (e-Zbierka), rozhodnutia všeobecných súdov, Najvyššieho súdu a Ústavného súdu SR.",
+          "displayName": "Slovenské právo (e-Zbierka a súdy SR)",
+          "description": "Slovenská právna databáza — legislatíva z e-Zbierky, rozhodnutia všeobecných súdov (~4,6 mil.) a Najvyššieho a Ústavného súdu SR.",
           "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
         }
       }
@@ -71,23 +71,23 @@
     {
       "uuid": "81a06344-5b2b-4c55-a0d0-e7943b988f86",
       "name": "visualization",
-      "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
+      "description": "Data visualization using D3.js, Leaflet and AG Grid — charts, network graphs, timelines, trees, calendars, flowcharts, kanban boards, tables and maps",
       "source": "./plugins/visualization",
       "category": "visualization",
       "i18n": {
         "cs": {
           "displayName": "Vizualizace dat",
-          "description": "Vizualizace dat pomocí D3.js — grafy, časové osy, stromy, kalendáře, mapy, kanban a tabulky. Ideální pro právní data.",
+          "description": "Interaktivní vizualizace dat (D3.js, Leaflet, AG Grid) — sloupcové, čárové a koláčové grafy, síťové grafy, časové osy a Gantt, stromy, kalendáře, vývojové diagramy, kanban, tabulky a mapy.",
           "tagLabels": { "visualization": "Vizualizace", "chart": "Grafy", "timeline": "Časová osa", "map": "Mapa", "legal": "Právo" }
         },
         "en": {
           "displayName": "Data Visualization",
-          "description": "D3.js-powered data visualization — charts, timelines, trees, calendars, maps, kanban boards and tables. Tailored for legal data.",
+          "description": "Interactive data visualization (D3.js, Leaflet, AG Grid) — bar/line/pie charts, network graphs, timelines and Gantt charts, trees, calendars, flowcharts, kanban boards, tables and maps.",
           "tagLabels": { "visualization": "Visualization", "chart": "Charts", "timeline": "Timeline", "map": "Map", "legal": "Law" }
         },
         "sk": {
           "displayName": "Vizualizácia dát",
-          "description": "Vizualizácia dát pomocou D3.js — grafy, časové osi, stromy, kalendáre, mapy, kanban a tabuľky. Ideálne pre právne dáta.",
+          "description": "Interaktívna vizualizácia dát (D3.js, Leaflet, AG Grid) — stĺpcové, čiarové a koláčové grafy, sieťové grafy, časové osi a Gantt, stromy, kalendáre, vývojové diagramy, kanban, tabuľky a mapy.",
           "tagLabels": { "visualization": "Vizualizácia", "chart": "Grafy", "timeline": "Časová os", "map": "Mapa", "legal": "Právo" }
         }
       }
@@ -143,23 +143,23 @@
     {
       "uuid": "4d7e6ced-f344-438f-9d12-141ac694fe65",
       "name": "video-analyze",
-      "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
+      "description": "Audio & video content analysis using Gemini — transcripts, summaries and Q&A over YouTube URLs and local video/audio files (MP4, WebM, MOV, MP3, WAV and more)",
       "source": "./plugins/video-analyze",
       "category": "media",
       "i18n": {
         "cs": {
-          "displayName": "Analýza videí",
-          "description": "Analýza obsahu videí pomocí modelu Gemini — přepisy, shrnutí a rozbor z YouTube odkazů i lokálních souborů.",
+          "displayName": "Analýza videa a audia",
+          "description": "Analýza obsahu videa a audia pomocí modelu Gemini — přepisy, shrnutí a otázky nad YouTube odkazy i lokálními soubory (MP4, WebM, MOV, MP3, WAV a další).",
           "tagLabels": { "media": "Média", "video": "Video", "ai": "AI" }
         },
         "en": {
-          "displayName": "Video Analysis",
-          "description": "Video content analysis powered by Gemini — transcripts, summaries, and insights from YouTube links or local files.",
+          "displayName": "Audio & Video Analysis",
+          "description": "Audio and video content analysis powered by Gemini — transcripts, summaries and Q&A over YouTube links and local files (MP4, WebM, MOV, MP3, WAV and more).",
           "tagLabels": { "media": "Media", "video": "Video", "ai": "AI" }
         },
         "sk": {
-          "displayName": "Analýza videí",
-          "description": "Analýza obsahu videí pomocou modelu Gemini — prepisy, zhrnutia a rozbor z YouTube odkazov i lokálnych súborov.",
+          "displayName": "Analýza videa a audia",
+          "description": "Analýza obsahu videa a audia pomocou modelu Gemini — prepisy, zhrnutia a otázky nad YouTube odkazmi i lokálnymi súbormi (MP4, WebM, MOV, MP3, WAV a ďalšie).",
           "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
         }
       }
@@ -239,23 +239,23 @@
     {
       "uuid": "bc2d2aff-84c6-49e4-8f2b-fed6ff316de8",
       "name": "cdx-at",
-      "description": "Austrian legal database (RIS) — federal and state legislation, court decisions, ministerial decrees, and consolidated law history",
+      "description": "Austrian legal database (RIS) — federal legislation (Bundesrecht), case law (Judikatur) from 7 courts including VfGH and VwGH, state legislation (Landesrecht), other official publications (Sonstige), and consolidated federal norms with full amendment history",
       "source": "./plugins/cdx-at",
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Rakouská legislativa (RIS)",
-          "description": "Rakouský právní informační systém RIS — spolková a zemská legislativa, rozhodnutí soudů, ministerské vyhlášky a historie předpisů.",
+          "displayName": "Rakouské právo (RIS)",
+          "description": "Rakouský právní informační systém RIS — spolková (Bundesrecht) a zemská (Landesrecht) legislativa, judikatura sedmi soudů včetně VfGH a VwGH, další úřední publikace (Sonstige) a historické konsolidované předpisy.",
           "tagLabels": { "legal": "Právo", "austrian": "Rakousko", "legislation": "Legislativa", "case-law": "Judikatura" }
         },
         "en": {
-          "displayName": "Austrian Legislation (RIS)",
-          "description": "Austrian Legal Information System (RIS) — federal and state legislation, court decisions, ministerial decrees, and consolidated law history.",
+          "displayName": "Austrian Legal Database (RIS)",
+          "description": "Austrian Legal Information System (RIS) — federal (Bundesrecht) and state (Landesrecht) legislation, case law (Judikatur) from seven courts including VfGH and VwGH, other official publications (Sonstige), and consolidated federal norms with full amendment history.",
           "tagLabels": { "legal": "Law", "austrian": "Austria", "legislation": "Legislation", "case-law": "Case Law" }
         },
         "sk": {
-          "displayName": "Rakúska legislatíva (RIS)",
-          "description": "Rakúsky právny informačný systém RIS — spolková a krajinská legislatíva, rozhodnutia súdov, ministerské vyhlášky a história predpisov.",
+          "displayName": "Rakúske právo (RIS)",
+          "description": "Rakúsky právny informačný systém RIS — spolková (Bundesrecht) a krajinská (Landesrecht) legislatíva, judikatúra siedmich súdov vrátane VfGH a VwGH, ďalšie úradné publikácie (Sonstige) a historické konsolidované predpisy.",
           "tagLabels": { "legal": "Právo", "austrian": "Rakúsko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
         }
       }

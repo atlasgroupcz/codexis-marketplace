@@ -5,14 +5,14 @@ description: This skill should be invoked whenever user needs Slovak law or lega
 version: 2.1.0
 i18n:
   cs:
-    displayName: "Slovenská legislativa"
-    summary: "Slovenská legislativa (e-Zbierka) a rozhodnutí obecných, Nejvyššího a Ústavního soudu SR."
+    displayName: "Slovenské právo (e-Zbierka a soudy SR)"
+    summary: "Slovenská právní databáze — legislativa z e-Zbierky, ~4,6 mil. rozhodnutí všeobecných soudů a rozhodnutí Nejvyššího a Ústavního soudu SR."
   en:
-    displayName: "Slovak Legislation"
-    summary: "Slovak legislation (e-Zbierka) plus general, Supreme and Constitutional Court decisions."
+    displayName: "Slovak Legal Database (e-Zbierka & courts)"
+    summary: "Slovak legal database — e-Zbierka legislation, ~4.6M general court decisions and Supreme & Constitutional Court rulings."
   sk:
-    displayName: "Slovenská legislatíva"
-    summary: "Slovenská legislatíva (e-Zbierka) a rozhodnutia všeobecných, Najvyššieho a Ústavného súdu SR."
+    displayName: "Slovenské právo (e-Zbierka a súdy SR)"
+    summary: "Slovenská právna databáza — legislatíva z e-Zbierky, ~4,6 mil. rozhodnutí všeobecných súdov a rozhodnutia Najvyššieho a Ústavného súdu SR."
 ---
 
 # Slovak Legal Database (cdx-sk)

@@ -1,7 +1,7 @@
 {
   "name": "cdx-sk",
   "version": "1.1.2",
-  "description": "Slovak legal database API access for legislation (e-Zbierka), general court decisions, and supreme/constitutional court decisions",
+  "description": "Slovak legal database — e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -11,18 +11,18 @@
   "tags": ["legal", "slovak", "legislation", "case-law"],
   "i18n": {
     "cs": {
-      "displayName": "Slovenská legislativa",
-      "description": "Slovenská legislativa (e-Zbierka), rozhodnutí obecných soudů, Nejvyššího soudu a Ústavního soudu SR.",
+      "displayName": "Slovenské právo (e-Zbierka a soudy SR)",
+      "description": "Slovenská právní databáze — legislativa z e-Zbierky, rozhodnutí všeobecných soudů (~4,6 mil.) a Nejvyššího a Ústavního soudu SR.",
       "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislativa", "case-law": "Judikatura" }
     },
     "en": {
-      "displayName": "Slovak Legislation",
-      "description": "Slovak legislation (e-Zbierka), general court decisions, Supreme Court and Constitutional Court rulings.",
+      "displayName": "Slovak Legal Database (e-Zbierka & courts)",
+      "description": "Slovak legal database — e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings.",
       "tagLabels": { "legal": "Law", "slovak": "Slovakia", "legislation": "Legislation", "case-law": "Case Law" }
     },
     "sk": {
-      "displayName": "Slovenská legislatíva",
-      "description": "Slovenská legislatíva (e-Zbierka), rozhodnutia všeobecných súdov, Najvyššieho súdu a Ústavného súdu SR.",
+      "displayName": "Slovenské právo (e-Zbierka a súdy SR)",
+      "description": "Slovenská právna databáza — legislatíva z e-Zbierky, rozhodnutia všeobecných súdov (~4,6 mil.) a Najvyššieho a Ústavného súdu SR.",
       "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
     }
   },

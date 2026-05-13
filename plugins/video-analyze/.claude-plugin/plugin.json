@@ -1,7 +1,7 @@
 {
   "name": "video-analyze",
   "version": "1.0.0",
-  "description": "Video content analysis using Gemini — supports YouTube URLs and local video files",
+  "description": "Audio & video content analysis using Gemini — transcripts, summaries and Q&A over YouTube URLs and local video/audio files (MP4, WebM, MOV, MP3, WAV and more)",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -17,18 +17,18 @@
   "tags": ["media", "video", "ai"],
   "i18n": {
     "cs": {
-      "displayName": "Analýza videí",
-      "description": "Analýza obsahu videí pomocí modelu Gemini — přepisy, shrnutí a rozbor z YouTube odkazů i lokálních souborů.",
+      "displayName": "Analýza videa a audia",
+      "description": "Analýza obsahu videa a audia pomocí modelu Gemini — přepisy, shrnutí a otázky nad YouTube odkazy i lokálními soubory (MP4, WebM, MOV, MP3, WAV a další).",
       "tagLabels": { "media": "Média", "video": "Video", "ai": "AI" }
     },
     "en": {
-      "displayName": "Video Analysis",
-      "description": "Video content analysis powered by Gemini — transcripts, summaries, and insights from YouTube links or local files.",
+      "displayName": "Audio & Video Analysis",
+      "description": "Audio and video content analysis powered by Gemini — transcripts, summaries and Q&A over YouTube links and local files (MP4, WebM, MOV, MP3, WAV and more).",
       "tagLabels": { "media": "Media", "video": "Video", "ai": "AI" }
     },
     "sk": {
-      "displayName": "Analýza videí",
-      "description": "Analýza obsahu videí pomocou modelu Gemini — prepisy, zhrnutia a rozbor z YouTube odkazov i lokálnych súborov.",
+      "displayName": "Analýza videa a audia",
+      "description": "Analýza obsahu videa a audia pomocou modelu Gemini — prepisy, zhrnutia a otázky nad YouTube odkazmi i lokálnymi súbormi (MP4, WebM, MOV, MP3, WAV a ďalšie).",
       "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
     }
   },
