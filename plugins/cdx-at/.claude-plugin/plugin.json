@@ -1,7 +1,7 @@
 {
   "name": "cdx-at",
   "version": "1.1.0",
-  "description": "Austrian legal database (RIS) API access for federal legislation (Bundesrecht), court decisions (Judikatur), state legislation (Landesrecht), ministerial decrees (Sonstige), and consolidated law provisions with historical versions",
+  "description": "Austrian legal database (RIS) — federal legislation (Bundesrecht), case law (Judikatur) from 7 courts including VfGH and VwGH, state legislation (Landesrecht), other official publications (Sonstige), and consolidated federal norms with full amendment history",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -11,18 +11,18 @@
   "tags": ["legal", "austrian", "legislation", "case-law"],
   "i18n": {
     "cs": {
-      "displayName": "Rakouská legislativa (RIS)",
-      "description": "Rakouský právní informační systém RIS — spolková a zemská legislativa, rozhodnutí soudů, ministerské vyhlášky a historie předpisů.",
+      "displayName": "Rakouské právo (RIS)",
+      "description": "Rakouský právní informační systém RIS — spolková (Bundesrecht) a zemská (Landesrecht) legislativa, judikatura sedmi soudů včetně VfGH a VwGH, další úřední publikace (Sonstige) a historické konsolidované předpisy.",
       "tagLabels": { "legal": "Právo", "austrian": "Rakousko", "legislation": "Legislativa", "case-law": "Judikatura" }
     },
     "en": {
-      "displayName": "Austrian Legislation (RIS)",
-      "description": "Austrian Legal Information System (RIS) — federal and state legislation, court decisions, ministerial decrees, and consolidated law history.",
+      "displayName": "Austrian Legal Database (RIS)",
+      "description": "Austrian Legal Information System (RIS) — federal (Bundesrecht) and state (Landesrecht) legislation, case law (Judikatur) from seven courts including VfGH and VwGH, other official publications (Sonstige), and consolidated federal norms with full amendment history.",
       "tagLabels": { "legal": "Law", "austrian": "Austria", "legislation": "Legislation", "case-law": "Case Law" }
     },
     "sk": {
-      "displayName": "Rakúska legislatíva (RIS)",
-      "description": "Rakúsky právny informačný systém RIS — spolková a krajinská legislatíva, rozhodnutia súdov, ministerské vyhlášky a história predpisov.",
+      "displayName": "Rakúske právo (RIS)",
+      "description": "Rakúsky právny informačný systém RIS — spolková (Bundesrecht) a krajinská (Landesrecht) legislatíva, judikatúra siedmich súdov vrátane VfGH a VwGH, ďalšie úradné publikácie (Sonstige) a historické konsolidované predpisy.",
       "tagLabels": { "legal": "Právo", "austrian": "Rakúsko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
     }
   },

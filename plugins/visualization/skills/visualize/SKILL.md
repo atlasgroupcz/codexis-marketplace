@@ -12,13 +12,13 @@ description: >-
 i18n:
   cs:
     displayName: "Vizualizace dat"
-    summary: "Interaktivní grafy, časové osy, stromy, kalendáře, mapy, kanban a tabulky pro právní i obecná data."
+    summary: "Interaktivní grafy, síťové diagramy, časové osy, Gantt, stromy, kalendáře, vývojové diagramy, kanban, tabulky a mapy (D3.js, Leaflet, AG Grid)."
   en:
     displayName: "Data Visualization"
-    summary: "Interactive charts, timelines, trees, calendars, maps, kanban boards and tables — tailored for legal and general data."
+    summary: "Interactive charts, network graphs, timelines, Gantt, trees, calendars, flowcharts, kanban, tables and maps (D3.js, Leaflet, AG Grid)."
   sk:
     displayName: "Vizualizácia dát"
-    summary: "Interaktívne grafy, časové osi, stromy, kalendáre, mapy, kanban a tabuľky pre právne i všeobecné dáta."
+    summary: "Interaktívne grafy, sieťové diagramy, časové osi, Gantt, stromy, kalendáre, vývojové diagramy, kanban, tabuľky a mapy (D3.js, Leaflet, AG Grid)."
 ---
 
 # Visualization Router

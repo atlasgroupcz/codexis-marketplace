@@ -1,7 +1,7 @@
 {
   "name": "visualization",
   "version": "1.0.0",
-  "description": "D3.js-based data visualization for legal/law data - graphs, timelines, trees, charts, calendars, flowcharts, grids, kanban boards, and maps",
+  "description": "Data visualization using D3.js, Leaflet and AG Grid — charts, network graphs, timelines, trees, calendars, flowcharts, kanban boards, tables and maps",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -27,17 +27,17 @@
   "i18n": {
     "cs": {
       "displayName": "Vizualizace dat",
-      "description": "Vizualizace dat pomocí D3.js — grafy, časové osy, stromy, kalendáře, mapy, kanban a tabulky. Ideální pro právní data.",
+      "description": "Interaktivní vizualizace dat (D3.js, Leaflet, AG Grid) — sloupcové, čárové a koláčové grafy, síťové grafy, časové osy a Gantt, stromy, kalendáře, vývojové diagramy, kanban, tabulky a mapy.",
       "tagLabels": { "visualization": "Vizualizace", "chart": "Grafy", "timeline": "Časová osa", "map": "Mapa", "legal": "Právo" }
     },
     "en": {
       "displayName": "Data Visualization",
-      "description": "D3.js-powered data visualization — charts, timelines, trees, calendars, maps, kanban boards and tables. Tailored for legal data.",
+      "description": "Interactive data visualization (D3.js, Leaflet, AG Grid) — bar/line/pie charts, network graphs, timelines and Gantt charts, trees, calendars, flowcharts, kanban boards, tables and maps.",
       "tagLabels": { "visualization": "Visualization", "chart": "Charts", "timeline": "Timeline", "map": "Map", "legal": "Law" }
     },
     "sk": {
       "displayName": "Vizualizácia dát",
-      "description": "Vizualizácia dát pomocou D3.js — grafy, časové osi, stromy, kalendáre, mapy, kanban a tabuľky. Ideálne pre právne dáta.",
+      "description": "Interaktívna vizualizácia dát (D3.js, Leaflet, AG Grid) — stĺpcové, čiarové a koláčové grafy, sieťové grafy, časové osi a Gantt, stromy, kalendáre, vývojové diagramy, kanban, tabuľky a mapy.",
       "tagLabels": { "visualization": "Vizualizácia", "chart": "Grafy", "timeline": "Časová os", "map": "Mapa", "legal": "Právo" }
     }
   },

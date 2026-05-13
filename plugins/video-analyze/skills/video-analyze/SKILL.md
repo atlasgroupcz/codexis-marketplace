@@ -15,14 +15,14 @@ description: >-
 allowed-tools: shell
 i18n:
   cs:
-    displayName: "Analýza videí"
-    summary: "Analýza obsahu videí (MP4, YouTube a další) pomocí multimodálního modelu Gemini."
+    displayName: "Analýza videa a audia"
+    summary: "Přepisy a analýza videa i audia (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) pomocí multimodálního modelu Gemini."
   en:
-    displayName: "Video Analysis"
-    summary: "Analyze video content (MP4, YouTube and more) using Gemini multimodal models."
+    displayName: "Audio & Video Analysis"
+    summary: "Transcribe and analyze audio and video (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) using Gemini multimodal models."
   sk:
-    displayName: "Analýza videí"
-    summary: "Analýza obsahu videí (MP4, YouTube a ďalšie) pomocou multimodálneho modelu Gemini."
+    displayName: "Analýza videa a audia"
+    summary: "Prepisy a analýza videa i audia (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) pomocou multimodálneho modelu Gemini."
 ---
 
 # Video & Audio Analysis
