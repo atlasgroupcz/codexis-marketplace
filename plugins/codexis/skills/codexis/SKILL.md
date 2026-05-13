@@ -1,18 +1,18 @@
 ---
 uuid: 272cbab6-4deb-4b1b-8595-279b6c6923d9
 name: codexis
-description: This skill should be invoked whenever user needs Czech or European legal research, especially legislation changes, case law or judikatura lookup, legal verification, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
+description: This skill should be invoked whenever user needs Czech, Slovak, or European legal research — legislation changes, case law / judikatura lookup, legal commentaries, professional literature, contract templates, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
 version: 2.1.0
 i18n:
   cs:
-    displayName: "CODEXIS — Legislativa ČR"
-    summary: "Vyhledávání v české a evropské legislativě s propojenou judikaturou a odbornou literaturou."
+    displayName: "CODEXIS — Právní databáze"
+    summary: "Česká, slovenská a evropská legislativa, česká a evropská judikatura, odborné komentáře, právní literatura a vzory smluv."
   en:
-    displayName: "CODEXIS — Czech Legislation"
-    summary: "Search Czech and EU legislation with linked case law and legal literature."
+    displayName: "CODEXIS — Legal Database"
+    summary: "Czech, Slovak and EU legislation, Czech and European case law, legal commentaries, literature and contract templates."
   sk:
-    displayName: "CODEXIS — Česká legislatíva"
-    summary: "Vyhľadávanie v českej a európskej legislatíve s prepojenou judikatúrou a odbornou literatúrou."
+    displayName: "CODEXIS — Právna databáza"
+    summary: "Česká, slovenská a európska legislatíva, česká a európska judikatúra, odborné komentáre, právna literatúra a vzory zmlúv."
 ---
 
 # CODEXIS Legal Database CLI
