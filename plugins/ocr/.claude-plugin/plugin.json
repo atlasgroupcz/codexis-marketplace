@@ -1,6 +1,6 @@
 {
   "name": "ocr",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
   "author": {
     "name": "ATLAS GROUP",
