@@ -181,7 +181,7 @@ class DaemonClient:
     # -------------------------------------------------- transport
     def health_check(self) -> bool:
         try:
-            req = urllib.request.Request(self.health_url)
+            req = urllib.request.Request(self.health_url, headers={"Authorization": self.auth_header})
             with urllib.request.urlopen(req, timeout=5) as resp:
                 return json.loads(resp.read()).get("status") == "UP"
         except Exception:

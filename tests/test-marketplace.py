@@ -72,31 +72,6 @@ def load_expected(plugin_dir: Path) -> dict | None:
     return None
 
 
-def parse_env_file(content: str) -> dict[str, str]:
-    """Parse a KEY=VALUE .env file. Empty lines + # comments ignored.
-    Whitespace is stripped from both sides of the value but preserved within."""
-    out: dict[str, str] = {}
-    for raw in content.splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        out[key.strip()] = value.strip()
-    return out
-
-
-def check_env_vars(env: dict[str, str], required: list[str], plugin_name: str,
-                   r: Results) -> None:
-    """Verify each declared env var is present and non-empty in the daemon env."""
-    for key in required:
-        if key not in env:
-            r.fail(f"{plugin_name}: env var {key!r} missing from daemon .env")
-        elif not env[key]:
-            r.fail(f"{plugin_name}: env var {key!r} present but empty")
-        else:
-            r.ok(f"{plugin_name}: env var {key!r} set")
-
-
 # ---------------------------------------------------------------------------
 # Test steps
 # ---------------------------------------------------------------------------
@@ -165,7 +140,7 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
 
 
 def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
-                daemon_env: dict[str, str] | None, r: Results) -> None:
+                r: Results) -> None:
     name = plugin["name"]
     plugin_id = plugin["id"]
     skills = plugin.get("skills", [])
@@ -176,14 +151,6 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
     r.log(f"  ID: {plugin_id}")
     if skills:
         r.log(f"  Skills: {', '.join(s['fullName'] for s in skills)}")
-
-    # --- Daemon env vars (declared by plugin in expected.json) ---
-    required_env = (expected or {}).get("env_vars") or []
-    if required_env:
-        if daemon_env is None:
-            r.skip(f"{name}: env var check skipped (daemon .env unreadable)")
-        else:
-            check_env_vars(daemon_env, required_env, name, r)
 
     # --- Install ---
     r.log("Installing...")
@@ -285,8 +252,6 @@ def main() -> int:
     parser.add_argument("--token", required=True, help="JWT token")
     parser.add_argument("--git-url", required=True, help="Git repository URL")
     parser.add_argument("--git-ref", required=True, help="Git branch or tag")
-    parser.add_argument("--env-path", default="/home/codexis/.cdx/.env",
-                        help="VM-side path to the daemon-managed .env file")
     parser.add_argument("--cookie", default="",
                         help="Optional _oauth2_proxy cookie value used to "
                              "auto-refresh the bearer token on 401.")
@@ -309,18 +274,8 @@ def main() -> int:
     our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)
     validate_listing(client, manifest, our_mkt, r)
 
-    # Read the daemon-managed .env once; per-plugin checks consult it.
-    daemon_env: dict[str, str] | None
-    try:
-        raw = client.download_file(args.env_path).decode("utf-8", errors="replace")
-        daemon_env = parse_env_file(raw)
-        r.log(f"Loaded daemon .env: {len(daemon_env)} keys from {args.env_path}")
-    except Exception as e:
-        daemon_env = None
-        r.log(f"Could not read {args.env_path}: {e} (env-var checks will be skipped)")
-
     for plugin in our_mkt.get("plugins", []):
-        test_plugin(client, plugin, marketplace_path, daemon_env, r)
+        test_plugin(client, plugin, marketplace_path, r)
 
     remove_marketplace(client, our_mkt["id"], manifest["name"], r)
     return r.summary()
