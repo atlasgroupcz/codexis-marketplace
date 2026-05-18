@@ -336,14 +336,18 @@ def list_all() -> list:
         latest_unconfirmed = max(
             (c.get("detected_on", "") for c in unconfirmed), default=""
         )
-        latest_confirmed = max(
-            (c.get("confirmed_on", "") for c in changes if c.get("confirmed_on")),
-            default="",
+        latest_change = max(
+            (c.get("detected_on", "") for c in changes), default=""
         )
-        # tier: 2 = unconfirmed, 1 = has changes, 0 = no changes
-        tier = 2 if unconfirmed else (1 if changes else 0)
-        activity = latest_unconfirmed if unconfirmed else latest_confirmed
-        return (tier, activity, s.get("added_on", ""))
+        # tier 1: needs action (unconfirmed change); tier 0: everything else.
+        # In tier 0 the most recent real event wins (detected change OR initial add),
+        # so confirming an old change drops the proceeding back to its event date
+        # instead of jumping to the top by confirmation timestamp.
+        tier = 1 if unconfirmed else 0
+        activity = latest_unconfirmed if unconfirmed else max(
+            latest_change, s.get("added_on", "")
+        )
+        return (tier, activity)
 
     results.sort(key=_sort_key, reverse=True)
     return results
