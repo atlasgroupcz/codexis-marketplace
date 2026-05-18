@@ -165,30 +165,6 @@
       }
     },
     {
-      "uuid": "366eb4b7-2713-43e3-9660-2a982b7992ae",
-      "name": "presentation",
-      "description": "Generate PowerPoint presentations (PPTX) using python-pptx",
-      "source": "./plugins/presentation",
-      "category": "document-processing",
-      "i18n": {
-        "cs": {
-          "displayName": "Tvorba prezentací",
-          "description": "Generování prezentací ve formátu PowerPoint (PPTX) z textových podkladů pomocí knihovny python-pptx.",
-          "tagLabels": { "document-processing": "Zpracování dokumentů", "presentation": "Prezentace", "pptx": "PowerPoint" }
-        },
-        "en": {
-          "displayName": "Presentation Generator",
-          "description": "Generate PowerPoint (PPTX) presentations from text briefs using python-pptx.",
-          "tagLabels": { "document-processing": "Document Processing", "presentation": "Presentations", "pptx": "PowerPoint" }
-        },
-        "sk": {
-          "displayName": "Tvorba prezentácií",
-          "description": "Generovanie prezentácií vo formáte PowerPoint (PPTX) z textových podkladov pomocou knižnice python-pptx.",
-          "tagLabels": { "document-processing": "Spracovanie dokumentov", "presentation": "Prezentácie", "pptx": "PowerPoint" }
-        }
-      }
-    },
-    {
       "uuid": "6424383b-d36a-4946-af8d-09b7755fad57",
       "name": "cdx-cz-spp",
       "description": "Czech municipal regulations (sbirkapp.gov.cz) — municipal decrees, ordinances, and local legal acts",
