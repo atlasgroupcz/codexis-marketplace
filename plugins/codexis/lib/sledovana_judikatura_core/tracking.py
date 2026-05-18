@@ -104,9 +104,10 @@ def set_automation(partial_uuid, automation_id):
 def list_all():
     """Return list of dicts summarizing each tracked topic, sorted by activity.
 
-    Order: topics with unconfirmed reports first, then topics with confirmed
-    reports (most recent on top), then ones without reports. Within each tier
-    we use the most recent report date; created_at breaks final ties.
+    Order: topics with unconfirmed reports first (newest report on top), then
+    everything else sorted by the most recent real event (report checked_at or
+    created_at). Confirming an old report drops the topic back to its real
+    event date rather than jumping to the top by confirmation timestamp.
     """
     out = []
     for t_uuid, data in state.all_topics():
@@ -132,16 +133,15 @@ def list_all():
             (s.get("checked_at") or s.get("report_id", "") for s in unconfirmed),
             default="",
         )
-        latest_confirmed = max(
-            (
-                s.get("confirmed_on") or s.get("checked_at") or s.get("report_id", "")
-                for s in summaries if s.get("confirmed_on")
-            ),
+        latest_report = max(
+            (s.get("checked_at") or s.get("report_id", "") for s in summaries),
             default="",
         )
-        tier = 2 if unconfirmed else (1 if summaries else 0)
-        activity = latest_unconfirmed if unconfirmed else latest_confirmed
-        return (tier, activity, t.get("created_at") or "")
+        tier = 1 if unconfirmed else 0
+        activity = latest_unconfirmed if unconfirmed else max(
+            latest_report, t.get("created_at") or ""
+        )
+        return (tier, activity)
 
     out.sort(key=sort_key, reverse=True)
     for t in out:

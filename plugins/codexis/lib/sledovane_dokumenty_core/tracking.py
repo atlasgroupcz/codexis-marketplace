@@ -96,9 +96,11 @@ def remove(codexis_id):
 def list_all():
     """Return list of state dicts for all tracked documents, sorted by activity.
 
-    Order: unconfirmed changes first, then documents with confirmed changes
-    (newest activity on top), then idle ones. Within each tier, newer activity
-    wins; added_on breaks final ties.
+    Order: documents with unconfirmed changes first (newest detected change on
+    top), then everything else sorted by the most recent real event
+    (detected change OR initial add). Confirming an old change moves the
+    document back to its real event date rather than jumping to the top by
+    confirmation timestamp.
     """
     docs = [
         s for s in (state.load_state(cid) for cid in state.all_tracked_ids())
@@ -111,13 +113,14 @@ def list_all():
         latest_unconfirmed = max(
             (c.get("detected_on", "") for c in unconfirmed), default=""
         )
-        latest_confirmed = max(
-            (c.get("confirmed_on", "") for c in changes if c.get("confirmed_on")),
-            default="",
+        latest_change = max(
+            (c.get("detected_on", "") for c in changes), default=""
         )
-        tier = 2 if unconfirmed else (1 if changes else 0)
-        activity = latest_unconfirmed if unconfirmed else latest_confirmed
-        return (tier, activity, s.get("added_on", ""))
+        tier = 1 if unconfirmed else 0
+        activity = latest_unconfirmed if unconfirmed else max(
+            latest_change, s.get("added_on", "")
+        )
+        return (tier, activity)
 
     docs.sort(key=sort_key, reverse=True)
     return docs
