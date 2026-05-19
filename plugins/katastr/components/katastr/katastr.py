@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """JSON CGI handler for the katastr plugin component.
 
-GET returns JSON data; POST dispatches JSON actions. HTML shell
-(index.html) is served by the sibling `katastr` bash wrapper's
-fast path; this module only runs for JSON requests.
+GET returns JSON data; POST dispatches JSON actions. The HTML shell
+(index.html) is served by the daemon's SpaCgi runtime directly from
+`entrypoint` in component.json, so this module only runs for JSON
+requests.
 
 State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/katastr/ (managed by katastr_core).
 """
