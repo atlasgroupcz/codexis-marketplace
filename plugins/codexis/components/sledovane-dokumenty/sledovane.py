@@ -2,9 +2,9 @@
 """JSON CGI handler for the sledovane-dokumenty plugin component.
 
 GET returns JSON data; POST dispatches JSON actions (confirm / remove /
-notes / groups). HTML shell (index.html) is served by the sibling
-`sledovane` bash wrapper's fast path; this module only runs for JSON
-requests.
+notes / groups). The HTML shell (index.html) is served by the daemon's
+SpaCgi runtime directly from `entrypoint` in component.json, so this
+module only runs for JSON requests.
 
 State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sledovane-dokumenty/ (managed by
 sledovane_dokumenty_core).

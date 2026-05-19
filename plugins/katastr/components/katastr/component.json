@@ -5,7 +5,7 @@
   "route": "katastr",
   "description": "Sledujte stav katastrálních řízení s automatickou kontrolou změn.",
   "entrypoint": "index.html",
-  "binary": "katastr",
+  "binary": "katastr.py",
   "i18n": {
     "cs": {
       "displayName": "Katastr — sledovaná řízení",

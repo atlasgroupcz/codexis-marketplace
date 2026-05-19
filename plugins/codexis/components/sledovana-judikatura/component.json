@@ -5,7 +5,7 @@
   "route": "sledovana-judikatura",
   "description": "Sledujte novou judikaturu podle tématu s pravidelným AI reportem.",
   "entrypoint": "index.html",
-  "binary": "judikatura",
+  "binary": "judikatura.py",
   "i18n": {
     "cs": {
       "displayName": "Sledovaná judikatura",

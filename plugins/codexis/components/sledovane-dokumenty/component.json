@@ -5,7 +5,7 @@
   "route": "sledovane-dokumenty",
   "description": "Sledujte zmeny legislativy a souvisejicich dokumentu podle CODEXIS ID.",
   "entrypoint": "index.html",
-  "binary": "sledovane",
+  "binary": "sledovane.py",
   "i18n": {
     "cs": {
       "displayName": "Sledované dokumenty",
