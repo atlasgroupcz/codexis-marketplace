@@ -1,0 +1,68 @@
+{
+  "endpoint": "toc",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLUIT_ID>/toc",
+    "cdx-nl://ecli/<ECLI>/toc"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/toc",
+      "method": "get",
+      "summary": "Get decision table of contents",
+      "description": "Retrieve the TOC tree for a Rechtspraak (Uitspraken) decision. Heading anchors with start page references in the decision PDF.",
+      "operationId": "getToc_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLUIT1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "TOC tree",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TocResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "TocResponse": {
+        "type": "object",
+        "description": "Table of contents for a Rechtspraak decision",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "sections": {
+            "type": "array",
+            "description": "Flat list of heading sections with start page references",
+            "items": { "$ref": "#/components/schemas/TocSection" }
+          }
+        }
+      },
+      "TocSection": {
+        "type": "object",
+        "description": "A single heading section in a Rechtspraak decision",
+        "properties": {
+          "id": { "type": "string", "description": "Section identifier (use as 'part' parameter in /text endpoint)" },
+          "nr": { "type": "string", "description": "Section number or anchor designation" },
+          "title": { "type": "string", "description": "Heading title" },
+          "role": { "type": "string", "description": "Heading role / type" },
+          "startPage": { "type": "integer", "format": "int32", "description": "1-based page number where this section starts" },
+          "startSourceFile": { "type": "string", "description": "Filename of the PDF this section appears in" }
+        }
+      }
+    }
+  }
+}

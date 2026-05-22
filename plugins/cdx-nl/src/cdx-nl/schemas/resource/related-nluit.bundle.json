@@ -1,0 +1,61 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-25T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLUIT_ID>/related",
+    "cdx-nl://ecli/<ECLI>/related"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get related documents (by type, paginated)",
+      "description": "The citation graph for a Rechtspraak decision. Choose one direction via `type`: `citedLaws` (BWB laws this decision cites, grouped with article pinpoints), `citedDecisions` (decisions this one cites — includes foreign ECLIs such as CJEU/ECHR with no cdx-nl link), or `citingDecisions` (decisions that cite this one). Use /meta `relationCounts` first to learn which directions are non-empty and how many results exist.",
+      "operationId": "getRelated_1",
+      "parameters": [
+        { "name": "docId", "in": "path", "required": true, "schema": { "type": "string" }, "example": "NLUIT1234" },
+        { "name": "type", "in": "query", "required": true, "description": "Relation direction.", "schema": { "type": "string", "enum": ["citedLaws", "citedDecisions", "citingDecisions"] } },
+        { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "format": "int32", "default": 0 } },
+        { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "format": "int32", "default": 20, "maximum": 100 } }
+      ],
+      "responses": {
+        "200": {
+          "description": "Related documents (one direction, paginated)",
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RechtspraakRelatedResponse" } } }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RechtspraakRelatedResponse": {
+        "type": "object",
+        "description": "Paginated related-documents page for one relation direction.",
+        "properties": {
+          "type": { "type": "string", "description": "Echoed relation direction.", "enum": ["citedLaws", "citedDecisions", "citingDecisions"] },
+          "totalResults": { "type": "integer", "format": "int64", "description": "Total before paging; matches the matching /meta relationCounts value.", "example": 12 },
+          "offset": { "type": "integer", "format": "int32", "example": 0 },
+          "limit": { "type": "integer", "format": "int32", "example": 20 },
+          "results": { "type": "array", "items": { "$ref": "#/components/schemas/RechtspraakRelatedItem" } }
+        }
+      },
+      "RechtspraakRelatedItem": {
+        "type": "object",
+        "description": "A related item. Decision fields (ecli/types/court/decisionDate) for citedDecisions & citingDecisions; law fields (bwbId/articles) for citedLaws. `url` is a cdx-nl:// link when resolvable, omitted otherwise (the ecli/bwbId remains as an external or cross-plugin handle).",
+        "properties": {
+          "ecli": { "type": "string", "description": "Decision ECLI (decision items).", "example": "ECLI:NL:HR:2022:961" },
+          "types": { "type": "array", "items": { "type": "string" }, "description": "LiDO linktype slugs (roles) for this citation edge (decision items), e.g. [\"lx-referentie\", \"rvr-cassatie-eerdereaanleg\"]. Usually one; LiDO can relate the same target ECLI under several roles." },
+          "court": { "type": "string", "description": "Court label (decision items). Best-effort for foreign/unresolved ECLIs." },
+          "decisionDate": { "type": "string", "description": "ISO date (decision items, when resolved)." },
+          "bwbId": { "type": "string", "description": "BWB law id (law items).", "example": "BWBR0005291" },
+          "articles": { "type": "array", "description": "Article-level pinpoints under this law (law items).", "items": { "type": "string" }, "example": ["boek 6 artikel 162"] },
+          "title": { "type": "string", "description": "Display title when known." },
+          "url": { "type": "string", "description": "cdx-nl:// link to the referenced document; omitted when not resolvable. Use verbatim, never construct.", "example": "cdx-nl://doc/NLUIT0042/meta" }
+        }
+      }
+    }
+  }
+}

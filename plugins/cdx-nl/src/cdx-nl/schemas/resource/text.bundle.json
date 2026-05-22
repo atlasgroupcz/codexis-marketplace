@@ -1,0 +1,87 @@
+{
+  "endpoint": "text",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<DOC_ID>/text",
+    "cdx-nl://law/NL/<BWB_ID>/text",
+    "cdx-nl://afkorting/<ABBR>/text",
+    "cdx-nl://ecli/<ECLI>/text"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/text",
+      "method": "get",
+      "summary": "Get document text",
+      "description": "Retrieve full text of a BWB document version as plain text. Defaults to the currently valid toestand. Pass toestandId to select a specific version.",
+      "operationId": "getText",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        },
+        {
+          "name": "toestandId",
+          "in": "query",
+          "description": "Defaults to currently valid version (validFrom <= today <= validTo). Falls back to latest by validFrom if none currently valid.",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "part",
+          "in": "query",
+          "description": "Optional part filter (heading anchors). Multiple values: ?part=a&part=b or ?part=a,b",
+          "required": false,
+          "schema": { "type": "array", "items": { "type": "string" } }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Plain-text markdown of the BWB document body.",
+          "content": {
+            "text/plain;charset=UTF-8": { "schema": { "type": "string" } }
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/text",
+      "method": "get",
+      "summary": "Get Rechtspraak decision text",
+      "description": "Retrieve the plain-text markdown of a Rechtspraak (Uitspraken) decision. Optionally narrow to a single page with ?page=N.",
+      "operationId": "getText_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLUIT1234"
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "description": "Optional 1-based page number to fetch a single page of markdown.",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Plain-text markdown of the decision body.",
+          "content": {
+            "text/plain;charset=UTF-8": { "schema": { "type": "string" } }
+          }
+        }
+      }
+    }
+  ],
+  "components": { "schemas": {} }
+}

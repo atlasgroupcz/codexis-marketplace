@@ -1,0 +1,50 @@
+{
+  "endpoint": "publication-resolve",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://publication/<PUB_ID>/resolve"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/publication/{publicationId}/resolve",
+      "method": "get",
+      "summary": "Resolve a publication ID to its hosting document and filename",
+      "description": "Returns {docId, file} so chat clients can construct cdx-nl://doc/{docId}/attachment/{file} links without downloading binary PDF bytes through the CLI.",
+      "operationId": "resolvePublication",
+      "parameters": [
+        {
+          "name": "publicationId",
+          "in": "path",
+          "description": "Publication ID (e.g. stb-2024-123)",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Publication resolved",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PublicationResolveResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "PublicationResolveResponse": {
+        "type": "object",
+        "description": "Publication resolution result — maps a publication ID to the hosting BWB document and attachment filename",
+        "properties": {
+          "docId": { "type": "string", "description": "Display ID of the BWB document containing this publication", "example": "NLBWB1234" },
+          "file": { "type": "string", "description": "Attachment filename to address via /doc/{docId}/attachment/{file}", "example": "content_5.pdf" }
+        }
+      }
+    }
+  }
+}

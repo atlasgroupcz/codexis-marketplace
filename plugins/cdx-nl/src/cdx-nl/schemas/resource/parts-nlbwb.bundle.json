@@ -1,0 +1,99 @@
+{
+  "endpoint": "parts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLBWB_ID>/parts",
+    "cdx-nl://law/NL/<BWB_ID>/parts",
+    "cdx-nl://afkorting/<ABBR>/parts"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/parts",
+      "method": "get",
+      "summary": "Get available parts",
+      "description": "List part identifiers for a BWB document version. Article-level part identifiers parsed from the toestand XML. Use a part's id as the ?part= filter on /text.",
+      "operationId": "getParts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        },
+        {
+          "name": "toestandId",
+          "in": "query",
+          "description": "Defaults to currently valid version.",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "description": "Filter parts by id (case-insensitive substring)",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (max: 500)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Part list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WettenOverheidNlBwbPartsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "WettenOverheidNlBwbPartsResponse": {
+        "type": "object",
+        "description": "Available parts in a BWB document version. Article-level part identifiers parsed from the toestand XML.",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "domain": { "type": "string", "description": "Domain identifier" },
+          "toestandId": { "type": "string", "description": "Toestand identifier" },
+          "totalParts": { "type": "integer", "format": "int32", "description": "Total number of parts" },
+          "parts": {
+            "type": "array",
+            "description": "Available parts",
+            "items": { "$ref": "#/components/schemas/WettenOverheidNlBwbPartItem" }
+          }
+        }
+      },
+      "WettenOverheidNlBwbPartItem": {
+        "type": "object",
+        "description": "An artikel-level part in a BWB document",
+        "properties": {
+          "id": { "type": "string", "description": "Part identifier (use as 'part' parameter in /text endpoint)", "example": "bwbr0001827/lid:1/artikel:3:33" },
+          "nr": { "type": "string", "description": "Article number as cited in Dutch legal practice", "example": "3:33" },
+          "title": { "type": "string", "description": "Article heading title" },
+          "start_page": { "type": "integer", "format": "int32", "description": "1-based page number in the consolidated PDF where this article starts" },
+          "start_source_file": { "type": "string", "description": "Filename of the consolidated PDF this article appears in" }
+        }
+      }
+    }
+  }
+}

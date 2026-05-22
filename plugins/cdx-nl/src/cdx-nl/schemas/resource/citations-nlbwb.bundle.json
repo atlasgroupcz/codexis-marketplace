@@ -1,0 +1,145 @@
+{
+  "endpoint": "citations",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLBWB_ID>/citations?toestandId=X[&page=N]",
+    "cdx-nl://law/NL/<BWB_ID>/citations?toestandId=X[&page=N]",
+    "cdx-nl://afkorting/<ABBR>/citations?toestandId=X[&page=N]"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/citations",
+      "method": "get",
+      "summary": "Get structured citations for a document version",
+      "description": "Returns the structured <intref>/<extref> citations extracted from the toestand XML at runner time, sliced by article scope. With ?page=N: returns refs from every article whose [startPage, endPage] range covers page N (multi-page articles surface their refs on every page they span). Without ?page: returns a summary with counts, top targets, and page coverage so the chatbot can decide follow-up scoped requests. Refs are loss-free in storage; this endpoint flattens the well-known attributes (bwbId, doc, type, label) and enriches each ref's title via a single OpenSearch lookup per response.",
+      "operationId": "getCitations",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        },
+        {
+          "name": "toestandId",
+          "in": "query",
+          "description": "Toestand (time-effective version) identifier",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "description": "1-based page number; omit for summary mode",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Citations (page or summary mode)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/CitationsResponse" },
+                  { "$ref": "#/components/schemas/CitationsSummaryResponse" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CitationsResponse": {
+        "type": "object",
+        "description": "Citations response (page mode)",
+        "properties": {
+          "docId": { "type": "string", "description": "Document display ID", "example": "NLBWB1234" },
+          "toestandId": { "type": "string", "description": "Toestand (time-effective version) identifier", "example": "BWBR0001_2020-01-01_0" },
+          "page": { "type": "integer", "format": "int32", "description": "Page number (1-based) for which citations were requested" },
+          "total": { "type": "integer", "format": "int32", "description": "Total number of refs across all returned articles" },
+          "articles": {
+            "type": "array",
+            "description": "Articles whose page range covers the requested page",
+            "items": { "$ref": "#/components/schemas/CitationArticleResponse" }
+          }
+        }
+      },
+      "CitationsSummaryResponse": {
+        "type": "object",
+        "description": "Citations response (summary mode, no page parameter)",
+        "properties": {
+          "docId": { "type": "string", "description": "Document display ID", "example": "NLBWB1234" },
+          "toestandId": { "type": "string", "description": "Toestand (time-effective version) identifier" },
+          "totalArticles": { "type": "integer", "format": "int32", "description": "Total number of article-like entries in the sidecar (articles + annexes + preamble)" },
+          "totalRefs": { "type": "integer", "format": "int32", "description": "Total number of refs across all articles" },
+          "topTargets": {
+            "type": "array",
+            "description": "Most-cited bwbIds with their resolved titles, descending by count",
+            "items": { "$ref": "#/components/schemas/TopTarget" }
+          },
+          "pagesWithCitations": {
+            "type": "array",
+            "description": "Sorted list of page numbers covered by at least one article with refs",
+            "items": { "type": "integer", "format": "int32" }
+          },
+          "hasPreamble": { "type": "boolean", "description": "True iff a synthetic preamble bucket (kind=\"preamble\") with refs exists" },
+          "amendmentsCount": { "type": "integer", "format": "int32", "description": "Number of amendment events recorded for this timecut" }
+        }
+      },
+      "CitationArticleResponse": {
+        "type": "object",
+        "description": "An article (or annex/preamble) entry with its citations",
+        "properties": {
+          "nr": { "type": "string", "description": "Article number as cited in Dutch legal practice", "example": "6:162" },
+          "id": { "type": "string", "description": "Article identifier (use as 'part' parameter in /text endpoint)", "example": "BWBR0001827/2020-01-01/0/Boek6/Titeldeel3/Afdeling1/Artikel162" },
+          "kind": {
+            "type": "string",
+            "description": "Entry kind",
+            "enum": ["article", "annex", "preamble"]
+          },
+          "title": { "type": "string", "description": "Article heading title (null for preamble)" },
+          "refs": {
+            "type": "array",
+            "description": "Citations in this article",
+            "items": { "$ref": "#/components/schemas/CitationRefResponse" }
+          }
+        }
+      },
+      "CitationRefResponse": {
+        "type": "object",
+        "description": "A single intref/extref citation, flattened for chatbot consumption",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Source XML element name",
+            "enum": ["intref", "extref"]
+          },
+          "bwbId": { "type": "string", "description": "BWB identifier of the cited law", "example": "BWBR0001827" },
+          "doc": { "type": "string", "description": "Document locator within the cited law" },
+          "type": { "type": "string", "description": "Citation type (e.g. 'wet')" },
+          "label": { "type": "string", "description": "Verbatim label text from the XML element" },
+          "title": { "type": "string", "description": "Title of the cited law, enriched server-side" }
+        }
+      },
+      "TopTarget": {
+        "type": "object",
+        "description": "A bwbId target with citation count and resolved title",
+        "properties": {
+          "bwbId": { "type": "string", "description": "BWB identifier of the cited law", "example": "BWBR0001827" },
+          "count": { "type": "integer", "format": "int32", "description": "Number of citations to this bwbId" },
+          "title": { "type": "string", "description": "Title of the cited law, enriched server-side" }
+        }
+      }
+    }
+  }
+}

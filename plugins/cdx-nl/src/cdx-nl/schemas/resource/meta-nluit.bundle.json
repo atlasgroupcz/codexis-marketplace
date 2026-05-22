@@ -1,0 +1,125 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLUIT_ID>/meta",
+    "cdx-nl://ecli/<ECLI>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for a Rechtspraak (Uitspraken) document by display ID.",
+      "operationId": "getMeta_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLUIT1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RechtspraakDocumentDto" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/by-ecli/{ecli}",
+      "method": "get",
+      "summary": "Get Rechtspraak document metadata by ECLI",
+      "description": "Resolve a Rechtspraak decision by its ECLI identifier and return its metadata.",
+      "operationId": "getMetaByEcli",
+      "parameters": [
+        {
+          "name": "ecli",
+          "in": "path",
+          "description": "ECLI identifier (e.g. ECLI:NL:HR:2024:1)",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "ECLI:NL:HR:2024:1"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RechtspraakDocumentDto" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RechtspraakDocumentDto": {
+        "type": "object",
+        "description": "Document record metadata for Rechtspraak (Uitspraken) decisions",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "NLUIT1234" },
+          "url": { "type": "string", "description": "Canonical rechtspraak.nl URL" },
+          "ecli": { "type": "string", "description": "ECLI identifier", "example": "ECLI:NL:HR:2024:1" },
+          "court": { "type": "string", "description": "Court code" },
+          "courtName": { "type": "string", "description": "Court full name" },
+          "decisionType": { "type": "string", "description": "Decision type (e.g. Uitspraak, Conclusie)" },
+          "decisionDate": { "type": "string", "description": "Decision date (ISO YYYY-MM-DD)" },
+          "caseNumber": { "type": "string", "description": "Case number" },
+          "judges": {
+            "type": "array",
+            "description": "Judges or rapporteurs",
+            "items": { "type": "string" }
+          },
+          "legalAreas": {
+            "type": "array",
+            "description": "Legal domains",
+            "items": { "type": "string" }
+          },
+          "procedure": { "type": "string", "description": "Procedure designation" },
+          "relationCounts": {
+            "$ref": "#/components/schemas/RechtspraakRelatedCountsResponse",
+            "description": "Citation-graph triage counts. Use these to decide whether (and which) /related?type= pages are worth fetching, without a second round-trip."
+          },
+          "summary": { "type": "string", "description": "Inhoudsindicatie (summary)" },
+          "language": { "type": "string", "description": "ISO language code" },
+          "assets": {
+            "type": "array",
+            "description": "Attachments with download URLs",
+            "items": { "$ref": "#/components/schemas/Asset" }
+          }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "description": "Asset file reference for a Rechtspraak document",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename (use with /attachment/{filename})", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-nl:// link to download this attachment", "example": "cdx-nl://doc/NLUIT1234/attachment/content_1.pdf" }
+        }
+      },
+      "RechtspraakRelatedCountsResponse": {
+        "type": "object",
+        "description": "Citation-graph counts for a Rechtspraak decision (declared graph; matches /related totalResults).",
+        "properties": {
+          "citedLaws": { "type": "integer", "format": "int32", "description": "Distinct BWB laws this decision cites.", "example": 5 },
+          "citingDecisions": { "type": "integer", "format": "int64", "description": "Distinct decisions citing this one.", "example": 47 },
+          "citedDecisions": { "type": "integer", "format": "int64", "description": "Distinct decisions cited by this one (incl. foreign).", "example": 12 }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "endpoint": "toc",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLBWB_ID>/toc",
+    "cdx-nl://law/NL/<BWB_ID>/toc",
+    "cdx-nl://afkorting/<ABBR>/toc"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/toc",
+      "method": "get",
+      "summary": "Get document table of contents",
+      "description": "Retrieve the TOC tree for a BWB document version. Flat list of articles parsed from the toestand XML at indexer time. Each entry carries id, nr, title, startPage and startSourceFile.",
+      "operationId": "getToc",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        },
+        {
+          "name": "toestandId",
+          "in": "query",
+          "description": "Defaults to currently valid version.",
+          "required": false,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "TOC tree",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WettenOverheidNlBwbTocResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "WettenOverheidNlBwbTocResponse": {
+        "type": "object",
+        "description": "Table of contents for a BWB document. Flat list of articles parsed from the toestand XML at indexer time. Each entry carries id, nr, title, startPage and startSourceFile.",
+        "properties": {
+          "toc": {
+            "type": "array",
+            "description": "Flat list of articles parsed from the toestand XML at indexer time. Each entry carries id, nr, title, startPage and startSourceFile.",
+            "items": { "$ref": "#/components/schemas/JsonNode" }
+          }
+        }
+      },
+      "JsonNode": {
+        "type": "object",
+        "description": "Article entry parsed from the toestand XML at indexer time, carrying id, nr, title, startPage and startSourceFile."
+      }
+    }
+  }
+}

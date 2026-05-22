@@ -1,0 +1,31 @@
+{
+  "name": "cdx-nl",
+  "version": "1.0.0",
+  "description": "Dutch legal database — national legislation (Basiswettenbestand) from wetten.overheid.nl and Dutch case law (Rechtspraak.nl) from all courts",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["cdx-nl", "legal", "law", "legislation", "dutch", "netherlands", "bwb", "rechtspraak", "case-law", "api"],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "dutch", "legislation", "case-law"],
+  "i18n": {
+    "cs": {
+      "displayName": "Nizozemské právo (BWB a Rechtspraak)",
+      "description": "Nizozemská právní databáze — národní legislativa Basiswettenbestand (wetten.overheid.nl) a rozhodnutí soudů (Rechtspraak.nl).",
+      "tagLabels": { "legal": "Právo", "dutch": "Nizozemsko", "legislation": "Legislativa", "case-law": "Judikatura" }
+    },
+    "en": {
+      "displayName": "Dutch Legal Database (BWB & Rechtspraak)",
+      "description": "Dutch legal database — Basiswettenbestand national legislation (wetten.overheid.nl) and court decisions (Rechtspraak.nl).",
+      "tagLabels": { "legal": "Law", "dutch": "Netherlands", "legislation": "Legislation", "case-law": "Case Law" }
+    },
+    "sk": {
+      "displayName": "Holandské právo (BWB a Rechtspraak)",
+      "description": "Holandská právna databáza — národná legislatíva Basiswettenbestand (wetten.overheid.nl) a rozhodnutia súdov (Rechtspraak.nl).",
+      "tagLabels": { "legal": "Právo", "dutch": "Holandsko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
+    }
+  },
+  "postInstall":   "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate":      "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills",
+  "env": { "CODEXIS_PLUGIN_NL_API_URL": "https://data.cdx-daemon.agrp.dev/api" }
+}

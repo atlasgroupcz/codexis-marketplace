@@ -1,0 +1,84 @@
+{
+  "endpoint": "bwbid",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://law/NL/<BWB_ID>",
+    "cdx-nl://afkorting/<ABBR>"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/bwbid/{bwbId}",
+      "method": "get",
+      "summary": "Resolve a BWB-id to a display ID",
+      "description": "Find the BWB document by its source identifier (BWBR / BWBV / BWBW). Returns the display ID and basic metadata for the latest toestand.",
+      "operationId": "resolveBwbId",
+      "parameters": [
+        {
+          "name": "bwbId",
+          "in": "path",
+          "description": "BWB identifier",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "BWBR0001827"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Resolution",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WettenOverheidNlBwbBwbIdResponse" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/api/NL/wetten/bwb/afkorting/{afkorting}",
+      "method": "get",
+      "summary": "Resolve a BWB abbreviation to a display ID",
+      "description": "Find the BWB document by its common abbreviation (e.g. AWB, BW). Returns the display ID and basic metadata for the latest toestand.",
+      "operationId": "resolveAfkorting",
+      "parameters": [
+        {
+          "name": "afkorting",
+          "in": "path",
+          "description": "BWB abbreviation",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "AWB"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Resolution",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WettenOverheidNlBwbBwbIdResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "WettenOverheidNlBwbBwbIdResponse": {
+        "type": "object",
+        "description": "BWB-id resolution result — maps a source BWB-id (BWBR.../BWBV.../BWBW...) to its display ID",
+        "properties": {
+          "bwbId": { "type": "string", "description": "BWB identifier (input)", "example": "BWBR0001827" },
+          "docId": { "type": "string", "description": "Display ID (use for /doc/{docId}/* endpoints)", "example": "NLBWB1234" },
+          "recordId": { "type": "string", "description": "Record ID (same as docId)", "example": "NLBWB1234" },
+          "title": { "type": "string", "description": "Document title" },
+          "validFrom": { "type": "string", "description": "Latest toestand validFrom (ISO YYYY-MM-DD)" },
+          "url": { "type": "string", "description": "Canonical wetten.overheid.nl URL" },
+          "docUrl": { "type": "string", "description": "Link to document metadata endpoint" }
+        }
+      }
+    }
+  }
+}
