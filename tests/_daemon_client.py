@@ -31,6 +31,20 @@ def make_oauth2_proxy_refresher(cookie: str,
     return _refresh
 
 
+def _normalize_git_url(git_url: str) -> str:
+    """Canonical form for comparing two git URLs: lowercased, no trailing
+    slash, no `.git` suffix. Mirrors the daemon's own normalization so a record
+    fetched from `marketplaces` matches the URL we are about to add."""
+    u = (git_url or "").strip().lower().rstrip("/")
+    return u[:-4] if u.endswith(".git") else u
+
+
+def _git_url_basename(git_url: str) -> str:
+    """Last path segment of a git URL, `.git` stripped, lowercased — the name
+    the daemon falls back to (`deriveSourceKey`) when it can't read a manifest."""
+    return _normalize_git_url(git_url).rsplit("/", 1)[-1]
+
+
 # ---------------------------------------------------------------------------
 # GraphQL query strings (private — use DaemonClient methods instead).
 # ---------------------------------------------------------------------------
@@ -57,7 +71,7 @@ mutation RemoveMarketplace($id: ID!) {
 """
 
 _Q_LIST_MARKETPLACES = """
-{ marketplaces { id name pluginCount error plugins { id name } } }
+{ marketplaces { id name pluginCount error source { url ref } plugins { id name } } }
 """
 
 _Q_INSTALL_PLUGIN = """
@@ -266,28 +280,40 @@ class DaemonClient:
 
     def add_marketplace_idempotent(self, git_url: str, git_ref: str,
                                    manifest: dict) -> dict:
-        """Like add_marketplace, but removes any stale copy (matched by name
-        from the local manifest) and retries once on 'already configured'.
+        """Add the marketplace from a clean slate: remove any existing copy of
+        the same git URL first, then add it fresh. This guarantees a fresh
+        checkout every run and side-steps a stale daemon record whose on-disk
+        checkout went missing (which the daemon reports with pluginCount=0 and
+        an error, never re-cloning on its own).
+
+        Matching is on the source git URL, not the manifest name, on purpose:
+        when the checkout is missing the daemon reports the marketplace under a
+        URL-derived fallback name (e.g. `codexis-marketplace`) rather than the
+        manifest name (`codexis-plugins`), so a name match would miss exactly
+        the records we need to clear. `manifest` is kept only for the defensive
+        name-based sweep below.
 
         Uses the daemon-issued node id from `list_marketplaces` rather than
         computing it locally — the daemon's NodeId wire format (protobuf
         varint + URL-safe base64) isn't worth re-implementing here.
         """
+        target = _normalize_git_url(git_url)
+        for m in self.list_marketplaces():
+            if _normalize_git_url((m.get("source") or {}).get("url") or "") == target:
+                self.remove_marketplace(m["id"])
+
         try:
             return self.add_marketplace(git_url, git_ref)
         except RuntimeError as e:
+            # Defensive: a record with no queryable source URL won't be caught
+            # above, so fall back to a name sweep (manifest name + URL basename)
+            # and retry once.
             if "already configured" not in str(e).lower():
                 raise
-            try:
-                stale = next(
-                    (m for m in self.list_marketplaces()
-                     if m["name"] == manifest["name"]),
-                    None,
-                )
-                if stale:
-                    self.remove_marketplace(stale["id"])
-            except Exception:
-                pass
+            names = {manifest.get("name"), _git_url_basename(git_url)}
+            for m in self.list_marketplaces():
+                if m.get("name") in names:
+                    self.remove_marketplace(m["id"])
             return self.add_marketplace(git_url, git_ref)
 
     def remove_marketplace(self, node_id: str) -> dict | None:
