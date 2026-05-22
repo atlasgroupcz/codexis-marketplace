@@ -228,7 +228,7 @@ def run_batch(client: DaemonClient,
         ok, run_id = setup_status[cfg.name]
         if not ok:
             return cfg, "(setup failed — skipped)\n", False
-        cmd = ["npx", "promptfoo", "eval", "-c", str(cfg), "--no-cache"]
+        cmd = ["npx", "promptfoo", "eval", "-c", str(cfg), "--no-cache", "--max-concurrency", "1"]
         if run_id:
             cmd += ["--var", f"run_id={run_id}"]
         proc = subprocess.Popen(cmd, cwd=str(cfg.parent),
