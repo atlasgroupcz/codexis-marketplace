@@ -1,37 +1,20 @@
-use std::collections::HashMap;
 use std::fmt;
 use std::process::{Command, Output, Stdio};
 
 use crate::core::config::DaemonConfig;
 use crate::core::error::CliError;
 
-pub(crate) const SOURCES_HEADER_NAME: &str = "x-cdx-sources";
-
-/// Reads the `X-Cdx-Sources` header from an upstream response and attaches it to the
-/// active cdx-daemon tool-call. The contract is strict: if the header is missing or
-/// empty, no daemon call is made. If it is present but malformed, an error is returned
-/// (the caller — `try_publish_sources` in `http.rs` — logs and continues so the agent's
-/// primary output is never blocked).
-pub(crate) fn publish_from_headers(
-    headers: &HashMap<String, String>,
+pub(crate) fn publish_from_body(
+    sources: &serde_json::Value,
     daemon: &DaemonConfig,
 ) -> Result<(), SourcesError> {
-    let Some(raw) = headers.get(SOURCES_HEADER_NAME) else {
-        return Ok(());
-    };
-    let trimmed = raw.trim();
-    if trimmed.is_empty() {
-        return Ok(());
-    }
-    let decoded = url_decode(trimmed).map_err(SourcesError::Decode)?;
-    let parsed: serde_json::Value =
-        serde_json::from_str(&decoded).map_err(|e| SourcesError::Parse(e.to_string()))?;
-    let entries = match parsed {
+    let entries = match sources {
+        serde_json::Value::Null => return Ok(()),
         serde_json::Value::Array(items) => items,
         other => {
             return Err(SourcesError::Parse(format!(
-                "expected JSON array, got {}",
-                value_kind(&other)
+                "expected JSON array in `sources`, got {}",
+                value_kind(other)
             )));
         }
     };
@@ -86,40 +69,6 @@ fn response_detail(output: &Output) -> String {
     }
 }
 
-/// Minimal URL-decode for header values produced by `URLEncoder.encode(json, UTF_8)`
-/// on the Java side. Handles `+` → space and `%XX` percent escapes; otherwise returns
-/// the bytes verbatim. We do this in-process instead of pulling a crate dependency to
-/// keep the cdx-cli binary small.
-fn url_decode(input: &str) -> Result<String, String> {
-    let bytes = input.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        match bytes[i] {
-            b'+' => {
-                out.push(b' ');
-                i += 1;
-            }
-            b'%' => {
-                if i + 2 >= bytes.len() {
-                    return Err(format!("truncated percent escape at byte {i}"));
-                }
-                let hex = std::str::from_utf8(&bytes[i + 1..i + 3])
-                    .map_err(|_| format!("invalid percent escape at byte {i}"))?;
-                let byte = u8::from_str_radix(hex, 16)
-                    .map_err(|_| format!("invalid percent escape at byte {i}: %{hex}"))?;
-                out.push(byte);
-                i += 3;
-            }
-            b => {
-                out.push(b);
-                i += 1;
-            }
-        }
-    }
-    String::from_utf8(out).map_err(|e| format!("decoded bytes are not valid UTF-8: {e}"))
-}
-
 fn value_kind(value: &serde_json::Value) -> &'static str {
     match value {
         serde_json::Value::Null => "null",
@@ -133,7 +82,6 @@ fn value_kind(value: &serde_json::Value) -> &'static str {
 
 #[derive(Debug)]
 pub(crate) enum SourcesError {
-    Decode(String),
     Parse(String),
     Spawn(String),
     Http { code: i32, detail: String },
@@ -142,8 +90,7 @@ pub(crate) enum SourcesError {
 impl fmt::Display for SourcesError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Decode(msg) => write!(f, "could not URL-decode X-Cdx-Sources: {msg}"),
-            Self::Parse(msg) => write!(f, "could not parse X-Cdx-Sources JSON: {msg}"),
+            Self::Parse(msg) => write!(f, "could not parse v2 envelope `sources`: {msg}"),
             Self::Spawn(msg) => write!(f, "could not POST sources to daemon: {msg}"),
             Self::Http { code, detail } => {
                 write!(f, "daemon rejected sources (curl exit {code}): {detail}")
@@ -165,60 +112,29 @@ impl From<SourcesError> for CliError {
 mod tests {
     use super::*;
 
-    fn header(value: &str) -> HashMap<String, String> {
-        let mut h = HashMap::new();
-        h.insert(SOURCES_HEADER_NAME.to_string(), value.to_string());
-        h
-    }
-
     #[test]
-    fn missing_header_is_silent_noop() {
-        let headers = HashMap::new();
-        // No daemon needed: function returns Ok before any daemon access.
-        assert!(publish_from_headers(&headers, &fake_daemon()).is_ok());
-    }
-
-    #[test]
-    fn empty_header_is_silent_noop() {
-        let headers = header("");
-        assert!(publish_from_headers(&headers, &fake_daemon()).is_ok());
+    fn null_sources_is_silent_noop() {
+        assert!(publish_from_body(&serde_json::Value::Null, &fake_daemon()).is_ok());
     }
 
     #[test]
     fn empty_array_is_silent_noop() {
-        let headers = header("%5B%5D");
-        assert!(publish_from_headers(&headers, &fake_daemon()).is_ok());
-    }
-
-    #[test]
-    fn malformed_json_returns_parse_error() {
-        let headers = header("not-json");
-        let err = publish_from_headers(&headers, &fake_daemon()).unwrap_err();
-        assert!(matches!(err, SourcesError::Parse(_)), "got {err}");
+        let sources = serde_json::json!([]);
+        assert!(publish_from_body(&sources, &fake_daemon()).is_ok());
     }
 
     #[test]
     fn non_array_returns_parse_error() {
-        // URL-encoded `{}`
-        let headers = header("%7B%7D");
-        let err = publish_from_headers(&headers, &fake_daemon()).unwrap_err();
+        let sources = serde_json::json!({});
+        let err = publish_from_body(&sources, &fake_daemon()).unwrap_err();
         assert!(matches!(err, SourcesError::Parse(_)), "got {err}");
     }
 
     #[test]
-    fn url_decode_handles_unicode_via_percent_escapes() {
-        let decoded = url_decode("%C5%BDlu%C5%A5ou%C4%8Dk%C3%BD%20k%C5%AF%C5%88").unwrap();
-        assert_eq!(decoded, "Žluťoučký kůň");
-    }
-
-    #[test]
-    fn url_decode_converts_plus_to_space() {
-        assert_eq!(url_decode("a+b+c").unwrap(), "a b c");
-    }
-
-    #[test]
-    fn url_decode_rejects_truncated_escape() {
-        assert!(url_decode("a%2").is_err());
+    fn string_returns_parse_error() {
+        let sources = serde_json::json!("not-an-array");
+        let err = publish_from_body(&sources, &fake_daemon()).unwrap_err();
+        assert!(matches!(err, SourcesError::Parse(_)), "got {err}");
     }
 
     fn fake_daemon() -> DaemonConfig {
