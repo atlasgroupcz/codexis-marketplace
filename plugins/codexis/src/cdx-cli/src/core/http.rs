@@ -1,10 +1,18 @@
+use std::collections::HashMap;
 use std::io::{self, Write};
 use std::process::{Command, Output, Stdio};
 
+use crate::core::config::DaemonConfig;
 use crate::core::error::CliError;
+use crate::core::sources::publish_from_headers;
 
 const CDX_SCHEME: &str = "cdx://";
 const API_PREFIX: &str = "/rest/cdx-api";
+
+/// Unique marker appended to curl stdout (via `-w`) so we can split the response body
+/// from the JSON headers dump. The unit-separator bytes are virtually never present
+/// in JSON responses or plain-text legal documents.
+const HEADER_DUMP_DELIM: &str = "\n\x1fCDX_HEADER_JSON\x1f\n";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum SearchFacetMode {
@@ -30,7 +38,11 @@ pub(crate) fn execute_search_request(
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, |body| print_response_body(body, facet_mode))
+    handle_curl_output(&output, |body, headers| {
+        print_response_body(body, facet_mode)?;
+        try_publish_sources(headers);
+        Ok(())
+    })
 }
 
 pub(crate) fn execute_get_request(
@@ -47,7 +59,24 @@ pub(crate) fn execute_get_request(
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, print_raw_response_body)
+    handle_curl_output(&output, |body, headers| {
+        print_raw_response_body(body)?;
+        try_publish_sources(headers);
+        Ok(())
+    })
+}
+
+/// Best-effort: if running inside a chat VM with daemon access AND the upstream response
+/// declared sources via `X-Cdx-Sources`, attach them to the active tool-call. Any failure
+/// is logged to stderr and never propagates — sources are a side channel; the agent's
+/// primary response (already on stdout) must not be affected.
+fn try_publish_sources(headers: &HashMap<String, String>) {
+    let Some(daemon) = DaemonConfig::load() else {
+        return;
+    };
+    if let Err(err) = publish_from_headers(headers, &daemon) {
+        eprintln!("cdx-cli: failed to attach sources to chat: {err}");
+    }
 }
 
 fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
@@ -60,20 +89,70 @@ fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
         .map_err(CliError::CurlSpawn)
 }
 
-fn handle_curl_output<F>(output: &Output, print_body: F) -> Result<(), CliError>
+fn handle_curl_output<F>(output: &Output, handle: F) -> Result<(), CliError>
 where
-    F: Fn(&[u8]) -> Result<(), CliError>,
+    F: Fn(&[u8], &HashMap<String, String>) -> Result<(), CliError>,
 {
+    let (body, headers) = split_curl_output(&output.stdout);
     match output.status.code() {
-        Some(0) => print_body(&output.stdout),
+        Some(0) => handle(body, &headers),
         Some(code) => {
-            if !output.stdout.is_empty() {
-                print_body(&output.stdout)?;
+            if !body.is_empty() {
+                handle(body, &headers)?;
             }
             Err(CliError::RequestFailed { code })
         }
         None => Err(CliError::CommandTerminated { command: "curl" }),
     }
+}
+
+/// Splits the curl stdout produced by `-w "<DELIM>%{header_json}"` into `(body, headers)`.
+/// On older curl builds (or when our `-w` arg was not honored) the delimiter is absent
+/// and we return all-body with empty headers.
+fn split_curl_output(stdout: &[u8]) -> (&[u8], HashMap<String, String>) {
+    let needle = HEADER_DUMP_DELIM.as_bytes();
+    let Some(pos) = find_last_subslice(stdout, needle) else {
+        return (stdout, HashMap::new());
+    };
+    let body = &stdout[..pos];
+    let header_dump = &stdout[pos + needle.len()..];
+    (body, parse_header_dump(header_dump))
+}
+
+fn find_last_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
+    (0..=haystack.len() - needle.len())
+        .rev()
+        .find(|&start| &haystack[start..start + needle.len()] == needle)
+}
+
+/// curl `%{header_json}` writes a JSON object whose values are arrays of strings (one
+/// per occurrence of the header). We flatten to the LAST value per name and lowercase
+/// names so callers can look up headers case-insensitively.
+fn parse_header_dump(bytes: &[u8]) -> HashMap<String, String> {
+    let Ok(parsed) = serde_json::from_slice::<serde_json::Value>(bytes) else {
+        return HashMap::new();
+    };
+    let serde_json::Value::Object(map) = parsed else {
+        return HashMap::new();
+    };
+    let mut out = HashMap::new();
+    for (name, value) in map {
+        let last_value = match value {
+            serde_json::Value::Array(items) => items
+                .into_iter()
+                .filter_map(|item| item.as_str().map(str::to_string))
+                .next_back(),
+            serde_json::Value::String(s) => Some(s),
+            _ => None,
+        };
+        if let Some(v) = last_value {
+            out.insert(name.to_ascii_lowercase(), v);
+        }
+    }
+    out
 }
 
 fn print_response_body(body: &[u8], facet_mode: SearchFacetMode) -> Result<(), CliError> {
@@ -142,6 +221,8 @@ fn build_search_curl_args(
         "POST".to_string(),
         "-H".to_string(),
         "Content-Type: application/json".to_string(),
+        "-w".to_string(),
+        header_dump_write_format(),
         build_search_url(base_url, source_code, facet_mode),
         "-d".to_string(),
         payload.to_string(),
@@ -158,8 +239,14 @@ fn build_get_curl_args(
         "--fail-with-body".to_string(),
         "-H".to_string(),
         auth_header.to_string(),
+        "-w".to_string(),
+        header_dump_write_format(),
         build_cdx_url(base_url, resource)?,
     ])
+}
+
+fn header_dump_write_format() -> String {
+    format!("{HEADER_DUMP_DELIM}%{{header_json}}")
 }
 
 fn build_search_url(base_url: &str, source_code: &str, facet_mode: SearchFacetMode) -> String {
@@ -284,6 +371,8 @@ mod tests {
                 "POST",
                 "-H",
                 "Content-Type: application/json",
+                "-w",
+                &header_dump_write_format(),
                 "https://app.codexis.cz/rest/cdx-api/search/JD",
                 "-d",
                 r#"{"query":"náhrada škody","limit":5}"#,
@@ -301,8 +390,12 @@ mod tests {
             SearchFacetMode::Full,
         );
 
+        let url_pos = args
+            .iter()
+            .position(|a| a.starts_with("https://"))
+            .expect("expected an HTTPS url arg");
         assert_eq!(
-            args[8],
+            args[url_pos],
             "https://app.codexis.cz/rest/cdx-api/search/JD?fullFacets=true"
         );
     }
@@ -323,6 +416,8 @@ mod tests {
                 "--fail-with-body",
                 "-H",
                 "Authorization: Bearer token",
+                "-w",
+                &header_dump_write_format(),
                 "https://app.codexis.cz/rest/cdx-api/doc/CR10_2026_01_01/text",
             ]
         );
@@ -337,7 +432,11 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(args[4], "https://app.codexis.cz/rest/cdx-api");
+        let url_pos = args
+            .iter()
+            .position(|a| a.starts_with("https://"))
+            .expect("expected an HTTPS url arg");
+        assert_eq!(args[url_pos], "https://app.codexis.cz/rest/cdx-api");
     }
 
     #[test]
@@ -437,5 +536,44 @@ mod tests {
     fn invalid_json_output_is_printed_raw() {
         let rendered = render_search_output(br#"not-json"#, SearchFacetMode::Hidden);
         assert_eq!(rendered, "not-json");
+    }
+
+    #[test]
+    fn split_curl_output_extracts_body_and_headers_from_dump() {
+        let mut stdout = b"{\"results\":[]}".to_vec();
+        stdout.extend_from_slice(HEADER_DUMP_DELIM.as_bytes());
+        stdout.extend_from_slice(
+            br#"{"x-cdx-sources":["%5B%5D"],"content-type":["application/json"]}"#,
+        );
+
+        let (body, headers) = split_curl_output(&stdout);
+
+        assert_eq!(body, b"{\"results\":[]}");
+        assert_eq!(headers.get("x-cdx-sources"), Some(&"%5B%5D".to_string()));
+        assert_eq!(
+            headers.get("content-type"),
+            Some(&"application/json".to_string())
+        );
+    }
+
+    #[test]
+    fn split_curl_output_returns_body_only_when_delim_missing() {
+        let stdout = b"plain text without delim";
+
+        let (body, headers) = split_curl_output(stdout);
+
+        assert_eq!(body, stdout);
+        assert!(headers.is_empty());
+    }
+
+    #[test]
+    fn split_curl_output_lowercases_header_names_and_keeps_last_value() {
+        let mut stdout = b"body".to_vec();
+        stdout.extend_from_slice(HEADER_DUMP_DELIM.as_bytes());
+        stdout.extend_from_slice(br#"{"X-Cdx-Sources":["first","last"]}"#);
+
+        let (_, headers) = split_curl_output(&stdout);
+
+        assert_eq!(headers.get("x-cdx-sources"), Some(&"last".to_string()));
     }
 }
