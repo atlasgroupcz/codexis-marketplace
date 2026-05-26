@@ -24,6 +24,14 @@ tests:
       # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries.
       tool_calls_max: 9
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title cron command enabled } }"
       jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
       count: 1
@@ -51,6 +59,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title } }"
       jsonpath: "$.automations[*].title"
       contains: "e2e-{{ run_id }}"
@@ -77,6 +93,14 @@ tests:
       # list (find id) + trigger + 1 slack.
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title lastRun { status trigger errorMessage } } }"
       jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')].lastRun"
       subset:
@@ -104,6 +128,14 @@ tests:
       # list (find id) + delete + 1 slack.
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title } }"
       jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
       count: 0
@@ -127,6 +159,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title } }"
       jsonpath: "$.automations[*].title"
       not_contains: "e2e-{{ run_id }}"

@@ -22,6 +22,14 @@ tests:
       input_regex: 'ares-cli[\s"\\]+(detail|search|api\s+get).*45274649(?!.*--help)'
       tool_calls_max: 5
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ares\.gov\.cz/ekonomicke-subjekty)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that ares-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch VAT or company data from ares.gov.cz instead of ares-cli."
+          - "Bypassing ares-cli to call the ARES API/site directly for the answer."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

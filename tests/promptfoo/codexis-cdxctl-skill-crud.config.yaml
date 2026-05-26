@@ -38,6 +38,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       # State oracle: the new skill is in the daemon's skill registry,
       # editable + deletable, with the description we asked for.
       graphql: "{ skills { name description editable deletable sourceKind } }"
@@ -67,6 +75,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ skills { name editable } }"
       jsonpath: "$.skills[?(@.editable == true)].name"
       contains: "ee-skill-{{ run_id }}"
@@ -93,6 +109,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ skills { name description } }"
       jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
       equals: "E2E test skill — updated"
@@ -117,6 +141,14 @@ tests:
       # cdxctl skill delete leaves an empty dir; AI may verify + rmdir.
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ skills { name } }"
       jsonpath: "$.skills[*].name"
       not_contains: "ee-skill-{{ run_id }}"

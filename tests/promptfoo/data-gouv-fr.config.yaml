@@ -30,6 +30,14 @@ tests:
       # urlopen(api/...)"` against the JSON API — that's the legitimate
       # fallback when MCP isn't surfaced.
       forbidden_regex: '(curl|wget)\s+.*data\.gouv\.fr/fr/'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a dataset URL that the data-gouv-fr tool itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget to fetch or scrape dataset pages from data.gouv.fr instead of the data-gouv-fr tool."
+          - "Bypassing the data-gouv-fr tool to query the data.gouv.fr site or API directly for results."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_count_max

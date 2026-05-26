@@ -20,6 +20,14 @@ tests:
       input_regex: 'cdx-cli[\s"\\]+(search|get)\b(?!.*--help)'
       tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|zakonyprolidi\.cz|psp\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate raw HTTP.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a paragraph URL that the codexis cdx-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch the §10 NOZ text from zakonyprolidi.cz/psp.cz instead of cdx-cli."
+          - "Bypassing cdx-cli to scrape the law text from the web."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

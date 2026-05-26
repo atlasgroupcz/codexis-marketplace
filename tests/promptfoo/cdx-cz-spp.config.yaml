@@ -19,6 +19,14 @@ tests:
       input_regex: 'cdx-cz-spp[\s"\\]+search\s+(CZSPP[A-Z]+|[A-Z]+)(?!.*--help)'
       tool_calls_max: 15
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sbirka\.gov\.cz|mvcr\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a doc URL that cdx-cz-spp itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch regulations from sbirka.gov.cz or mvcr.cz instead of cdx-cz-spp."
+          - "Bypassing cdx-cz-spp to scrape those sites for the records."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

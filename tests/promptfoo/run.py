@@ -40,16 +40,21 @@ import argparse
 import concurrent.futures
 import json
 import os
+import re
 import secrets
 import subprocess
 import sys
+import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import yaml
 
 THIS = Path(__file__).resolve()
 REPO_ROOT = THIS.parent.parent.parent
-sys.path.insert(0, str(THIS.parent.parent))
+sys.path.insert(0, str(THIS.parent.parent))  # tests/ — _daemon_client
+sys.path.insert(0, str(THIS.parent))         # tests/promptfoo — _arbitration, assertions
 from _daemon_client import DaemonClient  # noqa: E402
 
 # Filename → plugin name override. Empty by default — most config files are
@@ -77,7 +82,6 @@ BATCHES: list[list[str]] = [
         "cdx-sk-oz.config.yaml",
         "data-gouv-fr.config.yaml",
         "ocr.config.yaml",
-        "presentation.config.yaml",
         "video-analyze.config.yaml",
     ],
     # visualization ships 10 skills (visualize + 9 visualize-* variants).
@@ -197,9 +201,89 @@ def run_setup(cfg_path: Path) -> tuple[bool, str]:
                   else secrets.token_hex(2))
 
 
+# --------------------------------------------------------------------------- #
+# Arbitration: the optional LLM-judge "second phase" (see _arbitration.py).
+# Only active under --arbitrate; otherwise the runner behaves exactly as before.
+# --------------------------------------------------------------------------- #
+
+@dataclass
+class ArbCtx:
+    arb: Any                       # the _arbitration module
+    call: Any                      # call(messages) -> raw judge JSON string
+    model: str
+    pf_version: str
+    floor: float
+    cache: dict
+    cache_path: Path
+    results_dir: Path
+    records: list = field(default_factory=list)
+
+
+def read_promptfoo_version() -> str:
+    """Read the pinned promptfoo version from requirements.txt's marker line."""
+    req = THIS.parent / "requirements.txt"
+    try:
+        for line in req.read_text().splitlines():
+            m = re.match(r"#\s*promptfoo:\s*(\S+)", line)
+            if m:
+                return m.group(1)
+    except FileNotFoundError:
+        pass
+    return "unknown"
+
+
+def _arbitrate_config(cfg: Path, json_path: Path, ctx: ArbCtx) -> tuple[bool, str]:
+    """Re-grade one failed config's failing rows; return (final_ok, summary_note)."""
+    try:
+        result_json = json.loads(json_path.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"  ! arbitration: cannot read {cfg.name} output: {e}",
+              file=sys.stderr, flush=True)
+        return False, "arbitration: unreadable output"
+
+    outcomes = ctx.arb.arbitrate_failures(
+        result_json, cfg.name, call=ctx.call, model=ctx.model,
+        pf_version=ctx.pf_version, floor=ctx.floor, cache=ctx.cache)
+    if not outcomes:
+        return False, "arbitration: no parseable failures"
+
+    tdir = ctx.results_dir / "transcripts"
+    tdir.mkdir(parents=True, exist_ok=True)
+    flipped = errored = 0
+    for case, result in outcomes:
+        if result.passed:
+            flipped += 1
+        if result.flag == "JUDGE_ERROR":
+            errored += 1
+        (tdir / f"{ctx.arb.transcript_slug(cfg.name, case.test_idx)}.txt").write_text(
+            ctx.arb.format_transcript(case, result, result.passed))
+        ctx.records.append({
+            "config": cfg.name,
+            "test_idx": case.test_idx,
+            "description": case.description,
+            "verdict": result.verdict,
+            "confidence": result.confidence,
+            "flag": result.flag,
+            "passed": result.passed,
+            "rationale": result.rationale,
+            "failed_assertions": [{"type": a.get("type"), "value": a.get("value")}
+                                  for a in case.failed_assertions],
+        })
+        print(f"    ⚖ {cfg.name} test {case.test_idx}: {result.verdict} "
+              f"({result.confidence}) → {'PASS' if result.passed else 'FAIL'}"
+              f"{' [' + result.flag + ']' if result.flag else ''}", flush=True)
+
+    final_ok = ctx.arb.recompute_pass(False, outcomes)
+    note = f"{len(outcomes)} failure(s), {flipped} overruled→PASS"
+    if errored:
+        note += f", {errored} judge error(s)"
+    return final_ok, note
+
+
 def run_batch(client: DaemonClient,
               batch_cfgs: list[Path],
-              config_concurrency: int) -> list[tuple[str, bool]]:
+              config_concurrency: int,
+              arb_ctx: ArbCtx | None = None) -> list[tuple[str, bool, str]]:
     """Install batch's plugins, run configs with bounded parallelism."""
     plugin_names = [plugin_name_for(c, yaml.safe_load(c.read_text()))
                     for c in batch_cfgs]
@@ -217,47 +301,68 @@ def run_batch(client: DaemonClient,
             print(f"  ! setup failed for {cfg.name}",
                   file=sys.stderr, flush=True)
 
-    # Promptfoo's Python worker has a hardcoded 5-min timeout per call.
-    # We cap our chat poll well below that so chats time out cleanly
-    # (provider returns an error result) instead of letting the worker
-    # die with an orphaned response file — which freezes the whole batch.
+    # The chat poll deadline is the only hard limit on a single test: promptfoo's
+    # python provider imposes no per-call timeout (only HTTP fetches honor
+    # REQUEST_TIMEOUT_MS, which our urllib-based provider does not use). 600s gives
+    # slow plugins room to finish — notably video-analyze, whose transcription /
+    # cold model load can exceed the old 270s cap — while the provider still
+    # returns a clean error result if the deadline is hit. Override via env.
     env = {**os.environ, "CDX_EVAL_POLL_TIMEOUT_S": os.environ.get(
-        "CDX_EVAL_POLL_TIMEOUT_S", "270")}
+        "CDX_EVAL_POLL_TIMEOUT_S", "600")}
 
-    def _run_one(cfg: Path) -> tuple[Path, str, bool]:
+    def _run_one(cfg: Path) -> tuple[Path, str, bool, Path | None]:
         ok, run_id = setup_status[cfg.name]
         if not ok:
-            return cfg, "(setup failed — skipped)\n", False
+            return cfg, "(setup failed — skipped)\n", False, None
         cmd = ["npx", "promptfoo", "eval", "-c", str(cfg), "--no-cache", "--max-concurrency", "1"]
         if run_id:
             cmd += ["--var", f"run_id={run_id}"]
+        # Under --arbitrate we need structured results to find failing rows and
+        # their failed assertions; capture promptfoo's JSON to a temp file.
+        json_path: Path | None = None
+        if arb_ctx is not None:
+            fd, name = tempfile.mkstemp(suffix=".json", prefix=f"pf-{cfg.stem}-")
+            os.close(fd)
+            json_path = Path(name)
+            cmd += ["--output", str(json_path)]
         proc = subprocess.Popen(cmd, cwd=str(cfg.parent),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 env=env,
                                 text=True)
         out, _ = proc.communicate()
-        return cfg, out, proc.returncode == 0
+        return cfg, out, proc.returncode == 0, json_path
 
     n_eligible = sum(1 for c in batch_cfgs if setup_status[c.name][0])
     workers = max(1, min(config_concurrency, n_eligible)) if n_eligible else 1
-    print(f"  > running {n_eligible} eval(s) with config-concurrency={workers}...",
+    print(f"  > running {n_eligible} config(s) with config-concurrency={workers}...",
           flush=True)
 
-    # Bounded parallel execution. Up to `workers` Popen children alive at any
-    # time — the rest queue up. Mitigates VM fs shell-gate lock contention
+    # Phase A — bounded parallel run. Up to `workers` Popen children alive at
+    # any time — the rest queue up. Mitigates VM fs shell-gate lock contention
     # when many chats race to start against the same per-user VM.
-    results: list[tuple[str, bool]] = []
+    raw: list[tuple[Path, bool, Path | None]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
         # submit in declared order; iterate futures in the same order to keep
         # logs deterministic.
         futures = [ex.submit(_run_one, cfg) for cfg in batch_cfgs]
         for fut in futures:
-            cfg, out, ok_rc = fut.result()
+            cfg, out, ok_rc, json_path = fut.result()
             sys.stdout.write(f"\n--- {cfg.name} ---\n")
             sys.stdout.write(out)
             sys.stdout.flush()
-            results.append((cfg.name, ok_rc))
+            raw.append((cfg, ok_rc, json_path))
+
+    # Phase B — arbitration (serial: keeps the shared judge cache race-free and
+    # bounds concurrent judge calls). Only failed configs are re-graded.
+    results: list[tuple[str, bool, str]] = []
+    for cfg, ok_rc, json_path in raw:
+        ok, note = ok_rc, ""
+        if arb_ctx is not None and not ok_rc and json_path is not None and json_path.exists():
+            ok, note = _arbitrate_config(cfg, json_path, arb_ctx)
+        if json_path is not None:
+            json_path.unlink(missing_ok=True)
+        results.append((cfg.name, ok, note))
     return results
 
 
@@ -301,6 +406,43 @@ def remove_marketplace(client: DaemonClient, marketplace_node_id: str) -> None:
               file=sys.stderr, flush=True)
 
 
+_ARB_DEFAULT_FLOOR = 0.6
+
+
+def _build_arb_ctx(args) -> ArbCtx | None:
+    """Resolve the judge endpoint and assemble the arbitration context.
+
+    Imported lazily so the default (no --arbitrate) path never depends on the
+    arbitration module or its config. Returns None on configuration error
+    (already reported to stderr).
+    """
+    import _arbitration as arb  # noqa: E402  (lazy)
+
+    try:
+        base, key, model = arb.resolve_endpoint(os.environ)
+    except arb.ArbitrationConfigError as e:
+        print(f"--arbitrate: {e}", file=sys.stderr)
+        return None
+
+    cache_path = arb.default_cache_path()
+    if args.arbitration_cache_clear:
+        cache_path.unlink(missing_ok=True)
+    floor = (args.arbitration_confidence if args.arbitration_confidence is not None
+             else _ARB_DEFAULT_FLOOR)
+    print(f"arbitration: judge={model} floor={floor} "
+          f"endpoint={base.rstrip('/')}", flush=True)
+    return ArbCtx(
+        arb=arb,
+        call=arb.make_judge_caller(base, key, model),
+        model=model,
+        pf_version=read_promptfoo_version(),
+        floor=floor,
+        cache=arb.load_cache(cache_path),
+        cache_path=cache_path,
+        results_dir=THIS.parent / ".results",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -321,10 +463,26 @@ def main() -> int:
                              "(default: 3). The per-user VM serializes "
                              "chats on a shell-gate lock; setting this too "
                              "high causes 30s lock-timeout failures.")
+    parser.add_argument("--arbitrate", action="store_true",
+                        help="Second phase: re-grade each deterministically-"
+                             "failing row with an LLM judge against the test's "
+                             "vars.arbitration criteria. CORRECT (false positive) "
+                             "flips the row to PASS; INCORRECT stays FAIL. Requires "
+                             "an OpenAI-compatible judge endpoint (OPENAI_BASE_URL "
+                             "+ OPENAI_API_KEY, or CODEXIS_*_LITELLM_* fallback).")
+    parser.add_argument("--arbitration-confidence", type=float, default=None,
+                        help=f"Confidence floor for honoring a CORRECT verdict "
+                             f"(default: {_ARB_DEFAULT_FLOOR}).")
+    parser.add_argument("--arbitration-cache-clear", action="store_true",
+                        help="Wipe the arbitration verdict cache before running.")
     args = parser.parse_args()
     if args.config_concurrency < 1:
         print("--config-concurrency must be >= 1", file=sys.stderr)
         return 2
+
+    arb_ctx = _build_arb_ctx(args) if args.arbitrate else None
+    if args.arbitrate and arb_ctx is None:
+        return 2  # config error already reported
 
     here = THIS.parent
     all_cfgs = sorted(here.glob("*.config.yaml"))
@@ -363,18 +521,27 @@ def main() -> int:
     our_mkt = add_marketplace(client, args.git_url, args.git_ref)
     batches = assign_batches(cfgs)
 
-    results: list[tuple[str, bool]] = []
+    results: list[tuple[str, bool, str]] = []
     try:
         for batch in batches:
-            results.extend(run_batch(client, batch, args.config_concurrency))
+            results.extend(run_batch(client, batch, args.config_concurrency, arb_ctx))
     finally:
         print("\n=== removing marketplace ===", flush=True)
         remove_marketplace(client, our_mkt["id"])
 
-    passed = sum(1 for _, ok in results if ok)
+    if arb_ctx is not None:
+        arb_ctx.results_dir.mkdir(parents=True, exist_ok=True)
+        (arb_ctx.results_dir / "arbitration.json").write_text(
+            json.dumps(arb_ctx.records, ensure_ascii=False, indent=2))
+        arb_ctx.arb.save_cache(arb_ctx.cache, arb_ctx.cache_path)
+        print(f"\narbitration: {len(arb_ctx.records)} verdict(s) → "
+              f"{arb_ctx.results_dir}/arbitration.json", flush=True)
+
+    passed = sum(1 for _, ok, _ in results if ok)
     print("\n=== SUMMARY ===")
-    for name, ok in results:
-        print(f"  {'PASS' if ok else 'FAIL'}  {name}")
+    for name, ok, note in results:
+        suffix = f"  ({note})" if note else ""
+        print(f"  {'PASS' if ok else 'FAIL'}  {name}{suffix}")
     print(f"\n{passed}/{len(results)} passed")
     return 0 if passed == len(results) else 1
 

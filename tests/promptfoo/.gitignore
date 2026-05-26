@@ -1,2 +1,6 @@
 # Per-run sidecars written by setup.py — never commit, regenerated each run.
 *.run_id
+
+# Arbitration outputs written by `run.py --arbitrate` (transcripts +
+# arbitration.json). Regenerated each run; archived by CI, never committed.
+.results/

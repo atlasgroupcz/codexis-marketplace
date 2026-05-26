@@ -24,6 +24,14 @@ tests:
       # AI may try OS-notification tools first then self-recover to cdxctl.
       tool_calls_max: 11
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ notifications { items { message seen confirmed } } }"
       jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')]"
       count: 1
@@ -50,6 +58,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ notifications { items { message } } }"
       jsonpath: "$.notifications.items[*].message"
       contains: "e2e-notif-{{ run_id }}"
@@ -75,6 +91,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ notifications { items { message seen confirmed } } }"
       jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].seen"
       matches: '\d{4}-\d{2}-\d{2}'
@@ -98,6 +122,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ notifications { items { message seen confirmed } } }"
       jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].confirmed"
       matches: '\d{4}-\d{2}-\d{2}'

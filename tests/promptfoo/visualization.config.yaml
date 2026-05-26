@@ -26,6 +26,13 @@ tests:
       # Router→sub-skill→template-read→write — allow some headroom.
       tool_calls_max: 14
       forbidden_regex: '(curl|wget)\s+http'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Writing the chart HTML from the data given in the prompt, using the bundled visualization libraries."
+        incorrect:
+          - "Using curl/wget to fetch chart data or JS libraries from the web instead of the provided data and bundled assets."
       file: /home/codexis/mesta-{{ run_id }}.html
     assert:
       - type: python

@@ -43,6 +43,14 @@ tests:
       # the ocr binary produced nothing. Test stays RED until the daemon-side
       # stub is implemented.
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|pdftoppm|pdftotext|pdfinfo|pdftoimage|tesseract)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Running OCR on the PDF through the dedicated ocr tool; reading the given input PDF path is fine."
+        incorrect:
+          - "Doing OCR by hand with pdftoppm/pdftotext/pdfinfo/tesseract instead of the ocr tool."
+          - "Fetching the document over the network via curl/wget/requests instead of OCRing the given file."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

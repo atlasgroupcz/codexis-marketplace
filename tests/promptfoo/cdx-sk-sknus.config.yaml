@@ -21,6 +21,14 @@ tests:
       input_regex: 'cdx-sk[\s"\\]+search\s+SK[A-Z]+(?!.*--help)'
       tool_calls_max: 10
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsud\.sk|justice\.gov\.sk|e-zbierka\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an SKNUS doc URL that cdx-sk itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch decisions from nsud.sk, justice.gov.sk or e-zbierka.sk instead of cdx-sk."
+          - "Bypassing cdx-sk to scrape those sites for the records."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

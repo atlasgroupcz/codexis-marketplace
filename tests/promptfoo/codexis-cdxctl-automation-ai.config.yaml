@@ -27,12 +27,22 @@ tests:
       # agent list + create + possible retries + memory read/write.
       tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title type agentFullName prompt maxTurns enabled } }"
       jsonpath: "$.automations[?(@.title == 'ee-ai-{{ run_id }}')]"
       count: 1
       subset:
         type: "AGENT"
-        agentFullName: "explorer"
+        # cdxctl reports agents by their namespaced full name (plugin:agent),
+        # e.g. the built-in explorer agent is "codexis:explorer".
+        agentFullName: "codexis:explorer"
         prompt: "Popiš aktuální pracovní adresář."
         maxTurns: 5
         enabled: true
@@ -56,6 +66,14 @@ tests:
       tool_calls_min: 1
       tool_calls_max: 8
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ automations { title } }"
       jsonpath: "$.automations[*].title"
       not_contains: "ee-ai-{{ run_id }}"

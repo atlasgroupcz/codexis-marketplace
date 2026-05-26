@@ -36,6 +36,14 @@ tests:
       # All cdx-at workflows go through the binary; raw HTTP to RIS is
       # always scraping, regardless of the language.
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate raw HTTP.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an ATJD doc URL that cdx-at itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch judgment text from ris.bka.gv.at instead of using cdx-at."
+          - "Bypassing cdx-at to scrape RIS for the records."
     assert:
       # Structural — the AI actually invoked cdx-at, not just hallucinated.
       - type: python

@@ -22,6 +22,14 @@ tests:
       input_regex: 'cdx-at[\s"\\]+(search\s+(ATBR|ATHI)|get\s+[\\"]?cdx-at://)(?!.*--help)'
       tool_calls_max: 16
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate raw HTTP.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an ATBR/ATHI doc URL that cdx-at itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch the ABGB text from ris.bka.gv.at instead of using cdx-at."
+          - "Bypassing cdx-at to scrape RIS for the answer."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call
