@@ -344,9 +344,12 @@ class DaemonClient:
         return data["newChat"]
 
     def send_message(self, chat_id: str, message: str) -> dict:
+        # webSearchEnabled is a NonNull Boolean on SendMessageInput; e2e runs
+        # test plugin tool usage, not web search, so it is always false here.
         data = self.gql_data(
             _Q_SEND_MESSAGE,
-            {"input": {"chatId": chat_id, "message": message}},
+            {"input": {"chatId": chat_id, "message": message,
+                       "webSearchEnabled": False}},
         )
         return data["sendMessage"]
 
