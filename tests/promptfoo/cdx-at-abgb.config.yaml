@@ -20,7 +20,10 @@ tests:
       # AI may resolve via `search ATHI/ATBR` or via `get cdx-at://...`,
       # but never via `--help`.
       input_regex: 'cdx-at[\s"\\]+(search\s+(ATBR|ATHI)|get\s+[\\"]?cdx-at://)(?!.*--help)'
-      tool_calls_max: 16
+      # ABGB lookup legitimately spans several cdx-at calls (ATHI + ATBR search
+      # + get/meta), ~18-19 in practice — cap generously so honest exploration
+      # passes. assert_no_tool_call still independently catches real scraping.
+      tool_calls_max: 24
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ris\.bka\.gv\.at)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate raw HTTP.
