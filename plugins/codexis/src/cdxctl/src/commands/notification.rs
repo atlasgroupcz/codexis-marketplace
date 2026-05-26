@@ -71,7 +71,8 @@ pub fn list(
 }
 
 pub fn seen(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
-    update_state(client, id, json!({ "seen": true }), format)
+    let resolved = resolve_notification_id(client, id)?;
+    update_state(client, &resolved, json!({ "seen": true }), format)
 }
 
 pub fn confirm(
@@ -79,7 +80,32 @@ pub fn confirm(
     id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    update_state(client, id, json!({ "confirmed": true }), format)
+    let resolved = resolve_notification_id(client, id)?;
+    update_state(client, &resolved, json!({ "confirmed": true }), format)
+}
+
+/// Resolve a notification reference to its NodeId. Accepts either the id (a
+/// Notification NodeId or raw inner id) OR the notification's message text.
+/// Notifications are naturally referenced by message (unlike agents/skills,
+/// whose inner id IS their name), but the daemon mutation needs the id. A unique
+/// message match wins; otherwise the arg is treated as an id.
+fn resolve_notification_id(client: &GraphQLClient, arg: &str) -> Result<String, CdxctlError> {
+    let data = client.execute(graphql::NOTIFICATIONS_QUERY, json!({}))?;
+    if let Some(items) = data
+        .get("notifications")
+        .and_then(|n| n.get("items"))
+        .and_then(|i| i.as_array())
+    {
+        let ids: Vec<&str> = items
+            .iter()
+            .filter(|n| n.get("message").and_then(|m| m.as_str()) == Some(arg))
+            .filter_map(|n| n.get("id").and_then(|i| i.as_str()))
+            .collect();
+        if let [id] = ids.as_slice() {
+            return Ok((*id).to_string());
+        }
+    }
+    Ok(resolve_node_id(arg, "Notification"))
 }
 
 fn update_state(
