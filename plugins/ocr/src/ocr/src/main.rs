@@ -2,9 +2,9 @@ use std::env;
 use std::fmt::Write;
 use std::fs;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
-const OCR_ENDPOINT: &str = "http://localhost:8086/rest/ocr";
+// OCR endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see ocr_endpoint().
 const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
 const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 
@@ -65,6 +65,57 @@ fn ensure_bearer_prefix(value: &str) -> String {
     }
 }
 
+fn ocr_endpoint() -> String {
+    // CODEXIS_PUBLIC_DAEMON_URL is the daemon GraphQL URL (…/graphql); the OCR
+    // REST endpoint is its sibling. Strip /graphql, append /rest/ocr. Fall back
+    // to localhost:8086 only for local dev.
+    let graphql = env::var("CODEXIS_PUBLIC_DAEMON_URL")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "http://localhost:8086/graphql".to_string());
+    let base = graphql.trim_end_matches('/');
+    let base = base.strip_suffix("/graphql").unwrap_or(base);
+    format!("{}/rest/ocr", base)
+}
+
+fn extract_json_field(json: &str, field: &str) -> String {
+    let pattern = format!("\"{}\"", field);
+    if let Some(pos) = json.find(&pattern) {
+        let after = &json[pos + pattern.len()..];
+        let trimmed = after.trim_start();
+        if let Some(rest) = trimmed.strip_prefix(':') {
+            let rest = rest.trim_start();
+            if rest.starts_with('"') {
+                return parse_json_string(&rest[1..]);
+            }
+        }
+    }
+    String::new()
+}
+
+fn parse_json_string(s: &str) -> String {
+    let mut out = String::new();
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => break,
+            '\\' => {
+                if let Some(e) = chars.next() {
+                    match e {
+                        'n' => out.push('\n'),
+                        't' => out.push('\t'),
+                        'r' => out.push('\r'),
+                        '/' => out.push('/'),
+                        other => out.push(other),
+                    }
+                }
+            }
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -77,26 +128,39 @@ fn main() {
 
     let path = &args[0];
     let encoded_path = percent_encode(path.as_bytes());
-    let url = format!("{}?path={}", OCR_ENDPOINT, encoded_path);
-
+    let url = format!("{}?path={}", ocr_endpoint(), encoded_path);
     let auth_header = format!("Authorization: {}", daemon_auth);
-    let status = Command::new("curl")
-        .args([
-            "-s",
-            "--fail-with-body",
-            "-X", "POST",
-            &url,
-            "-H", &auth_header,
-        ])
-        .stdin(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status();
 
-    match status {
-        Ok(status) => std::process::exit(status.code().unwrap_or(1)),
+    // The endpoint OCRs the file and returns {path, resultPath}; the recognized
+    // text is written to resultPath. Capture the JSON, then print the result text.
+    let output = Command::new("curl")
+        .args(["-s", "--fail-with-body", "-X", "POST", &url, "-H", &auth_header])
+        .output();
+    let resp = match output {
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).into_owned(),
+        Ok(o) => {
+            eprintln!(
+                "error: ocr request failed: {}{}",
+                String::from_utf8_lossy(&o.stdout),
+                String::from_utf8_lossy(&o.stderr)
+            );
+            std::process::exit(1);
+        }
         Err(err) => {
             eprintln!("failed to run curl: {}", err);
+            std::process::exit(1);
+        }
+    };
+
+    let result_path = extract_json_field(&resp, "resultPath");
+    if result_path.is_empty() {
+        eprintln!("error: ocr response has no resultPath: {}", resp);
+        std::process::exit(1);
+    }
+    match fs::read_to_string(&result_path) {
+        Ok(text) => print!("{}", text),
+        Err(err) => {
+            eprintln!("error: cannot read OCR result {}: {}", result_path, err);
             std::process::exit(1);
         }
     }
