@@ -8,7 +8,7 @@ const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
 const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
-const UPLOAD_ENDPOINT: &str = "http://localhost:8086/rest/llm/gemini/upload";
+// Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see upload_endpoint().
 
 const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
     Use this exact format:\n\n\
@@ -152,9 +152,33 @@ fn load_api_jwt_auth() -> String {
     std::process::exit(2);
 }
 
+fn litellm_base() -> String {
+    // The LiteLLM gateway base URL is injected into the VM as
+    // CODEXIS_PUBLIC_LITELLM_BASE_URL (e.g. http://litellm.cdx.internal:4000).
+    // Fall back to localhost:4000 only for local dev outside the VM.
+    env::var("CODEXIS_PUBLIC_LITELLM_BASE_URL")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .map(|v| v.trim_end_matches('/').to_string())
+        .unwrap_or_else(|| "http://localhost:4000".to_string())
+}
+
+fn upload_endpoint() -> String {
+    // CODEXIS_PUBLIC_DAEMON_URL is the daemon GraphQL URL (…/graphql); the gemini
+    // upload REST endpoint is its sibling on the same host. Strip /graphql and
+    // append the REST path. Fall back to localhost:8086 only for local dev.
+    let graphql = env::var("CODEXIS_PUBLIC_DAEMON_URL")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "http://localhost:8086/graphql".to_string());
+    let base = graphql.trim_end_matches('/');
+    let base = base.strip_suffix("/graphql").unwrap_or(base);
+    format!("{}/rest/llm/gemini/upload", base)
+}
+
 fn upload_file(path: &str, daemon_auth: &str) -> String {
     let encoded_path = percent_encode(path.as_bytes());
-    let url = format!("{}?path={}", UPLOAD_ENDPOINT, encoded_path);
+    let url = format!("{}?path={}", upload_endpoint(), encoded_path);
 
     let auth_header = format!("Authorization: {}", daemon_auth);
     let output = Command::new("curl")
@@ -180,8 +204,8 @@ fn upload_file(path: &str, daemon_auth: &str) -> String {
 
 fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_youtube: bool, model: &str) -> String {
     let url = format!(
-        "http://localhost:4000/vertex_ai/v1/projects/{}/locations/{}/publishers/google/models/{}:generateContent",
-        VERTEX_PROJECT, VERTEX_LOCATION, model
+        "{}/vertex_ai/v1/projects/{}/locations/{}/publishers/google/models/{}:generateContent",
+        litellm_base(), VERTEX_PROJECT, VERTEX_LOCATION, model
     );
 
     let file_data = if is_youtube {
