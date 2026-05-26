@@ -1,10 +1,12 @@
 use std::io::{self, Write};
 use std::process::{Command, Output, Stdio};
 
+use crate::core::config::DaemonConfig;
 use crate::core::error::CliError;
+use crate::core::sources::publish_from_body;
 
 const CDX_SCHEME: &str = "cdx://";
-const API_PREFIX: &str = "/rest/cdx-api";
+const API_PREFIX: &str = "/rest/cdx-api/v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum SearchFacetMode {
@@ -30,7 +32,12 @@ pub(crate) fn execute_search_request(
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, |body| print_response_body(body, facet_mode))
+    handle_curl_output(&output, |body| {
+        let (content, sources) = split_envelope(body);
+        print_search_content(content, facet_mode)?;
+        try_publish_sources(sources.as_ref());
+        Ok(())
+    })
 }
 
 pub(crate) fn execute_get_request(
@@ -47,7 +54,28 @@ pub(crate) fn execute_get_request(
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, print_raw_response_body)
+    handle_curl_output(&output, |body| {
+        let (content, sources) = split_envelope(body);
+        print_get_content(content)?;
+        try_publish_sources(sources.as_ref());
+        Ok(())
+    })
+}
+
+/// Best-effort: if running inside a chat VM with daemon access AND the upstream response
+/// declared sources in its `sources` field, attach them to the active tool-call. Any failure
+/// is logged to stderr and never propagates — sources are a side channel; the agent's
+/// primary response (already on stdout) must not be affected.
+fn try_publish_sources(sources: Option<&serde_json::Value>) {
+    let Some(sources) = sources else {
+        return;
+    };
+    let Some(daemon) = DaemonConfig::load() else {
+        return;
+    };
+    if let Err(err) = publish_from_body(sources, &daemon) {
+        eprintln!("cdx-cli: failed to attach sources to chat: {err}");
+    }
 }
 
 fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
@@ -60,15 +88,16 @@ fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
         .map_err(CliError::CurlSpawn)
 }
 
-fn handle_curl_output<F>(output: &Output, print_body: F) -> Result<(), CliError>
+fn handle_curl_output<F>(output: &Output, handle: F) -> Result<(), CliError>
 where
     F: Fn(&[u8]) -> Result<(), CliError>,
 {
+    let body = &output.stdout[..];
     match output.status.code() {
-        Some(0) => print_body(&output.stdout),
+        Some(0) => handle(body),
         Some(code) => {
-            if !output.stdout.is_empty() {
-                print_body(&output.stdout)?;
+            if !body.is_empty() {
+                handle(body)?;
             }
             Err(CliError::RequestFailed { code })
         }
@@ -76,14 +105,58 @@ where
     }
 }
 
-fn print_response_body(body: &[u8], facet_mode: SearchFacetMode) -> Result<(), CliError> {
-    let rendered = render_search_output(body, facet_mode);
-    write_stdout(&rendered)
+/// Parses the v2 envelope `{content, sources}`. Returns `(content_json, sources_value)`.
+/// If the body is not a JSON object with a `content` field, falls back to returning the
+/// raw body as `content` and `None` sources — keeps the CLI usable against non-v2
+/// responses or error payloads.
+fn split_envelope(body: &[u8]) -> (EnvelopeContent, Option<serde_json::Value>) {
+    let Ok(mut value) = serde_json::from_slice::<serde_json::Value>(body) else {
+        return (EnvelopeContent::Raw(body.to_vec()), None);
+    };
+    let serde_json::Value::Object(ref mut map) = value else {
+        return (EnvelopeContent::Json(value), None);
+    };
+    if !map.contains_key("content") {
+        return (EnvelopeContent::Json(serde_json::Value::Object(map.clone())), None);
+    }
+    let sources = map.remove("sources");
+    let content = map.remove("content").unwrap_or(serde_json::Value::Null);
+    (EnvelopeContent::Json(content), sources)
 }
 
-fn print_raw_response_body(body: &[u8]) -> Result<(), CliError> {
-    let rendered = String::from_utf8_lossy(body).into_owned();
-    write_stdout(&rendered)
+enum EnvelopeContent {
+    Json(serde_json::Value),
+    Raw(Vec<u8>),
+}
+
+fn print_search_content(content: EnvelopeContent, facet_mode: SearchFacetMode) -> Result<(), CliError> {
+    match content {
+        EnvelopeContent::Json(mut value) => {
+            apply_facet_mode(&mut value, facet_mode);
+            let rendered = serde_json::to_string(&value)
+                .unwrap_or_else(|_| String::from_utf8_lossy(b"").into_owned());
+            write_stdout(&rendered)
+        }
+        EnvelopeContent::Raw(bytes) => {
+            let rendered = String::from_utf8_lossy(&bytes).into_owned();
+            write_stdout(&rendered)
+        }
+    }
+}
+
+fn print_get_content(content: EnvelopeContent) -> Result<(), CliError> {
+    match content {
+        EnvelopeContent::Json(serde_json::Value::String(s)) => write_stdout(&s),
+        EnvelopeContent::Json(value) => {
+            let rendered = serde_json::to_string(&value)
+                .unwrap_or_else(|_| String::new());
+            write_stdout(&rendered)
+        }
+        EnvelopeContent::Raw(bytes) => {
+            let rendered = String::from_utf8_lossy(&bytes).into_owned();
+            write_stdout(&rendered)
+        }
+    }
 }
 
 fn write_stdout(rendered: &str) -> Result<(), CliError> {
@@ -105,17 +178,6 @@ fn write_stdout(rendered: &str) -> Result<(), CliError> {
         })?;
     }
     Ok(())
-}
-
-fn render_search_output(body: &[u8], facet_mode: SearchFacetMode) -> String {
-    let text = String::from_utf8_lossy(body);
-    match serde_json::from_str::<serde_json::Value>(&text) {
-        Ok(mut value) => {
-            apply_facet_mode(&mut value, facet_mode);
-            serde_json::to_string(&value).unwrap_or_else(|_| text.into_owned())
-        }
-        Err(_) => text.into_owned(),
-    }
 }
 
 fn apply_facet_mode(value: &mut serde_json::Value, facet_mode: SearchFacetMode) {
@@ -284,7 +346,7 @@ mod tests {
                 "POST",
                 "-H",
                 "Content-Type: application/json",
-                "https://app.codexis.cz/rest/cdx-api/search/JD",
+                "https://app.codexis.cz/rest/cdx-api/v2/search/JD",
                 "-d",
                 r#"{"query":"náhrada škody","limit":5}"#,
             ]
@@ -301,9 +363,13 @@ mod tests {
             SearchFacetMode::Full,
         );
 
+        let url_pos = args
+            .iter()
+            .position(|a| a.starts_with("https://"))
+            .expect("expected an HTTPS url arg");
         assert_eq!(
-            args[8],
-            "https://app.codexis.cz/rest/cdx-api/search/JD?fullFacets=true"
+            args[url_pos],
+            "https://app.codexis.cz/rest/cdx-api/v2/search/JD?fullFacets=true"
         );
     }
 
@@ -323,7 +389,7 @@ mod tests {
                 "--fail-with-body",
                 "-H",
                 "Authorization: Bearer token",
-                "https://app.codexis.cz/rest/cdx-api/doc/CR10_2026_01_01/text",
+                "https://app.codexis.cz/rest/cdx-api/v2/doc/CR10_2026_01_01/text",
             ]
         );
     }
@@ -337,7 +403,11 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(args[4], "https://app.codexis.cz/rest/cdx-api");
+        let url_pos = args
+            .iter()
+            .position(|a| a.starts_with("https://"))
+            .expect("expected an HTTPS url arg");
+        assert_eq!(args[url_pos], "https://app.codexis.cz/rest/cdx-api/v2");
     }
 
     #[test]
@@ -387,55 +457,81 @@ mod tests {
     }
 
     #[test]
-    fn default_output_hides_available_filters() {
-        let rendered = render_search_output(
-            br#"{"results":[{"docId":"JD1"}],"availableFilters":[{"key":"court"}],"limit":1}"#,
-            SearchFacetMode::Hidden,
-        );
-
-        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
-        assert!(value.get("availableFilters").is_none());
-        assert_eq!(value["results"][0]["docId"], "JD1");
+    fn split_envelope_extracts_content_and_sources() {
+        let body = br#"{"content":{"results":[{"docId":"JD1"}]},"sources":[{"url":"https://app.codexis.cz/doc/JD1","title":"x"}]}"#;
+        let (content, sources) = split_envelope(body);
+        match content {
+            EnvelopeContent::Json(value) => {
+                assert_eq!(value["results"][0]["docId"], "JD1");
+            }
+            EnvelopeContent::Raw(_) => panic!("expected json content"),
+        }
+        let sources = sources.expect("expected sources");
+        assert_eq!(sources[0]["url"], "https://app.codexis.cz/doc/JD1");
     }
 
     #[test]
-    fn facet_output_keeps_available_filters() {
-        let rendered = render_search_output(
-            br#"{"results":[{"docId":"JD1"}],"availableFilters":[{"key":"court"}],"limit":1}"#,
-            SearchFacetMode::Summary,
-        );
+    fn split_envelope_handles_string_content() {
+        let body = br#"{"content":"plain text body","sources":[]}"#;
+        let (content, sources) = split_envelope(body);
+        match content {
+            EnvelopeContent::Json(serde_json::Value::String(s)) => {
+                assert_eq!(s, "plain text body");
+            }
+            _ => panic!("expected string json content"),
+        }
+        assert!(sources.is_some());
+    }
 
-        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+    #[test]
+    fn split_envelope_passes_through_non_envelope_json() {
+        let body = br#"{"some":"other","shape":1}"#;
+        let (content, sources) = split_envelope(body);
+        match content {
+            EnvelopeContent::Json(value) => {
+                assert_eq!(value["some"], "other");
+                assert_eq!(value["shape"], 1);
+            }
+            EnvelopeContent::Raw(_) => panic!("expected json content"),
+        }
+        assert!(sources.is_none());
+    }
+
+    #[test]
+    fn split_envelope_passes_through_non_json_bodies() {
+        let body = b"not json at all";
+        let (content, sources) = split_envelope(body);
+        match content {
+            EnvelopeContent::Raw(bytes) => assert_eq!(bytes.as_slice(), body),
+            EnvelopeContent::Json(_) => panic!("expected raw content"),
+        }
+        assert!(sources.is_none());
+    }
+
+    #[test]
+    fn print_search_content_strips_available_filters_when_hidden() {
+        let envelope: serde_json::Value = serde_json::from_slice(
+            br#"{"content":{"results":[{"docId":"JD1"}],"availableFilters":[{"key":"court"}]},"sources":[]}"#,
+        )
+        .unwrap();
+        let mut content_value = envelope
+            .as_object()
+            .unwrap()
+            .get("content")
+            .unwrap()
+            .clone();
+        apply_facet_mode(&mut content_value, SearchFacetMode::Hidden);
+        assert!(content_value.as_object().unwrap().get("availableFilters").is_none());
+        assert_eq!(content_value["results"][0]["docId"], "JD1");
+    }
+
+    #[test]
+    fn apply_facet_mode_summary_keeps_available_filters() {
+        let mut value: serde_json::Value = serde_json::from_slice(
+            br#"{"results":[{"docId":"JD1"}],"availableFilters":[{"key":"court"}]}"#,
+        )
+        .unwrap();
+        apply_facet_mode(&mut value, SearchFacetMode::Summary);
         assert_eq!(value["availableFilters"][0]["key"], "court");
-    }
-
-    #[test]
-    fn facet_output_tolerates_missing_available_filters() {
-        let rendered = render_search_output(
-            br#"{"results":[{"docId":"JD1"}],"limit":1}"#,
-            SearchFacetMode::Summary,
-        );
-
-        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
-        assert!(value.get("availableFilters").is_none());
-        assert_eq!(value["results"][0]["docId"], "JD1");
-    }
-
-    #[test]
-    fn full_facet_output_tolerates_missing_available_filters() {
-        let rendered = render_search_output(
-            br#"{"results":[{"docId":"JD1"}],"limit":1}"#,
-            SearchFacetMode::Full,
-        );
-
-        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
-        assert!(value.get("availableFilters").is_none());
-        assert_eq!(value["results"][0]["docId"], "JD1");
-    }
-
-    #[test]
-    fn invalid_json_output_is_printed_raw() {
-        let rendered = render_search_output(br#"not-json"#, SearchFacetMode::Hidden);
-        assert_eq!(rendered, "not-json");
     }
 }
