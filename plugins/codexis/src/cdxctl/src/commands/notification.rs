@@ -10,17 +10,23 @@ pub fn create(
     message: &str,
     action: Option<&str>,
     link: Option<&str>,
-    _extra: &[(String, String)],
+    extra: &[(String, String)],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    // The daemon's CreateNotificationInput accepts message/action/link/type/vars
-    // but NOT `extra`; sending `extra` makes the daemon reject the whole mutation
-    // ("field name 'extra' is not defined for input object CreateNotificationInput").
-    // Drop it until/unless the daemon schema gains an `extra` field.
+    // The daemon's CreateNotificationInput exposes the key/value metadata as
+    // `vars: [KeyValueInput!]` (KeyValueInput { key, value }). The CLI's
+    // `--extra k=v` pairs map straight onto it. (This field used to be named
+    // `extra`, which the current daemon schema rejects.)
+    let vars: Vec<Value> = extra
+        .iter()
+        .map(|(k, v)| json!({ "key": k, "value": v }))
+        .collect();
+
     let input = json!({
         "message": message,
         "action": action,
         "link": link,
+        "vars": if vars.is_empty() { Value::Null } else { Value::Array(vars) },
     });
 
     let data = client.execute(graphql::CREATE_NOTIFICATION_MUTATION, json!({ "input": input }))?;
