@@ -349,6 +349,62 @@ enum NotificationCommands {
         /// Notification ID
         id: String,
     },
+    /// Outbound email notifications
+    Email {
+        #[command(subcommand)]
+        command: EmailCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum EmailCommands {
+    /// Send an email through a notification channel
+    Send {
+        /// Recipient email address (repeat for multiple)
+        #[arg(long, required = true)]
+        to: Vec<String>,
+        /// Optional CC recipient (repeatable)
+        #[arg(long)]
+        cc: Vec<String>,
+        /// Optional BCC recipient (repeatable)
+        #[arg(long)]
+        bcc: Vec<String>,
+        /// Subject line
+        #[arg(long)]
+        subject: String,
+        /// Inline body text (mutually exclusive with --body-file)
+        #[arg(long)]
+        body: Option<String>,
+        /// Read body from file ("-" reads stdin); mutually exclusive with --body
+        #[arg(long)]
+        body_file: Option<String>,
+        /// Optional HTML body (sent alongside text body for multipart/alternative)
+        #[arg(long)]
+        body_html: Option<String>,
+        /// Channel id (omit to use the daemon system-default)
+        #[arg(long)]
+        channel_id: Option<String>,
+        /// Attach a local file (repeatable)
+        #[arg(long = "attach")]
+        attachments: Vec<String>,
+    },
+    /// Manage notification channels for email
+    Channels {
+        #[command(subcommand)]
+        command: EmailChannelsCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum EmailChannelsCommands {
+    /// List configured email channels (system default + user-owned)
+    List,
+    /// Send a canned probe email through a specific channel
+    Test {
+        /// Channel id
+        #[arg(long)]
+        id: String,
+    },
 }
 
 fn parse_key_value(s: &str) -> Result<(String, String), String> {
@@ -540,6 +596,39 @@ fn main() {
             NotificationCommands::Confirm { id } => {
                 commands::notification::confirm(&client, &id, format)
             }
+            NotificationCommands::Email { command } => match command {
+                EmailCommands::Send {
+                    to,
+                    cc,
+                    bcc,
+                    subject,
+                    body,
+                    body_file,
+                    body_html,
+                    channel_id,
+                    attachments,
+                } => commands::notification_email::send(
+                    &client,
+                    &to,
+                    &cc,
+                    &bcc,
+                    &subject,
+                    body.as_deref(),
+                    body_file.as_deref(),
+                    body_html.as_deref(),
+                    channel_id.as_deref(),
+                    &attachments,
+                    format,
+                ),
+                EmailCommands::Channels { command } => match command {
+                    EmailChannelsCommands::List => {
+                        commands::notification_email::channels_list(&client, format)
+                    }
+                    EmailChannelsCommands::Test { id } => {
+                        commands::notification_email::channels_test(&client, &id, format)
+                    }
+                },
+            },
         },
     };
 
@@ -590,5 +679,71 @@ mod tests {
             }
             _ => panic!("expected agent update command"),
         }
+    }
+
+    #[test]
+    fn parses_notification_email_send_command() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "notification",
+            "email",
+            "send",
+            "--to",
+            "alice@example.com",
+            "--to",
+            "bob@example.com",
+            "--subject",
+            "hi",
+            "--body",
+            "hello",
+            "--attach",
+            "/tmp/a.txt",
+        ])
+        .expect("notification email send should parse");
+
+        match cli.command {
+            Commands::Notification {
+                command:
+                    NotificationCommands::Email {
+                        command:
+                            EmailCommands::Send {
+                                to,
+                                subject,
+                                body,
+                                attachments,
+                                ..
+                            },
+                    },
+            } => {
+                assert_eq!(to, vec!["alice@example.com", "bob@example.com"]);
+                assert_eq!(subject, "hi");
+                assert_eq!(body.as_deref(), Some("hello"));
+                assert_eq!(attachments, vec!["/tmp/a.txt".to_string()]);
+            }
+            _ => panic!("expected notification email send command"),
+        }
+    }
+
+    #[test]
+    fn parses_notification_email_channels_list_command() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "notification",
+            "email",
+            "channels",
+            "list",
+        ])
+        .expect("notification email channels list should parse");
+
+        assert!(matches!(
+            cli.command,
+            Commands::Notification {
+                command: NotificationCommands::Email {
+                    command: EmailCommands::Channels {
+                        command: EmailChannelsCommands::List
+                    }
+                }
+            }
+        ));
     }
 }

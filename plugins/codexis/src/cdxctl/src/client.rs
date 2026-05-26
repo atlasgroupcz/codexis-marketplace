@@ -1,4 +1,5 @@
 use crate::error::CdxctlError;
+use reqwest::blocking::multipart::Form;
 use serde_json::{json, Value};
 
 const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
@@ -20,6 +21,67 @@ impl GraphQLClient {
             auth,
             client: reqwest::blocking::Client::new(),
         }
+    }
+
+    /// Base URL without the trailing `/graphql` so REST endpoints can be derived.
+    pub fn rest_base_url(&self) -> String {
+        self.url
+            .trim_end_matches('/')
+            .trim_end_matches("/graphql")
+            .trim_end_matches('/')
+            .to_string()
+    }
+
+    /// GET a REST endpoint and decode JSON.
+    pub fn rest_get(&self, path: &str) -> Result<Value, CdxctlError> {
+        let url = format!("{}{}", self.rest_base_url(), path);
+        let response = self
+            .client
+            .get(&url)
+            .header("Authorization", &self.auth)
+            .header("Accept", "application/json")
+            .send()?;
+        let status = response.status();
+        let text = response.text()?;
+        if !status.is_success() {
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
+        }
+        serde_json::from_str(&text).map_err(CdxctlError::from)
+    }
+
+    /// POST a multipart body (used for /rest/v1/channels/email/send).
+    pub fn rest_post_multipart(&self, path: &str, form: Form) -> Result<Value, CdxctlError> {
+        let url = format!("{}{}", self.rest_base_url(), path);
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", &self.auth)
+            .header("Accept", "application/json")
+            .multipart(form)
+            .send()?;
+        let status = response.status();
+        let text = response.text()?;
+        if !status.is_success() {
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
+        }
+        serde_json::from_str(&text).map_err(CdxctlError::from)
+    }
+
+    /// POST a JSON-less endpoint (no body), used for /test triggers.
+    pub fn rest_post_empty(&self, path: &str) -> Result<Value, CdxctlError> {
+        let url = format!("{}{}", self.rest_base_url(), path);
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", &self.auth)
+            .header("Accept", "application/json")
+            .send()?;
+        let status = response.status();
+        let text = response.text()?;
+        if !status.is_success() {
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
+        }
+        serde_json::from_str(&text).map_err(CdxctlError::from)
     }
 
     /// Execute a GraphQL operation and return the `data` field.
