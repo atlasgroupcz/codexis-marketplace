@@ -1,8 +1,12 @@
 use std::env;
 use std::fmt::Write;
+use std::fs;
+use std::path::Path;
 use std::process::{Command, Stdio};
 
 const OCR_ENDPOINT: &str = "http://localhost:8086/rest/ocr";
+const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
+const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 
 fn percent_encode(input: &[u8]) -> String {
     let mut out = String::with_capacity(input.len() * 3);
@@ -20,13 +24,45 @@ fn percent_encode(input: &[u8]) -> String {
 }
 
 fn load_api_jwt_auth() -> String {
-    if let Ok(val) = env::var("CODEXIS_USER_API_TOKEN") {
+    // Match cdxctl/all plugins: read the daemon JWT from the per-user secret file
+    // (~/.cdx/env/secret) first, fall back to the env var, and always send it as a
+    // Bearer token.
+    if let Some(secret) = read_secret_file() {
+        return ensure_bearer_prefix(&secret);
+    }
+    if let Ok(val) = env::var(CODEXIS_USER_API_TOKEN_ENV) {
         if !val.is_empty() {
-            return val;
+            return ensure_bearer_prefix(&val);
         }
     }
-    eprintln!("error: CODEXIS_USER_API_TOKEN not set");
+    eprintln!(
+        "error: no auth (tried ~/{} and ${})",
+        SECRET_FILE_RELATIVE, CODEXIS_USER_API_TOKEN_ENV
+    );
     std::process::exit(2);
+}
+
+fn read_secret_file() -> Option<String> {
+    let home = env::var("HOME").ok()?;
+    let contents = fs::read_to_string(Path::new(&home).join(SECRET_FILE_RELATIVE)).ok()?;
+    let trimmed = contents.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
+fn ensure_bearer_prefix(value: &str) -> String {
+    let mut s = value.trim();
+    if let Some(stripped) = s.strip_prefix("Authorization:") {
+        s = stripped.trim();
+    }
+    if s.len() >= 7 && s[..7].eq_ignore_ascii_case("Bearer ") {
+        s.to_string()
+    } else {
+        format!("Bearer {}", s)
+    }
 }
 
 fn main() {

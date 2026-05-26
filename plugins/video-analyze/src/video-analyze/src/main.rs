@@ -8,6 +8,8 @@ const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
 const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
+const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
+const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 // Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see upload_endpoint().
 
 const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
@@ -143,13 +145,46 @@ fn load_api_key() -> String {
 }
 
 fn load_api_jwt_auth() -> String {
-    if let Ok(val) = env::var("CODEXIS_USER_API_TOKEN") {
+    // Daemon JWT (for the upload endpoint): read the per-user secret file
+    // (~/.cdx/env/secret) first, fall back to the env var, send as Bearer —
+    // same as cdxctl/all plugins. The LiteLLM key still comes from the env
+    // var (CODEXIS_USER_LITELLM_API_KEY) via load_api_key.
+    if let Some(secret) = read_secret_file() {
+        return ensure_bearer_prefix(&secret);
+    }
+    if let Ok(val) = env::var(CODEXIS_USER_API_TOKEN_ENV) {
         if !val.is_empty() {
-            return val;
+            return ensure_bearer_prefix(&val);
         }
     }
-    eprintln!("error: CODEXIS_USER_API_TOKEN not set");
+    eprintln!(
+        "error: no auth (tried ~/{} and ${})",
+        SECRET_FILE_RELATIVE, CODEXIS_USER_API_TOKEN_ENV
+    );
     std::process::exit(2);
+}
+
+fn read_secret_file() -> Option<String> {
+    let home = env::var("HOME").ok()?;
+    let contents = fs::read_to_string(Path::new(&home).join(SECRET_FILE_RELATIVE)).ok()?;
+    let trimmed = contents.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
+fn ensure_bearer_prefix(value: &str) -> String {
+    let mut s = value.trim();
+    if let Some(stripped) = s.strip_prefix("Authorization:") {
+        s = stripped.trim();
+    }
+    if s.len() >= 7 && s[..7].eq_ignore_ascii_case("Bearer ") {
+        s.to_string()
+    } else {
+        format!("Bearer {}", s)
+    }
 }
 
 fn litellm_base() -> String {
