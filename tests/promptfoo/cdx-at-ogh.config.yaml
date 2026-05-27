@@ -30,7 +30,10 @@ tests:
       # Negative lookahead excludes `--help` calls (CLI exploration ≠ work).
       # We want at least one real search invocation against ATJD.
       input_regex: 'cdx-at[\s"\\]+search\s+ATJD(?!.*--help)'
-      tool_calls_max: 16
+      # OGH judikatura lookup can legitimately span many cdx-at calls (search +
+      # per-result get/meta), occasionally ~23 — cap generously, matching
+      # cdx-at-abgb. assert_no_tool_call still independently catches scraping.
+      tool_calls_max: 24
       # Anti-cheat: catch AI scraping RIS directly via curl/wget or via
       # `python -c "import requests; requests.get('https://ris.bka.gv.at/…')"`.
       # All cdx-at workflows go through the binary; raw HTTP to RIS is
