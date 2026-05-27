@@ -305,6 +305,9 @@ enum TabularCommands {
     Start {
         /// Folder path (sandbox path)
         folder: String,
+        /// Block until the extraction reaches DONE or FAILED instead of returning immediately
+        #[arg(long, default_value = "false")]
+        wait: bool,
     },
     /// Get extraction results (flattened rows)
     Results {
@@ -512,7 +515,9 @@ fn main() {
             TabularCommands::RemoveColumn { folder, column_id } => {
                 commands::tabular::remove_column(&client, &folder, &column_id, format)
             }
-            TabularCommands::Start { folder } => commands::tabular::start(&client, &folder, format),
+            TabularCommands::Start { folder, wait } => {
+                commands::tabular::start(&client, &folder, wait, format)
+            }
             TabularCommands::Results { folder } => {
                 commands::tabular::results(&client, &folder, format)
             }
