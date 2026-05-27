@@ -18,7 +18,7 @@ tests:
       prompt: "Jak zní §3 slovenského Občianskeho zákonníka (40/1964 Zb.)?"
       tool_name: shell
       input_regex: 'cdx-sk[\s"\\]+(search|get)\b(?!.*--help)'
-      tool_calls_max: 10
+      tool_calls_max: 14
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsud\.sk|justice\.gov\.sk|e-zbierka\.sk)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

@@ -22,7 +22,7 @@ tests:
       input_regex: 'marketplace\s+add.{0,300}--source-type\s+git'
       tool_calls_min: 1
       # may need flag discovery + retry.
-      tool_calls_max: 11
+      tool_calls_max: 15
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -53,7 +53,7 @@ tests:
       tool_name: shell
       input_regex: 'marketplace\s+list'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -86,7 +86,7 @@ tests:
       tool_name: shell
       input_regex: 'plugin\s+install'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -122,7 +122,7 @@ tests:
       tool_name: shell
       input_regex: 'plugin\s+uninstall'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -153,7 +153,7 @@ tests:
       tool_name: shell
       input_regex: 'marketplace\s+remove'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

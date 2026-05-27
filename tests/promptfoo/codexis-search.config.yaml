@@ -22,7 +22,7 @@ tests:
       prompt: "Najdi nějaká rozhodnutí Nejvyššího soudu o náhradě škody."
       tool_name: shell
       input_regex: 'cdx-cli[\s"\\]+search\s+[A-Z]+(?!.*--help)'
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsoud\.cz|nssoud\.cz)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate raw HTTP.

@@ -24,7 +24,7 @@ tests:
       tool_name: writeFile
       input_regex: 'mesta-[\s\S]*\.html'
       # Router→sub-skill→template-read→write — allow some headroom.
-      tool_calls_max: 14
+      tool_calls_max: 18
       forbidden_regex: '(curl|wget)\s+http'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

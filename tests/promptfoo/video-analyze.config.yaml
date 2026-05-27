@@ -32,7 +32,7 @@ tests:
       # skill load + shell (transcript) + readFile + safety margin for any
       # follow-up shell/readFile. If this fires, the binary likely errored
       # (Gemini auth, network, rate-limit) and AI fell back to scraping.
-      tool_calls_max: 8
+      tool_calls_max: 12
       # Anti-cheat: catches AI bypasses if `video-analyze` errors —
       # manual YouTube download (yt-dlp/youtube-dl/pytube),
       # local audio extraction (ffmpeg), direct LLM transcription

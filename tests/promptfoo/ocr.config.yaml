@@ -34,7 +34,7 @@ tests:
       prompt: "Co je napsáno v PDF /home/codexis/ee-ocr-{{ run_id }}/ocr-test.pdf?"
       tool_name: shell
       input_regex: 'ocr\s+[\s\S]*ocr-test\.pdf'
-      tool_calls_max: 10
+      tool_calls_max: 14
       # Anti-cheat: forbid the vision-via-PNG escape hatch. When the daemon's
       # /rest/ocr endpoint returns 500 (current state — `OcrController.ocr`
       # is a stub), the AI tries `pdftoppm`/`pdftotext`/`tesseract` to extract

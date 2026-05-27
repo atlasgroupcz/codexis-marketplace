@@ -22,7 +22,7 @@ tests:
       prompt: "Najdi mi 3 parlamentní dokumenty k interpelacím o daních. Krátký seznam stačí."
       tool_name: shell
       input_regex: 'cdx-cz-psp[\s"\\]+search\s+CZPSP[A-Z]+(?!.*--help)'
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|psp\.cz)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

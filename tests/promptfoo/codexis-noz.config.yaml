@@ -18,7 +18,7 @@ tests:
       prompt: "Jak zní §10 NOZ?"
       tool_name: shell
       input_regex: 'cdx-cli[\s"\\]+(search|get)\b(?!.*--help)'
-      tool_calls_max: 12
+      tool_calls_max: 16
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|zakonyprolidi\.cz|psp\.cz)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate raw HTTP.

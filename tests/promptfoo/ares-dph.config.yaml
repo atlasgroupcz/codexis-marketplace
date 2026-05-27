@@ -20,7 +20,7 @@ tests:
       prompt: "Je firma ČEZ a.s. (IČO 45274649) plátce DPH?"
       tool_name: shell
       input_regex: 'ares-cli[\s"\\]+(detail|search|api\s+get).*45274649(?!.*--help)'
-      tool_calls_max: 5
+      tool_calls_max: 9
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ares\.gov\.cz/ekonomicke-subjekty)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

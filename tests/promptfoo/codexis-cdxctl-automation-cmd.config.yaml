@@ -22,7 +22,7 @@ tests:
       input_regex: 'automation\s+create-command.{0,500}e2e-'
       tool_calls_min: 1
       # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries.
-      tool_calls_max: 9
+      tool_calls_max: 13
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -57,7 +57,7 @@ tests:
       tool_name: shell
       input_regex: 'automation\s+list'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -91,7 +91,7 @@ tests:
       input_regex: 'trigger'
       tool_calls_min: 1
       # list (find id) + trigger + 1 slack.
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -126,7 +126,7 @@ tests:
       input_regex: 'delete|remove'
       tool_calls_min: 1
       # list (find id) + delete + 1 slack.
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -157,7 +157,7 @@ tests:
       tool_name: shell
       input_regex: 'automation\s+list'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

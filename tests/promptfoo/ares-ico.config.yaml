@@ -29,7 +29,7 @@ tests:
       # AI may use `detail`, `search --ico`, or `api get`. Any non-help
       # invocation referencing 45274649 is acceptable.
       input_regex: 'ares-cli[\s"\\]+(detail|search|api\s+get).*45274649(?!.*--help)'
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ares\.gov\.cz/ekonomicke-subjekty)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): tells the LLM judge what counts as

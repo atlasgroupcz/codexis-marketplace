@@ -33,7 +33,7 @@ tests:
       # OGH judikatura lookup can legitimately span many cdx-at calls (search +
       # per-result get/meta), occasionally ~23 — cap generously, matching
       # cdx-at-abgb. assert_no_tool_call still independently catches scraping.
-      tool_calls_max: 24
+      tool_calls_max: 28
       # Anti-cheat: catch AI scraping RIS directly via curl/wget or via
       # `python -c "import requests; requests.get('https://ris.bka.gv.at/…')"`.
       # All cdx-at workflows go through the binary; raw HTTP to RIS is

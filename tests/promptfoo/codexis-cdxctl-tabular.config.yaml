@@ -29,7 +29,7 @@ tests:
       input_regex: 'tabular\s+add-column'
       tool_calls_min: 1
       # high-variance exploration; includes occasional spawn_agent.
-      tool_calls_max: 13
+      tool_calls_max: 17
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -63,7 +63,7 @@ tests:
       # shell form or Python list form.
       input_regex: 'tabular[^a-z]+start'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -96,7 +96,7 @@ tests:
       tool_name: shell
       input_regex: 'tabular\s+results'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

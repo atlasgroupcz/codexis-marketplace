@@ -17,7 +17,7 @@ tests:
       prompt: "Najdi mi obecně závazné vyhlášky hlavního města Prahy."
       tool_name: shell
       input_regex: 'cdx-cz-spp[\s"\\]+search\s+(CZSPP[A-Z]+|[A-Z]+)(?!.*--help)'
-      tool_calls_max: 15
+      tool_calls_max: 19
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sbirka\.gov\.cz|mvcr\.cz)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

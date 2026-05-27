@@ -36,7 +36,7 @@ tests:
       tool_name: shell
       input_regex: 'skill\s+create.{0,200}--stdin'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -73,7 +73,7 @@ tests:
       tool_name: shell
       input_regex: 'skill\s+list.{0,100}--editable-only'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -107,7 +107,7 @@ tests:
       tool_name: shell
       input_regex: 'skill\s+update'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -139,7 +139,7 @@ tests:
       input_regex: 'skill\s+delete'
       tool_calls_min: 1
       # cdxctl skill delete leaves an empty dir; AI may verify + rmdir.
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

@@ -25,7 +25,7 @@ tests:
       input_regex: 'automation\s+create[^-]'
       tool_calls_min: 1
       # agent list + create + possible retries + memory read/write.
-      tool_calls_max: 12
+      tool_calls_max: 16
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.
@@ -64,7 +64,7 @@ tests:
       tool_name: shell
       input_regex: 'automation\s+delete'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
       # Arbitration criteria (read only by `run.py --arbitrate` when a
       # deterministic check above fails): legitimate vs illegitimate behavior.

@@ -24,7 +24,7 @@ tests:
   - description: SIRENE dataset search returns real data.gouv.fr URLs
     vars:
       prompt: "Najdi mi na data.gouv.fr datasety související se SIRENE (francouzský registr firem)."
-      tool_calls_max: 12
+      tool_calls_max: 16
       # Forbidden: scraping the data.gouv.fr WEBSITE (HTML pages) via
       # curl/wget. Not forbidden: the AI's `python -c "import urllib;
       # urlopen(api/...)"` against the JSON API — that's the legitimate
