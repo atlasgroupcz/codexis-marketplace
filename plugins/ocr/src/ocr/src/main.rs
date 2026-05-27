@@ -157,11 +157,34 @@ fn main() {
         eprintln!("error: ocr response has no resultPath: {}", resp);
         std::process::exit(1);
     }
-    match fs::read_to_string(&result_path) {
-        Ok(text) => print!("{}", text),
-        Err(err) => {
-            eprintln!("error: cannot read OCR result {}: {}", result_path, err);
-            std::process::exit(1);
+    // resultPath is either a ZIP of per-page markdown (<doc>_page_N.md) or a plain
+    // text/markdown file. Stream the recognized text to stdout either way. Read as
+    // bytes (the result may be non-UTF-8) and write through unchanged.
+    let bytes = if result_path.ends_with(".zip") {
+        match Command::new("unzip").args(["-p", &result_path]).output() {
+            Ok(o) if o.status.success() => o.stdout,
+            Ok(o) => {
+                eprintln!(
+                    "error: could not unzip OCR result {}: {}",
+                    result_path,
+                    String::from_utf8_lossy(&o.stderr)
+                );
+                std::process::exit(1);
+            }
+            Err(err) => {
+                eprintln!("error: failed to run unzip on {}: {}", result_path, err);
+                std::process::exit(1);
+            }
         }
-    }
+    } else {
+        match fs::read(&result_path) {
+            Ok(b) => b,
+            Err(err) => {
+                eprintln!("error: cannot read OCR result {}: {}", result_path, err);
+                std::process::exit(1);
+            }
+        }
+    };
+    use std::io::Write;
+    let _ = std::io::stdout().write_all(&bytes);
 }
