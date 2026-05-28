@@ -11,6 +11,12 @@ const SEND_PATH: &str = "/rest/v1/plugin/email/send";
 
 #[derive(Serialize)]
 struct SendPayload<'a> {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    to: Vec<&'a str>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    cc: Vec<&'a str>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    bcc: Vec<&'a str>,
     subject: &'a str,
     #[serde(rename = "bodyText")]
     body_text: &'a str,
@@ -19,8 +25,12 @@ struct SendPayload<'a> {
     body_html: Option<&'a str>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn send(
     client: &GraphQLClient,
+    to: &[String],
+    cc: &[String],
+    bcc: &[String],
     subject: &str,
     body: Option<&str>,
     body_file: Option<&str>,
@@ -36,6 +46,9 @@ pub fn send(
     let body_owned = resolve_body(body, body_file)?;
 
     let payload = SendPayload {
+        to: to.iter().map(String::as_str).collect(),
+        cc: cc.iter().map(String::as_str).collect(),
+        bcc: bcc.iter().map(String::as_str).collect(),
         subject,
         body_text: &body_owned,
         body_html,
@@ -100,15 +113,38 @@ mod tests {
     }
 
     #[test]
-    fn serializes_payload_without_optional_fields_when_unset() {
+    fn omits_recipient_lists_when_empty() {
         let payload = SendPayload {
+            to: Vec::new(),
+            cc: Vec::new(),
+            bcc: Vec::new(),
             subject: "hi",
             body_text: "body",
             body_html: None,
         };
         let json = serde_json::to_string(&payload).expect("serialize");
+        assert!(!json.contains("\"to\""), "empty to list should be omitted: {json}");
+        assert!(!json.contains("\"cc\""), "empty cc list should be omitted: {json}");
+        assert!(!json.contains("\"bcc\""), "empty bcc list should be omitted: {json}");
         assert!(!json.contains("bodyHtml"), "bodyHtml should be omitted when None");
         assert!(json.contains("\"subject\":\"hi\""));
         assert!(json.contains("\"bodyText\":\"body\""));
+    }
+
+    #[test]
+    fn serializes_explicit_recipients() {
+        let payload = SendPayload {
+            to: vec!["alice@example.com", "bob@example.com"],
+            cc: vec!["team@example.com"],
+            bcc: vec!["audit@example.com"],
+            subject: "hi",
+            body_text: "body",
+            body_html: Some("<p>body</p>"),
+        };
+        let json = serde_json::to_string(&payload).expect("serialize");
+        assert!(json.contains("\"to\":[\"alice@example.com\",\"bob@example.com\"]"));
+        assert!(json.contains("\"cc\":[\"team@example.com\"]"));
+        assert!(json.contains("\"bcc\":[\"audit@example.com\"]"));
+        assert!(json.contains("\"bodyHtml\":\"<p>body</p>\""));
     }
 }

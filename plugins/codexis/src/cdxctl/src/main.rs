@@ -358,8 +358,17 @@ enum NotificationCommands {
 
 #[derive(Subcommand)]
 enum EmailCommands {
-    /// Send an email to the signed-in user (recipient is enforced by the daemon from JWT)
+    /// Send an email; omit --to to default to the signed-in user (recipient from JWT)
     Send {
+        /// Recipient email address (repeatable); when omitted the daemon falls back to the signed-in user
+        #[arg(long)]
+        to: Vec<String>,
+        /// Optional CC recipient (repeatable)
+        #[arg(long)]
+        cc: Vec<String>,
+        /// Optional BCC recipient (repeatable)
+        #[arg(long)]
+        bcc: Vec<String>,
         /// Subject line
         #[arg(long)]
         subject: String,
@@ -569,6 +578,9 @@ fn main() {
             }
             NotificationCommands::Email { command } => match command {
                 EmailCommands::Send {
+                    to,
+                    cc,
+                    bcc,
                     subject,
                     body,
                     body_file,
@@ -576,6 +588,9 @@ fn main() {
                     attachments,
                 } => commands::notification_email::send(
                     &client,
+                    &to,
+                    &cc,
+                    &bcc,
                     &subject,
                     body.as_deref(),
                     body_file.as_deref(),
