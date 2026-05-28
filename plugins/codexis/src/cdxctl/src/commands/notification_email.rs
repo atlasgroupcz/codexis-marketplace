@@ -11,11 +11,6 @@ const SEND_PATH: &str = "/rest/v1/plugin/email/send";
 
 #[derive(Serialize)]
 struct SendPayload<'a> {
-    to: &'a [String],
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    cc: Vec<&'a str>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    bcc: Vec<&'a str>,
     subject: &'a str,
     #[serde(rename = "bodyText")]
     body_text: &'a str,
@@ -24,12 +19,8 @@ struct SendPayload<'a> {
     body_html: Option<&'a str>,
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn send(
     client: &GraphQLClient,
-    to: &[String],
-    cc: &[String],
-    bcc: &[String],
     subject: &str,
     body: Option<&str>,
     body_file: Option<&str>,
@@ -37,24 +28,14 @@ pub fn send(
     attachments: &[String],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    if to.is_empty() {
-        return Err(CdxctlError::Parse(
-            "at least one --to recipient is required".into(),
-        ));
-    }
     if body.is_some() && body_file.is_some() {
         return Err(CdxctlError::Parse(
             "use either --body or --body-file, not both".into(),
         ));
     }
     let body_owned = resolve_body(body, body_file)?;
-    let cc_refs: Vec<&str> = cc.iter().map(String::as_str).collect();
-    let bcc_refs: Vec<&str> = bcc.iter().map(String::as_str).collect();
 
     let payload = SendPayload {
-        to,
-        cc: cc_refs,
-        bcc: bcc_refs,
         subject,
         body_text: &body_owned,
         body_html,
@@ -121,18 +102,13 @@ mod tests {
     #[test]
     fn serializes_payload_without_optional_fields_when_unset() {
         let payload = SendPayload {
-            to: &vec!["a@b".to_string()],
-            cc: Vec::new(),
-            bcc: Vec::new(),
             subject: "hi",
             body_text: "body",
             body_html: None,
         };
         let json = serde_json::to_string(&payload).expect("serialize");
-        assert!(!json.contains("cc"), "empty cc list should be omitted");
-        assert!(!json.contains("bcc"), "empty bcc list should be omitted");
         assert!(!json.contains("bodyHtml"), "bodyHtml should be omitted when None");
-        assert!(json.contains("\"to\":[\"a@b\"]"));
+        assert!(json.contains("\"subject\":\"hi\""));
         assert!(json.contains("\"bodyText\":\"body\""));
     }
 }

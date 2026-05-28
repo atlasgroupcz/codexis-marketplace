@@ -358,17 +358,8 @@ enum NotificationCommands {
 
 #[derive(Subcommand)]
 enum EmailCommands {
-    /// Send an email through the daemon's system-default SMTP channel
+    /// Send an email to the signed-in user (recipient is enforced by the daemon from JWT)
     Send {
-        /// Recipient email address (repeat for multiple)
-        #[arg(long, required = true)]
-        to: Vec<String>,
-        /// Optional CC recipient (repeatable)
-        #[arg(long)]
-        cc: Vec<String>,
-        /// Optional BCC recipient (repeatable)
-        #[arg(long)]
-        bcc: Vec<String>,
         /// Subject line
         #[arg(long)]
         subject: String,
@@ -578,9 +569,6 @@ fn main() {
             }
             NotificationCommands::Email { command } => match command {
                 EmailCommands::Send {
-                    to,
-                    cc,
-                    bcc,
                     subject,
                     body,
                     body_file,
@@ -588,9 +576,6 @@ fn main() {
                     attachments,
                 } => commands::notification_email::send(
                     &client,
-                    &to,
-                    &cc,
-                    &bcc,
                     &subject,
                     body.as_deref(),
                     body_file.as_deref(),
@@ -658,10 +643,6 @@ mod tests {
             "notification",
             "email",
             "send",
-            "--to",
-            "alice@example.com",
-            "--to",
-            "bob@example.com",
             "--subject",
             "hi",
             "--body",
@@ -677,7 +658,6 @@ mod tests {
                     NotificationCommands::Email {
                         command:
                             EmailCommands::Send {
-                                to,
                                 subject,
                                 body,
                                 attachments,
@@ -685,7 +665,6 @@ mod tests {
                             },
                     },
             } => {
-                assert_eq!(to, vec!["alice@example.com", "bob@example.com"]);
                 assert_eq!(subject, "hi");
                 assert_eq!(body.as_deref(), Some("hello"));
                 assert_eq!(attachments, vec!["/tmp/a.txt".to_string()]);
