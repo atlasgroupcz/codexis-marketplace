@@ -7,14 +7,10 @@ use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-const CHANNELS_PATH: &str = "/rest/v1/channels/email";
-const SEND_PATH: &str = "/rest/v1/channels/email/send";
+const SEND_PATH: &str = "/rest/v1/plugin/email/send";
 
 #[derive(Serialize)]
 struct SendPayload<'a> {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "channelId")]
-    channel_id: Option<&'a str>,
     to: &'a [String],
     #[serde(skip_serializing_if = "Vec::is_empty")]
     cc: Vec<&'a str>,
@@ -28,23 +24,6 @@ struct SendPayload<'a> {
     body_html: Option<&'a str>,
 }
 
-pub fn channels_list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
-    let data = client.rest_get(CHANNELS_PATH)?;
-    print_output(&data, format);
-    Ok(())
-}
-
-pub fn channels_test(
-    client: &GraphQLClient,
-    id: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
-    let path = format!("{CHANNELS_PATH}/{id}/test");
-    let data = client.rest_post_empty(&path)?;
-    print_output(&data, format);
-    Ok(())
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn send(
     client: &GraphQLClient,
@@ -55,7 +34,6 @@ pub fn send(
     body: Option<&str>,
     body_file: Option<&str>,
     body_html: Option<&str>,
-    channel_id: Option<&str>,
     attachments: &[String],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
@@ -74,7 +52,6 @@ pub fn send(
     let bcc_refs: Vec<&str> = bcc.iter().map(String::as_str).collect();
 
     let payload = SendPayload {
-        channel_id,
         to,
         cc: cc_refs,
         bcc: bcc_refs,
@@ -144,7 +121,6 @@ mod tests {
     #[test]
     fn serializes_payload_without_optional_fields_when_unset() {
         let payload = SendPayload {
-            channel_id: None,
             to: &vec!["a@b".to_string()],
             cc: Vec::new(),
             bcc: Vec::new(),
@@ -153,7 +129,6 @@ mod tests {
             body_html: None,
         };
         let json = serde_json::to_string(&payload).expect("serialize");
-        assert!(!json.contains("channelId"), "channelId should be omitted when None");
         assert!(!json.contains("cc"), "empty cc list should be omitted");
         assert!(!json.contains("bcc"), "empty bcc list should be omitted");
         assert!(!json.contains("bodyHtml"), "bodyHtml should be omitted when None");

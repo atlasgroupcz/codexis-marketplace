@@ -32,24 +32,7 @@ impl GraphQLClient {
             .to_string()
     }
 
-    /// GET a REST endpoint and decode JSON.
-    pub fn rest_get(&self, path: &str) -> Result<Value, CdxctlError> {
-        let url = format!("{}{}", self.rest_base_url(), path);
-        let response = self
-            .client
-            .get(&url)
-            .header("Authorization", &self.auth)
-            .header("Accept", "application/json")
-            .send()?;
-        let status = response.status();
-        let text = response.text()?;
-        if !status.is_success() {
-            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
-        }
-        serde_json::from_str(&text).map_err(CdxctlError::from)
-    }
-
-    /// POST a multipart body (used for /rest/v1/channels/email/send).
+    /// POST a multipart body (used for /rest/v1/plugin/email/send).
     pub fn rest_post_multipart(&self, path: &str, form: Form) -> Result<Value, CdxctlError> {
         let url = format!("{}{}", self.rest_base_url(), path);
         let response = self
@@ -58,23 +41,6 @@ impl GraphQLClient {
             .header("Authorization", &self.auth)
             .header("Accept", "application/json")
             .multipart(form)
-            .send()?;
-        let status = response.status();
-        let text = response.text()?;
-        if !status.is_success() {
-            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
-        }
-        serde_json::from_str(&text).map_err(CdxctlError::from)
-    }
-
-    /// POST a JSON-less endpoint (no body), used for /test triggers.
-    pub fn rest_post_empty(&self, path: &str) -> Result<Value, CdxctlError> {
-        let url = format!("{}{}", self.rest_base_url(), path);
-        let response = self
-            .client
-            .post(&url)
-            .header("Authorization", &self.auth)
-            .header("Accept", "application/json")
             .send()?;
         let status = response.status();
         let text = response.text()?;

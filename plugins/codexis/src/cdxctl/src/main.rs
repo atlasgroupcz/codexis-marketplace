@@ -358,7 +358,7 @@ enum NotificationCommands {
 
 #[derive(Subcommand)]
 enum EmailCommands {
-    /// Send an email through a notification channel
+    /// Send an email through the daemon's system-default SMTP channel
     Send {
         /// Recipient email address (repeat for multiple)
         #[arg(long, required = true)]
@@ -381,29 +381,9 @@ enum EmailCommands {
         /// Optional HTML body (sent alongside text body for multipart/alternative)
         #[arg(long)]
         body_html: Option<String>,
-        /// Channel id (omit to use the daemon system-default)
-        #[arg(long)]
-        channel_id: Option<String>,
         /// Attach a local file (repeatable)
         #[arg(long = "attach")]
         attachments: Vec<String>,
-    },
-    /// Manage notification channels for email
-    Channels {
-        #[command(subcommand)]
-        command: EmailChannelsCommands,
-    },
-}
-
-#[derive(Subcommand)]
-enum EmailChannelsCommands {
-    /// List configured email channels (system default + user-owned)
-    List,
-    /// Send a canned probe email through a specific channel
-    Test {
-        /// Channel id
-        #[arg(long)]
-        id: String,
     },
 }
 
@@ -605,7 +585,6 @@ fn main() {
                     body,
                     body_file,
                     body_html,
-                    channel_id,
                     attachments,
                 } => commands::notification_email::send(
                     &client,
@@ -616,18 +595,9 @@ fn main() {
                     body.as_deref(),
                     body_file.as_deref(),
                     body_html.as_deref(),
-                    channel_id.as_deref(),
                     &attachments,
                     format,
                 ),
-                EmailCommands::Channels { command } => match command {
-                    EmailChannelsCommands::List => {
-                        commands::notification_email::channels_list(&client, format)
-                    }
-                    EmailChannelsCommands::Test { id } => {
-                        commands::notification_email::channels_test(&client, &id, format)
-                    }
-                },
             },
         },
     };
@@ -724,26 +694,4 @@ mod tests {
         }
     }
 
-    #[test]
-    fn parses_notification_email_channels_list_command() {
-        let cli = Cli::try_parse_from([
-            "cdxctl",
-            "notification",
-            "email",
-            "channels",
-            "list",
-        ])
-        .expect("notification email channels list should parse");
-
-        assert!(matches!(
-            cli.command,
-            Commands::Notification {
-                command: NotificationCommands::Email {
-                    command: EmailCommands::Channels {
-                        command: EmailChannelsCommands::List
-                    }
-                }
-            }
-        ));
-    }
 }
