@@ -269,7 +269,7 @@ cdxctl notification confirm <id>
 
 ### Outbound email
 
-Send an email. Omit `--to` to let the daemon default to the **signed-in user** (recipient is taken from the JWT). Provide `--to` / `--cc` / `--bcc` (each repeatable) to target additional addresses. Subject + body are required, attachments optional. Every send is recorded with a `deliveryId` in the JSONL audit log at `~/.cdx/notifications/email-deliveries/YYYY-MM-DD.jsonl` — don't use this to spam arbitrary recipients.
+Send an email. Omit `--to` to let the daemon default to the **signed-in user** (recipient is taken from the JWT). Provide `--to` / `--cc` / `--bcc` (each repeatable) to target additional addresses. Subject + body are required, attachments optional.
 
 ```bash
 # Default: mail yourself
