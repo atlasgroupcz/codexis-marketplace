@@ -3,7 +3,7 @@
   "kind": "resource",
   "format": "openapi-fragment",
   "apiDocsUrl": "http://localhost:8081/v3/api-docs",
-  "fetchedAt": "2026-03-23T00:00:00Z",
+  "fetchedAt": "2026-05-27T00:00:00Z",
   "cdxPatterns": [
     "cdx-at://doc/<DOC_ID>/meta"
   ],
@@ -12,7 +12,7 @@
       "path": "/api/AT/history/doc/{docId}/meta",
       "method": "get",
       "summary": "Get document metadata",
-      "description": "Retrieve metadata for an Austrian consolidated federal law norm (Bundesnormen) by document ID. Returns the raw DomainMetadata object.",
+      "description": "Retrieve metadata for an Austrian consolidated federal law norm (Bundesnormen) by document ID. Returns a RisMetaResponse envelope: flat scalar metadata (all array-valued fields plus assets and schemaVersion stripped), relationCounts (a bare map of RelationType -> count), and assets each carrying a download_url.",
       "operationId": "getMeta_4",
       "parameters": [
         {
@@ -26,10 +26,10 @@
       ],
       "responses": {
         "200": {
-          "description": "Document metadata",
+          "description": "Document metadata envelope",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RisHistoryMetadata" }
+              "schema": { "$ref": "#/components/schemas/RisMetaResponse" }
             }
           }
         }
@@ -38,11 +38,24 @@
   ],
   "components": {
     "schemas": {
-      "RisHistoryMetadata": {
+      "RisMetaResponse": {
         "type": "object",
-        "description": "Metadata for Austrian consolidated federal law norms (Bundesnormen)",
+        "description": "Metadata envelope for one Austrian consolidated federal law norm (History). Null fields are omitted (NON_NULL).",
         "properties": {
-          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "docId": { "type": "string", "description": "Display document ID", "example": "ATHI1234" },
+          "metadata": { "$ref": "#/components/schemas/RisHistoryMetadataFlat" },
+          "relationCounts": { "$ref": "#/components/schemas/RisHistoryRelationCounts" },
+          "assets": {
+            "type": "array",
+            "description": "Attachment files with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "RisHistoryMetadataFlat": {
+        "type": "object",
+        "description": "Flat scalar metadata for an Austrian consolidated federal law norm (Bundesnormen). Array-valued fields (indices, note, amendments, annotation, keywords), assets, and schemaVersion are stripped. Null fields are omitted.",
+        "properties": {
           "url": { "type": "string", "description": "Source URL" },
           "documentNumber": { "type": "string", "description": "Document number" },
           "application": { "type": "string", "description": "Application" },
@@ -59,49 +72,29 @@
           "effectiveDate": { "type": "string", "description": "Effective date" },
           "expiryDate": { "type": "string", "description": "Expiry date" },
           "abbreviation": { "type": "string", "description": "Law abbreviation" },
-          "indices": {
-            "type": "array",
-            "description": "Subject indices",
-            "items": { "type": "string" }
-          },
-          "note": {
-            "type": "array",
-            "description": "Notes",
-            "items": { "type": "string" }
-          },
-          "amendments": {
-            "type": "array",
-            "description": "Amendment references (BGBl numbers)",
-            "items": { "type": "string" }
-          },
-          "annotation": {
-            "type": "array",
-            "description": "Annotations",
-            "items": { "type": "string" }
-          },
-          "keywords": {
-            "type": "array",
-            "description": "Keywords",
-            "items": { "type": "string" }
-          },
-          "lawNumber": { "type": "string", "description": "Law number" },
+          "lawNumber": { "type": "string", "description": "Law number (Gesetzesnummer)" },
           "fullLegislationUrl": { "type": "string", "description": "Full legislation URL" },
           "authority": { "type": "string", "description": "Issuing authority" },
           "publishedDate": { "type": "string", "description": "Published date" },
-          "lastModified": { "type": "string", "description": "Last modified date" },
-          "assets": {
-            "type": "array",
-            "description": "Attachments",
-            "items": { "$ref": "#/components/schemas/Asset" }
-          }
+          "lastModified": { "type": "string", "description": "Last modified date" }
         }
       },
-      "Asset": {
+      "RisHistoryRelationCounts": {
         "type": "object",
-        "description": "Asset file reference",
+        "description": "Counts of related documents grouped by relation type. Bare map keyed by RelationType enum name; History always emits these keys (0 when none).",
         "properties": {
-          "file": { "type": "string", "description": "Internal filename" },
-          "originalName": { "type": "string", "description": "Original filename from source" }
+          "CITING_DECISION": { "type": "integer", "description": "Court decisions citing this law" },
+          "RELATED_BGBL": { "type": "integer", "description": "Related BGBl documents (by ELI)" },
+          "CITED_LAW": { "type": "integer", "description": "Laws cited in this document (by Gesetzesnummer)" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-at:// link to download this attachment", "example": "cdx-at://doc/ATHI1234/attachment/content_1.pdf" }
         }
       }
     }

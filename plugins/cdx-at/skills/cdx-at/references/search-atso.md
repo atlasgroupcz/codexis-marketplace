@@ -40,3 +40,19 @@ Integer, 0-based. Default: 0.
 
 ## limit
 Integer, 1-100. Default: 20.
+
+## Document retrieval
+
+```
+cdx-at get cdx-at://doc/ATSO1234/meta
+cdx-at get cdx-at://doc/ATSO1234/text
+cdx-at get cdx-at://doc/ATSO1234/attachment/content_1.pdf
+```
+
+`/meta` returns a `RisMetaResponse` envelope, not the raw metadata:
+- `docId`
+- `metadata` — flat scalar fields only (array-valued fields, plus `assets` and `schemaVersion`, are stripped)
+- `relationCounts` — bare map keyed by relation type: `CITED_LAW`, `RELATED_BGBL`
+- `assets[]` — each with `file`, `original_name`, `download_url` (a `cdx-at://doc/<docId>/attachment/<file>` link)
+
+(Sonstige has no natural-key resolver endpoint.)
