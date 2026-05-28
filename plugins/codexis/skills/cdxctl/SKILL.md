@@ -267,6 +267,17 @@ cdxctl notification confirm <id>
 
 **File format:** Notifications are JSON files at `~/.cdx/notifications/YYYY/MM/DD/HH/n_{timestamp_ms}_{uuid}.json` with fields: `message` (required), `action`, `link`, `seen`, `confirmed`, plus any custom fields.
 
+### Outbound email
+
+Send an email to the **signed-in user** (recipient is taken from the JWT, callers cannot target anyone else). Subject + body are required, attachments optional.
+
+```bash
+cdxctl notification email send \
+    --subject "Export ready" \
+    --body "Your report finished generating." \
+    --attach /tmp/report.xlsx
+```
+
 ## Output
 
 - **Default:** JSON to stdout (machine-parseable)
