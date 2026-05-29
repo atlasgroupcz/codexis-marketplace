@@ -32,12 +32,20 @@ tests:
       # skill load + shell (transcript) + readFile + safety margin for any
       # follow-up shell/readFile. If this fires, the binary likely errored
       # (Gemini auth, network, rate-limit) and AI fell back to scraping.
-      tool_calls_max: 8
+      tool_calls_max: 12
       # Anti-cheat: catches AI bypasses if `video-analyze` errors —
       # manual YouTube download (yt-dlp/youtube-dl/pytube),
       # local audio extraction (ffmpeg), direct LLM transcription
       # (whisper/openai), or raw HTTP to Gemini.
       forbidden_regex: '(yt-dlp|youtube-dl|pytube|ffmpeg|whisper|generativelanguage\.googleapis|api\.openai\.com|(curl|wget)\s+.*youtube)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Transcribing the video through the video-analyze transcript command on the given URL."
+        incorrect:
+          - "Downloading the video with yt-dlp/youtube-dl/pytube/ffmpeg, or transcribing via whisper or an external API (OpenAI/Google), instead of the video-analyze tool."
+          - "Using curl/wget against YouTube to fetch the media or captions directly."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

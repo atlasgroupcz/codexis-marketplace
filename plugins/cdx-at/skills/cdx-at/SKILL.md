@@ -109,6 +109,19 @@ Every document reference in user-facing output MUST be a clickable attachment li
 - Get the filename from `/meta` assets. No page-level data is available in Austrian domains, so link without `#page`.
 - If `/meta` hasn't been fetched yet, fetch it to get the attachment filename before presenting the document to the user.
 
+### Never Scrape RIS — cdx-at Is the Only Access Path
+
+`cdx-at` is the complete, authoritative interface to RIS. **Never** fetch from or search
+`ris.bka.gv.at` (or any web search engine) directly to find, open, or "verify" a document:
+
+- Do NOT use `curl`, `wget`, `requests`, `urllib`, a headless browser, or DuckDuckGo/Google
+  `site:ris.bka.gv.at` queries.
+- `cdx-at search` finds documents; `cdx-at get <cdx-at://…>` fetches their content and `/meta`.
+  Trust those results — the `cdx-at://` link you build from them resolves to the correct RIS URL
+  at render time. There is no need to confirm it against the live site.
+- If `cdx-at search` returns no hit, refine the query (try ATBR/ATHI/ATJD, abbreviations,
+  gazette numbers) — do not fall back to scraping.
+
 ## Reference Files
 
 - **`references/search-atjd.md`** — Austrian case law search (Judikatur): courts, decision types, ECLI, case numbers

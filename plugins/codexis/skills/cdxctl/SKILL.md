@@ -215,8 +215,11 @@ cdxctl tabular add-column ~/invoices --name "Priority" --col-type tag \
 # Remove a column by ID (from status output)
 cdxctl tabular remove-column ~/invoices --column-id <id>
 
-# Start the extraction (processes all files in folder)
-cdxctl tabular start ~/invoices
+# Start the extraction (processes all files in folder).
+# Use --wait to block until the extraction reaches DONE (or FAILED) — it polls
+# for you. Never hand-roll a status-polling shell loop; the terminal field is
+# `status` ("DONE"/"FAILED"), not `state`.
+cdxctl tabular start ~/invoices --wait
 
 # Get results (flattened rows with column values)
 cdxctl tabular results ~/invoices
@@ -226,7 +229,7 @@ cdxctl tabular results ~/invoices
 
 **Tag/tags types** require `--option` flags in `value:COLOR` format. Available colors: RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, PINK, CYAN, TEAL, AMBER, EMERALD, INDIGO, VIOLET, FUCHSIA, ROSE, SKY, LIME, SLATE, GRAY, ZINC, NEUTRAL, STONE.
 
-**Workflow:** add columns → start → poll status/results until done.
+**Workflow:** add columns → `start --wait` (blocks until DONE) → results.
 
 ## Notifications
 

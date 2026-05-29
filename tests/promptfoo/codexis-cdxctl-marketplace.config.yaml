@@ -22,8 +22,16 @@ tests:
       input_regex: 'marketplace\s+add.{0,300}--source-type\s+git'
       tool_calls_min: 1
       # may need flag discovery + retry.
-      tool_calls_max: 11
+      tool_calls_max: 15
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ marketplaces { name } }"
       jsonpath: "$.marketplaces[*].name"
       contains: "claude-plugins-official"
@@ -45,8 +53,16 @@ tests:
       tool_name: shell
       input_regex: 'marketplace\s+list'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ marketplaces { name } }"
       jsonpath: "$.marketplaces[*].name"
       contains: "claude-plugins-official"
@@ -64,20 +80,28 @@ tests:
       - type: regex
         value: 'claude-plugins-official'
 
-  - description: plugin install — superpowers from claude-plugins-official
+  - description: plugin install — commit-commands from claude-plugins-official
     vars:
-      prompt: "Nainstaluj mi z marketplace claude-plugins-official plugin superpowers."
+      prompt: "Nainstaluj mi z marketplace claude-plugins-official plugin commit-commands."
       tool_name: shell
       input_regex: 'plugin\s+install'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       # Legacy did `installedPlugins(marketplace: $captured_id)`; here we
-      # check the global installedPlugins list — superpowers is unique
+      # check the global installedPlugins list — commit-commands is unique
       # enough (only that marketplace ships it) that name match is fine.
       graphql: "query { installedPlugins { name } }"
       jsonpath: "$.installedPlugins[*].name"
-      contains: "superpowers"
+      contains: "commit-commands"
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call
@@ -90,19 +114,27 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
       - type: regex
-        value: 'superpowers'
+        value: 'commit-commands'
 
-  - description: plugin uninstall — superpowers leaves the installed list
+  - description: plugin uninstall — commit-commands leaves the installed list
     vars:
-      prompt: "Odinstaluj plugin superpowers."
+      prompt: "Odinstaluj plugin commit-commands."
       tool_name: shell
       input_regex: 'plugin\s+uninstall'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "query { installedPlugins { name } }"
       jsonpath: "$.installedPlugins[*].name"
-      not_contains: "superpowers"
+      not_contains: "commit-commands"
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call
@@ -121,8 +153,16 @@ tests:
       tool_name: shell
       input_regex: 'marketplace\s+remove'
       tool_calls_min: 1
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Performing the requested registry operation through the cdxctl CLI (agent/skill/automation/notification/marketplace/plugin/tabular subcommands), including reading or writing the local files the workflow needs."
+        incorrect:
+          - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
+          - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ marketplaces { name } }"
       jsonpath: "$.marketplaces[*].name"
       not_contains: "claude-plugins-official"

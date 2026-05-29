@@ -114,16 +114,47 @@ pub fn remove_column(
 pub fn start(
     client: &GraphQLClient,
     folder: &str,
+    wait: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let id = folder_to_node_id(folder);
-    let data = client.execute(graphql::START_TABULAR_EXTRACTION, json!({ "id": id }))?;
-    let result = data
+    let started = client
+        .execute(graphql::START_TABULAR_EXTRACTION, json!({ "id": id.as_str() }))?
         .get("startTabularExtraction")
         .cloned()
         .unwrap_or(Value::Null);
-    print_output(&result, format);
-    Ok(())
+
+    if !wait {
+        print_output(&started, format);
+        return Ok(());
+    }
+
+    // Block until the extraction reaches a terminal state, so callers don't have
+    // to hand-roll a status-polling loop (and guess the status field name). The
+    // terminal status is `status: "DONE" | "FAILED"`. ~5 min cap at 2s intervals.
+    for _ in 0..150 {
+        let ext = client
+            .execute(graphql::GET_TABULAR_EXTRACTION, json!({ "id": id.as_str() }))?
+            .get("tabularExtraction")
+            .cloned()
+            .unwrap_or(Value::Null);
+        match ext.get("status").and_then(|s| s.as_str()) {
+            Some("DONE") => {
+                print_output(&ext, format);
+                return Ok(());
+            }
+            Some("FAILED") => {
+                print_output(&ext, format);
+                return Err(CdxctlError::GraphQL(vec![
+                    "tabular extraction FAILED".to_string(),
+                ]));
+            }
+            _ => std::thread::sleep(std::time::Duration::from_secs(2)),
+        }
+    }
+    Err(CdxctlError::GraphQL(vec![
+        "tabular extraction did not reach DONE within timeout".to_string(),
+    ]))
 }
 
 pub fn results(

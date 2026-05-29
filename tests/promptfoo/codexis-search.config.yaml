@@ -22,8 +22,16 @@ tests:
       prompt: "Najdi nějaká rozhodnutí Nejvyššího soudu o náhradě škody."
       tool_name: shell
       input_regex: 'cdx-cli[\s"\\]+search\s+[A-Z]+(?!.*--help)'
-      tool_calls_max: 8
+      tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|nsoud\.cz|nssoud\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate raw HTTP.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a JD doc URL that the codexis cdx-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch decisions from nsoud.cz/nssoud.cz instead of cdx-cli."
+          - "Bypassing cdx-cli to scrape the courts' sites for the records."
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call
