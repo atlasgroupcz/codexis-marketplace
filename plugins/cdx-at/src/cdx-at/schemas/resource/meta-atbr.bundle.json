@@ -3,7 +3,7 @@
   "kind": "resource",
   "format": "openapi-fragment",
   "apiDocsUrl": "http://localhost:8081/v3/api-docs",
-  "fetchedAt": "2026-03-23T00:00:00Z",
+  "fetchedAt": "2026-05-27T00:00:00Z",
   "cdxPatterns": [
     "cdx-at://doc/<DOC_ID>/meta"
   ],
@@ -12,7 +12,7 @@
       "path": "/api/AT/bundesrecht/doc/{docId}/meta",
       "method": "get",
       "summary": "Get document metadata",
-      "description": "Retrieve metadata for an Austrian federal legislation (BGBl) document by document ID. Returns the raw DomainMetadata object.",
+      "description": "Retrieve metadata for an Austrian federal legislation (BGBl) document by document ID. Returns a RisMetaResponse envelope: flat scalar metadata (all array-valued fields plus assets and schemaVersion stripped), relationCounts (a bare map of RelationType -> count), and assets each carrying a download_url.",
       "operationId": "getMeta",
       "parameters": [
         {
@@ -26,10 +26,10 @@
       ],
       "responses": {
         "200": {
-          "description": "Document metadata",
+          "description": "Document metadata envelope",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RisBundesrechtMetadata" }
+              "schema": { "$ref": "#/components/schemas/RisMetaResponse" }
             }
           }
         }
@@ -38,11 +38,24 @@
   ],
   "components": {
     "schemas": {
-      "RisBundesrechtMetadata": {
+      "RisMetaResponse": {
         "type": "object",
-        "description": "Metadata for Austrian federal legislation (BGBl) records",
+        "description": "Metadata envelope for one Austrian federal legislation (BGBl) document. Null fields are omitted (NON_NULL).",
         "properties": {
-          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "docId": { "type": "string", "description": "Display document ID", "example": "ATBR1234" },
+          "metadata": { "$ref": "#/components/schemas/RisBundesrechtMetadataFlat" },
+          "relationCounts": { "$ref": "#/components/schemas/RisBundesrechtRelationCounts" },
+          "assets": {
+            "type": "array",
+            "description": "Attachment files with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "RisBundesrechtMetadataFlat": {
+        "type": "object",
+        "description": "Flat scalar metadata for an Austrian federal legislation (BGBl) record. The array-valued field celexNumbers, assets, and schemaVersion are stripped. Null fields are omitted.",
+        "properties": {
           "url": { "type": "string", "description": "Source URL" },
           "documentNumber": { "type": "string", "description": "Document number" },
           "shortTitle": { "type": "string", "description": "Short title" },
@@ -55,31 +68,30 @@
           "submitter": { "type": "string", "description": "Submitter" },
           "eli": { "type": "string", "description": "European Legislation Identifier" },
           "legislativePeriod": { "type": "string", "description": "Legislative period" },
-          "celexNumbers": {
-            "type": "array",
-            "description": "CELEX numbers",
-            "items": { "type": "string" }
-          },
           "nationalCouncilDate": { "type": "string", "description": "National council date" },
           "nationalCouncilSession": { "type": "string", "description": "National council session" },
           "governmentProposal": { "type": "string", "description": "Government proposal" },
           "nationalCouncilCommitteeReport": { "type": "string", "description": "National council committee report" },
           "federalCouncilDate": { "type": "string", "description": "Federal council date" },
           "federalCouncilSession": { "type": "string", "description": "Federal council session" },
-          "federalCouncilCommitteeReport": { "type": "string", "description": "Federal council committee report" },
-          "assets": {
-            "type": "array",
-            "description": "Attachments",
-            "items": { "$ref": "#/components/schemas/Asset" }
-          }
+          "federalCouncilCommitteeReport": { "type": "string", "description": "Federal council committee report" }
         }
       },
-      "Asset": {
+      "RisBundesrechtRelationCounts": {
         "type": "object",
-        "description": "Asset file reference",
+        "description": "Counts of related documents grouped by relation type. Bare map keyed by RelationType enum name; Bundesrecht always emits these keys (0 when none).",
         "properties": {
-          "file": { "type": "string", "description": "Internal filename" },
-          "originalName": { "type": "string", "description": "Original filename from source" }
+          "CITED_LAW": { "type": "integer", "description": "Laws cited in this document (by Gesetzesnummer)" },
+          "RELATED_BGBL": { "type": "integer", "description": "Related BGBl documents (by ELI)" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-at:// link to download this attachment", "example": "cdx-at://doc/ATBR1234/attachment/content_1.pdf" }
         }
       }
     }

@@ -3,7 +3,7 @@
   "kind": "resource",
   "format": "openapi-fragment",
   "apiDocsUrl": "http://localhost:8081/v3/api-docs",
-  "fetchedAt": "2026-03-23T00:00:00Z",
+  "fetchedAt": "2026-05-27T00:00:00Z",
   "cdxPatterns": [
     "cdx-at://doc/<DOC_ID>/meta"
   ],
@@ -12,7 +12,7 @@
       "path": "/api/AT/sonstige/doc/{docId}/meta",
       "method": "get",
       "summary": "Get document metadata",
-      "description": "Retrieve metadata for an Austrian miscellaneous legal document by document ID. Returns the raw DomainMetadata object.",
+      "description": "Retrieve metadata for an Austrian miscellaneous legal document by document ID. Returns a RisMetaResponse envelope: flat scalar metadata (all array-valued fields plus assets and schemaVersion stripped), relationCounts (a bare map of RelationType -> count), and assets each carrying a download_url.",
       "operationId": "getMeta_3",
       "parameters": [
         {
@@ -26,10 +26,10 @@
       ],
       "responses": {
         "200": {
-          "description": "Document metadata",
+          "description": "Document metadata envelope",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RisSonstigeMetadata" }
+              "schema": { "$ref": "#/components/schemas/RisMetaResponse" }
             }
           }
         }
@@ -38,11 +38,24 @@
   ],
   "components": {
     "schemas": {
-      "RisSonstigeMetadata": {
+      "RisMetaResponse": {
         "type": "object",
-        "description": "Metadata for Austrian miscellaneous legal document records",
+        "description": "Metadata envelope for one Austrian miscellaneous legal document. Null fields are omitted (NON_NULL).",
         "properties": {
-          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "docId": { "type": "string", "description": "Display document ID", "example": "ATSO1234" },
+          "metadata": { "$ref": "#/components/schemas/RisSonstigeMetadataFlat" },
+          "relationCounts": { "$ref": "#/components/schemas/RisSonstigeRelationCounts" },
+          "assets": {
+            "type": "array",
+            "description": "Attachment files with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "RisSonstigeMetadataFlat": {
+        "type": "object",
+        "description": "Flat scalar metadata for an Austrian miscellaneous legal document record. The array-valued field fileNumbers, assets, and schemaVersion are stripped. Null fields are omitted.",
+        "properties": {
           "url": { "type": "string", "description": "Source URL" },
           "documentNumber": { "type": "string", "description": "Document number" },
           "application": { "type": "string", "description": "Sub-application" },
@@ -54,11 +67,6 @@
           "approvalDate": { "type": "string", "description": "Approval date" },
           "ministry": { "type": "string", "description": "Ministry" },
           "department": { "type": "string", "description": "Department" },
-          "fileNumbers": {
-            "type": "array",
-            "description": "File numbers",
-            "items": { "type": "string" }
-          },
           "publicationReference": { "type": "string", "description": "Publication reference" },
           "documentType": { "type": "string", "description": "Document type" },
           "sessionDate": { "type": "string", "description": "Session date" },
@@ -69,20 +77,24 @@
           "decisionBody": { "type": "string", "description": "Decision body" },
           "decisionDate": { "type": "string", "description": "Decision date" },
           "decisionFileNumber": { "type": "string", "description": "Decision file number" },
-          "lastModified": { "type": "string", "description": "Last modified date" },
-          "assets": {
-            "type": "array",
-            "description": "Attachments",
-            "items": { "$ref": "#/components/schemas/Asset" }
-          }
+          "lastModified": { "type": "string", "description": "Last modified date" }
         }
       },
-      "Asset": {
+      "RisSonstigeRelationCounts": {
         "type": "object",
-        "description": "Asset file reference",
+        "description": "Counts of related documents grouped by relation type. Bare map keyed by RelationType enum name; Sonstige always emits these keys (0 when none).",
         "properties": {
-          "file": { "type": "string", "description": "Internal filename" },
-          "originalName": { "type": "string", "description": "Original filename from source" }
+          "CITED_LAW": { "type": "integer", "description": "Laws cited in this document (by Gesetzesnummer)" },
+          "RELATED_BGBL": { "type": "integer", "description": "Related BGBl documents (by ELI)" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-at:// link to download this attachment", "example": "cdx-at://doc/ATSO1234/attachment/content_1.pdf" }
         }
       }
     }

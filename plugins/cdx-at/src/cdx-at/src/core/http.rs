@@ -194,6 +194,46 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
     if let Some(domain) = path.strip_prefix("search/") {
         let api_path = lookup_search_prefix(domain)?;
         Ok(format!("{base}/{api_path}/search{encoded_query}"))
+    } else if let Some(rest) = path.strip_prefix("law/") {
+        // Consolidated-law / point-in-time surface lives on the History domain.
+        // lawKey is a single token (all-digits Gesetzesnummer or eli~<stem>);
+        // the rest (/at, /versions, /toc, /parts, /paragraph/<para>/versions, /text)
+        // is forwarded verbatim.
+        if rest.is_empty() {
+            return Err("Missing law key after law/".to_string());
+        }
+        Ok(format!("{base}/AT/history/law/{rest}{encoded_query}"))
+    } else if let Some(rest) = path.strip_prefix("bgbl/") {
+        // BGBl gazette resolver (Bundesrecht only): bgbl/<TYPE>/<YEAR>/<NR>
+        if rest.is_empty() {
+            return Err("Missing BGBl path after bgbl/".to_string());
+        }
+        Ok(format!("{base}/AT/bundesrecht/bgbl/{rest}{encoded_query}"))
+    } else if let Some(rest) = path.strip_prefix("lgbl/") {
+        // LGBl gazette resolver (Landesrecht only): lgbl/<STATE>/<YEAR>/<NR>
+        if rest.is_empty() {
+            return Err("Missing LGBl path after lgbl/".to_string());
+        }
+        Ok(format!("{base}/AT/landesrecht/lgbl/{rest}{encoded_query}"))
+    } else if let Some(rest) = path.strip_prefix("by-ecli/") {
+        // ECLI resolver (Judikatur only): by-ecli/<ECLI>
+        if rest.is_empty() {
+            return Err("Missing ECLI after by-ecli/".to_string());
+        }
+        Ok(format!("{base}/AT/judikatur/by-ecli/{rest}{encoded_query}"))
+    } else if let Some(rest) = path.strip_prefix("by-document-number/") {
+        // Document-number resolver: by-document-number/<DOMAIN>/<DN>.
+        // A NOR number is not unique across domains, so the domain is required.
+        let (domain, dn) = rest.split_once('/').ok_or_else(|| {
+            format!("Expected by-document-number/<DOMAIN>/<DN>, got: by-document-number/{rest}")
+        })?;
+        let api_path = lookup_domain_name(domain)?;
+        if dn.is_empty() {
+            return Err("Missing document number".to_string());
+        }
+        Ok(format!(
+            "{base}/{api_path}/by-document-number/{dn}{encoded_query}"
+        ))
     } else if let Some(rest) = path.strip_prefix("doc/") {
         let (id, endpoint) = rest
             .split_once('/')
@@ -205,11 +245,6 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         Ok(format!(
             "{base}/{api_path}/doc/{id}/{endpoint}{encoded_query}"
         ))
-    } else if let Some(rest) = path.strip_prefix("resolve/") {
-        if rest.is_empty() {
-            return Err("Missing ID after resolve/".to_string());
-        }
-        Ok(format!("{base}/resolve/{rest}{encoded_query}"))
     } else {
         Err(format!("Unknown cdx-at:// path: {path}"))
     }
@@ -281,6 +316,25 @@ fn lookup_display_id_prefix(id: &str) -> Result<&'static str, String> {
         }
     }
     Err(format!("Unknown display ID prefix in: {id}"))
+}
+
+/// Domain URL segment -> API path, for the by-document-number resolver.
+/// Only the domains that expose a by-document-number endpoint are listed
+/// (Sonstige has none).
+const DOMAIN_NAMES: &[(&str, &str)] = &[
+    ("history", "AT/history"),
+    ("judikatur", "AT/judikatur"),
+    ("bundesrecht", "AT/bundesrecht"),
+    ("landesrecht", "AT/landesrecht"),
+];
+
+fn lookup_domain_name(name: &str) -> Result<&'static str, String> {
+    for &(domain, api_path) in DOMAIN_NAMES {
+        if domain == name {
+            return Ok(api_path);
+        }
+    }
+    Err(format!("Unknown domain for by-document-number: {name}"))
 }
 
 fn redact_curl_args(args: &[String]) -> Vec<String> {
@@ -606,16 +660,100 @@ mod tests {
     }
 
     #[test]
-    fn resolve_basic() {
+    fn law_summary() {
         assert_eq!(
-            resolve_cdx_url(BASE, "resolve/ATBR1234"),
-            Ok(format!("{BASE}/resolve/ATBR1234"))
+            resolve_cdx_url(BASE, "law/10008147"),
+            Ok(format!("{BASE}/AT/history/law/10008147"))
         );
     }
 
     #[test]
-    fn resolve_empty() {
-        assert!(resolve_cdx_url(BASE, "resolve/").is_err());
+    fn law_point_in_time_with_query() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "law/10008147/at?date=2024-06-01"),
+            Ok(format!("{BASE}/AT/history/law/10008147/at?date=2024-06-01"))
+        );
+    }
+
+    #[test]
+    fn law_eli_token_toc_all() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "law/eli~jgs~1811~946/toc?all=true"),
+            Ok(format!("{BASE}/AT/history/law/eli~jgs~1811~946/toc?all=true"))
+        );
+    }
+
+    #[test]
+    fn law_paragraph_versions() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "law/10008147/paragraph/Art.%207/versions"),
+            Ok(format!(
+                "{BASE}/AT/history/law/10008147/paragraph/Art.%207/versions"
+            ))
+        );
+    }
+
+    #[test]
+    fn law_empty_key() {
+        assert!(resolve_cdx_url(BASE, "law/").is_err());
+    }
+
+    #[test]
+    fn resolver_bgbl() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "bgbl/I/2026/62"),
+            Ok(format!("{BASE}/AT/bundesrecht/bgbl/I/2026/62"))
+        );
+    }
+
+    #[test]
+    fn resolver_lgbl() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "lgbl/WI/2026/14"),
+            Ok(format!("{BASE}/AT/landesrecht/lgbl/WI/2026/14"))
+        );
+    }
+
+    #[test]
+    fn resolver_by_ecli() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "by-ecli/ECLI:AT:LVWGNI:2018:LVwG.AV.72.001.2018"),
+            Ok(format!(
+                "{BASE}/AT/judikatur/by-ecli/ECLI:AT:LVWGNI:2018:LVwG.AV.72.001.2018"
+            ))
+        );
+    }
+
+    #[test]
+    fn resolver_by_document_number_history() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "by-document-number/history/NOR40277843"),
+            Ok(format!("{BASE}/AT/history/by-document-number/NOR40277843"))
+        );
+    }
+
+    #[test]
+    fn resolver_by_document_number_bundesrecht() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "by-document-number/bundesrecht/NOR12345"),
+            Ok(format!("{BASE}/AT/bundesrecht/by-document-number/NOR12345"))
+        );
+    }
+
+    #[test]
+    fn resolver_by_document_number_unknown_domain() {
+        // sonstige has no by-document-number resolver -> rejected locally
+        assert!(resolve_cdx_url(BASE, "by-document-number/sonstige/NOR1").is_err());
+    }
+
+    #[test]
+    fn resolver_by_document_number_missing_domain() {
+        assert!(resolve_cdx_url(BASE, "by-document-number/NOR1").is_err());
+    }
+
+    #[test]
+    fn resolver_bgbl_empty() {
+        assert!(resolve_cdx_url(BASE, "bgbl/").is_err());
     }
 
     #[test]
@@ -626,8 +764,8 @@ mod tests {
     #[test]
     fn base_url_trailing_slash_stripped() {
         assert_eq!(
-            resolve_cdx_url("https://api.example.com/api/", "resolve/ATBR1"),
-            Ok("https://api.example.com/api/resolve/ATBR1".to_string())
+            resolve_cdx_url("https://api.example.com/api/", "doc/ATBR1234/meta"),
+            Ok("https://api.example.com/api/AT/bundesrecht/doc/ATBR1234/meta".to_string())
         );
     }
 }

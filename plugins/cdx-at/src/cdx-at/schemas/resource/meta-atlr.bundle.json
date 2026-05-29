@@ -3,7 +3,7 @@
   "kind": "resource",
   "format": "openapi-fragment",
   "apiDocsUrl": "http://localhost:8081/v3/api-docs",
-  "fetchedAt": "2026-03-23T00:00:00Z",
+  "fetchedAt": "2026-05-27T00:00:00Z",
   "cdxPatterns": [
     "cdx-at://doc/<DOC_ID>/meta"
   ],
@@ -12,7 +12,7 @@
       "path": "/api/AT/landesrecht/doc/{docId}/meta",
       "method": "get",
       "summary": "Get document metadata",
-      "description": "Retrieve metadata for an Austrian state legislation (LGBl) document by document ID. Returns the raw DomainMetadata object.",
+      "description": "Retrieve metadata for an Austrian state legislation (LGBl) document by document ID. Returns a RisMetaResponse envelope: flat scalar metadata (all array-valued fields plus assets and schemaVersion stripped), relationCounts (a bare map of RelationType -> count), and assets each carrying a download_url.",
       "operationId": "getMeta_2",
       "parameters": [
         {
@@ -26,10 +26,10 @@
       ],
       "responses": {
         "200": {
-          "description": "Document metadata",
+          "description": "Document metadata envelope",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RisLandesrechtMetadata" }
+              "schema": { "$ref": "#/components/schemas/RisMetaResponse" }
             }
           }
         }
@@ -38,11 +38,24 @@
   ],
   "components": {
     "schemas": {
-      "RisLandesrechtMetadata": {
+      "RisMetaResponse": {
         "type": "object",
-        "description": "Metadata for Austrian state legislation (LGBl) records",
+        "description": "Metadata envelope for one Austrian state legislation (LGBl) document. Null fields are omitted (NON_NULL).",
         "properties": {
-          "schemaVersion": { "type": "integer", "description": "Schema version" },
+          "docId": { "type": "string", "description": "Display document ID", "example": "ATLR1234" },
+          "metadata": { "$ref": "#/components/schemas/RisLandesrechtMetadataFlat" },
+          "relationCounts": { "$ref": "#/components/schemas/RisLandesrechtRelationCounts" },
+          "assets": {
+            "type": "array",
+            "description": "Attachment files with download URLs",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "RisLandesrechtMetadataFlat": {
+        "type": "object",
+        "description": "Flat scalar metadata for an Austrian state legislation (LGBl) record. assets and schemaVersion are stripped (this domain has no array-valued metadata fields). Null fields are omitted.",
+        "properties": {
           "url": { "type": "string", "description": "Source URL" },
           "documentNumber": { "type": "string", "description": "Document number" },
           "shortTitle": { "type": "string", "description": "Short title" },
@@ -52,20 +65,24 @@
           "state": { "type": "string", "description": "Austrian state (Bundesland)" },
           "documentType": { "type": "string", "description": "Document type" },
           "authority": { "type": "string", "description": "Issuing authority" },
-          "eli": { "type": "string", "description": "European Legislation Identifier" },
-          "assets": {
-            "type": "array",
-            "description": "Attachments",
-            "items": { "$ref": "#/components/schemas/Asset" }
-          }
+          "eli": { "type": "string", "description": "European Legislation Identifier" }
         }
       },
-      "Asset": {
+      "RisLandesrechtRelationCounts": {
         "type": "object",
-        "description": "Asset file reference",
+        "description": "Counts of related documents grouped by relation type. Bare map keyed by RelationType enum name; Landesrecht always emits these keys (0 when none).",
         "properties": {
-          "file": { "type": "string", "description": "Internal filename" },
-          "originalName": { "type": "string", "description": "Original filename from source" }
+          "CITED_LAW": { "type": "integer", "description": "Laws cited in this document (by Gesetzesnummer)" },
+          "RELATED_BGBL": { "type": "integer", "description": "Related BGBl documents (by ELI)" }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source" },
+          "download_url": { "type": "string", "description": "cdx-at:// link to download this attachment", "example": "cdx-at://doc/ATLR1234/attachment/content_1.pdf" }
         }
       }
     }

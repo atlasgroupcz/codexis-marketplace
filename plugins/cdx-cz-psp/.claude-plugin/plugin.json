@@ -31,6 +31,6 @@
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "env": {
-    "CODEXIS_PLUGIN_CZ_PSP_API_URL": "http://192.168.4.64:8081/api"
+    "CODEXIS_PLUGIN_CZ_PSP_API_URL": "https://data.cdx-daemon.agrp.dev/api"
   }
 }

@@ -26,7 +26,7 @@ Examples:
   cdx-at search ATHI --abbreviation ASVG
   cdx-at get cdx-at://doc/ATBR1234/meta
   cdx-at get cdx-at://doc/ATJD5678/text
-  cdx-at get cdx-at://resolve/ATBR1234
+  cdx-at get cdx-at://law/10008147/at?date=2024-06-01
 
 Detailed source help:
   cdx-at search <DATA_SOURCE> --help
@@ -569,9 +569,14 @@ mod tests {
         assert!(help.contains("cdx-at://doc/<DOC_ID>/meta"));
         assert!(help.contains("cdx-at://doc/<DOC_ID>/text"));
         assert!(help.contains("cdx-at://doc/<DOC_ID>/attachment/<FILE>"));
-        assert!(help.contains("cdx-at://resolve/<ID>"));
-        // No law routes for AT
-        assert!(!help.contains("law/"));
+        // Consolidated-law / point-in-time routes (History domain)
+        assert!(help.contains("cdx-at://law/<LAW_KEY>"));
+        assert!(help.contains("cdx-at://law/<LAW_KEY>/at?date=<YYYY-MM-DD>"));
+        // Natural-key resolvers
+        assert!(help.contains("cdx-at://bgbl/<TYPE>/<YEAR>/<NR>"));
+        assert!(help.contains("cdx-at://lgbl/<STATE>/<YEAR>/<NR>"));
+        assert!(help.contains("cdx-at://by-ecli/<ECLI>"));
+        assert!(help.contains("cdx-at://by-document-number/<DOMAIN>/<DN>"));
     }
 
     #[test]
