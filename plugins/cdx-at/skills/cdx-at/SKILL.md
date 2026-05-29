@@ -29,12 +29,36 @@ Use `cdx-at search <SOURCE> --help` for available filters.
 ### get
 Fetch a document resource: `cdx-at get <cdx-at://URL> [--dry-run]`
 
-Use `cdx-at get --help` for available URL patterns.
+URL families:
+- `cdx-at://doc/<ID>/{meta,text,attachment/<file>}` — one document
+- `cdx-at://law/<LAW_KEY>/{at?date=,versions,toc,parts,paragraph/<P>/versions,text}` — consolidated law (ATHI) with point-in-time access; `<LAW_KEY>` = Gesetzesnummer or `eli~<stem>`
+- `cdx-at://{bgbl,lgbl,by-ecli,by-document-number/<domain>}/…` — resolve a gazette number / ECLI / document number to a document
+
+Use `cdx-at get --help` for the full pattern list.
 
 ### schema
 Print response schema for get endpoints: `cdx-at schema <ENDPOINT> [SOURCE]`
 
 Use `cdx-at schema --help` for available endpoints.
+
+## Routing: pick the right endpoint for the intent
+
+`search` is for **discovery** — finding documents you don't yet know exist. For precise queries about a known law or paragraph, go directly to the law / document surface. Defaulting to `search` returns text-relevance-ranked §-versions that will often surface neighbouring or outdated paragraphs.
+
+| User intent | URL pattern |
+|---|---|
+| Current text of § N of a known law | `cdx-at://law/<KEY>/text?part=§ N` |
+| Which paragraphs are in force on date D | `cdx-at://law/<KEY>/at?date=D` |
+| What § N said on date D (historical) | `cdx-at://law/<KEY>/text?part=§ N&date=D` |
+| Timeline of all version dates | `cdx-at://law/<KEY>/versions` |
+| All versions of one paragraph | `cdx-at://law/<KEY>/paragraph/<§>/versions` |
+| Table of contents / structure | `cdx-at://law/<KEY>/toc?all=true` (omit `all=` for in-force ToC) |
+| Search within ONE specific law | `cdx-at://law/<KEY>/parts?search=…&date=D` |
+| Case law citing a known provision | `cdx-at://doc/<ID>/related?type=CITING_DECISION` (**not** `search` on ATJD) |
+| Resolve a known NOR / BGBl / ECLI / document number | `cdx-at://by-document-number/<domain>/<dn>`, `cdx-at://bgbl/...`, `cdx-at://lgbl/...`, `cdx-at://by-ecli/<ecli>` |
+| Open-ended discovery ("find laws about X") | `cdx-at search <SOURCE> --query "…"` |
+
+`<KEY>` is either an all-digits Gesetzesnummer (e.g. `10008147` = ASVG) or `eli~<stem>` (e.g. `eli~jgs~1811~946` = ABGB) — see `references/search-athi.md` for examples.
 
 ## User-Facing Output Rules
 
@@ -124,6 +148,8 @@ Every document reference in user-facing output MUST be a clickable attachment li
 
 ## Reference Files
 
-- **`references/search-atjd.md`** — Austrian case law search (Judikatur): courts, decision types, ECLI, case numbers
-- **`references/search-atbr.md`** — Austrian federal legislation search (Bundesrecht): gazette numbers, document types
-- **`references/search-athi.md`** — Austrian consolidated law history: law abbreviations, amendments, effective dates
+- **`references/search-atbr.md`** — Austrian federal legislation search (Bundesrecht): gazette numbers, document types; BGBl resolver
+- **`references/search-atjd.md`** — Austrian case law search (Judikatur): courts, decision types, ECLI, case numbers; ECLI resolver
+- **`references/search-atlr.md`** — Austrian state legislation search (Landesrecht): state, gazette numbers; LGBl resolver
+- **`references/search-atso.md`** — Austrian other official publications search (Sonstige): document types
+- **`references/search-athi.md`** — Austrian consolidated law (History): search filters, plus the consolidated-law / point-in-time `cdx-at://law/<LAW_KEY>` surface (versions, as-of-date, paragraph history)
