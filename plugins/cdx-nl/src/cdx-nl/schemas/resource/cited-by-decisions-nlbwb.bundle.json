@@ -1,0 +1,83 @@
+{
+  "endpoint": "cited-by-decisions",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-20T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLBWB_ID>/cited-by-decisions",
+    "cdx-nl://law/NL/<BWB_ID>/cited-by-decisions",
+    "cdx-nl://afkorting/<ABBR>/cited-by-decisions"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/cited-by-decisions",
+      "method": "get",
+      "summary": "List Rechtspraak decisions citing this BWB law",
+      "description": "Reverse lookup against Rechtspraak's lawReferences. Returns decisions whose lawReferences cite this BWB document. Sorted decisionDate desc, ecli asc as tiebreaker.",
+      "operationId": "getCitedByDecisions",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (default: 10, max: 100)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Citing decisions",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WettenOverheidNlBwbCitedByDecisionsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "WettenOverheidNlBwbCitedByDecisionsResponse": {
+        "type": "object",
+        "description": "Rechtspraak decisions citing a given BWB document",
+        "properties": {
+          "docId": { "type": "string", "description": "BWB display ID being queried", "example": "NLBWB1234" },
+          "total": { "type": "integer", "format": "int64", "description": "Total Rechtspraak decisions citing this BWB id" },
+          "returned": { "type": "integer", "format": "int32", "description": "Number of decisions in this response after paging" },
+          "decisions": {
+            "type": "array",
+            "description": "Decisions, sorted decisionDate desc, ecli asc as tiebreaker",
+            "items": { "$ref": "#/components/schemas/WettenOverheidNlBwbCitingDecisionItem" }
+          }
+        }
+      },
+      "WettenOverheidNlBwbCitingDecisionItem": {
+        "type": "object",
+        "description": "A single Rechtspraak decision citing the BWB document",
+        "properties": {
+          "ecli": { "type": "string", "description": "European Case Law Identifier", "example": "ECLI:NL:HR:2024:1234" },
+          "decisionDate": { "type": "string", "description": "Decision date (ISO YYYY-MM-DD)" },
+          "court": { "type": "string", "description": "Court name, as recorded in Rechtspraak.nl" },
+          "metaUrl": { "type": "string", "description": "cdx-nl:// URL to fetch the decision's metadata" }
+        }
+      }
+    }
+  }
+}

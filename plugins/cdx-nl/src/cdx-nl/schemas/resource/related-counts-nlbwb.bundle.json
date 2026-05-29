@@ -1,0 +1,53 @@
+{
+  "endpoint": "related/counts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLBWB_ID>/related/counts",
+    "cdx-nl://law/NL/<BWB_ID>/related/counts",
+    "cdx-nl://afkorting/<ABBR>/related/counts"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/related/counts",
+      "method": "get",
+      "summary": "Count related laws for an NLBWB document",
+      "description": "Returns {in, out}: distinct incoming BWB references and distinct outgoing BWB references.",
+      "operationId": "getRelatedCounts",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Counts",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RelatedCountsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RelatedCountsResponse": {
+        "type": "object",
+        "description": "Counts of related BWB laws by direction",
+        "properties": {
+          "in": { "type": "integer", "format": "int64", "description": "Distinct BWB documents that reference this law (incoming).", "example": 47 },
+          "out": { "type": "integer", "format": "int64", "description": "Distinct BWB documents this law references (outgoing).", "example": 12 }
+        }
+      }
+    }
+  }
+}

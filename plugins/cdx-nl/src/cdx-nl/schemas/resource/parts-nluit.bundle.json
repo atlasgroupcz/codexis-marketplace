@@ -1,0 +1,64 @@
+{
+  "endpoint": "parts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLUIT_ID>/parts",
+    "cdx-nl://ecli/<ECLI>/parts"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/parts",
+      "method": "get",
+      "summary": "Get available parts",
+      "description": "List page-level part identifiers in a Rechtspraak (Uitspraken) decision. Use a part's page as the ?page= filter on /text.",
+      "operationId": "getParts_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLUIT1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Part list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PartsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "PartsResponse": {
+        "type": "object",
+        "description": "Available parts (pages) in a Rechtspraak decision",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID" },
+          "parts": {
+            "type": "array",
+            "description": "Available parts (one per page of decision markdown)",
+            "items": { "$ref": "#/components/schemas/PartItem" }
+          }
+        }
+      },
+      "PartItem": {
+        "type": "object",
+        "description": "A page-level part in a Rechtspraak decision",
+        "properties": {
+          "page": { "type": "integer", "format": "int32", "description": "1-based page number" },
+          "firstLine": { "type": "string", "description": "First non-empty line of this page (for preview)" }
+        }
+      }
+    }
+  }
+}

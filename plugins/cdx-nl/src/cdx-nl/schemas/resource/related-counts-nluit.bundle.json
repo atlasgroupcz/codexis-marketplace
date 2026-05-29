@@ -1,0 +1,53 @@
+{
+  "endpoint": "related/counts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-18T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLUIT_ID>/related/counts",
+    "cdx-nl://ecli/<ECLI>/related/counts"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/related/counts",
+      "method": "get",
+      "summary": "Count related documents for a Rechtspraak decision",
+      "description": "Returns counts of related laws, citing decisions, and cited decisions for a Rechtspraak (Uitspraken) document.",
+      "operationId": "getRelatedCounts_1",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLUIT1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Counts",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RechtspraakRelatedCountsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "RechtspraakRelatedCountsResponse": {
+        "type": "object",
+        "description": "Counts of related items for a Rechtspraak decision",
+        "properties": {
+          "citedLaws": { "type": "integer", "format": "int32", "description": "Distinct BWB laws this decision cites.", "example": 5 },
+          "citingDecisions": { "type": "integer", "format": "int64", "description": "Distinct Rechtspraak decisions citing this ECLI.", "example": 23 },
+          "citedDecisions": { "type": "integer", "format": "int64", "description": "Distinct Rechtspraak decisions cited by this decision.", "example": 5 }
+        }
+      }
+    }
+  }
+}

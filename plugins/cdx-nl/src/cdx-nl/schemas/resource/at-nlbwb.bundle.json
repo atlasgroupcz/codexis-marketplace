@@ -1,0 +1,97 @@
+{
+  "endpoint": "at",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-05-20T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLBWB_ID>/at?date=YYYY-MM-DD",
+    "cdx-nl://law/NL/<BWB_ID>/at?date=YYYY-MM-DD",
+    "cdx-nl://afkorting/<ABBR>/at?date=YYYY-MM-DD"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/wetten/bwb/doc/{docId}/at",
+      "method": "get",
+      "summary": "Resolve a BWB law to its toestand on a specific date",
+      "description": "Returns the toestand in force on the given date, plus its consolidated PDF, amendment PDFs (Stb/Stcrt/Trb publications), previous/next toestand pointers, and an aggregate versions count. Use this instead of /versions when you only need a single time-resolved version, not the whole history.",
+      "operationId": "getAt",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLBWB1234"
+        },
+        {
+          "name": "date",
+          "in": "query",
+          "description": "ISO date (YYYY-MM-DD) to resolve against. Required.",
+          "required": true,
+          "schema": { "type": "string", "format": "date" },
+          "example": "2020-06-15"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Resolved toestand envelope",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WettenOverheidNlBwbAtResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "WettenOverheidNlBwbAtResponse": {
+        "type": "object",
+        "description": "Toestand-resolved-by-date envelope for a BWB law",
+        "properties": {
+          "docId": { "type": "string", "description": "BWB display ID", "example": "NLBWB1234" },
+          "date": { "type": "string", "description": "Date the response was resolved for (ISO YYYY-MM-DD)" },
+          "toestand": { "$ref": "#/components/schemas/WettenOverheidNlBwbToestand" },
+          "pdf": { "$ref": "#/components/schemas/WettenOverheidNlBwbAttachmentRef", "description": "Consolidated PDF for this toestand; absent if not yet rendered" },
+          "amendmentPdfs": {
+            "type": "array",
+            "description": "Amendment PDFs (Stb/Stcrt/Trb publications) that contributed to this toestand",
+            "items": { "$ref": "#/components/schemas/WettenOverheidNlBwbAttachmentRef" }
+          },
+          "previousToestandId": { "type": "string", "description": "ID of the temporally-preceding toestand; null at the start of coverage" },
+          "nextToestandId": { "type": "string", "description": "ID of the temporally-following toestand; null at the end of coverage" },
+          "versions": { "$ref": "#/components/schemas/WettenOverheidNlBwbVersionsCount" }
+        }
+      },
+      "WettenOverheidNlBwbToestand": {
+        "type": "object",
+        "description": "A single time-effective version of a BWB law",
+        "properties": {
+          "id": { "type": "string", "description": "Toestand identifier (format: {bwbId}_{validFrom}_{seq})", "example": "BWBR0001827_2020-01-01_0" },
+          "validFrom": { "type": "string", "description": "ISO date this toestand came into force" },
+          "validTo": { "type": "string", "description": "ISO date this toestand stops being in force; null if open-ended" },
+          "textUrl": { "type": "string", "description": "cdx-nl:// URL to fetch this toestand's text" }
+        }
+      },
+      "WettenOverheidNlBwbAttachmentRef": {
+        "type": "object",
+        "description": "Reference to a PDF attachment hosted on the BWB document",
+        "properties": {
+          "originalName": { "type": "string", "description": "Human-meaningful filename (e.g. \"stb-2019-456.pdf\")" },
+          "url": { "type": "string", "description": "cdx-nl:// attachment URL" }
+        }
+      },
+      "WettenOverheidNlBwbVersionsCount": {
+        "type": "object",
+        "description": "Aggregate pointer to the versions endpoint",
+        "properties": {
+          "total": { "type": "integer", "format": "int32", "description": "Total number of toestanden for this document" },
+          "url": { "type": "string", "description": "cdx-nl:// URL to enumerate all versions" }
+        }
+      }
+    }
+  }
+}
