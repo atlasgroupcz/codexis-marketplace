@@ -352,6 +352,42 @@ enum NotificationCommands {
         /// Notification ID
         id: String,
     },
+    /// Outbound email notifications
+    Email {
+        #[command(subcommand)]
+        command: EmailCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum EmailCommands {
+    /// Send an email; omit --to to default to the signed-in user (recipient from JWT)
+    Send {
+        /// Recipient email address (repeatable); when omitted the daemon falls back to the signed-in user
+        #[arg(long)]
+        to: Vec<String>,
+        /// Optional CC recipient (repeatable)
+        #[arg(long)]
+        cc: Vec<String>,
+        /// Optional BCC recipient (repeatable)
+        #[arg(long)]
+        bcc: Vec<String>,
+        /// Subject line
+        #[arg(long)]
+        subject: String,
+        /// Inline body text (mutually exclusive with --body-file)
+        #[arg(long)]
+        body: Option<String>,
+        /// Read body from file ("-" reads stdin); mutually exclusive with --body
+        #[arg(long)]
+        body_file: Option<String>,
+        /// Optional HTML body (sent alongside text body for multipart/alternative)
+        #[arg(long)]
+        body_html: Option<String>,
+        /// Attach a local file (repeatable)
+        #[arg(long = "attach")]
+        attachments: Vec<String>,
+    },
 }
 
 fn parse_key_value(s: &str) -> Result<(String, String), String> {
@@ -545,6 +581,29 @@ fn main() {
             NotificationCommands::Confirm { id } => {
                 commands::notification::confirm(&client, &id, format)
             }
+            NotificationCommands::Email { command } => match command {
+                EmailCommands::Send {
+                    to,
+                    cc,
+                    bcc,
+                    subject,
+                    body,
+                    body_file,
+                    body_html,
+                    attachments,
+                } => commands::notification_email::send(
+                    &client,
+                    &to,
+                    &cc,
+                    &bcc,
+                    &subject,
+                    body.as_deref(),
+                    body_file.as_deref(),
+                    body_html.as_deref(),
+                    &attachments,
+                    format,
+                ),
+            },
         },
     };
 
@@ -596,4 +655,42 @@ mod tests {
             _ => panic!("expected agent update command"),
         }
     }
+
+    #[test]
+    fn parses_notification_email_send_command() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "notification",
+            "email",
+            "send",
+            "--subject",
+            "hi",
+            "--body",
+            "hello",
+            "--attach",
+            "/tmp/a.txt",
+        ])
+        .expect("notification email send should parse");
+
+        match cli.command {
+            Commands::Notification {
+                command:
+                    NotificationCommands::Email {
+                        command:
+                            EmailCommands::Send {
+                                subject,
+                                body,
+                                attachments,
+                                ..
+                            },
+                    },
+            } => {
+                assert_eq!(subject, "hi");
+                assert_eq!(body.as_deref(), Some("hello"));
+                assert_eq!(attachments, vec!["/tmp/a.txt".to_string()]);
+            }
+            _ => panic!("expected notification email send command"),
+        }
+    }
+
 }
