@@ -213,6 +213,30 @@
       }
     },
     {
+      "uuid": "e6e9938a-d93a-49e2-aac1-a6334573634b",
+      "name": "cdx-nl",
+      "description": "Dutch legal database — national legislation (BWB) and case law (Rechtspraak)",
+      "source": "./plugins/cdx-nl",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Nizozemské právo (BWB a Rechtspraak)",
+          "description": "Nizozemská právní databáze — národní legislativa BWB (wetten.overheid.nl) a rozhodnutí soudů (Rechtspraak.nl).",
+          "tagLabels": { "legal": "Právo", "dutch": "Nizozemsko", "legislation": "Legislativa", "case-law": "Judikatura" }
+        },
+        "en": {
+          "displayName": "Dutch Legal Database (BWB & Rechtspraak)",
+          "description": "Dutch legal database — Basiswettenbestand national legislation (wetten.overheid.nl) and court decisions (Rechtspraak.nl).",
+          "tagLabels": { "legal": "Law", "dutch": "Netherlands", "legislation": "Legislation", "case-law": "Case Law" }
+        },
+        "sk": {
+          "displayName": "Holandské právo (BWB a Rechtspraak)",
+          "description": "Holandská právna databáza — národná legislatíva BWB (wetten.overheid.nl) a rozhodnutia súdov (Rechtspraak.nl).",
+          "tagLabels": { "legal": "Právo", "dutch": "Holandsko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
+        }
+      }
+    },
+    {
       "uuid": "bc2d2aff-84c6-49e4-8f2b-fed6ff316de8",
       "name": "cdx-at",
       "description": "Austrian legal database (RIS) — federal legislation (Bundesrecht), case law (Judikatur) from 7 courts including VfGH and VwGH, state legislation (Landesrecht), other official publications (Sonstige), and consolidated federal norms with full amendment history",
