@@ -20,7 +20,7 @@ steps:
         name: writeFile
         input_matches: "mesta-.*\\.html"
       tool_calls_min: 1
-      # Router→sub-skill workflow needs to read at least references/chart/SKILL.md
+      # Router→sub-skill workflow needs to read at least references/chart/chart.md
       # and template.html before writing. Allow some headroom for retries.
       tool_calls_max: 12
       state:
