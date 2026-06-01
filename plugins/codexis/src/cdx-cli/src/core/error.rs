@@ -8,7 +8,6 @@ pub(crate) enum CliError {
     InvalidJson(String),
     SerializePayload(String),
     SearchPayloadMustBeObject,
-    MissingQueryField,
     InvalidSearchArgument(String),
     InvalidCdxUrl(String),
     InvalidStoredSchema(String),
@@ -26,7 +25,6 @@ impl CliError {
             | Self::InvalidJson(_)
             | Self::SerializePayload(_)
             | Self::SearchPayloadMustBeObject
-            | Self::MissingQueryField
             | Self::InvalidSearchArgument(_)
             | Self::InvalidCdxUrl(_)
             | Self::InvalidStoredSchema(_) => 2,
@@ -52,12 +50,6 @@ impl fmt::Display for CliError {
             Self::SerializePayload(message) => write!(f, "failed to serialize payload: {message}"),
             Self::SearchPayloadMustBeObject => {
                 write!(f, "search payload must be a JSON object")
-            }
-            Self::MissingQueryField => {
-                write!(
-                    f,
-                    "search input must include a non-empty query, either via --query or JSON_PAYLOAD"
-                )
             }
             Self::InvalidSearchArgument(message) => write!(f, "{message}"),
             Self::InvalidCdxUrl(message) => write!(f, "{message}"),

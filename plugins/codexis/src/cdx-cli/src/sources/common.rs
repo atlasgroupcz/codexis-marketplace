@@ -326,12 +326,6 @@ fn load_search_payload(raw_payload: Option<&str>) -> Result<Option<JsonMap>, Cli
 }
 
 fn validate_search_payload(source_code: &str, payload: &JsonMap) -> Result<(), CliError> {
-    let query = payload.get("query").and_then(Value::as_str).map(str::trim);
-    match query {
-        Some(value) if !value.is_empty() => {}
-        _ => return Err(CliError::MissingQueryField),
-    }
-
     if let Some(limit) = get_non_negative_integer(payload, "limit")? {
         if !(1..=50).contains(&limit) {
             return Err(CliError::InvalidSearchArgument(
@@ -498,9 +492,20 @@ mod tests {
     }
 
     #[test]
-    fn search_payload_must_include_query() {
-        let error = validate_search_payload("JD", &JsonMap::new()).unwrap_err();
-        assert!(matches!(error, CliError::MissingQueryField));
+    fn search_payload_allows_missing_query_for_backend_to_handle() {
+        let args = SearchJdArgs {
+            issued: IssuedDateArgs {
+                issued_from: Some("2026-05-26".to_string()),
+                issued_to: Some("2026-06-01".to_string()),
+            },
+            ..SearchJdArgs::default()
+        };
+
+        let payload = args.build_payload("JD").unwrap();
+        assert_eq!(
+            payload,
+            r#"{"issuedFrom":"2026-05-26","issuedTo":"2026-06-01","limit":10,"offset":1,"sort":"RELEVANCE","sortOrder":"DESC"}"#
+        );
     }
 
     #[test]
