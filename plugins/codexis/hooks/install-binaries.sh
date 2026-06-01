@@ -44,7 +44,6 @@ select_binary_source() {
 }
 
 install_binary "$(select_binary_source "cdx-cli")" "cdx-cli"
-install_binary "$(select_binary_source "cdx-link-rewriter")" "cdx-link-rewriter"
 install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"
 install_binary "$(select_binary_source "cdxctl")" "cdxctl"

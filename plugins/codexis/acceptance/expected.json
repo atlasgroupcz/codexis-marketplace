@@ -18,10 +18,6 @@
     },
     {
       "type": "file",
-      "path": "$HOME/.local/bin/cdx-link-rewriter"
-    },
-    {
-      "type": "file",
       "path": "$HOME/.local/bin/cdx-sledovane-dokumenty"
     },
     {
@@ -45,10 +41,6 @@
     {
       "type": "absent",
       "path": "$HOME/.local/bin/cdx-cli"
-    },
-    {
-      "type": "absent",
-      "path": "$HOME/.local/bin/cdx-link-rewriter"
     },
     {
       "type": "absent",

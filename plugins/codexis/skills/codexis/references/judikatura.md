@@ -5,7 +5,7 @@ Some phrases meaning case law research - `najdi judikaturu`, `najdi rozsudek`, `
 
 1. Start in `JD`, not `ALL`, when the user is asking for Czech court decisions.
 2. Use `cdx-cli search JD --help` if you need to confirm available filters.
-3. When doing case law research ALWAYS delegate JD candidate discovery to subagent if available. Instruct subagent to deliver meaningful snippets and `cdx://doc/...` links.
+3. When doing case law research ALWAYS delegate JD candidate discovery to subagent if available. Instruct subagent to deliver meaningful snippets and `https://` document links (the resolved URL from the source block).
 4. Wait for agents first, then verify. Do not run your own search in parallel with the agent; it will likely be redundant and less effective than the agent's targeted search.
 5. After collection promising candidates use subagent to verify the actual content of the decision text and the metadata. Pay attention to:
    - what conduct actually was at issue in the case,
