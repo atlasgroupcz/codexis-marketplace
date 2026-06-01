@@ -29,7 +29,7 @@ Create interactive data visualizations for legal/law data using D3.js, AG Grid, 
 
 This skill is a **router only**. For each visualization type, you MUST:
 
-1. **Read the type-specific SKILL.md** for full schema documentation
+1. **Read the type-specific reference doc** (`references/<type>/<type>.md`) for full schema documentation
 2. **Read the template.html** to understand the rendering code
 3. **Follow the A2UI schema format** exactly as documented
 
@@ -37,20 +37,20 @@ This skill is a **router only**. For each visualization type, you MUST:
 
 | Type | When to Use | Reference Files |
 |------|-------------|-----------------|
-| `chart` | Statistics, trends, comparisons (bar, line, area, pie) | [SKILL.md](references/chart/SKILL.md), [template.html](references/chart/template.html) |
-| `graph` | Networks, relationships, citations | [SKILL.md](references/graph/SKILL.md), [template.html](references/graph/template.html) |
-| `timeline` | Resource schedules, Gantt charts, allocations | [SKILL.md](references/timeline/SKILL.md), [template.html](references/timeline/template.html) |
-| `tree` | Hierarchies, document structure, nested data | [SKILL.md](references/tree/SKILL.md), [template.html](references/tree/template.html) |
-| `calendar` | Scheduled events, appointments, meetings | [SKILL.md](references/calendar/SKILL.md), [template.html](references/calendar/template.html) |
-| `flowchart` | Workflows, processes, decision trees | [SKILL.md](references/flowchart/SKILL.md), [template.html](references/flowchart/template.html) |
-| `grid` | Tables, search results, sortable/filterable listings | [SKILL.md](references/grid/SKILL.md), [template.html](references/grid/template.html) |
-| `kanban` | Workflow stages, task boards, status columns | [SKILL.md](references/kanban/SKILL.md), [template.html](references/kanban/template.html) |
-| `map` | Geographic locations, jurisdictions, markers | [SKILL.md](references/map/SKILL.md), [template.html](references/map/template.html) |
+| `chart` | Statistics, trends, comparisons (bar, line, area, pie) | [chart.md](references/chart/chart.md), [template.html](references/chart/template.html) |
+| `graph` | Networks, relationships, citations | [graph.md](references/graph/graph.md), [template.html](references/graph/template.html) |
+| `timeline` | Resource schedules, Gantt charts, allocations | [timeline.md](references/timeline/timeline.md), [template.html](references/timeline/template.html) |
+| `tree` | Hierarchies, document structure, nested data | [tree.md](references/tree/tree.md), [template.html](references/tree/template.html) |
+| `calendar` | Scheduled events, appointments, meetings | [calendar.md](references/calendar/calendar.md), [template.html](references/calendar/template.html) |
+| `flowchart` | Workflows, processes, decision trees | [flowchart.md](references/flowchart/flowchart.md), [template.html](references/flowchart/template.html) |
+| `grid` | Tables, search results, sortable/filterable listings | [grid.md](references/grid/grid.md), [template.html](references/grid/template.html) |
+| `kanban` | Workflow stages, task boards, status columns | [kanban.md](references/kanban/kanban.md), [template.html](references/kanban/template.html) |
+| `map` | Geographic locations, jurisdictions, markers | [map.md](references/map/map.md), [template.html](references/map/template.html) |
 
 ## Workflow
 
 1. **Identify visualization type** based on user's data and intent
-2. **Read the referenced SKILL.md** for that type (contains full schema with all fields)
+2. **Read the referenced doc** for that type (`references/<type>/<type>.md` — contains full schema with all fields)
 3. **Read the template.html** for that type
 4. **Construct A2UI JSON** following the schema exactly
 5. **Replace placeholders** in template: `{{TITLE}}` and `{{DATA}}`
@@ -191,7 +191,7 @@ All visualizations use this structure:
 }
 ```
 
-**See each type's SKILL.md for the exact `config` and `data` fields required.**
+**See each type's reference doc (`references/<type>/<type>.md`) for the exact `config` and `data` fields required.**
 
 ### BoundValue Pattern
 
