@@ -31,6 +31,6 @@
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "env": {
-    "CODEXIS_PLUGIN_AT_API_URL": "https://data.cdx-daemon.agrp.dev/api"
+    "CODEXIS_PLUGIN_AT_API_URL": "https://codexis.ai/sources/api"
   }
 }
