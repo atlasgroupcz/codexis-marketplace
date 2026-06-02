@@ -204,7 +204,7 @@ Pokud jedna vrstva odkazuje na druhou, dohledej a uveď.
 
 ## Proactive Reference Enrichment
 
-Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj ji v CODEXIS a použij `cdx://doc/` link. Neprezentuj raw reference bez pokusu o lookup. Pokud reference není v CODEXIS, ponechej plain text. Po sobě jdoucí paragrafy shrň do rozmezí.
+Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj ji v CODEXIS a použij `https://` odkaz na dokument (resolvovaná URL ze source bloku). Neprezentuj raw reference bez pokusu o lookup. Pokud reference není v CODEXIS, ponechej plain text. Po sobě jdoucí paragrafy shrň do rozmezí.
 
 ## Short Best Practices
 
