@@ -63,7 +63,7 @@ All CODEXIS documents are in Czech.
 
 ## User-Facing Output Rules
 
-- Use only `cdx://doc/` links: `[title](cdx://doc/{docId})` or `[title](cdx://doc/{docId}#elementId)`. Never expose raw IDs, source codes, relation enums, resolved HTTP URLs, or API suffixes like `/text`, `/meta`, `/toc` as user has no way to access it.
+- User-facing document links MUST use the resolved `https://` URL from the source block. Each cited document is appended to tool output as a `【src_xxx】 url: https://…` block — use that `https://` URL as the link target: `[title](https://…)` or `[title](https://…#elementId)` (append the same `#elementId` anchor you would have used). The `cdx://` scheme is ONLY an addressing scheme for `cdx-cli get cdx://...` fetch arguments — never put a `cdx://` link in output shown to the user. Never expose raw IDs, source codes, relation enums, or API suffixes like `/text`, `/meta`, `/toc` as user has no way to access it.
 - Use the search-result title as link text, stripping `<mark>` tags. For `JD`, include the court name in the link text. If title is unavailable, use `docNumber` or a short descriptive fallback, raw ID as last resort.
 - For relation labels, use the `name` field from `/related/counts`, never the `type` enum.
 - When citing a legal section, make the section itself the clickable reference instead of splitting title and link.
@@ -101,7 +101,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 
 ## Proactive Legal Reference Enrichment
 
-Whenever legal references appear in user text, tool output, or extracts, resolve them in CODEXIS and present them with `cdx://doc/` links.
+Whenever legal references appear in user text, tool output, or extracts, resolve them in CODEXIS and present them with `https://` document links (the resolved URL from the source block).
 
 - Do not present raw legal references without attempting lookup first.
 - If a reference cannot be found in CODEXIS, keep it as plain text instead of omitting it.
