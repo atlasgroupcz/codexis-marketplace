@@ -15,4 +15,3 @@ remove_binary() {
 }
 
 remove_binary "cdx-cz-spp"
-remove_binary "cdx-cz-spp-link-rewriter"

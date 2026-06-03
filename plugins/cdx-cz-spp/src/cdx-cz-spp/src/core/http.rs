@@ -1,7 +1,9 @@
 use std::io::{self, Write};
 use std::process::{Command, Output, Stdio};
 
+use crate::core::config::DaemonConfig;
 use crate::core::error::CliError;
+use crate::core::sources::publish_from_body;
 
 const CDX_CZ_SPP_SCHEME: &str = "cdx-cz-spp://";
 
@@ -27,7 +29,7 @@ pub(crate) fn execute_search_request(
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, print_raw_response_body)
+    handle_curl_output(&output, |body| handle_api_response(body, base_url))
 }
 
 pub(crate) fn execute_get_request(
@@ -44,7 +46,7 @@ pub(crate) fn execute_get_request(
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, print_raw_response_body)
+    handle_curl_output(&output, |body| handle_api_response(body, base_url))
 }
 
 fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
@@ -73,9 +75,27 @@ where
     }
 }
 
-fn print_raw_response_body(body: &[u8]) -> Result<(), CliError> {
-    let rendered = String::from_utf8_lossy(body).into_owned();
-    write_stdout(&rendered)
+/// Resolve attachment links, unwrap the envelope, print content, best-effort publish sources.
+fn handle_api_response(body: &[u8], base_url: &str) -> Result<(), CliError> {
+    let raw = String::from_utf8_lossy(body);
+    let resolved = resolve_attachment_links(&raw, base_url);
+    let (content, sources) = split_envelope_str(&resolved);
+    write_stdout(&content)?;
+    try_publish_sources(sources.as_ref());
+    Ok(())
+}
+
+/// Best-effort sources publish: any failure logs to stderr, never propagates.
+fn try_publish_sources(sources: Option<&serde_json::Value>) {
+    let Some(sources) = sources else {
+        return;
+    };
+    let Some(daemon) = DaemonConfig::load() else {
+        return;
+    };
+    if let Err(err) = publish_from_body(sources, &daemon) {
+        eprintln!("cdx-cz-spp: failed to attach sources to chat: {err}");
+    }
 }
 
 fn write_stdout(rendered: &str) -> Result<(), CliError> {
@@ -208,6 +228,82 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         Ok(format!("{base}/resolve/{rest}{encoded_query}"))
     } else {
         Err(format!("Unknown cdx-cz-spp:// path: {path}"))
+    }
+}
+
+/// Rewrite ONLY `cdx-cz-spp://…/attachment/…` links in `body` to absolute https URLs,
+/// preserving any `#fragment` / `?query`. Non-attachment cdx:// links are left as-is.
+/// Pure string scan (no JSON parse, no regex) — the matched token ends at the first
+/// JSON/markdown delimiter.
+pub(crate) fn resolve_attachment_links(body: &str, base_url: &str) -> String {
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+    while let Some(pos) = rest.find(CDX_CZ_SPP_SCHEME) {
+        out.push_str(&rest[..pos]);
+        let after = &rest[pos + CDX_CZ_SPP_SCHEME.len()..];
+        let end = after
+            .find(|c: char| {
+                c.is_whitespace()
+                    || matches!(
+                        c,
+                        '"' | '\''
+                            | '<'
+                            | '>'
+                            | '('
+                            | ')'
+                            | '['
+                            | ']'
+                            | '{'
+                            | '}'
+                            | '\\'
+                            | ','
+                            | '`'
+                    )
+            })
+            .unwrap_or(after.len());
+        let token = &after[..end]; // e.g. doc/CZSB12/attachment/content_1.pdf#page=3
+        if token.contains("/attachment/") {
+            // Split off the #fragment so it is preserved verbatim (never query-encoded by
+            // resolve_cdx_url, which only splits on '?'). Handles fragment-only AND query+fragment.
+            let (route, frag) = match token.find('#') {
+                Some(h) => (&token[..h], &token[h..]),
+                None => (token, ""),
+            };
+            match resolve_cdx_url(base_url, route) {
+                Ok(url) => {
+                    out.push_str(&url);
+                    out.push_str(frag);
+                }
+                Err(_) => {
+                    out.push_str(CDX_CZ_SPP_SCHEME);
+                    out.push_str(token);
+                }
+            }
+        } else {
+            out.push_str(CDX_CZ_SPP_SCHEME);
+            out.push_str(token);
+        }
+        rest = &after[end..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Split the `{content, sources}` envelope. Returns `(content_to_print, sources)`.
+/// Falls back to `(whole_body, None)` for non-enveloped responses (meta/text/toc).
+/// String `content` (e.g. /doc/{id}/text) is unwrapped from its JSON quotes.
+pub(crate) fn split_envelope_str(body: &str) -> (String, Option<serde_json::Value>) {
+    match serde_json::from_str::<serde_json::Value>(body) {
+        Ok(serde_json::Value::Object(mut map)) if map.contains_key("content") => {
+            let sources = map.remove("sources");
+            let content = map.remove("content").unwrap_or(serde_json::Value::Null);
+            let printed = match &content {
+                serde_json::Value::String(s) => s.clone(),
+                other => serde_json::to_string(other).unwrap_or_default(),
+            };
+            (printed, sources)
+        }
+        _ => (body.to_string(), None),
     }
 }
 
@@ -616,5 +712,97 @@ mod tests {
             resolve_cdx_url("https://api.example.com/api/", "resolve/CZSB1"),
             Ok("https://api.example.com/api/resolve/CZSB1".to_string())
         );
+    }
+
+    // --- attachment link resolution + envelope splitting ---
+
+    #[test]
+    fn resolves_only_attachment_links_keeping_fragment() {
+        let base = "https://example.com/api";
+        let body = r#"{"a":"cdx-cz-spp://doc/CZSB12/attachment/content_1.pdf#page=3","b":"cdx-cz-spp://doc/CZSB12/meta","c":"plain"}"#;
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains(
+            "https://example.com/api/CZ/sbirkapp/doc/CZSB12/attachment/content_1.pdf#page=3"
+        ));
+        assert!(
+            out.contains("\"cdx-cz-spp://doc/CZSB12/meta\""),
+            "non-attachment cdx:// must be left untouched: {out}"
+        );
+        assert!(out.contains("\"plain\""));
+    }
+
+    #[test]
+    fn split_envelope_extracts_content_and_sources() {
+        let body = r#"{"content":{"results":[{"docId":"CZSB1"}]},"sources":[{"__kind":"url","url":"https://x/y.pdf"}]}"#;
+        let (content, sources) = split_envelope_str(body);
+        assert!(content.contains("\"results\""));
+        assert!(sources.is_some());
+        assert_eq!(sources.unwrap()[0]["url"], "https://x/y.pdf");
+    }
+
+    #[test]
+    fn split_envelope_passthrough_when_no_content_key() {
+        let body = r#"{"results":[1,2]}"#;
+        let (content, sources) = split_envelope_str(body);
+        assert_eq!(content, body);
+        assert!(sources.is_none());
+    }
+
+    #[test]
+    fn resolves_attachment_with_query_and_fragment() {
+        let base = "https://example.com/api";
+        let body = r#""cdx-cz-spp://doc/CZSB12/attachment/content_1.pdf?v=2#page=7""#;
+        let out = resolve_attachment_links(body, base);
+        assert!(
+            out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB12/attachment/content_1.pdf")
+        );
+        assert!(
+            out.ends_with("#page=7\""),
+            "fragment must be preserved verbatim: {out}"
+        );
+    }
+
+    #[test]
+    fn non_attachment_url_in_sources_stays_cdx() {
+        let base = "https://example.com/api";
+        let body =
+            r#"{"content":1,"sources":[{"__kind":"url","url":"cdx-cz-spp://doc/CZSB12/meta"}]}"#;
+        let out = resolve_attachment_links(body, base);
+        assert!(
+            out.contains("\"cdx-cz-spp://doc/CZSB12/meta\""),
+            "non-attachment cdx:// in sources must stay unresolved: {out}"
+        );
+    }
+
+    #[test]
+    fn resolves_attachment_amid_multibyte_czech_text() {
+        let base = "https://example.com/api";
+        // Multi-byte chars (…, š, í) IMMEDIATELY adjacent to the token guard the char-boundary
+        // slicing — this resolver runs on Czech sbirkapp content where a mis-sliced index panics.
+        let body = "Vyhláška…cdx-cz-spp://doc/CZSB12/attachment/content_1.pdf#page=3,více š";
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB12/attachment/content_1.pdf#page=3"));
+        assert!(out.starts_with("Vyhláška…https://"), "multi-byte text immediately before token preserved: {out}");
+        assert!(out.ends_with(",více š"), "multi-byte text after the delimiter preserved: {out}");
+    }
+
+    #[test]
+    fn resolves_multiple_attachment_links_in_one_body() {
+        let base = "https://example.com/api";
+        let body = r#"["cdx-cz-spp://doc/CZSB1/attachment/a.pdf","cdx-cz-spp://doc/CZSB2/attachment/b.pdf#page=2"]"#;
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB1/attachment/a.pdf"));
+        assert!(out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB2/attachment/b.pdf#page=2"));
+        assert!(!out.contains("cdx-cz-spp://"), "all attachment links resolved: {out}");
+    }
+
+    #[test]
+    fn unknown_prefix_attachment_falls_back_to_cdx() {
+        let base = "https://example.com/api";
+        // Unknown ID prefix → resolve_cdx_url errors → original cdx:// link re-emitted unchanged.
+        let body = r#""cdx-cz-spp://doc/XXYY9/attachment/c.pdf#page=1""#;
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains("\"cdx-cz-spp://doc/XXYY9/attachment/c.pdf#page=1\""),
+            "unknown-prefix attachment link must be left as cdx://: {out}");
     }
 }

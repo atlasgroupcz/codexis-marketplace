@@ -44,4 +44,3 @@ select_binary_source() {
 }
 
 install_binary "$(select_binary_source "cdx-cz-spp")" "cdx-cz-spp"
-install_binary "$(select_binary_source "cdx-cz-spp-link-rewriter")" "cdx-cz-spp-link-rewriter"
