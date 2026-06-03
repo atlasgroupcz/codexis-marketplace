@@ -85,7 +85,5 @@ build_crate_macos_arm64() {
 
 build_crate "$SCRIPT_DIR/cdx-cz-spp" "cdx-cz-spp"
 build_crate_macos_arm64 "$SCRIPT_DIR/cdx-cz-spp" "cdx-cz-spp"
-build_crate "$SCRIPT_DIR/cdx-cz-spp-link-rewriter" "cdx-cz-spp-link-rewriter"
-build_crate_macos_arm64 "$SCRIPT_DIR/cdx-cz-spp-link-rewriter" "cdx-cz-spp-link-rewriter"
 
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

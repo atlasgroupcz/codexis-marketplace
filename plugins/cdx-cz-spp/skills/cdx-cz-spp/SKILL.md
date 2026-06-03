@@ -42,12 +42,11 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-cz-spp://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PLUGIN_CZ_SPP_API_URL` for link construction.
+User-facing document links MUST use the `https://` URL that appears in tool output. The binary resolves the PDF attachment of each result to a real `https://…/attachment/…#page=N` link before you see it — that resolved link is the citable **source**; link to it: `[Title](https://…#page=N)`.
 
-When citing documents, link to **attachment** URLs: `[Title](cdx-cz-spp://doc/{id}/attachment/{filename}#page=N)`.
-Search results include a `pageUrl` field with the complete attachment URL (including `#page=N`) — use it directly. If `pageUrl` is absent, get the filename from `/meta` assets.
+A `cdx-cz-spp://` link is NOT a user-facing link — it is an internal address you dereference with `cdx-cz-spp get cdx-cz-spp://…` to fetch more (`/meta`, `/text`, `/toc`). Never show a `cdx-cz-spp://` link to the user; if you need its content, fetch it and continue.
 
-Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
+Never resolve URLs yourself and never read `$CODEXIS_PLUGIN_CZ_SPP_API_URL` for link construction. Strip `<mark>` tags from titles.
 
 ### Forbidden Raw Identifiers
 
@@ -55,7 +54,7 @@ Never include any of the following in user-facing text:
 
 - Raw document IDs (e.g., `CZSB1234`)
 - Raw search prefix (`CZSB`)
-- Resolved HTTP URLs (e.g., `https://search.example.com/api/CZ/sbirkapp/doc/...`)
+- Bare API URLs you construct yourself (e.g., `https://…/api/CZ/sbirkapp/doc/CZSB123`) — cite ONLY the `https://…/attachment/…` PDF link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_CZ_SPP_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
@@ -71,7 +70,7 @@ When referring to the data source in prose, match the user's conversation langua
 
 Use the `nazev` field as the link text, combined with publisher and document number for context:
 
-- `[OZV o místním poplatku — Statutární město Brno, č. 8/2025](cdx-cz-spp://doc/CZSB123/attachment/content_1.pdf)`
+- `[OZV o místním poplatku — Statutární město Brno, č. 8/2025](https://…/CZ/sbirkapp/doc/CZSB123/attachment/content_1.pdf)`
 
 If nazev is unavailable, use `cisloPredpisu` and `publikujici` as fallback — never the raw document ID.
 
@@ -79,14 +78,14 @@ If nazev is unavailable, use `cisloPredpisu` and `publikujici` as fallback — n
 
 **Correct:**
 ```
-[OZV o místním poplatku za obecní systém odpadového hospodářství — Statutární město Brno, č. 8/2025](cdx-cz-spp://doc/CZSB123/attachment/content_1.pdf#page=3)
+[OZV o místním poplatku za obecní systém odpadového hospodářství — Statutární město Brno, č. 8/2025](https://…/CZ/sbirkapp/doc/CZSB123/attachment/content_1.pdf#page=3)
 ```
 
 **Incorrect:**
 ```
 CZSB123 — wrong, raw document ID
 cdx-cz-spp://doc/CZSB123/text — wrong, API endpoint as link
-https://search.example.com/api/CZ/sbirkapp/doc/CZSB123 — wrong, resolved URL
+https://search.example.com/api/CZ/sbirkapp/doc/CZSB123 — wrong, bare API doc URL (cite the /attachment/ PDF link from tool output instead)
 ```
 
 ## Hard Rules
@@ -95,7 +94,7 @@ https://search.example.com/api/CZ/sbirkapp/doc/CZSB123 — wrong, resolved URL
 
 Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
 
-- Search results include a ready-made `pageUrl` field — use it directly as the link target. It is a complete `cdx-cz-spp://` URL with `#page=N` already built in.
+- Search results include a ready-made `pageUrl` field — use it directly as the link target. The binary has already resolved it to a complete `https://…/attachment/…` URL with `#page=N` built in.
 - When `pageUrl` is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link without `#page` rather than omitting the link.
 
 ## Reference Files
