@@ -42,12 +42,14 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-sk://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PLUGIN_SK_API_URL` for link construction.
+User-facing document links MUST use the `https://` URL that appears in tool output. The binary resolves PDF attachment links to real `https://.../attachment/...` URLs before you see them — that resolved link is the citable source.
+
+A `cdx-sk://` link is NOT a user-facing link — it is an internal address you dereference with `cdx-sk get cdx-sk://...` to fetch more (`/meta`, `/text`, `/parts`, `/toc`). Never show a `cdx-sk://` link to the user; if you need its content, fetch it and continue.
 
 Every document reference MUST be a clickable attachment link — never plain text. How to build the link depends on the source:
 
-- **SKEZ (legislation):** Use the `attachmentUrl` field from the `/parts` response directly — it already includes `#page=N`. If you haven't fetched `/parts`, get the filename from `/meta` assets and link without `#page`. When `attachmentUrl` is absent (PDF page mapping unavailable), fall back to a link without `#page`.
-- **SKNUS/SKVS (court decisions):** Get the filename from `/meta` assets. Link to the attachment without `#page` — no page-level data exists for court decisions. Their `/parts` only provide `textUrl` for section text, not attachment URLs.
+- **SKEZ (legislation):** Use the resolved `https://` attachment URL from `attachmentUrl`/`pageUrl` in the tool output; it may already include `#page=N`. If you haven't fetched `/parts`, get the filename from `/meta` assets and fetch/construct the internal `cdx-sk://.../attachment/...` URL only as a tool step, then cite the resolved `https://` URL from output.
+- **SKNUS/SKVS (court decisions):** Get the filename from `/meta` assets. Link to the resolved attachment URL without `#page` — no page-level data exists for court decisions. Their `/parts` only provide `textUrl` for section text, not attachment URLs.
 
 Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
 
@@ -57,7 +59,7 @@ Never include any of the following in user-facing text:
 
 - Raw document IDs (e.g., `SKEZ1234`, `SKVS5678`, `SKNUS9012`)
 - Raw search prefixes (e.g., `SKEZ`, `SKVS`, `SKNUS`)
-- Resolved HTTP URLs (e.g., `https://search.example.com/api/SK/ezbierka/doc/...`)
+- Bare API URLs you construct yourself (e.g., `https://.../api/SK/ezbierka/doc/SKEZ123`) — cite ONLY the `https://.../attachment/...` PDF link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_SK_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
@@ -76,7 +78,7 @@ When referring to data sources in prose, match the user's conversation language:
 Use these fields as the link text:
 
 - **SKEZ:** `title` from search results (e.g., "Obciansky zakonnik") — strip `<mark>` tags
-- **SKVS/SKNUS:** `title` from search results, include court name inside the link text (e.g., `[Rozsudok — Okresny sud Bratislava I, sp. zn. 1C/123/2024](cdx-sk://doc/SKVS5678/attachment/content_1.pdf)`)
+- **SKVS/SKNUS:** `title` from search results, include court name inside the link text (e.g., `[Rozsudok — Okresny sud Bratislava I, sp. zn. 1C/123/2024](https://.../SK/vseobecne-sudy/doc/SKVS5678/attachment/content_1.pdf)`)
 
 If title is unavailable, use `docNumber` or a descriptive fallback — never the raw document ID.
 
@@ -84,16 +86,17 @@ If title is unavailable, use `docNumber` or a descriptive fallback — never the
 
 **Correct:**
 ```
-[ss 123 Obcianskeho zakonnika (40/1964 Zb.)](cdx-sk://doc/SKEZ1234/attachment/content_1.pdf#page=45)
+[ss 123 Obcianskeho zakonnika (40/1964 Zb.)](https://.../SK/ezbierka/doc/SKEZ1234/attachment/content_1.pdf#page=45)
 
-[Rozsudok — Okresny sud Bratislava I, sp. zn. 1C/123/2024](cdx-sk://doc/SKVS5678/attachment/content_1.pdf)
+[Rozsudok — Okresny sud Bratislava I, sp. zn. 1C/123/2024](https://.../SK/vseobecne-sudy/doc/SKVS5678/attachment/content_1.pdf)
 ```
 
 **Incorrect:**
 ```
 SKEZ1234 — wrong, raw document ID
 cdx-sk://doc/SKEZ1234/text — wrong, API endpoint as link
-https://search.example.com/api/SK/ezbierka/doc/SKEZ1234 — wrong, resolved URL
+cdx-sk://doc/SKEZ1234/attachment/content_1.pdf — wrong, internal address shown to user
+https://search.example.com/api/SK/ezbierka/doc/SKEZ1234 — wrong, bare API doc URL (cite the /attachment/ PDF link from tool output instead)
 ```
 
 ## Hard Rules
