@@ -15,4 +15,3 @@ remove_binary() {
 }
 
 remove_binary "cdx-sk"
-remove_binary "cdx-sk-link-rewriter"

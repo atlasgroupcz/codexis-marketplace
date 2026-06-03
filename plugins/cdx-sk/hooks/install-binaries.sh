@@ -44,4 +44,3 @@ select_binary_source() {
 }
 
 install_binary "$(select_binary_source "cdx-sk")" "cdx-sk"
-install_binary "$(select_binary_source "cdx-sk-link-rewriter")" "cdx-sk-link-rewriter"
