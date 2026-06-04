@@ -92,8 +92,10 @@ cdx-nl get "cdx-nl://afkorting/BW/parts?search=1:1"
 # 2. Read just that article's text:
 cdx-nl get "cdx-nl://afkorting/BW/text?part=<id-from-step-1>"
 
-# 3. Build the user-facing PDF link from the same parts[] entry:
-#   cdx-nl://doc/<docId>/attachment/<startSourceFile>#page=<startPage>
+# 3. Get the resolved https:// attachment URL for the user-facing link:
+cdx-nl get "cdx-nl://doc/<docId>/meta"
+#   → assets[].download_url appears as a resolved https://…/attachment/… URL in output
+#   Append #page=<startPage> from the parts[] entry for a page-specific deep-link.
 ```
 
 `?part=` is repeatable — pass multiple ids to concatenate their bodies in one

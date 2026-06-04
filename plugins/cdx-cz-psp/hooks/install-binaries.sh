@@ -44,4 +44,3 @@ select_binary_source() {
 }
 
 install_binary "$(select_binary_source "cdx-cz-psp")" "cdx-cz-psp"
-install_binary "$(select_binary_source "cdx-cz-psp-link-rewriter")" "cdx-cz-psp-link-rewriter"

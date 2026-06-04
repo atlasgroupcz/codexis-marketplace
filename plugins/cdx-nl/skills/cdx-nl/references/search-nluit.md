@@ -58,9 +58,10 @@ directly to the document:
 ```
 cdx-nl get cdx-nl://ecli/ECLI:NL:HR:2024:1234/meta
 #   → { docId, metadata, assets: [{ original_name, download_url, ... }] }
+#   assets[].download_url appears as a resolved https://…/attachment/… URL in output.
+#   Use that https:// URL directly as the user-facing link target.
 
-# Build the user-facing link from assets[].download_url (already a cdx-nl://
-# attachment link). To deep-link a page, fetch /parts and append #page=:
+# To deep-link a specific page, fetch /parts and append #page=<N>:
 cdx-nl get "cdx-nl://ecli/ECLI:NL:HR:2024:1234/parts"
 ```
 

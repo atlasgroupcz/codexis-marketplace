@@ -44,4 +44,3 @@ select_binary_source() {
 }
 
 install_binary "$(select_binary_source "cdx-at")" "cdx-at"
-install_binary "$(select_binary_source "cdx-at-link-rewriter")" "cdx-at-link-rewriter"

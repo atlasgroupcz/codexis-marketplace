@@ -15,4 +15,3 @@ remove_binary() {
 }
 
 remove_binary "cdx-cz-psp"
-remove_binary "cdx-cz-psp-link-rewriter"

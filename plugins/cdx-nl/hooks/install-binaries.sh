@@ -44,4 +44,3 @@ select_binary_source() {
 }
 
 install_binary "$(select_binary_source "cdx-nl")" "cdx-nl"
-install_binary "$(select_binary_source "cdx-nl-link-rewriter")" "cdx-nl-link-rewriter"

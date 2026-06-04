@@ -42,12 +42,11 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-cz-psp://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PLUGIN_CZ_PSP_API_URL` for link construction.
+User-facing document links MUST use the `https://` URL that appears in tool output. The binary resolves the PDF attachment of each result to a real `https://…/attachment/…#page=N` link before you see it — that resolved link is the citable **source**; link to it: `[Title](https://…#page=N)`.
 
-When citing documents, link to **attachment** URLs: `[Title](cdx-cz-psp://doc/{id}/attachment/{filename}#page=N)`.
-Search results include a `pageUrl` field with the complete attachment URL (including `#page=N`) — use it directly. If `pageUrl` is absent, get the filename from `/meta` assets.
+A `cdx-cz-psp://` link is NOT a user-facing link — it is an internal address you dereference with `cdx-cz-psp get cdx-cz-psp://…` to fetch more (`/meta`, `/text`, `/toc`). Never show a `cdx-cz-psp://` link to the user; if you need its content, fetch it and continue.
 
-Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
+Never resolve URLs yourself and never read `$CODEXIS_PLUGIN_CZ_PSP_API_URL` for link construction. Strip `<mark>` tags from titles.
 
 ### Forbidden Raw Identifiers
 
@@ -55,7 +54,7 @@ Never include any of the following in user-facing text:
 
 - Raw document IDs (e.g., `CZPSPDOK1234`, `CZPSPPRE5678`)
 - Raw search prefixes (e.g., `CZPSPDOK`, `CZPSPPRE`)
-- Resolved HTTP URLs (e.g., `https://search.example.com/api/CZ/psp/dokumenty/doc/...`)
+- Bare API URLs you construct yourself (e.g., `https://…/api/CZ/psp/preleg/doc/CZPSPPRE123`) — cite ONLY the `https://…/attachment/…` PDF link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_CZ_PSP_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
@@ -75,7 +74,7 @@ Use these fields as the link text:
 - **CZPSPDOK:** `title` or `fullTitle` from search results (e.g., "Písemná interpelace ve věci...")
 - **CZPSPPRE:** `title` or `fullTitle` from search results (e.g., "Novela zákona o daních z příjmů")
 
-Include press number and election period for context when helpful (e.g., `[Sněmovní tisk 123/0, 10. volební období](cdx-cz-psp://doc/CZPSPPRE5678/attachment/content_1.pdf)`).
+Include press number and election period for context when helpful (e.g., `[Sněmovní tisk 123/0, 10. volební období](https://…/CZ/psp/preleg/doc/CZPSPPRE5678/attachment/content_1.pdf#page=2)`).
 
 If title is unavailable, use press number or a descriptive fallback — never the raw document ID.
 
@@ -83,16 +82,16 @@ If title is unavailable, use press number or a descriptive fallback — never th
 
 **Correct:**
 ```
-[Novela zákona o daních z příjmů (tisk 123)](cdx-cz-psp://doc/CZPSPPRE1234/attachment/content_1.pdf#page=3)
+[Novela zákona o daních z příjmů (tisk 123)](https://…/CZ/psp/preleg/doc/CZPSPPRE1234/attachment/content_1.pdf#page=3)
 
-[Písemná interpelace ve věci dopravní infrastruktury](cdx-cz-psp://doc/CZPSPDOK5678/attachment/content_1.pdf)
+[Písemná interpelace ve věci dopravní infrastruktury](https://…/CZ/psp/dokumenty/doc/CZPSPDOK5678/attachment/content_1.pdf)
 ```
 
 **Incorrect:**
 ```
 CZPSPPRE1234 — wrong, raw document ID
 cdx-cz-psp://doc/CZPSPPRE1234/text — wrong, API endpoint as link
-https://search.example.com/api/CZ/psp/preleg/doc/CZPSPPRE1234 — wrong, resolved URL
+https://search.example.com/api/CZ/psp/preleg/doc/CZPSPPRE1234 — wrong, bare API doc URL (cite the /attachment/ PDF link from tool output instead)
 ```
 
 ## Hard Rules
@@ -101,8 +100,8 @@ https://search.example.com/api/CZ/psp/preleg/doc/CZPSPPRE1234 — wrong, resolve
 
 Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
 
-- Search results include a ready-made `pageUrl` field — use it directly as the link target. It is a complete `cdx-cz-psp://` URL with `#page=N` already built in.
-- When `pageUrl` is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link without `#page` rather than omitting the link.
+- Both PSP sources (CZPSPPRE, CZPSPDOK) are page-native: search results include a ready-made `pageUrl` field — use it directly as the link target. The binary has already resolved it to a complete `https://…/attachment/…` URL with `#page=N` built in.
+- When `pageUrl` is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link to the resolved `https://…/attachment/…` URL without `#page` rather than omitting the link.
 
 ### Do Not Use includeAllAssets=true on /meta
 
