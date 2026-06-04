@@ -15,4 +15,3 @@ remove_binary() {
 }
 
 remove_binary "cdx-at"
-remove_binary "cdx-at-link-rewriter"

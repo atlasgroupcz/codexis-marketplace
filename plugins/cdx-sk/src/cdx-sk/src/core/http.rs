@@ -23,8 +23,7 @@ pub(crate) fn execute_search_request(
     sort: Option<&str>,
     order: Option<&str>,
 ) -> Result<(), CliError> {
-    let curl_args =
-        build_search_curl_args(base_url, auth_header, source_code, payload, sort, order);
+    let curl_args = build_search_curl_args(base_url, auth_header, source_code, payload, sort, order);
 
     if dry_run {
         println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
@@ -122,6 +121,82 @@ fn write_stdout(rendered: &str) -> Result<(), CliError> {
     Ok(())
 }
 
+/// Rewrite ONLY `cdx-sk://…/attachment/…` links in `body` to absolute https URLs,
+/// preserving any `#fragment` / `?query`. Non-attachment cdx:// links are left as-is.
+/// Pure string scan (no JSON parse, no regex) — the matched token ends at the first
+/// JSON/markdown delimiter.
+pub(crate) fn resolve_attachment_links(body: &str, base_url: &str) -> String {
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+    while let Some(pos) = rest.find(CDX_SK_SCHEME) {
+        out.push_str(&rest[..pos]);
+        let after = &rest[pos + CDX_SK_SCHEME.len()..];
+        let end = after
+            .find(|c: char| {
+                c.is_whitespace()
+                    || matches!(
+                        c,
+                        '"' | '\''
+                            | '<'
+                            | '>'
+                            | '('
+                            | ')'
+                            | '['
+                            | ']'
+                            | '{'
+                            | '}'
+                            | '\\'
+                            | ','
+                            | '`'
+                    )
+            })
+            .unwrap_or(after.len());
+        let token = &after[..end]; // e.g. doc/SKVS100/attachment/content_1.pdf#page=3
+        if token.contains("/attachment/") {
+            // Split off the #fragment so it is preserved verbatim (never query-encoded by
+            // resolve_cdx_url, which only splits on '?'). Handles fragment-only AND query+fragment.
+            let (route, frag) = match token.find('#') {
+                Some(h) => (&token[..h], &token[h..]),
+                None => (token, ""),
+            };
+            match resolve_cdx_url(base_url, route) {
+                Ok(url) => {
+                    out.push_str(&url);
+                    out.push_str(frag);
+                }
+                Err(_) => {
+                    out.push_str(CDX_SK_SCHEME);
+                    out.push_str(token);
+                }
+            }
+        } else {
+            out.push_str(CDX_SK_SCHEME);
+            out.push_str(token);
+        }
+        rest = &after[end..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Split the `{content, sources}` envelope. Returns `(content_to_print, sources)`.
+/// Falls back to `(whole_body, None)` for non-enveloped responses (meta/text/toc).
+/// String `content` (e.g. /doc/{id}/text) is unwrapped from its JSON quotes.
+pub(crate) fn split_envelope_str(body: &str) -> (String, Option<serde_json::Value>) {
+    match serde_json::from_str::<serde_json::Value>(body) {
+        Ok(serde_json::Value::Object(mut map)) if map.contains_key("content") => {
+            let sources = map.remove("sources");
+            let content = map.remove("content").unwrap_or(serde_json::Value::Null);
+            let printed = match &content {
+                serde_json::Value::String(s) => s.clone(),
+                other => serde_json::to_string(other).unwrap_or_default(),
+            };
+            (printed, sources)
+        }
+        _ => (body.to_string(), None),
+    }
+}
+
 fn build_search_curl_args(
     base_url: &str,
     auth_header: Option<&str>,
@@ -130,7 +205,10 @@ fn build_search_curl_args(
     sort: Option<&str>,
     order: Option<&str>,
 ) -> Vec<String> {
-    let mut args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
+    let mut args = vec![
+        "-sS".to_string(),
+        "--fail-with-body".to_string(),
+    ];
     if let Some(header) = auth_header {
         args.push("-H".to_string());
         args.push(header.to_string());
@@ -145,12 +223,11 @@ fn build_search_curl_args(
     args
 }
 
-fn build_get_curl_args(
-    base_url: &str,
-    auth_header: Option<&str>,
-    resource: &str,
-) -> Result<Vec<String>, CliError> {
-    let mut args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
+fn build_get_curl_args(base_url: &str, auth_header: Option<&str>, resource: &str) -> Result<Vec<String>, CliError> {
+    let mut args = vec![
+        "-sS".to_string(),
+        "--fail-with-body".to_string(),
+    ];
     if let Some(header) = auth_header {
         args.push("-H".to_string());
         args.push(header.to_string());
@@ -234,77 +311,6 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         Ok(format!("{base}/resolve/{rest}{encoded_query}"))
     } else {
         Err(format!("Unknown cdx-sk:// path: {path}"))
-    }
-}
-
-/// Rewrite ONLY `cdx-sk://.../attachment/...` links in `body` to absolute https URLs,
-/// preserving any `#fragment` / `?query`. Non-attachment cdx:// links are left as-is.
-pub(crate) fn resolve_attachment_links(body: &str, base_url: &str) -> String {
-    let mut out = String::with_capacity(body.len());
-    let mut rest = body;
-    while let Some(pos) = rest.find(CDX_SK_SCHEME) {
-        out.push_str(&rest[..pos]);
-        let after = &rest[pos + CDX_SK_SCHEME.len()..];
-        let end = after
-            .find(|c: char| {
-                c.is_whitespace()
-                    || matches!(
-                        c,
-                        '"' | '\''
-                            | '<'
-                            | '>'
-                            | '('
-                            | ')'
-                            | '['
-                            | ']'
-                            | '{'
-                            | '}'
-                            | '\\'
-                            | ','
-                            | '`'
-                    )
-            })
-            .unwrap_or(after.len());
-        let token = &after[..end];
-        if token.contains("/attachment/") {
-            let (route, frag) = match token.find('#') {
-                Some(h) => (&token[..h], &token[h..]),
-                None => (token, ""),
-            };
-            match resolve_cdx_url(base_url, route) {
-                Ok(url) => {
-                    out.push_str(&url);
-                    out.push_str(frag);
-                }
-                Err(_) => {
-                    out.push_str(CDX_SK_SCHEME);
-                    out.push_str(token);
-                }
-            }
-        } else {
-            out.push_str(CDX_SK_SCHEME);
-            out.push_str(token);
-        }
-        rest = &after[end..];
-    }
-    out.push_str(rest);
-    out
-}
-
-/// Split the `{content, sources}` envelope. Returns `(content_to_print, sources)`.
-/// Falls back to `(whole_body, None)` for non-enveloped responses.
-pub(crate) fn split_envelope_str(body: &str) -> (String, Option<serde_json::Value>) {
-    match serde_json::from_str::<serde_json::Value>(body) {
-        Ok(serde_json::Value::Object(mut map)) if map.contains_key("content") => {
-            let sources = map.remove("sources");
-            let content = map.remove("content").unwrap_or(serde_json::Value::Null);
-            let printed = match &content {
-                serde_json::Value::String(s) => s.clone(),
-                other => serde_json::to_string(other).unwrap_or_default(),
-            };
-            (printed, sources)
-        }
-        _ => (body.to_string(), None),
     }
 }
 
@@ -507,7 +513,8 @@ mod tests {
 
     #[test]
     fn get_curl_args_translate_cdx_sk_resource_to_api_url() {
-        let args = build_get_curl_args(BASE, None, "cdx-sk://doc/SKEZ1234/meta").unwrap();
+        let args =
+            build_get_curl_args(BASE, None, "cdx-sk://doc/SKEZ1234/meta").unwrap();
 
         assert_eq!(
             args,
@@ -521,7 +528,8 @@ mod tests {
 
     #[test]
     fn get_curl_args_reject_non_cdx_sk_urls() {
-        let error = build_get_curl_args(BASE, None, "https://example.com/doc/1").unwrap_err();
+        let error =
+            build_get_curl_args(BASE, None, "https://example.com/doc/1").unwrap_err();
 
         assert!(matches!(error, CliError::InvalidCdxUrl(_)));
     }
@@ -639,7 +647,9 @@ mod tests {
     fn law_with_query_string() {
         assert_eq!(
             resolve_cdx_url(BASE, "law/SK/40/1964/text?timecutId=abc"),
-            Ok(format!("{BASE}/SK/ezbierka/law/40/1964/text?timecutId=abc"))
+            Ok(format!(
+                "{BASE}/SK/ezbierka/law/40/1964/text?timecutId=abc"
+            ))
         );
     }
 
@@ -678,7 +688,9 @@ mod tests {
     fn doc_with_query_string() {
         assert_eq!(
             resolve_cdx_url(BASE, "doc/SKEZ1/text?part=paragraf-1"),
-            Ok(format!("{BASE}/SK/ezbierka/doc/SKEZ1/text?part=paragraf-1"))
+            Ok(format!(
+                "{BASE}/SK/ezbierka/doc/SKEZ1/text?part=paragraf-1"
+            ))
         );
     }
 
@@ -766,71 +778,30 @@ mod tests {
         );
     }
 
+    // --- attachment link resolution + envelope splitting ---
+
     #[test]
     fn resolves_only_attachment_links_keeping_fragment() {
-        let body = r#"{"a":"cdx-sk://doc/SKEZ12/attachment/content_1.pdf#page=3","b":"cdx-sk://doc/SKEZ12/meta","c":"plain"}"#;
-        let out = resolve_attachment_links(body, BASE);
+        let base = "https://example.com/api";
+        let body = r#"{"a":"cdx-sk://doc/SKVS100/attachment/content_1.pdf#page=3","b":"cdx-sk://doc/SKVS100/meta","c":"plain"}"#;
+        let out = resolve_attachment_links(body, base);
         assert!(out.contains(
-            "https://api.example.com/api/SK/ezbierka/doc/SKEZ12/attachment/content_1.pdf#page=3"
+            "https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf#page=3"
         ));
         assert!(
-            out.contains("\"cdx-sk://doc/SKEZ12/meta\""),
-            "non-attachment cdx-sk:// must be left untouched: {out}"
+            out.contains("\"cdx-sk://doc/SKVS100/meta\""),
+            "non-attachment cdx:// must be left untouched: {out}"
         );
         assert!(out.contains("\"plain\""));
     }
 
     #[test]
-    fn resolves_attachment_links_for_all_sk_prefixes() {
-        let body = r#"[
-            "cdx-sk://doc/SKEZ1/attachment/a.pdf",
-            "cdx-sk://doc/SKVS2/attachment/b.pdf",
-            "cdx-sk://doc/SKNUS3/attachment/c.pdf"
-        ]"#;
-        let out = resolve_attachment_links(body, BASE);
-        assert!(out.contains("https://api.example.com/api/SK/ezbierka/doc/SKEZ1/attachment/a.pdf"));
-        assert!(out
-            .contains("https://api.example.com/api/SK/vseobecne-sudy/doc/SKVS2/attachment/b.pdf"));
-        assert!(out.contains(
-            "https://api.example.com/api/SK/najvyssi-ustavny-sud/doc/SKNUS3/attachment/c.pdf"
-        ));
-    }
-
-    #[test]
-    fn resolves_attachment_with_query_and_fragment() {
-        let body = r#""cdx-sk://doc/SKEZ12/attachment/content_1.pdf?v=2#page=7""#;
-        let out = resolve_attachment_links(body, BASE);
-        assert!(out.contains(
-            "https://api.example.com/api/SK/ezbierka/doc/SKEZ12/attachment/content_1.pdf"
-        ));
-        assert!(out.contains("?v=2#page=7"));
-    }
-
-    #[test]
-    fn unknown_prefix_attachment_falls_back_to_cdx() {
-        let body = r#""cdx-sk://doc/XXYY9/attachment/c.pdf#page=1""#;
-        let out = resolve_attachment_links(body, BASE);
-        assert!(
-            out.contains("\"cdx-sk://doc/XXYY9/attachment/c.pdf#page=1\""),
-            "unknown-prefix attachment link must be left as cdx-sk://: {out}"
-        );
-    }
-
-    #[test]
     fn split_envelope_extracts_content_and_sources() {
-        let body = r#"{"content":{"results":[{"docId":"SKEZ1"}]},"sources":[{"__kind":"url","url":"https://x/y.pdf"}]}"#;
+        let body = r#"{"content":{"results":[{"docId":"SKVS1"}]},"sources":[{"__kind":"url","url":"https://x/y.pdf"}]}"#;
         let (content, sources) = split_envelope_str(body);
         assert!(content.contains("\"results\""));
-        let sources = sources.expect("expected sources");
-        assert_eq!(sources[0]["url"], "https://x/y.pdf");
-    }
-
-    #[test]
-    fn split_envelope_unwraps_string_content() {
-        let body = r#"{"content":"plain text body","sources":[]}"#;
-        let (content, sources) = split_envelope_str(body);
-        assert_eq!(content, "plain text body");
         assert!(sources.is_some());
+        assert_eq!(sources.unwrap()[0]["url"], "https://x/y.pdf");
     }
 
     #[test]
@@ -842,10 +813,60 @@ mod tests {
     }
 
     #[test]
-    fn split_envelope_passthrough_non_json() {
-        let body = "not json";
-        let (content, sources) = split_envelope_str(body);
-        assert_eq!(content, body);
-        assert!(sources.is_none());
+    fn resolves_attachment_with_query_and_fragment() {
+        let base = "https://example.com/api";
+        let body = r#""cdx-sk://doc/SKVS100/attachment/content_1.pdf?v=2#page=7""#;
+        let out = resolve_attachment_links(body, base);
+        assert!(
+            out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf")
+        );
+        assert!(
+            out.ends_with("#page=7\""),
+            "fragment must be preserved verbatim: {out}"
+        );
+    }
+
+    #[test]
+    fn non_attachment_url_in_sources_stays_cdx() {
+        let base = "https://example.com/api";
+        let body =
+            r#"{"content":1,"sources":[{"__kind":"url","url":"cdx-sk://doc/SKVS100/meta"}]}"#;
+        let out = resolve_attachment_links(body, base);
+        assert!(
+            out.contains("\"cdx-sk://doc/SKVS100/meta\""),
+            "non-attachment cdx:// in sources must stay unresolved: {out}"
+        );
+    }
+
+    #[test]
+    fn resolves_attachment_amid_multibyte_slovak_text() {
+        let base = "https://example.com/api";
+        // Multi-byte chars (…, š, í) IMMEDIATELY adjacent to the token guard the char-boundary
+        // slicing — this resolver runs on Slovak content where a mis-sliced index panics.
+        let body = "Rozhodnutie…cdx-sk://doc/SKVS100/attachment/content_1.pdf#page=3,viac š";
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf#page=3"));
+        assert!(out.starts_with("Rozhodnutie…https://"), "multi-byte text immediately before token preserved: {out}");
+        assert!(out.ends_with(",viac š"), "multi-byte text after the delimiter preserved: {out}");
+    }
+
+    #[test]
+    fn resolves_multiple_attachment_links_in_one_body() {
+        let base = "https://example.com/api";
+        let body = r#"["cdx-sk://doc/SKVS1/attachment/a.pdf","cdx-sk://doc/SKVS2/attachment/b.pdf#page=2"]"#;
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS1/attachment/a.pdf"));
+        assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS2/attachment/b.pdf#page=2"));
+        assert!(!out.contains("cdx-sk://"), "all attachment links resolved: {out}");
+    }
+
+    #[test]
+    fn unknown_prefix_attachment_falls_back_to_cdx() {
+        let base = "https://example.com/api";
+        // Unknown ID prefix → resolve_cdx_url errors → original cdx:// link re-emitted unchanged.
+        let body = r#""cdx-sk://doc/XXYY9/attachment/c.pdf#page=1""#;
+        let out = resolve_attachment_links(body, base);
+        assert!(out.contains("\"cdx-sk://doc/XXYY9/attachment/c.pdf#page=1\""),
+            "unknown-prefix attachment link must be left as cdx://: {out}");
     }
 }

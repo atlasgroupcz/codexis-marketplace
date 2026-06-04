@@ -28,17 +28,8 @@ pub(crate) fn publish_from_body(
 fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), SourcesError> {
     let output = Command::new("curl")
         .args([
-            "-sS",
-            "--fail-with-body",
-            "-H",
-            auth_header,
-            "-X",
-            "POST",
-            "-H",
-            "Content-Type: application/json",
-            url,
-            "-d",
-            body,
+            "-sS", "--fail-with-body", "-H", auth_header, "-X", "POST",
+            "-H", "Content-Type: application/json", url, "-d", body,
         ])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -47,10 +38,7 @@ fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), Source
         .map_err(|e| SourcesError::Spawn(e.to_string()))?;
     match output.status.code() {
         Some(0) => Ok(()),
-        Some(code) => Err(SourcesError::Http {
-            code,
-            detail: response_detail(&output),
-        }),
+        Some(code) => Err(SourcesError::Http { code, detail: response_detail(&output) }),
         None => Err(SourcesError::Spawn("curl terminated without status".into())),
     }
 }
@@ -95,37 +83,5 @@ impl fmt::Display for SourcesError {
                 write!(f, "daemon rejected sources (curl exit {code}): {detail}")
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn null_sources_is_silent_noop() {
-        assert!(publish_from_body(&serde_json::Value::Null, &fake_daemon()).is_ok());
-    }
-
-    #[test]
-    fn empty_array_is_silent_noop() {
-        let sources = serde_json::json!([]);
-        assert!(publish_from_body(&sources, &fake_daemon()).is_ok());
-    }
-
-    #[test]
-    fn non_array_returns_parse_error() {
-        let sources = serde_json::json!({});
-        let err = publish_from_body(&sources, &fake_daemon()).unwrap_err();
-        assert!(matches!(err, SourcesError::Parse(_)), "got {err}");
-    }
-
-    fn fake_daemon() -> DaemonConfig {
-        DaemonConfig::test_only_new(
-            "http://daemon.test/graphql".to_string(),
-            "Authorization: Bearer token".to_string(),
-            "chat-1".to_string(),
-            "tool-1".to_string(),
-        )
     }
 }

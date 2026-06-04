@@ -85,7 +85,5 @@ build_crate_macos_arm64() {
 
 build_crate "$SCRIPT_DIR/cdx-nl" "cdx-nl"
 build_crate_macos_arm64 "$SCRIPT_DIR/cdx-nl" "cdx-nl"
-build_crate "$SCRIPT_DIR/cdx-nl-link-rewriter" "cdx-nl-link-rewriter"
-build_crate_macos_arm64 "$SCRIPT_DIR/cdx-nl-link-rewriter" "cdx-nl-link-rewriter"
 
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

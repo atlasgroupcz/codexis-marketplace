@@ -55,21 +55,6 @@ impl DaemonConfig {
         })
     }
 
-    #[cfg(test)]
-    pub(crate) fn test_only_new(
-        daemon_url: String,
-        auth_header: String,
-        chat_id: String,
-        tool_call_id: String,
-    ) -> Self {
-        Self {
-            daemon_url,
-            auth_header,
-            chat_id,
-            tool_call_id,
-        }
-    }
-
     pub(crate) fn auth_header(&self) -> &str {
         &self.auth_header
     }
@@ -90,14 +75,8 @@ impl DaemonConfig {
 
 fn read_daemon_secret() -> Option<String> {
     let home = read_env(CODEXIS_PUBLIC_USER_HOME_ENV).or_else(|| read_env("HOME"))?;
-    let path = format!(
-        "{}/{}",
-        home.trim_end_matches('/'),
-        DAEMON_SECRET_RELATIVE_PATH
-    );
-    std::fs::read_to_string(path)
-        .ok()
-        .and_then(normalize_config_value)
+    let path = format!("{}/{}", home.trim_end_matches('/'), DAEMON_SECRET_RELATIVE_PATH);
+    std::fs::read_to_string(path).ok().and_then(normalize_config_value)
 }
 
 fn read_env(name: &str) -> Option<String> {

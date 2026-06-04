@@ -2,7 +2,7 @@
 uuid: 43dc8c25-4d0b-4983-a0f6-2b0bde63a852
 name: cdx-at
 description: This skill should be invoked whenever user needs Austrian law or legal information — federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), or other publications (Sonstige) from the RIS system.
-version: 2.1.0
+version: 2.2.0
 i18n:
   cs:
     displayName: "Rakouské právo (RIS)"
@@ -66,12 +66,15 @@ All responses shown to the user **must** follow these formatting rules. The raw 
 
 ### Link Format
 
-**IMPORTANT:** All document links in user-facing output MUST use the `cdx-at://` scheme. The system automatically resolves these to real URLs at render time. Never resolve URLs yourself — never read or use `$CODEXIS_PLUGIN_AT_API_URL` for link construction.
+User-facing document links MUST use the `https://` URL that appears in tool output. The binary resolves the PDF attachment of each result to a real `https://…/attachment/…` link before you see it — that resolved link is the citable **source**; link to it: `[Title](https://…)`.
 
-When citing documents, link to **attachment** URLs: `[Title](cdx-at://doc/{id}/attachment/{filename})`.
-Get the filename from the `/meta` response (assets array).
+For ATBR, ATJD, ATLR, and ATSO sources, search results include `#page=N` in the resolved URL when a page mapping is available — use that URL as-is: `[Title](https://…#page=N)`.
 
-Never present search, meta, text, or other API endpoints as clickable links — those are internal tool calls only.
+For ATHI (history) sources, search results provide document-level sources without `#page` — the history surface is a query-time computed temporal snapshot, not a paged PDF. Link to the resolved URL as-is, without adding a page suffix.
+
+A `cdx-at://` link is NOT a user-facing link — it is an internal address you dereference with `cdx-at get cdx-at://…` to fetch more (`/meta`, `/text`, `/toc`, `/law/…`). Never show a `cdx-at://` link to the user; if you need its content, fetch it and continue.
+
+Never resolve URLs yourself and never read `$CODEXIS_PLUGIN_AT_API_URL` for link construction. Strip `<mark>` tags from titles.
 
 ### Forbidden Raw Identifiers
 
@@ -79,7 +82,7 @@ Never include any of the following in user-facing text:
 
 - Raw document IDs (e.g., `ATBR1234`, `ATJD5678`)
 - Raw search prefixes (e.g., `ATBR`, `ATJD`, `ATHI`)
-- Resolved HTTP URLs (e.g., `https://search.example.com/api/AT/judikatur/doc/...`)
+- Bare API URLs you construct yourself (e.g., `https://…/api/AT/judikatur/doc/ATJD123`) — cite ONLY the `https://…/attachment/…` link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_AT_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
 
@@ -100,7 +103,7 @@ When referring to data sources in prose, match the user's conversation language:
 Use these fields as the link text:
 
 - **ATBR:** `title` or `shortTitle` (e.g., "Bundesgesetz, mit dem das Strafgesetzbuch geandert wird")
-- **ATJD:** `court` + case number from search results (e.g., `[VfGH, G 47/2024](cdx-at://doc/ATJD5678/attachment/content_1.pdf)`)
+- **ATJD:** `court` + case number from search results
 - **ATHI:** `shortTitle` or `abbreviation` + `articleParagraph` (e.g., "StGB § 165")
 - **ATLR/ATSO:** `title` from search results
 
@@ -110,18 +113,19 @@ If title is unavailable, use `documentNumber` or a descriptive fallback — neve
 
 **Correct:**
 ```
-[StGB § 165 — Betrügerischer Datenverarbeitungsmissbrauch](cdx-at://doc/ATHI1234/attachment/content_1.pdf)
+[StGB § 165 — Betrügerischer Datenverarbeitungsmissbrauch](https://codexis.ai/sources/api/AT/history/doc/ATHI1234/attachment/content_1.pdf)
 
-[VfGH, G 47/2024](cdx-at://doc/ATJD5678/attachment/content_1.pdf)
+[VfGH, G 47/2024](https://codexis.ai/sources/api/AT/judikatur/doc/ATJD5678/attachment/content_1.pdf#page=1)
 
-[BGBl. I Nr. 58/2018](cdx-at://doc/ATBR9012/attachment/content_1.pdf)
+[BGBl. I Nr. 58/2018](https://codexis.ai/sources/api/AT/bundesrecht/doc/ATBR9012/attachment/content_1.pdf#page=1)
 ```
 
 **Incorrect:**
 ```
 ATJD5678 — wrong, raw document ID
-cdx-at://doc/ATJD5678/text — wrong, API endpoint as link
-https://search.example.com/api/AT/judikatur/doc/ATJD5678 — wrong, resolved URL
+cdx-at://doc/ATJD5678/text — wrong, API endpoint shown as a link
+cdx-at://doc/ATJD5678/attachment/content_1.pdf — wrong, internal handle shown as a link
+https://search.example.com/api/AT/judikatur/doc/ATJD5678 — wrong, bare API doc URL (not an attachment link)
 ```
 
 ## Hard Rules
@@ -130,8 +134,10 @@ https://search.example.com/api/AT/judikatur/doc/ATJD5678 — wrong, resolved URL
 
 Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
 
-- Get the filename from `/meta` assets. No page-level data is available in Austrian domains, so link without `#page`.
-- If `/meta` hasn't been fetched yet, fetch it to get the attachment filename before presenting the document to the user.
+- Search results include a ready-made resolved `https://…/attachment/…` URL — use it directly as the link target. The binary has already resolved it to a complete `https://` URL.
+- For ATBR, ATJD, ATLR, ATSO: the resolved URL includes `#page=N` when a page mapping is available. Use it as-is.
+- For ATHI: the resolved URL is document-level (no `#page`). Link to it as-is — do not add a page suffix.
+- When a resolved URL is absent (the field is omitted from JSON when unavailable), get the filename from `/meta` assets and link without `#page` rather than omitting the link.
 
 ### Never Scrape RIS — cdx-at Is the Only Access Path
 
@@ -141,8 +147,8 @@ Every document reference in user-facing output MUST be a clickable attachment li
 - Do NOT use `curl`, `wget`, `requests`, `urllib`, a headless browser, or DuckDuckGo/Google
   `site:ris.bka.gv.at` queries.
 - `cdx-at search` finds documents; `cdx-at get <cdx-at://…>` fetches their content and `/meta`.
-  Trust those results — the `cdx-at://` link you build from them resolves to the correct RIS URL
-  at render time. There is no need to confirm it against the live site.
+  Trust those results — the resolved `https://` link you see in tool output is already correct.
+  There is no need to confirm it against the live site.
 - If `cdx-at search` returns no hit, refine the query (try ATBR/ATHI/ATJD, abbreviations,
   gazette numbers) — do not fall back to scraping.
 
