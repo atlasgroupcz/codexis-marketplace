@@ -206,6 +206,10 @@ pub fn sync(client: &GraphQLClient, dry_run: bool, format: OutputFormat) -> Resu
     }
 
     if !dry_run {
+        // Chats were written straight to disk, bypassing the daemon's history index.
+        // The daemon only rebuilds that index when it is missing, so drop it here to
+        // force a rebuild from every chat on disk (old chats included) on next access.
+        invalidate_history_index(&home);
         let _ = fs::remove_dir_all(&work_dir);
     }
 
@@ -220,6 +224,23 @@ pub fn sync(client: &GraphQLClient, dry_run: bool, format: OutputFormat) -> Resu
     });
     print_output(&summary, format);
     Ok(())
+}
+
+/// Remove the daemon's chat history index so it is rebuilt from the chats on disk.
+fn invalidate_history_index(home: &Path) {
+    let cdx = home.join(".cdx");
+    if let Ok(entries) = fs::read_dir(cdx.join("indices")) {
+        for entry in entries.flatten() {
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("chat-global-history-index")
+            {
+                let _ = fs::remove_file(entry.path());
+            }
+        }
+    }
+    let _ = fs::remove_dir_all(cdx.join("chat-index"));
 }
 
 fn map_role(author_type: Option<&str>) -> Option<&'static str> {
