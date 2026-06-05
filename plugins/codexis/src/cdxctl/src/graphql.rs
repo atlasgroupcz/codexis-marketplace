@@ -85,6 +85,17 @@ mutation TriggerAutomation($id: ID!) {
 }
 "#;
 
+// ==================== Codexis 1.0 sync ====================
+
+pub const START_CODEXIS_EXPORT: &str = r#"
+mutation StartCodexisExport {
+    startCodexisExport {
+        snapshotId
+        archiveUrl
+    }
+}
+"#;
+
 // ==================== Marketplaces ====================
 
 pub const GET_MARKETPLACES: &str = r#"
