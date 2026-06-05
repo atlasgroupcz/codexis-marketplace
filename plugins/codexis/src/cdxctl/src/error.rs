@@ -4,12 +4,14 @@ use std::fmt;
 pub const EXIT_NETWORK: i32 = 2;
 pub const EXIT_GRAPHQL: i32 = 3;
 pub const EXIT_PARSE: i32 = 4;
+pub const EXIT_REFUSED: i32 = 5;
 
 #[derive(Debug)]
 pub enum CdxctlError {
     Network(String),
     GraphQL(Vec<String>),
     Parse(String),
+    Refused(String),
 }
 
 impl CdxctlError {
@@ -18,6 +20,7 @@ impl CdxctlError {
             CdxctlError::Network(_) => EXIT_NETWORK,
             CdxctlError::GraphQL(_) => EXIT_GRAPHQL,
             CdxctlError::Parse(_) => EXIT_PARSE,
+            CdxctlError::Refused(_) => EXIT_REFUSED,
         }
     }
 }
@@ -30,6 +33,7 @@ impl fmt::Display for CdxctlError {
                 write!(f, "GraphQL error: {}", errors.join("; "))
             }
             CdxctlError::Parse(msg) => write!(f, "Parse error: {msg}"),
+            CdxctlError::Refused(msg) => write!(f, "Refused: {msg}"),
         }
     }
 }
