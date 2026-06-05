@@ -6,7 +6,6 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use uuid::Uuid;
 
 /// Import chats and files from Codexis 1.0.
@@ -38,17 +37,7 @@ pub fn sync(client: &GraphQLClient, dry_run: bool, format: OutputFormat) -> Resu
 
     eprintln!("Downloading Codexis 1.0 snapshot {snapshot_id} ...");
     download(archive_url, &zip_path)?;
-
-    let status = Command::new("unzip")
-        .arg("-o")
-        .arg("-q")
-        .arg(&zip_path)
-        .arg("-d")
-        .arg(&extract_dir)
-        .status()?;
-    if !status.success() {
-        return Err(CdxctlError::Network("unzip failed on the downloaded snapshot".into()));
-    }
+    extract_zip(&zip_path, &extract_dir)?;
 
     let manifest = read_json(&extract_dir.join("manifest.json"))?;
 
@@ -267,6 +256,16 @@ fn home_dir() -> Result<PathBuf, CdxctlError> {
 fn read_json(path: &Path) -> Result<Value, CdxctlError> {
     let bytes = fs::read(path)?;
     Ok(serde_json::from_slice(&bytes)?)
+}
+
+fn extract_zip(zip_path: &Path, dest: &Path) -> Result<(), CdxctlError> {
+    let file = fs::File::open(zip_path)?;
+    let mut archive = zip::ZipArchive::new(file)
+        .map_err(|e| CdxctlError::Network(format!("opening snapshot archive failed: {e}")))?;
+    archive
+        .extract(dest)
+        .map_err(|e| CdxctlError::Network(format!("extracting snapshot archive failed: {e}")))?;
+    Ok(())
 }
 
 fn download(url: &str, dest: &Path) -> Result<(), CdxctlError> {
