@@ -62,6 +62,8 @@ cdxctl automation trigger <id>
 
 **Required fields for create-command:** `--title`, `--cron`, `--command`
 
+**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative — e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--cron`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt — this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
+
 **IDs:** Use the `id` or `uuid` from `automation list` output. Both Node IDs (base64) and raw UUIDs work.
 
 ## Marketplaces
