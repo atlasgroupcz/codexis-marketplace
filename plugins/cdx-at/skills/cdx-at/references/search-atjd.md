@@ -15,6 +15,21 @@ Court code (exact match):
 - `Dok` - Dokumentation / Documentation (~1,600)
 - `Umse` - Umweltsenat / Environmental Senate (~390)
 
+## Citation court abbreviations
+Court abbreviation used in the user-facing citation link text (`GERICHT - GZ - DD.MM.YYYY`):
+
+| `court` value | Abbrev |
+|---------------|--------|
+| Verfassungsgerichtshof (`Vfgh`) | VfGH |
+| Verwaltungsgerichtshof (`Vwgh`) | VwGH |
+| Oberster Gerichtshof (`Justiz`) | OGH |
+| Bundesverwaltungsgericht (`Bvwg`) | BVwG |
+| Landesverwaltungsgericht (`Lvwg`) | LVwG |
+| Oberlandesgericht `<Ort>` | OLG `<Ort>` |
+| Landesgericht `<Ort>` | LG `<Ort>` |
+
+Unknown court → keep its official short name verbatim.
+
 ## documentType
 Document type (exact match):
 - `Entscheidungstext` - Full decision text

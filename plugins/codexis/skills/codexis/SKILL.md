@@ -2,7 +2,7 @@
 uuid: 272cbab6-4deb-4b1b-8595-279b6c6923d9
 name: codexis
 description: This skill should be invoked whenever user needs Czech, Slovak, or European legal research — legislation changes, case law / judikatura lookup, legal commentaries, professional literature, contract templates, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
-version: 2.1.0
+version: 2.2.0
 i18n:
   cs:
     displayName: "CODEXIS — Právní databáze"
@@ -64,7 +64,8 @@ All CODEXIS documents are in Czech.
 ## User-Facing Output Rules
 
 - User-facing document links MUST use the resolved `https://` URL from the source block. Each cited document is appended to tool output as a `【src_xxx】 url: https://…` block — use that `https://` URL as the link target: `[title](https://…)` or `[title](https://…#elementId)` (append the same `#elementId` anchor you would have used). The `cdx://` scheme is ONLY an addressing scheme for `cdx-cli get cdx://...` fetch arguments — never put a `cdx://` link in output shown to the user. Never expose raw IDs, source codes, relation enums, or API suffixes like `/text`, `/meta`, `/toc` as user has no way to access it.
-- Use the search-result title as link text, stripping `<mark>` tags. For `JD`, include the court name in the link text. If title is unavailable, use `docNumber` or a short descriptive fallback, raw ID as last resort.
+- Use the search-result title as link text, stripping `<mark>` tags. If title is unavailable, use `docNumber` or a short descriptive fallback, raw ID as last resort.
+- For court decisions (`JD`, `ES`), the visible link text MUST be a compact legal citation, not the raw or generic title: `COURT - Č. J. / SP. ZN. - DD.MM.YYYY` (e.g. `ÚS - Pl. ÚS 1/26 - 20.05.2026`, `NSS - 1 As 123/2026 - 13.05.2026`). Compose it from metadata (search result or `/meta`): map `court` to its abbreviation per the table in `references/judikatura.md` (Czech courts plus the EU `ES` sources SDEU/ESLP), take the reference from `cislaJednaci[0]` (else `spZns[0]`, then `ecli`/`sbirkoveCislo`), and append ` - DD.MM.YYYY` from `releaseDate` only when a date exists — never invent one. The generic title (`docType` + long court name) may appear only as secondary text, never as the primary label; for an unrecognised court keep its official short name verbatim.
 - For relation labels, use the `name` field from `/related/counts`, never the `type` enum.
 - When citing a legal section, make the section itself the clickable reference instead of splitting title and link.
 
