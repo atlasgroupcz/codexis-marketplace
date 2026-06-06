@@ -2,6 +2,7 @@ mod client;
 mod commands;
 mod error;
 mod graphql;
+mod guard;
 mod output;
 
 use clap::{Parser, Subcommand};
@@ -399,6 +400,12 @@ fn parse_key_value(s: &str) -> Result<(String, String), String> {
 
 fn main() {
     let cli = Cli::parse();
+
+    if let Err(e) = preflight_guard(&cli.command) {
+        eprintln!("Error: {e}");
+        process::exit(e.exit_code());
+    }
+
     let client = GraphQLClient::new();
     let format = OutputFormat::from_flag(cli.table);
 
@@ -611,6 +618,21 @@ fn main() {
         eprintln!("Error: {e}");
         process::exit(e.exit_code());
     }
+}
+
+/// Refuse recursive/invalid operations before any network or auth setup runs.
+fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
+    if let Commands::Automation { command } = command {
+        let action = match command {
+            AutomationCommands::Create { .. } => Some("automation create"),
+            AutomationCommands::CreateCommand { .. } => Some("automation create-command"),
+            _ => None,
+        };
+        if let Some(action) = action {
+            guard::refuse_if_in_automation(action)?;
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
