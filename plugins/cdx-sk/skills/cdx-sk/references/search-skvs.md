@@ -15,6 +15,16 @@ Court code (exact match):
 - `KSBA` - Krajsky sud v Bratislave
 - And many more (use courtName for full-text match)
 
+## Citation court abbreviations
+Court abbreviation used in the user-facing citation link text (`SÚD - SP. ZN. - DD.MM.RRRR`):
+
+| `courtName` value | Abbrev |
+|-------------------|--------|
+| Krajsky sud `<mesto>` | KS `<mesto>` |
+| Okresny sud `<mesto>` | OS `<mesto>` |
+
+Unknown court → keep its official short name verbatim.
+
 ## courtName
 Full court name (exact match). Examples:
 - `Okresny sud Bratislava I`

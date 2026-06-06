@@ -1,7 +1,7 @@
 ---
 uuid: e5c6de23-bcb5-48b7-a845-8d8c472ff220
 name: codexis-ucetnictvi
-version: 2.1.0
+version: 2.2.0
 i18n:
   cs:
     displayName: "CODEXIS — Účetnictví ČR"
@@ -205,6 +205,8 @@ Pokud jedna vrstva odkazuje na druhou, dohledej a uveď.
 ## Proactive Reference Enrichment
 
 Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj ji v CODEXIS a použij `https://` odkaz na dokument (resolvovaná URL ze source bloku). Neprezentuj raw reference bez pokusu o lookup. Pokud reference není v CODEXIS, ponechej plain text. Po sobě jdoucí paragrafy shrň do rozmezí.
+
+U citace soudního rozhodnutí (`JD`, typicky judikatura NSS k účetním sporům) musí být viditelný text odkazu kompaktní právní citace, ne zkrácený obecný titulek: `SOUD - Č. J. / SP. ZN. - DD.MM.RRRR` (např. `NSS - 1 Afs 123/2026 - 13.05.2026`). Sestav z metadat (search result nebo `/meta`): `SOUD` zkrať podle tabulky v `references/judikatura.md` skillu `codexis`, referenci vezmi z `cislaJednaci[0]` (jinak `spZns[0]`) a `- DD.MM.RRRR` z `releaseDate` přidej jen když datum existuje. Obecný titulek smí být jen sekundární text, nikdy primární odkaz.
 
 ## Short Best Practices
 

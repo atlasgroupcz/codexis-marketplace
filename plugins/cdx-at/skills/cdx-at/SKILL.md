@@ -2,7 +2,7 @@
 uuid: 43dc8c25-4d0b-4983-a0f6-2b0bde63a852
 name: cdx-at
 description: This skill should be invoked whenever user needs Austrian law or legal information — federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), or other publications (Sonstige) from the RIS system.
-version: 2.2.0
+version: 2.3.0
 i18n:
   cs:
     displayName: "Rakouské právo (RIS)"
@@ -103,7 +103,7 @@ When referring to data sources in prose, match the user's conversation language:
 Use these fields as the link text:
 
 - **ATBR:** `title` or `shortTitle` (e.g., "Bundesgesetz, mit dem das Strafgesetzbuch geandert wird")
-- **ATJD:** `court` + case number from search results
+- **ATJD (court decisions):** the link text MUST be a compact legal citation, not the generic title: `GERICHT - GZ - DD.MM.YYYY` (e.g. `VfGH - G 47/2024 - 14.06.2024`). Map the court to its abbreviation per the table in `references/search-atjd.md`; the reference is `caseNumber` (Geschäftszahl, else `ecli`), and append ` - DD.MM.YYYY` (decision date) when available. Unknown court → keep its official short name; missing date → drop only the date segment.
 - **ATHI:** `shortTitle` or `abbreviation` + `articleParagraph` (e.g., "StGB § 165")
 - **ATLR/ATSO:** `title` from search results
 
@@ -115,7 +115,7 @@ If title is unavailable, use `documentNumber` or a descriptive fallback — neve
 ```
 [StGB § 165 — Betrügerischer Datenverarbeitungsmissbrauch](https://codexis.ai/sources/api/AT/history/doc/ATHI1234/attachment/content_1.pdf)
 
-[VfGH, G 47/2024](https://codexis.ai/sources/api/AT/judikatur/doc/ATJD5678/attachment/content_1.pdf#page=1)
+[VfGH - G 47/2024 - 14.06.2024](https://codexis.ai/sources/api/AT/judikatur/doc/ATJD5678/attachment/content_1.pdf#page=1)
 
 [BGBl. I Nr. 58/2018](https://codexis.ai/sources/api/AT/bundesrecht/doc/ATBR9012/attachment/content_1.pdf#page=1)
 ```

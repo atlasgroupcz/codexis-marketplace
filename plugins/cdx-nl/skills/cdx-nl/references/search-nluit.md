@@ -17,6 +17,20 @@ Court code. Common values:
 
   cdx-nl search NLUIT --court HR --court GHAMS
 
+## Citation court abbreviations
+Court abbreviation used in the user-facing citation link text (`COURT - ECLI - DD.MM.YYYY`):
+
+| `court` value | Abbrev |
+|---------------|--------|
+| Hoge Raad | HR |
+| Raad van State | RvS |
+| Centrale Raad van Beroep | CRvB |
+| College van Beroep voor het bedrijfsleven | CBb |
+| Gerechtshof `<plaats>` | Hof `<plaats>` |
+| Rechtbank `<plaats>` | Rb `<plaats>` |
+
+Unknown court → keep its official short name verbatim.
+
 ## --decision-type
 Uitspraak | Conclusie | Beslissing | Tussenuitspraak | …
 

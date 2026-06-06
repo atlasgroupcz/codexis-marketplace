@@ -1,7 +1,7 @@
 ---
 uuid: f2c4412e-d6c4-462b-9ca5-0b94048be8cb
 name: codexis-dane
-version: 3.2.0
+version: 3.3.0
 i18n:
   cs:
     displayName: "CODEXIS — Daně ČR"
@@ -233,6 +233,7 @@ Pokud jedna vrstva odkazuje na druhou („stanoví zvláštní předpis", „pod
 - Je-li zákonné ustanovení formulováno podmíněně („…pokud…", „…s výjimkou…"), zachovej tu podmíněnost v odpovědi.
 - Uživatelské odkazy MUSÍ používat resolvovanou `https://` URL ze source bloku (každý citovaný dokument je k tool outputu připojen jako `【src_xxx】 url: https://…`): `[title](https://…)` nebo `[title](https://…#elementId)`. Schéma `cdx://` je POUZE adresace pro argumenty `cdx-cli get cdx://...` — nikdy ho nedávej do výstupu pro uživatele. Nikdy nevystavuj raw ID, API suffixy jako `/text`, `/meta`, `/toc`.
 - Při citaci paragrafu udělej z paragrafu samotného klikací referenci.
+- U citace soudního rozhodnutí (`JD`) musí být viditelný text odkazu kompaktní právní citace, ne zkrácený obecný titulek: `SOUD - Č. J. / SP. ZN. - DD.MM.RRRR` (např. `NSS - 1 Afs 123/2026 - 13.05.2026`). Sestav z metadat (search result nebo `/meta`): `SOUD` zkrať podle tabulky v `references/judikatura.md` skillu `codexis`, referenci vezmi z `cislaJednaci[0]` (jinak `spZns[0]`) a `- DD.MM.RRRR` z `releaseDate` přidej jen když datum existuje. Obecný titulek (`docType` + dlouhý název soudu) smí být jen sekundární text, nikdy primární odkaz; neznámý soud → jeho oficiální zkrácený název.
 
 ## Proactive Reference Enrichment
 
