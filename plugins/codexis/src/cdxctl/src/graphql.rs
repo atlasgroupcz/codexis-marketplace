@@ -87,11 +87,16 @@ mutation TriggerAutomation($id: ID!) {
 
 // ==================== Codexis 1.0 sync ====================
 
-pub const START_CODEXIS_EXPORT: &str = r#"
-mutation StartCodexisExport {
-    startCodexisExport {
+pub const START_CODEXIS_IMPORT: &str = r#"
+mutation StartCodexisImport {
+    startCodexisImport {
         snapshotId
-        archiveUrl
+        chatsImported
+        chatsSkipped
+        messagesImported
+        agentsImported
+        agentsSkipped
+        filesImported
     }
 }
 "#;
