@@ -90,6 +90,8 @@ mutation TriggerAutomation($id: ID!) {
 pub const START_CODEXIS_IMPORT: &str = r#"
 mutation StartCodexisImport {
     startCodexisImport {
+        runId
+        status
         snapshotId
         chatsImported
         chatsSkipped
@@ -97,6 +99,24 @@ mutation StartCodexisImport {
         agentsImported
         agentsSkipped
         filesImported
+        error
+    }
+}
+"#;
+
+pub const CODEXIS_IMPORT_STATUS: &str = r#"
+query CodexisImportStatus {
+    codexisImportStatus {
+        runId
+        status
+        snapshotId
+        chatsImported
+        chatsSkipped
+        messagesImported
+        agentsImported
+        agentsSkipped
+        filesImported
+        error
     }
 }
 "#;
