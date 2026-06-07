@@ -85,6 +85,42 @@ mutation TriggerAutomation($id: ID!) {
 }
 "#;
 
+// ==================== Codexis 1.0 sync ====================
+
+pub const START_CODEXIS_IMPORT: &str = r#"
+mutation StartCodexisImport {
+    startCodexisImport {
+        runId
+        status
+        snapshotId
+        chatsImported
+        chatsSkipped
+        messagesImported
+        agentsImported
+        agentsSkipped
+        filesImported
+        error
+    }
+}
+"#;
+
+pub const CODEXIS_IMPORT_STATUS: &str = r#"
+query CodexisImportStatus {
+    codexisImportStatus {
+        runId
+        status
+        snapshotId
+        chatsImported
+        chatsSkipped
+        messagesImported
+        agentsImported
+        agentsSkipped
+        filesImported
+        error
+    }
+}
+"#;
+
 // ==================== Marketplaces ====================
 
 pub const GET_MARKETPLACES: &str = r#"
