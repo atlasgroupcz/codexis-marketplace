@@ -2,7 +2,7 @@
 uuid: 858f1a59-06c5-46a4-84dc-62d50cc1b6af
 name: cdx-nl
 description: Dutch national legislation (BWB) and Dutch case law (Rechtspraak.nl) — use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., or references BWB-ids.
-version: 2.0.0
+version: 2.1.0
 i18n:
   cs:
     displayName: "Nizozemské právo (BWB a Rechtspraak.nl)"
@@ -73,7 +73,7 @@ When referring to data sources in prose, match the user's conversation language:
 Use these fields as the link text:
 
 - **NLBWB:** `title` from search results (e.g., "Burgerlijk Wetboek Boek 1") — strip `<mark>` tags. When citing a specific article, prefix with the article reference (e.g., `art. 1:1 BW`).
-- **NLUIT:** `title` from search results, include court name and case identifier inside the link text (e.g., `[Uitspraak — Hoge Raad, ECLI:NL:HR:2024:123](https://…/attachment/decision.pdf#page=12)`).
+- **NLUIT (court decisions):** the link text MUST be a compact legal citation, not the generic title: `COURT - ECLI - DD.MM.YYYY` (e.g. `[HR - ECLI:NL:HR:2024:123 - 12.01.2024](https://…/attachment/decision.pdf#page=12)`). Map the court to its abbreviation per the table in `references/search-nluit.md`; the reference is `ecli` (registered case number only if no ECLI), and append ` - DD.MM.YYYY` (`decisionDate`) when available. The decision type (`Uitspraak`) may be secondary text, never the primary label; missing date → drop only the date segment.
 
 If title is unavailable, use a descriptive fallback — never the raw document ID.
 
@@ -83,7 +83,7 @@ If title is unavailable, use a descriptive fallback — never the raw document I
 ```
 [art. 1:1 Burgerlijk Wetboek Boek 1](https://…/NL/wetten/bwb/doc/NLBWB1234/attachment/content_1.pdf#page=3)
 
-[Uitspraak — Hoge Raad, ECLI:NL:HR:2024:123](https://…/NL/rechtspraak/uitspraken/doc/NLUIT5678/attachment/decision.pdf#page=12)
+[HR - ECLI:NL:HR:2024:123 - 12.01.2024](https://…/NL/rechtspraak/uitspraken/doc/NLUIT5678/attachment/decision.pdf#page=12)
 ```
 
 **Incorrect:**

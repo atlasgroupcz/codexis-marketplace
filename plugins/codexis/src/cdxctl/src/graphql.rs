@@ -251,11 +251,11 @@ query GetAgents {
         description
         marketplace
         plugin
-        tools
+        tools { toolName displayName kind source }
         skills
         model
         maxTurns
-        disallowedTools
+        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
@@ -274,11 +274,11 @@ mutation CreateAgent($markdown: Markdown!) {
         description
         marketplace
         plugin
-        tools
+        tools { toolName displayName kind source }
         skills
         model
         maxTurns
-        disallowedTools
+        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
@@ -297,11 +297,11 @@ mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
         description
         marketplace
         plugin
-        tools
+        tools { toolName displayName kind source }
         skills
         model
         maxTurns
-        disallowedTools
+        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
@@ -412,7 +412,8 @@ mod tests {
             assert!(query.contains("path { absolutePath displayPath }"));
             assert!(query.contains("sourcePath { absolutePath displayPath }"));
             assert!(query.contains("maxTurns"));
-            assert!(query.contains("disallowedTools"));
+            assert!(query.contains("tools { toolName"));
+            assert!(query.contains("disallowedTools { toolName"));
         }
     }
 

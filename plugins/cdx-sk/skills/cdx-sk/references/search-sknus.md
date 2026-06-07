@@ -10,6 +10,16 @@ Court code:
 - `NSSR` - Najvyssi sud Slovenskej republiky (Supreme Court, ~715 decisions)
 - `USSR` - Ustavny sud Slovenskej republiky (Constitutional Court, ~2,189 decisions)
 
+## Citation court abbreviations
+Court abbreviation used in the user-facing citation link text (`SÚD - SP. ZN. - DD.MM.RRRR`):
+
+| `courtName` value | Abbrev |
+|-------------------|--------|
+| Najvyssi sud Slovenskej republiky | NS SR |
+| Ustavny sud Slovenskej republiky | ÚS SR |
+
+Unknown court → keep its official short name verbatim.
+
 ## courtName
 Full court name (exact match):
 - `Najvyssi sud Slovenskej republiky`

@@ -46,6 +46,10 @@ tests:
         prompt: "Popiš aktuální pracovní adresář."
         maxTurns: 5
         enabled: true
+      # The stored prompt must be the WORK to perform, never a request to
+      # create/update/delete another automation — otherwise the scheduled run
+      # would recursively register automations instead of doing the task.
+      not_matches: '(?i)(automation\s+(create|update|delete)|create an automation|vytvoř\w*\s+(\w+\s+)*automatizaci)'
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

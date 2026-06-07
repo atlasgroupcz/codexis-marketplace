@@ -277,6 +277,7 @@ def assert_state_graphql(output: str, context: dict) -> dict:
         contains:       str — pass if any extracted value contains it.
         not_contains:   str — pass if no extracted value contains it.
         matches:        str — Python regex pass-if-any.
+        not_matches:    str — Python regex pass-if-none.
         equals:         any — pass if the FIRST extracted value equals.
         count:          int — pass if extracted has exactly this length.
         subset:         dict — first extracted dict contains all key→value
@@ -342,6 +343,13 @@ def assert_state_graphql(output: str, context: dict) -> dict:
             return {"pass": False, "score": 0.0,
                     "reason": (f"no extracted value matched /{pattern}/. "
                                f"Extracted: {extracted!r}")}
+    if "not_matches" in vars_:
+        pattern = vars_["not_matches"]
+        for v in extracted:
+            if _re.search(pattern, str(v)):
+                return {"pass": False, "score": 0.0,
+                        "reason": (f"not_matches /{pattern}/ unexpectedly "
+                                   f"matched {v!r}")}
     if "equals" in vars_:
         want = vars_["equals"]
         if not extracted or extracted[0] != want:
