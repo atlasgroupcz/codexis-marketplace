@@ -6,4 +6,6 @@ description: Pull the latest plugins from your git marketplaces.
 command: cdxctl marketplace update
 cron: 0 * * * *
 enabled: true
+notify-on-success: false
+notify-on-failure: false
 ---

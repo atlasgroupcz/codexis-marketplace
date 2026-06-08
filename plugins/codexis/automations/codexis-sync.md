@@ -6,4 +6,6 @@ description: Import your chats, agents and files from Codexis 1.0.
 command: cdxctl codexis sync
 cron: 0 3 * * *
 enabled: true
+notify-on-success: false
+notify-on-failure: false
 ---
