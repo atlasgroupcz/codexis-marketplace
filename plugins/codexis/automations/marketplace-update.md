@@ -4,8 +4,18 @@ type: COMMAND
 title: Update marketplaces
 description: Pull the latest plugins from your git marketplaces.
 command: cdxctl marketplace update
-cron: 0 * * * *
+cron: 0 4 * * *
 enabled: true
 notify-on-success: false
 notify-on-failure: false
+i18n:
+  cs:
+    title: "Aktualizovat tržiště"
+    description: "Stáhne nejnovější pluginy z vašich git tržišť."
+  en:
+    title: "Update marketplaces"
+    description: "Pull the latest plugins from your git marketplaces."
+  sk:
+    title: "Aktualizovať trhoviská"
+    description: "Stiahne najnovšie pluginy z vašich git trhovísk."
 ---
