@@ -3,6 +3,7 @@ uuid: 43dc8c25-4d0b-4983-a0f6-2b0bde63a852
 name: cdx-at
 description: This skill should be invoked whenever user needs Austrian law or legal information — federal law (Bundesrecht), case law (Judikatur), consolidated law history, state law (Landesrecht), or other publications (Sonstige) from the RIS system.
 version: 2.3.0
+jurisdictions: [AT]
 i18n:
   cs:
     displayName: "Rakouské právo (RIS)"

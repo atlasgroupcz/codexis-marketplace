@@ -3,6 +3,7 @@ uuid: 5cdb1ccf-e079-49a9-a618-a3f3bb60dc20
 name: sledovana-judikatura
 description: Track case law topics and generate periodic reports. Use when user wants to monitor new jurisprudence, track judicial decisions, or get regular case law summaries. Triggers on "sleduj judikaturu", "judikatura", "nová rozhodnutí", "case law monitoring", "soudní rozhodnutí".
 version: 1.1.0
+jurisdictions: [CZ]
 i18n:
   cs:
     displayName: "Sledovaná judikatura"

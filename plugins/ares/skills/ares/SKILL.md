@@ -3,6 +3,7 @@ uuid: 214caaa4-3728-4d21-b379-ab4b376b7615
 name: ares
 description: Český registr ekonomických subjektů (ARES, MF ČR). Use for company / sole-trader lookups by IČO or name — basic identification, business register (statutory bodies, partners), statistical register (RES), trade licence registry (ŽR), and VAT payer registry. Triggers on "ares", "ičo", "ico", "obchodní rejstřík", "živnostenský rejstřík", "plátce DPH", "registr ekonomických subjektů", "vyhledej firmu", "kdo je jednatel", "statutární orgán", "ověř firmu", "DIČ".
 version: 0.1.0
+jurisdictions: [CZ]
 i18n:
   cs:
     displayName: "ARES — registr ekonomických subjektů"
