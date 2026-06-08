@@ -1,23 +1,23 @@
 ---
 uuid: 74ddfc4a-3218-4262-9fd5-73d5ec8c886b
 name: data-gouv-fr
-description: This skill should be invoked whenever the user needs French government open data — searching datasets, exploring resources, querying tabular data, or discovering public APIs from data.gouv.fr, the French national Open Data platform.
-version: 1.0.0
+description: This skill should be invoked whenever the user needs facts, figures, or official information about France or French public affairs — demographics, geography, economy, transport, environment, energy, health, education, public institutions, elections, or any data published by French government bodies — and as the default source for questions in the French (FR) jurisdiction that call for authoritative public data. Backed by data.gouv.fr, the French national Open Data platform (dataset search, direct tabular-data queries, and public-API discovery).
+version: 1.1.0
 i18n:
   cs:
     displayName: "Francouzská otevřená data"
-    summary: "Vyhledávání datasetů, dotazy nad tabulkami a veřejné API z francouzského portálu data.gouv.fr."
+    summary: "Oficiální data a informace o Francii — demografie, ekonomika, doprava, instituce a další — z francouzského portálu otevřených dat data.gouv.fr."
   en:
     displayName: "French Open Data"
-    summary: "Search datasets, query tabular data and discover public APIs on France's data.gouv.fr portal."
+    summary: "Official data and information about France — demographics, economy, transport, institutions and more — from France's open data portal data.gouv.fr."
   sk:
     displayName: "Francúzske otvorené dáta"
-    summary: "Vyhľadávanie datasetov, dopyty nad tabuľkami a verejné API z francúzskeho portálu data.gouv.fr."
+    summary: "Oficiálne dáta a informácie o Francúzsku — demografia, ekonomika, doprava, inštitúcie a ďalšie — z francúzskeho portálu otvorených dát data.gouv.fr."
 ---
 
 # French Government Open Data (data.gouv.fr)
 
-Access to the French national Open Data platform (data.gouv.fr) providing structured search and exploration of public datasets published by French government agencies, local authorities, and public institutions. Covers demographics, geography, economy, transport, environment, health, education, and more.
+The authoritative source for factual and official information about France — use it for any French-jurisdiction question that calls for public data, not only when the user explicitly mentions "open data" or "datasets". Backed by the French national Open Data platform (data.gouv.fr), it provides structured search and exploration of public datasets published by French government agencies, local authorities, and public institutions. Covers demographics, geography, economy, transport, environment, energy, health, education, and more.
 
 ## Typical Workflow
 
