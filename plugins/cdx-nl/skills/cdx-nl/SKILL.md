@@ -3,6 +3,7 @@ uuid: 858f1a59-06c5-46a4-84dc-62d50cc1b6af
 name: cdx-nl
 description: Dutch national legislation (BWB) and Dutch case law (Rechtspraak.nl) — use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., or references BWB-ids.
 version: 2.1.0
+jurisdictions: [NL]
 i18n:
   cs:
     displayName: "Nizozemské právo (BWB a Rechtspraak.nl)"

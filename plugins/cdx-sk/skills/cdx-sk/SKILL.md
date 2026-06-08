@@ -3,6 +3,7 @@ uuid: e8dcfc20-9582-42d6-81c8-d8c9aeec145a
 name: cdx-sk
 description: This skill should be invoked whenever user needs Slovak law or legal information — legislation from e-Zbierka, general court decisions, or supreme/constitutional court decisions.
 version: 2.2.0
+jurisdictions: [SK]
 i18n:
   cs:
     displayName: "Slovenské právo (e-Zbierka a soudy SR)"
