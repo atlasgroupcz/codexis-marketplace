@@ -3,6 +3,7 @@ uuid: 74ddfc4a-3218-4262-9fd5-73d5ec8c886b
 name: data-gouv-fr
 description: This skill should be invoked whenever the user needs facts, figures, or official information about France or French public affairs — demographics, geography, economy, transport, environment, energy, health, education, public institutions, elections, or any data published by French government bodies — and as the default source for questions in the French (FR) jurisdiction that call for authoritative public data. Backed by data.gouv.fr, the French national Open Data platform (dataset search, direct tabular-data queries, and public-API discovery).
 version: 1.1.0
+jurisdictions: [FR]
 i18n:
   cs:
     displayName: "Francouzská otevřená data"
