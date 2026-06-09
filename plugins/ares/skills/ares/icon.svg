@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="2" y="2" width="60" height="60" rx="10" fill="#1d4e89"/>
-  <text x="32" y="40" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#ffffff" letter-spacing="1">ARES</text>
+<svg id="Vrstva_14" data-name="Vrstva 14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #dbeaff;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        fill: #2362a2;
+      }
+    </style>
+  </defs>
+  <g id="Vrstva_17" data-name="Vrstva 17">
+    <rect class="cls-1" x="0" y="-.03" width="300" height="300"/>
+    <path class="cls-3" d="M250,60.51v179.26c-.35,5.28-4.92,9.85-10.55,9.85H60.19c-5.62,0-10.19-4.57-10.19-10.2V60.16c0-5.27,4.92-9.84,10.54-9.84h179.26c5.63,0,10.2,4.57,10.2,10.19Z"/>
+    <path class="cls-2" d="M207.93,82.42h-65.77v.36h0l-61.07,63.56h0v71.23h136.19v-41.92h-56.87v-18.07h56.69v-11.47l-28.37-27.1h30.17v-36.59h-10.98ZM110.27,131.75h27.78v-10.93h-17.3l26.24-27.42h2.44v52.99h-53.26l14.09-14.64ZM206.12,186.63v20.1h-114.24v-20.1h46.62v-10.98h-46.62v-18.07h57.55v29.27l56.69-.23ZM201.61,146.39h-41.24v-27.42h12.6l28.64,27.42ZM207.89,107.99h-47.47v-14.59h47.52l-.05,14.59Z"/>
+  </g>
 </svg>
