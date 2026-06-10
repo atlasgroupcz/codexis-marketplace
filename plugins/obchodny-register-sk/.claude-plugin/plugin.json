@@ -1,6 +1,6 @@
 {
   "name": "obchodny-register-sk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Slovak commercial register (obchodný register SR) — company lookup by IČO or name via the RPO open API, statutory bodies, registered office, share capital, full history, and links to orsr.sk extracts",
   "author": {
     "name": "ATLAS GROUP",
@@ -9,6 +9,9 @@
   "keywords": ["orsr", "rpo", "slovakia", "registry", "company", "ico"],
   "license": "PROPRIETARY",
   "tags": ["legal", "slovak", "registry", "company"],
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "i18n": {
     "cs": {
       "displayName": "Obchodný register SR",

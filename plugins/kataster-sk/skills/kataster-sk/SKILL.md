@@ -2,7 +2,7 @@
 uuid: 4d8b61c5-641d-4201-85fe-259ca742eaeb
 name: kataster-sk
 description: Slovenský kataster nehnuteľností (ÚGKK SR). Use for Slovak parcel lookups — parcel number, cadastral unit (katastrálne územie), area (výmera), land use, register C/E parcels, and links to title deeds (list vlastníctva). Triggers on "kataster", "kataster nehnuteľností", "parcela", "parcelné číslo", "list vlastníctva", "LV", "katastrálne územie", "výmera pozemku", "pozemok na Slovensku", "ZBGIS", "ESKN", "kataster portál". Slovak (SK) jurisdiction only — for the Czech cadastre use the katastr skill.
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [SK]
 i18n:
   cs:
@@ -18,25 +18,29 @@ i18n:
 
 # Slovak Land Cadastre (kataster nehnuteľností SR)
 
-Anonymous, read-only access to Slovak cadastre parcel data via two public endpoints
-of ÚGKK SR (Úrad geodézie, kartografie a katastra SR):
+A single tool — **`kataster-sk-cli`** — wraps the two public endpoints of
+ÚGKK SR (ZBGIS MAPKA search + ESKN ArcGIS REST) with the browser-like headers
+the cadastre WAF requires.
 
-1. **ZBGIS MAPKA search API** — geocode cadastral units and find parcels by number.
-2. **ESKN ArcGIS REST** — full parcel attributes (area, land use, ownership type).
+**IMPORTANT:** The only tool in this skill is `kataster-sk-cli`. Do NOT call
+`curl` or any other tool against `skgeodesy.sk` directly — raw requests are
+rejected by the WAF. Assume `kataster-sk-cli` is installed and available in `PATH`.
 
-Use `curl` directly. **Always send a browser-like `User-Agent` header** — requests
-without one are rejected by the WAF:
+**IMPORTANT:** If `kataster-sk-cli` outputs an `ERROR:` line, stop and report it
+to the user. The cadastre services are occasionally unstable (recovery from the
+January 2025 cyberattack) — do not retry blindly.
 
-```bash
-UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
-```
+## Output Format
+
+`kataster-sk-cli` always prints **JSON to stdout** (verbatim API response). Parse
+with `jq`. On failure: `ERROR: …` on stderr, exit code 2.
 
 ## What this skill can and cannot do
 
 | Data | Available |
 |---|---|
-| Parcel number, areas, land use, register C/E attributes | ✅ anonymously via API |
-| Cadastral unit lookup (name → code) | ✅ anonymously via API |
+| Parcel number, areas, land use, register C/E attributes | ✅ `kataster-sk-cli` |
+| Cadastral unit lookup (name → code) | ✅ `kataster-sk-cli` |
 | Owner names, LV (list vlastníctva) contents | ❌ no anonymous API — provide deep links instead |
 | LV usable for legal acts (sealed PDF) | ❌ eID only via slovensko.sk — provide link |
 
@@ -49,47 +53,38 @@ bypass the recaptcha-protected owner endpoints — always hand the user a deep l
 ### 1. Resolve the cadastral unit (katastrálne územie) code
 
 ```bash
-curl -s -H "User-Agent: $UA" \
-  "https://zbgis.skgeodesy.sk/mapka/api/search/kataster?q=Ruzinov"
+kataster-sk-cli ku "Ruzinov" | jq '.items[].data | {category, id, text}'
 ```
 
-Returns `items[]`; entries with `category` = `katastrálne územie` carry
-`data.id` (the KU code, e.g. `805556`), `data.municipalityCode`, and `data.text`
-(e.g. `Ružinov (805556)`). Diacritics in `q` are optional.
+Entries with `category` = `katastrálne územie` carry `id` (the KU code,
+e.g. `805556`) and `text` (e.g. `Ružinov (805556)`). Diacritics are optional.
 
 ### 2. Find the parcel by number within the cadastral unit
 
 ```bash
-curl -s -H "User-Agent: $UA" \
-  "https://zbgis.skgeodesy.sk/mapka/api/search/kataster/805556/mu/805556?q=1234"
+kataster-sk-cli parcela 805556 "1234/9" | jq '.items[].data | {category, id, text, route}'
 ```
 
-Returns matching parcels: `data.category` is `parcela-c` (register C) or
-`parcela-e` (register E), `data.id` is the parcel object id for step 3,
-`data.text` is the full parcel number (e.g. `1234/9`), `data.description`
-confirms the KU.
+`category` is `parcela-c` (register C) or `parcela-e` (register E), `id` is the
+object id for step 3, `route` is the MAPKA deep-link path suffix.
 
-### 3. Fetch parcel attributes from ArcGIS REST
-
-Register C parcels use `parcels_c_view`, register E parcels `parcels_e_view`:
+### 3. Fetch parcel attributes
 
 ```bash
-curl -s -H "User-Agent: $UA" \
-  "https://kataster.skgeodesy.sk/eskn/rest/services/VRM/parcels_c_view/MapServer/0/query?objectIds=1070374091&outFields=*&returnGeometry=false&f=json"
+kataster-sk-cli detail 1070374091
+kataster-sk-cli detail 123456 --register e
+kataster-sk-cli detail 1070374091 --geometry   # adds the WGS84 polygon
 ```
 
 Key attributes: `PARCEL_NUMBER`, `DESCRIPTIVE_AREA_OF_PARCEL` (official area in m²),
 `GEODETIC_AREA_OF_PARCEL`, `NATURE_OF_LAND_USE_ID`, `OWNERSHIP_TYPE_ID`,
 `FOLIO_ID` (internal title-deed identifier; `null` when the parcel has no LV record
-in that register view). Field details and code lists: `references/arcgis-api.md`.
-
-**Only query by `objectIds` (from step 2) or by geometry.** Generic `where=`
-queries are blocked by the WAF and return an HTML error page.
+in that register view). Field details: `references/arcgis-api.md`.
 
 ### 4. Give the user deep links for owners and the LV
 
-- Parcel in the MAPKA map (replace `/` in the parcel number with `_`):
-  `https://zbgis.skgeodesy.sk/mapka/sk/kataster/parcela-c/805556/1234_9`
+- Parcel in the MAPKA map: `https://zbgis.skgeodesy.sk/mapka/sk/{route}`
+  (`route` from step 2, e.g. `kataster/parcela-c/805556/1234_9`)
 - ESKN portal (owner/LV lookup after login): `https://kataster.skgeodesy.sk/eskn-portal/`
 - CICA web search: `https://cica.vugk.sk/`
 - LV usable for legal acts (eID required): `https://www.slovensko.sk/sk/detail-sluzby?externalCode=ks_336485`
@@ -97,15 +92,14 @@ queries are blocked by the WAF and return an HTML error page.
 ## Output rules
 
 - Match the user's conversation language (Slovak data stays in Slovak where natural).
-- Never present raw API URLs (`/mapka/api/...`, `/eskn/rest/...`) as clickable links —
-  user-facing links are only the MAPKA/ESKN/CICA/slovensko.sk pages above.
+- User-facing links are only the MAPKA/ESKN/CICA/slovensko.sk pages above — never
+  present raw API URLs.
 - State the official area (`DESCRIPTIVE_AREA_OF_PARCEL`) when reporting výmera;
   mention the geodetic area only when it differs.
-- If an endpoint returns an HTML error page or empty `items`, say so plainly and
-  fall back to the MAPKA deep link — the cadastre services are occasionally
-  unstable (recovery from the January 2025 cyberattack).
+- On `ERROR:` output, say plainly that the cadastre service refused or is down
+  and fall back to the MAPKA deep link.
 
 ## Reference Files
 
-- **`references/zbgis-search.md`** — search API endpoints, categories, response shape
-- **`references/arcgis-api.md`** — ArcGIS layers, fields, query limits
+- **`references/zbgis-search.md`** — search categories and response shape
+- **`references/arcgis-api.md`** — parcel layers, fields, query limits

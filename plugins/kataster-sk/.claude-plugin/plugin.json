@@ -1,6 +1,6 @@
 {
   "name": "kataster-sk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Slovak land cadastre (kataster nehnuteľností SR) — parcel lookup by cadastral unit and parcel number, areas, land use, and deep links to title deeds (list vlastníctva) on the ESKN portal",
   "author": {
     "name": "ATLAS GROUP",
@@ -9,6 +9,9 @@
   "keywords": ["kataster", "slovakia", "cadastre", "parcel", "list-vlastnictva", "zbgis"],
   "license": "PROPRIETARY",
   "tags": ["legal", "slovak", "cadastre", "property"],
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "i18n": {
     "cs": {
       "displayName": "Kataster nehnuteľností SR",

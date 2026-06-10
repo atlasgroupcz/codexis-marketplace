@@ -4,11 +4,12 @@ Base: `https://zbgis.skgeodesy.sk/mapka/api/search`
 
 Undocumented but stable API used by the official MAPKA application
 (`https://zbgis.skgeodesy.sk/mapka/sk/kataster`). Anonymous, JSON, GET only.
-Always send a browser-like `User-Agent` header.
+Accessed exclusively through `kataster-sk-cli`, which sends the browser-like
+`User-Agent` header the WAF requires.
 
 ## Endpoints
 
-### Geocode — cadastral units, municipalities, places
+### Geocode — cadastral units, municipalities, places (`kataster-sk-cli ku`)
 
 ```
 GET /kataster?q={text}
@@ -39,7 +40,7 @@ Response:
 `category` values seen: `katastrálne územie`, `obec`, `okres`, `ulica`.
 For cadastral units `id` is the KU code used in all other endpoints.
 
-### Parcel search within a cadastral unit
+### Parcel search within a cadastral unit (`kataster-sk-cli parcela`)
 
 ```
 GET /kataster/{kuCode}/mu/{kuCode}?q={parcelNumber}

@@ -3,7 +3,8 @@
 Base: `https://kataster.skgeodesy.sk/eskn/rest/services/VRM`
 
 Standard ArcGIS MapServer REST (version 10.91). Anonymous, JSON (`f=json`).
-Always send a browser-like `User-Agent` header.
+Accessed exclusively through `kataster-sk-cli detail`, which sends the
+browser-like `User-Agent` header the WAF requires.
 
 ## Layers
 
@@ -14,17 +15,16 @@ Always send a browser-like `User-Agent` header.
 
 Layer metadata: `GET {layer}?f=json` — lists all fields with Slovak aliases.
 
-## Query
+## Query (`kataster-sk-cli detail`)
 
 ```
 GET {layer}/query?objectIds={id}&outFields=*&returnGeometry=false&f=json
 ```
 
-- `objectIds` — comma-separated ids obtained from the ZBGIS parcel search
-  (`data.id`); the only reliable filter.
-- `returnGeometry=true&outSR=4326` — adds the parcel polygon in WGS84
-  (source SRS is S-JTSK, wkid 5514).
-- `outFields` — `*` or a comma-separated subset.
+- `objectIds` — id obtained from the ZBGIS parcel search (`data.id`); the only
+  reliable filter.
+- `returnGeometry=true&outSR=4326` (the CLI's `--geometry` flag) — adds the
+  parcel polygon in WGS84 (source SRS is S-JTSK, wkid 5514).
 
 ### Restrictions (WAF)
 
