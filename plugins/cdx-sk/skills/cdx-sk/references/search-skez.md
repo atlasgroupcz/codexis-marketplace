@@ -9,6 +9,14 @@ Free-text search across paragraph text, titles, and headings. Optional.
 Exact match on document number. Include suffix.
 - Examples: `40/1964 Zb.`, `311/2001 Z. z.`
 
+## Citation link text
+User-facing links use the compact law citation `ČÍSLO NÁZOV` built from `docNumber` + `title`
+(e.g. `311/2001 Z. z. Zákonník práce`); when citing a specific version, append
+`, v znení účinnom od DD.MM.RRRR` from the result's `validFrom`. The collection suffix in
+`docNumber` is authoritative (`Zb.` pre-1993, `Z. z.` post-1993) — never hardcode it. The API's
+resolved source titles already use this format — reuse them verbatim where shown. See
+SKILL.md → Document Titles.
+
 ## typ
 Document type (exact match, case-sensitive with diacritics):
 - `Zakon`
