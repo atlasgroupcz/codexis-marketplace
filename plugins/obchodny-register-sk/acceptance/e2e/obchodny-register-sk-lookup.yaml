@@ -1,0 +1,12 @@
+name: obchodny-register-sk-lookup
+description: Verify the obchodny-register-sk skill looks up a Slovak company in the RPO open API (ESET — stable, well-known entity).
+
+steps:
+  - prompt: "Nájdi v slovenskom obchodnom registri firmu ESET, spol. s r.o. — kto sú konatelia a aké má základné imanie?"
+    expect:
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        # A real RPO hit reports the IČO 31333532 or the registration number Sro/3586/B
+        # or links to the orsr.sk extract.
+        matches: "(31333532|Sro/3586/B|orsr\\.sk)"
