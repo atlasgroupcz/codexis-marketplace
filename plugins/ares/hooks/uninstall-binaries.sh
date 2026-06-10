@@ -2,22 +2,10 @@
 set -euo pipefail
 
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
+TARGET_SHARE_DIR="${TARGET_SHARE_DIR:-${HOME}/.local/share/ares}"
 
-remove_binary() {
-  local target_name="$1"
-  local target_path="${TARGET_BIN_DIR}/${target_name}"
+rm -f "${TARGET_BIN_DIR}/ares"
+rm -rf "${TARGET_SHARE_DIR}"
 
-  if [[ ! -e "${target_path}" ]]; then
-    return 0
-  fi
-
-  if [[ -w "${TARGET_BIN_DIR}" ]]; then
-    rm -f "${target_path}"
-  else
-    sudo rm -f "${target_path}"
-  fi
-
-  echo "Removed ${target_path}"
-}
-
-remove_binary "ares-cli"
+echo "Removed ${TARGET_BIN_DIR}/ares"
+echo "Removed ${TARGET_SHARE_DIR}"
