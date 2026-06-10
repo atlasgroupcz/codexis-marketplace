@@ -36,9 +36,25 @@ and report it to the user. Do not retry blindly.
 Successful RPO/RUZ responses are **cached by URL for 24 hours**; pass `--no-cache`
 when the user explicitly needs a fresh read.
 
+### jq cookbook — use these field names, do not guess others
+
+Search results (`.results[]`) and `detail` share the same entity shape. The
+identifier lives in `identifiers[].value` (NOT `.identifier`), the register in
+`sourceRegister` (an object, NOT `sourceRegisters`), and every sub-object is a
+history array with `validFrom`/`validTo`:
+
 ```bash
-orsr-cli search --ico 31333532 | jq '.results[] | {id, name: .fullNames[-1].value}'
-orsr-cli detail 937053 | jq '.statutoryBodies[] | select(.validTo == null)'
+# overview of search hits: RPO id, IČO, current name, terminated?
+orsr-cli search --name "ESET" | jq '.results[] | {id, ico: .identifiers[-1].value, name: .fullNames[-1].value, terminated: .termination}'
+
+# current statutory bodies (konatelia/predstavenstvo)
+orsr-cli detail 937053 | jq '[.statutoryBodies[] | select(.validTo == null) | {name: .personName.formatedName, role: .stakeholderType.value}]'
+
+# current share capital and registration
+orsr-cli detail 937053 | jq '{imanie: [.equities[] | select(.validTo == null)], register: .sourceRegister}'
+
+# current registered office
+orsr-cli detail 937053 | jq '[.addresses[] | select(.validTo == null)]'
 ```
 
 ## Five commands

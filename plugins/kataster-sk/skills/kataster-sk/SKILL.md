@@ -81,6 +81,14 @@ Key attributes: `PARCEL_NUMBER`, `DESCRIPTIVE_AREA_OF_PARCEL` (official area in 
 `FOLIO_ID` (internal title-deed identifier; `null` when the parcel has no LV record
 in that register view). Field details: `references/arcgis-api.md`.
 
+**Code-only fields:** `NATURE_OF_LAND_USE_ID` (druh pozemku), `PLOT_UTILISATION_ID`
+(spôsob využívania) and the other `*_ID` fields are internal numeric identifiers and
+the anonymous API provides **no code list to translate them** — they do NOT match
+the official kódy druhov pozemkov from the vyhláška. Do not search for a mapping,
+do not guess labels, and do not spawn agents to find one. When the user asks for
+druh pozemku or spôsob využívania, state the numeric identifier and point them to
+the parcel's MAPKA page (step 4), which renders the human-readable labels.
+
 ### 4. Give the user deep links for owners and the LV
 
 - Parcel in the MAPKA map: `https://zbgis.skgeodesy.sk/mapka/sk/{route}`
