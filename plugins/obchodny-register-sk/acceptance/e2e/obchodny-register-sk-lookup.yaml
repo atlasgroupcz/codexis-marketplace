@@ -10,3 +10,33 @@ steps:
         # A real RPO hit reports the IČO 31333532 or the registration number Sro/3586/B
         # or links to the orsr.sk extract.
         matches: "(31333532|Sro/3586/B|orsr\\.sk)"
+
+  - prompt: "Vyhľadaj v RPO subjekt podľa IČO 31333532 a uveď jeho RPO ID."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "orsr-cli\\s+(--no-cache\\s+)?search\\s+.*31333532"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?s)937053.{0,240}ESET|ESET.{0,240}937053"
+
+  - prompt: "U detailu RPO ID 937053 zisti zdrojový register a registračné číslo."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "orsr-cli\\s+(--no-cache\\s+)?detail\\s+937053"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?s)Obchodn(ý|y|í) register.{0,240}Sro/3586/B|Sro/3586/B.{0,240}Obchodn(ý|y|í) register"
+
+  - prompt: "Daj mi odkaz na aktuálny výpis z obchodného registra pre IČO 31333532."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "orsr-cli\\s+(--no-cache\\s+)?links\\s+.*31333532"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "orsr\\.sk/vypis\\.asp"
