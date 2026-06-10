@@ -48,9 +48,13 @@ GET {layer}/query?objectIds={id}&outFields=*&returnGeometry=false&f=json
 | `HOUSE_NUMBER` | Building number when a building stands on the parcel |
 | `XMIN/XMAX/YMIN/YMAX` | Bounding box (Web Mercator) |
 
-Numeric `*_ID` fields are code-list references; when the value matters, report the
-raw code and direct the user to the parcel's MAPKA page, which renders the
-human-readable labels.
+Numeric `*_ID` fields are **internal code-list identifiers without any public
+mapping**: the layers expose no ArcGIS coded-value domains, the values do not
+match the official kódy druhov pozemkov (vyhláška č. 461/2009 Z. z. uses
+2–14 with gaps, while e.g. a built-up Ružinov parcel carries
+`NATURE_OF_LAND_USE_ID = 9`), and the translating endpoint sits behind the
+recaptcha-gated ESKN portal. Report the raw identifier and direct the user to
+the parcel's MAPKA page, which renders the human-readable labels.
 
 ## Map images
 
