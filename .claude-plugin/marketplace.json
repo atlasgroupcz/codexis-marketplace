@@ -307,6 +307,54 @@
           "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "company": "Firmy" }
         }
       }
+    },
+    {
+      "uuid": "4785cc31-461b-4516-8a68-5567b1312dfb",
+      "name": "kataster-sk",
+      "description": "Slovak land cadastre (kataster nehnuteľností) — parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal",
+      "source": "./plugins/kataster-sk",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Kataster nehnuteľností SR",
+          "description": "Slovenský katastr nemovitostí — vyhledávání parcel podle katastrálního území a parcelního čísla, výměry, druh pozemku a odkazy na list vlastníctva na portálu ESKN.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "cadastre": "Katastr", "property": "Nemovitosti" }
+        },
+        "en": {
+          "displayName": "Slovak Land Cadastre",
+          "description": "Slovak land cadastre (kataster nehnuteľností) — parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal.",
+          "tagLabels": { "legal": "Law", "slovak": "Slovakia", "cadastre": "Cadastre", "property": "Property" }
+        },
+        "sk": {
+          "displayName": "Kataster nehnuteľností SR",
+          "description": "Slovenský kataster nehnuteľností — vyhľadávanie parciel podľa katastrálneho územia a parcelného čísla, výmery, druh pozemku a odkazy na list vlastníctva na portáli ESKN.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "cadastre": "Kataster", "property": "Nehnuteľnosti" }
+        }
+      }
+    },
+    {
+      "uuid": "9ee5f171-db75-4ff9-b0b3-4eaa5cae9d8a",
+      "name": "obchodny-register-sk",
+      "description": "Slovak commercial register (obchodný register SR) — company lookup by IČO or name via the RPO open API, statutory bodies, share capital, full history, and orsr.sk extracts",
+      "source": "./plugins/obchodny-register-sk",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Obchodný register SR",
+          "description": "Slovenský obchodní rejstřík — vyhledávání firem podle IČO/názvu přes otevřené RPO API, statutární orgány, sídlo, základní kapitál, plná historie a odkazy na výpisy z orsr.sk.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Rejstřík", "company": "Firmy" }
+        },
+        "en": {
+          "displayName": "Slovak Commercial Register",
+          "description": "Slovak commercial register — company lookup by IČO/name via the open RPO API, statutory bodies, registered office, share capital, full history and links to orsr.sk extracts.",
+          "tagLabels": { "legal": "Law", "slovak": "Slovakia", "registry": "Registry", "company": "Companies" }
+        },
+        "sk": {
+          "displayName": "Obchodný register SR",
+          "description": "Slovenský obchodný register — vyhľadávanie firiem podľa IČO/názvu cez otvorené RPO API, štatutárne orgány, sídlo, základné imanie, plná história a odkazy na výpisy z orsr.sk.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "company": "Firmy" }
+        }
+      }
     }
   ]
 }
