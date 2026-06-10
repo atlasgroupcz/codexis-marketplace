@@ -16,12 +16,34 @@ Court code (exact match):
 - And many more (use courtName for full-text match)
 
 ## Citation court abbreviations
-Court abbreviation used in the user-facing citation link text (`SÚD - SP. ZN. - DD.MM.RRRR`):
+Court abbreviation used in the user-facing citation link text (`SÚD - SP. ZN. - DD.MM.RRRR`).
+These match the source titles the API emits — when a resolved source title is shown, reuse it
+verbatim. The pattern set covers the complete slov-lex court list (68 courts):
 
 | `courtName` value | Abbrev |
 |-------------------|--------|
-| Krajsky sud `<mesto>` | KS `<mesto>` |
-| Okresny sud `<mesto>` | OS `<mesto>` |
+| Okresný súd `<mesto>` | OS `<mesto>` |
+| Mestský súd `<mesto>` | MS `<mesto>` |
+| Krajský súd v `<mesto-lokál>` | KS `<mesto-nominatív>` |
+| Správny súd v `<mesto-lokál>` | SS `<mesto-nominatív>` |
+| Najvyšší súd Slovenskej republiky | NS SR |
+| Najvyšší správny súd Slovenskej republiky | NSS SR |
+| Špecializovaný trestný súd | ŠTS |
+
+OS/MS keep the city verbatim as it appears in the name (`OS Košice okolie`, `MS Bratislava IV`).
+KS/SS names carry the seat city in the locative ("v Bratislave") — the citation uses the
+nominative (all 8 seat cities):
+
+| Locative (in `courtName`) | Nominative (in citation) |
+|---|---|
+| v Banskej Bystrici | Banská Bystrica |
+| v Bratislave | Bratislava |
+| v Košiciach | Košice |
+| v Nitre | Nitra |
+| v Prešove | Prešov |
+| v Trenčíne | Trenčín |
+| v Trnave | Trnava |
+| v Žiline | Žilina |
 
 Unknown court → keep its official short name verbatim.
 
