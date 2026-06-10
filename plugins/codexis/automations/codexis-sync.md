@@ -8,4 +8,14 @@ cron: 0 3 * * *
 enabled: true
 notify-on-success: false
 notify-on-failure: false
+i18n:
+  cs:
+    title: "Synchronizovat Codexis 1.0"
+    description: "Importuje vaše chaty, agenty a soubory z Codexis 1.0."
+  en:
+    title: "Sync Codexis 1.0"
+    description: "Import your chats, agents and files from Codexis 1.0."
+  sk:
+    title: "Synchronizovať Codexis 1.0"
+    description: "Importuje vaše chaty, agentov a súbory z Codexis 1.0."
 ---
