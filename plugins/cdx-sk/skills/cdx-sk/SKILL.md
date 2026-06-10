@@ -2,7 +2,7 @@
 uuid: e8dcfc20-9582-42d6-81c8-d8c9aeec145a
 name: cdx-sk
 description: This skill should be invoked whenever user needs Slovak law or legal information — legislation from e-Zbierka, general court decisions, or supreme/constitutional court decisions.
-version: 2.2.0
+version: 2.3.0
 jurisdictions: [SK]
 i18n:
   cs:
@@ -73,16 +73,16 @@ When referring to data sources in prose, match the user's conversation language:
 
 Use these fields as the link text:
 
-- **SKEZ:** `title` from search results (e.g., "Obciansky zakonnik") — strip `<mark>` tags
+- **SKEZ (legislation):** the link text MUST be the compact law citation, not the bare title: `ČÍSLO NÁZOV` from `docNumber` + `title` (e.g. `[311/2001 Z. z. Zákonník práce](https://…/attachment/content_1.pdf#page=45)`). The collection suffix comes from `docNumber` as the data returns it — never hardcode it: pre-1993 laws are `Zb.`, post-1993 `Z. z.` (e.g. `40/1964 Zb. Občiansky zákonník`). When citing a specific version, append `, v znení účinnom od DD.MM.RRRR` (from the result's `validFrom`). The API's resolved source titles already use this exact format — where one is shown, reuse it verbatim. Never invent a missing segment: no number/year → `title` alone; no `validFrom` → drop only the version suffix.
 - **SKVS/SKNUS (court decisions):** the link text MUST be a compact legal citation, not the generic title: `SÚD - SP. ZN. - DD.MM.RRRR` (e.g. `[OS Bratislava I - 1C/123/2024 - 15.03.2024](https://…/attachment/content_1.pdf#page=1)`). Map the court to its abbreviation per the tables in `references/search-skvs.md` / `references/search-sknus.md`; the reference is the case file number (else `ecli`), and append ` - DD.MM.RRRR` (decision date) when available. The decision type (`Rozsudok`/`Uznesenie`/`Nalez`) may be secondary text, never the primary label; missing date → drop only the date segment.
 
-If title is unavailable, use `docNumber` or a descriptive fallback — never the raw document ID.
+If no citation is composable, use a descriptive fallback — never the raw document ID.
 
 ### Examples
 
 **Correct:**
 ```
-[§ 123 Obcianskeho zakonnika (40/1964 Zb.)](https://codexis.ai/sources/api/SK/ezbierka/doc/SKEZ1234/attachment/content_1.pdf#page=45)
+[40/1964 Zb. Občiansky zákonník, § 123](https://codexis.ai/sources/api/SK/ezbierka/doc/SKEZ1234/attachment/content_1.pdf#page=45)
 
 [OS Bratislava I - 1C/123/2024 - 15.03.2024](https://codexis.ai/sources/api/SK/vseobecne-sudy/doc/SKVS5678/attachment/content_1.pdf#page=1)
 ```
