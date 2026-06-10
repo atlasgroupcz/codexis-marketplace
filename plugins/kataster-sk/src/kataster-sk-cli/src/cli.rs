@@ -105,7 +105,7 @@ pub fn run() -> Result<()> {
             if args.geometry {
                 query.push(("outSR", "4326"));
             }
-            client.eskn_get(&path, &query)?
+            crate::land_use::enrich_detail(&client.eskn_get(&path, &query)?)
         }
     };
 
