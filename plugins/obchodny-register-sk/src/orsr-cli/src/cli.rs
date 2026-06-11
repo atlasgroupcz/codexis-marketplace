@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
 use clap::{Args, Parser, Subcommand};
 
+use serde_json::Value;
+
 use crate::http::RegistryClient;
 use crate::ico::normalize_ico;
 use crate::orsr::resolve_links;
+use crate::sources;
 
 const ROOT_HELP: &str = "\
 orsr-cli — Slovak commercial register / RPO lookup.
@@ -66,23 +69,44 @@ pub fn run() -> Result<()> {
     let cli = Cli::parse();
     let client = RegistryClient::new()?;
 
-    let body = match cli.command {
-        Command::Search(args) => search(&client, args)?,
-        Command::Detail { id } => client.rpo_get(&format!("entity/{id}"), &[])?,
+    let (body, source_entries) = match cli.command {
+        Command::Search(args) => (search(&client, args)?, Vec::new()),
+        Command::Detail { id } => {
+            let body = client.rpo_get(&format!("entity/{id}"), &[])?;
+            let entries = detail_source_entries(&client, &body);
+            (body, entries)
+        }
         Command::Links { ico } => {
             let ico = normalize_ico(&ico)?;
             let links = resolve_links(&client, &ico)?;
-            serde_json::to_string_pretty(&links)?
+            let entries = sources::links_sources(&links, &ico);
+            (serde_json::to_string_pretty(&links)?, entries)
         }
-        Command::Ruz { ico } => ruz(&client, &ico)?,
-        Command::Api { path } => client.rpo_get(&path, &[])?,
+        Command::Ruz { ico } => {
+            let ico = normalize_ico(&ico)?;
+            let (body, entity_id) = ruz(&client, &ico)?;
+            let entries = sources::ruz_source(&body, &ico, entity_id);
+            (body, entries)
+        }
+        Command::Api { path } => (client.rpo_get(&path, &[])?, Vec::new()),
     };
 
     print!("{body}");
     if !body.ends_with('\n') {
         println!();
     }
+    sources::try_publish(&source_entries);
     Ok(())
+}
+
+fn detail_source_entries(client: &RegistryClient, detail_body: &str) -> Vec<Value> {
+    let Some(ico) = sources::current_ico(detail_body) else {
+        return Vec::new();
+    };
+    let Ok(links) = resolve_links(client, &ico) else {
+        return Vec::new();
+    };
+    sources::detail_source(detail_body, &links, &ico)
 }
 
 fn search(client: &RegistryClient, args: SearchArgs) -> Result<String> {
@@ -96,13 +120,12 @@ fn search(client: &RegistryClient, args: SearchArgs) -> Result<String> {
     }
 }
 
-fn ruz(client: &RegistryClient, ico: &str) -> Result<String> {
-    let ico = normalize_ico(ico)?;
+fn ruz(client: &RegistryClient, ico: &str) -> Result<(String, i64)> {
     let ids_body = client.ruz_get(
         "uctovne-jednotky",
         &[
             ("zmenene-od", "2000-01-01"),
-            ("ico", ico.as_str()),
+            ("ico", ico),
             ("max-zaznamov", "10"),
         ],
     )?;
@@ -112,5 +135,6 @@ fn ruz(client: &RegistryClient, ico: &str) -> Result<String> {
         .and_then(|a| a.first())
         .and_then(|v| v.as_i64())
         .ok_or_else(|| anyhow!("no accounting entity found for IČO {ico} in registeruz.sk"))?;
-    client.ruz_get("uctovna-jednotka", &[("id", first_id.to_string().as_str())])
+    let body = client.ruz_get("uctovna-jednotka", &[("id", first_id.to_string().as_str())])?;
+    Ok((body, first_id))
 }

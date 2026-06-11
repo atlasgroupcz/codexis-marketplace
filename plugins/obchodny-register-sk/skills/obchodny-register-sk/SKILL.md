@@ -2,7 +2,7 @@
 uuid: 499b1cf8-5a26-49ef-8840-d664fdd30582
 name: obchodny-register-sk
 description: Slovenský obchodný register a register právnických osôb (RPO, Štatistický úrad SR). Use for Slovak company / legal-entity lookups by IČO or name — identification, registered office, statutory bodies (konatelia, predstavenstvo), partners (spoločníci), share capital (základné imanie), legal form, registration court and number, and full historical changes. Triggers on "obchodný register", "ORSR", "RPO", "slovenská firma", "slovenské IČO", "výpis z obchodného registra", "konateľ", "spoločník", "základné imanie", "register právnických osôb", "sídlo firmy na Slovensku". Slovak (SK) jurisdiction only — for Czech companies use the ares skill.
-version: 1.1.0
+version: 1.2.0
 jurisdictions: [SK]
 i18n:
   cs:
@@ -83,9 +83,17 @@ orsr-cli api <PATH>
    `aktualnyVypis` (current) and, when the user wants history, `uplnyVypis`.
 4. **`ruz <ico>`** — accounting entity from registeruz.sk (financial statements
    ids in `idUctovnychZavierok`). Use when the user asks about financials and
-   link `https://www.registeruz.sk/cruz-public/domain/accountingentity/simplesearch?q={ico}`.
+   link `https://www.registeruz.sk/cruz-public/domain/accountingentity/show/{id}`
+   (the resolved entity id; `simplesearch?q={ico}` as fallback when no id is known).
 5. **`api <path>`** — raw GET escape hatch against the RPO base
    (e.g. `orsr-cli api "search?identifier=31333532"`).
+
+## Chat sources
+
+`orsr-cli links`, `detail` and `ruz` automatically attach the official pages
+(orsr.sk výpis, registeruz.sk entity page) to the chat "Sources" panel — no
+extra step needed. `search` attaches nothing; run `detail` or `links` on the
+chosen entity to get the citation. Still cite the same URLs in prose.
 
 ## Output rules
 
