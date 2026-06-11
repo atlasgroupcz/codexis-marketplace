@@ -2,7 +2,7 @@
 uuid: 214caaa4-3728-4d21-b379-ab4b376b7615
 name: ares
 description: Český registr ekonomických subjektů (ARES, MF ČR). Use for company / sole-trader lookups by IČO or name — basic identification, business register (statutory bodies, partners), statistical register (RES), trade licence registry (ŽR), and VAT payer registry. Triggers on "ares", "ičo", "ico", "obchodní rejstřík", "živnostenský rejstřík", "plátce DPH", "registr ekonomických subjektů", "vyhledej firmu", "kdo je jednatel", "statutární orgán", "ověř firmu", "DIČ".
-version: 0.1.0
+version: 0.2.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -115,6 +115,13 @@ to narrow down). Pick the right candidate from `ekonomickeSubjekty[]`, then run
 **User wants a list of companies in a region / by legal form?**
 → `ares-cli search --obec "..." --pravni-forma <CODE> --pocet 100` (paginate
 with `--start` if needed).
+
+## Chat sources
+
+`ares-cli detail` and `ares-cli search` automatically attach the official ARES
+page of each looked-up subject (`https://ares.gov.cz/ekonomicke-subjekty?ico=<IČO>`)
+to the chat "Sources" panel — no extra step needed. When naming a company in
+your answer, cite that same URL in prose.
 
 ## User-facing output rules
 

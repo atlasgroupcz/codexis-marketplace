@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 
 use crate::error::normalize_ico;
 use crate::http::AresClient;
+use crate::sources;
 
 const ROOT_HELP: &str = "\
 ares-cli — Czech business registry (ARES) lookup.
@@ -131,14 +132,29 @@ pub fn run() -> Result<()> {
     let cli = Cli::parse();
     let client = AresClient::new()?;
 
-    let body = match cli.command {
-        Command::Detail(args) => detail(&client, args)?,
-        Command::Search(args) => search(&client, args)?,
-        Command::Api(ApiCommand::Get { path }) => client.get(&path)?,
+    let (body, source_entries) = match cli.command {
+        Command::Detail(args) => {
+            let ico = normalize_ico(&args.ico)?;
+            let body = detail(&client, &ico, args.register)?;
+            let entries = sources::detail_source(&ico, &body);
+            (body, entries)
+        }
+        Command::Search(args) => {
+            let body = search(&client, args)?;
+            let entries = sources::search_sources(&body, sources::SEARCH_SOURCES_CAP);
+            (body, entries)
+        }
+        Command::Api(ApiCommand::Get { path }) => {
+            let body = client.get(&path)?;
+            let entries = sources::sniff_sources(&body);
+            (body, entries)
+        }
         Command::Api(ApiCommand::Post { path, body }) => {
             let payload: Value = serde_json::from_str(&body)
                 .map_err(|e| anyhow!("--body is not valid JSON: {e}"))?;
-            client.post_json(&path, &payload)?
+            let body = client.post_json(&path, &payload)?;
+            let entries = sources::sniff_sources(&body);
+            (body, entries)
         }
     };
 
@@ -146,12 +162,12 @@ pub fn run() -> Result<()> {
     if !body.ends_with('\n') {
         println!();
     }
+    sources::try_publish(&source_entries);
     Ok(())
 }
 
-fn detail(client: &AresClient, args: DetailArgs) -> Result<String> {
-    let ico = normalize_ico(&args.ico)?;
-    let path = format!("{}/{}", args.register.endpoint_prefix(), ico);
+fn detail(client: &AresClient, ico: &str, register: Register) -> Result<String> {
+    let path = format!("{}/{}", register.endpoint_prefix(), ico);
     client.get(&path)
 }
 
