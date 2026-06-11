@@ -2,7 +2,7 @@
 uuid: 4d8b61c5-641d-4201-85fe-259ca742eaeb
 name: kataster-sk
 description: Slovenský kataster nehnuteľností (ÚGKK SR). Use for Slovak parcel lookups — parcel number, cadastral unit (katastrálne územie), area (výmera), land use, register C/E parcels, and links to title deeds (list vlastníctva). Triggers on "kataster", "kataster nehnuteľností", "parcela", "parcelné číslo", "list vlastníctva", "LV", "katastrálne územie", "výmera pozemku", "pozemok na Slovensku", "ZBGIS", "ESKN", "kataster portál". Slovak (SK) jurisdiction only — for the Czech cadastre use the katastr skill.
-version: 1.2.0
+version: 1.3.0
 jurisdictions: [SK]
 i18n:
   cs:
@@ -94,8 +94,12 @@ parcel's MAPKA page (step 4), which renders the human-readable labels.
 
 ### 4. Give the user deep links for owners and the LV
 
-- Parcel in the MAPKA map: `https://zbgis.skgeodesy.sk/mapka/sk/{route}`
-  (`route` from step 2, e.g. `kataster/parcela-c/805556/1234_9`)
+- Parcel in the MAPKA map: `https://zbgis.skgeodesy.sk/mapka/sk/kataster/detail/{route}`
+  (`route` from step 2, e.g. `kataster/parcela-c/805556/1234_9` — yes, `kataster`
+  appears twice in the final URL; that is the app's own detail-route format).
+  `kataster-sk-cli parcela` attaches these MAPKA pages to the chat "Sources"
+  panel automatically; `ku` and `detail` attach nothing — the citation for a
+  parcel comes from the `parcela` step. Still cite the link in prose.
 - ESKN portal (owner/LV lookup after login): `https://kataster.skgeodesy.sk/eskn-portal/`
 - CICA web search: `https://cica.vugk.sk/`
 - LV usable for legal acts (eID required): `https://www.slovensko.sk/sk/detail-sluzby?externalCode=ks_336485`
