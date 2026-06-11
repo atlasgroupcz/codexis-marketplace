@@ -13,21 +13,7 @@ pub fn resolve_links(client: &RegistryClient, ico: &str) -> Result<Value> {
     let body = client.get_bytes(&search_url)?;
     let page = String::from_utf8_lossy(&body);
 
-    let mut subjects: Vec<(String, String)> = Vec::new();
-    for fragment in page.split("vypis.asp?").skip(1) {
-        let href: String = fragment
-            .chars()
-            .take_while(|c| *c != '"' && *c != '\'' && *c != '<' && *c != ' ')
-            .collect();
-        let href = href.replace("&amp;", "&");
-        let (Some(id), Some(sid)) = (param(&href, "ID"), param(&href, "SID")) else {
-            continue;
-        };
-        if !subjects.iter().any(|(i, s)| *i == id && *s == sid) {
-            subjects.push((id, sid));
-        }
-    }
-
+    let subjects = extract_subjects(&page);
     if subjects.is_empty() {
         return Err(anyhow!(
             "no orsr.sk entry found for IČO {ico} (searched {search_url})"
@@ -49,10 +35,58 @@ pub fn resolve_links(client: &RegistryClient, ico: &str) -> Result<Value> {
     Ok(json!({ "ico": ico, "subjekty": entries }))
 }
 
+fn extract_subjects(page: &str) -> Vec<(String, String)> {
+    let mut subjects: Vec<(String, String)> = Vec::new();
+    for fragment in page.split("vypis.asp?").skip(1) {
+        let href: String = fragment
+            .chars()
+            .take_while(|c| *c != '"' && *c != '\'' && *c != '<' && *c != ' ')
+            .collect();
+        let href = href.replace("&amp;", "&");
+        let (Some(id), Some(sid)) = (param(&href, "ID"), param(&href, "SID")) else {
+            continue;
+        };
+        if !subjects.iter().any(|(i, s)| *i == id && *s == sid) {
+            subjects.push((id, sid));
+        }
+    }
+    subjects
+}
+
 fn param(query: &str, name: &str) -> Option<String> {
     query.split('&').find_map(|pair| {
         let (key, value) = pair.split_once('=')?;
         (key == name && value.chars().all(|c| c.is_ascii_digit()))
             .then(|| value.to_string())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_subjects_parses_and_dedups_vypis_hrefs() {
+        let page = r#"
+            <a href="vypis.asp?ID=54190&amp;SID=2&amp;P=0">Aktuálny</a>
+            <a href="vypis.asp?ID=54190&amp;SID=2&amp;P=1">Úplný</a>
+            <a href="vypis.asp?ID=99999&amp;SID=3&amp;P=0">Iný subjekt</a>
+            <a href="vypis.asp?ID=bad&amp;SID=3&amp;P=0">Zlý odkaz</a>
+        "#;
+
+        let subjects = extract_subjects(page);
+
+        assert_eq!(
+            subjects,
+            vec![
+                ("54190".to_string(), "2".to_string()),
+                ("99999".to_string(), "3".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn extract_subjects_returns_empty_for_page_without_hrefs() {
+        assert!(extract_subjects("<html><body>Bez výsledkov</body></html>").is_empty());
+    }
 }

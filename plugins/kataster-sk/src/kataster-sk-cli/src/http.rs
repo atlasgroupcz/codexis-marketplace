@@ -1,3 +1,4 @@
+use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
@@ -11,6 +12,7 @@ const DEFAULT_ESKN_BASE_URL: &str =
 // The cadastre WAF rejects non-browser user agents, so impersonate one.
 const USER_AGENT_VALUE: &str =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const MAX_ATTEMPTS: usize = 3;
 
 pub struct KatasterClient {
     client: Client,
@@ -42,28 +44,46 @@ impl KatasterClient {
     }
 
     fn get_json(&self, url: &str, query: &[(&str, &str)]) -> Result<String> {
-        let resp = self
-            .client
-            .get(url)
-            .query(query)
-            .header(ACCEPT, "application/json")
-            .send()?;
-        let status = resp.status();
-        let final_url = resp.url().to_string();
-        let body = resp.text().unwrap_or_default();
-        if !status.is_success() {
-            return Err(anyhow!(
-                "HTTP {status} on GET {final_url}\n{body}",
-                status = format_status(status),
-                body = body.trim()
-            ));
+        for attempt in 0..MAX_ATTEMPTS {
+            let resp = match self
+                .client
+                .get(url)
+                .query(query)
+                .header(ACCEPT, "application/json")
+                .send()
+            {
+                Ok(resp) => resp,
+                Err(error) => {
+                    if attempt + 1 < MAX_ATTEMPTS {
+                        sleep(backoff(attempt));
+                        continue;
+                    }
+                    return Err(error.into());
+                }
+            };
+            let status = resp.status();
+            let final_url = resp.url().to_string();
+            let body = resp.text().unwrap_or_default();
+            if !status.is_success() {
+                if retryable_status(status) && attempt + 1 < MAX_ATTEMPTS {
+                    sleep(backoff(attempt));
+                    continue;
+                }
+                return Err(anyhow!(
+                    "HTTP {status} on GET {final_url}\n{body}",
+                    status = format_status(status),
+                    body = body.trim()
+                ));
+            }
+            // A WAF block arrives as HTTP 200 + HTML — never retried.
+            if body.trim_start().starts_with('<') {
+                return Err(anyhow!(
+                    "GET {final_url} returned HTML instead of JSON — the cadastre WAF blocked the request or the service is unavailable"
+                ));
+            }
+            return Ok(body);
         }
-        if body.trim_start().starts_with('<') {
-            return Err(anyhow!(
-                "GET {final_url} returned HTML instead of JSON — the cadastre WAF blocked the request or the service is unavailable"
-            ));
-        }
-        Ok(body)
+        Err(anyhow!("GET {url} failed after {MAX_ATTEMPTS} attempts"))
     }
 }
 
@@ -81,9 +101,45 @@ fn join_url(base: &str, path: &str) -> String {
     format!("{base}/{}", path.trim_start_matches('/'))
 }
 
+fn retryable_status(status: StatusCode) -> bool {
+    status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error()
+}
+
+fn backoff(attempt: usize) -> Duration {
+    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
+}
+
 fn format_status(status: StatusCode) -> String {
     match status.canonical_reason() {
         Some(reason) => format!("{} {}", status.as_u16(), reason),
         None => status.as_u16().to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retryable_status_matches_429_and_5xx_only() {
+        assert!(retryable_status(StatusCode::TOO_MANY_REQUESTS));
+        assert!(retryable_status(StatusCode::INTERNAL_SERVER_ERROR));
+        assert!(!retryable_status(StatusCode::FORBIDDEN));
+    }
+
+    #[test]
+    fn backoff_grows_exponentially() {
+        assert_eq!(backoff(0), Duration::from_millis(250));
+        assert_eq!(backoff(1), Duration::from_millis(500));
+        assert_eq!(backoff(2), Duration::from_millis(1000));
+    }
+
+    #[test]
+    fn join_url_handles_empty_and_slashed_paths() {
+        assert_eq!(join_url("https://example.sk/api", ""), "https://example.sk/api");
+        assert_eq!(
+            join_url("https://example.sk/api", "/805556/mu/805556"),
+            "https://example.sk/api/805556/mu/805556"
+        );
     }
 }

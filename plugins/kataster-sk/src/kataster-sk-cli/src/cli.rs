@@ -128,3 +128,20 @@ fn require_nonempty<'a>(value: &'a str, what: &str) -> Result<&'a str> {
     }
     Ok(trimmed)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn require_nonempty_trims_and_rejects_blank() {
+        assert_eq!(require_nonempty(" 1234/9 ", "parcel number").unwrap(), "1234/9");
+        assert!(require_nonempty("   ", "query").is_err());
+    }
+
+    #[test]
+    fn register_maps_to_eskn_layers() {
+        assert_eq!(Register::C.layer(), "parcels_c_view");
+        assert_eq!(Register::E.layer(), "parcels_e_view");
+    }
+}
