@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
 use crate::http::KatasterClient;
+use crate::sources;
 
 const ROOT_HELP: &str = "\
 kataster-sk-cli — Slovak land cadastre (kataster nehnuteľností) lookup.
@@ -79,6 +80,7 @@ pub fn run() -> Result<()> {
     let cli = Cli::parse();
     let client = KatasterClient::new()?;
 
+    let mut source_entries = Vec::new();
     let body = match cli.command {
         Command::Ku { query } => {
             let query = require_nonempty(&query, "query")?;
@@ -90,7 +92,9 @@ pub fn run() -> Result<()> {
         } => {
             let parcel_number = require_nonempty(&parcel_number, "parcel number")?;
             let ku = ku_code.to_string();
-            client.zbgis_get(&format!("{ku}/mu/{ku}"), &[("q", parcel_number)])?
+            let body = client.zbgis_get(&format!("{ku}/mu/{ku}"), &[("q", parcel_number)])?;
+            source_entries = sources::parcela_sources(&body, sources::PARCEL_SOURCES_CAP);
+            body
         }
         Command::Detail(args) => {
             let path = format!("{}/MapServer/0/query", args.register.layer());
@@ -105,7 +109,7 @@ pub fn run() -> Result<()> {
             if args.geometry {
                 query.push(("outSR", "4326"));
             }
-            client.eskn_get(&path, &query)?
+            crate::land_use::enrich_detail(&client.eskn_get(&path, &query)?)
         }
     };
 
@@ -113,6 +117,7 @@ pub fn run() -> Result<()> {
     if !body.ends_with('\n') {
         println!();
     }
+    sources::try_publish(&source_entries);
     Ok(())
 }
 
@@ -122,4 +127,21 @@ fn require_nonempty<'a>(value: &'a str, what: &str) -> Result<&'a str> {
         return Err(anyhow!("{what} is empty"));
     }
     Ok(trimmed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn require_nonempty_trims_and_rejects_blank() {
+        assert_eq!(require_nonempty(" 1234/9 ", "parcel number").unwrap(), "1234/9");
+        assert!(require_nonempty("   ", "query").is_err());
+    }
+
+    #[test]
+    fn register_maps_to_eskn_layers() {
+        assert_eq!(Register::C.layer(), "parcels_c_view");
+        assert_eq!(Register::E.layer(), "parcels_e_view");
+    }
 }

@@ -1,6 +1,6 @@
 {
   "name": "kataster-sk",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "description": "Slovak land cadastre (kataster nehnuteľností SR) — parcel lookup by cadastral unit and parcel number, areas, land use, and deep links to title deeds (list vlastníctva) on the ESKN portal",
   "author": {
     "name": "ATLAS GROUP",

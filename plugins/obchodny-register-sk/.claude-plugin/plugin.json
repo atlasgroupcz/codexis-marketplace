@@ -1,6 +1,6 @@
 {
   "name": "obchodny-register-sk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Slovak commercial register (obchodný register SR) — company lookup by IČO or name via the RPO open API, statutory bodies, registered office, share capital, full history, and links to orsr.sk extracts",
   "author": {
     "name": "ATLAS GROUP",
