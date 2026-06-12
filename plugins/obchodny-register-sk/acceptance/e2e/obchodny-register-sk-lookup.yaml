@@ -40,3 +40,7 @@ steps:
       tool_calls_max: 8
       response:
         matches: "orsr\\.sk/vypis\\.asp"
+      sources:
+        # orsr-cli links attaches the orsr.sk aktuálny výpis of each subject.
+        min: 1
+        matches: "orsr\\.sk/vypis\\.asp"

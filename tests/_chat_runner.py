@@ -70,6 +70,7 @@ def parse_assistant_message(msg: dict) -> dict:
                 "name": part.get("toolName"),
                 "input": _extract_tool_input(part),
                 "output": _flatten_tool_output(part.get("output")),
+                "sources": part.get("sources") or [],
             })
         # ReasoningMessagePart, unknown types: ignored
     return {"text": "".join(text_parts), "tool_calls": tool_calls}

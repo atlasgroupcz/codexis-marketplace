@@ -10,6 +10,10 @@ steps:
         # A real hit reports the official area in m² and the Ružinov KU code 805556
         # or links to the MAPKA parcel page.
         matches: "(805556|m²|m2|zbgis\\.skgeodesy\\.sk)"
+      sources:
+        # kataster-sk-cli parcela attaches MAPKA deep links of the found parcels.
+        min: 1
+        matches: "zbgis\\.skgeodesy\\.sk/mapka"
 
   - prompt: "Zisti mi vlastníka alebo LV tejto parcely automaticky."
     expect:

@@ -384,6 +384,37 @@ def _check_state(spec, client: Any, result: dict, vars_: dict) -> None:
         _check_state_single(check, client, result, vars_)
 
 
+def _check_sources(spec: dict, tool_calls: list[dict], vars_: dict) -> None:
+    """Assert on chat sources attached to this turn's tool calls.
+
+    Plugins attach sources (URL/file citations shown in the chat "Sources"
+    panel) to their shell tool calls via the daemon REST API; the chat query
+    surfaces them per tool part. `spec`: {min?: int (default 1),
+    matches?: regex, contains?: substring} — regex/substring run against the
+    JSON blob of all sources gathered across the turn.
+    """
+    sources = [s for call in tool_calls for s in (call.get("sources") or [])]
+    blob = json.dumps(sources, ensure_ascii=False)
+    minimum = spec.get("min", 1)
+    if len(sources) < minimum:
+        raise AssertionFailure(
+            f"sources axis failed: got {len(sources)} source(s), expected >= {minimum}. "
+            f"Tool calls: {[c.get('name') for c in tool_calls]!r}"
+        )
+    if "matches" in spec:
+        pattern = substitute(spec["matches"], vars_)
+        if not re.search(pattern, blob):
+            raise AssertionFailure(
+                f"sources axis failed: regex /{pattern}/ did not match sources {blob!r}"
+            )
+    if "contains" in spec:
+        needle = substitute(spec["contains"], vars_)
+        if needle not in blob:
+            raise AssertionFailure(
+                f"sources axis failed: {needle!r} not in sources {blob!r}"
+            )
+
+
 def _check_tool_calls_count(expect: dict, tool_calls: list) -> None:
     """Bound the number of *work* tool calls the model made in this turn.
 
@@ -419,6 +450,8 @@ def run_step_checks(expect: dict, result: dict, captured: dict, client: Any) -> 
         _check_tool_calls_count(expect, result.get("tool_calls") or [])
     if "response" in expect:
         _check_response(expect["response"], result.get("text") or "", captured)
+    if "sources" in expect:
+        _check_sources(expect["sources"], result.get("tool_calls") or [], captured)
     if "state" in expect:
         _check_state(expect["state"], client, result, captured)
 

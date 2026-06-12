@@ -135,6 +135,11 @@ __typename partId
         ... on ErrorToolOutput { message }
         ... on ImageToolOutput { mimeType }
     }
+    sources {
+        __typename
+        ... on UrlSource { url title snippet }
+        ... on FileSource { path }
+    }
 }
 ... on ShellToolMessagePart { command note }
 ... on ReadFileToolMessagePart { path offset limit }
