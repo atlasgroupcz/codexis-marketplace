@@ -19,5 +19,4 @@ RAW_SOURCES: dict[str, SourceSpec] = {
     "vr": SourceSpec("vr", "Veřejný rejstřík", "/ekonomicke-subjekty-vr/{ico}"),
     "res": SourceSpec("res", "Registr ekonomických subjektů", "/ekonomicke-subjekty-res/{ico}"),
     "rzp": SourceSpec("rzp", "Živnostenský rejstřík", "/ekonomicke-subjekty-rzp/{ico}"),
-    "rpsh": SourceSpec("rpsh", "Registr skutečných majitelů", "/ekonomicke-subjekty-rpsh/{ico}"),
 }

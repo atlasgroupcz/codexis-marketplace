@@ -1,4 +1,4 @@
-"""Typed output contracts for future parser work."""
+"""Typed output contracts for parser and formatter work."""
 
 from __future__ import annotations
 

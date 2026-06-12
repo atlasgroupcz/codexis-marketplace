@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections.abc import Callable
 
 from . import __version__
 from .errors import AresCliError
@@ -13,58 +12,48 @@ from .service import AresService
 from .sources import RAW_SOURCES
 
 
-CommandFunc = Callable[[argparse.Namespace], dict]
-
 BUSINESS_CASES = """\
 Business cases:
   ares search <query>
     Supports: "Najdi firmu podle názvu."
     Endpoint: POST /ekonomicke-subjekty/vyhledat
     Call when: user gives a company name or partial name.
+    Output: candidates with name, IČO, seat, legal form, primary source and registration states.
 
   ares company <ico>
     Supports: "Zobraz základní údaje o subjektu."
     Endpoint: GET /ekonomicke-subjekty/{ico}
     Call when: user already has IČO and needs name, address, legal form, status, dates.
+    Output: company card with name, IČO, DIČ, seat, legal form, dates, update, primary source, registrations and CZ-NACE.
 
   ares officers <ico>
     Supports: "Kdo může za firmu jednat?"
     Endpoint: GET /ekonomicke-subjekty-vr/{ico}
     Call when: user asks about statutory bodies, directors, board members, or signing authority.
+    Output: statutory bodies, members, functions, periods, signing authority, file number, capital, shareholders/partners, execution/insolvency/bankruptcy fields if returned by VR.
 
   ares trades <ico>
     Supports: "Jaká má firma živnostenská oprávnění?"
     Endpoint: GET /ekonomicke-subjekty-rzp/{ico}
     Call when: user asks about business activities, trades, licences, or scope of business.
-
-  ares owners <ico>
-    Supports: "Kdo je skutečný majitel?"
-    Endpoint: GET /ekonomicke-subjekty-rpsh/{ico}
-    Call when: user asks about beneficial owners, AML, KYC, or ownership/compliance checks.
+    Output: trade licences, type, dates, validity, suspension/interruption, conditions, fields, responsible persons, premises and trade/premises states.
 
   ares raw <ico> --source <source>
     Supports: "Ukaž surová data ze zdroje."
     Endpoint: source-specific endpoint
     Call when: debugging, serving advanced users, or needing fields not exposed by simplified commands.
+    Output: original JSON from the selected ARES source, without interpretation.
 
 Raw sources:
   basic  /ekonomicke-subjekty/{ico}       basic identification; same source as `company`
   vr     /ekonomicke-subjekty-vr/{ico}    public register; same source as `officers`
   res    /ekonomicke-subjekty-res/{ico}   statistical register data
   rzp    /ekonomicke-subjekty-rzp/{ico}   trade licence register; same source as `trades`
-  rpsh   /ekonomicke-subjekty-rpsh/{ico}  beneficial owners; same source as `owners`
 """
 
 
 def _print_json(payload: dict) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=False))
-
-
-def _not_implemented(command: str) -> dict:
-    raise AresCliError(
-        f"Command '{command}' is scaffolded but not implemented yet. "
-        "Fill ares_cli.client and ares_cli.service to call ARES."
-    )
 
 
 def cmd_search(args: argparse.Namespace) -> dict:
@@ -83,10 +72,6 @@ def cmd_trades(args: argparse.Namespace) -> dict:
     return AresService().trades(args.ico)
 
 
-def cmd_owners(args: argparse.Namespace) -> dict:
-    return AresService().owners(args.ico)
-
-
 def cmd_raw(args: argparse.Namespace) -> dict:
     return AresService().raw(args.ico, source=args.source)
 
@@ -95,15 +80,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ares",
         description=(
-            "Query Czech ARES public-register data for legal and compliance "
-            "checks. Outputs JSON suitable for Claude to summarize in Czech."
+            "Query Czech ARES public-register data for legal checks. "
+            "Mapped commands output JSON with an echo block; raw outputs original ARES JSON."
         ),
         epilog=BUSINESS_CASES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"ares {__version__}")
 
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(
+        dest="command",
+        required=True,
+        metavar="{search,company,officers,trades,raw}",
+    )
 
     search = sub.add_parser(
         "search",
@@ -112,7 +101,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Endpoint: POST /ekonomicke-subjekty/vyhledat\n"
             "Call when: user gives a company name or partial name.\n"
-            "Output: candidate entities to disambiguate before running detail commands."
+            "Output: echo + kandidati[].nazev, ico, sidlo, pravniForma, primarniZdroj, stavRegistraci."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -127,7 +116,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Endpoint: GET /ekonomicke-subjekty/{ico}\n"
             "Call when: user already has IČO and needs name, address, legal form, status, dates.\n"
-            "Output: canonical identity, registered seat, legal form and lifecycle/status fields."
+            "Output: echo + kartaSubjektu with nazev, ico, dic, sidlo, pravniForma, datumVzniku/Zaniku, datumAktualizace, primarniZdroj, registrace, czNace."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -141,7 +130,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Endpoint: GET /ekonomicke-subjekty-vr/{ico}\n"
             "Call when: user asks about statutory bodies, directors, board members, or signing authority.\n"
-            "Output: statutory body records and způsob jednání if returned by ARES."
+            "Output: echo + VR zaznamy with statutarniOrgany, clenove, funkce, obdobi, zpusobJednani, spisovaZnacka, zakladniKapital, spolecnici/akcionari, exekuce/insolvence/konkursy if returned."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -155,26 +144,12 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Endpoint: GET /ekonomicke-subjekty-rzp/{ico}\n"
             "Call when: user asks about business activities, trades, licences, or scope of business.\n"
-            "Output: trade licences and related živnostenský rejstřík data."
+            "Output: echo + RZP zaznamy with zivnosti, druh, dates, platnost, pozastaveni/preruseni, podminky, obory, odpovedniZastupci, provozovny, zivnostiStav/provozovnyStav."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     trades.add_argument("ico", help="Czech IČO.")
     trades.set_defaults(func=cmd_trades)
-
-    owners = sub.add_parser(
-        "owners",
-        help="Show beneficial-owner and compliance-relevant data.",
-        description='Supports: "Kdo je skutečný majitel?"',
-        epilog=(
-            "Endpoint: GET /ekonomicke-subjekty-rpsh/{ico}\n"
-            "Call when: user asks about beneficial owners, AML, KYC, or ownership/compliance checks.\n"
-            "Output: beneficial-owner/compliance records from the RPSH source when available."
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    owners.add_argument("ico", help="Czech IČO.")
-    owners.set_defaults(func=cmd_owners)
 
     raw = sub.add_parser(
         "raw",
@@ -183,12 +158,12 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Endpoint: source-specific endpoint selected by --source.\n"
             "Call when: debugging, serving advanced users, or needing fields not exposed by simplified commands.\n\n"
+            "Output: original JSON without interpretation.\n\n"
             "Sources:\n"
             "  basic  basic identification; same source as `company`\n"
             "  vr     public register; same source as `officers`\n"
             "  res    statistical register data\n"
-            "  rzp    trade licence register; same source as `trades`\n"
-            "  rpsh   beneficial owners; same source as `owners`"
+            "  rzp    trade licence register; same source as `trades`"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -197,7 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--source",
         required=True,
         choices=list(RAW_SOURCES),
-        help="ARES source to fetch: basic, vr, res, rzp or rpsh.",
+        help="ARES source to fetch: basic, vr, res or rzp.",
     )
     raw.set_defaults(func=cmd_raw)
 
