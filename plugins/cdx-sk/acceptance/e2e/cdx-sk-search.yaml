@@ -20,6 +20,9 @@ steps:
       response:
         # Real SKNUS doc links prove the search returned actual hits.
         matches: "/doc/SKNUS\\d+"
+      sources:
+        # The API envelope carries sources; cdx-sk attaches them to the chat.
+        min: 1
 
   - prompt: "Jak zní §3 slovenského Občianskeho zákonníka (40/1964 Zb.)?"
     expect:
