@@ -32,21 +32,32 @@ _TOOL_PART_INPUT_FIELDS: dict[str, tuple[str, ...]] = {
 def _extract_tool_input(part: dict) -> dict:
     """Pull the type-specific input fields off a concrete *ToolMessagePart."""
     keys = _TOOL_PART_INPUT_FIELDS.get(part.get("__typename") or "", ())
-    return {k: part[k] for k in keys if part.get(k) is not None}
+    out = {}
+    for k in keys:
+        v = part.get(k)
+        if v is None and k == "content":
+            # WriteFileToolMessagePart.content is aliased to fileContent in the
+            # chat query (FieldsConflict with TextMessagePart.content: HTML).
+            v = part.get("fileContent")
+        if v is not None:
+            out[k] = v
+    return out
 
 
 def _flatten_tool_output(output: dict | None) -> Any:
-    """Flatten the ToolOutput union into a plain text/error string or None."""
+    """Flatten ToolOutput.blocks into a plain text/error string or None."""
     if not output:
         return None
-    typ = output.get("__typename")
-    if typ == "TextToolOutput":
-        return output.get("content")
-    if typ == "ErrorToolOutput":
-        return {"error": output.get("message")}
-    if typ == "ImageToolOutput":
-        return {"image": output.get("mimeType")}
-    return output
+    texts: list[str] = []
+    for block in output.get("blocks") or []:
+        typ = block.get("__typename")
+        if typ == "TextToolOutput":
+            texts.append(block.get("content") or "")
+        elif typ == "ErrorToolOutput":
+            return {"error": block.get("message")}
+        elif typ == "ImageToolOutput":
+            return {"image": block.get("mimeType")}
+    return "".join(texts) if texts else None
 
 
 def parse_assistant_message(msg: dict) -> dict:

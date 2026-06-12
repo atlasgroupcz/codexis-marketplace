@@ -126,24 +126,26 @@ mutation SendMessage($input: SendMessageInput!) {
 _PART_FIELDS = """
 __typename partId
 ... on TextMessagePart { content }
-... on ReasoningMessagePart { content }
+... on ReasoningMessagePart { reasoningContent: content }
 ... on ToolMessagePart {
     toolCallId toolName state
     output {
-        __typename
-        ... on TextToolOutput { content }
-        ... on ErrorToolOutput { message }
-        ... on ImageToolOutput { mimeType }
+        blocks {
+            __typename
+            ... on TextToolOutput { content }
+            ... on ErrorToolOutput { message }
+            ... on ImageToolOutput { mimeType }
+        }
     }
     sources {
         __typename
         ... on UrlSource { url title snippet }
-        ... on FileSource { path }
+        ... on FileSource { path { displayPath } }
     }
 }
 ... on ShellToolMessagePart { command note }
 ... on ReadFileToolMessagePart { path offset limit }
-... on WriteFileToolMessagePart { path content }
+... on WriteFileToolMessagePart { path fileContent: content }
 ... on EditFileToolMessagePart { filePath oldString newString replaceAll }
 ... on SkillToolMessagePart { skill resolvedSkillName }
 ... on SpawnAgentToolMessagePart { subagentType prompt note maxTurns }
@@ -349,12 +351,9 @@ class DaemonClient:
         return data["newChat"]
 
     def send_message(self, chat_id: str, message: str) -> dict:
-        # webSearchEnabled is a NonNull Boolean on SendMessageInput; e2e runs
-        # test plugin tool usage, not web search, so it is always false here.
         data = self.gql_data(
             _Q_SEND_MESSAGE,
-            {"input": {"chatId": chat_id, "message": message,
-                       "webSearchEnabled": False}},
+            {"input": {"chatId": chat_id, "message": message}},
         )
         return data["sendMessage"]
 
