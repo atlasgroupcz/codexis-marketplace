@@ -287,23 +287,23 @@
     {
       "uuid": "735dc013-d3c8-40ca-acd4-f0ac3f51a178",
       "name": "ares",
-      "description": "Czech business registry (ARES) — IČO lookup, company search, business register, trade licence and VAT payer status",
+      "description": "Czech ARES public-register verification — name search, company identity, officers, signing authority and trade licences",
       "source": "./plugins/ares",
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "ARES — registr ekonomických subjektů",
-          "description": "Český registr ekonomických subjektů ARES — vyhledávání firem podle IČO/názvu, výpis z obchodního rejstříku, RES, živnostenského rejstříku a registru plátců DPH.",
+          "displayName": "ARES — ověřování ekonomických subjektů",
+          "description": "Ověřování českých firem a podnikatelů v ARES — vyhledání podle názvu, základní identifikace podle IČO, statutární orgány, způsob jednání a živnosti.",
           "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "company": "Firmy" }
         },
         "en": {
-          "displayName": "ARES — Czech Business Registry",
-          "description": "Czech business registry ARES — company lookup by ICO/name, business register, statistical register, trade licence registry and VAT payer registry.",
+          "displayName": "ARES — Czech Entity Verification",
+          "description": "Verify Czech companies and entrepreneurs in ARES — search by name, company identity by ICO, officers, signing authority and trade licences.",
           "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "company": "Companies" }
         },
         "sk": {
-          "displayName": "ARES — register ekonomických subjektov",
-          "description": "Český register ekonomických subjektov ARES — vyhľadávanie firiem podľa IČO/názvu, výpis z obchodného registra, RES, živnostenského registra a registra platcov DPH.",
+          "displayName": "ARES — overovanie ekonomických subjektov",
+          "description": "Overovanie českých firiem a podnikateľov v ARES — vyhľadanie podľa názvu, základná identifikácia podľa IČO, štatutárne orgány, spôsob konania a živnosti.",
           "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "company": "Firmy" }
         }
       }

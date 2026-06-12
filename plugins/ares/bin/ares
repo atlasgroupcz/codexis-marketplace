@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""Executable wrapper for the bundled ARES Python CLI."""
+
+import sys
+from pathlib import Path
+
+
+HERE = Path(__file__).resolve().parent
+CANDIDATES = [
+    HERE.parent / "lib",
+    Path.home() / ".local/share/ares/lib",
+    Path("/usr/local/share/ares/lib"),
+]
+
+for path in CANDIDATES:
+    if (path / "ares_cli").is_dir():
+        sys.path.insert(0, str(path))
+        break
+
+try:
+    from ares_cli.cli import main
+except ImportError as exc:
+    print(f"ERROR: ares_cli library not found: {exc}", file=sys.stderr)
+    sys.exit(2)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
