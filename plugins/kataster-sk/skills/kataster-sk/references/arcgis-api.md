@@ -48,13 +48,33 @@ GET {layer}/query?objectIds={id}&outFields=*&returnGeometry=false&f=json
 | `HOUSE_NUMBER` | Building number when a building stands on the parcel |
 | `XMIN/XMAX/YMIN/YMAX` | Bounding box (Web Mercator) |
 
-Numeric `*_ID` fields are **internal code-list identifiers without any public
-mapping**: the layers expose no ArcGIS coded-value domains, the values do not
-match the official kódy druhov pozemkov (vyhláška č. 461/2009 Z. z. uses
-2–14 with gaps, while e.g. a built-up Ružinov parcel carries
-`NATURE_OF_LAND_USE_ID = 9`), and the translating endpoint sits behind the
-recaptcha-gated ESKN portal. Report the raw identifier and direct the user to
-the parcel's MAPKA page, which renders the human-readable labels.
+## Land-use translation (`DRUH_POZEMKU`)
+
+`NATURE_OF_LAND_USE_ID` is the 1–10 sequential internal id of the KN code list
+ordered by the official kód druhu pozemku. `kataster-sk-cli detail` injects the
+translation as `DRUH_POZEMKU` + `DRUH_POZEMKU_KOD`:
+
+| ID | DRUH_POZEMKU | Kód (vyhláška č. 461/2009 Z. z.) |
+|----|--------------|----------------------------------|
+| 1 | Orná pôda | 2 |
+| 2 | Chmeľnica | 3 |
+| 3 | Vinica | 4 |
+| 4 | Záhrada | 5 |
+| 5 | Ovocný sad | 6 |
+| 6 | Trvalý trávny porast | 7 |
+| 7 | Lesný pozemok | 10 |
+| 8 | Vodná plocha | 11 |
+| 9 | Zastavaná plocha a nádvorie | 13 |
+| 10 | Ostatná plocha | 14 |
+
+The layers publish no coded-value domains; this mapping was verified per value
+by cross-referencing identical parcels between the ESKN ArcGIS services and the
+ESKN portal parcel search (2026-06). Official label list:
+https://kataster.skgeodesy.sk/eskn-portal/ciselniky
+
+The remaining numeric `*_ID` fields (`PLOT_UTILISATION_ID`, `OWNERSHIP_TYPE_ID`,
+…) have **no verified public mapping** — report the raw identifier and direct
+the user to the parcel's MAPKA page, which renders the human-readable labels.
 
 ## Map images
 

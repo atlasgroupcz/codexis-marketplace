@@ -7,19 +7,32 @@ All endpoints below are accessed through `orsr-cli`, never directly.
 
 ## GET /search
 
-Query params (one required):
+Query params (at least one required; they combine as logical AND — `orsr-cli
+search` exposes each as a flag):
 
-| Param | Meaning |
-|---|---|
-| `identifier` | IČO (8 digits) |
-| `fullName` | name fragment; matches historical names too |
+| Param | `orsr-cli search` flag | Meaning |
+|---|---|---|
+| `identifier` | `--ico` | IČO (8 digits; the CLI pads shorter inputs) |
+| `fullName` | `--name` | name fragment; matches historical names too |
+| `addressMunicipality` | `--municipality` | seat municipality |
+| `addressStreet` | `--street` | seat street |
+| `legalForm` | `--legal-form` | legal form text |
+| `legalStatus` | `--legal-status` | legal status text |
+| `sourceRegister` | `--source-register` | source register text |
+| `mainActivity` | `--main-activity` | main economic activity text |
+| `onlyActive` | `--active` | literal `true` — only active entities |
+| `establishmentAfter` / `establishmentBefore` | `--establishment-after/-before` | YYYY-MM-DD |
+| `terminationAfter` / `terminationBefore` | `--termination-after/-before` | YYYY-MM-DD |
+| `dbModificationDateAfter` / `dbModificationDateBefore` | `--db-modification-after/-before` | YYYY-MM-DD |
 
 Returns `{"results": [<entity>...], "license": "..."}` — each result is the same
-shape as `/entity/{id}` below. No pagination metadata.
+shape as `/entity/{id}` below. No pagination metadata; at most 500 hits.
 
 ## GET /entity/{id}
 
-`{id}` = RPO internal id (`results[].id` from search), not IČO.
+`{id}` = RPO internal id (`results[].id` from search), not IČO. Optional query
+params (exposed as `orsr-cli detail` flags): `showHistoricalData=true`
+(`--history`), `showOrganizationUnits=true` (`--units`).
 
 Top-level fields (every nested object carries `validFrom` / `validTo` — an entry
 with `validTo` set is historical):

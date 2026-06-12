@@ -2,7 +2,7 @@
 uuid: 4d8b61c5-641d-4201-85fe-259ca742eaeb
 name: kataster-sk
 description: Slovenský kataster nehnuteľností (ÚGKK SR). Use for Slovak parcel lookups — parcel number, cadastral unit (katastrálne územie), area (výmera), land use, register C/E parcels, and links to title deeds (list vlastníctva). Triggers on "kataster", "kataster nehnuteľností", "parcela", "parcelné číslo", "list vlastníctva", "LV", "katastrálne územie", "výmera pozemku", "pozemok na Slovensku", "ZBGIS", "ESKN", "kataster portál". Slovak (SK) jurisdiction only — for the Czech cadastre use the katastr skill.
-version: 1.1.0
+version: 1.3.0
 jurisdictions: [SK]
 i18n:
   cs:
@@ -81,18 +81,25 @@ Key attributes: `PARCEL_NUMBER`, `DESCRIPTIVE_AREA_OF_PARCEL` (official area in 
 `FOLIO_ID` (internal title-deed identifier; `null` when the parcel has no LV record
 in that register view). Field details: `references/arcgis-api.md`.
 
-**Code-only fields:** `NATURE_OF_LAND_USE_ID` (druh pozemku), `PLOT_UTILISATION_ID`
-(spôsob využívania) and the other `*_ID` fields are internal numeric identifiers and
-the anonymous API provides **no code list to translate them** — they do NOT match
-the official kódy druhov pozemkov from the vyhláška. Do not search for a mapping,
-do not guess labels, and do not spawn agents to find one. When the user asks for
-druh pozemku or spôsob využívania, state the numeric identifier and point them to
-the parcel's MAPKA page (step 4), which renders the human-readable labels.
+**Druh pozemku:** `detail` output already carries the translated land-use fields
+`DRUH_POZEMKU` (official label, e.g. `Zastavaná plocha a nádvorie`) and
+`DRUH_POZEMKU_KOD` (official kód per vyhláška č. 461/2009 Z. z.) — the CLI derives
+them from `NATURE_OF_LAND_USE_ID`. Use them directly.
+
+**Untranslatable code-only fields:** `PLOT_UTILISATION_ID` (spôsob využívania),
+`OWNERSHIP_TYPE_ID` and the remaining `*_ID` fields are internal identifiers with
+no public code list. Do not search for a mapping, do not guess labels, and do not
+spawn agents to find one — state the numeric identifier and point the user to the
+parcel's MAPKA page (step 4), which renders the human-readable labels.
 
 ### 4. Give the user deep links for owners and the LV
 
-- Parcel in the MAPKA map: `https://zbgis.skgeodesy.sk/mapka/sk/{route}`
-  (`route` from step 2, e.g. `kataster/parcela-c/805556/1234_9`)
+- Parcel in the MAPKA map: `https://zbgis.skgeodesy.sk/mapka/sk/kataster/detail/{route}`
+  (`route` from step 2, e.g. `kataster/parcela-c/805556/1234_9` — yes, `kataster`
+  appears twice in the final URL; that is the app's own detail-route format).
+  `kataster-sk-cli parcela` attaches these MAPKA pages to the chat "Sources"
+  panel automatically; `ku` and `detail` attach nothing — the citation for a
+  parcel comes from the `parcela` step. Still cite the link in prose.
 - ESKN portal (owner/LV lookup after login): `https://kataster.skgeodesy.sk/eskn-portal/`
 - CICA web search: `https://cica.vugk.sk/`
 - LV usable for legal acts (eID required): `https://www.slovensko.sk/sk/detail-sluzby?externalCode=ks_336485`
