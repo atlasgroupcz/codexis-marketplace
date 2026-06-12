@@ -1,0 +1,43 @@
+{
+  "name": "zrsr",
+  "version": "0.1.0",
+  "description": "Slovak business & trade register (ZRSR/RPO) — IČO lookup, company and sole-trader search, trade licences, Živnostenský and Obchodný register data",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "zrsr",
+    "rpo",
+    "ico",
+    "zivnostensky-register",
+    "obchodny-register",
+    "register",
+    "slovak",
+    "company",
+    "szco"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "slovak", "registry", "company"],
+  "i18n": {
+    "cs": {
+      "displayName": "ZRSR — živnostenský registr SR",
+      "description": "Slovenský registr právnických osob a podnikatelů (RPO) — vyhledávání firem a živnostníků podle IČO/názvu, živnostenská oprávnění, údaje z živnostenského i obchodního registru.",
+      "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Registr", "company": "Firmy" }
+    },
+    "en": {
+      "displayName": "ZRSR — Slovak Trade Register",
+      "description": "Slovak register of legal entities and entrepreneurs (RPO) — company and sole-trader lookup by IČO/name, trade licences, Trade and Business Register data.",
+      "tagLabels": { "legal": "Law", "slovak": "Slovakia", "registry": "Registry", "company": "Companies" }
+    },
+    "sk": {
+      "displayName": "ZRSR — živnostenský register SR",
+      "description": "Slovenský register právnických osôb a podnikateľov (RPO) — vyhľadávanie firiem a živnostníkov podľa IČO/názvu, živnostenské oprávnenia, údaje zo živnostenského aj obchodného registra.",
+      "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "company": "Firmy" }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}
