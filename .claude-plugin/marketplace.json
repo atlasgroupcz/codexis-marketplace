@@ -355,6 +355,30 @@
           "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "company": "Firmy" }
         }
       }
+    },
+    {
+      "uuid": "aff0f8f8-7043-48c6-a83b-7dc11c279fa7",
+      "name": "zrsr",
+      "description": "Slovak trade register (živnostenský register SR) — company and sole-trader lookup by IČO or name via the RPO open API, trade licences, Živnostenský and Obchodný register data",
+      "source": "./plugins/zrsr",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "ZRSR — živnostenský registr SR",
+          "description": "Slovenský registr právnických osob a podnikatelů (RPO) — vyhledávání firem a živnostníků podle IČO/názvu, živnostenská oprávnění, údaje z živnostenského i obchodního registru.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Registr", "company": "Firmy" }
+        },
+        "en": {
+          "displayName": "ZRSR — Slovak Trade Register",
+          "description": "Slovak register of legal entities and entrepreneurs (RPO) — company and sole-trader lookup by IČO/name, trade licences, Trade and Business Register data.",
+          "tagLabels": { "legal": "Law", "slovak": "Slovakia", "registry": "Registry", "company": "Companies" }
+        },
+        "sk": {
+          "displayName": "ZRSR — živnostenský register SR",
+          "description": "Slovenský register právnických osôb a podnikateľov (RPO) — vyhľadávanie firiem a živnostníkov podľa IČO/názvu, živnostenské oprávnenia, údaje zo živnostenského aj obchodného registra.",
+          "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "company": "Firmy" }
+        }
+      }
     }
   ]
 }
