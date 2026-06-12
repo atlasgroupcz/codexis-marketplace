@@ -7,9 +7,10 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 10
       response:
-        # A real RPO hit reports the IČO 31333532 or the registration number Sro/3586/B
-        # or links to the orsr.sk extract.
-        matches: "(31333532|Sro/3586/B|orsr\\.sk)"
+        # A real RPO hit reports the IČO 31333532 (possibly digit-grouped) or the
+        # registration number Sro 3586/B (slash or "vložka č." phrasing) or links
+        # to the orsr.sk extract (possibly rendered as a citation span).
+        matches: "(31\\s?333\\s?532|Sro\\D{0,15}3586/B|orsr\\.sk|data-cdx-citation-id)"
 
   - prompt: "Vyhľadaj v RPO subjekt podľa IČO 31333532 a uveď jeho RPO ID."
     expect:
