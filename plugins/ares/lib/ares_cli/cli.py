@@ -18,7 +18,7 @@ Business cases:
     Supports: "Najdi firmu podle názvu."
     Endpoint: POST /ekonomicke-subjekty/vyhledat
     Call when: user gives a company name or partial name.
-    Output: candidates with name, IČO, seat, legal form, primary source and registration states.
+    Output: locally ranked candidates with name, IČO, seat, legal form, primary source and registration states.
 
   ares company <ico>
     Supports: "Zobraz základní údaje o subjektu."
@@ -101,12 +101,13 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Endpoint: POST /ekonomicke-subjekty/vyhledat\n"
             "Call when: user gives a company name or partial name.\n"
-            "Output: echo + kandidati[].nazev, ico, sidlo, pravniForma, primarniZdroj, stavRegistraci."
+            "Output: echo + locally ranked kandidati[].nazev, ico, sidlo, pravniForma, primarniZdroj, stavRegistraci.\n"
+            "Note: --limit controls returned candidates; the CLI may fetch a wider pool to avoid hiding exact-name matches behind subsidiaries."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     search.add_argument("query", help='Company name or name fragment, e.g. "ATLAS".')
-    search.add_argument("--limit", type=int, default=10, help="Maximum number of candidates to return.")
+    search.add_argument("--limit", type=int, default=10, help="Maximum number of ranked candidates to return.")
     search.set_defaults(func=cmd_search)
 
     company = sub.add_parser(

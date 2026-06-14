@@ -64,13 +64,51 @@ class AresServiceTests(unittest.TestCase):
             [
                 (
                     "/ekonomicke-subjekty/vyhledat",
-                    {"obchodniJmeno": "ATLAS", "pocet": 1, "start": 0},
+                    {"obchodniJmeno": "ATLAS", "pocet": 50, "start": 0},
                 )
             ],
         )
         self.assertEqual(result["echo"]["query"], "ATLAS")
+        self.assertEqual(result["echo"]["limit"], 1)
+        self.assertEqual(result["echo"]["fetchLimit"], 50)
+        self.assertEqual(result["echo"]["ranking"], "local_relevance")
         self.assertEqual(result["kandidati"][0]["nazev"], "ATLAS spol. s r.o.")
         self.assertEqual(result["kandidati"][0]["stavRegistraci"]["stavZdrojeVr"], "AKTIVNI")
+
+    def test_search_reranks_exact_legal_name_before_subsidiaries(self) -> None:
+        client = FakeClient()
+        client.post_responses["/ekonomicke-subjekty/vyhledat"] = {
+            "pocetCelkem": 4,
+            "ekonomickeSubjekty": [
+                {"obchodniJmeno": "ČEZ Recyklace, s.r.o.", "ico": "03479919", "pravniForma": "112"},
+                {"obchodniJmeno": "ČEZ ESCO, a.s.", "ico": "03592880", "pravniForma": "121"},
+                {"obchodniJmeno": "Nadace ČEZ", "ico": "26721511", "pravniForma": "117"},
+                {
+                    "obchodniJmeno": "ČEZ, a. s.",
+                    "ico": "45274649",
+                    "pravniForma": "121",
+                    "seznamRegistraci": {"stavZdrojeVr": "AKTIVNI", "stavZdrojeRzp": "AKTIVNI"},
+                },
+            ],
+        }
+
+        result = AresService(client).search("ČEZ", limit=2)
+
+        self.assertEqual(result["kandidati"][0]["ico"], "45274649")
+        self.assertEqual(len(result["kandidati"]), 2)
+        self.assertEqual(result["pocetCelkem"], 4)
+        self.assertEqual(result["pocetVraceno"], 2)
+
+    def test_search_respects_large_limit_as_fetch_limit(self) -> None:
+        client = FakeClient()
+        client.post_responses["/ekonomicke-subjekty/vyhledat"] = {"ekonomickeSubjekty": []}
+
+        AresService(client).search("ATLAS", limit=75)
+
+        self.assertEqual(
+            client.post_calls,
+            [("/ekonomicke-subjekty/vyhledat", {"obchodniJmeno": "ATLAS", "pocet": 75, "start": 0})],
+        )
 
     def test_search_rejects_empty_query(self) -> None:
         with self.assertRaisesRegex(AresCliError, "dotaz nesmí být prázdný"):
