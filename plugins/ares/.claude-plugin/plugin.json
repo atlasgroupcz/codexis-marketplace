@@ -1,6 +1,6 @@
 {
   "name": "ares",
-  "version": "0.1.0",
+  "version": "0.1.0+local1",
   "description": "Czech ARES public-register verification — name search, company identity, officers, signing authority and trade licences",
   "author": {
     "name": "ATLAS GROUP",
