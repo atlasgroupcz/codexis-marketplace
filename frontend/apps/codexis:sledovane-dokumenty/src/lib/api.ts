@@ -5,7 +5,7 @@ function getApiBase(): string {
   if (import.meta.env.DEV) {
     return '/api/'
   }
-  return './'
+  return './api'
 }
 
 export async function fetchOverview(): Promise<OverviewResponse> {
