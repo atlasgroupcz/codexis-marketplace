@@ -1,0 +1,275 @@
+#!/usr/bin/env python3
+"""insolvence-cli — track Czech insolvency-register (ISIR) subjects and run ad-hoc lookups.
+
+Usage:
+    insolvence-cli sledovani add-firma <ICO> [--label "..."]
+    insolvence-cli sledovani add-osoba <PŘÍJMENÍ> <JMÉNO> <DATUM_NAROZENI> [--label "..."]
+    insolvence-cli sledovani list
+    insolvence-cli sledovani show <ID>
+    insolvence-cli sledovani check [<ID>]
+    insolvence-cli sledovani confirm <ID> [--all | --change <INDEX>]
+    insolvence-cli sledovani remove <ID>
+    insolvence-cli sledovani set-label <ID> <LABEL>
+
+    insolvence-cli lustrace firma <ICO>
+    insolvence-cli lustrace osoba <PŘÍJMENÍ> <JMÉNO> <DATUM_NAROZENI>
+
+<ID> is either the subject UUID (from `sledovani list`) or, for companies, the IČO.
+<DATUM_NAROZENI> is ISO format, e.g. 1980-05-01.
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+# Add the bundled library to sys.path. Works whether the binary is installed
+# in ~/.local/bin/, or run in-place from the plugin dir.
+HERE = Path(__file__).resolve().parent
+CANDIDATES = [
+    HERE.parent / "lib",                          # plugin in-place: bin/../lib
+    Path.home() / ".local/share/insolvence/lib",  # user-local install (XDG)
+]
+for p in CANDIDATES:
+    if (p / "insolvence_core").is_dir():
+        sys.path.insert(0, str(p))
+        break
+
+try:
+    from insolvence_core import api_client, tracking
+    from insolvence_core.exceptions import InsolvenceError
+except ImportError as e:
+    print(f"ERROR: insolvence_core library not found: {e}", file=sys.stderr)
+    sys.exit(2)
+
+
+# ── output helpers ───────────────────────────────────────────────────────────
+
+
+def err(msg):
+    print(f"ERROR: {msg}", file=sys.stderr)
+
+
+def info(msg):
+    print(msg)
+
+
+def _resolve(identifier: str) -> dict:
+    """Resolve a CLI subject reference (UUID or company IČO) to a state dict."""
+    state = tracking.find_by_uuid(identifier)
+    if state is not None:
+        return state
+    digits = "".join(ch for ch in identifier if ch.isdigit())
+    if 1 <= len(digits) <= 8:
+        canonical = digits.zfill(8)
+        for s in tracking.list_all():
+            if s.get("kind") == "company" and s.get("ico") == canonical:
+                return s
+    raise tracking.SubjectNotTrackedError(
+        f"Subjekt {identifier!r} není sledován. Použij `insolvence-cli sledovani list`."
+    )
+
+
+def _fmt_subject_short(state: dict) -> str:
+    entry = tracking.state_to_overview_entry(state)
+    ident = entry["ico"] or entry.get("datum_narozeni") or ""
+    ident_str = f" [{ident}]" if ident else ""
+    if entry["ma_aktivni_insolvenci"]:
+        stav = f"{entry['primary_druh_label']}: {entry['primary_stav'] or '—'}"
+    else:
+        stav = "Bez insolvenčního řízení"
+    unconfirmed = entry["unconfirmed_count"]
+    badge = f" • {unconfirmed} nepřečtených změn" if unconfirmed else ""
+    return (
+        f"  {entry['display_name']}{ident_str}  (id: {entry['uuid']})\n"
+        f"    {stav}\n"
+        f"    Řízení: {entry['rizeni_count']}, změn: {entry['changes_count']}{badge}"
+    )
+
+
+# ── sledovani commands ─────────────────────────────────────────────────────────
+
+
+def cmd_add_firma(args):
+    state = tracking.add_company(args.ico, label=args.label)
+    info(f"OK: Firma {tracking.display_name(state)} (IČO {state['ico']}) přidána ke sledování.")
+    info(f"  Aktivní insolvence: {'ano' if state['ma_aktivni_insolvenci'] else 'ne'}")
+    info(f"  Řízení: {len(state['rizeni'])}")
+
+
+def cmd_add_osoba(args):
+    state = tracking.add_person(
+        args.prijmeni, args.jmeno, args.datum_narozeni, label=args.label
+    )
+    info(f"OK: Osoba {tracking.display_name(state)} ({state['datum_narozeni']}) přidána ke sledování.")
+    info(f"  Aktivní insolvence: {'ano' if state['ma_aktivni_insolvenci'] else 'ne'}")
+    info(f"  Řízení: {len(state['rizeni'])}")
+
+
+def cmd_list(args):
+    subjects = tracking.list_all()
+    if not subjects:
+        info("Žádné sledované subjekty.")
+        return
+    info(f"Sledované subjekty ({len(subjects)}):\n")
+    for state in subjects:
+        info(_fmt_subject_short(state))
+        info("")
+
+
+def cmd_show(args):
+    state = _resolve(args.id)
+    print(json.dumps(tracking.state_to_detail_entry(state), indent=2, ensure_ascii=False))
+
+
+def cmd_check(args):
+    if args.id:
+        results = [tracking.check_one(_resolve(args.id)["uuid"])]
+    else:
+        results = tracking.check_all()
+    if not results:
+        info("Žádné sledované subjekty ke kontrole.")
+        return
+    total = 0
+    for r in results:
+        name = r["display_name"]
+        if not r["ok"]:
+            info(f"  {name}: CHYBA — {r['error']}")
+            continue
+        changes = r["changes"]
+        if not changes:
+            info(f"  {name}: beze změn")
+            continue
+        total += len(changes)
+        info(f"  {name}: {len(changes)} nových změn")
+        for c in changes:
+            info(f"    • {c.get('popis', c.get('typ', ''))}")
+    info(f"\nKontrola dokončena. Celkem {total} nových změn u {len(results)} subjektů.")
+
+
+def cmd_confirm(args):
+    if args.change is not None and args.all:
+        err("Použij buď --all NEBO --change <INDEX>, ne obojí.")
+        sys.exit(1)
+    state = _resolve(args.id)
+    marked = tracking.confirm(state["uuid"], change_index=args.change)
+    if marked == 0:
+        info("Žádné nepřečtené změny.")
+    else:
+        info(f"OK: Označeno jako přečteno: {marked} změn")
+
+
+def cmd_remove(args):
+    state = _resolve(args.id)
+    name = tracking.display_name(state)
+    tracking.remove(state["uuid"])
+    info(f"OK: Subjekt {name} odstraněn ze sledování.")
+
+
+def cmd_set_label(args):
+    state = _resolve(args.id)
+    tracking.set_label(state["uuid"], args.label)
+    if args.label:
+        info(f"OK: Označení nastaveno na: {args.label}")
+    else:
+        info("OK: Označení odstraněno.")
+
+
+# ── lustrace commands ──────────────────────────────────────────────────────────
+
+
+def cmd_lustrace_firma(args):
+    result = api_client.lookup_company(tracking.normalize_ico(args.ico))
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+def cmd_lustrace_osoba(args):
+    result = api_client.lookup_person(
+        tracking.normalize_prijmeni(args.prijmeni),
+        tracking.normalize_jmeno(args.jmeno),
+        tracking.normalize_birthdate(args.datum_narozeni),
+    )
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+# ── argparse plumbing ────────────────────────────────────────────────────────
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="insolvence-cli",
+        description="Sledování subjektů v insolvenčním rejstříku (ISIR) a jednorázové lustrace.",
+    )
+    sub = p.add_subparsers(dest="namespace", required=True)
+
+    # ─── sledovani ────
+    tr = sub.add_parser("sledovani", help="Track insolvency subjects")
+    tr_sub = tr.add_subparsers(dest="cmd", required=True)
+
+    p_af = tr_sub.add_parser("add-firma", help="Track a company by IČO")
+    p_af.add_argument("ico", help="IČO (8 digits), e.g. 27182775")
+    p_af.add_argument("--label", default="", help="Optional user-friendly label")
+    p_af.set_defaults(func=cmd_add_firma)
+
+    p_ao = tr_sub.add_parser("add-osoba", help="Track a natural person by surname + given + DOB")
+    p_ao.add_argument("prijmeni", help='Surname, e.g. "Novák"')
+    p_ao.add_argument("jmeno", help='Given name, e.g. "Jan"')
+    p_ao.add_argument("datum_narozeni", help="Date of birth, ISO YYYY-MM-DD")
+    p_ao.add_argument("--label", default="", help="Optional user-friendly label")
+    p_ao.set_defaults(func=cmd_add_osoba)
+
+    p_list = tr_sub.add_parser("list", help="List all tracked subjects")
+    p_list.set_defaults(func=cmd_list)
+
+    p_show = tr_sub.add_parser("show", help="Show full state of a tracked subject (JSON)")
+    p_show.add_argument("id", help="Subject UUID or company IČO")
+    p_show.set_defaults(func=cmd_show)
+
+    p_check = tr_sub.add_parser("check", help="Check for changes against ISIR")
+    p_check.add_argument("id", nargs="?", help="Specific subject (default: all)")
+    p_check.set_defaults(func=cmd_check)
+
+    p_conf = tr_sub.add_parser("confirm", help="Mark changes as read")
+    p_conf.add_argument("id", help="Subject UUID or company IČO")
+    p_conf.add_argument("--all", action="store_true", help="Mark all unconfirmed (default)")
+    p_conf.add_argument("--change", type=int, metavar="INDEX", help="Mark a single change by 0-based index")
+    p_conf.set_defaults(func=cmd_confirm)
+
+    p_rm = tr_sub.add_parser("remove", help="Stop tracking a subject")
+    p_rm.add_argument("id", help="Subject UUID or company IČO")
+    p_rm.set_defaults(func=cmd_remove)
+
+    p_lbl = tr_sub.add_parser("set-label", help="Set or clear the user-friendly label")
+    p_lbl.add_argument("id", help="Subject UUID or company IČO")
+    p_lbl.add_argument("label", help='New label (use "" to clear)')
+    p_lbl.set_defaults(func=cmd_set_label)
+
+    # ─── lustrace ────
+    lu = sub.add_parser("lustrace", help="One-shot ISIR lookup (no tracking)")
+    lu_sub = lu.add_subparsers(dest="cmd", required=True)
+
+    p_lf = lu_sub.add_parser("firma", help="Look up a company by IČO")
+    p_lf.add_argument("ico", help="IČO (8 digits)")
+    p_lf.set_defaults(func=cmd_lustrace_firma)
+
+    p_lo = lu_sub.add_parser("osoba", help="Look up a natural person by surname + given + DOB")
+    p_lo.add_argument("prijmeni", help='Surname, e.g. "Novák"')
+    p_lo.add_argument("jmeno", help='Given name, e.g. "Jan"')
+    p_lo.add_argument("datum_narozeni", help="Date of birth, ISO YYYY-MM-DD")
+    p_lo.set_defaults(func=cmd_lustrace_osoba)
+
+    return p
+
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
+    try:
+        args.func(args)
+    except InsolvenceError as e:
+        err(str(e))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

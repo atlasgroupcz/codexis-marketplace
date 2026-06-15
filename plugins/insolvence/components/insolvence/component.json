@@ -1,0 +1,23 @@
+{
+  "id": "insolvence",
+  "title": "Hlídač insolvencí",
+  "icon": "assets/icon.png",
+  "route": "insolvence",
+  "description": "Sledujte firmy a osoby v insolvenčním rejstříku s automatickou kontrolou změn.",
+  "entrypoint": "index.html",
+  "binary": "insolvence.py",
+  "i18n": {
+    "cs": {
+      "displayName": "Hlídač insolvencí",
+      "description": "Sledujte firmy (IČO) i osoby v insolvenčním rejstříku (ISIR) s automatickou kontrolou nových a změněných řízení."
+    },
+    "en": {
+      "displayName": "Insolvency Watchdog",
+      "description": "Track companies (IČO) and people in the Czech Insolvency Register (ISIR) with automatic detection of new and changed proceedings."
+    },
+    "sk": {
+      "displayName": "Hliadač insolvencií",
+      "description": "Sledujte firmy (IČO) aj osoby v insolvenčnom registri (ISIR) s automatickou kontrolou nových a zmenených konaní."
+    }
+  }
+}
