@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Activity, FileText, ShieldAlert } from 'lucide-react'
+import { Activity, FileText, History, ShieldAlert } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
 import { BellCheckIcon, CheckIcon } from './icons'
@@ -26,7 +26,19 @@ export function ChangeTimeline({ uuid, changes, onConfirmed }: ChangeTimelinePro
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
 
-  if (changes.length === 0) return null
+  if (changes.length === 0) {
+    return (
+      <div className="bg-card border-border flex flex-col items-center rounded-xl border px-6 py-8 text-center">
+        <span className="bg-muted text-muted-foreground mb-3 flex size-11 items-center justify-center rounded-full">
+          <History className="size-5" strokeWidth={1.5} />
+        </span>
+        <p className="text-foreground text-sm font-medium">{t('detail.noChanges')}</p>
+        <p className="text-muted-foreground mt-1 max-w-xs text-xs text-pretty">
+          {t('detail.noChangesHint')}
+        </p>
+      </div>
+    )
+  }
 
   // Keep original indices (confirm targets them) but show newest first.
   const ordered = changes
@@ -44,9 +56,8 @@ export function ChangeTimeline({ uuid, changes, onConfirmed }: ChangeTimelinePro
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">{t('detail.changeHistory')}</h2>
-        {unconfirmed > 0 && (
+      {unconfirmed > 0 && (
+        <div className="mb-3 flex justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -57,8 +68,8 @@ export function ChangeTimeline({ uuid, changes, onConfirmed }: ChangeTimelinePro
             <BellCheckIcon className="size-4" />
             {t('detail.markAllRead', { count: unconfirmed })}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
       <ol className="relative space-y-3 border-l pl-5">
         {ordered.map(({ change, index }) => {
           const unread = !change.confirmed_on

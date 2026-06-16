@@ -31,7 +31,7 @@ export function NoSelection() {
   const { t } = useTranslation()
   return (
     <div className="text-muted-foreground hidden h-full flex-col items-center justify-center gap-4 p-8 text-center md:flex">
-      <PickSubjectArt className="h-32 w-auto" />
+      <PickSubjectArt className="h-44 w-auto" />
       <p className="max-w-[16rem] text-sm text-pretty">{t('empty.noSelection')}</p>
     </div>
   )

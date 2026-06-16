@@ -24,7 +24,6 @@ export function ProceedingsList({ rizeni }: { rizeni: Array<Rizeni> }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold">{t('detail.proceedings')}</h2>
       {rizeni.map((r, i) => (
         <div
           key={`${r.spisova_znacka}-${i}`}

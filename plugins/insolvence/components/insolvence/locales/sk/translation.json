@@ -64,6 +64,8 @@
     "changeHistory": "História zmien",
     "markAllRead": "Označiť všetko prečítané ({{count}})",
     "markRead": "Označiť prečítané",
+    "noChanges": "Zatiaľ žiadne zmeny",
+    "noChangesHint": "Keď sa v sledovaných konaniach niečo zmení, uvidíte to tu.",
     "refresh": "Aktualizovať",
     "refreshed": "Subjekt aktualizovaný.",
     "refreshError": "Kontrolu sa nepodarilo vykonať.",

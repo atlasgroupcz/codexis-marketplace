@@ -64,6 +64,8 @@
     "changeHistory": "Change history",
     "markAllRead": "Mark all read ({{count}})",
     "markRead": "Mark read",
+    "noChanges": "No changes yet",
+    "noChangesHint": "When something changes in the tracked proceedings, it will show up here.",
     "refresh": "Refresh",
     "refreshed": "Subject refreshed.",
     "refreshError": "The check could not be completed.",
