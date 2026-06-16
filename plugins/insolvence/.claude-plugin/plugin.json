@@ -1,0 +1,44 @@
+{
+  "name": "insolvence",
+  "version": "1.0.0",
+  "description": "Hlídač insolvencí ČR (ISIR)",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "insolvence",
+    "isir",
+    "konkurs",
+    "oddluzeni",
+    "upadek"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "insolvency", "registry"],
+  "i18n": {
+    "cs": {
+      "displayName": "Hlídač insolvencí ČR",
+      "description": "Sledování insolvenčního rejstříku (ISIR) — hlídejte firmy (IČO) i osoby a nechte se upozornit na nová a změněná insolvenční řízení.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "insolvency": "Insolvence", "registry": "Registr" }
+    },
+    "en": {
+      "displayName": "Czech Insolvency Watchdog",
+      "description": "Monitor the Czech Insolvency Register (ISIR) — watch companies (IČO) and people and get alerted to new and changed insolvency proceedings.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "insolvency": "Insolvency", "registry": "Registry" }
+    },
+    "sk": {
+      "displayName": "Hliadač insolvencií ČR",
+      "description": "Sledovanie insolvenčného registra (ISIR) — sledujte firmy (IČO) aj osoby a nechajte sa upozorniť na nové a zmenené insolvenčné konania.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "insolvency": "Insolvencia", "registry": "Register" }
+    }
+  },
+  "dependencies": ["codexis"],
+  "postInstall": "mkdir -p \"${HOME}/.local/share/insolvence/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && cp -r \"${PLUGIN_DIR}/lib/insolvence_core\" \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/insolvence-cli\" \"${HOME}/.local/bin/insolvence-cli\"",
+  "postUninstall": "rm -f \"${HOME}/.local/bin/insolvence-cli\" && rm -rf \"${HOME}/.local/share/insolvence\"",
+  "onUpdate": "mkdir -p \"${HOME}/.local/share/insolvence/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && cp -r \"${PLUGIN_DIR}/lib/insolvence_core\" \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/insolvence-cli\" \"${HOME}/.local/bin/insolvence-cli\"",
+  "skills": "./skills",
+  "components": "./components",
+  "env": {
+    "CODEXIS_PLUGIN_INSOLVENCE_ISIR_WS_URL": "https://isir.justice.cz:8443/isir_cuzk_ws/IsirWsCuzkService"
+  }
+}

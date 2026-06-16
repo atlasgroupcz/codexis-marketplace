@@ -1,0 +1,80 @@
+{
+  "common": {
+    "retry": "Try again",
+    "cancel": "Cancel"
+  },
+  "app": {
+    "title": "Insolvency Watchdog",
+    "subtitle": "Monitoring the Czech Insolvency Register (ISIR)",
+    "checkAll": "Refresh all",
+    "add": "Add subject",
+    "checkChanges": "New changes found: {{count}}",
+    "checkErrors": "Errors during check: {{count}}",
+    "checkNone": "No new changes."
+  },
+  "list": {
+    "count": "Tracked: {{count}}",
+    "activeCount": "active: {{count}}",
+    "unreadCount": "unread: {{count}}",
+    "bornOn": "b. {{date}}",
+    "unreadChanges": "{{count}} unread changes"
+  },
+  "status": {
+    "active": "Active insolvency",
+    "closed": "No active insolvency",
+    "clean": "No insolvency"
+  },
+  "druh": {
+    "konkurs": "Bankruptcy",
+    "oddluzeni": "Debt relief",
+    "reorganizace": "Reorganization",
+    "moratorium": "Moratorium",
+    "neurceno": "Proceeding"
+  },
+  "add": {
+    "title": "Add a subject to watch",
+    "description": "Enter a company by its IČO, or a natural person by surname, given name and date of birth.",
+    "company": "Company",
+    "person": "Person",
+    "ico": "IČO",
+    "icoHint": "8 digits, e.g. 04863313.",
+    "surname": "Surname",
+    "givenName": "Given name",
+    "birthDate": "Date of birth",
+    "personHint": "A person cannot be matched reliably without a date of birth.",
+    "label": "Custom label (optional)",
+    "labelPlaceholder": "e.g. Supplier A",
+    "add": "Add",
+    "adding": "Adding…",
+    "success": "Subject added to the watchlist.",
+    "error": "Could not add the subject."
+  },
+  "detail": {
+    "statusLabel": "Status",
+    "proceedingsCount": "Proceedings",
+    "lastCheck": "Last check",
+    "addedOn": "Watched since",
+    "proceedings": "Insolvency proceedings",
+    "noProceedings": "No insolvency proceedings",
+    "noProceedingsHint": "This subject has no insolvency proceedings in the ISIR register.",
+    "stav": "State",
+    "datumZahajeni": "Insolvency declared",
+    "datumUkonceni": "Closed",
+    "openInIsir": "Open in ISIR",
+    "changeHistory": "Change history",
+    "markAllRead": "Mark all read ({{count}})",
+    "markRead": "Mark read",
+    "refresh": "Refresh",
+    "refreshed": "Subject refreshed.",
+    "refreshError": "The check could not be completed.",
+    "remove": "Remove",
+    "confirmRemove": "Really remove?",
+    "removed": "Subject removed from the watchlist."
+  },
+  "empty": {
+    "title": "You're not watching any subjects yet",
+    "text": "Add a company or a person and the watchdog will check daily for new and changed insolvency proceedings.",
+    "add": "Add subject",
+    "noSelection": "Select a subject from the list on the left."
+  }
+}

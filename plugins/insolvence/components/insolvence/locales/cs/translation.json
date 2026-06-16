@@ -1,0 +1,80 @@
+{
+  "common": {
+    "retry": "Zkusit znovu",
+    "cancel": "Zrušit"
+  },
+  "app": {
+    "title": "Hlídač insolvencí",
+    "subtitle": "Sledování insolvenčního rejstříku (ISIR)",
+    "checkAll": "Aktualizovat vše",
+    "add": "Přidat subjekt",
+    "checkChanges": "Nalezeno nových změn: {{count}}",
+    "checkErrors": "Chyby při kontrole: {{count}}",
+    "checkNone": "Žádné nové změny."
+  },
+  "list": {
+    "count": "Sledováno: {{count}}",
+    "activeCount": "aktivní: {{count}}",
+    "unreadCount": "nepřečtené: {{count}}",
+    "bornOn": "nar. {{date}}",
+    "unreadChanges": "{{count}} nepřečtených změn"
+  },
+  "status": {
+    "active": "Aktivní insolvence",
+    "closed": "Bez aktivní insolvence",
+    "clean": "Bez insolvence"
+  },
+  "druh": {
+    "konkurs": "Konkurs",
+    "oddluzeni": "Oddlužení",
+    "reorganizace": "Reorganizace",
+    "moratorium": "Moratorium",
+    "neurceno": "Řízení"
+  },
+  "add": {
+    "title": "Přidat subjekt ke sledování",
+    "description": "Firmu zadejte podle IČO, fyzickou osobu podle příjmení, jména a data narození.",
+    "company": "Firma",
+    "person": "Osoba",
+    "ico": "IČO",
+    "icoHint": "8 číslic, např. 04863313.",
+    "surname": "Příjmení",
+    "givenName": "Jméno",
+    "birthDate": "Datum narození",
+    "personHint": "Bez data narození nelze osobu spolehlivě dohledat.",
+    "label": "Vlastní označení (volitelné)",
+    "labelPlaceholder": "Např. Dodavatel A",
+    "add": "Přidat",
+    "adding": "Přidávám…",
+    "success": "Subjekt přidán ke sledování.",
+    "error": "Subjekt se nepodařilo přidat."
+  },
+  "detail": {
+    "statusLabel": "Stav",
+    "proceedingsCount": "Počet řízení",
+    "lastCheck": "Poslední kontrola",
+    "addedOn": "Sledováno od",
+    "proceedings": "Insolvenční řízení",
+    "noProceedings": "Žádné insolvenční řízení",
+    "noProceedingsHint": "Subjekt nemá v rejstříku ISIR žádné insolvenční řízení.",
+    "stav": "Stav",
+    "datumZahajeni": "Zjištění úpadku",
+    "datumUkonceni": "Ukončení",
+    "openInIsir": "Otevřít v ISIR",
+    "changeHistory": "Historie změn",
+    "markAllRead": "Označit vše přečtené ({{count}})",
+    "markRead": "Označit přečtené",
+    "refresh": "Aktualizovat",
+    "refreshed": "Subjekt aktualizován.",
+    "refreshError": "Kontrolu se nepodařilo provést.",
+    "remove": "Odebrat",
+    "confirmRemove": "Opravdu odebrat?",
+    "removed": "Subjekt odebrán ze sledování."
+  },
+  "empty": {
+    "title": "Zatím nesledujete žádné subjekty",
+    "text": "Přidejte firmu nebo osobu a hlídač bude denně kontrolovat nová a změněná insolvenční řízení.",
+    "add": "Přidat subjekt",
+    "noSelection": "Vyberte subjekt v seznamu vlevo."
+  }
+}
