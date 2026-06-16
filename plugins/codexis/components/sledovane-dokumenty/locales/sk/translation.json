@@ -42,12 +42,42 @@
     "removeFromGroup": "Odobrať zo skupiny",
     "createGroup": "Vytvoriť skupinu",
     "deleteGroup": "Zmazať skupinu",
+    "deleteGroupHint": "Kliknite na skupinu, ktorú chcete zmazať",
+    "done": "Hotovo",
+    "manageGroups": "Skupiny",
     "deleteGroupConfirm": "Zmazať skupinu \"{{name}}\"? Dokumenty nebudú zmazané.",
     "groupName": "Názov skupiny",
     "noGroups": "Zatiaľ žiadne skupiny",
     "notes": "Poznámky",
     "notesHint": "AI zhrnutie zmien zohľadňuje vaše poznámky",
     "addNote": "Pridať poznámku",
-    "notePlaceholder": "Čo vás na tomto dokumente zaujíma?"
+    "notePlaceholder": "Čo vás na tomto dokumente zaujíma?",
+    "saveNote": "Uložiť poznámku",
+    "noteSaved": "Poznámka uložená",
+    "subtitle": "Strážime zmeny vo vašich zákonoch",
+    "refresh": "Obnoviť",
+    "removed": "Sledovanie odobraté",
+    "tabs": {
+      "changes": "Zmeny",
+      "documents": "Dokumenty"
+    },
+    "feed": {
+      "searchPlaceholder": "Hľadať v zmenách…",
+      "onlyUnconfirmed": "Len nepotvrdené",
+      "empty": "Zatiaľ žiadne zmeny",
+      "emptyHint": "Hneď ako sa niektorý zo sledovaných dokumentov zmení, uvidíte to tu.",
+      "emptyFiltered": "Žiadna zmena nezodpovedá filtru."
+    },
+    "stats": {
+      "tracked": "Sledované",
+      "totalChanges": "Zmien celkom",
+      "unconfirmed": "Nepotvrdené"
+    },
+    "landing": {
+      "title": "Vaše zákony pod dohľadom",
+      "text": "Pridajte dokument na sledovanie a upozorníme vás na každú novelu aj súvisiacu zmenu.",
+      "chatLead": "Začnite z chatu CODEXIS:",
+      "chatPrompt": "Sleduj zmeny v zákonníku práce"
+    }
   }
 }

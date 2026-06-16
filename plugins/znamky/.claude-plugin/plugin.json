@@ -1,0 +1,45 @@
+{
+  "name": "znamky",
+  "version": "1.0.0",
+  "description": "Hlídač ochranných známek (ÚPV + EUIPO přes TMview)",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "ochranne-znamky",
+    "trademark",
+    "upv",
+    "euipo",
+    "tmview",
+    "zamenitelnost"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "european", "trademark", "registry"],
+  "i18n": {
+    "cs": {
+      "displayName": "Hlídač ochranných známek",
+      "description": "Sledování ochranných známek v rejstřících ÚPV (ČR) a EUIPO (EU) přes TMview — hlídejte slovní i obrazové známky a nechte se upozornit na podobné nové přihlášky a zápisy.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "european": "Evropa", "trademark": "Ochranné známky", "registry": "Registr" }
+    },
+    "en": {
+      "displayName": "Trademark Watchdog",
+      "description": "Monitor trademarks in the ÚPV (CZ) and EUIPO (EU) registers via TMview — watch word and figurative marks and get alerted to similar new filings and registrations.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "european": "European Union", "trademark": "Trademarks", "registry": "Registry" }
+    },
+    "sk": {
+      "displayName": "Hliadač ochranných známok",
+      "description": "Sledovanie ochranných známok v registroch ÚPV (ČR) a EUIPO (EÚ) cez TMview — sledujte slovné aj obrazové známky a nechajte sa upozorniť na podobné nové prihlášky a zápisy.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "european": "Európa", "trademark": "Ochranné známky", "registry": "Register" }
+    }
+  },
+  "dependencies": ["codexis"],
+  "postInstall": "mkdir -p \"${HOME}/.local/share/znamky/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/znamky/lib/znamky_core\" && cp -r \"${PLUGIN_DIR}/lib/znamky_core\" \"${HOME}/.local/share/znamky/lib/znamky_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/znamky-cli\" \"${HOME}/.local/bin/znamky-cli\" && (python3 -m pip install --user --quiet Pillow ImageHash || true)",
+  "postUninstall": "rm -f \"${HOME}/.local/bin/znamky-cli\" && rm -rf \"${HOME}/.local/share/znamky\"",
+  "onUpdate": "mkdir -p \"${HOME}/.local/share/znamky/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/znamky/lib/znamky_core\" && cp -r \"${PLUGIN_DIR}/lib/znamky_core\" \"${HOME}/.local/share/znamky/lib/znamky_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/znamky-cli\" \"${HOME}/.local/bin/znamky-cli\" && (python3 -m pip install --user --quiet Pillow ImageHash || true)",
+  "skills": "./skills",
+  "components": "./components",
+  "env": {
+    "CODEXIS_PLUGIN_ZNAMKY_TMVIEW_API_URL": "https://www.tmdn.org/tmview/api"
+  }
+}

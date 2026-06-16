@@ -42,12 +42,42 @@
     "removeFromGroup": "Remove from group",
     "createGroup": "Create group",
     "deleteGroup": "Delete group",
+    "deleteGroupHint": "Click a group to delete it",
+    "done": "Done",
+    "manageGroups": "Groups",
     "deleteGroupConfirm": "Delete group \"{{name}}\"? Documents will not be deleted.",
     "groupName": "Group name",
     "noGroups": "No groups yet",
     "notes": "Notes",
     "notesHint": "AI change summaries take your notes into account",
     "addNote": "Add note",
-    "notePlaceholder": "What interests you about this document?"
+    "notePlaceholder": "What interests you about this document?",
+    "saveNote": "Save note",
+    "noteSaved": "Note saved",
+    "subtitle": "We watch your laws for changes",
+    "refresh": "Refresh",
+    "removed": "Tracking removed",
+    "tabs": {
+      "changes": "Changes",
+      "documents": "Documents"
+    },
+    "feed": {
+      "searchPlaceholder": "Search changes…",
+      "onlyUnconfirmed": "Unconfirmed only",
+      "empty": "No changes yet",
+      "emptyHint": "When one of your tracked documents changes, you'll see it here.",
+      "emptyFiltered": "No change matches your filter."
+    },
+    "stats": {
+      "tracked": "Tracked",
+      "totalChanges": "Total changes",
+      "unconfirmed": "Unconfirmed"
+    },
+    "landing": {
+      "title": "Your laws under watch",
+      "text": "Add a document to tracking and we'll flag every amendment and related change.",
+      "chatLead": "Start from the CODEXIS chat:",
+      "chatPrompt": "Track changes in the Labour Code"
+    }
   }
 }

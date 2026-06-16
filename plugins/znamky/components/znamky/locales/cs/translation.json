@@ -1,0 +1,140 @@
+{
+  "common": {
+    "retry": "Zkusit znovu",
+    "cancel": "Zrušit",
+    "back": "Zpět",
+    "close": "Zavřít"
+  },
+  "settings": {
+    "title": "Nastavení přístupu (EUIPO)",
+    "description": "Pro reálná data zadejte své EUIPO API credentials. Získáte je zdarma na dev.euipo.europa.eu.",
+    "getKey": "Získat klíče na dev.euipo.europa.eu",
+    "clientId": "EUIPO client_id",
+    "clientSecret": "EUIPO client_secret",
+    "currentKey": "Nastaveno",
+    "save": "Uložit a ověřit",
+    "saving": "Ověřuji…",
+    "saved": "Přístup uložen.",
+    "saveError": "Klíče se nepodařilo uložit.",
+    "deleteKey": "Odebrat klíče",
+    "deleting": "Odebírám…"
+  },
+  "config": {
+    "title": "Nejdřív nastavte aplikaci",
+    "text": "Hlídač čerpá data z oficiálního EUIPO API. Zadejte své vlastní EUIPO API credentials (zdarma, ~5 minut na dev.euipo.europa.eu) — bez nich nelze prohledávat rejstřík.",
+    "action": "Nastavit přístup",
+    "hint": "Klíče se ukládají jen do tvého prostoru (~/.cdx) a používají se pro dotazy na EUIPO."
+  },
+  "app": {
+    "title": "Hlídač ochranných známek",
+    "subtitle": "Sledování a ochrana ochranných známek",
+    "checkAll": "Zkontrolovat vše",
+    "add": "Přidat známku",
+    "checkChanges": "Nalezeno nových podobných známek: {{count}}",
+    "checkErrors": "Chyby při kontrole: {{count}}",
+    "checkNone": "Žádné nové podobné známky."
+  },
+  "list": {
+    "count": "Sledováno: {{count}}",
+    "classes": "tř."
+  },
+  "kind": {
+    "word": "Slovní známka",
+    "figurative": "Obrazová známka",
+    "combined": "Kombinovaná známka"
+  },
+  "tier": {
+    "high": "vysoká shoda",
+    "medium": "střední shoda",
+    "low": "nízká shoda"
+  },
+  "risk": {
+    "high": "vysoké riziko záměny",
+    "medium": "střední riziko záměny",
+    "low": "nízké riziko záměny",
+    "none": "bez rizika záměny"
+  },
+  "territory": {
+    "CZ": "Česko",
+    "EU": "EU"
+  },
+  "score": {
+    "overall": "Celková shoda",
+    "text_combined": "Slovní shoda",
+    "text_phonetic": "Fonetická shoda",
+    "class_overlap": "Shoda tříd",
+    "vienna_overlap": "Vídeňské třídění",
+    "image_phash": "Obrazová shoda"
+  },
+  "add": {
+    "title": "Přidat známku ke sledování",
+    "description": "Zadejte slovní známku, nebo nahrajte logo. Hlídač pak sleduje podobné nové přihlášky a zápisy ochranných známek.",
+    "word": "Slovní",
+    "figurative": "Obrazová",
+    "text": "Text známky",
+    "nice": "Třídy výrobků/služeb (Nice)",
+    "niceHint": "Čísla 1–45, oddělená čárkou. Nepovinné — zúží relevanci.",
+    "territory": "Území",
+    "logo": "Logo",
+    "logoHint": "Klikněte a nahrajte obrázek loga (PNG, JPG, SVG).",
+    "logoText": "Text v logu (volitelné)",
+    "vienna": "Vídeňské obrazové kódy (volitelné)",
+    "owner": "Vlastník (volitelné)",
+    "label": "Označení (volitelné)",
+    "labelPlaceholder": "Např. naše hlavní značka",
+    "add": "Přidat",
+    "adding": "Přidávám…",
+    "success": "Známka přidána ke sledování.",
+    "error": "Známku se nepodařilo přidat."
+  },
+  "edit": {
+    "title": "Upravit známku",
+    "description": "Změňte práh shody, třídy, území, vlastníka nebo označení sledované známky.",
+    "thresholdHint": "Kolize se ukážou jen nad tímto prahem. Nižší práh = více (i volnějších) shod.",
+    "save": "Uložit",
+    "saving": "Ukládám…",
+    "success": "Změny uloženy.",
+    "error": "Změny se nepodařilo uložit."
+  },
+  "detail": {
+    "owner": "Vlastník",
+    "threshold": "Práh shody",
+    "lastCheck": "Poslední kontrola",
+    "collisionsCount": "Počet kolizí",
+    "collisions": "Podobné známky (kolize)",
+    "markAllRead": "Označit vše posouzené ({{count}})",
+    "refresh": "Zkontrolovat",
+    "refreshedNew": "Nalezeno nových: {{count}}",
+    "refreshedNone": "Žádné nové podobné známky.",
+    "refreshError": "Kontrolu se nepodařilo provést.",
+    "remove": "Odebrat",
+    "confirmRemove": "Opravdu přestat hlídat tuto známku?",
+    "removed": "Známka odebrána ze sledování.",
+    "allMarked": "Označeno jako posouzené.",
+    "noCollisions": "Žádné podobné známky",
+    "noCollisionsHint": "Zatím nebyla nalezena žádná podobná známka nad prahem shody."
+  },
+  "collision": {
+    "figurativeMark": "(obrazová známka)",
+    "unknownApplicant": "Neznámý přihlašovatel",
+    "filed": "podáno",
+    "confirm": "Posouzeno",
+    "yours": "Vaše",
+    "candidate": "Nalezená",
+    "aiTitle": "AI posouzení zaměnitelnosti",
+    "visual": "Vizuální",
+    "aural": "Fonetické",
+    "conceptual": "Významové",
+    "goods": "Výrobky a služby",
+    "openSource": "Otevřít zdroj",
+    "reviewed": "Posouzeno"
+  },
+  "empty": {
+    "title": "Zatím nehlídáte žádnou známku",
+    "text": "Přidejte slovní nebo obrazovou známku a hlídač bude pravidelně kontrolovat podobné nové přihlášky a zápisy ochranných známek.",
+    "add": "Přidat známku",
+    "noSelection": "Vyberte známku v seznamu vlevo.",
+    "chatLead": "Nebo si hlídání nastavte v konverzaci — napište třeba:",
+    "chatPrompt": "Hlídej ochrannou známku CODEXIS ve třídách 9 a 42 v ČR i EU a jednou týdně mi pošli e-mailem podobné nové přihlášky."
+  }
+}

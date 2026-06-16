@@ -9,7 +9,9 @@
     "areas": "Areas",
     "areasCount": "{{count}} areas",
     "notes": "Notes",
-    "notePlaceholder": "Add note...",
+    "notePlaceholder": "Write your notes on this topic…",
+    "saveNote": "Save note",
+    "noteSaved": "Note saved",
     "addNote": "Add",
     "reports": "Reports",
     "reportsCount": "{{count}} reports",
@@ -42,6 +44,29 @@
     "viewInCodexis": "Open in CODEXIS",
     "retry": "Retry",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "subtitle": "We watch case law for your topics",
+    "refresh": "Refresh",
+    "removed": "Topic deleted",
+    "allTopics": "All",
+    "topicDetail": "Topic detail",
+    "feed": {
+      "searchPlaceholder": "Search reports…",
+      "onlyUnconfirmed": "New only",
+      "empty": "No reports yet",
+      "emptyHint": "When new case law appears for one of your topics, the report shows up here.",
+      "emptyFiltered": "No report matches your filter."
+    },
+    "stats": {
+      "topics": "Topics",
+      "reports": "Reports",
+      "unconfirmed": "Unread"
+    },
+    "landing": {
+      "title": "Case law for your topics, under watch",
+      "text": "Set a topic and we'll regularly scan new case law and prepare a digest for you.",
+      "chatLead": "Start from the CODEXIS chat:",
+      "chatPrompt": "Track case law on employment law"
+    }
   }
 }

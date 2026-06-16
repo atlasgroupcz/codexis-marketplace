@@ -9,7 +9,9 @@
     "areas": "Oblasti",
     "areasCount": "{{count}} oblastí",
     "notes": "Poznámky",
-    "notePlaceholder": "Pridať poznámku...",
+    "notePlaceholder": "Sem si píšte poznámky k téme…",
+    "saveNote": "Uložiť poznámku",
+    "noteSaved": "Poznámka uložená",
     "addNote": "Pridať",
     "reports": "Reporty",
     "reportsCount": "{{count}} reportov",
@@ -42,6 +44,29 @@
     "viewInCodexis": "Otvoriť v CODEXIS",
     "retry": "Skúsiť znova",
     "cancel": "Zrušiť",
-    "confirm": "Potvrdiť"
+    "confirm": "Potvrdiť",
+    "subtitle": "Strážime judikatúru k vašim témam",
+    "refresh": "Obnoviť",
+    "removed": "Téma zmazané",
+    "allTopics": "Všetko",
+    "topicDetail": "Detail témy",
+    "feed": {
+      "searchPlaceholder": "Hľadať v reportoch…",
+      "onlyUnconfirmed": "Len nové",
+      "empty": "Zatiaľ žiadne reporty",
+      "emptyHint": "Hneď ako k niektorej z tém pribudne nová judikatúra, report sa objaví tu.",
+      "emptyFiltered": "Žiadny report nezodpovedá filtru."
+    },
+    "stats": {
+      "topics": "Tém",
+      "reports": "Reportov",
+      "unconfirmed": "Neprečítané"
+    },
+    "landing": {
+      "title": "Judikatúra k vašim témam pod dohľadom",
+      "text": "Zadajte tému a my pravidelne prechádzame novú judikatúru a pripravíme vám zhrnutie.",
+      "chatLead": "Začnite z chatu CODEXIS:",
+      "chatPrompt": "Sleduj judikatúru k téme pracovné právo"
+    }
   }
 }

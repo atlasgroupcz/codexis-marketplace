@@ -1,0 +1,23 @@
+{
+  "id": "znamky",
+  "title": "Hlídač ochranných známek",
+  "icon": "icon.svg",
+  "route": "znamky",
+  "description": "Hlídejte slovní i obrazové ochranné známky a nechte se upozornit na podobné přihlášky v ÚPV a EUIPO.",
+  "entrypoint": "index.html",
+  "binary": "znamky.py",
+  "i18n": {
+    "cs": {
+      "displayName": "Hlídač ochranných známek",
+      "description": "Sledujte slovní i obrazové ochranné známky vůči rejstříkům ÚPV (ČR) a EUIPO (EU) přes TMview — automatická kontrola podobných přihlášek a zápisů (slovní, fonetická i obrazová podobnost)."
+    },
+    "en": {
+      "displayName": "Trademark Watchdog",
+      "description": "Monitor word and figurative trademarks against the ÚPV (CZ) and EUIPO (EU) registers via TMview — automatic detection of similar filings (verbal, phonetic and visual similarity)."
+    },
+    "sk": {
+      "displayName": "Hliadač ochranných známok",
+      "description": "Sledujte slovné aj obrazové ochranné známky voči registrom ÚPV (ČR) a EUIPO (EÚ) cez TMview — automatická kontrola podobných prihlášok a zápisov (slovná, fonetická aj obrazová podobnosť)."
+    }
+  }
+}

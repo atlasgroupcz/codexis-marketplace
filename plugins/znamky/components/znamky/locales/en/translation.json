@@ -1,0 +1,140 @@
+{
+  "common": {
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "back": "Back",
+    "close": "Close"
+  },
+  "settings": {
+    "title": "Access settings (EUIPO)",
+    "description": "For real data, enter your EUIPO API credentials. They are free from dev.euipo.europa.eu.",
+    "getKey": "Get keys at dev.euipo.europa.eu",
+    "clientId": "EUIPO client_id",
+    "clientSecret": "EUIPO client_secret",
+    "currentKey": "Configured",
+    "save": "Save & verify",
+    "saving": "Verifying…",
+    "saved": "Access saved.",
+    "saveError": "Could not save the keys.",
+    "deleteKey": "Remove keys",
+    "deleting": "Removing…"
+  },
+  "config": {
+    "title": "First, set up the app",
+    "text": "The watchdog pulls data from the official EUIPO API. Enter your own EUIPO API credentials (free, ~5 min at dev.euipo.europa.eu) — searching the register is not possible without them.",
+    "action": "Set up access",
+    "hint": "Keys are stored only in your space (~/.cdx) and used for EUIPO queries."
+  },
+  "app": {
+    "title": "Trademark Watchdog",
+    "subtitle": "Trademark monitoring & protection",
+    "checkAll": "Check all",
+    "add": "Add trademark",
+    "checkChanges": "New similar trademarks found: {{count}}",
+    "checkErrors": "Errors during check: {{count}}",
+    "checkNone": "No new similar trademarks."
+  },
+  "list": {
+    "count": "Watched: {{count}}",
+    "classes": "cl."
+  },
+  "kind": {
+    "word": "Word mark",
+    "figurative": "Figurative mark",
+    "combined": "Combined mark"
+  },
+  "tier": {
+    "high": "high similarity",
+    "medium": "medium similarity",
+    "low": "low similarity"
+  },
+  "risk": {
+    "high": "high risk of confusion",
+    "medium": "medium risk of confusion",
+    "low": "low risk of confusion",
+    "none": "no risk of confusion"
+  },
+  "territory": {
+    "CZ": "Czechia",
+    "EU": "EU"
+  },
+  "score": {
+    "overall": "Overall similarity",
+    "text_combined": "Verbal similarity",
+    "text_phonetic": "Phonetic similarity",
+    "class_overlap": "Class overlap",
+    "vienna_overlap": "Vienna classification",
+    "image_phash": "Visual similarity"
+  },
+  "add": {
+    "title": "Watch a trademark",
+    "description": "Enter a word mark, or upload a logo. The watchdog then monitors similar new trademark filings and registrations.",
+    "word": "Word",
+    "figurative": "Figurative",
+    "text": "Mark text",
+    "nice": "Goods/services classes (Nice)",
+    "niceHint": "Numbers 1–45, comma separated. Optional — narrows relevance.",
+    "territory": "Territory",
+    "logo": "Logo",
+    "logoHint": "Click to upload a logo image (PNG, JPG, SVG).",
+    "logoText": "Text in the logo (optional)",
+    "vienna": "Vienna figurative codes (optional)",
+    "owner": "Owner (optional)",
+    "label": "Label (optional)",
+    "labelPlaceholder": "e.g. our main brand",
+    "add": "Add",
+    "adding": "Adding…",
+    "success": "Trademark added to monitoring.",
+    "error": "Could not add the trademark."
+  },
+  "edit": {
+    "title": "Edit trademark",
+    "description": "Change the match threshold, classes, territories, owner or label of the watched mark.",
+    "thresholdHint": "Collisions show only above this threshold. Lower threshold = more (looser) matches.",
+    "save": "Save",
+    "saving": "Saving…",
+    "success": "Changes saved.",
+    "error": "Could not save changes."
+  },
+  "detail": {
+    "owner": "Owner",
+    "threshold": "Match threshold",
+    "lastCheck": "Last check",
+    "collisionsCount": "Collisions",
+    "collisions": "Similar trademarks (collisions)",
+    "markAllRead": "Mark all reviewed ({{count}})",
+    "refresh": "Check now",
+    "refreshedNew": "New found: {{count}}",
+    "refreshedNone": "No new similar trademarks.",
+    "refreshError": "The check could not be performed.",
+    "remove": "Remove",
+    "confirmRemove": "Stop watching this trademark?",
+    "removed": "Trademark removed from monitoring.",
+    "allMarked": "Marked as reviewed.",
+    "noCollisions": "No similar trademarks",
+    "noCollisionsHint": "No similar trademark above the match threshold has been found yet."
+  },
+  "collision": {
+    "figurativeMark": "(figurative mark)",
+    "unknownApplicant": "Unknown applicant",
+    "filed": "filed",
+    "confirm": "Reviewed",
+    "yours": "Yours",
+    "candidate": "Found",
+    "aiTitle": "AI likelihood-of-confusion assessment",
+    "visual": "Visual",
+    "aural": "Aural",
+    "conceptual": "Conceptual",
+    "goods": "Goods & services",
+    "openSource": "Open source",
+    "reviewed": "Reviewed"
+  },
+  "empty": {
+    "title": "You are not watching any trademark yet",
+    "text": "Add a word or figurative mark and the watchdog will regularly check for similar new trademark filings and registrations.",
+    "add": "Add trademark",
+    "noSelection": "Select a trademark from the list on the left.",
+    "chatLead": "Or set up monitoring in a conversation — try:",
+    "chatPrompt": "Watch the trademark CODEXIS in classes 9 and 42 in CZ and EU and e-mail me similar new filings weekly."
+  }
+}

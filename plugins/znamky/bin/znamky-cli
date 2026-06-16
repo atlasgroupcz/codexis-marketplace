@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""znamky-cli — watch trademarks for similar marks in ÚPV + EUIPO (via TMview).
+
+Usage:
+    znamky-cli sledovani add-text <TEXT> [--nice 9,42] [--territory CZ,EU] [--owner "..."] [--label "..."]
+    znamky-cli sledovani add-logo <PATH> [--text "..."] [--nice 9,42] [--territory CZ,EU] [--vienna 26.4.1,27.5] [--label "..."]
+    znamky-cli sledovani list
+    znamky-cli sledovani show <ID>
+    znamky-cli sledovani check [<ID>] [--email]
+    znamky-cli sledovani confirm <ID> [--all | --change <INDEX>]
+    znamky-cli sledovani set-label <ID> <LABEL>
+    znamky-cli sledovani remove <ID>
+    znamky-cli sledovani assess <ID> --change <INDEX> --risk high|medium|low|none [--visual ...] [--aural ...] [--conceptual ...] [--goods ...] [--summary ...]
+
+    znamky-cli lustrace text <TEXT> [--nice 9,42] [--territory CZ,EU]
+    znamky-cli lustrace logo <PATH> [--text "..."] [--nice 9,42] [--territory CZ,EU] [--vienna 26.4.1]
+
+<ID> is the watched-mark UUID (from `sledovani list`). Nice classes are 1–45.
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+CANDIDATES = [
+    HERE.parent / "lib",                        # plugin in-place: bin/../lib
+    Path.home() / ".local/share/znamky/lib",    # user-local install (XDG)
+]
+for p in CANDIDATES:
+    if (p / "znamky_core").is_dir():
+        sys.path.insert(0, str(p))
+        break
+
+try:
+    from znamky_core import notify, tracking
+    from znamky_core.exceptions import ZnamkyError
+except ImportError as e:
+    print(f"ERROR: znamky_core library not found: {e}", file=sys.stderr)
+    sys.exit(2)
+
+
+def err(msg):
+    print(f"ERROR: {msg}", file=sys.stderr)
+
+
+def info(msg):
+    print(msg)
+
+
+def _read_logo(path: str) -> tuple:
+    data = Path(path).read_bytes()
+    ext = Path(path).suffix.lower()
+    mime = {
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
+    }.get(ext, "image/png")
+    return data, mime
+
+
+def _resolve(identifier: str) -> dict:
+    state = tracking.find_by_uuid(identifier)
+    if state is not None:
+        return state
+    raise tracking.MarkNotTrackedError(
+        f"Známka {identifier!r} není sledována. Použij `znamky-cli sledovani list`."
+    )
+
+
+def _fmt_mark_short(state: dict) -> str:
+    e = tracking.state_to_overview_entry(state)
+    classes = ", ".join(str(c) for c in e["nice_classes"]) or "—"
+    territories = "/".join(e["territories"]) or "—"
+    badge = f" • {e['unconfirmed_count']} k posouzení" if e["unconfirmed_count"] else ""
+    tier = f" [{e['worst_tier']}]" if e["worst_tier"] else ""
+    return (
+        f"  {e['display_name']}{tier}  (id: {e['uuid']})\n"
+        f"    Typ: {e['kind']}, třídy: {classes}, území: {territories}\n"
+        f"    Kolizí: {e['collisions_count']}{badge}"
+    )
+
+
+# ── sledovani commands ─────────────────────────────────────────────────────────
+
+
+def cmd_add_text(args):
+    state = tracking.add_text(
+        args.text, nice_classes=args.nice, territories=args.territory,
+        owner_name=args.owner, label=args.label,
+    )
+    e = tracking.state_to_overview_entry(state)
+    info(f"OK: Slovní známka „{state['text']}\" přidána ke sledování (id: {state['uuid']}).")
+    info(f"  Nalezeno podobných známek: {e['collisions_count']}")
+
+
+def cmd_add_logo(args):
+    data, mime = _read_logo(args.path)
+    state = tracking.add_logo(
+        data, mime=mime, text=args.text, nice_classes=args.nice,
+        territories=args.territory, vienna_codes=_split(args.vienna), label=args.label,
+        owner_name=args.owner,
+    )
+    e = tracking.state_to_overview_entry(state)
+    info(f"OK: Obrazová známka přidána ke sledování (id: {state['uuid']}).")
+    info(f"  Nalezeno podobných známek: {e['collisions_count']}")
+
+
+def cmd_list(args):
+    marks = tracking.list_all()
+    if not marks:
+        info("Žádné sledované známky.")
+        return
+    info(f"Sledované známky ({len(marks)}):\n")
+    for state in marks:
+        info(_fmt_mark_short(state))
+        info("")
+
+
+def cmd_show(args):
+    state = _resolve(args.id)
+    print(json.dumps(tracking.state_to_detail_entry(state), indent=2, ensure_ascii=False))
+
+
+def cmd_check(args):
+    if args.id:
+        results = [tracking.check_one(_resolve(args.id)["uuid"])]
+    else:
+        results = tracking.check_all()
+    if not results:
+        info("Žádné sledované známky ke kontrole.")
+        return
+    total = 0
+    for r in results:
+        name = r["display_name"]
+        if not r["ok"]:
+            info(f"  {name}: CHYBA — {r['error']}")
+            continue
+        new = r["new_collisions"]
+        if not new:
+            info(f"  {name}: beze změn")
+            continue
+        total += len(new)
+        info(f"  {name}: {len(new)} nových podobných známek")
+        for c in new:
+            label = c.get("mark_text") or "(obrazová známka)"
+            info(f"    • {label} [{c['tier']}, skóre {c['scores']['overall']}] — {c.get('applicant', '')}")
+    info(f"\nKontrola dokončena. Celkem {total} nových u {len(results)} známek.")
+
+    if getattr(args, "email", False):
+        try:
+            sent = notify.email_change_summary(results)
+            info(f"E-mailem odeslán souhrn {sent} nových." if sent else "Žádné nové — e-mail neodeslán.")
+        except ZnamkyError as e:
+            info(f"E-mail se nepodařilo odeslat: {e}")
+
+
+def cmd_confirm(args):
+    if args.change is not None and args.all:
+        err("Použij buď --all NEBO --change <INDEX>, ne obojí.")
+        sys.exit(1)
+    state = _resolve(args.id)
+    marked = tracking.confirm(state["uuid"], change_index=args.change)
+    info("Žádné nepřečtené kolize." if marked == 0 else f"OK: Označeno jako posouzeno: {marked}")
+
+
+def cmd_assess(args):
+    state = _resolve(args.id)
+    collision = tracking.set_assessment(
+        state["uuid"], args.change,
+        {
+            "risk": args.risk, "visual": args.visual, "aural": args.aural,
+            "conceptual": args.conceptual, "goods_similarity": args.goods,
+            "summary": args.summary,
+        },
+    )
+    info(f"OK: Posouzení uloženo (riziko: {collision['ai_assessment']['risk']}).")
+
+
+def cmd_remove(args):
+    state = _resolve(args.id)
+    name = tracking.display_name(state)
+    tracking.remove(state["uuid"])
+    info(f"OK: Známka {name} odstraněna ze sledování.")
+
+
+def cmd_set_label(args):
+    state = _resolve(args.id)
+    tracking.set_label(state["uuid"], args.label)
+    info(f"OK: Označení nastaveno na: {args.label}" if args.label else "OK: Označení odstraněno.")
+
+
+# ── lustrace commands ──────────────────────────────────────────────────────────
+
+
+def cmd_lustrace_text(args):
+    result = tracking.lookup_text(args.text, nice_classes=args.nice, territories=args.territory)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+def cmd_lustrace_logo(args):
+    data, mime = _read_logo(args.path)
+    result = tracking.lookup_logo(
+        data, mime=mime, text=args.text, nice_classes=args.nice,
+        territories=args.territory, vienna_codes=_split(args.vienna),
+    )
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+def _split(value):
+    if not value:
+        return []
+    return [p.strip() for p in str(value).replace(";", ",").split(",") if p.strip()]
+
+
+# ── argparse plumbing ────────────────────────────────────────────────────────
+
+
+def _add_search_filters(parser):
+    parser.add_argument("--nice", default="", help="Nice classes, e.g. 9,42")
+    parser.add_argument("--territory", default="", help="Territories: CZ,EU (default both)")
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="znamky-cli",
+        description="Sledování ochranných známek (ÚPV + EUIPO přes TMview) a jednorázové lustrace.",
+    )
+    sub = p.add_subparsers(dest="namespace", required=True)
+
+    tr = sub.add_parser("sledovani", help="Track trademarks")
+    tr_sub = tr.add_subparsers(dest="cmd", required=True)
+
+    p_at = tr_sub.add_parser("add-text", help="Watch a word mark")
+    p_at.add_argument("text", help='Verbal element, e.g. "CODEXIS"')
+    _add_search_filters(p_at)
+    p_at.add_argument("--owner", default="", help="Owner name (to recognise your own marks)")
+    p_at.add_argument("--label", default="", help="Optional label")
+    p_at.set_defaults(func=cmd_add_text)
+
+    p_al = tr_sub.add_parser("add-logo", help="Watch a figurative/combined mark")
+    p_al.add_argument("path", help="Path to the logo image file")
+    p_al.add_argument("--text", default="", help="Optional verbal element (→ combined mark)")
+    _add_search_filters(p_al)
+    p_al.add_argument("--vienna", default="", help="Vienna codes, e.g. 26.4.1,27.5")
+    p_al.add_argument("--owner", default="", help="Owner name")
+    p_al.add_argument("--label", default="", help="Optional label")
+    p_al.set_defaults(func=cmd_add_logo)
+
+    p_list = tr_sub.add_parser("list", help="List watched marks")
+    p_list.set_defaults(func=cmd_list)
+
+    p_show = tr_sub.add_parser("show", help="Show full state of a watched mark (JSON)")
+    p_show.add_argument("id", help="Mark UUID")
+    p_show.set_defaults(func=cmd_show)
+
+    p_check = tr_sub.add_parser("check", help="Re-search registers for new similar marks")
+    p_check.add_argument("id", nargs="?", help="Specific mark (default: all)")
+    p_check.add_argument("--email", action="store_true", help="E-mail a summary of new collisions")
+    p_check.set_defaults(func=cmd_check)
+
+    p_conf = tr_sub.add_parser("confirm", help="Mark collisions as reviewed")
+    p_conf.add_argument("id", help="Mark UUID")
+    p_conf.add_argument("--all", action="store_true", help="Mark all unconfirmed (default)")
+    p_conf.add_argument("--change", type=int, metavar="INDEX", help="Mark a single collision by index")
+    p_conf.set_defaults(func=cmd_confirm)
+
+    p_assess = tr_sub.add_parser("assess", help="Attach an AI likelihood-of-confusion verdict")
+    p_assess.add_argument("id", help="Mark UUID")
+    p_assess.add_argument("--change", type=int, required=True, metavar="INDEX", help="Collision index")
+    p_assess.add_argument("--risk", required=True, choices=["high", "medium", "low", "none"])
+    p_assess.add_argument("--visual", default="")
+    p_assess.add_argument("--aural", default="")
+    p_assess.add_argument("--conceptual", default="")
+    p_assess.add_argument("--goods", default="")
+    p_assess.add_argument("--summary", default="")
+    p_assess.set_defaults(func=cmd_assess)
+
+    p_rm = tr_sub.add_parser("remove", help="Stop watching a mark")
+    p_rm.add_argument("id", help="Mark UUID")
+    p_rm.set_defaults(func=cmd_remove)
+
+    p_lbl = tr_sub.add_parser("set-label", help="Set or clear the label")
+    p_lbl.add_argument("id", help="Mark UUID")
+    p_lbl.add_argument("label", help='New label (use "" to clear)')
+    p_lbl.set_defaults(func=cmd_set_label)
+
+    lu = sub.add_parser("lustrace", help="One-shot similarity search (no tracking)")
+    lu_sub = lu.add_subparsers(dest="cmd", required=True)
+
+    p_lt = lu_sub.add_parser("text", help="Search by a word mark")
+    p_lt.add_argument("text", help="Verbal element")
+    _add_search_filters(p_lt)
+    p_lt.set_defaults(func=cmd_lustrace_text)
+
+    p_ll = lu_sub.add_parser("logo", help="Search by a logo image")
+    p_ll.add_argument("path", help="Path to the logo image file")
+    p_ll.add_argument("--text", default="", help="Optional verbal element")
+    _add_search_filters(p_ll)
+    p_ll.add_argument("--vienna", default="", help="Vienna codes")
+    p_ll.set_defaults(func=cmd_lustrace_logo)
+
+    return p
+
+
+def main():
+    args = build_parser().parse_args()
+    try:
+        args.func(args)
+    except ZnamkyError as e:
+        err(str(e))
+        sys.exit(1)
+    except FileNotFoundError as e:
+        err(f"Soubor nenalezen: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
