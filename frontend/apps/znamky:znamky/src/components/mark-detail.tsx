@@ -8,7 +8,7 @@ import { EditMarkDialog } from './edit-mark-dialog'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { useDetail } from '@/hooks/use-detail'
-import { checkSubject, confirmChange, logoUrl, removeMark } from '@/lib/api'
+import { checkSubject, confirmChange, removeMark } from '@/lib/api'
 import { formatRelative } from '@/lib/format'
 import type { Collision } from '@/lib/schemas'
 
@@ -84,8 +84,8 @@ export function MarkDetail({
         <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack} aria-label={t('common.back')}>
           <ArrowLeft className="size-5" />
         </Button>
-        {mark.has_logo && (
-          <img src={logoUrl(uuid)} alt="" className="bg-background size-9 rounded border object-contain p-0.5" />
+        {mark.logo_data_url && (
+          <img src={mark.logo_data_url} alt="" className="bg-background size-9 rounded border object-contain p-0.5" />
         )}
         <div className="min-w-0 flex-1">
           <h2 className="font-display truncate text-lg leading-tight">{mark.display_name}</h2>
@@ -139,8 +139,7 @@ export function MarkDetail({
                   key={`${c.source}:${c.source_id}:${realIndex}`}
                   collision={c}
                   index={realIndex}
-                  markUuid={uuid}
-                  markHasLogo={mark.has_logo}
+                  markLogoDataUrl={mark.logo_data_url}
                   onConfirm={confirmOne}
                 />
               )

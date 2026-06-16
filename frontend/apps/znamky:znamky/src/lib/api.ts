@@ -27,16 +27,6 @@ function buildUrl(params?: Record<string, string>): string {
   return url.toString()
 }
 
-/** `<img src>` for a watched mark's stored logo. */
-export function logoUrl(uuid: string): string {
-  return buildUrl({ logo: uuid })
-}
-
-/** `<img src>` for a collision candidate's downloaded logo. */
-export function candidateLogoUrl(uuid: string, index: number): string {
-  return buildUrl({ candidate_logo: uuid, index: String(index) })
-}
-
 async function getJson<T>(
   schema: z.ZodType<T>,
   params?: Record<string, string>,

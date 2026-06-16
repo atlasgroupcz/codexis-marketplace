@@ -12,6 +12,7 @@ $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/sledovane/<uuid>/state.json, with any
 stored logos beside it — kept on disk so AI tools can read them as context.
 """
 
+import base64
 import datetime
 import json
 import os
@@ -602,6 +603,30 @@ def ensure_automation() -> None:
 # ── presentation helpers ─────────────────────────────────────────────────────
 
 
+_MIME_BY_EXT = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
+}
+
+
+def logo_data_url(path) -> Optional[str]:
+    """Read a stored image and return a base64 data: URL, or None.
+
+    Logos are delivered inline (data URL in the JSON payload) rather than as a
+    binary CGI response, because the plugin CGI runtime decodes process stdout as
+    UTF-8 text — which corrupts raw image bytes.
+    """
+    if not path or not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "rb") as f:
+            raw = f.read()
+    except OSError:
+        return None
+    mime = _MIME_BY_EXT.get(os.path.splitext(path)[1].lower(), "image/png")
+    return f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+
+
 def display_name(state: dict) -> str:
     if state.get("label"):
         return state["label"]
@@ -632,6 +657,7 @@ def state_to_overview_entry(state: dict) -> dict:
         "display_name": display_name(state),
         "text": state.get("text", ""),
         "has_logo": bool(state.get("logo_path")),
+        "logo_data_url": logo_data_url(state.get("logo_path")),
         "nice_classes": state.get("nice_classes", []),
         "territories": state.get("territories", []),
         "owner_name": state.get("owner_name", ""),
@@ -647,5 +673,8 @@ def state_to_detail_entry(state: dict) -> dict:
     entry = state_to_overview_entry(state)
     entry["threshold"] = state.get("threshold", DEFAULT_THRESHOLD)
     entry["vienna_codes"] = state.get("vienna_codes", [])
-    entry["collisions"] = state.get("collisions", [])
+    entry["collisions"] = [
+        {**c, "image_data_url": logo_data_url(c.get("image_path"))}
+        for c in state.get("collisions", [])
+    ]
     return entry
