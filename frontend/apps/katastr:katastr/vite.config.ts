@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) =>
             path.replace(
               /^\/api/,
-              '/rest/plugin-components/katastr%40katastr/katastr',
+              '/rest/plugin-components/katastr%40katastr/katastr/api',
             ),
         },
       },
