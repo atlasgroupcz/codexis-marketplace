@@ -5,3 +5,7 @@ export const viewParser = parseAsStringLiteral(['list', 'detail'] as const).with
 export const uuidParser = parseAsString
 
 export const groupParser = parseAsString
+
+export const tabParser = parseAsStringLiteral(['changes', 'documents'] as const).withDefault(
+  'changes',
+)

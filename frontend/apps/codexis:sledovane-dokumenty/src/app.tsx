@@ -1,6 +1,6 @@
 import { useQueryState } from 'nuqs'
 import { uuidParser, viewParser } from '@/lib/url-state'
-import { DocumentList } from '@/components/document-list'
+import { DocumentsHome } from '@/components/documents-home'
 import { DocumentDetail } from '@/components/document-detail'
 
 export function App() {
@@ -21,5 +21,5 @@ export function App() {
     return <DocumentDetail uuid={uuid} onBack={handleBack} />
   }
 
-  return <DocumentList onSelectDocument={handleSelectDocument} />
+  return <DocumentsHome onSelectDocument={handleSelectDocument} />
 }
