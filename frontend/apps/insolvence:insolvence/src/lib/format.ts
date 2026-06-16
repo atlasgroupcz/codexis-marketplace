@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns'
+import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { cs, enUS, sk } from 'date-fns/locale'
 import type { Locale } from 'date-fns'
 import i18n from '@/lib/i18n'
@@ -31,6 +31,19 @@ export function formatDateTime(isoString: string | null | undefined): string {
   if (!isoString) return '—'
   try {
     return format(parseISO(isoString), 'Pp', {
+      locale: getDateFnsLocale(i18n.language),
+    })
+  } catch {
+    return isoString
+  }
+}
+
+/** Relative time, e.g. "před 5 minutami" / "5 minutes ago" / "pred 3 dňami". */
+export function formatRelative(isoString: string | null | undefined): string {
+  if (!isoString) return '—'
+  try {
+    return formatDistanceToNow(parseISO(isoString), {
+      addSuffix: true,
       locale: getDateFnsLocale(i18n.language),
     })
   } catch {

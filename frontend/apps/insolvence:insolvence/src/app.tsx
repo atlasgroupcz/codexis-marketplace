@@ -43,15 +43,19 @@ export function App() {
   }
 
   return (
-    <div className="bg-background text-foreground flex h-screen flex-col">
+    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-700 dark:text-emerald-400">
-            <ShieldAlert className="size-5" />
+          <span className="bg-secondary text-primary ring-brand-100 flex size-9 items-center justify-center rounded-xl ring-1">
+            <ShieldAlert className="size-5" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold">{t('app.title')}</h1>
-            <p className="text-muted-foreground hidden text-xs sm:block">{t('app.subtitle')}</p>
+            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
+              {t('app.title')}
+            </h1>
+            <p className="text-muted-foreground hidden truncate text-xs sm:block">
+              {t('app.subtitle')}
+            </p>
           </div>
         </div>
         <div className="flex shrink-0 gap-2">

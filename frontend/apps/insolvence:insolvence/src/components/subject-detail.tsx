@@ -1,23 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  ArrowLeft,
-  Building2,
-  Pencil,
-  RefreshCw,
-  Trash2,
-  User,
-} from 'lucide-react'
+import { ArrowLeft, Building2, Clock, Eye, Pencil, RefreshCw, Trash2, User } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
 import { toast } from '@workspace/ui/components/sonner'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { InsolvencyStatus } from './status-badge'
 import { ProceedingsList } from './proceedings-list'
 import { ChangeTimeline } from './change-timeline'
-import { formatDateTime } from '@/lib/format'
+import { DphPanel } from './dph-panel'
+import { formatRelative } from '@/lib/format'
 import { checkSubject, removeSubject, setLabel } from '@/lib/api'
 import { useDetail } from '@/hooks/use-detail'
 
@@ -49,6 +44,12 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
   const s = data.subject
   const hasHistory = s.rizeni_count > 0 && !s.ma_aktivni_insolvenci
   const Icon = s.kind === 'company' ? Building2 : User
+  // The old ISIR detail deep-links are dead (register migrated to eISIR);
+  // link to the live eISIR by IČO, which falls back to its search.
+  const isirUrl =
+    s.kind === 'company' && s.ico
+      ? `https://eisir.justice.cz/insolvencni-rejstrik/dle-ico/${s.ico}`
+      : 'https://eisir.justice.cz/insolvencni-rejstrik'
   const identifier =
     s.kind === 'company'
       ? s.ico
@@ -104,15 +105,15 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
 
   return (
     <ScrollArea className="h-full">
-      <div className="space-y-6 p-6">
+      <div className="space-y-5 p-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
               <ArrowLeft className="size-4" />
             </Button>
-            <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg">
-              <Icon className="text-muted-foreground size-5" />
+            <div className="bg-secondary text-primary ring-brand-100 flex size-10 shrink-0 items-center justify-center rounded-xl ring-1">
+              <Icon className="size-5" />
             </div>
             <div className="min-w-0">
               {editing ? (
@@ -133,16 +134,43 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
                 <button
                   type="button"
                   onClick={startEdit}
-                  className="hover:text-primary group inline-flex items-center gap-1.5 text-left text-lg font-semibold transition-colors"
+                  className="hover:text-primary group font-display inline-flex items-center gap-1.5 text-left text-xl font-normal transition-colors"
                   data-testid="label-edit-trigger"
                 >
                   <span className="truncate">{s.display_name}</span>
                   <Pencil className="text-muted-foreground size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
                 </button>
               )}
-              {identifier && (
-                <p className="text-muted-foreground truncate text-sm">{identifier}</p>
-              )}
+              {identifier && <p className="text-muted-foreground text-sm">{identifier}</p>}
+
+              {/* Inline, readable summary right under the identifier */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]">
+                <InsolvencyStatus active={s.ma_aktivni_insolvenci} hasHistory={hasHistory} />
+                {s.last_check_at && (
+                  <>
+                    <Dot />
+                    <span
+                      className="text-muted-foreground inline-flex items-center gap-1"
+                      title={t('detail.lastCheck')}
+                    >
+                      <Clock className="size-3.5" />
+                      {formatRelative(s.last_check_at)}
+                    </span>
+                  </>
+                )}
+                {s.added_on && (
+                  <>
+                    <Dot />
+                    <span
+                      className="text-muted-foreground inline-flex items-center gap-1"
+                      title={t('detail.addedOn')}
+                    >
+                      <Eye className="size-3.5" />
+                      {formatRelative(s.added_on)}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
@@ -170,41 +198,48 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
           </div>
         </div>
 
-        {/* Status summary */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label={t('detail.statusLabel')}>
-            <InsolvencyStatus active={s.ma_aktivni_insolvenci} hasHistory={hasHistory} size="md" />
-          </StatCard>
-          <StatCard label={t('detail.proceedingsCount')}>
-            <span className="text-lg font-semibold">{s.rizeni_count}</span>
-          </StatCard>
-          <StatCard label={t('detail.lastCheck')}>
-            <span className="text-sm">{formatDateTime(s.last_check_at)}</span>
-          </StatCard>
-          <StatCard label={t('detail.addedOn')}>
-            <span className="text-sm">{formatDateTime(s.added_on)}</span>
-          </StatCard>
-        </div>
-
-        <ProceedingsList rizeni={data.subject.rizeni} />
-        <ChangeTimeline
-          uuid={uuid}
-          changes={data.subject.changes}
-          onConfirmed={() => {
-            refetch()
-            onChanged()
-          }}
-        />
+        {/* Proceedings / change-history as a two-tab menu */}
+        <Tabs defaultValue="rizeni" className="gap-4">
+          <TabsList variant="line" className="w-full justify-start gap-4">
+            <TabsTrigger value="rizeni" className="flex-none px-0">
+              {t('detail.proceedings')}
+              <CountChip>{s.rizeni_count}</CountChip>
+            </TabsTrigger>
+            <TabsTrigger value="zmeny" className="flex-none px-0">
+              {t('detail.changeHistory')}
+              {s.changes.length > 0 && <CountChip>{s.changes.length}</CountChip>}
+            </TabsTrigger>
+            {s.kind === 'company' && s.ico && (
+              <TabsTrigger value="dph" className="flex-none px-0">
+                {t('dph.tab')}
+              </TabsTrigger>
+            )}
+          </TabsList>
+          <TabsContent value="rizeni">
+            <ProceedingsList rizeni={s.rizeni} isirUrl={isirUrl} />
+          </TabsContent>
+          <TabsContent value="zmeny">
+            <ChangeTimeline changes={s.changes} />
+          </TabsContent>
+          {s.kind === 'company' && s.ico && (
+            <TabsContent value="dph">
+              <DphPanel ico={s.ico} />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </ScrollArea>
   )
 }
 
-function StatCard({ label, children }: { label: string; children: React.ReactNode }) {
+function Dot() {
+  return <span className="text-border">·</span>
+}
+
+function CountChip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border p-3">
-      <div className="text-muted-foreground text-xs font-medium">{label}</div>
-      <div className="mt-1.5">{children}</div>
-    </div>
+    <span className="bg-secondary text-secondary-foreground ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold">
+      {children}
+    </span>
   )
 }

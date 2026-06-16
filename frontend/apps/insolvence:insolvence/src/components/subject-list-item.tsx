@@ -44,14 +44,6 @@ export function SubjectListItem({ subject, selected, onSelect }: SubjectListItem
           <span className="text-muted-foreground block truncate text-xs">{subtitle}</span>
         )}
       </div>
-      {subject.unconfirmed_count > 0 && (
-        <span
-          className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-semibold text-white dark:bg-red-500"
-          title={t('list.unreadChanges', { count: subject.unconfirmed_count })}
-        >
-          {subject.unconfirmed_count}
-        </span>
-      )}
     </button>
   )
 }

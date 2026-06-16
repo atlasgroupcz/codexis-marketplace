@@ -64,6 +64,8 @@
     "changeHistory": "História zmien",
     "markAllRead": "Označiť všetko prečítané ({{count}})",
     "markRead": "Označiť prečítané",
+    "noChanges": "Zatiaľ žiadne zmeny",
+    "noChangesHint": "Keď sa v sledovaných konaniach niečo zmení, uvidíte to tu.",
     "refresh": "Aktualizovať",
     "refreshed": "Subjekt aktualizovaný.",
     "refreshError": "Kontrolu sa nepodarilo vykonať.",
@@ -71,10 +73,24 @@
     "confirmRemove": "Naozaj odobrať?",
     "removed": "Subjekt odobraný zo sledovania."
   },
+  "dph": {
+    "tab": "DPH",
+    "reliable": "Spoľahlivý platiteľ DPH",
+    "unreliable": "Nespoľahlivý platiteľ DPH",
+    "unreliableSince": "Nespoľahlivý od {{date}}",
+    "notPayer": "Nie je platiteľom DPH",
+    "taxOffice": "Daňový úrad",
+    "accounts": "Zverejnené účty",
+    "noAccounts": "Žiadne zverejnené účty",
+    "publishedOn": "zverejnený {{date}}",
+    "source": "Zdroj: register platiteľov DPH (MF ČR)"
+  },
   "empty": {
     "title": "Zatiaľ nesledujete žiadne subjekty",
     "text": "Pridajte firmu alebo osobu a hliadač bude denne kontrolovať nové a zmenené insolvenčné konania.",
     "add": "Pridať subjekt",
-    "noSelection": "Vyberte subjekt v zozname vľavo."
+    "noSelection": "Vyberte subjekt v zozname vľavo.",
+    "chatLead": "Alebo si sledovanie nastavte v konverzácii — napíšte napríklad:",
+    "chatPrompt": "Sleduj insolvenciu firmy s IČO 04863313 a každý týždeň mi pošli e-mailom súhrn nových a zmenených konaní."
   }
 }

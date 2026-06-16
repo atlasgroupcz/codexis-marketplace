@@ -64,6 +64,8 @@
     "changeHistory": "Change history",
     "markAllRead": "Mark all read ({{count}})",
     "markRead": "Mark read",
+    "noChanges": "No changes yet",
+    "noChangesHint": "When something changes in the tracked proceedings, it will show up here.",
     "refresh": "Refresh",
     "refreshed": "Subject refreshed.",
     "refreshError": "The check could not be completed.",
@@ -71,10 +73,24 @@
     "confirmRemove": "Really remove?",
     "removed": "Subject removed from the watchlist."
   },
+  "dph": {
+    "tab": "VAT",
+    "reliable": "Reliable VAT payer",
+    "unreliable": "Unreliable VAT payer",
+    "unreliableSince": "Unreliable since {{date}}",
+    "notPayer": "Not a VAT payer",
+    "taxOffice": "Tax office",
+    "accounts": "Published bank accounts",
+    "noAccounts": "No published accounts",
+    "publishedOn": "published {{date}}",
+    "source": "Source: VAT-payer registry (MF CZ)"
+  },
   "empty": {
     "title": "You're not watching any subjects yet",
     "text": "Add a company or a person and the watchdog will check daily for new and changed insolvency proceedings.",
     "add": "Add subject",
-    "noSelection": "Select a subject from the list on the left."
+    "noSelection": "Select a subject from the list on the left.",
+    "chatLead": "Or set it up in a conversation — just write, for example:",
+    "chatPrompt": "Watch insolvency for company ID 04863313 and email me a weekly summary of new and changed proceedings."
   }
 }
