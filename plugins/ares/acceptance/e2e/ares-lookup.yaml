@@ -20,6 +20,10 @@ steps:
         # "ČEZ, a. s." is the canonical obchodniJmeno; "Duhová" anchors the
         # address. Both must appear (order-independent) for a real hit.
         matches: "(?s)ČEZ.{0,200}Duhov|Duhov.{0,200}ČEZ"
+      sources:
+        # ares-cli attaches the official ARES page of each looked-up subject.
+        min: 1
+        matches: "ares\\.gov\\.cz/ekonomicke-subjekty"
 
   # 2. Follow-up about VAT status — natural Czech business question.
   #    AI may answer from step-1 context (basic detail already includes
