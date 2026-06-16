@@ -16,7 +16,7 @@ function getApiBase(): string {
   if (import.meta.env.DEV) {
     return '/api/'
   }
-  return './'
+  return './api'
 }
 
 function buildUrl(params?: Record<string, string>): string {

@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) =>
             path.replace(
               /^\/api/,
-              '/rest/plugin-components/insolvence%40insolvence/insolvence',
+              '/rest/plugin-components/insolvence%40insolvence/insolvence/api',
             ),
         },
       },
