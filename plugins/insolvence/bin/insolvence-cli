@@ -36,7 +36,7 @@ for p in CANDIDATES:
         break
 
 try:
-    from insolvence_core import api_client, tracking
+    from insolvence_core import api_client, notify, tracking
     from insolvence_core.exceptions import InsolvenceError
 except ImportError as e:
     print(f"ERROR: insolvence_core library not found: {e}", file=sys.stderr)
@@ -146,6 +146,16 @@ def cmd_check(args):
             info(f"    • {c.get('popis', c.get('typ', ''))}")
     info(f"\nKontrola dokončena. Celkem {total} nových změn u {len(results)} subjektů.")
 
+    if getattr(args, "email", False):
+        try:
+            sent = notify.email_change_summary(results)
+            if sent:
+                info(f"E-mailem odeslán souhrn {sent} nových změn.")
+            else:
+                info("Žádné nové změny — e-mail neodeslán.")
+        except InsolvenceError as e:
+            info(f"E-mail se nepodařilo odeslat: {e}")
+
 
 def cmd_confirm(args):
     if args.change is not None and args.all:
@@ -227,6 +237,11 @@ def build_parser():
 
     p_check = tr_sub.add_parser("check", help="Check for changes against ISIR")
     p_check.add_argument("id", nargs="?", help="Specific subject (default: all)")
+    p_check.add_argument(
+        "--email",
+        action="store_true",
+        help="E-mailem poslat uživateli souhrn nových změn (pro automatizaci)",
+    )
     p_check.set_defaults(func=cmd_check)
 
     p_conf = tr_sub.add_parser("confirm", help="Mark changes as read")

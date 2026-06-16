@@ -21,7 +21,7 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from insolvence_core import tracking
+    from insolvence_core import dph, tracking
     from insolvence_core.exceptions import (
         ApiHttpError,
         ApiNetworkError,
@@ -165,6 +165,16 @@ def handle_post(body: dict) -> None:
 
 def handle_get(query_string: str) -> None:
     params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+
+    dph_dic = (params.get("dph", [None])[0] or "").strip()
+    if dph_dic:
+        try:
+            result = dph.lookup_dph(dph_dic)
+        except InsolvenceError as e:
+            emit_json({"mode": "dph", "error": str(e)}, status="502 Bad Gateway")
+            return
+        emit_json({"mode": "dph", "generated_at": tracking.now_utc(), **result})
+        return
 
     requested_uuid = (params.get("uuid", [None])[0] or "").strip()
     if requested_uuid:
