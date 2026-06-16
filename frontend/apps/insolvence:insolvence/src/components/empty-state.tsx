@@ -1,7 +1,26 @@
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react'
+import { MessageSquareText, Plus } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { PickSubjectArt, WatchRegisterArt } from './illustrations'
+
+/** Opens a new CODEXIS conversation pre-filled with an example request. */
+function ConversationHint() {
+  const { t } = useTranslation()
+  return (
+    <div className="border-border/70 mt-8 w-full max-w-sm border-t pt-6">
+      <p className="text-muted-foreground text-sm">{t('empty.chatLead')}</p>
+      <a
+        href={`/?prompt=${encodeURIComponent(t('empty.chatPrompt'))}`}
+        target="_top"
+        className="group border-brand-100 bg-secondary/60 hover:bg-secondary mt-2 flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm transition-colors"
+        data-testid="empty-chat-example"
+      >
+        <MessageSquareText className="text-primary mt-0.5 size-4 shrink-0" />
+        <span className="text-foreground/90 italic">“{t('empty.chatPrompt')}”</span>
+      </a>
+    </div>
+  )
+}
 
 export function EmptySubjects({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation()
@@ -22,6 +41,7 @@ export function EmptySubjects({ onAdd }: { onAdd: () => void }) {
           <Plus className="size-4" />
           {t('empty.add')}
         </Button>
+        <ConversationHint />
       </div>
     </div>
   )

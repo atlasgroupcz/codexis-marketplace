@@ -77,6 +77,8 @@
     "title": "You're not watching any subjects yet",
     "text": "Add a company or a person and the watchdog will check daily for new and changed insolvency proceedings.",
     "add": "Add subject",
-    "noSelection": "Select a subject from the list on the left."
+    "noSelection": "Select a subject from the list on the left.",
+    "chatLead": "Or set it up in a conversation — just write, for example:",
+    "chatPrompt": "Watch insolvency for company ID 04863313 and email me a weekly summary of new and changed proceedings."
   }
 }
