@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="znamky" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <style>
+      .cls-bg { fill: #e8f0ff; }
+      .cls-shield { fill: #3f6fde; }
+      .cls-shield-dark { fill: #2748a8; }
+      .cls-mark { fill: #ffffff; }
+    </style>
+  </defs>
+  <rect class="cls-bg" width="300" height="300"/>
+  <path class="cls-shield" d="M150,46 L248,84 V150 C248,206 207,245 150,259 C93,245 52,206 52,150 V84 Z"/>
+  <path class="cls-shield-dark" d="M150,259 C207,245 248,206 248,150 V84 L150,46 Z" opacity="0.18"/>
+  <text class="cls-mark" x="150" y="178" text-anchor="middle" font-family="Georgia, serif" font-size="120" font-weight="700">™</text>
+</svg>
