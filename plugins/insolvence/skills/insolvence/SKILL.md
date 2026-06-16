@@ -119,6 +119,28 @@ Stateful watchdog. State is stored in `~/.cdx/apps/insolvence/subjekty/`. A sing
 automation (`0 7 * * *`) runs `insolvence-cli sledovani check` daily to refresh all tracked
 subjects and record changes.
 
+### E-mailová upozornění (automatizace na míru)
+
+Když uživatel chce být na změny upozorňován e-mailem, spouštěj kontrolu s přepínačem `--email`:
+
+```bash
+insolvence-cli sledovani check --email
+```
+
+`--email` po kontrole pošle uživateli souhrnný e-mail, **pokud byly nalezeny nové změny** (beze
+změn se nic neposílá). E-mail jde automaticky na adresu přihlášeného uživatele — neřeš ani
+nepředávej žádnou adresu, token ani „secret", daemon je doplní sám.
+
+Když uživatel řekne např. *„hlídej IČO 04863313 a každý týden mi pošli e-mail s novými řízeními"*:
+
+1. Přidej subjekt(y) do sledování (`sledovani add-firma` / `add-osoba`).
+2. Vytvoř uživateli **automatizaci**, která spouští `insolvence-cli sledovani check --email`.
+   Výchozí frekvence je **týdně** (cron `0 7 * * 1`, pondělí ráno), pokud uživatel neřekne jinak.
+3. Stručně potvrď, co jsi nastavil (které subjekty, jak často, že upozornění chodí e-mailem).
+
+Tato automatizace si kontrolu provádí sama — neplánuj pro stejné subjekty zvlášť ještě `check`
+bez `--email`, jinak by změny zachytil ten dřívější běh a e-mail by nepřišel.
+
 ### What changes are detected
 
 - **nové řízení** — a new insolvency proceeding (spisová značka) appears for the subject
