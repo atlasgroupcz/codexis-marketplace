@@ -52,7 +52,7 @@ export function CollisionCard({
       }`}
     >
       <div className="flex gap-4">
-        <div className="shrink-0 self-start">
+        <div className="flex size-[160px] shrink-0 items-center justify-center self-center">
           <SimilarityDonut overall={s.overall} tier={collision.tier} />
         </div>
 
