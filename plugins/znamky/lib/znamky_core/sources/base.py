@@ -151,3 +151,14 @@ def post_json(url: str, payload: dict, source_name: str, headers: dict = None) -
 def get_bytes(url: str, source_name: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
     return _request(req, source_name)
+
+
+def get_json(url: str, source_name: str, headers: dict = None) -> dict:
+    base_headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
+    base_headers.update(headers or {})
+    req = urllib.request.Request(url, headers=base_headers, method="GET")
+    raw = _request(req, source_name)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ApiParseError(f"Neplatná JSON odpověď {source_name}: {exc}")

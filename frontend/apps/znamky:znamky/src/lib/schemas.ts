@@ -83,9 +83,16 @@ export type MarkDetail = z.infer<typeof markDetailSchema>
 export const overviewResponseSchema = z.object({
   mode: z.literal('overview'),
   generated_at: z.string(),
+  configured: z.boolean().optional().default(true),
   marks: z.array(markSummarySchema),
 })
 export type OverviewResponse = z.infer<typeof overviewResponseSchema>
+
+export const configResponseSchema = z.object({
+  configured: z.boolean(),
+  maskedKey: z.string().optional().default(''),
+})
+export type ConfigResponse = z.infer<typeof configResponseSchema>
 
 export const detailResponseSchema = z.object({
   mode: z.literal('detail'),

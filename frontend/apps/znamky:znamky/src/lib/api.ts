@@ -1,6 +1,7 @@
 import {
   actionResponseSchema,
   checkAllResponseSchema,
+  configResponseSchema,
   detailResponseSchema,
   overviewResponseSchema,
 } from './schemas'
@@ -8,6 +9,7 @@ import type { z } from 'zod'
 import type {
   ActionResponse,
   CheckAllResponse,
+  ConfigResponse,
   DetailResponse,
   OverviewResponse,
 } from './schemas'
@@ -147,4 +149,21 @@ export interface UpdateMarkInput {
 
 export function updateMark(uuid: string, fields: UpdateMarkInput): Promise<ActionResponse> {
   return postJson('update_mark', actionResponseSchema, { uuid, ...fields })
+}
+
+// ─── EUIPO credentials config ─────────────────────────────────────────────────
+
+export function fetchConfig(): Promise<ConfigResponse> {
+  return getJson(configResponseSchema, { settings: '1' })
+}
+
+export function saveConfig(clientId: string, clientSecret: string): Promise<ActionResponse> {
+  return postJson('save_config', actionResponseSchema, {
+    client_id: clientId,
+    client_secret: clientSecret,
+  })
+}
+
+export function deleteConfig(): Promise<ActionResponse> {
+  return postJson('delete_config', actionResponseSchema)
 }

@@ -2,7 +2,28 @@
   "common": {
     "retry": "Skúsiť znova",
     "cancel": "Zrušiť",
-    "back": "Späť"
+    "back": "Späť",
+    "close": "Zavrieť"
+  },
+  "settings": {
+    "title": "Nastavenie prístupu (EUIPO)",
+    "description": "Pre reálne dáta zadajte svoje EUIPO API credentials. Získate ich zdarma na developer.euipo.europa.eu.",
+    "getKey": "Získať kľúče na developer.euipo.europa.eu",
+    "clientId": "EUIPO client_id",
+    "clientSecret": "EUIPO client_secret",
+    "currentKey": "Nastavené",
+    "save": "Uložiť a overiť",
+    "saving": "Overujem…",
+    "saved": "Prístup uložený.",
+    "saveError": "Kľúče sa nepodarilo uložiť.",
+    "deleteKey": "Odobrať kľúče",
+    "deleting": "Odoberám…"
+  },
+  "config": {
+    "title": "Najprv nastavte aplikáciu",
+    "text": "Hliadač čerpá dáta z oficiálneho EUIPO API. Zadajte svoje vlastné EUIPO API credentials (zdarma, ~5 minút na developer.euipo.europa.eu) — bez nich nie je možné prehľadávať register.",
+    "action": "Nastaviť prístup",
+    "hint": "Kľúče sa ukladajú len do tvojho priestoru (~/.cdx) a používajú sa na dopyty na EUIPO."
   },
   "app": {
     "title": "Hliadač ochranných známok",

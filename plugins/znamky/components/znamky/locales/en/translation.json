@@ -2,7 +2,28 @@
   "common": {
     "retry": "Try again",
     "cancel": "Cancel",
-    "back": "Back"
+    "back": "Back",
+    "close": "Close"
+  },
+  "settings": {
+    "title": "Access settings (EUIPO)",
+    "description": "For real data, enter your EUIPO API credentials. They are free from developer.euipo.europa.eu.",
+    "getKey": "Get keys at developer.euipo.europa.eu",
+    "clientId": "EUIPO client_id",
+    "clientSecret": "EUIPO client_secret",
+    "currentKey": "Configured",
+    "save": "Save & verify",
+    "saving": "Verifying…",
+    "saved": "Access saved.",
+    "saveError": "Could not save the keys.",
+    "deleteKey": "Remove keys",
+    "deleting": "Removing…"
+  },
+  "config": {
+    "title": "First, set up the app",
+    "text": "The watchdog pulls data from the official EUIPO API. Enter your own EUIPO API credentials (free, ~5 min at developer.euipo.europa.eu) — searching the register is not possible without them.",
+    "action": "Set up access",
+    "hint": "Keys are stored only in your space (~/.cdx) and used for EUIPO queries."
   },
   "app": {
     "title": "Trademark Watchdog",

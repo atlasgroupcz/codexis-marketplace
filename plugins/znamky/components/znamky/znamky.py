@@ -24,11 +24,13 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from znamky_core import tracking
+    from znamky_core import settings, tracking
     from znamky_core.exceptions import (
         ApiHttpError,
         ApiNetworkError,
         ApiParseError,
+        CredentialsInvalidError,
+        CredentialsMissingError,
         InvalidMarkError,
         MarkAlreadyTrackedError,
         MarkNotTrackedError,
@@ -73,6 +75,10 @@ def error_status(exc: Exception) -> str:
         return "404 Not Found"
     if isinstance(exc, InvalidMarkError):
         return "400 Bad Request"
+    if isinstance(exc, CredentialsInvalidError):
+        return "401 Unauthorized"
+    if isinstance(exc, CredentialsMissingError):
+        return "412 Precondition Failed"
     if isinstance(exc, ApiNetworkError):
         return "503 Service Unavailable"
     if isinstance(exc, ApiParseError):
@@ -99,6 +105,16 @@ def with_mark_uuid(body: dict, fn: Callable[[dict], None]) -> None:
 
 def handle_post(body: dict) -> None:
     action = body.get("action", "")
+
+    if action == "save_config":
+        result = settings.set_credentials(body.get("client_id", ""), body.get("client_secret", ""))
+        emit_json({"ok": True, "verified": result["verified"], "warning": result["warning"]})
+        return
+
+    if action == "delete_config":
+        settings.write_credentials("", "")
+        emit_json({"ok": True})
+        return
 
     if action == "add_text":
         state = tracking.add_text(
@@ -195,6 +211,14 @@ def handle_post(body: dict) -> None:
 def handle_get(query_string: str) -> None:
     params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
 
+    if "settings" in params:
+        if settings.is_configured():
+            cid, _secret = settings.read_credentials()
+            emit_json({"configured": True, "maskedKey": settings.mask(cid)})
+        else:
+            emit_json({"configured": False})
+        return
+
     logo_uuid = (params.get("logo", [None])[0] or "").strip()
     if logo_uuid:
         state = tracking.find_by_uuid(logo_uuid)
@@ -226,6 +250,7 @@ def handle_get(query_string: str) -> None:
 
     states = tracking.list_all()
     emit_json({"mode": "overview", "generated_at": tracking.now_utc(),
+               "configured": settings.is_configured(),
                "marks": [tracking.state_to_overview_entry(s) for s in states]})
 
 

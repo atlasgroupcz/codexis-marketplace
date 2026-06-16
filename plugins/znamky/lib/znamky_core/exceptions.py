@@ -31,3 +31,11 @@ class MarkAlreadyTrackedError(ZnamkyError):
 
 class MarkNotTrackedError(ZnamkyError):
     """The mark is not in the local watch state."""
+
+
+class CredentialsMissingError(ZnamkyError):
+    """No source credentials configured — the user must set them up first."""
+
+
+class CredentialsInvalidError(ZnamkyError):
+    """The configured source credentials were rejected by the provider."""

@@ -40,7 +40,6 @@
   "skills": "./skills",
   "components": "./components",
   "env": {
-    "CODEXIS_PLUGIN_ZNAMKY_TMVIEW_API_URL": "https://www.tmdn.org/tmview/api",
-    "CODEXIS_PLUGIN_ZNAMKY_DEMO": "1"
+    "CODEXIS_PLUGIN_ZNAMKY_TMVIEW_API_URL": "https://www.tmdn.org/tmview/api"
   }
 }
