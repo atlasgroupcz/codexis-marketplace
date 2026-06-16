@@ -1,6 +1,7 @@
 import {
   actionResponseSchema,
   checkAllResponseSchema,
+  configResponseSchema,
   detailResponseSchema,
   overviewResponseSchema,
 } from './schemas'
@@ -8,6 +9,7 @@ import type { z } from 'zod'
 import type {
   ActionResponse,
   CheckAllResponse,
+  ConfigResponse,
   DetailResponse,
   OverviewResponse,
 } from './schemas'
@@ -25,16 +27,6 @@ function buildUrl(params?: Record<string, string>): string {
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
   }
   return url.toString()
-}
-
-/** `<img src>` for a watched mark's stored logo. */
-export function logoUrl(uuid: string): string {
-  return buildUrl({ logo: uuid })
-}
-
-/** `<img src>` for a collision candidate's downloaded logo. */
-export function candidateLogoUrl(uuid: string, index: number): string {
-  return buildUrl({ candidate_logo: uuid, index: String(index) })
 }
 
 async function getJson<T>(
@@ -86,8 +78,8 @@ export function fetchDetail(uuid: string): Promise<DetailResponse> {
 
 export interface AddTextInput {
   text: string
-  nice_classes: number[]
-  territories: string[]
+  nice_classes: Array<number>
+  territories: Array<string>
   owner_name?: string
   label?: string
 }
@@ -104,9 +96,9 @@ export interface AddLogoInput {
   logo_base64: string
   mime: string
   text?: string
-  nice_classes: number[]
-  territories: string[]
-  vienna_codes?: string[]
+  nice_classes: Array<number>
+  territories: Array<string>
+  vienna_codes?: Array<string>
   owner_name?: string
   label?: string
 }
@@ -144,4 +136,34 @@ export function confirmChange(
 
 export function setLabel(uuid: string, label: string): Promise<ActionResponse> {
   return postJson('set_label', actionResponseSchema, { uuid, label })
+}
+
+export interface UpdateMarkInput {
+  text?: string
+  nice_classes?: Array<number>
+  territories?: Array<string>
+  owner_name?: string
+  label?: string
+  threshold?: number
+}
+
+export function updateMark(uuid: string, fields: UpdateMarkInput): Promise<ActionResponse> {
+  return postJson('update_mark', actionResponseSchema, { uuid, ...fields })
+}
+
+// ─── EUIPO credentials config ─────────────────────────────────────────────────
+
+export function fetchConfig(): Promise<ConfigResponse> {
+  return getJson(configResponseSchema, { settings: '1' })
+}
+
+export function saveConfig(clientId: string, clientSecret: string): Promise<ActionResponse> {
+  return postJson('save_config', actionResponseSchema, {
+    client_id: clientId,
+    client_secret: clientSecret,
+  })
+}
+
+export function deleteConfig(): Promise<ActionResponse> {
+  return postJson('delete_config', actionResponseSchema)
 }

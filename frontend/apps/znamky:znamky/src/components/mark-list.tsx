@@ -7,7 +7,7 @@ export function MarkList({
   selectedUuid,
   onSelect,
 }: {
-  marks: MarkSummary[]
+  marks: Array<MarkSummary>
   selectedUuid: string | null
   onSelect: (uuid: string) => void
 }) {

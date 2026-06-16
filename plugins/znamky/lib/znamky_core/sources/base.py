@@ -20,6 +20,7 @@ dict so the scoring/tracking layers never care where a mark came from:
     }
 """
 
+import http.client
 import json
 import time
 import urllib.error
@@ -118,12 +119,16 @@ def _request(req: urllib.request.Request, source_name: str) -> bytes:
                 continue
             body = exc.read().decode("utf-8", "replace")[:300]
             raise ApiHttpError(exc.code, f"{source_name} vrátilo HTTP {exc.code}: {body}")
-        except urllib.error.URLError as exc:
+        except (urllib.error.URLError, http.client.HTTPException, OSError) as exc:
+            # URLError, connection resets ([Errno 104]), broken TLS, DNS, timeouts —
+            # all "source unreachable". Retry, then degrade to ApiNetworkError so the
+            # caller (search_all) captures it instead of crashing the whole request.
             if attempt < RETRIES:
                 last_err = exc
                 time.sleep(1 + attempt)
                 continue
-            raise ApiNetworkError(f"Nepodařilo se kontaktovat {source_name}: {exc.reason}")
+            reason = getattr(exc, "reason", None) or exc
+            raise ApiNetworkError(f"Nepodařilo se kontaktovat {source_name}: {reason}")
     raise ApiNetworkError(f"{source_name} nedostupné: {last_err}")
 
 
@@ -146,3 +151,14 @@ def post_json(url: str, payload: dict, source_name: str, headers: dict = None) -
 def get_bytes(url: str, source_name: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
     return _request(req, source_name)
+
+
+def get_json(url: str, source_name: str, headers: dict = None) -> dict:
+    base_headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
+    base_headers.update(headers or {})
+    req = urllib.request.Request(url, headers=base_headers, method="GET")
+    raw = _request(req, source_name)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ApiParseError(f"Neplatná JSON odpověď {source_name}: {exc}")

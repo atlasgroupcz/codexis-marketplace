@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Image as ImageIcon, Layers, Type } from 'lucide-react'
 import { RiskDot } from './risk-badge'
-import { logoUrl } from '@/lib/api'
-import type { MarkKind, MarkSummary } from '@/lib/schemas'
+import type { MarkSummary } from '@/lib/schemas'
 
 const KIND_ICON = { word: Type, figurative: ImageIcon, combined: Layers }
 
@@ -16,7 +15,7 @@ export function MarkListItem({
   onSelect: (uuid: string) => void
 }) {
   const { t } = useTranslation()
-  const Icon = KIND_ICON[mark.kind as MarkKind] ?? Type
+  const Icon = KIND_ICON[mark.kind]
 
   return (
     <button
@@ -29,9 +28,9 @@ export function MarkListItem({
       }`}
     >
       <RiskDot tier={mark.worst_tier} />
-      {mark.has_logo ? (
+      {mark.logo_data_url ? (
         <img
-          src={logoUrl(mark.uuid)}
+          src={mark.logo_data_url}
           alt=""
           className="bg-background size-8 shrink-0 rounded border object-contain p-0.5"
         />

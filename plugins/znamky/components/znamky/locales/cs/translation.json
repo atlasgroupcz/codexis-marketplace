@@ -2,7 +2,28 @@
   "common": {
     "retry": "Zkusit znovu",
     "cancel": "Zrušit",
-    "back": "Zpět"
+    "back": "Zpět",
+    "close": "Zavřít"
+  },
+  "settings": {
+    "title": "Nastavení přístupu (EUIPO)",
+    "description": "Pro reálná data zadejte své EUIPO API credentials. Získáte je zdarma na dev.euipo.europa.eu.",
+    "getKey": "Získat klíče na dev.euipo.europa.eu",
+    "clientId": "EUIPO client_id",
+    "clientSecret": "EUIPO client_secret",
+    "currentKey": "Nastaveno",
+    "save": "Uložit a ověřit",
+    "saving": "Ověřuji…",
+    "saved": "Přístup uložen.",
+    "saveError": "Klíče se nepodařilo uložit.",
+    "deleteKey": "Odebrat klíče",
+    "deleting": "Odebírám…"
+  },
+  "config": {
+    "title": "Nejdřív nastavte aplikaci",
+    "text": "Hlídač čerpá data z oficiálního EUIPO API. Zadejte své vlastní EUIPO API credentials (zdarma, ~5 minut na dev.euipo.europa.eu) — bez nich nelze prohledávat rejstřík.",
+    "action": "Nastavit přístup",
+    "hint": "Klíče se ukládají jen do tvého prostoru (~/.cdx) a používají se pro dotazy na EUIPO."
   },
   "app": {
     "title": "Hlídač ochranných známek",
@@ -65,6 +86,15 @@
     "adding": "Přidávám…",
     "success": "Známka přidána ke sledování.",
     "error": "Známku se nepodařilo přidat."
+  },
+  "edit": {
+    "title": "Upravit známku",
+    "description": "Změňte práh shody, třídy, území, vlastníka nebo označení sledované známky.",
+    "thresholdHint": "Kolize se ukážou jen nad tímto prahem. Nižší práh = více (i volnějších) shod.",
+    "save": "Uložit",
+    "saving": "Ukládám…",
+    "success": "Změny uloženy.",
+    "error": "Změny se nepodařilo uložit."
   },
   "detail": {
     "owner": "Vlastník",

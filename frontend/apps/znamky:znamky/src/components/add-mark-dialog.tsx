@@ -18,7 +18,7 @@ import { addLogo, addText } from '@/lib/api'
 
 const TERRITORIES = ['CZ', 'EU'] as const
 
-function parseClasses(value: string): number[] {
+function parseClasses(value: string): Array<number> {
   return Array.from(
     new Set(
       value
@@ -29,7 +29,7 @@ function parseClasses(value: string): number[] {
   )
 }
 
-function parseList(value: string): string[] {
+function parseList(value: string): Array<string> {
   return value.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean)
 }
 
@@ -48,7 +48,7 @@ export function AddMarkDialog({
   const [logoText, setLogoText] = useState('')
   const [nice, setNice] = useState('')
   const [vienna, setVienna] = useState('')
-  const [territories, setTerritories] = useState<string[]>(['CZ', 'EU'])
+  const [territories, setTerritories] = useState<Array<string>>(['CZ', 'EU'])
   const [owner, setOwner] = useState('')
   const [label, setLabel] = useState('')
   const [logo, setLogo] = useState<{ dataUrl: string; mime: string } | null>(null)

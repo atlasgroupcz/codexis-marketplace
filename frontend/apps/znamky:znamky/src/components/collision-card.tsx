@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { Check, ExternalLink, Sparkles } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { SimilarityDonut } from './similarity-donut'
-import { candidateLogoUrl, logoUrl } from '@/lib/api'
-import { formatDate } from '@/lib/format'
+import { LogoZoom } from './logo-zoom'
 import type { Collision } from '@/lib/schemas'
+import { formatDate } from '@/lib/format'
 
 const RISK_CLASSES: Record<string, string> = {
   high: 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200',
@@ -16,21 +16,19 @@ const RISK_CLASSES: Record<string, string> = {
 export function CollisionCard({
   collision,
   index,
-  markUuid,
-  markHasLogo,
+  markLogoDataUrl,
   onConfirm,
 }: {
   collision: Collision
   index: number
-  markUuid: string
-  markHasLogo: boolean
+  markLogoDataUrl: string | null
   onConfirm: (index: number) => void
 }) {
   const { t } = useTranslation()
   const unconfirmed = !collision.confirmed_on
   const s = collision.scores
   const ai = collision.ai_assessment
-  const showLogos = markHasLogo || Boolean(collision.image_path)
+  const showLogos = Boolean(markLogoDataUrl) || Boolean(collision.image_data_url)
 
   const breakdown: Array<{ key: string; value: number }> = [
     { key: 'text_combined', value: s.text_combined },
@@ -40,7 +38,7 @@ export function CollisionCard({
   ]
   if (s.image_phash !== null) breakdown.push({ key: 'image_phash', value: s.image_phash })
 
-  const meta: string[] = []
+  const meta: Array<string> = []
   if (collision.filing_date) meta.push(formatDate(collision.filing_date))
   if (collision.nice_classes.length > 0) meta.push(`${t('list.classes')} ${collision.nice_classes.join(', ')}`)
 
@@ -84,15 +82,15 @@ export function CollisionCard({
 
           {showLogos && (
             <div className="mt-3 flex items-center gap-3">
-              {markHasLogo && (
+              {markLogoDataUrl && (
                 <figure className="text-center">
-                  <img src={logoUrl(markUuid)} alt="" className="bg-background size-14 rounded border object-contain p-1" />
+                  <LogoZoom src={markLogoDataUrl} className="bg-background size-14 rounded border object-contain p-1" />
                   <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.yours')}</figcaption>
                 </figure>
               )}
-              {collision.image_path && (
+              {collision.image_data_url && (
                 <figure className="text-center">
-                  <img src={candidateLogoUrl(markUuid, index)} alt="" className="bg-background size-14 rounded border object-contain p-1" />
+                  <LogoZoom src={collision.image_data_url} className="bg-background size-14 rounded border object-contain p-1" />
                   <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.candidate')}</figcaption>
                 </figure>
               )}

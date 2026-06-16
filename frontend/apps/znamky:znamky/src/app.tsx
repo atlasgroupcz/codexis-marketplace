@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { useQueryState } from 'nuqs'
 import { useTranslation } from 'react-i18next'
-import { Plus, RefreshCw, ShieldCheck } from 'lucide-react'
+import { Plus, RefreshCw, Settings, ShieldCheck } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { uuidParser } from '@/lib/url-state'
 import { useOverview } from '@/hooks/use-overview'
-import { checkAll } from '@/lib/api'
+import { useFetch } from '@/hooks/use-fetch'
+import { checkAll, fetchConfig } from '@/lib/api'
 import { MarkList } from '@/components/mark-list'
 import { MarkDetail } from '@/components/mark-detail'
 import { AddMarkDialog } from '@/components/add-mark-dialog'
+import { SettingsDialog } from '@/components/settings-dialog'
+import { ConfigSetup } from '@/components/config-setup'
 import { EmptyMarks, NoSelection } from '@/components/empty-state'
 import { DetailSkeleton, ListSkeleton } from '@/components/loading-skeleton'
 import { ErrorMessage } from '@/components/error-message'
@@ -17,12 +20,15 @@ import { ErrorMessage } from '@/components/error-message'
 export function App() {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
+  const { data: config, refetch: refetchConfig } = useFetch(fetchConfig)
   const [selectedUuid, setSelectedUuid] = useQueryState('uuid', uuidParser)
   const [addOpen, setAddOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [checking, setChecking] = useState(false)
   const [detailNonce, setDetailNonce] = useState(0)
 
   const marks = data?.marks ?? []
+  const configured = config?.configured ?? null
 
   const handleCheckAll = () => {
     setChecking(true)
@@ -50,30 +56,38 @@ export function App() {
             <ShieldCheck className="size-5" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('app.title')}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {t('app.subtitle')}
-            </p>
+            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">{t('app.title')}</h1>
+            <p className="text-muted-foreground hidden truncate text-xs sm:block">{t('app.subtitle')}</p>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          {marks.length > 0 && (
+        <div className="flex shrink-0 items-center gap-2">
+          {configured && marks.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleCheckAll} disabled={checking} data-testid="check-all">
               <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">{t('app.checkAll')}</span>
             </Button>
           )}
-          <Button size="sm" onClick={() => setAddOpen(true)} data-testid="add-mark">
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">{t('app.add')}</span>
+          {configured && (
+            <Button size="sm" onClick={() => setAddOpen(true)} data-testid="add-mark">
+              <Plus className="size-4" />
+              <span className="hidden sm:inline">{t('app.add')}</span>
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} aria-label={t('settings.title')} data-testid="open-settings">
+            <Settings className="size-5" />
           </Button>
         </div>
       </header>
 
       <main className="min-h-0 flex-1">
-        {loading && !data ? (
+        {configured === null ? (
+          <div className="grid h-full min-h-0 md:grid-cols-[320px_1fr]">
+            <div className="border-r"><ListSkeleton /></div>
+            <div className="hidden md:block"><DetailSkeleton /></div>
+          </div>
+        ) : !configured ? (
+          <ConfigSetup onConfigure={() => setSettingsOpen(true)} />
+        ) : loading && !data ? (
           <div className="grid h-full min-h-0 md:grid-cols-[320px_1fr]">
             <div className="border-r"><ListSkeleton /></div>
             <div className="hidden md:block"><DetailSkeleton /></div>
@@ -108,6 +122,12 @@ export function App() {
         open={addOpen}
         onOpenChange={setAddOpen}
         onAdded={(uuid) => { refetch(); if (uuid) void setSelectedUuid(uuid) }}
+      />
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        config={config}
+        onSaved={() => { refetchConfig(); refetch() }}
       />
       <Toaster position="bottom-right" />
     </div>

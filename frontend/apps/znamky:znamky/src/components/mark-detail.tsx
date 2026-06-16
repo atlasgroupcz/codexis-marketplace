@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, Pencil, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
 import { CollisionCard } from './collision-card'
+import { EditMarkDialog } from './edit-mark-dialog'
+import { LogoZoom } from './logo-zoom'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
-import { useDetail } from '@/hooks/use-detail'
-import { checkSubject, confirmChange, logoUrl, removeMark } from '@/lib/api'
-import { formatRelative } from '@/lib/format'
 import type { Collision } from '@/lib/schemas'
+import { useDetail } from '@/hooks/use-detail'
+import { checkSubject, confirmChange, removeMark } from '@/lib/api'
+import { formatRelative } from '@/lib/format'
 
 export function MarkDetail({
   uuid,
@@ -25,6 +27,7 @@ export function MarkDetail({
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useDetail(uuid)
   const [busy, setBusy] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   if (loading && !data) return <DetailSkeleton />
   if (error) return <div className="p-6"><ErrorMessage message={error.message} onRetry={refetch} /></div>
@@ -33,7 +36,7 @@ export function MarkDetail({
   const mark = data.mark
   const collisions = mark.collisions
   const unconfirmed = collisions.filter((c) => !c.confirmed_on)
-  const sorted: Collision[] = [
+  const sorted: Array<Collision> = [
     ...unconfirmed,
     ...collisions.filter((c) => c.confirmed_on),
   ]
@@ -82,8 +85,8 @@ export function MarkDetail({
         <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack} aria-label={t('common.back')}>
           <ArrowLeft className="size-5" />
         </Button>
-        {mark.has_logo && (
-          <img src={logoUrl(uuid)} alt="" className="bg-background size-9 rounded border object-contain p-0.5" />
+        {mark.logo_data_url && (
+          <LogoZoom src={mark.logo_data_url} className="bg-background size-9 rounded border object-contain p-0.5" />
         )}
         <div className="min-w-0 flex-1">
           <h2 className="font-display truncate text-lg leading-tight">{mark.display_name}</h2>
@@ -95,6 +98,9 @@ export function MarkDetail({
         <Button variant="outline" size="sm" onClick={runCheck} disabled={busy} data-testid="check-mark">
           <RefreshCw className={`size-4 ${busy ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">{t('detail.refresh')}</span>
+        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setEditOpen(true)} disabled={busy} aria-label={t('edit.title')} data-testid="edit-mark">
+          <Pencil className="size-4" />
         </Button>
         <Button variant="ghost" size="icon" onClick={remove} disabled={busy} aria-label={t('detail.remove')}>
           <Trash2 className="size-4" />
@@ -134,8 +140,7 @@ export function MarkDetail({
                   key={`${c.source}:${c.source_id}:${realIndex}`}
                   collision={c}
                   index={realIndex}
-                  markUuid={uuid}
-                  markHasLogo={mark.has_logo}
+                  markLogoDataUrl={mark.logo_data_url}
                   onConfirm={confirmOne}
                 />
               )
@@ -143,6 +148,16 @@ export function MarkDetail({
           </div>
         )}
       </div>
+
+      <EditMarkDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mark={mark}
+        onSaved={() => {
+          refetch()
+          onChanged()
+        }}
+      />
     </div>
   )
 }

@@ -12,6 +12,7 @@ $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/sledovane/<uuid>/state.json, with any
 stored logos beside it — kept on disk so AI tools can read them as context.
 """
 
+import base64
 import datetime
 import json
 import os
@@ -472,6 +473,38 @@ def set_label(mark_uuid: str, label: str) -> dict:
     return state
 
 
+def update_mark(mark_uuid: str, text=None, nice_classes=None, territories=None,
+                owner_name=None, label=None, threshold=None) -> dict:
+    """Update editable fields of a watched mark. Only non-None fields change.
+
+    Does not change the mark's kind or stored logo. A new threshold/classes/
+    territories take effect on the next check (which is when sources are queried).
+    """
+    state = find_by_uuid(mark_uuid)
+    if state is None:
+        raise MarkNotTrackedError("Známka není sledována.")
+    if text is not None:
+        verbal = normalize_text(text)
+        if state.get("kind") == "word" and not verbal:
+            raise InvalidMarkError("Text slovní známky je povinný.")
+        state["text"] = verbal
+    if nice_classes is not None:
+        state["nice_classes"] = parse_nice_classes(nice_classes)
+    if territories is not None:
+        state["territories"] = parse_territories(territories)
+    if owner_name is not None:
+        state["owner_name"] = normalize_text(owner_name)
+    if label is not None:
+        state["label"] = normalize_text(label)
+    if threshold is not None:
+        value = float(threshold)
+        if not (0.0 < value < 1.0):
+            raise InvalidMarkError("Práh shody musí být mezi 0 a 1 (např. 0.6).")
+        state["threshold"] = round(value, 2)
+    _save_state(state)
+    return state
+
+
 def remove(mark_uuid: str) -> None:
     state = find_by_uuid(mark_uuid)
     if state is None:
@@ -570,6 +603,30 @@ def ensure_automation() -> None:
 # ── presentation helpers ─────────────────────────────────────────────────────
 
 
+_MIME_BY_EXT = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
+}
+
+
+def logo_data_url(path) -> Optional[str]:
+    """Read a stored image and return a base64 data: URL, or None.
+
+    Logos are delivered inline (data URL in the JSON payload) rather than as a
+    binary CGI response, because the plugin CGI runtime decodes process stdout as
+    UTF-8 text — which corrupts raw image bytes.
+    """
+    if not path or not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "rb") as f:
+            raw = f.read()
+    except OSError:
+        return None
+    mime = _MIME_BY_EXT.get(os.path.splitext(path)[1].lower(), "image/png")
+    return f"data:{mime};base64," + base64.b64encode(raw).decode("ascii")
+
+
 def display_name(state: dict) -> str:
     if state.get("label"):
         return state["label"]
@@ -600,6 +657,7 @@ def state_to_overview_entry(state: dict) -> dict:
         "display_name": display_name(state),
         "text": state.get("text", ""),
         "has_logo": bool(state.get("logo_path")),
+        "logo_data_url": logo_data_url(state.get("logo_path")),
         "nice_classes": state.get("nice_classes", []),
         "territories": state.get("territories", []),
         "owner_name": state.get("owner_name", ""),
@@ -615,5 +673,8 @@ def state_to_detail_entry(state: dict) -> dict:
     entry = state_to_overview_entry(state)
     entry["threshold"] = state.get("threshold", DEFAULT_THRESHOLD)
     entry["vienna_codes"] = state.get("vienna_codes", [])
-    entry["collisions"] = state.get("collisions", [])
+    entry["collisions"] = [
+        {**c, "image_data_url": logo_data_url(c.get("image_path"))}
+        for c in state.get("collisions", [])
+    ]
     return entry

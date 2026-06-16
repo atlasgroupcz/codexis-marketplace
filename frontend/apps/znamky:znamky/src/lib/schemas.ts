@@ -46,6 +46,7 @@ export const collisionSchema = z.object({
   url_detail: z.string().optional().default(''),
   image_url: z.string().optional().default(''),
   image_path: z.string().nullable().optional().default(null),
+  image_data_url: z.string().nullable().optional().default(null),
   scores: scoresSchema,
   tier: tierSchema,
   ai_assessment: aiAssessmentSchema.nullable().optional().default(null),
@@ -60,6 +61,7 @@ export const markSummarySchema = z.object({
   display_name: z.string(),
   text: z.string().optional().default(''),
   has_logo: z.boolean().optional().default(false),
+  logo_data_url: z.string().nullable().optional().default(null),
   nice_classes: z.array(z.number()).optional().default([]),
   territories: z.array(z.string()).optional().default([]),
   owner_name: z.string().optional().default(''),
@@ -81,9 +83,16 @@ export type MarkDetail = z.infer<typeof markDetailSchema>
 export const overviewResponseSchema = z.object({
   mode: z.literal('overview'),
   generated_at: z.string(),
+  configured: z.boolean().optional().default(true),
   marks: z.array(markSummarySchema),
 })
 export type OverviewResponse = z.infer<typeof overviewResponseSchema>
+
+export const configResponseSchema = z.object({
+  configured: z.boolean(),
+  maskedKey: z.string().optional().default(''),
+})
+export type ConfigResponse = z.infer<typeof configResponseSchema>
 
 export const detailResponseSchema = z.object({
   mode: z.literal('detail'),
