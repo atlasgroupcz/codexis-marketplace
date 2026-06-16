@@ -381,6 +381,30 @@
       }
     },
     {
+      "uuid": "f8f80532-aeed-4d9c-ba2c-9bb781fe030c",
+      "name": "znamky",
+      "description": "Czech + EU trademark watchdog (ÚPV + EUIPO via TMview) — monitor word and figurative marks for similar new filings and registrations with verbal, phonetic and visual similarity scoring",
+      "source": "./plugins/znamky",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Hlídač ochranných známek",
+          "description": "Sledování ochranných známek v rejstřících ÚPV (ČR) a EUIPO (EU) přes TMview — hlídejte slovní i obrazové známky a nechte se upozornit na podobné nové přihlášky a zápisy (slovní, fonetická i obrazová podobnost).",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "european": "Evropa", "trademark": "Ochranné známky", "registry": "Registr" }
+        },
+        "en": {
+          "displayName": "Trademark Watchdog",
+          "description": "Monitor trademarks in the ÚPV (CZ) and EUIPO (EU) registers via TMview — watch word and figurative marks and get alerted to similar new filings and registrations (verbal, phonetic and visual similarity).",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "european": "European Union", "trademark": "Trademarks", "registry": "Registry" }
+        },
+        "sk": {
+          "displayName": "Hliadač ochranných známok",
+          "description": "Sledovanie ochranných známok v registroch ÚPV (ČR) a EUIPO (EÚ) cez TMview — sledujte slovné aj obrazové známky a nechajte sa upozorniť na podobné nové prihlášky a zápisy (slovná, fonetická aj obrazová podobnosť).",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "european": "Európa", "trademark": "Ochranné známky", "registry": "Register" }
+        }
+      }
+    },
+    {
       "uuid": "aff0f8f8-7043-48c6-a83b-7dc11c279fa7",
       "name": "zrsr",
       "description": "Slovak trade register (živnostenský register SR) — company and sole-trader lookup by IČO or name via the RPO open API, trade licences, Živnostenský and Obchodný register data",
