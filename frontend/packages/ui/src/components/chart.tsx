@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import { cn } from "@workspace/ui/lib/utils"
 import type { TooltipValueType } from "recharts"
 
-import { cn } from "@workspace/ui/lib/utils"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -83,7 +83,7 @@ function ChartContainer({
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([, config]) => config.theme ?? config.color
+    ([, itemConfig]) => itemConfig.theme ?? itemConfig.color
   )
 
   if (!colorConfig.length) {
@@ -212,7 +212,7 @@ function ChartTooltipContent({
                   indicator === "dot" && "items-center"
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
+                {formatter && item.value !== undefined && item.name ? (
                   formatter(item.value, item.name, item, index, item.payload)
                 ) : (
                   <>

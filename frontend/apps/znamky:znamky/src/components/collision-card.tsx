@@ -3,8 +3,8 @@ import { Check, ExternalLink, Sparkles } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { SimilarityDonut } from './similarity-donut'
 import { LogoZoom } from './logo-zoom'
-import { formatDate } from '@/lib/format'
 import type { Collision } from '@/lib/schemas'
+import { formatDate } from '@/lib/format'
 
 const RISK_CLASSES: Record<string, string> = {
   high: 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200',
@@ -38,7 +38,7 @@ export function CollisionCard({
   ]
   if (s.image_phash !== null) breakdown.push({ key: 'image_phash', value: s.image_phash })
 
-  const meta: string[] = []
+  const meta: Array<string> = []
   if (collision.filing_date) meta.push(formatDate(collision.filing_date))
   if (collision.nice_classes.length > 0) meta.push(`${t('list.classes')} ${collision.nice_classes.join(', ')}`)
 

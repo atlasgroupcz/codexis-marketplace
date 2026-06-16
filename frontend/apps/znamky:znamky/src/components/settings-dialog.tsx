@@ -13,8 +13,8 @@ import {
 import { Input } from '@workspace/ui/components/input'
 import { Label } from '@workspace/ui/components/label'
 import { toast } from '@workspace/ui/components/sonner'
-import { deleteConfig, saveConfig } from '@/lib/api'
 import type { ConfigResponse } from '@/lib/schemas'
+import { deleteConfig, saveConfig } from '@/lib/api'
 
 export function SettingsDialog({
   open,

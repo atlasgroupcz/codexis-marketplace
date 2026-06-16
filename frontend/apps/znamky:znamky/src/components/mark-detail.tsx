@@ -8,10 +8,10 @@ import { EditMarkDialog } from './edit-mark-dialog'
 import { LogoZoom } from './logo-zoom'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
+import type { Collision } from '@/lib/schemas'
 import { useDetail } from '@/hooks/use-detail'
 import { checkSubject, confirmChange, removeMark } from '@/lib/api'
 import { formatRelative } from '@/lib/format'
-import type { Collision } from '@/lib/schemas'
 
 export function MarkDetail({
   uuid,
@@ -36,7 +36,7 @@ export function MarkDetail({
   const mark = data.mark
   const collisions = mark.collisions
   const unconfirmed = collisions.filter((c) => !c.confirmed_on)
-  const sorted: Collision[] = [
+  const sorted: Array<Collision> = [
     ...unconfirmed,
     ...collisions.filter((c) => c.confirmed_on),
   ]

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Image as ImageIcon, Layers, Type } from 'lucide-react'
 import { RiskDot } from './risk-badge'
-import type { MarkKind, MarkSummary } from '@/lib/schemas'
+import type { MarkSummary } from '@/lib/schemas'
 
 const KIND_ICON = { word: Type, figurative: ImageIcon, combined: Layers }
 
@@ -15,7 +15,7 @@ export function MarkListItem({
   onSelect: (uuid: string) => void
 }) {
   const { t } = useTranslation()
-  const Icon = KIND_ICON[mark.kind as MarkKind] ?? Type
+  const Icon = KIND_ICON[mark.kind]
 
   return (
     <button

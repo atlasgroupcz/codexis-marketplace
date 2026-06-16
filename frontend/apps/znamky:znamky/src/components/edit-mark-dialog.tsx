@@ -12,12 +12,12 @@ import { Input } from '@workspace/ui/components/input'
 import { Button } from '@workspace/ui/components/button'
 import { Label } from '@workspace/ui/components/label'
 import { toast } from '@workspace/ui/components/sonner'
-import { updateMark } from '@/lib/api'
 import type { MarkDetail } from '@/lib/schemas'
+import { updateMark } from '@/lib/api'
 
 const TERRITORIES = ['CZ', 'EU'] as const
 
-function parseClasses(value: string): number[] {
+function parseClasses(value: string): Array<number> {
   return Array.from(
     new Set(
       value
@@ -42,7 +42,7 @@ export function EditMarkDialog({
   const { t } = useTranslation()
   const [text, setText] = useState(mark.text)
   const [nice, setNice] = useState(mark.nice_classes.join(', '))
-  const [territories, setTerritories] = useState<string[]>(mark.territories)
+  const [territories, setTerritories] = useState<Array<string>>(mark.territories)
   const [owner, setOwner] = useState(mark.owner_name)
   const [label, setLabel] = useState(mark.label)
   const [threshold, setThreshold] = useState(mark.threshold)

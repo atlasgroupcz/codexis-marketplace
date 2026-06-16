@@ -78,8 +78,8 @@ export function fetchDetail(uuid: string): Promise<DetailResponse> {
 
 export interface AddTextInput {
   text: string
-  nice_classes: number[]
-  territories: string[]
+  nice_classes: Array<number>
+  territories: Array<string>
   owner_name?: string
   label?: string
 }
@@ -96,9 +96,9 @@ export interface AddLogoInput {
   logo_base64: string
   mime: string
   text?: string
-  nice_classes: number[]
-  territories: string[]
-  vienna_codes?: string[]
+  nice_classes: Array<number>
+  territories: Array<string>
+  vienna_codes?: Array<string>
   owner_name?: string
   label?: string
 }
@@ -140,8 +140,8 @@ export function setLabel(uuid: string, label: string): Promise<ActionResponse> {
 
 export interface UpdateMarkInput {
   text?: string
-  nice_classes?: number[]
-  territories?: string[]
+  nice_classes?: Array<number>
+  territories?: Array<string>
   owner_name?: string
   label?: string
   threshold?: number
