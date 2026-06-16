@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Trash2, Plus, X } from 'lucide-react'
+import { ArrowLeft, FileText, Scale, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
-import { Badge } from '@workspace/ui/components/badge'
-import { useTopicDetail } from '@/hooks/use-topic-detail'
-import { postAction } from '@/lib/api'
-import { formatDate } from '@/lib/format'
+import { Textarea } from '@workspace/ui/components/textarea'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { Card, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card'
+import { ItemGroup } from '@workspace/ui/components/item'
+import { FeedItem } from './feed-item'
+import { NoReports } from './empty-state'
 import { LoadingSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
+import { useTopicDetail } from '@/hooks/use-topic-detail'
+import { postAction } from '@/lib/api'
+import { formatDate, formatRelative } from '@/lib/format'
 
 interface TopicDetailProps {
   uuid: string
@@ -18,7 +24,8 @@ interface TopicDetailProps {
 export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useTopicDetail(uuid)
-  const [noteText, setNoteText] = useState('')
+  const [noteDraft, setNoteDraft] = useState<string | null>(null)
+  const [savingNotes, setSavingNotes] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [removing, setRemoving] = useState(false)
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -30,11 +37,22 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
   }, [])
 
   if (loading && !data) return <LoadingSkeleton />
-  if (error) return <ErrorMessage error={error} onRetry={refetch} />
+  if (error) {
+    return (
+      <div className="p-6">
+        <ErrorMessage error={error} onRetry={refetch} />
+      </div>
+    )
+  }
   if (!data) return null
 
   const topic = data.topic
-  const reports = data.reports
+  const notesText = topic.notes.join('\n')
+  const noteValue = noteDraft ?? notesText
+  const notesDirty = noteValue !== notesText
+  const reports = [...data.reports].sort((a, b) =>
+    (a.checked_at ?? '') < (b.checked_at ?? '') ? 1 : -1,
+  )
 
   const handleDelete = () => {
     if (!confirmRemove) {
@@ -45,30 +63,56 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
     if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
     setRemoving(true)
     postAction({ action: 'delete', uuid })
-      .then(() => onBack())
-      .catch(() => setRemoving(false))
+      .then(() => {
+        toast.success(t('judikatura.removed'))
+        onBack()
+      })
+      .catch((e: unknown) => {
+        toast.error(e instanceof Error ? e.message : String(e))
+        setRemoving(false)
+      })
   }
 
-  const handleAddNote = async () => {
-    if (!noteText.trim()) return
-    await postAction({ action: 'note_add', uuid, text: noteText.trim() })
-    setNoteText('')
-    refetch()
-  }
-
-  const handleRemoveNote = async (index: number) => {
-    await postAction({ action: 'note_remove', uuid, index })
-    refetch()
+  const handleSaveNotes = async () => {
+    setSavingNotes(true)
+    try {
+      for (let i = topic.notes.length - 1; i >= 0; i--) {
+        await postAction({ action: 'note_remove', uuid, index: i })
+      }
+      const text = noteValue.trim()
+      if (text) await postAction({ action: 'note_add', uuid, text })
+      setNoteDraft(null)
+      toast.success(t('judikatura.noteSaved'))
+      refetch()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSavingNotes(false)
+    }
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="size-4" />
-          {t('judikatura.back')}
-        </Button>
+    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
+            <ArrowLeft className="size-4" />
+            <span className="hidden sm:inline">{t('judikatura.back')}</span>
+          </Button>
+          <span className="bg-secondary text-primary ring-brand-100 hidden size-9 shrink-0 items-center justify-center rounded-xl ring-1 sm:flex">
+            <Scale className="size-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
+              {topic.name}
+            </h1>
+            <p className="text-muted-foreground hidden truncate text-xs sm:block">
+              {topic.last_check_at
+                ? `${t('judikatura.lastCheck')}: ${formatDate(topic.last_check_at)}`
+                : t('judikatura.areasCount', { count: topic.areas.length })}
+            </p>
+          </div>
+        </div>
         <Button
           variant={confirmRemove ? 'destructive' : 'outline'}
           size="sm"
@@ -77,127 +121,87 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
           data-testid="delete-topic"
         >
           <Trash2 className="size-4" />
-          {confirmRemove ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
+          <span className="hidden sm:inline">
+            {confirmRemove ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
+          </span>
         </Button>
-      </div>
+      </header>
 
-      {/* Title */}
-      <div>
-        <h1 className="text-xl font-semibold">{topic.name}</h1>
-        <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{t('judikatura.trackedSince')}: {topic.created_at ? formatDate(topic.created_at) : '-'}</span>
-          {topic.last_check_at && (
-            <>
-              <span>&middot;</span>
-              <span>{t('judikatura.lastCheck')}: {formatDate(topic.last_check_at)}</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Areas */}
-      {topic.areas.length > 0 && (
-        <div>
-          <h2 className="mb-3 text-sm font-semibold">{t('judikatura.areas')}</h2>
-          <div className="space-y-2">
-            {topic.areas.map((area) => (
-              <div key={area.name} className="rounded-lg border-l-4 border-l-primary/40 bg-muted/30 px-4 py-3">
-                <div className="font-medium text-sm">{area.name}</div>
-                {area.baseline_summary && (
-                  <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                    {area.baseline_summary}
-                  </p>
-                )}
-                {!area.baseline_summary && (
-                  <p className="mt-1 text-xs italic text-muted-foreground/60">
-                    {t('judikatura.baseline')}: -
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Notes */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold">{t('judikatura.notes')}</h2>
-        {topic.notes.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {topic.notes.map((note, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs shadow-sm"
-              >
-                {note}
-                <button
-                  type="button"
-                  className="ml-1 text-muted-foreground hover:text-destructive"
-                  onClick={() => void handleRemoveNote(i)}
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void handleAddNote()}
-            placeholder={t('judikatura.notePlaceholder')}
-            className="flex-1 rounded-md border bg-background px-3 py-1.5 text-sm"
-          />
-          <Button variant="outline" size="sm" onClick={() => void handleAddNote()}>
-            <Plus className="size-4" />
-            {t('judikatura.addNote')}
-          </Button>
-        </div>
-      </div>
-
-      {/* Reports */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold">{t('judikatura.reports')}</h2>
-        {reports.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {t('judikatura.noReports')}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {[...reports].reverse().map((report) => (
-              <button
-                key={report.report_id}
-                type="button"
-                className="bg-card text-card-foreground flex w-full items-center gap-4 rounded-xl border p-4 text-left shadow-sm transition-colors hover:bg-accent/50"
-                data-testid={`report-card-${report.report_id}`}
-                onClick={() => onSelectReport(report.report_id)}
-              >
-                <div className="flex-1 space-y-1">
-                  <div className="font-semibold">
-                    {report.checked_at ? formatDate(report.checked_at) : report.report_id}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{t('judikatura.foundCount', { count: report.found_count })}</span>
-                    {report.period_from && report.period_to && (
-                      <>
-                        <span>&middot;</span>
-                        <span>{formatDate(report.period_from)} – {formatDate(report.period_to)}</span>
-                      </>
-                    )}
-                  </div>
+      <main className="min-h-0 flex-1">
+        <ScrollArea className="h-full">
+          <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+            {topic.areas.length > 0 && (
+              <section className="space-y-2">
+                <h2 className="text-sm font-medium">{t('judikatura.areas')}</h2>
+                <div className="space-y-3">
+                  {topic.areas.map((area) => (
+                    <Card key={area.name} className="gap-2 py-4">
+                      <CardHeader className="gap-1 px-4">
+                        <CardTitle className="text-sm">{area.name}</CardTitle>
+                        <CardDescription className="leading-relaxed whitespace-pre-line">
+                          {area.baseline_summary ?? `${t('judikatura.baseline')}: -`}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ))}
                 </div>
-                {report.confirmed_on ? (
-                  <Badge variant="outline">{t('judikatura.confirmed')}</Badge>
-                ) : (
-                  <Badge variant="destructive">{t('judikatura.notConfirmed')}</Badge>
-                )}
-              </button>
-            ))}
+              </section>
+            )}
+
+            <section className="space-y-2">
+              <h2 className="text-sm font-medium">{t('judikatura.notes')}</h2>
+              <Textarea
+                value={noteValue}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                placeholder={t('judikatura.notePlaceholder')}
+                className="min-h-24"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => void handleSaveNotes()}
+                  disabled={!notesDirty || savingNotes}
+                >
+                  {t('judikatura.saveNote')}
+                </Button>
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="font-display text-lg">{t('judikatura.reports')}</h2>
+              {reports.length === 0 ? (
+                <NoReports />
+              ) : (
+                <ItemGroup className="gap-1.5">
+                  {reports.map((report) => {
+                    const unread = !report.confirmed_on
+                    const period =
+                      report.period_from && report.period_to
+                        ? ` · ${formatDate(report.period_from)} – ${formatDate(report.period_to)}`
+                        : ''
+                    return (
+                      <FeedItem
+                        key={report.report_id}
+                        unread={unread}
+                        icon={
+                          <FileText className={unread ? 'text-primary' : 'text-muted-foreground'} />
+                        }
+                        title={t('judikatura.report')}
+                        description={`${t('judikatura.foundCount', { count: report.found_count })}${period}`}
+                        date={report.checked_at ? formatRelative(report.checked_at) : report.report_id}
+                        dateTitle={report.checked_at ? formatDate(report.checked_at) : undefined}
+                        onClick={() => onSelectReport(report.report_id)}
+                      />
+                    )
+                  })}
+                </ItemGroup>
+              )}
+            </section>
           </div>
-        )}
-      </div>
+        </ScrollArea>
+      </main>
+
+      <Toaster position="bottom-right" />
     </div>
   )
 }

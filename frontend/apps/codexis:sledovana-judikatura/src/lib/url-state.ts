@@ -5,3 +5,5 @@ export const viewParser = parseAsStringLiteral(['list', 'detail', 'report'] as c
 export const uuidParser = parseAsString
 
 export const reportParser = parseAsString
+
+export const topicFilterParser = parseAsString

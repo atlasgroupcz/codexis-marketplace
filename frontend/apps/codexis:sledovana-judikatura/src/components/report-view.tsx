@@ -1,12 +1,30 @@
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Check, ExternalLink, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Badge } from '@workspace/ui/components/badge'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@workspace/ui/components/table'
+import { LoadingSkeleton } from './loading-skeleton'
+import { ErrorMessage } from './error-message'
 import { useReport } from '@/hooks/use-report'
 import { postAction } from '@/lib/api'
 import { formatDate } from '@/lib/format'
-import { LoadingSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
 
 interface ReportViewProps {
   uuid: string
@@ -14,223 +32,240 @@ interface ReportViewProps {
   onBack: () => void
 }
 
+function codexisUrl(codexisId: string): string {
+  return `https://next.codexis.cz/doc/${codexisId}`
+}
+
 export function ReportView({ uuid, reportId, onBack }: ReportViewProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useReport(uuid, reportId)
 
   if (loading && !data) return <LoadingSkeleton />
-  if (error) return <ErrorMessage error={error} onRetry={refetch} />
+  if (error) {
+    return (
+      <div className="p-6">
+        <ErrorMessage error={error} onRetry={refetch} />
+      </div>
+    )
+  }
   if (!data) return null
 
   const topic = data.topic
   const report = data.report
 
   const handleConfirm = async () => {
-    await postAction({ action: 'confirm_report', uuid, report_id: reportId })
-    refetch()
+    try {
+      await postAction({ action: 'confirm_report', uuid, report_id: reportId })
+      toast.success(t('judikatura.confirmed'))
+      refetch()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    }
   }
 
-  // Collect all documents across areas for the table
   const allDocs = report.areas.flatMap((area) =>
     area.documents.map((doc) => ({ ...doc, areaName: area.name })),
   )
 
+  const summaryTabs = [
+    { value: 'lawyer', label: t('judikatura.summaryForLawyer'), text: report.summary_for_lawyer },
+    { value: 'hr', label: t('judikatura.summaryForHr'), text: report.summary_for_hr },
+    { value: 'en', label: t('judikatura.executiveSummary'), text: report.summary_en },
+  ].filter((tab): tab is { value: string; label: string; text: string } => Boolean(tab.text))
+
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="size-4" />
-          {t('judikatura.backToTopic')}
-        </Button>
+    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
+            <ArrowLeft className="size-4" />
+            <span className="hidden sm:inline">{t('judikatura.back')}</span>
+          </Button>
+          <span className="bg-secondary text-primary ring-brand-100 hidden size-9 shrink-0 items-center justify-center rounded-xl ring-1 sm:flex">
+            <Scale className="size-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
+              {t('judikatura.report')} {report.checked_at ? formatDate(report.checked_at) : reportId}
+            </h1>
+            <p className="text-muted-foreground hidden truncate text-xs sm:block">{topic.name}</p>
+          </div>
+        </div>
         {report.confirmed_on ? (
-          <Badge variant="outline">
-            {t('judikatura.confirmed')} {formatDate(report.confirmed_on)}
+          <Badge variant="outline" className="shrink-0">
+            <Check className="size-3.5" />
+            {t('judikatura.confirmed')}
           </Badge>
         ) : (
           <Button size="sm" onClick={() => void handleConfirm()}>
             {t('judikatura.confirmReport')}
           </Button>
         )}
-      </div>
+      </header>
 
-      {/* Title */}
-      <div>
-        <h1 className="text-xl font-semibold">
-          {t('judikatura.report')} {report.checked_at ? formatDate(report.checked_at) : reportId}
-        </h1>
-        <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{topic.name}</span>
-          <span>&middot;</span>
-          <span>
-            {t('judikatura.period')}: {report.period_from ? formatDate(report.period_from) : '-'}
-            {' \u2013 '}
-            {report.period_to ? formatDate(report.period_to) : '-'}
-          </span>
-          <span>&middot;</span>
-          <span>{t('judikatura.foundCount', { count: report.found_count })}</span>
-        </div>
-      </div>
+      <main className="min-h-0 flex-1">
+        <ScrollArea className="h-full">
+          <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+            <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <span>
+                {t('judikatura.period')}: {report.period_from ? formatDate(report.period_from) : '-'}
+                {' – '}
+                {report.period_to ? formatDate(report.period_to) : '-'}
+              </span>
+              <span className="text-border">·</span>
+              <span>{t('judikatura.foundCount', { count: report.found_count })}</span>
+            </div>
 
-      {/* Overall summary */}
-      {report.overall_summary && (
-        <div className="rounded-lg border-l-4 border-primary bg-primary/5 p-4 text-sm leading-relaxed">
-          {report.overall_summary}
-        </div>
-      )}
-
-      {/* Decisions table */}
-      {allDocs.length > 0 && (
-        <div>
-          <h2 className="mb-3 font-semibold">{t('judikatura.overviewTable')}</h2>
-          <div className="overflow-x-auto rounded-xl border shadow-sm" data-testid="decisions-table">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium">{t('judikatura.date')}</th>
-                  <th className="px-4 py-3 text-left font-medium">{t('judikatura.caseNumber')}</th>
-                  <th className="px-4 py-3 text-left font-medium">{t('judikatura.court')}</th>
-                  <th className="px-4 py-3 text-left font-medium">{t('judikatura.area')}</th>
-                  <th className="px-4 py-3 text-left font-medium">{t('judikatura.interpretation')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allDocs.map((doc, i) => (
-                  <tr key={i} className="border-b last:border-0 even:bg-muted/20">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {doc.issued_on ? formatDate(doc.issued_on) : '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {doc.codexisId ? (
-                        <a
-                          href={`https://next.codexis.cz/doc/${doc.codexisId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {doc.spZn || doc.title}
-                        </a>
-                      ) : (
-                        <span className="font-medium">{doc.spZn || doc.title}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{doc.court}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{doc.areaName}</td>
-                    <td className="px-4 py-3">
-                      {doc.changes_established_view ? (
-                        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                          {t('judikatura.changesView')}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{t('judikatura.confirmsView')}</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Detail by area */}
-      {report.areas.length > 0 && (
-        <div>
-          <h2 className="mb-3 font-semibold">{t('judikatura.detailByArea')}</h2>
-          <div className="space-y-4">
-            {report.areas.map((area) => (
-              <div key={area.name} className="rounded-xl border bg-card shadow-sm">
-                <div className="border-b px-5 py-3">
-                  <h3 className="font-semibold">{area.name}</h3>
-                  {area.area_summary && (
-                    <p className="mt-1 text-sm text-muted-foreground">{area.area_summary}</p>
-                  )}
-                </div>
-                <div className="divide-y">
-                  {area.documents.map((doc, i) => (
-                    <div key={i} className="px-5 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="font-medium">
-                            {doc.codexisId ? (
-                              <a
-                                href={`https://next.codexis.cz/doc/${doc.codexisId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                {doc.spZn} — {doc.court}
-                                <ExternalLink className="ml-1 inline size-3" />
-                              </a>
-                            ) : (
-                              <>{doc.spZn} — {doc.court}</>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {doc.doc_type && <span>{doc.doc_type}</span>}
-                            {doc.issued_on && (
-                              <>
-                                <span>&middot;</span>
-                                <span>{formatDate(doc.issued_on)}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        {doc.changes_established_view ? (
-                          <Badge className="shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                            {t('judikatura.changesView')}
-                          </Badge>
-                        ) : (
-                          <span className="shrink-0 text-xs text-muted-foreground">{t('judikatura.confirmsView')}</span>
-                        )}
-                      </div>
-                      {doc.legal_sentence && (
-                        <p className="mt-3 rounded-md bg-muted/30 px-3 py-2 text-xs italic text-muted-foreground">
-                          {doc.legal_sentence}
-                        </p>
-                      )}
-                      {doc.summary && (
-                        <p className="mt-3 text-sm leading-relaxed">{doc.summary}</p>
-                      )}
-                      {doc.practical_conclusion && (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          <strong>{t('judikatura.practical')}:</strong> {doc.practical_conclusion}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            {report.overall_summary && (
+              <div className="border-l-primary bg-secondary/40 rounded-r-lg border-l-4 p-4 text-sm leading-relaxed">
+                {report.overall_summary}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* Summaries */}
-      {report.summary_for_lawyer && (
-        <div>
-          <h2 className="mb-2 font-semibold">{t('judikatura.summaryForLawyer')}</h2>
-          <div className="rounded-lg border-l-4 border-primary bg-primary/5 p-4 text-sm leading-relaxed">
-            {report.summary_for_lawyer}
+            <Tabs defaultValue="overview">
+              <TabsList variant="line" className="w-full justify-start gap-4">
+                <TabsTrigger value="overview" className="flex-none px-0">
+                  {t('judikatura.overviewTable')}
+                </TabsTrigger>
+                {summaryTabs.map((tab) => (
+                  <TabsTrigger key={tab.value} value={tab.value} className="flex-none px-0">
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6 pt-4">
+                {allDocs.length > 0 && (
+                  <div className="rounded-xl border" data-testid="decisions-table">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>{t('judikatura.date')}</TableHead>
+                          <TableHead>{t('judikatura.caseNumber')}</TableHead>
+                          <TableHead>{t('judikatura.court')}</TableHead>
+                          <TableHead>{t('judikatura.area')}</TableHead>
+                          <TableHead>{t('judikatura.interpretation')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {allDocs.map((doc, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-muted-foreground">
+                              {doc.issued_on ? formatDate(doc.issued_on) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {doc.codexisId ? (
+                                <a
+                                  href={codexisUrl(doc.codexisId)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary font-medium hover:underline"
+                                >
+                                  {doc.spZn || doc.title}
+                                </a>
+                              ) : (
+                                <span className="font-medium">{doc.spZn || doc.title}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{doc.court}</TableCell>
+                            <TableCell className="text-muted-foreground">{doc.areaName}</TableCell>
+                            <TableCell>
+                              {doc.changes_established_view ? (
+                                <Badge className="bg-amber-100 text-amber-800">
+                                  {t('judikatura.changesView')}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">
+                                  {t('judikatura.confirmsView')}
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {report.areas.map((area) => (
+                  <Card key={area.name} className="gap-0 py-0">
+                    <CardHeader className="gap-1 border-b py-4">
+                      <CardTitle className="font-display text-base">{area.name}</CardTitle>
+                      {area.area_summary && <CardDescription>{area.area_summary}</CardDescription>}
+                    </CardHeader>
+                    <CardContent className="divide-y px-0">
+                      {area.documents.map((doc, i) => (
+                        <div key={i} className="px-6 py-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {doc.codexisId ? (
+                                  <a
+                                    href={codexisUrl(doc.codexisId)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                  >
+                                    {doc.spZn} — {doc.court}
+                                    <ExternalLink className="ml-1 inline size-3" />
+                                  </a>
+                                ) : (
+                                  <>
+                                    {doc.spZn} — {doc.court}
+                                  </>
+                                )}
+                              </div>
+                              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                                {doc.doc_type && <span>{doc.doc_type}</span>}
+                                {doc.issued_on && (
+                                  <>
+                                    <span className="text-border">·</span>
+                                    <span>{formatDate(doc.issued_on)}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            {doc.changes_established_view ? (
+                              <Badge className="shrink-0 bg-amber-100 text-amber-800">
+                                {t('judikatura.changesView')}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground shrink-0 text-xs">
+                                {t('judikatura.confirmsView')}
+                              </span>
+                            )}
+                          </div>
+                          {doc.legal_sentence && (
+                            <p className="bg-muted/30 text-muted-foreground mt-3 rounded-md px-3 py-2 text-xs italic">
+                              {doc.legal_sentence}
+                            </p>
+                          )}
+                          {doc.summary && <p className="mt-3 text-sm leading-relaxed">{doc.summary}</p>}
+                          {doc.practical_conclusion && (
+                            <p className="text-muted-foreground mt-2 text-xs">
+                              <strong>{t('judikatura.practical')}:</strong> {doc.practical_conclusion}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+
+              {summaryTabs.map((tab) => (
+                <TabsContent key={tab.value} value={tab.value} className="pt-4">
+                  <div className="border-l-primary bg-secondary/30 rounded-r-lg border-l-4 p-4 text-sm leading-relaxed whitespace-pre-line">
+                    {tab.text}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
           </div>
-        </div>
-      )}
-      {report.summary_for_hr && (
-        <div>
-          <h2 className="mb-2 font-semibold">{t('judikatura.summaryForHr')}</h2>
-          <div className="rounded-lg border-l-4 border-blue-400 bg-blue-50 p-4 text-sm leading-relaxed dark:border-blue-600 dark:bg-blue-950/30">
-            {report.summary_for_hr}
-          </div>
-        </div>
-      )}
-      {report.summary_en && (
-        <div>
-          <h2 className="mb-2 font-semibold">{t('judikatura.executiveSummary')}</h2>
-          <div className="rounded-lg border-l-4 border-gray-400 bg-gray-50 p-4 text-sm leading-relaxed dark:border-gray-600 dark:bg-gray-950/30">
-            {report.summary_en}
-          </div>
-        </div>
-      )}
+        </ScrollArea>
+      </main>
+
+      <Toaster position="bottom-right" />
     </div>
   )
 }

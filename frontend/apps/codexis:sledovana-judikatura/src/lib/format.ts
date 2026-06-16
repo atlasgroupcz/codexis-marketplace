@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns'
+import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { cs, enUS, sk } from 'date-fns/locale'
 import type { Locale } from 'date-fns'
 import i18n from '@/lib/i18n'
@@ -22,6 +22,14 @@ export function formatDate(isoString: string): string {
 
 export function formatDateTime(isoString: string): string {
   return format(parseISO(isoString), 'Pp', {
+    locale: getDateFnsLocale(i18n.language),
+  })
+}
+
+/** Relative "time since" (e.g. "před 3 dny"), for feed timestamps. */
+export function formatRelative(isoString: string): string {
+  return formatDistanceToNow(parseISO(isoString), {
+    addSuffix: true,
     locale: getDateFnsLocale(i18n.language),
   })
 }

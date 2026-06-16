@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Info, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeft, BookMarked, FileText, Hash, Info, Link2, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
-import { Badge } from '@workspace/ui/components/badge'
+import { Input } from '@workspace/ui/components/input'
+import { Textarea } from '@workspace/ui/components/textarea'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { cn } from '@workspace/ui/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { TrackingTypeBadge } from './tracking-type-badge'
 import { ChangeItem } from './change-item'
+import { NoChanges } from './empty-state'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { useDocumentDetail } from '@/hooks/use-document-detail'
@@ -24,7 +29,8 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
-  const [newNote, setNewNote] = useState('')
+  const [noteDraft, setNoteDraft] = useState<string | null>(null)
+  const [savingNotes, setSavingNotes] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -35,16 +41,22 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
   if (loading && !data) {
     return <DetailSkeleton />
   }
-
   if (error) {
-    return <ErrorMessage message={error.message} onRetry={refetch} />
+    return (
+      <div className="p-6">
+        <ErrorMessage message={error.message} onRetry={refetch} />
+      </div>
+    )
   }
-
   if (!data) {
     return null
   }
 
   const { document } = data
+  const notesText = document.user_notes.join('\n')
+  const noteValue = noteDraft ?? notesText
+  const notesDirty = noteValue !== notesText
+  const ordered = [...document.changes].sort((a, b) => (a.detected_on < b.detected_on ? 1 : -1))
 
   const handleRemove = (): void => {
     if (!confirmRemove) {
@@ -55,17 +67,54 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
     if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
     setRemoving(true)
     postAction('remove', uuid)
-      .then(() => onBack())
-      .catch(() => setRemoving(false))
+      .then(() => {
+        toast.success(t('followedDocs.removed'))
+        onBack()
+      })
+      .catch((e: unknown) => {
+        toast.error(e instanceof Error ? e.message : String(e))
+        setRemoving(false)
+      })
+  }
+
+  const handleSaveNotes = async (): Promise<void> => {
+    setSavingNotes(true)
+    try {
+      for (let i = document.user_notes.length - 1; i >= 0; i--) {
+        await postNoteAction('note_remove', uuid, { index: i })
+      }
+      const text = noteValue.trim()
+      if (text) await postNoteAction('note_add', uuid, { text })
+      setNoteDraft(null)
+      toast.success(t('followedDocs.noteSaved'))
+      refetch()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSavingNotes(false)
+    }
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="size-4" />
-          {t('followedDocs.back')}
-        </Button>
+    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
+            <ArrowLeft className="size-4" />
+            <span className="hidden sm:inline">{t('followedDocs.back')}</span>
+          </Button>
+          <span className="bg-secondary text-primary ring-brand-100 hidden size-9 shrink-0 items-center justify-center rounded-xl ring-1 sm:flex">
+            <BookMarked className="size-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
+              {document.name}
+            </h1>
+            <p className="text-muted-foreground hidden truncate text-xs sm:block">
+              {t('followedDocs.trackedSince', { date: formatDate(document.added_on) })}
+            </p>
+          </div>
+        </div>
         <Button
           variant={confirmRemove ? 'destructive' : 'outline'}
           size="sm"
@@ -74,219 +123,213 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
           data-testid="remove-document"
         >
           <Trash2 className="size-4" />
-          {confirmRemove ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
+          <span className="hidden sm:inline">
+            {confirmRemove ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
+          </span>
         </Button>
-      </div>
+      </header>
 
-      <div className="space-y-2">
-        <h1 className="text-xl font-semibold">{document.name}</h1>
-        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
-          <span>{document.codexisId}</span>
-          <span>&middot;</span>
-          <span>
-            {t('followedDocs.trackedSince', { date: formatDate(document.added_on) })}
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <TrackingTypeBadge type={document.tracking_type} />
-          <Badge variant="secondary">
-            {t('followedDocs.total', { count: document.total_changes })}
-          </Badge>
-          {document.unconfirmed_changes > 0 && (
-            <Badge variant="destructive">
-              {t('followedDocs.unconfirmed', { count: document.unconfirmed_changes })}
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Group management */}
-      <div className="space-y-2">
-        <h2 className="text-sm font-medium">{t('followedDocs.groups')}</h2>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {document.groups.map((g) => (
-            <Badge key={g.id} variant="outline" className="gap-1 pr-1">
-              {g.name}
-              <button
-                type="button"
-                className="text-muted-foreground hover:text-destructive rounded-full p-0.5"
-                onClick={() => {
-                  postGroupAction('group_remove', {
-                    codexisId: document.codexisId,
-                    groupId: g.id,
-                  }).then(() => refetch())
-                }}
-                title={t('followedDocs.removeFromGroup')}
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          ))}
-          <button
-            type="button"
-            className="text-muted-foreground hover:text-foreground rounded-full border border-dashed p-1 transition-colors"
-            onClick={() => setShowGroupPicker(!showGroupPicker)}
-            title={t('followedDocs.addToGroup')}
-          >
-            <Plus className="size-3" />
-          </button>
-        </div>
-        {showGroupPicker && (
-          <div className="space-y-2 rounded-lg border p-3">
-            {/* Existing groups not yet assigned */}
-            {data.groups
-              .filter((g) => !document.groups.some((dg) => dg.id === g.id))
-              .map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  className="hover:bg-accent block w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors"
-                  onClick={() => {
-                    postGroupAction('group_add', {
-                      codexisId: document.codexisId,
-                      groupName: g.name,
-                    }).then(() => {
-                      setShowGroupPicker(false)
-                      refetch()
-                    })
-                  }}
-                >
-                  {g.name}
-                </button>
-              ))}
-            {/* Create new group */}
-            <div className="flex items-center gap-2 border-t pt-2">
-              <input
-                type="text"
-                className="border-input bg-background flex-1 rounded-md border px-3 py-1 text-sm"
-                placeholder={t('followedDocs.groupName')}
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newGroupName.trim()) {
-                    postGroupAction('group_add', {
-                      codexisId: document.codexisId,
-                      groupName: newGroupName.trim(),
-                    }).then(() => {
-                      setNewGroupName('')
-                      setShowGroupPicker(false)
-                      refetch()
-                    })
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!newGroupName.trim()}
-                onClick={() => {
-                  if (!newGroupName.trim()) return
-                  postGroupAction('group_add', {
-                    codexisId: document.codexisId,
-                    groupName: newGroupName.trim(),
-                  }).then(() => {
-                    setNewGroupName('')
-                    setShowGroupPicker(false)
-                    refetch()
-                  })
-                }}
-              >
-                {t('followedDocs.createGroup')}
-              </Button>
+      <main className="min-h-0 flex-1">
+        <ScrollArea className="h-full">
+          <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+              <TrackingTypeBadge type={document.tracking_type} />
+              <span>{t('followedDocs.total', { count: document.total_changes })}</span>
+              {document.unconfirmed_changes > 0 && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="text-primary font-medium">
+                    {t('followedDocs.unconfirmed', { count: document.unconfirmed_changes })}
+                  </span>
+                </>
+              )}
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Notes */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium">{t('followedDocs.notes')}</h2>
-          <span className="text-muted-foreground flex items-center gap-1 text-xs">
-            <Info className="size-3" />
-            {t('followedDocs.notesHint')}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            className="border-input bg-background flex-1 rounded-md border px-3 py-1 text-sm"
-            placeholder={t('followedDocs.notePlaceholder')}
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newNote.trim()) {
-                postNoteAction('note_add', uuid, { text: newNote.trim() }).then(() => {
-                  setNewNote('')
-                  refetch()
-                })
-              }
-            }}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!newNote.trim()}
-            onClick={() => {
-              if (!newNote.trim()) return
-              postNoteAction('note_add', uuid, { text: newNote.trim() }).then(() => {
-                setNewNote('')
-                refetch()
-              })
-            }}
-          >
-            {t('followedDocs.addNote')}
-          </Button>
-        </div>
-        {document.user_notes.length > 0 && (
-          <div className="space-y-1">
-            {document.user_notes.map((note, i) => (
-              <div key={i} className="bg-muted/50 flex items-start gap-2 rounded-md px-3 py-1.5 text-sm">
-                <span className="flex-1">{note}</span>
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-destructive mt-0.5 shrink-0 rounded-full p-0.5"
-                  onClick={() => {
-                    postNoteAction('note_remove', uuid, { index: i }).then(() => refetch())
-                  }}
+            {/* Groups */}
+            <section className="space-y-2">
+              <h2 className="text-sm font-medium">{t('followedDocs.groups')}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                {document.groups.map((g) => (
+                  <span
+                    key={g.id}
+                    className="border-input bg-background inline-flex h-8 items-center gap-1 rounded-full border pr-1.5 pl-3 text-sm"
+                  >
+                    {g.name}
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive rounded-full p-1"
+                      onClick={() =>
+                        void postGroupAction('group_remove', {
+                          codexisId: document.codexisId,
+                          groupId: g.id,
+                        }).then(refetch)
+                      }
+                      title={t('followedDocs.removeFromGroup')}
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </span>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground rounded-full border border-dashed"
+                  onClick={() => setShowGroupPicker(!showGroupPicker)}
                 >
-                  <X className="size-3" />
-                </button>
+                  <Plus className="size-3" />
+                  {t('followedDocs.addToGroup')}
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              {showGroupPicker && (
+                <div className="space-y-2 rounded-lg border p-3">
+                  {data.groups
+                    .filter((g) => !document.groups.some((dg) => dg.id === g.id))
+                    .map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        className="hover:bg-accent block w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors"
+                        onClick={() =>
+                          void postGroupAction('group_add', {
+                            codexisId: document.codexisId,
+                            groupName: g.name,
+                          }).then(() => {
+                            setShowGroupPicker(false)
+                            refetch()
+                          })
+                        }
+                      >
+                        {g.name}
+                      </button>
+                    ))}
+                  <div className="flex items-center gap-2 border-t pt-2">
+                    <Input
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newGroupName.trim()) {
+                          void postGroupAction('group_add', {
+                            codexisId: document.codexisId,
+                            groupName: newGroupName.trim(),
+                          }).then(() => {
+                            setNewGroupName('')
+                            setShowGroupPicker(false)
+                            refetch()
+                          })
+                        }
+                      }}
+                      placeholder={t('followedDocs.groupName')}
+                      className="h-8 flex-1"
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
 
-      {document.parts.length > 0 && (
-        <div className="space-y-1">
-          <h2 className="text-sm font-medium">{t('followedDocs.trackedParts')}</h2>
-          <div className="flex flex-wrap gap-1">
-            {document.parts.map((part) => (
-              <Badge key={part.partId} variant="outline">{part.label}</Badge>
-            ))}
-          </div>
-        </div>
-      )}
+            {/* Notes — one continuous note */}
+            <section className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-medium">{t('followedDocs.notes')}</h2>
+                <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                  <Info className="size-3" />
+                  {t('followedDocs.notesHint')}
+                </span>
+              </div>
+              <Textarea
+                value={noteValue}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                placeholder={t('followedDocs.notePlaceholder')}
+                className="min-h-24"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => void handleSaveNotes()}
+                  disabled={!notesDirty || savingNotes}
+                >
+                  {t('followedDocs.saveNote')}
+                </Button>
+              </div>
+            </section>
 
-      <div className="space-y-3">
-        <h2 className="text-sm font-medium">
-          {t('followedDocs.changes', { count: document.changes.length })}
-        </h2>
-        {document.changes.length > 0 ? (
-          document.changes.map((change, index) => (
-            <ChangeItem
-              key={index}
-              change={change}
-              changeIndex={index}
-              uuid={uuid}
-              onMutate={refetch}
-            />
-          ))
-        ) : (
-          <p className="text-muted-foreground text-sm">{t('followedDocs.noChanges')}</p>
-        )}
-      </div>
+            {/* Tracked parts — stacked */}
+            {document.parts.length > 0 && (
+              <section className="space-y-2">
+                <h2 className="text-sm font-medium">{t('followedDocs.trackedParts')}</h2>
+                <div className="space-y-1">
+                  {document.parts.map((part) => (
+                    <div
+                      key={part.partId}
+                      className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                    >
+                      <Hash className="text-muted-foreground size-3.5 shrink-0" />
+                      {part.label}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Change timeline — type under the icon, line through icon centres */}
+            <section className="space-y-3">
+              <h2 className="font-display text-lg">
+                {t('followedDocs.changes', { count: document.changes.length })}
+              </h2>
+              {ordered.length > 0 ? (
+                <ol>
+                  {ordered.map((change, index) => {
+                    const related = change.change_type === 'related_change'
+                    const Icon = related ? Link2 : FileText
+                    const isLast = index === ordered.length - 1
+                    return (
+                      <li
+                        key={`${change.detected_on}-${index}`}
+                        className="grid grid-cols-[5.5rem_1fr] gap-3"
+                      >
+                        <div className="flex flex-col items-center pt-1">
+                          <span
+                            className={cn(
+                              'bg-background flex size-9 items-center justify-center rounded-full border',
+                              !change.confirmed_on && 'border-primary/40',
+                            )}
+                          >
+                            <Icon
+                              className={cn('size-4', related ? 'text-amber-600' : 'text-primary')}
+                            />
+                          </span>
+                          <span
+                            className={cn(
+                              'mt-1.5 text-center text-[10px] leading-tight',
+                              related ? 'text-amber-700' : 'text-primary',
+                            )}
+                          >
+                            {related
+                              ? t('followedDocs.changeType.relatedChange')
+                              : t('followedDocs.changeType.documentChange')}
+                          </span>
+                          {!isLast && <span className="bg-border mt-2 w-px flex-1" />}
+                        </div>
+                        <div className="pb-6">
+                          <ChangeItem
+                            change={change}
+                            changeIndex={document.changes.indexOf(change)}
+                            uuid={uuid}
+                            onMutate={refetch}
+                          />
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ol>
+              ) : (
+                <NoChanges />
+              )}
+            </section>
+          </div>
+        </ScrollArea>
+      </main>
+
+      <Toaster position="bottom-right" />
     </div>
   )
 }

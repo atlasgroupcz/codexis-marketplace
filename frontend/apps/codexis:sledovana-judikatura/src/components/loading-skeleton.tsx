@@ -17,5 +17,19 @@ export function ListSkeleton() {
   )
 }
 
+export function FeedSkeleton() {
+  return (
+    <ol className="relative space-y-1 border-l pl-5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <li key={i} className="space-y-2 px-3 py-2.5">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 /** @deprecated Use ListSkeleton instead */
 export const LoadingSkeleton = ListSkeleton

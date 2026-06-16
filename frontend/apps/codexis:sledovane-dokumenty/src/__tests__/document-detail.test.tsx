@@ -10,7 +10,7 @@ beforeEach(() => {
 })
 
 describe('DocumentDetail', () => {
-  it('renders document name and codexisId', async () => {
+  it('renders the document name', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -27,7 +27,6 @@ describe('DocumentDetail', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' })).toBeInTheDocument()
     })
-    expect(screen.getByText('cdx://doc/CR13986')).toBeInTheDocument()
   })
 
   it('renders changes', async () => {

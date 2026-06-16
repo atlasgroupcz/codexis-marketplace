@@ -1,6 +1,6 @@
 import { useQueryState } from 'nuqs'
-import { viewParser, uuidParser, reportParser } from '@/lib/url-state'
-import { TopicList } from '@/components/topic-list'
+import { reportParser, uuidParser, viewParser } from '@/lib/url-state'
+import { JudikaturaHome } from '@/components/judikatura-home'
 import { TopicDetail } from '@/components/topic-detail'
 import { ReportView } from '@/components/report-view'
 
@@ -9,15 +9,16 @@ export function App() {
   const [uuid, setUuid] = useQueryState('uuid', uuidParser)
   const [reportId, setReportId] = useQueryState('report', reportParser)
 
-  const handleSelectTopic = (topicUuid: string) => {
-    void setView('detail')
+  const handleSelectReport = (topicUuid: string, rid: string) => {
     void setUuid(topicUuid)
-    void setReportId(null)
+    void setReportId(rid)
+    void setView('report')
   }
 
-  const handleSelectReport = (rid: string) => {
-    void setView('report')
-    void setReportId(rid)
+  const handleOpenTopic = (topicUuid: string) => {
+    void setUuid(topicUuid)
+    void setReportId(null)
+    void setView('detail')
   }
 
   const handleBackToList = () => {
@@ -26,18 +27,19 @@ export function App() {
     void setReportId(null)
   }
 
-  const handleBackToDetail = () => {
-    void setView('detail')
-    void setReportId(null)
-  }
-
   if (view === 'report' && uuid && reportId) {
-    return <ReportView uuid={uuid} reportId={reportId} onBack={handleBackToDetail} />
+    return <ReportView uuid={uuid} reportId={reportId} onBack={handleBackToList} />
   }
 
   if (view === 'detail' && uuid) {
-    return <TopicDetail uuid={uuid} onBack={handleBackToList} onSelectReport={handleSelectReport} />
+    return (
+      <TopicDetail
+        uuid={uuid}
+        onBack={handleBackToList}
+        onSelectReport={(rid) => handleSelectReport(uuid, rid)}
+      />
+    )
   }
 
-  return <TopicList onSelectTopic={handleSelectTopic} />
+  return <JudikaturaHome onSelectReport={handleSelectReport} onOpenTopic={handleOpenTopic} />
 }
