@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, BookMarked, FileText, Hash, Info, Link2, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
-import { Badge } from '@workspace/ui/components/badge'
 import { Input } from '@workspace/ui/components/input'
 import { Textarea } from '@workspace/ui/components/textarea'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
@@ -149,13 +148,16 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
             {/* Groups */}
             <section className="space-y-2">
               <h2 className="text-sm font-medium">{t('followedDocs.groups')}</h2>
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
                 {document.groups.map((g) => (
-                  <Badge key={g.id} variant="outline" className="gap-1 pr-1">
+                  <span
+                    key={g.id}
+                    className="border-input bg-background inline-flex h-8 items-center gap-1 rounded-full border pr-1.5 pl-3 text-sm"
+                  >
                     {g.name}
                     <button
                       type="button"
-                      className="text-muted-foreground hover:text-destructive rounded-full p-0.5"
+                      className="text-muted-foreground hover:text-destructive rounded-full p-1"
                       onClick={() =>
                         void postGroupAction('group_remove', {
                           codexisId: document.codexisId,
@@ -164,9 +166,9 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
                       }
                       title={t('followedDocs.removeFromGroup')}
                     >
-                      <X className="size-3" />
+                      <X className="size-3.5" />
                     </button>
-                  </Badge>
+                  </span>
                 ))}
                 <Button
                   variant="ghost"
@@ -239,13 +241,15 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
                 placeholder={t('followedDocs.notePlaceholder')}
                 className="min-h-24"
               />
-              {notesDirty && (
-                <div className="flex justify-end">
-                  <Button size="sm" onClick={() => void handleSaveNotes()} disabled={savingNotes}>
-                    {t('followedDocs.saveNote')}
-                  </Button>
-                </div>
-              )}
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => void handleSaveNotes()}
+                  disabled={!notesDirty || savingNotes}
+                >
+                  {t('followedDocs.saveNote')}
+                </Button>
+              </div>
             </section>
 
             {/* Tracked parts — stacked */}

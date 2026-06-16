@@ -1,6 +1,5 @@
 import {
   Item,
-  ItemActions,
   ItemContent,
   ItemDescription,
   ItemMedia,
@@ -11,7 +10,7 @@ import type { ReactNode } from 'react'
 interface FeedItemProps {
   /** Type icon (already coloured by the caller); conveys the kind of entry. */
   icon: ReactNode
-  /** Unread / unconfirmed → subtle emphasis + dot, no text badge. */
+  /** Unread / unconfirmed → filled dot before the time + subtle emphasis. */
   unread?: boolean
   title: string
   description?: string
@@ -46,12 +45,20 @@ export function FeedItem({
       }}
       className="hover:bg-accent/60 cursor-pointer"
     >
-      <time
-        className="text-muted-foreground w-28 shrink-0 self-start pt-1.5 text-xs leading-tight tabular-nums"
-        title={dateTitle}
-      >
-        {date}
-      </time>
+      {/* Leading column: unread dot then relative time. The dot's space is always
+          reserved (transparent when read) so the time never shifts horizontally. */}
+      <div className="flex w-28 shrink-0 items-start gap-1.5 self-start pt-1.5">
+        <span
+          aria-hidden
+          className={`mt-1 size-2 shrink-0 rounded-full ${unread ? 'bg-primary' : 'bg-transparent'}`}
+        />
+        <time
+          className="text-muted-foreground text-xs leading-tight tabular-nums"
+          title={dateTitle}
+        >
+          {date}
+        </time>
+      </div>
       <ItemMedia variant="icon" className={unread ? 'border-primary/30 bg-secondary' : ''}>
         {icon}
       </ItemMedia>
@@ -59,11 +66,6 @@ export function FeedItem({
         <ItemTitle>{title}</ItemTitle>
         {description && <ItemDescription>{description}</ItemDescription>}
       </ItemContent>
-      {unread && (
-        <ItemActions className="self-start pt-2">
-          <span aria-hidden className="bg-primary size-2 rounded-full" />
-        </ItemActions>
-      )}
     </Item>
   )
 }

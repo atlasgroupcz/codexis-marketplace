@@ -44,6 +44,7 @@
     "deleteGroup": "Delete group",
     "deleteGroupHint": "Click a group to delete it",
     "done": "Done",
+    "manageGroups": "Groups",
     "deleteGroupConfirm": "Delete group \"{{name}}\"? Documents will not be deleted.",
     "groupName": "Group name",
     "noGroups": "No groups yet",

@@ -44,6 +44,7 @@
     "deleteGroup": "Smazat skupinu",
     "deleteGroupHint": "Klikněte na skupinu, kterou chcete smazat",
     "done": "Hotovo",
+    "manageGroups": "Skupiny",
     "deleteGroupConfirm": "Smazat skupinu \"{{name}}\"? Dokumenty nebudou smazány.",
     "groupName": "Název skupiny",
     "noGroups": "Zatím žádné skupiny",

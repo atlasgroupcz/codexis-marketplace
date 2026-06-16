@@ -1,14 +1,10 @@
 import { useState } from 'react'
 import { useQueryState } from 'nuqs'
 import { useTranslation } from 'react-i18next'
-import { Check, Plus, Trash2 } from 'lucide-react'
+import { Plus, Settings2, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from '@workspace/ui/components/input-group'
+import { Input } from '@workspace/ui/components/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@workspace/ui/components/popover'
 import { DocumentCard } from './document-card'
 import type { Group, TrackedDocumentSummary } from '@/lib/schemas'
 import { postGroupAction } from '@/lib/api'
@@ -24,10 +20,8 @@ interface DocumentGridProps {
 export function DocumentGrid({ documents, groups, onSelectDocument, onMutate }: DocumentGridProps) {
   const { t } = useTranslation()
   const [selectedGroup, setSelectedGroup] = useQueryState('group', groupParser)
-  const [showCreateGroup, setShowCreateGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [creating, setCreating] = useState(false)
-  const [manage, setManage] = useState(false)
 
   const ungroupedCount = documents.filter((doc) => doc.groups.length === 0).length
   const filtered = documents.filter((doc) => {
@@ -42,7 +36,6 @@ export function DocumentGrid({ documents, groups, onSelectDocument, onMutate }: 
     postGroupAction('group_add', { groupName: newGroupName.trim() })
       .then(() => {
         setNewGroupName('')
-        setShowCreateGroup(false)
         onMutate()
       })
       .finally(() => setCreating(false))
@@ -60,114 +53,106 @@ export function DocumentGrid({ documents, groups, onSelectDocument, onMutate }: 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {manage ? (
-          <>
-            <span className="text-muted-foreground mr-1 text-xs">
-              {t('followedDocs.deleteGroupHint')}
-            </span>
-            {groups.map((group) => (
-              <Button
-                key={group.id}
-                size="sm"
-                variant="outline"
-                className="border-destructive/40 text-destructive hover:bg-destructive/10 rounded-full"
-                onClick={() => handleDeleteGroup(group.id)}
-              >
-                <Trash2 />
-                {group.name}
-              </Button>
-            ))}
-            <Button size="sm" variant="ghost" onClick={() => setManage(false)}>
-              {t('followedDocs.done')}
+        <Button
+          size="sm"
+          variant={pill(!selectedGroup)}
+          className="rounded-full"
+          onClick={() => setSelectedGroup(null)}
+        >
+          {t('followedDocs.allDocuments')}
+          <span className="opacity-70">{documents.length}</span>
+        </Button>
+
+        {groups.map((group) => {
+          const active = selectedGroup === group.id
+          return (
+            <Button
+              key={group.id}
+              size="sm"
+              variant={pill(active)}
+              className="rounded-full"
+              onClick={() => setSelectedGroup(active ? null : group.id)}
+            >
+              {group.name}
+              <span className="opacity-70">{group.members.length}</span>
             </Button>
-          </>
-        ) : (
-          <>
+          )
+        })}
+
+        {ungroupedCount > 0 && groups.length > 0 && (
+          <Button
+            size="sm"
+            variant={pill(selectedGroup === '__ungrouped__')}
+            className="rounded-full"
+            onClick={() =>
+              setSelectedGroup(selectedGroup === '__ungrouped__' ? null : '__ungrouped__')
+            }
+          >
+            {t('followedDocs.ungrouped')}
+            <span className="opacity-70">{ungroupedCount}</span>
+          </Button>
+        )}
+
+        {/* Group management lives in a popover, so the filter row never shifts. */}
+        <Popover>
+          <PopoverTrigger asChild>
             <Button
               size="sm"
-              variant={pill(!selectedGroup)}
-              className="rounded-full"
-              onClick={() => setSelectedGroup(null)}
+              variant="ghost"
+              className="text-muted-foreground rounded-full border border-dashed"
             >
-              {t('followedDocs.allDocuments')}
-              <span className="opacity-70">{documents.length}</span>
+              <Settings2 />
+              {t('followedDocs.manageGroups')}
             </Button>
-
-            {groups.map((group) => {
-              const active = selectedGroup === group.id
-              return (
-                <Button
-                  key={group.id}
-                  size="sm"
-                  variant={pill(active)}
-                  className="rounded-full"
-                  onClick={() => setSelectedGroup(active ? null : group.id)}
-                >
-                  {group.name}
-                  <span className="opacity-70">{group.members.length}</span>
-                </Button>
-              )
-            })}
-
-            {ungroupedCount > 0 && groups.length > 0 && (
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-72 space-y-3">
+            <p className="text-sm font-medium">{t('followedDocs.manageGroups')}</p>
+            <div className="flex items-center gap-2">
+              <Input
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateGroup()}
+                placeholder={t('followedDocs.groupName')}
+                className="h-8"
+              />
               <Button
                 size="sm"
-                variant={pill(selectedGroup === '__ungrouped__')}
-                className="rounded-full"
-                onClick={() =>
-                  setSelectedGroup(selectedGroup === '__ungrouped__' ? null : '__ungrouped__')
-                }
-              >
-                {t('followedDocs.ungrouped')}
-                <span className="opacity-70">{ungroupedCount}</span>
-              </Button>
-            )}
-
-            {showCreateGroup ? (
-              <InputGroup className="h-8 w-56 rounded-full">
-                <InputGroupInput
-                  autoFocus
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateGroup()}
-                  placeholder={t('followedDocs.groupName')}
-                />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    size="icon-xs"
-                    disabled={creating || !newGroupName.trim()}
-                    onClick={handleCreateGroup}
-                    aria-label={t('followedDocs.createGroup')}
-                  >
-                    <Check />
-                  </InputGroupButton>
-                </InputGroupAddon>
-              </InputGroup>
-            ) : (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-muted-foreground rounded-full border border-dashed"
-                onClick={() => setShowCreateGroup(true)}
+                variant="outline"
+                disabled={creating || !newGroupName.trim()}
+                onClick={handleCreateGroup}
               >
                 <Plus />
                 {t('followedDocs.createGroup')}
               </Button>
+            </div>
+            {groups.length > 0 ? (
+              <ul className="space-y-1">
+                {groups.map((group) => (
+                  <li
+                    key={group.id}
+                    className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-sm"
+                  >
+                    <span className="truncate">
+                      {group.name}
+                      <span className="text-muted-foreground ml-1">({group.members.length})</span>
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive size-7"
+                      onClick={() => handleDeleteGroup(group.id)}
+                      title={t('followedDocs.deleteGroup')}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-xs">{t('followedDocs.noGroups')}</p>
             )}
-
-            {groups.length > 0 && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-muted-foreground"
-                onClick={() => setManage(true)}
-                title={t('followedDocs.deleteGroup')}
-              >
-                <Trash2 />
-              </Button>
-            )}
-          </>
-        )}
+          </PopoverContent>
+        </Popover>
       </div>
 
       {filtered.length === 0 ? (

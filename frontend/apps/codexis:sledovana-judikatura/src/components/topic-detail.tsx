@@ -133,12 +133,12 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
             {topic.areas.length > 0 && (
               <section className="space-y-2">
                 <h2 className="text-sm font-medium">{t('judikatura.areas')}</h2>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-3">
                   {topic.areas.map((area) => (
                     <Card key={area.name} className="gap-2 py-4">
                       <CardHeader className="gap-1 px-4">
                         <CardTitle className="text-sm">{area.name}</CardTitle>
-                        <CardDescription className="line-clamp-3">
+                        <CardDescription className="leading-relaxed whitespace-pre-line">
                           {area.baseline_summary ?? `${t('judikatura.baseline')}: -`}
                         </CardDescription>
                       </CardHeader>
@@ -156,13 +156,15 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
                 placeholder={t('judikatura.notePlaceholder')}
                 className="min-h-24"
               />
-              {notesDirty && (
-                <div className="flex justify-end">
-                  <Button size="sm" onClick={() => void handleSaveNotes()} disabled={savingNotes}>
-                    {t('judikatura.saveNote')}
-                  </Button>
-                </div>
-              )}
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => void handleSaveNotes()}
+                  disabled={!notesDirty || savingNotes}
+                >
+                  {t('judikatura.saveNote')}
+                </Button>
+              </div>
             </section>
 
             <section className="space-y-3">
