@@ -82,7 +82,7 @@ export function SettingsDialog({
 
         <div className="space-y-4 py-2">
           <a
-            href="https://developer.euipo.europa.eu"
+            href="https://dev.euipo.europa.eu"
             target="_blank"
             rel="noreferrer"
             className="text-primary inline-flex items-center gap-1 text-sm hover:underline"

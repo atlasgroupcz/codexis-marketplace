@@ -7,8 +7,8 @@
   },
   "settings": {
     "title": "Nastavení přístupu (EUIPO)",
-    "description": "Pro reálná data zadejte své EUIPO API credentials. Získáte je zdarma na developer.euipo.europa.eu.",
-    "getKey": "Získat klíče na developer.euipo.europa.eu",
+    "description": "Pro reálná data zadejte své EUIPO API credentials. Získáte je zdarma na dev.euipo.europa.eu.",
+    "getKey": "Získat klíče na dev.euipo.europa.eu",
     "clientId": "EUIPO client_id",
     "clientSecret": "EUIPO client_secret",
     "currentKey": "Nastaveno",
@@ -21,7 +21,7 @@
   },
   "config": {
     "title": "Nejdřív nastavte aplikaci",
-    "text": "Hlídač čerpá data z oficiálního EUIPO API. Zadejte své vlastní EUIPO API credentials (zdarma, ~5 minut na developer.euipo.europa.eu) — bez nich nelze prohledávat rejstřík.",
+    "text": "Hlídač čerpá data z oficiálního EUIPO API. Zadejte své vlastní EUIPO API credentials (zdarma, ~5 minut na dev.euipo.europa.eu) — bez nich nelze prohledávat rejstřík.",
     "action": "Nastavit přístup",
     "hint": "Klíče se ukládají jen do tvého prostoru (~/.cdx) a používají se pro dotazy na EUIPO."
   },

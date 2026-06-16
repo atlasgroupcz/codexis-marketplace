@@ -1,7 +1,7 @@
 """EUIPO API credential management (user-provided).
 
 The official EUIPO trademark-search API is OAuth2-protected, so the user brings
-their own free credentials from developer.euipo.europa.eu. They are stored in
+their own free credentials from dev.euipo.europa.eu. They are stored in
 $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/.env (KEY=VALUE, mode 0600), the same
 self-contained pattern the katastr plugin uses for its ČÚZK key.
 """

@@ -7,8 +7,8 @@
   },
   "settings": {
     "title": "Access settings (EUIPO)",
-    "description": "For real data, enter your EUIPO API credentials. They are free from developer.euipo.europa.eu.",
-    "getKey": "Get keys at developer.euipo.europa.eu",
+    "description": "For real data, enter your EUIPO API credentials. They are free from dev.euipo.europa.eu.",
+    "getKey": "Get keys at dev.euipo.europa.eu",
     "clientId": "EUIPO client_id",
     "clientSecret": "EUIPO client_secret",
     "currentKey": "Configured",
@@ -21,7 +21,7 @@
   },
   "config": {
     "title": "First, set up the app",
-    "text": "The watchdog pulls data from the official EUIPO API. Enter your own EUIPO API credentials (free, ~5 min at developer.euipo.europa.eu) — searching the register is not possible without them.",
+    "text": "The watchdog pulls data from the official EUIPO API. Enter your own EUIPO API credentials (free, ~5 min at dev.euipo.europa.eu) — searching the register is not possible without them.",
     "action": "Set up access",
     "hint": "Keys are stored only in your space (~/.cdx) and used for EUIPO queries."
   },
