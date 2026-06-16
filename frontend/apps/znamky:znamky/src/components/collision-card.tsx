@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, ExternalLink, Sparkles } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { SimilarityDonut } from './similarity-donut'
+import { LogoZoom } from './logo-zoom'
 import { formatDate } from '@/lib/format'
 import type { Collision } from '@/lib/schemas'
 
@@ -83,13 +84,13 @@ export function CollisionCard({
             <div className="mt-3 flex items-center gap-3">
               {markLogoDataUrl && (
                 <figure className="text-center">
-                  <img src={markLogoDataUrl} alt="" className="bg-background size-14 rounded border object-contain p-1" />
+                  <LogoZoom src={markLogoDataUrl} className="bg-background size-14 rounded border object-contain p-1" />
                   <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.yours')}</figcaption>
                 </figure>
               )}
               {collision.image_data_url && (
                 <figure className="text-center">
-                  <img src={collision.image_data_url} alt="" className="bg-background size-14 rounded border object-contain p-1" />
+                  <LogoZoom src={collision.image_data_url} className="bg-background size-14 rounded border object-contain p-1" />
                   <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.candidate')}</figcaption>
                 </figure>
               )}

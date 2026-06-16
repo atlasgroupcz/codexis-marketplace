@@ -5,6 +5,7 @@ import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
 import { CollisionCard } from './collision-card'
 import { EditMarkDialog } from './edit-mark-dialog'
+import { LogoZoom } from './logo-zoom'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { useDetail } from '@/hooks/use-detail'
@@ -85,7 +86,7 @@ export function MarkDetail({
           <ArrowLeft className="size-5" />
         </Button>
         {mark.logo_data_url && (
-          <img src={mark.logo_data_url} alt="" className="bg-background size-9 rounded border object-contain p-0.5" />
+          <LogoZoom src={mark.logo_data_url} className="bg-background size-9 rounded border object-contain p-0.5" />
         )}
         <div className="min-w-0 flex-1">
           <h2 className="font-display truncate text-lg leading-tight">{mark.display_name}</h2>
