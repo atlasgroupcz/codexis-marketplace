@@ -126,7 +126,7 @@ export function MarkDetail({
             <p className="max-w-xs text-xs">{t('detail.noCollisionsHint')}</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid items-start gap-3 xl:grid-cols-2">
             {sorted.map((c) => {
               const realIndex = collisions.indexOf(c)
               return (
