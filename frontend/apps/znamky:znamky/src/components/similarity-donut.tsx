@@ -1,11 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart } from 'recharts'
 import { ShieldAlert } from 'lucide-react'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@workspace/ui/components/chart'
+import { ChartContainer } from '@workspace/ui/components/chart'
 import type { ChartConfig } from '@workspace/ui/components/chart'
 import type { Tier } from '@/lib/schemas'
 
@@ -20,47 +16,45 @@ const TIER_TEXT: Record<Tier, string> = {
   low: 'text-slate-400',
 }
 
-const chartConfig = {
-  value: { label: 'Shoda' },
-  match: { label: 'Shoda' },
-  rest: { label: '' },
-} satisfies ChartConfig
+const chartConfig = { value: { label: 'Shoda' } } satisfies ChartConfig
 
-/** Donut gauge of the overall similarity with a large icon + % in the centre. */
+/** Light donut gauge of the overall similarity: icon in the centre, % below it. */
 export function SimilarityDonut({ overall, tier }: { overall: number; tier: Tier }) {
   const { t } = useTranslation()
   const pct = Math.round(Math.max(0, Math.min(1, overall)) * 100)
   const data = [
-    { key: 'match', label: t('score.overall'), value: pct, fill: TIER_FILL[tier] },
-    { key: 'rest', label: '', value: 100 - pct, fill: 'var(--muted)' },
+    { key: 'match', value: pct, fill: TIER_FILL[tier] },
+    { key: 'rest', value: 100 - pct, fill: 'var(--muted)' },
   ]
 
   return (
-    <div className="relative">
-      <ChartContainer config={chartConfig} className="aspect-square h-[156px]">
-        <PieChart>
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="label" />} />
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="label"
-            innerRadius={54}
-            outerRadius={74}
-            startAngle={90}
-            endAngle={-270}
-            strokeWidth={2}
-            isAnimationActive={false}
-          >
-            {data.map((entry) => (
-              <Cell key={entry.key} fill={entry.fill} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ChartContainer>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <ShieldAlert className={`size-10 ${TIER_TEXT[tier]}`} strokeWidth={1.75} />
-        <span className="text-foreground mt-1 text-2xl font-semibold tabular-nums">{pct}%</span>
+    <div className="flex w-[104px] flex-col items-center">
+      <div className="relative size-[104px]">
+        <ChartContainer config={chartConfig} className="size-full">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="key"
+              innerRadius={38}
+              outerRadius={50}
+              startAngle={90}
+              endAngle={-270}
+              strokeWidth={0}
+              isAnimationActive={false}
+            >
+              {data.map((entry) => (
+                <Cell key={entry.key} fill={entry.fill} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <ShieldAlert className={`size-7 ${TIER_TEXT[tier]}`} strokeWidth={1.75} />
+        </div>
       </div>
+      <span className={`mt-1 text-xl font-semibold tabular-nums ${TIER_TEXT[tier]}`}>{pct}%</span>
+      <span className="text-muted-foreground text-[10px] leading-none">{t('score.overall')}</span>
     </div>
   )
 }

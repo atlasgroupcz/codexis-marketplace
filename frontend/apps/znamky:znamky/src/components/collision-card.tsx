@@ -99,13 +99,19 @@ export function CollisionCard({
             </div>
           )}
 
-          <dl className="mt-3 space-y-1">
-            {breakdown.map((b) => (
-              <div key={b.key} className="flex items-center justify-between gap-3 text-xs">
-                <dt className="text-muted-foreground truncate">{t(`score.${b.key}`)}</dt>
-                <dd className="text-foreground/80 font-mono tabular-nums">{Math.round(b.value * 100)}%</dd>
-              </div>
-            ))}
+          <dl className="mt-3 space-y-1.5">
+            {breakdown.map((b) => {
+              const v = Math.round(b.value * 100)
+              return (
+                <div key={b.key} className="flex items-center gap-2 text-xs">
+                  <dt className="text-muted-foreground w-24 shrink-0 truncate">{t(`score.${b.key}`)}</dt>
+                  <div className="bg-muted h-1.5 w-16 shrink-0 overflow-hidden rounded-full">
+                    <div className="bg-primary/60 h-full rounded-full" style={{ width: `${v}%` }} />
+                  </div>
+                  <dd className="text-foreground/70 w-8 shrink-0 text-right font-mono tabular-nums">{v}%</dd>
+                </div>
+              )
+            })}
           </dl>
 
           {ai && (
