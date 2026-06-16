@@ -87,3 +87,32 @@ export function PickSubjectArt({ className }: ArtProps) {
     </svg>
   )
 }
+
+/** "No changes yet, you're being watched" — a bell at rest with a green check. */
+export function NoChangesArt({ className }: ArtProps) {
+  return (
+    <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
+      <ellipse cx="98" cy="128" rx="46" ry="7" fill="#eef3e6" />
+      <circle cx="96" cy="66" r="50" fill="#f4f7f0" />
+      <g
+        transform="translate(52 20) scale(3.7)"
+        fill="none"
+        stroke="#b4b4ad"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+      </g>
+      <circle cx="138" cy="98" r="15" fill="#5ea500" />
+      <path
+        d="m131 98 4.2 4.4 8.4-9"
+        stroke="#ffffff"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}

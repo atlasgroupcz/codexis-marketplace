@@ -42,7 +42,6 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
 
   const s = data.subject
   const hasHistory = s.rizeni_count > 0 && !s.ma_aktivni_insolvenci
-  const unread = s.changes.filter((c) => !c.confirmed_on).length
   const Icon = s.kind === 'company' ? Building2 : User
   const identifier =
     s.kind === 'company'
@@ -201,21 +200,14 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
             </TabsTrigger>
             <TabsTrigger value="zmeny" className="flex-none px-0">
               {t('detail.changeHistory')}
-              {unread > 0 && <CountChip tone="alert">{unread}</CountChip>}
+              {s.changes.length > 0 && <CountChip>{s.changes.length}</CountChip>}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="rizeni">
             <ProceedingsList rizeni={s.rizeni} />
           </TabsContent>
           <TabsContent value="zmeny">
-            <ChangeTimeline
-              uuid={uuid}
-              changes={s.changes}
-              onConfirmed={() => {
-                refetch()
-                onChanged()
-              }}
-            />
+            <ChangeTimeline changes={s.changes} />
           </TabsContent>
         </Tabs>
       </div>
@@ -227,13 +219,9 @@ function Dot() {
   return <span className="text-border">·</span>
 }
 
-function CountChip({ children, tone }: { children: React.ReactNode; tone?: 'alert' }) {
+function CountChip({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className={`ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
-        tone === 'alert' ? 'bg-red-600 text-white' : 'bg-secondary text-secondary-foreground'
-      }`}
-    >
+    <span className="bg-secondary text-secondary-foreground ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold">
       {children}
     </span>
   )
