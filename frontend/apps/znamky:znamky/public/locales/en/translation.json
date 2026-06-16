@@ -6,7 +6,7 @@
   },
   "app": {
     "title": "Trademark Watchdog",
-    "subtitle": "ÚPV (CZ) and EUIPO (EU) via TMview",
+    "subtitle": "Trademark monitoring & protection",
     "checkAll": "Check all",
     "add": "Add trademark",
     "checkChanges": "New similar trademarks found: {{count}}",
@@ -34,8 +34,8 @@
     "none": "no risk of confusion"
   },
   "territory": {
-    "CZ": "Czechia (ÚPV)",
-    "EU": "EU (EUIPO)"
+    "CZ": "Czechia",
+    "EU": "EU"
   },
   "score": {
     "overall": "Overall similarity",
@@ -47,7 +47,7 @@
   },
   "add": {
     "title": "Watch a trademark",
-    "description": "Enter a word mark, or upload a logo. The watchdog then monitors similar filings in ÚPV and EUIPO.",
+    "description": "Enter a word mark, or upload a logo. The watchdog then monitors similar new trademark filings and registrations.",
     "word": "Word",
     "figurative": "Figurative",
     "text": "Mark text",
@@ -96,12 +96,12 @@
     "aural": "Aural",
     "conceptual": "Conceptual",
     "goods": "Goods & services",
-    "openSource": "Open in TMview",
+    "openSource": "Open source",
     "reviewed": "Reviewed"
   },
   "empty": {
     "title": "You are not watching any trademark yet",
-    "text": "Add a word or figurative mark and the watchdog will regularly check for similar new filings and registrations in ÚPV and EUIPO.",
+    "text": "Add a word or figurative mark and the watchdog will regularly check for similar new trademark filings and registrations.",
     "add": "Add trademark",
     "noSelection": "Select a trademark from the list on the left.",
     "chatLead": "Or set up monitoring in a conversation — try:",

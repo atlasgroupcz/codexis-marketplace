@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Check, ExternalLink, Sparkles } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
-import { RiskBadge } from './risk-badge'
 import { SimilarityDonut } from './similarity-donut'
 import { candidateLogoUrl, logoUrl } from '@/lib/api'
 import { formatDate } from '@/lib/format'
@@ -29,8 +28,21 @@ export function CollisionCard({
 }) {
   const { t } = useTranslation()
   const unconfirmed = !collision.confirmed_on
+  const s = collision.scores
   const ai = collision.ai_assessment
   const showLogos = markHasLogo || Boolean(collision.image_path)
+
+  const breakdown: Array<{ key: string; value: number }> = [
+    { key: 'text_combined', value: s.text_combined },
+    { key: 'text_phonetic', value: s.text_phonetic },
+    { key: 'class_overlap', value: s.class_overlap },
+    { key: 'vienna_overlap', value: s.vienna_overlap },
+  ]
+  if (s.image_phash !== null) breakdown.push({ key: 'image_phash', value: s.image_phash })
+
+  const meta: string[] = []
+  if (collision.filing_date) meta.push(formatDate(collision.filing_date))
+  if (collision.nice_classes.length > 0) meta.push(`${t('list.classes')} ${collision.nice_classes.join(', ')}`)
 
   return (
     <div
@@ -39,111 +51,94 @@ export function CollisionCard({
         unconfirmed ? 'border-primary/30 bg-secondary/40' : 'bg-card'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-display truncate text-base">
+      <div className="flex gap-4">
+        <div className="shrink-0 self-start">
+          <SimilarityDonut overall={s.overall} tier={collision.tier} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <h4 className="font-display min-w-0 truncate text-lg">
               {collision.mark_text || t('collision.figurativeMark')}
-            </span>
-            <RiskBadge tier={collision.tier} />
-            <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs">
-              {collision.office || collision.territory}
-            </span>
+            </h4>
+            {unconfirmed && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onConfirm(index)}
+                data-testid="confirm-collision"
+                className="shrink-0"
+              >
+                <Check className="size-4" />
+                <span className="hidden sm:inline">{t('collision.confirm')}</span>
+              </Button>
+            )}
           </div>
-          <p className="text-muted-foreground mt-0.5 truncate text-sm">
+
+          <p className="text-foreground/80 mt-0.5 truncate text-sm">
             {collision.applicant || t('collision.unknownApplicant')}
           </p>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {collision.status && <span>{collision.status} · </span>}
-            {collision.filing_date && <span>{t('collision.filed')} {formatDate(collision.filing_date)} · </span>}
-            {collision.nice_classes.length > 0 && (
-              <span>{t('list.classes')} {collision.nice_classes.join(', ')}</span>
-            )}
-          </p>
-        </div>
-        {unconfirmed && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onConfirm(index)}
-            data-testid="confirm-collision"
-            className="shrink-0"
-          >
-            <Check className="size-4" />
-            <span className="hidden sm:inline">{t('collision.confirm')}</span>
-          </Button>
-        )}
-      </div>
-
-      {showLogos && (
-        <div className="mt-3 flex items-center gap-3">
-          {markHasLogo && (
-            <figure className="text-center">
-              <img
-                src={logoUrl(markUuid)}
-                alt=""
-                className="bg-background size-16 rounded border object-contain p-1"
-              />
-              <figcaption className="text-muted-foreground mt-1 text-[10px]">
-                {t('collision.yours')}
-              </figcaption>
-            </figure>
+          {meta.length > 0 && (
+            <p className="text-muted-foreground mt-0.5 text-xs">{meta.join(' · ')}</p>
           )}
-          {collision.image_path && (
-            <figure className="text-center">
-              <img
-                src={candidateLogoUrl(markUuid, index)}
-                alt=""
-                className="bg-background size-16 rounded border object-contain p-1"
-              />
-              <figcaption className="text-muted-foreground mt-1 text-[10px]">
-                {t('collision.candidate')}
-              </figcaption>
-            </figure>
+
+          {showLogos && (
+            <div className="mt-3 flex items-center gap-3">
+              {markHasLogo && (
+                <figure className="text-center">
+                  <img src={logoUrl(markUuid)} alt="" className="bg-background size-14 rounded border object-contain p-1" />
+                  <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.yours')}</figcaption>
+                </figure>
+              )}
+              {collision.image_path && (
+                <figure className="text-center">
+                  <img src={candidateLogoUrl(markUuid, index)} alt="" className="bg-background size-14 rounded border object-contain p-1" />
+                  <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.candidate')}</figcaption>
+                </figure>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      <div className="mt-3">
-        <SimilarityDonut scores={collision.scores} tier={collision.tier} />
-      </div>
-
-      {ai && (
-        <div className="border-border/60 mt-3 rounded-lg border border-dashed p-3" data-testid="ai-assessment">
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-primary size-4" />
-            <span className="text-sm font-medium">{t('collision.aiTitle')}</span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${RISK_CLASSES[ai.risk] ?? ''}`}>
-              {t(`risk.${ai.risk}`)}
-            </span>
-          </div>
-          {ai.summary && <p className="mt-2 text-sm">{ai.summary}</p>}
-          <dl className="text-muted-foreground mt-2 space-y-1 text-xs">
-            {ai.visual && <Row label={t('collision.visual')} value={ai.visual} />}
-            {ai.aural && <Row label={t('collision.aural')} value={ai.aural} />}
-            {ai.conceptual && <Row label={t('collision.conceptual')} value={ai.conceptual} />}
-            {ai.goods_similarity && <Row label={t('collision.goods')} value={ai.goods_similarity} />}
+          <dl className="mt-3 space-y-1">
+            {breakdown.map((b) => (
+              <div key={b.key} className="flex items-center justify-between gap-3 text-xs">
+                <dt className="text-muted-foreground truncate">{t(`score.${b.key}`)}</dt>
+                <dd className="text-foreground/80 font-mono tabular-nums">{Math.round(b.value * 100)}%</dd>
+              </div>
+            ))}
           </dl>
-        </div>
-      )}
 
-      <div className="mt-3 flex items-center justify-between">
-        {collision.url_detail ? (
-          <a
-            href={collision.url_detail}
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary inline-flex items-center gap-1 text-xs hover:underline"
-          >
-            <ExternalLink className="size-3.5" />
-            {t('collision.openSource')}
-          </a>
-        ) : (
-          <span />
-        )}
-        {!unconfirmed && (
-          <span className="text-muted-foreground text-xs">{t('collision.reviewed')}</span>
-        )}
+          {ai && (
+            <div className="border-border/60 mt-3 rounded-lg border border-dashed p-3" data-testid="ai-assessment">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-primary size-4" />
+                <span className="text-sm font-medium">{t('collision.aiTitle')}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${RISK_CLASSES[ai.risk] ?? ''}`}>
+                  {t(`risk.${ai.risk}`)}
+                </span>
+              </div>
+              {ai.summary && <p className="mt-2 text-sm">{ai.summary}</p>}
+              <dl className="text-muted-foreground mt-2 space-y-1 text-xs">
+                {ai.visual && <Row label={t('collision.visual')} value={ai.visual} />}
+                {ai.aural && <Row label={t('collision.aural')} value={ai.aural} />}
+                {ai.conceptual && <Row label={t('collision.conceptual')} value={ai.conceptual} />}
+                {ai.goods_similarity && <Row label={t('collision.goods')} value={ai.goods_similarity} />}
+              </dl>
+            </div>
+          )}
+
+          {collision.url_detail && (
+            <a
+              href={collision.url_detail}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary mt-3 inline-flex items-center gap-1 text-xs hover:underline"
+            >
+              <ExternalLink className="size-3.5" />
+              {t('collision.openSource')}
+            </a>
+          )}
+        </div>
       </div>
     </div>
   )

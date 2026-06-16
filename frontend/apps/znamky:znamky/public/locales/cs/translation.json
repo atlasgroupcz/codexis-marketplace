@@ -6,7 +6,7 @@
   },
   "app": {
     "title": "Hlídač ochranných známek",
-    "subtitle": "ÚPV (ČR) a EUIPO (EU) přes TMview",
+    "subtitle": "Sledování a ochrana ochranných známek",
     "checkAll": "Zkontrolovat vše",
     "add": "Přidat známku",
     "checkChanges": "Nalezeno nových podobných známek: {{count}}",
@@ -34,8 +34,8 @@
     "none": "bez rizika záměny"
   },
   "territory": {
-    "CZ": "Česko (ÚPV)",
-    "EU": "EU (EUIPO)"
+    "CZ": "Česko",
+    "EU": "EU"
   },
   "score": {
     "overall": "Celková shoda",
@@ -47,7 +47,7 @@
   },
   "add": {
     "title": "Přidat známku ke sledování",
-    "description": "Zadejte slovní známku, nebo nahrajte logo. Hlídač pak sleduje podobné přihlášky v ÚPV a EUIPO.",
+    "description": "Zadejte slovní známku, nebo nahrajte logo. Hlídač pak sleduje podobné nové přihlášky a zápisy ochranných známek.",
     "word": "Slovní",
     "figurative": "Obrazová",
     "text": "Text známky",
@@ -96,12 +96,12 @@
     "aural": "Fonetické",
     "conceptual": "Významové",
     "goods": "Výrobky a služby",
-    "openSource": "Otevřít v TMview",
+    "openSource": "Otevřít zdroj",
     "reviewed": "Posouzeno"
   },
   "empty": {
     "title": "Zatím nehlídáte žádnou známku",
-    "text": "Přidejte slovní nebo obrazovou známku a hlídač bude pravidelně kontrolovat podobné nové přihlášky a zápisy v ÚPV a EUIPO.",
+    "text": "Přidejte slovní nebo obrazovou známku a hlídač bude pravidelně kontrolovat podobné nové přihlášky a zápisy ochranných známek.",
     "add": "Přidat známku",
     "noSelection": "Vyberte známku v seznamu vlevo.",
     "chatLead": "Nebo si hlídání nastavte v konverzaci — napište třeba:",
