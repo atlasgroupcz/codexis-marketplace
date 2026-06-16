@@ -166,6 +166,20 @@ def handle_post(body: dict) -> None:
             emit_json({"ok": True})
         with_mark_uuid(body, _set_label)
 
+    elif action == "update_mark":
+        def _update(state):
+            updated = tracking.update_mark(
+                state["uuid"],
+                text=body.get("text"),
+                nice_classes=body.get("nice_classes"),
+                territories=body.get("territories"),
+                owner_name=body.get("owner_name"),
+                label=body.get("label"),
+                threshold=body.get("threshold"),
+            )
+            emit_json({"ok": True, "mark": tracking.state_to_overview_entry(updated)})
+        with_mark_uuid(body, _update)
+
     elif action == "set_assessment":
         def _assess(state):
             collision = tracking.set_assessment(

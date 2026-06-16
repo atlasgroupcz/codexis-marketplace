@@ -145,3 +145,16 @@ export function confirmChange(
 export function setLabel(uuid: string, label: string): Promise<ActionResponse> {
   return postJson('set_label', actionResponseSchema, { uuid, label })
 }
+
+export interface UpdateMarkInput {
+  text?: string
+  nice_classes?: number[]
+  territories?: string[]
+  owner_name?: string
+  label?: string
+  threshold?: number
+}
+
+export function updateMark(uuid: string, fields: UpdateMarkInput): Promise<ActionResponse> {
+  return postJson('update_mark', actionResponseSchema, { uuid, ...fields })
+}

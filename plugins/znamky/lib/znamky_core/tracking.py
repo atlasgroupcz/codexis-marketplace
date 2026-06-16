@@ -472,6 +472,38 @@ def set_label(mark_uuid: str, label: str) -> dict:
     return state
 
 
+def update_mark(mark_uuid: str, text=None, nice_classes=None, territories=None,
+                owner_name=None, label=None, threshold=None) -> dict:
+    """Update editable fields of a watched mark. Only non-None fields change.
+
+    Does not change the mark's kind or stored logo. A new threshold/classes/
+    territories take effect on the next check (which is when sources are queried).
+    """
+    state = find_by_uuid(mark_uuid)
+    if state is None:
+        raise MarkNotTrackedError("Známka není sledována.")
+    if text is not None:
+        verbal = normalize_text(text)
+        if state.get("kind") == "word" and not verbal:
+            raise InvalidMarkError("Text slovní známky je povinný.")
+        state["text"] = verbal
+    if nice_classes is not None:
+        state["nice_classes"] = parse_nice_classes(nice_classes)
+    if territories is not None:
+        state["territories"] = parse_territories(territories)
+    if owner_name is not None:
+        state["owner_name"] = normalize_text(owner_name)
+    if label is not None:
+        state["label"] = normalize_text(label)
+    if threshold is not None:
+        value = float(threshold)
+        if not (0.0 < value < 1.0):
+            raise InvalidMarkError("Práh shody musí být mezi 0 a 1 (např. 0.6).")
+        state["threshold"] = round(value, 2)
+    _save_state(state)
+    return state
+
+
 def remove(mark_uuid: str) -> None:
     state = find_by_uuid(mark_uuid)
     if state is None:

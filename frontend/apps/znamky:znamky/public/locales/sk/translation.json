@@ -66,6 +66,15 @@
     "success": "Známka pridaná na sledovanie.",
     "error": "Známku sa nepodarilo pridať."
   },
+  "edit": {
+    "title": "Upraviť známku",
+    "description": "Zmeňte prah zhody, triedy, územie, vlastníka alebo označenie sledovanej známky.",
+    "thresholdHint": "Kolízie sa zobrazia len nad týmto prahom. Nižší prah = viac (aj voľnejších) zhôd.",
+    "save": "Uložiť",
+    "saving": "Ukladám…",
+    "success": "Zmeny uložené.",
+    "error": "Zmeny sa nepodarilo uložiť."
+  },
   "detail": {
     "owner": "Vlastník",
     "threshold": "Prah zhody",

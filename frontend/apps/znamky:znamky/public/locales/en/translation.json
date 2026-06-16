@@ -66,6 +66,15 @@
     "success": "Trademark added to monitoring.",
     "error": "Could not add the trademark."
   },
+  "edit": {
+    "title": "Edit trademark",
+    "description": "Change the match threshold, classes, territories, owner or label of the watched mark.",
+    "thresholdHint": "Collisions show only above this threshold. Lower threshold = more (looser) matches.",
+    "save": "Save",
+    "saving": "Saving…",
+    "success": "Changes saved.",
+    "error": "Could not save changes."
+  },
   "detail": {
     "owner": "Owner",
     "threshold": "Match threshold",

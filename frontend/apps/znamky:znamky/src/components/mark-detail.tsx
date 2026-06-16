@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, Pencil, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
 import { CollisionCard } from './collision-card'
+import { EditMarkDialog } from './edit-mark-dialog'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { useDetail } from '@/hooks/use-detail'
@@ -25,6 +26,7 @@ export function MarkDetail({
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useDetail(uuid)
   const [busy, setBusy] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   if (loading && !data) return <DetailSkeleton />
   if (error) return <div className="p-6"><ErrorMessage message={error.message} onRetry={refetch} /></div>
@@ -96,6 +98,9 @@ export function MarkDetail({
           <RefreshCw className={`size-4 ${busy ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">{t('detail.refresh')}</span>
         </Button>
+        <Button variant="ghost" size="icon" onClick={() => setEditOpen(true)} disabled={busy} aria-label={t('edit.title')} data-testid="edit-mark">
+          <Pencil className="size-4" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={remove} disabled={busy} aria-label={t('detail.remove')}>
           <Trash2 className="size-4" />
         </Button>
@@ -143,6 +148,16 @@ export function MarkDetail({
           </div>
         )}
       </div>
+
+      <EditMarkDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mark={mark}
+        onSaved={() => {
+          refetch()
+          onChanged()
+        }}
+      />
     </div>
   )
 }
