@@ -2,6 +2,7 @@ import {
   actionResponseSchema,
   checkAllResponseSchema,
   detailResponseSchema,
+  dphResponseSchema,
   overviewResponseSchema,
 } from './schemas'
 import type { z } from 'zod'
@@ -9,6 +10,7 @@ import type {
   ActionResponse,
   CheckAllResponse,
   DetailResponse,
+  DphResponse,
   OverviewResponse,
 } from './schemas'
 
@@ -73,6 +75,11 @@ export function fetchOverview(): Promise<OverviewResponse> {
 
 export function fetchDetail(uuid: string): Promise<DetailResponse> {
   return getJson(detailResponseSchema, { uuid })
+}
+
+/** VAT-payer reliability + published accounts, by IČO/DIČ (MF registry). */
+export function fetchDph(dic: string): Promise<DphResponse> {
+  return getJson(dphResponseSchema, { dph: dic })
 }
 
 // ─── writes ────────────────────────────────────────────────────────────────

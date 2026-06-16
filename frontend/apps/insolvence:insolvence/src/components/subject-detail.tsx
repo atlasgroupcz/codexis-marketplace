@@ -11,6 +11,7 @@ import { ErrorMessage } from './error-message'
 import { InsolvencyStatus } from './status-badge'
 import { ProceedingsList } from './proceedings-list'
 import { ChangeTimeline } from './change-timeline'
+import { DphPanel } from './dph-panel'
 import { formatRelative } from '@/lib/format'
 import { checkSubject, removeSubject, setLabel } from '@/lib/api'
 import { useDetail } from '@/hooks/use-detail'
@@ -208,6 +209,11 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
               {t('detail.changeHistory')}
               {s.changes.length > 0 && <CountChip>{s.changes.length}</CountChip>}
             </TabsTrigger>
+            {s.kind === 'company' && s.ico && (
+              <TabsTrigger value="dph" className="flex-none px-0">
+                {t('dph.tab')}
+              </TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="rizeni">
             <ProceedingsList rizeni={s.rizeni} isirUrl={isirUrl} />
@@ -215,6 +221,11 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
           <TabsContent value="zmeny">
             <ChangeTimeline changes={s.changes} />
           </TabsContent>
+          {s.kind === 'company' && s.ico && (
+            <TabsContent value="dph">
+              <DphPanel ico={s.ico} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </ScrollArea>

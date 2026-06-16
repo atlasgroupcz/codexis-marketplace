@@ -73,6 +73,18 @@
     "confirmRemove": "Really remove?",
     "removed": "Subject removed from the watchlist."
   },
+  "dph": {
+    "tab": "VAT",
+    "reliable": "Reliable VAT payer",
+    "unreliable": "Unreliable VAT payer",
+    "unreliableSince": "Unreliable since {{date}}",
+    "notPayer": "Not a VAT payer",
+    "taxOffice": "Tax office",
+    "accounts": "Published bank accounts",
+    "noAccounts": "No published accounts",
+    "publishedOn": "published {{date}}",
+    "source": "Source: VAT-payer registry (MF CZ)"
+  },
   "empty": {
     "title": "You're not watching any subjects yet",
     "text": "Add a company or a person and the watchdog will check daily for new and changed insolvency proceedings.",

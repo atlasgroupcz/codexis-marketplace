@@ -97,3 +97,22 @@ export const checkAllResponseSchema = z.object({
   ),
 })
 export type CheckAllResponse = z.infer<typeof checkAllResponseSchema>
+
+export const dphAccountSchema = z.object({
+  ucet: z.string(),
+  iban: z.boolean().optional().default(false),
+  datum_zverejneni: z.string().optional().default(''),
+})
+export type DphAccount = z.infer<typeof dphAccountSchema>
+
+export const dphResponseSchema = z.object({
+  mode: z.literal('dph'),
+  dic: z.string().optional().default(''),
+  found: z.boolean().optional().default(false),
+  je_platce: z.boolean().optional().default(false),
+  nespolehlivy: z.boolean().nullable().optional().default(null),
+  nespolehlivy_od: z.string().optional().default(''),
+  cislo_fu: z.string().optional().default(''),
+  ucty: z.array(dphAccountSchema).optional().default([]),
+})
+export type DphResponse = z.infer<typeof dphResponseSchema>

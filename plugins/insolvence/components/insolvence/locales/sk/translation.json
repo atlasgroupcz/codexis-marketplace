@@ -73,6 +73,18 @@
     "confirmRemove": "Naozaj odobrať?",
     "removed": "Subjekt odobraný zo sledovania."
   },
+  "dph": {
+    "tab": "DPH",
+    "reliable": "Spoľahlivý platiteľ DPH",
+    "unreliable": "Nespoľahlivý platiteľ DPH",
+    "unreliableSince": "Nespoľahlivý od {{date}}",
+    "notPayer": "Nie je platiteľom DPH",
+    "taxOffice": "Daňový úrad",
+    "accounts": "Zverejnené účty",
+    "noAccounts": "Žiadne zverejnené účty",
+    "publishedOn": "zverejnený {{date}}",
+    "source": "Zdroj: register platiteľov DPH (MF ČR)"
+  },
   "empty": {
     "title": "Zatiaľ nesledujete žiadne subjekty",
     "text": "Pridajte firmu alebo osobu a hliadač bude denne kontrolovať nové a zmenené insolvenčné konania.",
