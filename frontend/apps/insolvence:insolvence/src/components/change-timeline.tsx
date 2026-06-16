@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Activity, BellOff, FileText, ShieldAlert } from 'lucide-react'
+import { Activity, FileText, ShieldAlert } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
+import { BellCheckIcon, CheckIcon } from './icons'
 import type { SubjectChange } from '@/lib/schemas'
 import { formatDateTime } from '@/lib/format'
 import { confirmChange } from '@/lib/api'
@@ -53,7 +54,7 @@ export function ChangeTimeline({ uuid, changes, onConfirmed }: ChangeTimelinePro
             onClick={() => run(() => confirmChange(uuid))}
             data-testid="mark-all-read"
           >
-            <BellOff className="size-4" />
+            <BellCheckIcon className="size-4" />
             {t('detail.markAllRead', { count: unconfirmed })}
           </Button>
         )}
@@ -83,7 +84,9 @@ export function ChangeTimeline({ uuid, changes, onConfirmed }: ChangeTimelinePro
                       size="sm"
                       disabled={busy}
                       onClick={() => run(() => confirmChange(uuid, index))}
+                      className="text-muted-foreground hover:text-primary -my-1"
                     >
+                      <CheckIcon className="size-3.5" />
                       {t('detail.markRead')}
                     </Button>
                   )}

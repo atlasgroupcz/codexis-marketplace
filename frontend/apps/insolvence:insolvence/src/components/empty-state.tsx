@@ -1,15 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import { Plus, ShieldQuestion } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { PickSubjectArt, WatchRegisterArt } from './illustrations'
 
 export function EmptySubjects({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation()
   return (
     <div className="flex h-full items-center justify-center p-6">
       <div className="flex max-w-md flex-col items-center text-center">
-        <span className="bg-secondary text-primary ring-brand-100 mb-6 flex size-16 items-center justify-center rounded-2xl ring-1">
-          <ShieldQuestion className="size-8" strokeWidth={1.5} />
-        </span>
+        <WatchRegisterArt className="mb-6 h-44 w-auto" />
         <p className="text-primary mb-3 text-xs font-semibold tracking-[0.14em] uppercase">
           {t('app.title')}
         </p>
@@ -31,8 +30,8 @@ export function EmptySubjects({ onAdd }: { onAdd: () => void }) {
 export function NoSelection() {
   const { t } = useTranslation()
   return (
-    <div className="text-muted-foreground hidden h-full flex-col items-center justify-center gap-3 p-8 text-center md:flex">
-      <ShieldQuestion className="size-8 opacity-30" strokeWidth={1.5} />
+    <div className="text-muted-foreground hidden h-full flex-col items-center justify-center gap-4 p-8 text-center md:flex">
+      <PickSubjectArt className="h-32 w-auto" />
       <p className="max-w-[16rem] text-sm text-pretty">{t('empty.noSelection')}</p>
     </div>
   )
