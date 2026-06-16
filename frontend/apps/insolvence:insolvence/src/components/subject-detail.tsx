@@ -43,6 +43,12 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
   const s = data.subject
   const hasHistory = s.rizeni_count > 0 && !s.ma_aktivni_insolvenci
   const Icon = s.kind === 'company' ? Building2 : User
+  // The old ISIR detail deep-links are dead (register migrated to eISIR);
+  // link to the live eISIR by IČO, which falls back to its search.
+  const isirUrl =
+    s.kind === 'company' && s.ico
+      ? `https://eisir.justice.cz/insolvencni-rejstrik/dle-ico/${s.ico}`
+      : 'https://eisir.justice.cz/insolvencni-rejstrik'
   const identifier =
     s.kind === 'company'
       ? s.ico
@@ -204,7 +210,7 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
             </TabsTrigger>
           </TabsList>
           <TabsContent value="rizeni">
-            <ProceedingsList rizeni={s.rizeni} />
+            <ProceedingsList rizeni={s.rizeni} isirUrl={isirUrl} />
           </TabsContent>
           <TabsContent value="zmeny">
             <ChangeTimeline changes={s.changes} />

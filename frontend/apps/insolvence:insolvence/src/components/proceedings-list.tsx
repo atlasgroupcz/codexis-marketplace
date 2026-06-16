@@ -6,9 +6,13 @@ import { NoProceedingsArt } from './illustrations'
 import type { Rizeni } from '@/lib/schemas'
 import { formatDate } from '@/lib/format'
 
-const ISIR_PORTAL = 'https://isir.justice.cz/isir/common/index.do'
-
-export function ProceedingsList({ rizeni }: { rizeni: Array<Rizeni> }) {
+export function ProceedingsList({
+  rizeni,
+  isirUrl,
+}: {
+  rizeni: Array<Rizeni>
+  isirUrl: string
+}) {
   const { t } = useTranslation()
 
   if (rizeni.length === 0) {
@@ -44,7 +48,7 @@ export function ProceedingsList({ rizeni }: { rizeni: Array<Rizeni> }) {
               )}
             </dl>
             <a
-              href={r.url_detail || ISIR_PORTAL}
+              href={isirUrl}
               target="_blank"
               rel="noreferrer noopener"
               className="text-primary mt-3 inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
