@@ -73,7 +73,7 @@ export function AddSubjectDialog({ open, onOpenChange, onAdded }: AddSubjectDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('add.title')}</DialogTitle>
+          <DialogTitle className="font-display text-xl font-normal">{t('add.title')}</DialogTitle>
           <DialogDescription>{t('add.description')}</DialogDescription>
         </DialogHeader>
 

@@ -1,17 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { ShieldAlert, ShieldCheck } from 'lucide-react'
+import { Badge } from '@workspace/ui/components/badge'
 
 const DRUH_CLASSES: Record<string, string> = {
-  konkurs:
-    'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 ring-red-200 dark:ring-red-900',
-  reorganizace:
-    'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 ring-amber-200 dark:ring-amber-900',
-  moratorium:
-    'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 ring-amber-200 dark:ring-amber-900',
-  oddluzeni:
-    'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 ring-blue-200 dark:ring-blue-900',
-  neurceno:
-    'bg-muted text-muted-foreground ring-border',
+  konkurs: 'border-red-200 bg-red-50 text-red-800',
+  reorganizace: 'border-amber-200 bg-amber-50 text-amber-900',
+  moratorium: 'border-amber-200 bg-amber-50 text-amber-900',
+  oddluzeni: 'border-blue-200 bg-blue-50 text-blue-800',
+  neurceno: 'border-border bg-muted text-muted-foreground',
 }
 
 /** Coloured pill for an insolvency-proceeding type (druh). */
@@ -19,11 +15,9 @@ export function DruhBadge({ druh }: { druh: string }) {
   const { t } = useTranslation()
   const cls = DRUH_CLASSES[druh] ?? DRUH_CLASSES.neurceno
   return (
-    <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${cls}`}
-    >
+    <Badge variant="outline" className={`rounded-md font-medium ${cls}`}>
       {t(`druh.${druh}`, { defaultValue: t('druh.neurceno') })}
-    </span>
+    </Badge>
   )
 }
 
@@ -43,9 +37,7 @@ export function InsolvencyStatus({
 
   if (active) {
     return (
-      <span
-        className={`inline-flex items-center gap-1.5 font-medium text-red-700 dark:text-red-300 ${text}`}
-      >
+      <span className={`inline-flex items-center gap-1.5 font-medium text-red-700 ${text}`}>
         <ShieldAlert className={iconSize} />
         {t('status.active')}
       </span>
@@ -60,9 +52,7 @@ export function InsolvencyStatus({
     )
   }
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400 ${text}`}
-    >
+    <span className={`text-brand-700 inline-flex items-center gap-1.5 font-medium ${text}`}>
       <ShieldCheck className={iconSize} />
       {t('status.clean')}
     </span>
@@ -71,10 +61,6 @@ export function InsolvencyStatus({
 
 /** Small status dot for the master list. */
 export function StatusDot({ active, hasHistory }: { active: boolean; hasHistory: boolean }) {
-  const color = active
-    ? 'bg-red-500'
-    : hasHistory
-      ? 'bg-muted-foreground/40'
-      : 'bg-emerald-500'
+  const color = active ? 'bg-red-500' : hasHistory ? 'bg-muted-foreground/40' : 'bg-brand-500'
   return <span className={`size-2.5 shrink-0 rounded-full ${color}`} aria-hidden />
 }

@@ -133,7 +133,7 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
                 <button
                   type="button"
                   onClick={startEdit}
-                  className="hover:text-primary group inline-flex items-center gap-1.5 text-left text-lg font-semibold transition-colors"
+                  className="hover:text-primary group font-display inline-flex items-center gap-1.5 text-left text-xl font-normal transition-colors"
                   data-testid="label-edit-trigger"
                 >
                   <span className="truncate">{s.display_name}</span>
