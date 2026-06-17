@@ -41,6 +41,10 @@ for p in CANDIDATES:
 try:
     from sledovane_dokumenty_core import (
         clients,
+        folder_check,
+        folders,
+        harvest,
+        notify,
         related as related_mod,
         state,
         tracking,
@@ -49,6 +53,7 @@ try:
         CdxClientError,
         DocumentError,
     )
+    from sledovane_dokumenty_core.folders import WatchedFolderError
 except ImportError as e:
     print(f"ERROR: sledovane_dokumenty_core library not found: {e}", file=sys.stderr)
     sys.exit(2)
@@ -293,6 +298,121 @@ def cmd_related_types(args):
     print()
 
 
+# ── watched folders ──────────────────────────────────────────────────────────
+
+
+def _print_json(obj):
+    print(json.dumps(obj, indent=2, ensure_ascii=False))
+
+
+def cmd_folder_add(args):
+    res = folders.add_watch(args.root, name=args.name)
+    print(
+        f"OK: Sledování složky „{res['name']}“ zahájeno "
+        f"({res['total']} dokumentů, {res['added']} nových)."
+    )
+    if res.get("total"):
+        print(f"  Spusťte extrakci: cdx-sledovane-dokumenty folder harvest {res['root']}")
+
+
+def cmd_folder_list(args):
+    watches = folders.list_watches()
+    if not watches:
+        print("Žádné sledované složky.")
+        return
+    for w in watches:
+        print(f"  {w['name']}  ({w['root']})")
+        print(
+            f"    Dokumentů: {w['documents']}  K extrakci: {w['pending_harvest']}  "
+            f"Odkazů: {w['legislation']}"
+        )
+        status = (
+            f"NOVÉ ZMĚNY ({w['unconfirmed_changes']})"
+            if w.get("unconfirmed_changes") else "bez změn"
+        )
+        print(f"    Poslední kontrola: {w.get('last_check_at')}  Stav: {status}")
+        print()
+
+
+def cmd_folder_scan(args):
+    _, summary = folders.sync_watched(folders.normalize_root(args.root))
+    print(
+        f"OK: Sken hotov — {summary['total']} dokumentů "
+        f"(+{summary['added']} nových, ~{summary['changed']} změněných, "
+        f"-{summary['removed']} odebraných)."
+    )
+
+
+def cmd_folder_harvest(args):
+    res = harvest.harvest_folder(args.root, printer=print_progress)
+    suffix = (
+        f", {res['failed']} selhalo (zkusí se příště)" if res["failed"] else ""
+    )
+    print(
+        f"OK: Extrakce hotova — {res['documents']} dokumentů, "
+        f"{res['references']} odkazů{suffix}."
+    )
+
+
+def cmd_folder_refresh(args):
+    abs_root = folders.normalize_root(args.root)
+    folders.sync_watched(abs_root)
+    folders.mark_all_for_reharvest(abs_root)
+    res = harvest.harvest_folder(abs_root, printer=print_progress)
+    print(
+        f"OK: Složka obnovena — {res['documents']} dokumentů přeextrahováno, "
+        f"{res['references']} odkazů."
+    )
+
+
+def cmd_folder_check(args):
+    result = folder_check.check_folders(
+        args.root, printer=print_progress, send_notifications=not args.no_notify
+    )
+    for e in result["errors"]:
+        print(f"  ! {e}")
+    if result["changes_found"] == 0:
+        print("Žádné nové změny legislativy.")
+    else:
+        print(f"OK: {result['changes_found']} nových změn legislativy.")
+
+
+def cmd_folder_show(args):
+    abs_root = os.path.abspath(os.path.expanduser(args.root))
+    _print_json({
+        "watched": folders.read_watched(abs_root),
+        "tracking": folders.read_tracking(abs_root),
+    })
+
+
+def cmd_folder_confirm(args):
+    marked = folder_check.confirm_folder(args.root, args.codexis_id)
+    print(f"OK: {marked} změn potvrzeno." if marked else "Žádná nepotvrzená změna.")
+
+
+def cmd_folder_remove(args):
+    removed = folders.remove_watch(args.root, purge=args.purge)
+    print("OK: Složka odebrána ze sledování." if removed else "Složka nebyla sledována.")
+
+
+def cmd_folder_browse(args):
+    _print_json(folders.browse(args.path))
+
+
+def cmd_folder_notify_show(args):
+    _print_json(notify.load_settings())
+
+
+def cmd_folder_notify_set(args):
+    settings = notify.load_settings()
+    if args.email is not None:
+        settings["email"] = args.email
+    if args.inapp is not None:
+        settings["inApp"] = args.inapp
+    saved = notify.save_settings(settings)
+    print(f"OK: Notifikace — e-mail: {saved['email']}, in-app: {saved['inApp']}.")
+
+
 # ── argparse plumbing ────────────────────────────────────────────────────────
 
 
@@ -373,6 +493,61 @@ def build_parser():
     prelt = prel_sub.add_parser("types")
     prelt.add_argument("codexis_id")
     prelt.set_defaults(func=cmd_related_types)
+
+    pf = sub.add_parser("folder", help="Watch a folder of documents for legislation")
+    pf_sub = pf.add_subparsers(dest="sub", required=True)
+
+    pfa = pf_sub.add_parser("add", help="Start watching a folder")
+    pfa.add_argument("root")
+    pfa.add_argument("--name")
+    pfa.set_defaults(func=cmd_folder_add)
+
+    pfl = pf_sub.add_parser("list", help="List watched folders")
+    pfl.set_defaults(func=cmd_folder_list)
+
+    pfs = pf_sub.add_parser("scan", help="Rescan files (checksums)")
+    pfs.add_argument("root")
+    pfs.set_defaults(func=cmd_folder_scan)
+
+    pfh = pf_sub.add_parser("harvest", help="AI-extract legislation references")
+    pfh.add_argument("root")
+    pfh.set_defaults(func=cmd_folder_harvest)
+
+    pfref = pf_sub.add_parser("refresh", help="Force full re-harvest")
+    pfref.add_argument("root")
+    pfref.set_defaults(func=cmd_folder_refresh)
+
+    pfc = pf_sub.add_parser("check", help="Deterministic legislation-change check")
+    pfc.add_argument("root", nargs="?")
+    pfc.add_argument("--no-notify", action="store_true")
+    pfc.set_defaults(func=cmd_folder_check)
+
+    pfsh = pf_sub.add_parser("show", help="Show watched.json + tracking state as JSON")
+    pfsh.add_argument("root")
+    pfsh.set_defaults(func=cmd_folder_show)
+
+    pfcf = pf_sub.add_parser("confirm", help="Confirm changes + advance baseline")
+    pfcf.add_argument("root")
+    pfcf.add_argument("codexis_id", nargs="?")
+    pfcf.set_defaults(func=cmd_folder_confirm)
+
+    pfr = pf_sub.add_parser("remove", help="Stop watching a folder")
+    pfr.add_argument("root")
+    pfr.add_argument("--purge", action="store_true", help="also delete .watched/")
+    pfr.set_defaults(func=cmd_folder_remove)
+
+    pfb = pf_sub.add_parser("browse", help="List sub-directories (folder picker)")
+    pfb.add_argument("path", nargs="?")
+    pfb.set_defaults(func=cmd_folder_browse)
+
+    pfn = pf_sub.add_parser("notify", help="Manage notification settings")
+    pfn_sub = pfn.add_subparsers(dest="subsub", required=True)
+    pfns = pfn_sub.add_parser("show")
+    pfns.set_defaults(func=cmd_folder_notify_show)
+    pfnset = pfn_sub.add_parser("set")
+    pfnset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
+    pfnset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
+    pfnset.set_defaults(func=cmd_folder_notify_set)
 
     return p
 

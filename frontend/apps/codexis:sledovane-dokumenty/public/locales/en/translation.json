@@ -79,5 +79,58 @@
       "chatLead": "Start from the CODEXIS chat:",
       "chatPrompt": "Track changes in the Labour Code"
     }
+  },
+  "folders": {
+    "section": { "documents": "Acts", "folders": "Folders" },
+    "title": "Watched folders",
+    "subtitle": "We track the legislation your documents reference",
+    "add": "Add folder",
+    "back": "Back",
+    "cancel": "Cancel",
+    "added": "Folder added, starting extraction…",
+    "removed": "Folder removed",
+    "confirmed": "Changes confirmed",
+    "refresh": "Re-extract",
+    "remove": "Remove folder",
+    "checkNow": "Check now",
+    "refreshStarted": "Starting a fresh extraction…",
+    "checkStarted": "Checking legislation…",
+    "changed": "New change",
+    "tracked": "Tracked",
+    "untracked": "Unverified",
+    "confirm": "Confirm",
+    "viewInCodexis": "View in CODEXIS",
+    "effectiveFrom": "Effective from {{date}}",
+    "extractingProgress": "Extracting references ({{done}}/{{total}})",
+    "legislationExtracting": "Extracting legislation references…",
+    "noLegislation": "No legislation found in this folder yet.",
+    "extracted": "Processed",
+    "pending": "Pending",
+    "refCount": "{{count}} legislation references",
+    "tabs": { "legislation": "Legislation", "documents": "Documents" },
+    "card": {
+      "documents": "{{count}} documents",
+      "legislation": "{{count}} acts",
+      "extracting": "extracting {{count}}"
+    },
+    "landing": {
+      "title": "Watch the legislation in your documents",
+      "text": "Pick a folder of contracts or documents. AI extracts the laws they reference, and we alert you when any of them changes."
+    },
+    "picker": {
+      "title": "Choose a folder to watch",
+      "watchThis": "Watch this folder",
+      "noSubfolders": "No sub-folders",
+      "home": "Home",
+      "up": "Up one level"
+    },
+    "notify": {
+      "title": "Notification settings",
+      "description": "How we alert you when watched legislation changes.",
+      "email": "By e-mail",
+      "inApp": "In the app",
+      "save": "Save",
+      "saved": "Settings saved"
+    }
   }
 }

@@ -79,5 +79,58 @@
       "chatLead": "Začnite z chatu CODEXIS:",
       "chatPrompt": "Sleduj zmeny v zákonníku práce"
     }
+  },
+  "folders": {
+    "section": { "documents": "Akty", "folders": "Priečinky" },
+    "title": "Sledované priečinky",
+    "subtitle": "Sledujeme legislatívu, na ktorú odkazujú vaše dokumenty",
+    "add": "Pridať priečinok",
+    "back": "Späť",
+    "cancel": "Zrušiť",
+    "added": "Priečinok pridaný, spúšťam extrakciu…",
+    "removed": "Priečinok odobraný",
+    "confirmed": "Zmeny potvrdené",
+    "refresh": "Znova načítať",
+    "remove": "Odobrať priečinok",
+    "checkNow": "Skontrolovať teraz",
+    "refreshStarted": "Spúšťam novú extrakciu…",
+    "checkStarted": "Kontrolujem legislatívu…",
+    "changed": "Nová zmena",
+    "tracked": "Sledované",
+    "untracked": "Neoverené",
+    "confirm": "Potvrdiť",
+    "viewInCodexis": "Zobraziť v CODEXISe",
+    "effectiveFrom": "Účinné od {{date}}",
+    "extractingProgress": "Extrahujem odkazy ({{done}}/{{total}})",
+    "legislationExtracting": "Prebieha extrakcia odkazov na legislatívu…",
+    "noLegislation": "V tomto priečinku zatiaľ nebola nájdená žiadna legislatíva.",
+    "extracted": "Spracované",
+    "pending": "Čaká",
+    "refCount": "{{count}} odkazov na legislatívu",
+    "tabs": { "legislation": "Legislatíva", "documents": "Dokumenty" },
+    "card": {
+      "documents": "{{count}} dokumentov",
+      "legislation": "{{count}} predpisov",
+      "extracting": "extrahujem {{count}}"
+    },
+    "landing": {
+      "title": "Strážte legislatívu vo svojich dokumentoch",
+      "text": "Vyberte priečinok so zmluvami alebo dokumentmi. AI z nich vytiahne odkazy na zákony a my vás upozorníme, keď sa niektorý zmení."
+    },
+    "picker": {
+      "title": "Vyberte priečinok na sledovanie",
+      "watchThis": "Sledovať tento priečinok",
+      "noSubfolders": "Žiadne podpriečinky",
+      "home": "Domov",
+      "up": "O úroveň vyššie"
+    },
+    "notify": {
+      "title": "Nastavenia upozornení",
+      "description": "Ako vás upozorníme, keď sa zmení sledovaná legislatíva.",
+      "email": "E-mailom",
+      "inApp": "V aplikácii",
+      "save": "Uložiť",
+      "saved": "Nastavenia uložené"
+    }
   }
 }

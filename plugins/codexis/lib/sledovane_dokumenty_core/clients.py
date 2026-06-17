@@ -182,44 +182,74 @@ def load_api_jwt_auth():
     return os.environ.get("CODEXIS_USER_API_TOKEN", "").strip()
 
 
-def llm_extract(text, query):
-    """Call /rest/llm/extract on the daemon. Returns response text, or None on failure.
+# Plugin-facing extract endpoint (backed by the daemon ExtractAgentExecutor).
+EXTRACT_PATH = "/rest/v1/plugin/llm/extract"
 
-    Returns None rather than raising so callers can mark summaries as pending
-    and retry next check cycle.
+
+def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
+    """POST a file in the user's VM to /rest/v1/plugin/llm/extract.
+
+    The daemon reads the file itself (docx/pdf/txt + OCR) and runs one extraction
+    pass. Returns the parsed ``response`` value (a dict/list when a JSON schema is
+    supplied, otherwise a string), or None on any failure — callers degrade
+    gracefully rather than crash a scheduled run.
     """
     daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL)
-    daemon_auth = load_api_jwt_auth()
-    if not daemon_auth:
+    token = load_api_jwt_auth()
+    if not token:
         return None
 
+    cmd = [
+        "curl", "-sS", "-X", "POST",
+        f"{daemon_url}{EXTRACT_PATH}",
+        "-H", f"Authorization: Bearer {token}",
+        "-F", f"path={file_path}",
+        "-F", f"query={query}",
+    ]
+    if schema:
+        cmd.extend(["-F", f"schema={schema}"])
+    if schema_name:
+        cmd.extend(["-F", f"schemaName={schema_name}"])
+    chat_id = os.environ.get("CODEXIS_PUBLIC_SESSION_ID")
+    if chat_id:
+        cmd.extend(["-H", f"X-CDX-Session-Id: {chat_id}"])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if result.returncode != 0:
+        return None
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data.get("response")
+
+
+def llm_extract_file(file_path, query, schema=None, schema_name=None):
+    """One extraction pass over a document on disk. See _post_extract."""
+    return _post_extract(file_path, query, schema=schema, schema_name=schema_name)
+
+
+def llm_extract(text, query):
+    """Extract over raw text (legacy summary path). Returns response text or None.
+
+    The extract agent reads from a file path, so the text is written to a temp
+    file in the VM first. Returns None rather than raising so summaries can stay
+    pending and retry next cycle.
+    """
     tmp_path = None
     try:
-        # Write text to temp file to avoid curl -F truncation with special chars.
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", encoding="utf-8", delete=False
+        ) as f:
             f.write(text)
             tmp_path = f.name
-        cmd = [
-            "curl", "-sS", "-X", "POST",
-            f"{daemon_url}/rest/llm/extract",
-            "-H", f"Authorization: {daemon_auth}",
-            "-F", f"text=<{tmp_path}",
-            "-F", f"query={query}",
-        ]
-        chat_id = os.environ.get("CODEXIS_PUBLIC_SESSION_ID")
-        if chat_id:
-            cmd.extend(["-H", f"X-CDX-Session-Id: {chat_id}"])
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
-        )
-        if result.returncode != 0:
-            return None
-        try:
-            data = json.loads(result.stdout)
-        except json.JSONDecodeError:
-            return None
-        return data.get("response")
-    except (subprocess.SubprocessError, OSError):
+        return _post_extract(tmp_path, query)
+    except OSError:
         return None
     finally:
         if tmp_path:
@@ -227,3 +257,25 @@ def llm_extract(text, query):
                 os.unlink(tmp_path)
             except OSError:
                 pass
+
+
+# ── citation → canonical URI + CODEXIS id ────────────────────────────────────
+
+
+def resolve_cz_law(num, year):
+    """Resolve a Czech act ``num/year`` to its base CODEXIS document id, or None.
+
+    Strips any ``_YYYY_MM_DD`` version suffix so the result is the stable base id
+    (e.g. ``CR26785``) suitable for deterministic version tracking.
+    """
+    try:
+        meta = cdx_get(f"cdx://cz_law/{num}/{year}/meta")
+    except CdxClientError:
+        return None
+    if not isinstance(meta, dict):
+        return None
+    main = (meta.get("cr") or {}).get("main") or {}
+    doc_id = main.get("docId")
+    if not doc_id:
+        return None
+    return doc_id.split("_")[0] if "_" in doc_id else doc_id

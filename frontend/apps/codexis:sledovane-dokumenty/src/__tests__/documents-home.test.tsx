@@ -56,7 +56,7 @@ beforeEach(() => {
 describe('DocumentsHome', () => {
   it('renders the branded header', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome onSelectDocument={vi.fn()} />)
+    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
@@ -65,7 +65,7 @@ describe('DocumentsHome', () => {
 
   it('builds a cross-document changes feed', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome onSelectDocument={vi.fn()} />)
+    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} />)
 
     await waitFor(() => {
       expect(
@@ -78,7 +78,7 @@ describe('DocumentsHome', () => {
     stubRoutedFetch()
     const onSelectDocument = vi.fn()
     const user = userEvent.setup()
-    renderApp(<DocumentsHome onSelectDocument={onSelectDocument} />, {
+    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={onSelectDocument} />, {
       searchParams: { tab: 'documents' },
     })
 
@@ -96,7 +96,7 @@ describe('DocumentsHome', () => {
       'fetch',
       vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Internal Server Error' }),
     )
-    renderApp(<DocumentsHome onSelectDocument={vi.fn()} />)
+    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText(/HTTP 500/)).toBeInTheDocument()

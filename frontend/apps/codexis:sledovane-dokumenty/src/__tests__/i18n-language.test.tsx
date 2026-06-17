@@ -23,7 +23,7 @@ function stubOverview() {
 describe('i18n language resolution', () => {
   it('renders English copy when URL has lang=en', async () => {
     stubOverview()
-    renderApp(<DocumentsHome onSelectDocument={() => {}} />, { searchParams: { lang: 'en' } })
+    renderApp(<DocumentsHome section="documents" onChangeSection={() => {}} onSelectDocument={() => {}} />, { searchParams: { lang: 'en' } })
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
@@ -33,7 +33,7 @@ describe('i18n language resolution', () => {
   it('uses localStorage language when URL lang is absent', async () => {
     window.localStorage.setItem('i18nextLng', 'sk')
     stubOverview()
-    renderApp(<DocumentsHome onSelectDocument={() => {}} />)
+    renderApp(<DocumentsHome section="documents" onChangeSection={() => {}} onSelectDocument={() => {}} />)
 
     await waitFor(() => {
       expect(screen.getByText('Strážime zmeny vo vašich zákonoch')).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('i18n language resolution', () => {
   it('URL lang overrides localStorage language', async () => {
     window.localStorage.setItem('i18nextLng', 'cs')
     stubOverview()
-    renderApp(<DocumentsHome onSelectDocument={() => {}} />, { searchParams: { lang: 'en' } })
+    renderApp(<DocumentsHome section="documents" onChangeSection={() => {}} onSelectDocument={() => {}} />, { searchParams: { lang: 'en' } })
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()

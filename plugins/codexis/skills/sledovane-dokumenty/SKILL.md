@@ -166,10 +166,74 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 A periodic `cdx-sledovane-dokumenty check` automation is created automatically when the user adds a document. **Do NOT create additional automations**. The existing COMMAND automation handles periodic checks. The user views changes in the Sledované dokumenty UI component — there is no need for AI-generated reports via automation prompts.
 
+## Watched folders (legislation referenced by the user's own documents)
+
+Besides tracking individual CODEXIS acts by id, this tool can watch a **folder of
+the user's own documents** (contracts, `.docx`/`.pdf`/`.txt`) and track changes in
+the **legislation those documents reference**. The user picks a folder in the
+Sledované dokumenty app and starts extraction; everything below is also available
+from the CLI.
+
+```bash
+# Start watching a folder (scans files, computes checksums, bootstraps the daily check)
+cdx-sledovane-dokumenty folder add /home/<user>/my-contracts --name "Smlouvy"
+
+# Harvest legislative references with AI (ONE pass per document, only docs that need it)
+cdx-sledovane-dokumenty folder harvest /home/<user>/my-contracts
+
+# List watched folders with counts + change status
+cdx-sledovane-dokumenty folder list
+
+# Deterministic change check (no AI) — this is what the daily automation runs
+cdx-sledovane-dokumenty folder check
+
+# Force a full re-harvest of a folder (e.g. user explicitly refreshes)
+cdx-sledovane-dokumenty folder refresh /home/<user>/my-contracts
+
+# Confirm detected changes (advances the baseline)
+cdx-sledovane-dokumenty folder confirm /home/<user>/my-contracts
+
+# Inspect a folder's contract + tracking state as JSON
+cdx-sledovane-dokumenty folder show /home/<user>/my-contracts
+
+# Stop watching (add --purge to also delete the hidden .watched/ folder)
+cdx-sledovane-dokumenty folder remove /home/<user>/my-contracts
+
+# Folder picker support + notification settings (used by the app)
+cdx-sledovane-dokumenty folder browse [/some/dir]
+cdx-sledovane-dokumenty folder notify show
+cdx-sledovane-dokumenty folder notify set --email --no-inapp
+```
+
+### How it works
+
+1. `folder add` scans the tree, computes a SHA-256 per document and writes the
+   skeleton `<root>/.watched/watched.json` (see
+   `references/watched-json-contract.md`). It also bootstraps a daily
+   `folder check` automation (idempotent).
+2. `folder harvest` sends each document that needs it (new or changed checksum)
+   to the daemon **once** and stores the referenced legislation back into
+   `watched.json`, with a canonical `uri` and — for Czech acts — a `codexisId`.
+3. `folder check` (daily, **no AI**) compares each referenced act's current
+   CODEXIS version against the stored baseline and records changes.
+4. On change, the user is notified **from the daemon** (e-mail and/or in-app),
+   per the configurable notification settings.
+5. References are re-harvested **only** when a document's checksum changes or the
+   user explicitly runs `folder refresh`.
+
+`.watched/watched.json` is a stable, documented contract — deterministic tools
+read it as the integration boundary. Never hand-edit it; use the CLI.
+
 ## Storage
 
-State files: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/state.json`
-Related baselines: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/related_<TYPE>.json`
-Groups file: `~/.cdx/apps/sledovane-dokumenty/groups.json`
+CODEXIS-id tracking:
+- State files: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/state.json`
+- Related baselines: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/related_<TYPE>.json`
+- Groups file: `~/.cdx/apps/sledovane-dokumenty/groups.json`
 
-The Sledované dokumenty UI component reads from this directory automatically.
+Watched folders:
+- Index of watched roots: `~/.cdx/apps/sledovane-dokumenty/watched-folders.json`
+- Notification settings: `~/.cdx/apps/sledovane-dokumenty/folder-watch-settings.json`
+- Per-folder contract: `<root>/.watched/watched.json` (+ `tracking-state.json`)
+
+The Sledované dokumenty UI component reads from these locations automatically.

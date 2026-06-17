@@ -3,21 +3,21 @@
   "title": "CODEXIS Sledovane dokumenty",
   "icon": "assets/icon.png",
   "route": "sledovane-dokumenty",
-  "description": "Sledujte zmeny legislativy a souvisejicich dokumentu podle CODEXIS ID.",
+  "description": "Sledujte zmeny legislativy podle CODEXIS ID nebo hlidejte slozky vlastnich dokumentu a legislativu, na kterou odkazuji.",
   "entrypoint": "index.html",
   "binary": "sledovane.py",
   "i18n": {
     "cs": {
       "displayName": "Sledované dokumenty",
-      "description": "Sledujte změny legislativy a souvisejících dokumentů podle CODEXIS ID."
+      "description": "Sledujte změny legislativy podle CODEXIS ID nebo hlídejte složky vlastních dokumentů a legislativu, na kterou odkazují."
     },
     "en": {
       "displayName": "Document Tracker",
-      "description": "Track changes in legislation and related documents by CODEXIS ID."
+      "description": "Track legislation changes by CODEXIS ID, or watch folders of your own documents and the legislation they reference."
     },
     "sk": {
       "displayName": "Sledované dokumenty",
-      "description": "Sledujte zmeny legislatívy a súvisiacich dokumentov podľa CODEXIS ID."
+      "description": "Sledujte zmeny legislatívy podľa CODEXIS ID alebo strážte priečinky vlastných dokumentov a legislatívu, na ktorú odkazujú."
     }
   }
 }
