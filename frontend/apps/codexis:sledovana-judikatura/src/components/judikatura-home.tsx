@@ -1,6 +1,6 @@
 import { useQueryState } from 'nuqs'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, RefreshCw, Scale } from 'lucide-react'
+import { ArrowRight, Plus, RefreshCw, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster } from '@workspace/ui/components/sonner'
@@ -42,10 +42,21 @@ export function JudikaturaHome({ onSelectReport, onOpenTopic }: JudikaturaHomePr
           </div>
         </div>
         {topics.length > 0 && (
-          <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={loading}>
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{t('judikatura.refresh')}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" data-testid="add-monitoring">
+              <a
+                href={`/?draft=${encodeURIComponent(t('judikatura.landing.chatPrompt'))}`}
+                target="_top"
+              >
+                <Plus className="size-4" />
+                <span className="hidden sm:inline">{t('judikatura.addMonitoring')}</span>
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={loading}>
+              <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{t('judikatura.refresh')}</span>
+            </Button>
+          </div>
         )}
       </header>
 

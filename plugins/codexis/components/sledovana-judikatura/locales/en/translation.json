@@ -50,6 +50,7 @@
     "removed": "Topic deleted",
     "allTopics": "All",
     "topicDetail": "Topic detail",
+    "addMonitoring": "Set up another watch",
     "feed": {
       "searchPlaceholder": "Search reports…",
       "onlyUnconfirmed": "New only",
@@ -64,9 +65,18 @@
     },
     "landing": {
       "title": "Case law for your topics, under watch",
-      "text": "Set a topic and we'll regularly scan new case law and prepare a digest for you.",
-      "chatLead": "Start from the CODEXIS chat:",
-      "chatPrompt": "Track case law on employment law"
+      "text": "We watch new and changed case law on the topics you care about — so you don't have to.",
+      "feature1": "New & changed rulings",
+      "feature2": "Regular checks",
+      "feature3": "Email digest",
+      "step1Title": "Describe it in chat",
+      "step1Text": "Tell us what to watch — area, courts, how often, and in what form.",
+      "step2Title": "We watch the courts",
+      "step2Text": "We regularly scan new and changed decisions for your topic.",
+      "step3Title": "You get a digest",
+      "step3Text": "A clear summary of new rulings, by email if you like.",
+      "chatLead": "Write in chat, for example:",
+      "chatPrompt": "Track case law on employment law from the Supreme and Constitutional Courts, check weekly, and email me a summary of new decisions."
     }
   }
 }
