@@ -1,5 +1,19 @@
-import { actionResponseSchema, detailResponseSchema, overviewResponseSchema } from './schemas'
-import type { ActionResponse, DetailResponse, OverviewResponse } from './schemas'
+import {
+  actionResponseSchema,
+  browseResponseSchema,
+  detailResponseSchema,
+  folderResponseSchema,
+  foldersResponseSchema,
+  overviewResponseSchema,
+} from './schemas'
+import type {
+  ActionResponse,
+  BrowseResponse,
+  DetailResponse,
+  FolderResponse,
+  FoldersResponse,
+  OverviewResponse,
+} from './schemas'
 
 function getApiBase(): string {
   if (import.meta.env.DEV) {
@@ -95,4 +109,69 @@ export async function postGroupAction(
   }
   const json: unknown = await response.json()
   return actionResponseSchema.parse(json)
+}
+
+// ── watched folders ─────────────────────────────────────────────────────────
+
+function withParams(params: Record<string, string>): string {
+  const url = new URL(getApiBase(), window.location.href)
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v)
+  }
+  return url.toString()
+}
+
+async function getJson(url: string): Promise<unknown> {
+  const response = await fetch(url, {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  return response.json()
+}
+
+export async function fetchFolders(): Promise<FoldersResponse> {
+  return foldersResponseSchema.parse(await getJson(withParams({ view: 'folders' })))
+}
+
+export async function fetchFolder(root: string): Promise<FolderResponse> {
+  return folderResponseSchema.parse(await getJson(withParams({ view: 'folder', root })))
+}
+
+export async function browseFolders(path?: string): Promise<BrowseResponse> {
+  const params: Record<string, string> = { view: 'browse' }
+  if (path) {
+    params.path = path
+  }
+  return browseResponseSchema.parse(await getJson(withParams(params)))
+}
+
+export type FolderAction =
+  | 'folder_add'
+  | 'folder_remove'
+  | 'folder_refresh'
+  | 'folder_check'
+  | 'folder_confirm'
+  | 'start_extraction'
+  | 'save_notify_settings'
+
+export async function postFolderAction(
+  action: FolderAction,
+  payload: Record<string, unknown>,
+): Promise<ActionResponse> {
+  const url = new URL(getApiBase(), window.location.href).toString()
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ action, ...payload }),
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  return actionResponseSchema.parse(await response.json())
 }

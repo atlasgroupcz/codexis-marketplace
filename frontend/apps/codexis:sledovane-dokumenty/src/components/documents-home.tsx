@@ -10,14 +10,17 @@ import { DocumentGrid } from './document-grid'
 import { EmptyDocuments } from './empty-state'
 import { FeedSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
+import { SectionSwitch } from './section-switch'
 import { useOverview } from '@/hooks/use-overview'
 import { tabParser } from '@/lib/url-state'
 
 interface DocumentsHomeProps {
+  section: 'documents' | 'folders'
+  onChangeSection: (section: 'documents' | 'folders') => void
   onSelectDocument: (uuid: string) => void
 }
 
-export function DocumentsHome({ onSelectDocument }: DocumentsHomeProps) {
+export function DocumentsHome({ section, onChangeSection, onSelectDocument }: DocumentsHomeProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const [tab, setTab] = useQueryState('tab', tabParser)
@@ -42,12 +45,15 @@ export function DocumentsHome({ onSelectDocument }: DocumentsHomeProps) {
             </p>
           </div>
         </div>
-        {documents.length > 0 && (
-          <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{t('followedDocs.refresh')}</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <SectionSwitch section={section} onChange={onChangeSection} />
+          {documents.length > 0 && (
+            <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+              <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{t('followedDocs.refresh')}</span>
+            </Button>
+          )}
+        </div>
       </header>
 
       <main className="min-h-0 flex-1">

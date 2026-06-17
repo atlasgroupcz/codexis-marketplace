@@ -5,7 +5,17 @@ CGI handler. All business logic (CODEXIS fetching, diff generation, state
 management, change detection) lives here so neither caller duplicates it.
 """
 
-from . import clients, diff, related, state, tracking
+from . import (
+    clients,
+    diff,
+    folder_check,
+    folders,
+    harvest,
+    notify,
+    related,
+    state,
+    tracking,
+)
 from .exceptions import (
     CdxClientError,
     DocumentAlreadyTrackedError,
@@ -16,10 +26,15 @@ from .exceptions import (
     LlmDaemonError,
     RelatedTypeNotTrackedError,
 )
+from .folders import WatchedFolderError
 
 __all__ = [
     "clients",
     "diff",
+    "folder_check",
+    "folders",
+    "harvest",
+    "notify",
     "related",
     "state",
     "tracking",
@@ -31,4 +46,5 @@ __all__ = [
     "GroupNotFoundError",
     "LlmDaemonError",
     "RelatedTypeNotTrackedError",
+    "WatchedFolderError",
 ]

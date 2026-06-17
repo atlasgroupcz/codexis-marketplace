@@ -79,5 +79,58 @@
       "chatLead": "Začněte z chatu CODEXIS:",
       "chatPrompt": "Sleduj změny v zákoníku práce"
     }
+  },
+  "folders": {
+    "section": { "documents": "Akty", "folders": "Složky" },
+    "title": "Hlídané složky",
+    "subtitle": "Sledujeme legislativu, na kterou odkazují vaše dokumenty",
+    "add": "Přidat složku",
+    "back": "Zpět",
+    "cancel": "Zrušit",
+    "added": "Složka přidána, spouštím extrakci…",
+    "removed": "Složka odebrána",
+    "confirmed": "Změny potvrzeny",
+    "refresh": "Znovu načíst",
+    "remove": "Odebrat složku",
+    "checkNow": "Zkontrolovat teď",
+    "refreshStarted": "Spouštím novou extrakci…",
+    "checkStarted": "Spouštím kontrolu legislativy…",
+    "changed": "Nová změna",
+    "tracked": "Sledováno",
+    "untracked": "Neověřeno",
+    "confirm": "Potvrdit",
+    "viewInCodexis": "Zobrazit v CODEXISu",
+    "effectiveFrom": "Účinné od {{date}}",
+    "extractingProgress": "Extrahuji odkazy ({{done}}/{{total}})",
+    "legislationExtracting": "Probíhá extrakce odkazů na legislativu…",
+    "noLegislation": "V této složce zatím nebyla nalezena žádná legislativa.",
+    "extracted": "Zpracováno",
+    "pending": "Čeká",
+    "refCount": "{{count}} odkazů na legislativu",
+    "tabs": { "legislation": "Legislativa", "documents": "Dokumenty" },
+    "card": {
+      "documents": "{{count}} dokumentů",
+      "legislation": "{{count}} předpisů",
+      "extracting": "extrahuji {{count}}"
+    },
+    "landing": {
+      "title": "Hlídejte legislativu ve svých dokumentech",
+      "text": "Vyberte složku se smlouvami nebo dokumenty. AI z nich vytáhne odkazy na zákony a my vás upozorníme, když se některý změní."
+    },
+    "picker": {
+      "title": "Vyberte složku ke sledování",
+      "watchThis": "Sledovat tuto složku",
+      "noSubfolders": "Žádné podsložky",
+      "home": "Domů",
+      "up": "O úroveň výš"
+    },
+    "notify": {
+      "title": "Nastavení upozornění",
+      "description": "Jak vás upozorníme, když se změní sledovaná legislativa.",
+      "email": "E-mailem",
+      "inApp": "V aplikaci",
+      "save": "Uložit",
+      "saved": "Nastavení uloženo"
+    }
   }
 }
