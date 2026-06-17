@@ -5,6 +5,7 @@ import { DruhBadge } from './status-badge'
 import { NoProceedingsArt } from './illustrations'
 import type { Rizeni } from '@/lib/schemas'
 import { formatDate } from '@/lib/format'
+import { eisirProceedingUrl } from '@/lib/isir'
 
 export function ProceedingsList({
   rizeni,
@@ -48,7 +49,7 @@ export function ProceedingsList({
               )}
             </dl>
             <a
-              href={isirUrl}
+              href={eisirProceedingUrl(r, isirUrl)}
               target="_blank"
               rel="noreferrer noopener"
               className="text-primary mt-3 inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
