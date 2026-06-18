@@ -23,7 +23,13 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from sledovane_dokumenty_core import state, tracking
+    from sledovane_dokumenty_core import (
+        folder_check,
+        folders,
+        notify,
+        state,
+        tracking,
+    )
     from sledovane_dokumenty_core.exceptions import (
         DocumentAlreadyTrackedError,
         DocumentError,
@@ -31,6 +37,7 @@ try:
         DocumentNotTrackedError,
         GroupNotFoundError,
     )
+    from sledovane_dokumenty_core.folders import WatchedFolderError
 except ImportError as e:
     sys.stdout.write("Status: 500 Internal Server Error\r\n")
     sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n\r\n")
@@ -59,6 +66,8 @@ def now_utc():
 def error_status(exc):
     if isinstance(exc, DocumentAlreadyTrackedError):
         return "409 Conflict"
+    if isinstance(exc, WatchedFolderError):
+        return "400 Bad Request"
     if isinstance(exc, (DocumentNotTrackedError, DocumentNotFoundError, GroupNotFoundError)):
         return "404 Not Found"
     return "500 Internal Server Error"
@@ -162,6 +171,169 @@ def to_overview_entry(document, groups):
     }
 
 
+# ── watched folders ─────────────────────────────────────────────────────────
+
+
+def _spawn_cli(cli_args):
+    """Run cdx-sledovane-dokumenty detached so slow harvest/check don't block."""
+    import subprocess
+    try:
+        subprocess.Popen(
+            ["cdx-sledovane-dokumenty"] + cli_args,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return True
+    except OSError:
+        return False
+
+
+def folder_to_fe(root):
+    """Reshape one watched folder (watched.json + tracking) for the FE."""
+    abs_root = os.path.abspath(os.path.expanduser(root))
+    entry = folders.find_in_index(abs_root) or {
+        "root": abs_root,
+        "name": os.path.basename(abs_root.rstrip("/")) or abs_root,
+        "added_on": None,
+    }
+    data = folders.read_watched(abs_root) or folders.empty_watched()
+    tracking_state = folders.read_tracking(abs_root) or {"legislation": {}, "lastCheckAt": None}
+    leg_state = tracking_state.get("legislation", {})
+
+    documents = []
+    pending = 0
+    for d in data.get("documents", []):
+        if d.get("extractedAt") is None:
+            pending += 1
+        documents.append({
+            "path": d.get("path"),
+            "sha256": d.get("sha256"),
+            "discoveredAt": d.get("discoveredAt"),
+            "extractedAt": d.get("extractedAt"),
+            "updatedAt": d.get("updatedAt"),
+            "legislation": d.get("legislation", []),
+        })
+
+    legislation = []
+    for ref in folders.unique_legislation(abs_root):
+        cid = ref.get("codexisId")
+        st = leg_state.get(cid, {}) if cid else {}
+        changes = st.get("changes", [])
+        legislation.append({
+            "uri": ref.get("uri"),
+            "text": ref.get("text"),
+            "codexisId": cid,
+            "tracked": bool(cid),
+            "baselineVersionId": st.get("baselineVersionId"),
+            "lastKnownVersionId": st.get("lastKnownVersionId"),
+            "changes": changes,
+            "unconfirmed_changes": sum(1 for c in changes if not c.get("confirmed_on")),
+        })
+
+    return {
+        "root": abs_root,
+        "name": entry.get("name"),
+        "added_on": entry.get("added_on"),
+        "documents": documents,
+        "documents_count": len(documents),
+        "pending_harvest": pending,
+        "legislation": legislation,
+        "last_check_at": tracking_state.get("lastCheckAt"),
+    }
+
+
+def handle_folder_get(view, params):
+    if view == "folders":
+        emit_json({
+            "mode": "folders",
+            "generated_at": now_utc(),
+            "folders": folders.list_watches(),
+            "settings": notify.load_settings(),
+        })
+        return
+    if view == "folder":
+        root = (params.get("root", [""])[0] or "").strip()
+        if not root:
+            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+            return
+        emit_json({"mode": "folder", "generated_at": now_utc(), "folder": folder_to_fe(root)})
+        return
+    if view == "browse":
+        path = (params.get("path", [""])[0] or "").strip() or None
+        emit_json({"mode": "browse", "generated_at": now_utc(), **folders.browse(path)})
+        return
+    if view == "notify":
+        emit_json({"mode": "notify", "settings": notify.load_settings()})
+        return
+    emit_json({"ok": False, "error": f"unknown view: {view}"}, status="400 Bad Request")
+
+
+def handle_folder_action(action, body):
+    root = (body.get("root") or "").strip()
+
+    if action == "folder_add":
+        if not root:
+            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+            return
+        res = folders.add_watch(root, name=(body.get("name") or None))
+        _spawn_cli(["folder", "harvest", res["root"]])
+        emit_json({"ok": True, "folder": res, "extracting": True})
+        return
+
+    if action in ("start_extraction", "folder_harvest"):
+        if not root:
+            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+            return
+        _spawn_cli(["folder", "harvest", os.path.abspath(os.path.expanduser(root))])
+        emit_json({"ok": True, "started": True})
+        return
+
+    if action == "folder_refresh":
+        if not root:
+            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+            return
+        _spawn_cli(["folder", "refresh", os.path.abspath(os.path.expanduser(root))])
+        emit_json({"ok": True, "started": True})
+        return
+
+    if action == "folder_check":
+        args = ["folder", "check"]
+        if root:
+            args.append(os.path.abspath(os.path.expanduser(root)))
+        _spawn_cli(args)
+        emit_json({"ok": True, "started": True})
+        return
+
+    if action == "folder_remove":
+        if not root:
+            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+            return
+        folders.remove_watch(root, purge=bool(body.get("purge")))
+        emit_json({"ok": True})
+        return
+
+    if action == "folder_confirm":
+        if not root:
+            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+            return
+        marked = folder_check.confirm_folder(root, body.get("codexisId"))
+        emit_json({"ok": True, "confirmed": marked})
+        return
+
+    if action == "save_notify_settings":
+        saved = notify.save_settings({
+            "email": bool(body.get("email", True)),
+            "inApp": bool(body.get("inApp", True)),
+            "recipients": body.get("recipients", []),
+        })
+        emit_json({"ok": True, "settings": saved})
+        return
+
+    emit_json({"ok": False, "error": f"unknown folder action: {action}"}, status="400 Bad Request")
+
+
 # ── POST dispatch ───────────────────────────────────────────────────────────
 
 
@@ -170,6 +342,10 @@ def handle_post(body):
 
     if action in ("group_add", "group_remove", "group_delete", "group_rename"):
         handle_group_action(action, body)
+        return
+
+    if action.startswith("folder_") or action in ("start_extraction", "save_notify_settings"):
+        handle_folder_action(action, body)
         return
 
     target_uuid = body.get("uuid", "")
@@ -300,6 +476,12 @@ def handle_group_action(action, body):
 
 def handle_get(query_string):
     params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+
+    view = (params.get("view", [""])[0] or "").strip()
+    if view:
+        handle_folder_get(view, params)
+        return
+
     requested_uuid = (params.get("uuid", [""])[0] or "").strip()
 
     documents = [state_to_fe_document(s) for s in tracking.list_all()]

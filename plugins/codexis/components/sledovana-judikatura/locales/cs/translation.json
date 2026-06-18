@@ -50,6 +50,7 @@
     "removed": "Téma smazáno",
     "allTopics": "Vše",
     "topicDetail": "Detail tématu",
+    "addMonitoring": "Nastavit další sledování",
     "feed": {
       "searchPlaceholder": "Hledat v reportech…",
       "onlyUnconfirmed": "Jen nové",
@@ -64,9 +65,18 @@
     },
     "landing": {
       "title": "Judikatura k vašim tématům pod dohledem",
-      "text": "Zadejte téma a my pravidelně procházíme novou judikaturu a připravíme vám shrnutí.",
-      "chatLead": "Začněte z chatu CODEXIS:",
-      "chatPrompt": "Sleduj judikaturu k tématu pracovní právo"
+      "text": "Sledujeme za vás novou i změněnou judikaturu k tématům, která vás zajímají.",
+      "feature1": "Nová i změněná rozhodnutí",
+      "feature2": "Pravidelná kontrola",
+      "feature3": "Souhrn e-mailem",
+      "step1Title": "Popíšete téma v chatu",
+      "step1Text": "Řeknete, co chcete sledovat — oblast, soudy, jak často a v jaké podobě.",
+      "step2Title": "Hlídáme rozhodnutí soudů",
+      "step2Text": "Pravidelně procházíme nová i změněná rozhodnutí k vašemu tématu.",
+      "step3Title": "Dostanete shrnutí",
+      "step3Text": "Přehledný souhrn nových rozhodnutí, klidně i e-mailem.",
+      "chatLead": "Napište do chatu třeba:",
+      "chatPrompt": "Sleduj judikaturu k tématu pracovní právo od Nejvyššího a Ústavního soudu, kontroluj týdně a posílej mi e-mailem souhrn nových rozhodnutí."
     }
   }
 }
