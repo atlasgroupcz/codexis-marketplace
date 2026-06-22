@@ -1,0 +1,102 @@
+{
+  "endpoint": "at",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-06-22T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLCVDR_ID>/at?date=YYYY-MM-DD"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/lokaleregelgeving/cvdr/doc/{docId}/at",
+      "method": "get",
+      "summary": "Resolve a CVDR regulation to its version on a specific date",
+      "description": "Returns the version in force on the given date, plus its consolidated PDF, bijlagen, neighbour version labels, a work-level withdrawn flag, and the full version list. Use this instead of /versions when you want a single version, not the whole history.",
+      "operationId": "getAt",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLCVDR1234"
+        },
+        {
+          "name": "date",
+          "in": "query",
+          "description": "ISO date (YYYY-MM-DD) to resolve against. Required.",
+          "required": true,
+          "schema": { "type": "string", "format": "date" },
+          "example": "2020-06-15"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Resolved version envelope",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CvdrAtResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CvdrAtResponse": {
+        "type": "object",
+        "description": "Version-resolved-by-date envelope for a CVDR regulation",
+        "properties": {
+          "docId": { "type": "string", "description": "CVDR display ID", "example": "NLCVDR1234" },
+          "date": { "type": "string", "description": "Date the response was resolved for (ISO YYYY-MM-DD)" },
+          "version": { "$ref": "#/components/schemas/CvdrVersionItem", "description": "The version in force on date; null when no version covers it" },
+          "pdf": { "$ref": "#/components/schemas/CvdrAttachmentRef", "description": "Consolidated PDF of the resolved version; null when none" },
+          "bijlagen": {
+            "type": "array",
+            "description": "Bijlage (annex) PDF attachments of the resolved version",
+            "items": { "$ref": "#/components/schemas/CvdrAttachmentRef" }
+          },
+          "previousVersion": { "type": "string", "description": "version label of the temporally-preceding version; null at the start of coverage" },
+          "nextVersion": { "type": "string", "description": "version label of the temporally-following version; null at the end of coverage" },
+          "withdrawn": { "type": "boolean", "description": "True when the work was withdrawn (datumIntrekking) on or before date" },
+          "versions": {
+            "type": "array",
+            "description": "Full version list (latest → oldest by validFrom)",
+            "items": { "$ref": "#/components/schemas/CvdrVersionItem" }
+          }
+        }
+      },
+      "CvdrVersionItem": {
+        "type": "object",
+        "description": "A single version (toestand) of a CVDR regulation",
+        "properties": {
+          "version": { "type": "string", "description": "Manifest expression label — pass as the ?version= parameter on /text, /toc, /parts", "example": "2" },
+          "validFrom": { "type": "string", "description": "Version valid from date (ISO YYYY-MM-DD)" },
+          "validTo": { "type": "string", "description": "Version valid to date (null if open-ended)" },
+          "validFromEstimated": { "type": "boolean", "description": "True when validFrom was derived/estimated rather than declared verbatim" },
+          "validFromSource": { "type": "string", "description": "Provenance of validFrom" },
+          "url": { "type": "string", "description": "Canonical portal URL for this toestand (display only)" },
+          "textUrl": { "type": "string", "description": "cdx-nl:// URL to fetch this version's text" },
+          "pdf": { "$ref": "#/components/schemas/CvdrAttachmentRef", "description": "Rendered consolidated PDF for this toestand; null when none" },
+          "bijlagen": {
+            "type": "array",
+            "description": "Bijlage (annex) PDF attachments for this toestand",
+            "items": { "$ref": "#/components/schemas/CvdrAttachmentRef" }
+          }
+        }
+      },
+      "CvdrAttachmentRef": {
+        "type": "object",
+        "description": "Reference to a CVDR attachment (consolidated PDF or bijlage)",
+        "properties": {
+          "originalName": { "type": "string", "description": "Human-meaningful filename", "example": "CVDR101405_2.pdf" },
+          "kind": { "type": "string", "description": "Attachment kind", "enum": ["consolidated", "bijlage"] },
+          "url": { "type": "string", "description": "cdx-nl:// attachment URL" }
+        }
+      }
+    }
+  }
+}

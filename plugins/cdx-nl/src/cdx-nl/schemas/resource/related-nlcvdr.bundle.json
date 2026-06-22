@@ -1,0 +1,74 @@
+{
+  "endpoint": "related",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-06-22T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLCVDR_ID>/related"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/lokaleregelgeving/cvdr/doc/{docId}/related",
+      "method": "get",
+      "summary": "Get related laws (grondslag)",
+      "description": "Grondslag (legal-basis) references for a CVDR regulation. direction=out (default): the laws this regulation is based on, resolved from the work-level grondslagRefs. direction=in: empty (grondslag is outgoing-only).",
+      "operationId": "getRelated",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLCVDR1234"
+        },
+        {
+          "name": "direction",
+          "in": "query",
+          "description": "out = laws this is based on (grondslag); in = empty",
+          "required": false,
+          "schema": { "type": "string", "enum": ["in", "out"], "default": "out" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Related documents",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CvdrRelatedResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CvdrRelatedResponse": {
+        "type": "object",
+        "description": "Grondslag (legal-basis) references for a CVDR regulation",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "NLCVDR1234" },
+          "direction": { "type": "string", "description": "Resolved direction", "enum": ["in", "out"] },
+          "total": { "type": "integer", "format": "int32", "description": "Number of related items" },
+          "items": {
+            "type": "array",
+            "description": "Grondslag references (empty when direction=in)",
+            "items": { "$ref": "#/components/schemas/CvdrRelatedItem" }
+          }
+        }
+      },
+      "CvdrRelatedItem": {
+        "type": "object",
+        "description": "A single grondslag reference, best-effort resolved to a BWB deep link",
+        "properties": {
+          "raw": { "type": "string", "description": "The raw grondslag resourceIdentifier (JCI/BWB reference or deeplink)" },
+          "bwbId": { "type": "string", "description": "Extracted BWB identifier when one was found; null otherwise", "example": "BWBR0005416" },
+          "href": { "type": "string", "description": "Resolver link: the BWB /bwbid/{bwbId} API path when kind=bwb, else the raw identifier" },
+          "kind": { "type": "string", "description": "Resolution kind", "enum": ["bwb", "external"] }
+        }
+      }
+    }
+  }
+}

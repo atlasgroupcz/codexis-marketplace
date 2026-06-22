@@ -11,6 +11,7 @@ const CDX_NL_SCHEME: &str = "cdx-nl://";
 const ID_PREFIXES: &[(&str, &str)] = &[
     ("NLBWB", "NL/wetten/bwb"),
     ("NLUIT", "NL/rechtspraak/uitspraken"),
+    ("NLCVDR", "NL/lokaleregelgeving/cvdr"),
 ];
 
 pub(crate) fn execute_search_request(
@@ -246,6 +247,13 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
             return Err("Missing ECLI after ecli/".to_string());
         }
         Ok(format!("{base}/NL/rechtspraak/uitspraken/by-ecli/{rest}{encoded_query}"))
+    } else if let Some(rest) = path.strip_prefix("workid/") {
+        // NLCVDR work-id resolver: cdx-nl://workid/<CVDR_WORK_ID> resolves a source work
+        // identifier to its CVDR display document. CVDR-only (NLBWB uses law/NL + afkorting).
+        if rest.is_empty() {
+            return Err("Missing work-id after workid/".to_string());
+        }
+        Ok(format!("{base}/NL/lokaleregelgeving/cvdr/workid/{rest}{encoded_query}"))
     } else if let Some(rest) = path.strip_prefix("publication/") {
         // Spec §6: only /<pubId>/resolve is exposed via the cdx-nl:// scheme.
         // The bare /publication/<id> bytes endpoint stays on the server but is
@@ -399,6 +407,7 @@ fn lookup_search_prefix(source: &str) -> Result<&'static str, String> {
     match source {
         "NLBWB" => Ok("NL/wetten/bwb"),
         "NLUIT" => Ok("NL/rechtspraak/uitspraken"),
+        "NLCVDR" => Ok("NL/lokaleregelgeving/cvdr"),
         other => Err(format!("Unknown source code: {other}")),
     }
 }
@@ -502,6 +511,37 @@ mod tests {
             resolve_cdx_url(BASE, "doc/NLUIT1/meta").unwrap(),
             format!("{BASE}/NL/rechtspraak/uitspraken/doc/NLUIT1/meta")
         );
+    }
+
+    #[test]
+    fn doc_nlcvdr_meta_routes_to_lokaleregelgeving_cvdr() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/NLCVDR1/meta").unwrap(),
+            format!("{BASE}/NL/lokaleregelgeving/cvdr/doc/NLCVDR1/meta")
+        );
+    }
+
+    #[test]
+    fn doc_nlcvdr_at_with_query_preserved() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/NLCVDR1/at?date=2024-01-01").unwrap(),
+            format!("{BASE}/NL/lokaleregelgeving/cvdr/doc/NLCVDR1/at?date=2024-01-01")
+        );
+    }
+
+    #[test]
+    fn workid_routes_to_lokaleregelgeving_cvdr() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "workid/CVDR72510").unwrap(),
+            format!("{BASE}/NL/lokaleregelgeving/cvdr/workid/CVDR72510")
+        );
+        assert!(resolve_cdx_url(BASE, "workid/").is_err());
+    }
+
+    #[test]
+    fn search_url_for_nlcvdr() {
+        let args = build_search_curl_args(BASE, None, "NLCVDR", r#"{"query":"apv"}"#, None, None);
+        assert!(args.contains(&format!("{BASE}/NL/lokaleregelgeving/cvdr/search")));
     }
 
     #[test]

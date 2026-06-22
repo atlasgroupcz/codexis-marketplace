@@ -1,0 +1,93 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-06-22T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLCVDR_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/lokaleregelgeving/cvdr/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get document metadata",
+      "description": "Retrieve metadata for a CVDR (Dutch decentralized regulation) document by display ID.",
+      "operationId": "getMeta",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLCVDR1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Document metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CvdrMetaResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CvdrMetaResponse": {
+        "type": "object",
+        "description": "Document record metadata for a CVDR regulation",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "NLCVDR1234" },
+          "metadata": {
+            "$ref": "#/components/schemas/CvdrMetadataResponse",
+            "description": "CVDR work-level regulation metadata"
+          },
+          "assets": {
+            "type": "array",
+            "description": "Attachments with download URLs (rendered consolidated PDFs, bijlage PDFs, illustratie images, toestand XMLs)",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "CvdrMetadataResponse": {
+        "type": "object",
+        "description": "CVDR work-level regulation metadata (flat scalars projected from the typed metadata's main block)",
+        "properties": {
+          "url": { "type": "string", "description": "Canonical lokaleregelgeving.overheid.nl portal URL for the work (display only — never fetched)" },
+          "workId": { "type": "string", "description": "CVDR work identifier (dedup/identity key)", "example": "CVDR101405" },
+          "title": { "type": "string", "description": "Regulation title (citeertitel)" },
+          "type": { "type": "string", "description": "dcterms:type of the regulation", "example": "regeling" },
+          "organisatie": { "type": "string", "description": "Issuing body (dcterms:creator), e.g. a gemeente/provincie/waterschap name", "example": "Amsterdam" },
+          "organisatieType": { "type": "string", "description": "Issuing-body type (creator/@scheme, overheid: stripped). One of: Gemeente, Provincie, Waterschap, Koninkrijksdeel, CaribischOpenbaarLichaam, NederlandseAntillen, RegionaalSamenwerkingsorgaan", "example": "Gemeente" },
+          "rechtsgebied": {
+            "type": "array",
+            "description": "Legal domains (owmsmantel/dcterms:subject, multi-valued)",
+            "items": { "type": "string" }
+          },
+          "onderwerp": { "type": "string", "description": "Subject keyword(s) (often empty)" },
+          "datumIntrekking": { "type": "string", "description": "Withdrawal date (work-level, SRU-only); null/absent if still in force" },
+          "datumLaatsteWijziging": { "type": "string", "description": "Date of the last amendment" },
+          "grondslagRefs": {
+            "type": "array",
+            "description": "Legal-basis deeplinks (owmsmantel/dcterms:source @resourceIdentifier — JCI/BWB references, partial). Surfaced as relations via /related.",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename (use with /attachment/{filename})", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source", "example": "CVDR101405_2.pdf" },
+          "download_url": { "type": "string", "description": "cdx-nl:// link to download this attachment", "example": "cdx-nl://doc/NLCVDR1234/attachment/content_1.pdf" }
+        }
+      }
+    }
+  }
+}

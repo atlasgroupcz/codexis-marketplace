@@ -1,0 +1,113 @@
+{
+  "endpoint": "versions",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-06-22T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://doc/<NLCVDR_ID>/versions"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/lokaleregelgeving/cvdr/doc/{docId}/versions",
+      "method": "get",
+      "summary": "List CVDR document versions",
+      "description": "Returns toestanden/versions sorted latest → oldest by validFrom. Use from/to (YYYY-MM-DD) to window by validFrom; limit/offset to page. Each item carries the rendered consolidated PDF plus its bijlage attachments.",
+      "operationId": "getVersions",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "NLCVDR1234"
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "Page size (default: all remaining after offset)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "description": "Pagination offset (default: 0)",
+          "required": false,
+          "schema": { "type": "integer", "format": "int32" }
+        },
+        {
+          "name": "from",
+          "in": "query",
+          "description": "Inclusive lower bound on validFrom (YYYY-MM-DD). Items with null validFrom are excluded when set.",
+          "required": false,
+          "schema": { "type": "string", "format": "date" }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "Inclusive upper bound on validFrom (YYYY-MM-DD). Items with null validFrom are excluded when set.",
+          "required": false,
+          "schema": { "type": "string", "format": "date" }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Version list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CvdrVersionsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CvdrVersionsResponse": {
+        "type": "object",
+        "description": "Available versions (toestanden) of a CVDR regulation",
+        "properties": {
+          "docId": { "type": "string", "description": "CVDR display ID", "example": "NLCVDR1234" },
+          "total": { "type": "integer", "format": "int32", "description": "Total toestand count after from/to filtering, before paging" },
+          "count": { "type": "integer", "format": "int32", "description": "Number of items in this response after paging" },
+          "items": {
+            "type": "array",
+            "description": "Toestanden, sorted latest → oldest by validFrom",
+            "items": { "$ref": "#/components/schemas/CvdrVersionItem" }
+          }
+        }
+      },
+      "CvdrVersionItem": {
+        "type": "object",
+        "description": "A single version (toestand) of a CVDR regulation",
+        "properties": {
+          "version": { "type": "string", "description": "Manifest expression label — pass as the ?version= parameter on /text, /toc, /parts", "example": "2" },
+          "validFrom": { "type": "string", "description": "Version valid from date (ISO YYYY-MM-DD)" },
+          "validTo": { "type": "string", "description": "Version valid to date (null if open-ended; read-time clamped if upstream interval is inverted)" },
+          "validFromEstimated": { "type": "boolean", "description": "True when validFrom was derived/estimated rather than declared verbatim" },
+          "validFromSource": { "type": "string", "description": "Provenance of validFrom (which source/field it was taken from)" },
+          "url": { "type": "string", "description": "Canonical portal URL for this toestand (display only)" },
+          "textUrl": { "type": "string", "description": "cdx-nl:// URL to fetch this version's text" },
+          "pdf": { "$ref": "#/components/schemas/CvdrAttachmentRef", "description": "Rendered consolidated PDF for this toestand; null when none" },
+          "bijlagen": {
+            "type": "array",
+            "description": "Bijlage (annex) PDF attachments for this toestand — empty list if none",
+            "items": { "$ref": "#/components/schemas/CvdrAttachmentRef" }
+          }
+        }
+      },
+      "CvdrAttachmentRef": {
+        "type": "object",
+        "description": "Reference to a CVDR attachment (consolidated PDF or bijlage)",
+        "properties": {
+          "originalName": { "type": "string", "description": "Human-meaningful filename", "example": "CVDR101405_2.pdf" },
+          "kind": { "type": "string", "description": "Attachment kind", "enum": ["consolidated", "bijlage"] },
+          "url": { "type": "string", "description": "cdx-nl:// attachment URL" }
+        }
+      }
+    }
+  }
+}
