@@ -18,12 +18,14 @@ pub(crate) enum ResourceSchemaKind {
     Citations,
     PublicationResolve,
     BwbId,
+    WorkId,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum SchemaSource {
     Nlbwb,
     Nluit,
+    Nlcvdr,
 }
 
 struct RenderedSchemaDocument {
@@ -190,8 +192,6 @@ fn load_shared_schema_bundle(kind: ResourceSchemaKind) -> Result<&'static str, C
     use ResourceSchemaKind as K;
     Ok(match kind {
         K::Text => include_str!("../../schemas/resource/text.bundle.json"),
-        K::Versions => include_str!("../../schemas/resource/versions-nlbwb.bundle.json"),
-        K::At => include_str!("../../schemas/resource/at-nlbwb.bundle.json"),
         K::CitedByDecisions => {
             include_str!("../../schemas/resource/cited-by-decisions-nlbwb.bundle.json")
         }
@@ -200,6 +200,7 @@ fn load_shared_schema_bundle(kind: ResourceSchemaKind) -> Result<&'static str, C
             include_str!("../../schemas/resource/publication-resolve.bundle.json")
         }
         K::BwbId => include_str!("../../schemas/resource/bwbid-nlbwb.bundle.json"),
+        K::WorkId => include_str!("../../schemas/resource/workid-nlcvdr.bundle.json"),
         _ => {
             return Err(CliError::InvalidStoredSchema(format!(
                 "/{} is source-aware, not shared",
@@ -218,18 +219,32 @@ fn load_source_aware_schema_bundle(
     Ok(match (kind, source) {
         (K::Meta, S::Nlbwb) => include_str!("../../schemas/resource/meta-nlbwb.bundle.json"),
         (K::Meta, S::Nluit) => include_str!("../../schemas/resource/meta-nluit.bundle.json"),
+        (K::Meta, S::Nlcvdr) => include_str!("../../schemas/resource/meta-nlcvdr.bundle.json"),
         (K::Toc, S::Nlbwb) => include_str!("../../schemas/resource/toc-nlbwb.bundle.json"),
         (K::Toc, S::Nluit) => include_str!("../../schemas/resource/toc-nluit.bundle.json"),
+        (K::Toc, S::Nlcvdr) => include_str!("../../schemas/resource/toc-nlcvdr.bundle.json"),
         (K::Parts, S::Nlbwb) => include_str!("../../schemas/resource/parts-nlbwb.bundle.json"),
         (K::Parts, S::Nluit) => include_str!("../../schemas/resource/parts-nluit.bundle.json"),
+        (K::Parts, S::Nlcvdr) => include_str!("../../schemas/resource/parts-nlcvdr.bundle.json"),
         (K::Related, S::Nlbwb) => include_str!("../../schemas/resource/related-nlbwb.bundle.json"),
         (K::Related, S::Nluit) => include_str!("../../schemas/resource/related-nluit.bundle.json"),
+        (K::Related, S::Nlcvdr) => {
+            include_str!("../../schemas/resource/related-nlcvdr.bundle.json")
+        }
         (K::RelatedCounts, S::Nlbwb) => {
             include_str!("../../schemas/resource/related-counts-nlbwb.bundle.json")
         }
         (K::RelatedCounts, S::Nluit) => {
             include_str!("../../schemas/resource/related-counts-nluit.bundle.json")
         }
+        (K::Versions, S::Nlbwb) => {
+            include_str!("../../schemas/resource/versions-nlbwb.bundle.json")
+        }
+        (K::Versions, S::Nlcvdr) => {
+            include_str!("../../schemas/resource/versions-nlcvdr.bundle.json")
+        }
+        (K::At, S::Nlbwb) => include_str!("../../schemas/resource/at-nlbwb.bundle.json"),
+        (K::At, S::Nlcvdr) => include_str!("../../schemas/resource/at-nlcvdr.bundle.json"),
         (kind, source) => {
             return Err(CliError::InvalidStoredSchema(format!(
                 "no bundle for /{} on {}",
@@ -480,6 +495,7 @@ fn resource_endpoint_name(kind: ResourceSchemaKind) -> &'static str {
         ResourceSchemaKind::Citations => "citations",
         ResourceSchemaKind::PublicationResolve => "publication-resolve",
         ResourceSchemaKind::BwbId => "bwbid",
+        ResourceSchemaKind::WorkId => "workid",
     }
 }
 
@@ -497,6 +513,7 @@ fn resource_endpoint_label(kind: ResourceSchemaKind) -> &'static str {
         ResourceSchemaKind::Citations => "Citations",
         ResourceSchemaKind::PublicationResolve => "Publication resolver",
         ResourceSchemaKind::BwbId => "BWB-id resolver",
+        ResourceSchemaKind::WorkId => "CVDR work-id resolver",
     }
 }
 
@@ -535,6 +552,9 @@ fn resource_output_description(kind: ResourceSchemaKind) -> &'static str {
         ResourceSchemaKind::BwbId => {
             "Resolution from a BWB identifier or afkorting to a display document id."
         }
+        ResourceSchemaKind::WorkId => {
+            "Resolution from a CVDR work-id to a display document id (latest version)."
+        }
     }
 }
 
@@ -557,19 +577,20 @@ fn resource_cdx_patterns(kind: ResourceSchemaKind) -> Vec<String> {
             "cdx-nl://afkorting/<ABBR>/citations?toestandId=X[&page=N]".into(),
         ],
         K::PublicationResolve => vec!["cdx-nl://publication/<PUB_ID>/resolve".into()],
+        K::WorkId => vec!["cdx-nl://workid/<CVDR_WORK_ID>".into()],
         K::BwbId => vec![
             "cdx-nl://law/NL/<BWB_ID>".into(),
             "cdx-nl://afkorting/<ABBR>".into(),
         ],
         K::Versions => vec![
-            "cdx-nl://doc/<NLBWB_ID>/versions".into(),
-            "cdx-nl://law/NL/<BWB_ID>/versions".into(),
-            "cdx-nl://afkorting/<ABBR>/versions".into(),
+            "cdx-nl://doc/<DOC_ID>/versions  (NLBWB or NLCVDR)".into(),
+            "cdx-nl://law/NL/<BWB_ID>/versions (NLBWB only)".into(),
+            "cdx-nl://afkorting/<ABBR>/versions (NLBWB only)".into(),
         ],
         K::At => vec![
-            "cdx-nl://doc/<NLBWB_ID>/at?date=YYYY-MM-DD".into(),
-            "cdx-nl://law/NL/<BWB_ID>/at?date=YYYY-MM-DD".into(),
-            "cdx-nl://afkorting/<ABBR>/at?date=YYYY-MM-DD".into(),
+            "cdx-nl://doc/<DOC_ID>/at?date=YYYY-MM-DD  (NLBWB or NLCVDR)".into(),
+            "cdx-nl://law/NL/<BWB_ID>/at?date=YYYY-MM-DD (NLBWB only)".into(),
+            "cdx-nl://afkorting/<ABBR>/at?date=YYYY-MM-DD (NLBWB only)".into(),
         ],
         K::CitedByDecisions => vec![
             "cdx-nl://doc/<NLBWB_ID>/cited-by-decisions".into(),
@@ -610,6 +631,7 @@ fn source_specific_cdx_patterns(
             format!("cdx-nl://doc/<NLUIT_ID>/{endpoint}"),
             format!("cdx-nl://ecli/<ECLI>/{endpoint}"),
         ],
+        SchemaSource::Nlcvdr => vec![format!("cdx-nl://doc/<NLCVDR_ID>/{endpoint}")],
     }
 }
 
@@ -660,7 +682,7 @@ impl ResourceSchemaKind {
         use ResourceSchemaKind as K;
         matches!(
             self,
-            K::Meta | K::Toc | K::Parts | K::Related | K::RelatedCounts
+            K::Meta | K::Toc | K::Parts | K::Related | K::RelatedCounts | K::Versions | K::At
         )
     }
 
@@ -668,16 +690,15 @@ impl ResourceSchemaKind {
         use ResourceSchemaKind as K;
         use SchemaSource as S;
         match self {
-            K::Meta | K::Toc | K::Parts | K::Related | K::RelatedCounts => {
-                &[S::Nlbwb, S::Nluit]
-            }
+            K::Meta | K::Toc | K::Parts | K::Related => &[S::Nlbwb, S::Nluit, S::Nlcvdr],
+            K::RelatedCounts => &[S::Nlbwb, S::Nluit],
+            K::Versions | K::At => &[S::Nlbwb, S::Nlcvdr],
             K::Text
-            | K::Versions
-            | K::At
             | K::CitedByDecisions
             | K::Citations
             | K::PublicationResolve
-            | K::BwbId => &[],
+            | K::BwbId
+            | K::WorkId => &[],
         }
     }
 }
@@ -687,6 +708,7 @@ impl SchemaSource {
         match self {
             Self::Nlbwb => "NLBWB",
             Self::Nluit => "NLUIT",
+            Self::Nlcvdr => "NLCVDR",
         }
     }
 }
@@ -700,15 +722,23 @@ mod tests {
         let cases: Vec<(ResourceSchemaKind, Option<SchemaSource>)> = vec![
             (ResourceSchemaKind::Meta, Some(SchemaSource::Nlbwb)),
             (ResourceSchemaKind::Meta, Some(SchemaSource::Nluit)),
+            (ResourceSchemaKind::Meta, Some(SchemaSource::Nlcvdr)),
             (ResourceSchemaKind::Meta, None), // generic intro
             (ResourceSchemaKind::Text, None),
-            (ResourceSchemaKind::Versions, None),
+            (ResourceSchemaKind::Versions, None), // generic intro (now source-aware)
+            (ResourceSchemaKind::Versions, Some(SchemaSource::Nlbwb)),
+            (ResourceSchemaKind::Versions, Some(SchemaSource::Nlcvdr)),
             (ResourceSchemaKind::At, None),
+            (ResourceSchemaKind::At, Some(SchemaSource::Nlcvdr)),
+            (ResourceSchemaKind::Toc, Some(SchemaSource::Nlcvdr)),
+            (ResourceSchemaKind::Parts, Some(SchemaSource::Nlcvdr)),
             (ResourceSchemaKind::CitedByDecisions, None),
             (ResourceSchemaKind::Citations, None),
             (ResourceSchemaKind::PublicationResolve, None),
             (ResourceSchemaKind::BwbId, None),
+            (ResourceSchemaKind::WorkId, None),
             (ResourceSchemaKind::Related, Some(SchemaSource::Nlbwb)),
+            (ResourceSchemaKind::Related, Some(SchemaSource::Nlcvdr)),
             (ResourceSchemaKind::RelatedCounts, Some(SchemaSource::Nluit)),
         ];
         for (kind, source) in cases {

@@ -1,0 +1,57 @@
+{
+  "endpoint": "workid",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://10.245.1.74:8081/v3/api-docs",
+  "fetchedAt": "2026-06-22T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-nl://workid/<CVDR_WORK_ID>"
+  ],
+  "operations": [
+    {
+      "path": "/api/NL/lokaleregelgeving/cvdr/workid/{workId}",
+      "method": "get",
+      "summary": "Resolve a CVDR work-id to a display ID",
+      "description": "Find the CVDR document by its source work identifier (e.g. CVDR101405). Returns the display ID and basic metadata for the latest version. This response is NOT wrapped in a search envelope.",
+      "operationId": "resolveWorkId",
+      "parameters": [
+        {
+          "name": "workId",
+          "in": "path",
+          "description": "CVDR work identifier",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "CVDR101405"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Resolution",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CvdrWorkIdResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CvdrWorkIdResponse": {
+        "type": "object",
+        "description": "Resolution of a CVDR work-id to a display document",
+        "properties": {
+          "workId": { "type": "string", "description": "The CVDR work identifier that was resolved", "example": "CVDR101405" },
+          "docId": { "type": "string", "description": "Resolved display ID", "example": "NLCVDR1234" },
+          "domain": { "type": "string", "description": "Domain identifier", "example": "lokaleregelgeving_overheid_nl_cvdr" },
+          "recordId": { "type": "string", "description": "Internal record ID" },
+          "title": { "type": "string", "description": "Title of the latest version" },
+          "validFrom": { "type": "string", "description": "validFrom of the latest version (ISO YYYY-MM-DD)" },
+          "url": { "type": "string", "description": "Canonical lokaleregelgeving.overheid.nl portal URL (display only)" },
+          "docUrl": { "type": "string", "description": "cdx-nl:// URL to the document's /meta endpoint" }
+        }
+      }
+    }
+  }
+}

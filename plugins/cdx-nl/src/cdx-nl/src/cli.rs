@@ -7,34 +7,40 @@ use crate::core::schema::{render_resource_schema, ResourceSchemaKind, SchemaSour
 use crate::get::GetArgs;
 use crate::sources::common::SearchPayloadArgs;
 use crate::sources::nlbwb::{SearchNlbwbArgs, SEARCH_NLBWB_HELP};
+use crate::sources::nlcvdr::{SearchNlcvdrArgs, SEARCH_NLCVDR_HELP};
 use crate::sources::nluit::{SearchNluitArgs, SEARCH_NLUIT_HELP};
 
 const ROOT_HELP: &str = "\
 Data sources:
-  NLBWB    Dutch Legislation    Basiswettenbestand (BWB): Dutch national laws and treaties
-  NLUIT    Dutch Case Law       Rechtspraak.nl: judicial decisions from Dutch courts
+  NLBWB     Dutch Legislation              Basiswettenbestand (BWB): Dutch national laws and treaties
+  NLUIT     Dutch Case Law                 Rechtspraak.nl: judicial decisions from Dutch courts
+  NLCVDR    Dutch Decentralized Regulation CVDR: regulations of gemeenten, provincies, waterschappen
 
 Examples:
   cdx-nl search NLBWB --query \"Burgerlijk Wetboek\" --limit 5
   cdx-nl search NLBWB --bwb-id BWBR0001827
   cdx-nl search NLUIT --query \"huurrecht\" --court HR --limit 5
+  cdx-nl search NLCVDR --query \"algemene plaatselijke verordening\" --organisatie-type Gemeente
   cdx-nl get cdx-nl://doc/NLBWB1234/meta
   cdx-nl get cdx-nl://doc/NLUIT5678/text
+  cdx-nl get cdx-nl://doc/NLCVDR1234/versions
   cdx-nl get cdx-nl://law/NL/BWBR0001827
   cdx-nl get cdx-nl://ecli/ECLI:NL:HR:2024:1234
   cdx-nl get cdx-nl://afkorting/BW/text
+  cdx-nl get cdx-nl://workid/CVDR72510
 
 Detailed source help:
   cdx-nl search <DATA_SOURCE> --help
-  cdx-nl search [NLBWB|NLUIT] --help
+  cdx-nl search [NLBWB|NLUIT|NLCVDR] --help
 
 Endpoint schema help:
-  cdx-nl schema [meta|text|toc|parts|versions|at|cited-by-decisions|related|related/counts|citations|publication-resolve|bwbid]
-  cdx-nl schema meta [NLBWB|NLUIT]
+  cdx-nl schema [meta|text|toc|parts|versions|at|cited-by-decisions|related|related/counts|citations|publication-resolve|bwbid|workid]
+  cdx-nl schema meta [NLBWB|NLUIT|NLCVDR]
+  cdx-nl schema versions [NLBWB|NLCVDR]
 
 Common get resource suffixes:
   /meta, /toc, /text, /parts, /versions, /citations
-  /at?date=YYYY-MM-DD (NLBWB only), /cited-by-decisions (NLBWB only)
+  /at?date=YYYY-MM-DD (NLBWB, NLCVDR), /cited-by-decisions (NLBWB only)
   /related, /related/counts, /attachment/<FILE>
 
 Direct law fetch (NLBWB only):
@@ -43,7 +49,8 @@ Direct law fetch (NLBWB only):
 Resolvers:
   cdx-nl://afkorting/<ABBR>[/...]           # NLBWB
   cdx-nl://ecli/<ECLI>[/...]                # NLUIT
-  cdx-nl://publication/<PUB_ID>/resolve     # NLBWB";
+  cdx-nl://publication/<PUB_ID>/resolve     # NLBWB
+  cdx-nl://workid/<CVDR_WORK_ID>            # NLCVDR";
 
 #[derive(Parser, Debug)]
 #[command(
@@ -127,11 +134,27 @@ pub(crate) enum ResourceSchemaCommand {
         source: Option<SchemaSourceCommand>,
     },
 
-    #[command(name = "versions", about = "Output schema for /versions (NLBWB only)")]
-    Versions,
+    #[command(
+        name = "versions",
+        about = "Output schema for /versions (NLBWB, NLCVDR)",
+        subcommand_value_name = "DATA_SOURCE",
+        subcommand_help_heading = "Schema sources"
+    )]
+    Versions {
+        #[command(subcommand)]
+        source: Option<SchemaSourceCommand>,
+    },
 
-    #[command(name = "at", about = "Output schema for /at?date=YYYY-MM-DD (NLBWB only)")]
-    At,
+    #[command(
+        name = "at",
+        about = "Output schema for /at?date=YYYY-MM-DD (NLBWB, NLCVDR)",
+        subcommand_value_name = "DATA_SOURCE",
+        subcommand_help_heading = "Schema sources"
+    )]
+    At {
+        #[command(subcommand)]
+        source: Option<SchemaSourceCommand>,
+    },
 
     #[command(
         name = "cited-by-decisions",
@@ -175,6 +198,9 @@ pub(crate) enum ResourceSchemaCommand {
         about = "Output schema for NLBWB resolver response (afkorting/publication)"
     )]
     BwbId,
+
+    #[command(name = "workid", about = "Output schema for /workid/<CVDR_WORK_ID> (NLCVDR only)")]
+    WorkId,
 }
 
 impl ResourceSchemaCommand {
@@ -184,14 +210,15 @@ impl ResourceSchemaCommand {
             Self::Text => ResourceSchemaKind::Text,
             Self::Toc { .. } => ResourceSchemaKind::Toc,
             Self::Parts { .. } => ResourceSchemaKind::Parts,
-            Self::Versions => ResourceSchemaKind::Versions,
-            Self::At => ResourceSchemaKind::At,
+            Self::Versions { .. } => ResourceSchemaKind::Versions,
+            Self::At { .. } => ResourceSchemaKind::At,
             Self::CitedByDecisions => ResourceSchemaKind::CitedByDecisions,
             Self::Related { .. } => ResourceSchemaKind::Related,
             Self::RelatedCounts { .. } => ResourceSchemaKind::RelatedCounts,
             Self::Citations => ResourceSchemaKind::Citations,
             Self::PublicationResolve => ResourceSchemaKind::PublicationResolve,
             Self::BwbId => ResourceSchemaKind::BwbId,
+            Self::WorkId => ResourceSchemaKind::WorkId,
         }
     }
 
@@ -200,15 +227,16 @@ impl ResourceSchemaCommand {
             Self::Meta { source } => source.as_ref().map(SchemaSourceCommand::kind),
             Self::Toc { source } => source.as_ref().map(SchemaSourceCommand::kind),
             Self::Parts { source } => source.as_ref().map(SchemaSourceCommand::kind),
+            Self::Versions { source } => source.as_ref().map(SchemaSourceCommand::kind),
+            Self::At { source } => source.as_ref().map(SchemaSourceCommand::kind),
             Self::Related { source } => source.as_ref().map(SchemaSourceCommand::kind),
             Self::RelatedCounts { source } => source.as_ref().map(SchemaSourceCommand::kind),
             Self::Text
-            | Self::Versions
-            | Self::At
             | Self::CitedByDecisions
             | Self::Citations
             | Self::PublicationResolve
-            | Self::BwbId => None,
+            | Self::BwbId
+            | Self::WorkId => None,
         }
     }
 }
@@ -220,6 +248,9 @@ pub(crate) enum SchemaSourceCommand {
 
     #[command(name = "NLUIT", alias = "nluit", about = "NLUIT schema")]
     Nluit,
+
+    #[command(name = "NLCVDR", alias = "nlcvdr", about = "NLCVDR schema")]
+    Nlcvdr,
 }
 
 impl SchemaSourceCommand {
@@ -227,6 +258,7 @@ impl SchemaSourceCommand {
         match self {
             Self::Nlbwb => SchemaSource::Nlbwb,
             Self::Nluit => SchemaSource::Nluit,
+            Self::Nlcvdr => SchemaSource::Nlcvdr,
         }
     }
 }
@@ -240,6 +272,10 @@ pub(crate) enum SearchSource {
     /// Search Dutch case law (Rechtspraak.nl).
     #[command(name = "NLUIT", alias = "nluit", after_help = SEARCH_NLUIT_HELP)]
     Nluit(SearchNluitArgs),
+
+    /// Search Dutch decentralized regulations (CVDR).
+    #[command(name = "NLCVDR", alias = "nlcvdr", after_help = SEARCH_NLCVDR_HELP)]
+    Nlcvdr(SearchNlcvdrArgs),
 }
 
 impl SearchSource {
@@ -247,6 +283,7 @@ impl SearchSource {
         match self {
             Self::Nlbwb(_) => "NLBWB",
             Self::Nluit(_) => "NLUIT",
+            Self::Nlcvdr(_) => "NLCVDR",
         }
     }
 
@@ -254,6 +291,7 @@ impl SearchSource {
         match self {
             Self::Nlbwb(args) => args.build_payload("NLBWB"),
             Self::Nluit(args) => args.build_payload("NLUIT"),
+            Self::Nlcvdr(args) => args.build_payload("NLCVDR"),
         }
     }
 
@@ -261,6 +299,7 @@ impl SearchSource {
         match self {
             Self::Nlbwb(args) => args.dry_run(),
             Self::Nluit(args) => args.dry_run(),
+            Self::Nlcvdr(args) => args.dry_run(),
         }
     }
 
@@ -268,6 +307,7 @@ impl SearchSource {
         match self {
             Self::Nlbwb(args) => args.sort(),
             Self::Nluit(args) => args.sort(),
+            Self::Nlcvdr(args) => args.sort(),
         }
     }
 
@@ -275,6 +315,7 @@ impl SearchSource {
         match self {
             Self::Nlbwb(args) => args.order(),
             Self::Nluit(args) => args.order(),
+            Self::Nlcvdr(args) => args.order(),
         }
     }
 }
@@ -344,6 +385,18 @@ mod tests {
     }
 
     #[test]
+    fn parses_uppercase_nlcvdr_search() {
+        let cli = Cli::try_parse_from(["cdx-nl", "search", "NLCVDR", "--query", "apv", "--work-id", "CVDR72510"]).unwrap();
+        match cli.command {
+            Commands::Search { source: SearchSource::Nlcvdr(args) } => {
+                assert_eq!(args.base.query.as_deref(), Some("apv"));
+                assert_eq!(args.work_id.as_deref(), Some("CVDR72510"));
+            }
+            _ => panic!("expected NLCVDR search"),
+        }
+    }
+
+    #[test]
     fn parses_get_with_dry_run() {
         let cli = Cli::try_parse_from(["cdx-nl", "get", "cdx-nl://doc/NLBWB1/meta", "--dry-run"]).unwrap();
         match cli.command {
@@ -383,6 +436,13 @@ mod tests {
         assert!(Cli::try_parse_from(["cdx-nl", "schema", "bwbid"]).is_ok());
         // related/counts is source-aware.
         assert!(Cli::try_parse_from(["cdx-nl", "schema", "related/counts", "NLUIT"]).is_ok());
+        // versions/at are source-aware (NLBWB, NLCVDR); source optional.
+        assert!(Cli::try_parse_from(["cdx-nl", "schema", "versions", "NLBWB"]).is_ok());
+        assert!(Cli::try_parse_from(["cdx-nl", "schema", "versions", "NLCVDR"]).is_ok());
+        assert!(Cli::try_parse_from(["cdx-nl", "schema", "at", "NLCVDR"]).is_ok());
+        assert!(Cli::try_parse_from(["cdx-nl", "schema", "meta", "NLCVDR"]).is_ok());
+        // workid is NLCVDR-only, no source.
+        assert!(Cli::try_parse_from(["cdx-nl", "schema", "workid"]).is_ok());
     }
 
     #[test]
