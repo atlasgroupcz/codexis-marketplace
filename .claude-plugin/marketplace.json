@@ -427,6 +427,30 @@
           "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "company": "Firmy" }
         }
       }
+    },
+    {
+      "uuid": "713eb310-3414-4656-9c15-9831e76c7280",
+      "name": "leciva",
+      "description": "Czech medicines registry (SÚKL DLP) — drug lookup by name or SÚKL code, strength, form, active substances, ATC.",
+      "source": "./plugins/leciva",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "SÚKL — registr léčiv",
+          "description": "Registr léčiv SÚKL (DLP) — vyhledávání léků podle názvu nebo kódu SÚKL, síla, léková forma, účinné látky, ATC skupina.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "health": "Zdraví" }
+        },
+        "en": {
+          "displayName": "SÚKL — Medicines Registry",
+          "description": "SÚKL medicines registry (DLP) — drug lookup by name or SÚKL code, strength, form, active substances, ATC group.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "health": "Health" }
+        },
+        "sk": {
+          "displayName": "SÚKL — register liekov",
+          "description": "Register liekov SÚKL (DLP) — vyhľadávanie liekov podľa názvu alebo kódu SÚKL, sila, lieková forma, účinné látky, ATC skupina.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "health": "Zdravie" }
+        }
+      }
     }
   ]
 }
