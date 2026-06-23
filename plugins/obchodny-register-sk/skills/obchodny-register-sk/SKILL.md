@@ -1,6 +1,7 @@
 ---
 uuid: 499b1cf8-5a26-49ef-8840-d664fdd30582
 name: obchodny-register-sk
+icon: icon.svg
 description: Slovenský obchodný register a register právnických osôb (RPO, Štatistický úrad SR). Use for Slovak company / legal-entity lookups by IČO or name — identification, registered office, statutory bodies (konatelia, predstavenstvo), partners (spoločníci), share capital (základné imanie), legal form, registration court and number, and full historical changes. Triggers on "obchodný register", "ORSR", "RPO", "slovenská firma", "slovenské IČO", "výpis z obchodného registra", "konateľ", "spoločník", "základné imanie", "register právnických osôb", "sídlo firmy na Slovensku". Slovak (SK) jurisdiction only — for Czech companies use the ares skill.
 version: 1.2.0
 jurisdictions: [SK]

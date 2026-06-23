@@ -1,6 +1,7 @@
 ---
 uuid: 1c427cf8-4d37-4304-b2e1-fbabf245dae4
 name: sledovane-dokumenty
+icon: icon.svg
 description: Track changes in Czech legislation via CODEXIS. Use when user wants to monitor laws, track amendments, or check for legislative changes.
 version: 1.0.0
 jurisdictions: [CZ]
