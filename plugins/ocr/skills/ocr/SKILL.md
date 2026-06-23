@@ -1,6 +1,7 @@
 ---
 uuid: 5c685f5d-ab83-464b-97df-45d5e9ca98e3
 name: ocr
+icon: icon.svg
 description: >-
   Convert binary documents to markdown using OCR / document conversion.
   Supported formats: PDF, DOC, DOCX, PPTX, XLS, XLSX, ODS, ODT, RTF, HTML,

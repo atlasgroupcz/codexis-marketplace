@@ -1,6 +1,7 @@
 ---
 uuid: f2c4412e-d6c4-462b-9ca5-0b94048be8cb
 name: codexis-dane
+icon: icon.svg
 version: 3.3.0
 jurisdictions: [CZ]
 i18n:

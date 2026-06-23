@@ -1,6 +1,7 @@
 ---
 uuid: 35151977-329d-4d0c-a44b-2a1f8bf5dbb2
 name: insolvence
+icon: icon.svg
 jurisdictions: [CZ]
 description: Český insolvenční rejstřík (ISIR, veřejné WS justice.cz). Use for ad-hoc insolvency lookups of companies (by IČO) and natural persons (by surname + given name + date of birth), and for tracked monitoring of subjects with automatic detection of new and changed insolvency proceedings (konkurs, oddlužení, reorganizace). Triggers on "insolvence", "insolvenční rejstřík", "ISIR", "úpadek", "konkurs", "oddlužení", "reorganizace", "je firma v insolvenci", "hlídej insolvenci", "sleduj insolvenci", "hlídač insolvencí".
 i18n:

@@ -1,5 +1,6 @@
 {
   "name": "insolvence",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "Hlídač insolvencí ČR (ISIR)",
   "author": {

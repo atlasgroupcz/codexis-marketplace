@@ -86,6 +86,7 @@ Documentation and instructions...
 ```json
 {
   "name": "plugin-name",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "Plugin description",
   "author": {
@@ -103,6 +104,19 @@ Documentation and instructions...
   }
 }
 ```
+
+### Icons
+
+Every manifest **declares** its icon path; the daemon no longer scans the repo
+for `icon.svg`/`icon.png`/etc. Without a declaration the UI renders initials.
+
+- `plugin.json` → `iconPath` (or `icon`), resolved relative to the **plugin
+  directory** (e.g. `"icon.svg"` for `plugins/<name>/icon.svg`).
+- `marketplace.json` → `iconPath`, resolved relative to the **marketplace root**.
+- `component.json` → `icon`, resolved relative to the **component directory**
+  (e.g. `"assets/icon.png"`).
+- `SKILL.md` / agent `*.md` frontmatter → `icon:`, resolved relative to the
+  **skill/agent directory**.
 
 ### Plugin-owned environment variables
 

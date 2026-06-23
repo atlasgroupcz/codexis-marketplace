@@ -1,6 +1,7 @@
 ---
 uuid: 18a1a3e5-6c4d-4670-91eb-627db8b4a22d
 name: znamky
+icon: icon.svg
 jurisdictions: [CZ, EU]
 description: Ochrana a hlídání ochranných známek vůči veřejným rejstříkům ÚPV (ČR) a EUIPO (EU) přes agregátor TMview. Use for ad-hoc similarity searches (lustrace) of a word mark or a logo, and for stateful monitoring of trademarks with automatic detection of similar new filings/registrations and an AI likelihood-of-confusion (zaměnitelnost) assessment. Triggers on "ochranná známka", "ochranné známky", "trademark", "ÚPV", "EUIPO", "TMview", "zaměnitelnost", "podobná známka", "hlídej známku", "registrace značky", "kolize ochranných známek", "rešerše známky".
 i18n:
