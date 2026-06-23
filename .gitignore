@@ -133,3 +133,6 @@ __pycache__/
 test-results/
 
 .worktrees/
+
+# superpowers brainstorm/sdd scratch (local tooling, never tracked)
+.superpowers/
