@@ -1,24 +1,24 @@
 ---
 uuid: 858f1a59-06c5-46a4-84dc-62d50cc1b6af
 name: cdx-nl
-description: Dutch national legislation (BWB) and Dutch case law (Rechtspraak.nl) — use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., or references BWB-ids.
-version: 2.1.0
+description: Dutch national legislation (BWB), Dutch case law (Rechtspraak.nl), and decentralized regulations (CVDR) — use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., references BWB-ids, or asks about municipal/provincial/water-board (gemeente/provincie/waterschap) regulations.
+version: 2.2.0
 jurisdictions: [NL]
 i18n:
   cs:
-    displayName: "Nizozemské právo (BWB a Rechtspraak.nl)"
-    summary: "Nizozemská právní databáze — národní legislativa z Basiswettenbestand (BWB) a rozhodnutí nizozemských soudů z Rechtspraak.nl."
+    displayName: "Nizozemské právo (BWB, Rechtspraak.nl a CVDR)"
+    summary: "Nizozemská právní databáze — národní legislativa z Basiswettenbestand (BWB), rozhodnutí nizozemských soudů z Rechtspraak.nl a decentralizované předpisy obcí/provincií/vodních úřadů (CVDR)."
   en:
-    displayName: "Dutch Legal Database (BWB & Rechtspraak.nl)"
-    summary: "Dutch legal database — national legislation from Basiswettenbestand (BWB) and Dutch court decisions from Rechtspraak.nl."
+    displayName: "Dutch Legal Database (BWB, Rechtspraak.nl & CVDR)"
+    summary: "Dutch legal database — national legislation from Basiswettenbestand (BWB), Dutch court decisions from Rechtspraak.nl, and decentralized regulations of municipalities/provinces/water boards (CVDR)."
   nl:
-    displayName: "Nederlandse rechtsdatabase (BWB & Rechtspraak.nl)"
-    summary: "Nederlandse rechtsdatabase — nationale wetgeving uit Basiswettenbestand (BWB) en uitspraken van Nederlandse rechtbanken via Rechtspraak.nl."
+    displayName: "Nederlandse rechtsdatabase (BWB, Rechtspraak.nl & CVDR)"
+    summary: "Nederlandse rechtsdatabase — nationale wetgeving uit Basiswettenbestand (BWB), uitspraken van Nederlandse rechtbanken via Rechtspraak.nl en decentrale regelgeving van gemeenten/provincies/waterschappen (CVDR)."
 ---
 
 # Dutch Legal Database (cdx-nl)
 
-Dutch legal database providing structured access to two sources: national legislation from Basiswettenbestand (NLBWB) and Dutch case law from Rechtspraak.nl (NLUIT). Invoke when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with `ECLI:NL:...`, or references BWB-ids.
+Dutch legal database providing structured access to three sources: national legislation from Basiswettenbestand (NLBWB), Dutch case law from Rechtspraak.nl (NLUIT), and decentralized regulations from CVDR — gemeenten, provincies, waterschappen (NLCVDR). Invoke when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with `ECLI:NL:...`, references BWB-ids, or asks about local/decentralized (gemeente/provincie/waterschap) regulations.
 
 ## Commands
 
@@ -53,8 +53,8 @@ Never resolve URLs yourself and never read `$CODEXIS_PLUGIN_NL_API_URL` for link
 
 Never include any of the following in user-facing text:
 
-- Raw document IDs (e.g., `NLBWB1234`, `NLUIT5678`)
-- Raw search prefixes (e.g., `NLBWB`, `NLUIT`)
+- Raw document IDs (e.g., `NLBWB1234`, `NLUIT5678`, `NLCVDR1234`)
+- Raw search prefixes (e.g., `NLBWB`, `NLUIT`, `NLCVDR`)
 - Raw BWB-ids (e.g., `BWBR0001840`) and raw ECLIs (e.g., `ECLI:NL:HR:2024:123`) outside of a wrapping link
 - Bare API URLs you construct yourself (e.g., `https://…/api/NL/wetten/bwb/doc/NLBWB1234`) — cite ONLY the `https://…/attachment/…` PDF link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_NL_API_URL`)
@@ -64,10 +64,11 @@ Never include any of the following in user-facing text:
 
 When referring to data sources in prose, match the user's conversation language:
 
-| Code (internal) | Dutch Name                  | English Name         |
-|-----------------|-----------------------------|----------------------|
-| `NLBWB`         | Basiswettenbestand          | National Legislation |
-| `NLUIT`         | Uitspraken (Rechtspraak.nl) | Case Law             |
+| Code (internal) | Dutch Name                  | English Name             |
+|-----------------|-----------------------------|--------------------------|
+| `NLBWB`         | Basiswettenbestand          | National Legislation     |
+| `NLUIT`         | Uitspraken (Rechtspraak.nl) | Case Law                 |
+| `NLCVDR`        | Lokale/decentrale regelgeving (CVDR) | Decentralized Regulations |
 
 ### Document Titles
 
@@ -75,6 +76,7 @@ Use these fields as the link text:
 
 - **NLBWB:** `title` from search results (e.g., "Burgerlijk Wetboek Boek 1") — strip `<mark>` tags. When citing a specific article, prefix with the article reference (e.g., `art. 1:1 BW`).
 - **NLUIT (court decisions):** the link text MUST be a compact legal citation, not the generic title: `COURT - ECLI - DD.MM.YYYY` (e.g. `[HR - ECLI:NL:HR:2024:123 - 12.01.2024](https://…/attachment/decision.pdf#page=12)`). Map the court to its abbreviation per the table in `references/search-nluit.md`; the reference is `ecli` (registered case number only if no ECLI), and append ` - DD.MM.YYYY` (`decisionDate`) when available. The decision type (`Uitspraak`) may be secondary text, never the primary label; missing date → drop only the date segment.
+- **NLCVDR (decentralized regulations):** use `title` from search results — strip `<mark>` tags. CVDR regulations are versioned (toestanden); when the user references a point in time, prefer `/at?date=` over the latest version. The issuing body (`organisatie`) makes good secondary text (e.g. "Algemene Plaatselijke Verordening — Amsterdam").
 
 If title is unavailable, use a descriptive fallback — never the raw document ID.
 
@@ -162,7 +164,20 @@ Prefer these over `/versions` when applicable:
 Both endpoints accept `/doc/<NLBWB_ID>/`, `/law/NL/<BWB_ID>/`, and
 `/afkorting/<ABBR>/` prefixes.
 
+### NLCVDR is versioned; relations are grondslag-only
+
+CVDR regulations carry N versions (toestanden) per work, like NLBWB. Navigate
+time with `/doc/<NLCVDR_ID>/versions` (full history) or `/doc/<NLCVDR_ID>/at?date=YYYY-MM-DD`
+(single version in force on a date, plus its PDF + neighbour pointers). Pin a
+version on `/text`, `/toc`, `/parts` with `?version=<label>` (the manifest
+expression label, NOT a date). Relations are **outgoing-only** legal-basis
+(grondslag) refs via `/related?direction=out`; `direction=in` is always empty.
+There are NO `/law`, `/afkorting`, `/citations`, or `/cited-by-decisions`
+surfaces for CVDR. To resolve a known CVDR work-id directly, use
+`cdx-nl get cdx-nl://workid/<CVDR_WORK_ID>` (returns the display doc + `docUrl`).
+
 ## Reference Files
 
 - **`references/search-nlbwb.md`** — Dutch national legislation search (Basiswettenbestand): document types, validity filters, BWB-id and afkorting lookup
 - **`references/search-nluit.md`** — Dutch case law search (Rechtspraak.nl): court codes, decision types, ECLI lookup
+- **`references/search-nlcvdr.md`** — Dutch decentralized regulations search (CVDR): organisatie/organisatieType facets, validity filters, versions/at navigation, work-id resolution
