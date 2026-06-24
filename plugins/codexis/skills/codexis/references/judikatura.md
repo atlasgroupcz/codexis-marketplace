@@ -21,7 +21,9 @@ To get specific information from a concrete case law use subagent instead of ret
 
 ## Attribution: what the COURT held vs. what a PARTY argued
 
-A Czech decision is layered. The `odůvodnění` first **recapitulates the proceedings** — it restates, in reported speech, what the lower courts decided and what each party submitted — and only later gives the court's **own legal assessment**. The recapitulated arguments are NOT the court's view. Never present a party's submission, a lower court's reasoning that was overturned, or a dissenting opinion as the holding. This is the single most common extraction error — guard against it explicitly.
+**The rule:** treat as the holding only the `výrok` and those parts of the `odůvodnění` where the **deciding court itself adopts** a factual or legal conclusion. Recapitulated party arguments, a lower court's conclusions the deciding court did NOT adopt, and dissenting opinions are always a *foreign voice* — never present them as the court's conclusion. This is the single most common extraction error — guard against it explicitly.
+
+A Czech decision is layered into a binding `výrok` and an `odůvodnění`. The `odůvodnění` typically restates, in reported speech, what the lower courts decided and what each party submitted, and gives the court's **own legal assessment** — but the form varies. It is NOT reliably "recapitulation first, assessment second": brief decisions skip the recapitulation, some interleave restatement with assessment, and some expressly adopt parts of the lower court's reasoning. So attribute by the *voice of each passage* (see signal phrases below), not by its position in the text.
 
 Anatomy of a decision, by attribution layer:
 
@@ -30,7 +32,9 @@ Anatomy of a decision, by attribution layer:
 | `výrok` ("soud rozhodl takto") | The operative ruling — who won, what was annulled/awarded/remanded | **Court (binding)** |
 | Rekapitulace řízení / vyjádření účastníků | Restatement of party submissions and lower-court conclusions | **Parties / lower court (reported, not endorsed)** |
 | Vlastní posouzení soudu | The deciding court's legal reasoning → the ratio | **Court (this is the holding)** |
-| `právní věta` | Editorial headnote summarizing the ratio | Court (editorial) |
+| Lower-court reasoning the higher court **expressly adopts** | Becomes the deciding court's own reasoning *to that extent* | **Court (holding, in that scope)** |
+| Lower-court reasoning the higher court **reverses / rejects / overrules** | Superseded — must NOT be shown as the higher court's conclusion | **Lower court (not the holding)** |
+| `právní věta` | A short summary of the ratio — useful ratio-decidendi signal, but verify against the `odůvodnění`; in commercial databases it may be the **publisher's editorial headnote**, not the court's text | Ratio indicator (court's at NS Sbírka; possibly editorial elsewhere) |
 | Odlišné stanovisko (dissent) | Minority opinion | **Individual judge — NOT the holding** |
 
 Signal phrases — read the verb before attributing any statement:
