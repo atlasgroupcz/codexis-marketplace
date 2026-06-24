@@ -3,7 +3,7 @@ uuid: 5cdb1ccf-e079-49a9-a618-a3f3bb60dc20
 name: sledovana-judikatura
 icon: icon.svg
 description: Track case law topics and generate periodic reports. Use when user wants to monitor new jurisprudence, track judicial decisions, or get regular case law summaries. Triggers on "sleduj judikaturu", "judikatura", "nová rozhodnutí", "case law monitoring", "soudní rozhodnutí".
-version: 1.1.0
+version: 1.1.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -189,6 +189,8 @@ Create a report JSON and save it. The report should contain:
 ```
 
 The `title` field is the compact legal citation shown to the lawyer: `SOUD - Č. J. / SP. ZN. - DD.MM.RRRR` (e.g. `NS - 25 Cdo 1234/2025 - 10.03.2026`, `ÚS - Pl. ÚS 1/26 - 20.05.2026`). Compose it from `court` (abbreviated per the table in the `codexis` skill's `references/judikatura.md`), číslo jednací (else `spZn`) and `issued_on` as `DD.MM.RRRR`, dropping the ` - DD.MM.RRRR` segment when the date is missing. Keep `doc_type` as the separate secondary field — never use a truncated generic title as `title`.
+
+**Attribution in `summary` / `legal_sentence` / `practical_conclusion`:** state what the **court held**, not what a party argued. The holding is the `výrok` plus the parts of the `odůvodnění` where the deciding court itself adopts a conclusion ("soud dospěl k závěru…/uzavírá…"). Recapitulated party submissions ("žalobce/stěžovatel/dovolatel namítá/tvrdí…"), a lower-court conclusion the court did not adopt, and dissents are a foreign voice — never present them as the holding. When in doubt, attribute explicitly ("soud dovodil…" vs. "žalobce namítal…"). See the attribution section in the `codexis` skill's `references/judikatura.md` for signal phrases and examples.
 
 Write the report JSON to a temp file and save:
 ```bash
