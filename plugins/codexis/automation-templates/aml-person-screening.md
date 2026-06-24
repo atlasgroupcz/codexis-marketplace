@@ -8,6 +8,7 @@ max-turns: 25
 enabled: false
 notify-on-success: true
 notify-on-failure: true
+web-search: true
 i18n:
   cs:
     title: "AML prověření osoby"
