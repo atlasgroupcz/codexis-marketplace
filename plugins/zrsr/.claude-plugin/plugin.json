@@ -1,5 +1,6 @@
 {
   "name": "zrsr",
+  "iconPath": "icon.svg",
   "version": "0.1.0",
   "description": "Slovak business & trade register (ZRSR/RPO) — IČO lookup, company and sole-trader search, trade licences, Živnostenský and Obchodný register data",
   "author": {

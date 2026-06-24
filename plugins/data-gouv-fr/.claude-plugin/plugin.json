@@ -1,5 +1,6 @@
 {
   "name": "data-gouv-fr",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "French government open data (data.gouv.fr) — search and explore datasets, query tabular data, and discover APIs from the national Open Data platform",
   "author": {

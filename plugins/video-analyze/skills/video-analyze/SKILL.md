@@ -1,6 +1,7 @@
 ---
 uuid: 3e29a143-11b7-4567-b417-7a40c5471404
 name: video-analyze
+icon: icon.svg
 description: >-
   This skill should be invoked whenever user needs to analyze, transcribe,
   summarize, or describe video or audio content — local files (mp4, webm,

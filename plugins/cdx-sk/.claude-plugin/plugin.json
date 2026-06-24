@@ -1,5 +1,6 @@
 {
   "name": "cdx-sk",
+  "iconPath": "icon.svg",
   "version": "1.1.2",
   "description": "Slovak legal database — e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings",
   "author": {

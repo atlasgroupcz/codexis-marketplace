@@ -1,5 +1,6 @@
 {
   "name": "cdx-at",
+  "iconPath": "icon.svg",
   "version": "1.1.0",
   "description": "Austrian legal database (RIS) — federal legislation (Bundesrecht), case law (Judikatur) from 7 courts including VfGH and VwGH, state legislation (Landesrecht), other official publications (Sonstige), and consolidated federal norms with full amendment history",
   "author": {

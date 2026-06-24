@@ -1,5 +1,6 @@
 {
   "name": "znamky",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "Hlídač ochranných známek (ÚPV + EUIPO přes TMview)",
   "author": {

@@ -1,6 +1,7 @@
 {
   "uuid": "87975c97-617b-4393-9fb8-921c1ff7b70e",
   "name": "codexis-plugins",
+  "iconPath": "icon.svg",
   "owner": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"

@@ -1,6 +1,7 @@
 ---
 uuid: e5c6de23-bcb5-48b7-a845-8d8c472ff220
 name: codexis-ucetnictvi
+icon: icon.svg
 version: 2.2.0
 jurisdictions: [CZ]
 i18n:

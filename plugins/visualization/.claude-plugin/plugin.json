@@ -1,5 +1,6 @@
 {
   "name": "visualization",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "Data visualization using D3.js, Leaflet and AG Grid — charts, network graphs, timelines, trees, calendars, flowcharts, kanban boards, tables and maps",
   "author": {

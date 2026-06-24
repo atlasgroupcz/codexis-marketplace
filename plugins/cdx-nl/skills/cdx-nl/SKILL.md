@@ -1,6 +1,7 @@
 ---
 uuid: 858f1a59-06c5-46a4-84dc-62d50cc1b6af
 name: cdx-nl
+icon: icon.svg
 description: Dutch national legislation (BWB), Dutch case law (Rechtspraak.nl), and decentralized regulations (CVDR) — use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., references BWB-ids, or asks about municipal/provincial/water-board (gemeente/provincie/waterschap) regulations.
 version: 2.2.0
 jurisdictions: [NL]

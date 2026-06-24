@@ -1,6 +1,7 @@
 ---
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
+icon: icon.svg
 description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, or delete custom agents, skills, scheduled automations (cron), plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
 version: 1.5.1
 i18n:

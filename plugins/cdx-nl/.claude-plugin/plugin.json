@@ -1,5 +1,6 @@
 {
   "name": "cdx-nl",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "Dutch legal database — national legislation (Basiswettenbestand) from wetten.overheid.nl and Dutch case law (Rechtspraak.nl) from all courts",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },

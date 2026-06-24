@@ -1,6 +1,7 @@
 ---
 uuid: 272cbab6-4deb-4b1b-8595-279b6c6923d9
 name: codexis
+icon: icon.svg
 description: This skill should be invoked whenever user needs Czech or European legal research — legislation changes, case law / judikatura lookup, legal commentaries, professional literature, contract templates, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
 version: 2.2.1
 jurisdictions: [CZ, EU]
