@@ -1,6 +1,7 @@
 ---
 uuid: 4d8b61c5-641d-4201-85fe-259ca742eaeb
 name: kataster-sk
+icon: icon.svg
 description: Slovenský kataster nehnuteľností (ÚGKK SR). Use for Slovak parcel lookups — parcel number, cadastral unit (katastrálne územie), area (výmera), land use, register C/E parcels, and links to title deeds (list vlastníctva). Triggers on "kataster", "kataster nehnuteľností", "parcela", "parcelné číslo", "list vlastníctva", "LV", "katastrálne územie", "výmera pozemku", "pozemok na Slovensku", "ZBGIS", "ESKN", "kataster portál". Slovak (SK) jurisdiction only — for the Czech cadastre use the katastr skill.
 version: 1.3.0
 jurisdictions: [SK]

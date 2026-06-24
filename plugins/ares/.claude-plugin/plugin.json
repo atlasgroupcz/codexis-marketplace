@@ -1,5 +1,6 @@
 {
   "name": "ares",
+  "iconPath": "icon.svg",
   "version": "0.2.0",
   "description": "Czech business registry (ARES) — IČO lookup, company search, business register, trade licence and VAT payer status",
   "author": {

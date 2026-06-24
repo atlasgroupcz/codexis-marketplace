@@ -1,5 +1,6 @@
 {
   "name": "video-analyze",
+  "iconPath": "icon.svg",
   "version": "1.0.0",
   "description": "Audio & video content analysis using Gemini — transcripts, summaries and Q&A over YouTube URLs and local video/audio files (MP4, WebM, MOV, MP3, WAV and more)",
   "author": {

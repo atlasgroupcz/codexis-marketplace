@@ -136,3 +136,6 @@ test-results/
 
 # Local superpowers design/plan artifacts — not for this repo
 docs/superpowers/
+
+# superpowers brainstorm/sdd scratch (local tooling, never tracked)
+.superpowers/
