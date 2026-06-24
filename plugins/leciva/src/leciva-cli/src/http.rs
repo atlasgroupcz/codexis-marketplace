@@ -78,12 +78,20 @@ impl SuklClient {
         &self.base_url
     }
 
-    /// Jako `get`, ale vrátí tělo i při ne-2xx. Některé endpointy (cau-scau,
+    /// Jako `get`, ale 404 vrátí jako tělo (ne chybu). Některé endpointy (cau-scau,
     /// dokumenty-metadata) signalizují „bez záznamu" přes HTTP 404 + chybový JSON.
+    /// Ostatní ne-2xx (5xx, 403…) jsou reálná chyba serveru → vrať `Err`, ať se to
+    /// nezamění za „bez záznamu".
     pub fn get_lenient(&self, path: &str) -> Result<String> {
         let url = self.url_for(path);
         let resp = self.client.get(&url).header(ACCEPT, "application/json").send()?;
-        Ok(resp.text().unwrap_or_default())
+        let status = resp.status();
+        let body = resp.text().unwrap_or_default();
+        if status.is_success() || status == reqwest::StatusCode::NOT_FOUND {
+            Ok(body)
+        } else {
+            Err(anyhow!("HTTP {status} on GET {url}\n{}", body.trim()))
+        }
     }
 
     pub fn get_bytes(&self, url: &str) -> Result<Vec<u8>> {

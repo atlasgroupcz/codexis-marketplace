@@ -74,13 +74,23 @@ pub fn parse_tsv(tsv: &str) -> Index {
 
 impl Index {
     pub fn search(&self, query: &str, limit: usize) -> Vec<Entry> {
-        let q = query.to_lowercase();
+        let q = crate::text::fold(query);
         self.entries
             .iter()
-            .filter(|e| e.nazev.to_lowercase().contains(&q))
+            .filter(|e| crate::text::fold(&e.nazev).contains(&q))
             .take(limit)
             .cloned()
             .collect()
+    }
+
+    /// Kolik záznamů by `search` našel bez ořezu na `limit`.
+    /// Slouží k rozlišení „přesně N výsledků" od „N z mnoha" (truncated).
+    pub fn count_matches(&self, query: &str) -> usize {
+        let q = crate::text::fold(query);
+        self.entries
+            .iter()
+            .filter(|e| crate::text::fold(&e.nazev).contains(&q))
+            .count()
     }
 }
 
@@ -120,5 +130,14 @@ mod tests {
         let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
         let idx = parse_tsv(&tsv);
         assert_eq!(idx.search("", 1).len(), 1);
+    }
+
+    #[test]
+    fn count_matches_ignores_limit() {
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        // search ořízne na 1, count_matches vrátí skutečný počet
+        assert_eq!(idx.search("", 1).len(), 1);
+        assert_eq!(idx.count_matches(""), 2);
     }
 }
