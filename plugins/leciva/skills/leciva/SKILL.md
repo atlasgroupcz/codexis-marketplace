@@ -2,7 +2,7 @@
 uuid: 3f8b1d6a-2c47-4e90-b15a-9d72e0c4a8f1
 name: leciva
 description: Registr léčiv SÚKL (DLP). Use for Czech medicinal product lookups by drug name or SÚKL code — strength, dosage form, packaging, active substances, ATC group, dispensing type. Triggers on "lék", "léčivo", "léčivý přípravek", "SÚKL", "kód SÚKL", "účinná látka", "ATC", "příbalový leták", "SPC", "registrovaný lék", "najdi lék", "složení léku".
-version: 1.3.0
+version: 1.3.1
 jurisdictions: [CZ]
 i18n:
   cs:
