@@ -40,7 +40,7 @@ pub fn build_tsv_from_csv(csv: &str) -> Result<(String, usize)> {
         }
         let cols = split_semicolon(line);
         let get = |i: usize| cols.get(i).map(|s| s.trim()).unwrap_or("");
-        // tab-separated; tabuly v datech nahraď mezerou pro jistotu
+        // replace any tab in the data — it would break the TSV layout
         let row = format!(
             "{}\t{}\t{}\t{}",
             get(i_kod).replace('\t', " "),
@@ -72,25 +72,81 @@ pub fn parse_tsv(tsv: &str) -> Index {
     Index { entries }
 }
 
+// Empty query yields no tokens, which matches everything (keeps `search("")`).
+fn tokens(query: &str) -> Vec<String> {
+    crate::text::fold(query)
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect()
+}
+
+/// Matches `num` in `hay` only as a whole number: `"50"` hits `"50MG"` but not
+/// `"150MG"` nor `"500MG"`. Byte indexing is UTF-8-safe (a non-ASCII byte is not
+/// an ascii digit, so it counts as a boundary).
+fn contains_whole_number(hay: &str, num: &str) -> bool {
+    if num.is_empty() {
+        return false; // empty would make `find` spin forever
+    }
+    let hb = hay.as_bytes();
+    let n = num.len();
+    let mut start = 0;
+    while let Some(off) = hay[start..].find(num) {
+        let pos = start + off;
+        let before_ok = pos == 0 || !hb[pos - 1].is_ascii_digit();
+        let after_ok = pos + n >= hb.len() || !hb[pos + n].is_ascii_digit();
+        if before_ok && after_ok {
+            return true;
+        }
+        start = pos + 1;
+    }
+    false
+}
+
+impl Entry {
+    /// All tokens must match (AND). A numeric token is matched as a whole number
+    /// in `nazev + sila` only — never the package size, so "euthyrox 50" won't hit
+    /// 50-count packs of other strengths. A text token is a substring of
+    /// `nazev + sila + doplnek` (so form words like "sup"/"tbl" match). The code is
+    /// deliberately not in the haystack: `search` is a name→code resolver.
+    /// Haystacks are folded lazily — most queries are text-only and never build `strength`.
+    fn matches(&self, tokens: &[String]) -> bool {
+        let mut strength: Option<String> = None;
+        let mut full: Option<String> = None;
+        tokens.iter().all(|t| {
+            if crate::text::is_ascii_digits(t) {
+                let h = strength
+                    .get_or_insert_with(|| crate::text::fold(&format!("{} {}", self.nazev, self.sila)));
+                contains_whole_number(h, t)
+            } else {
+                let h = full.get_or_insert_with(|| {
+                    crate::text::fold(&format!("{} {} {}", self.nazev, self.sila, self.doplnek))
+                });
+                h.contains(t.as_str())
+            }
+        })
+    }
+}
+
 impl Index {
-    pub fn search(&self, query: &str, limit: usize) -> Vec<Entry> {
-        let q = crate::text::fold(query);
-        self.entries
-            .iter()
-            .filter(|e| crate::text::fold(&e.nazev).contains(&q))
-            .take(limit)
-            .cloned()
-            .collect()
+    /// Single pass → (true match count, first `limit` results). Combined so the
+    /// index isn't scanned (and folded) twice for the count and the listing.
+    pub fn search_counted(&self, query: &str, limit: usize) -> (usize, Vec<Entry>) {
+        let toks = tokens(query);
+        let mut total = 0;
+        let mut hits = Vec::new();
+        for e in &self.entries {
+            if e.matches(&toks) {
+                total += 1;
+                if hits.len() < limit {
+                    hits.push(e.clone());
+                }
+            }
+        }
+        (total, hits)
     }
 
-    /// Kolik záznamů by `search` našel bez ořezu na `limit`.
-    /// Slouží k rozlišení „přesně N výsledků" od „N z mnoha" (truncated).
-    pub fn count_matches(&self, query: &str) -> usize {
-        let q = crate::text::fold(query);
-        self.entries
-            .iter()
-            .filter(|e| crate::text::fold(&e.nazev).contains(&q))
-            .count()
+    pub fn search(&self, query: &str, limit: usize) -> Vec<Entry> {
+        self.search_counted(query, limit).1
     }
 }
 
@@ -133,11 +189,48 @@ mod tests {
     }
 
     #[test]
-    fn count_matches_ignores_limit() {
+    fn search_counted_returns_total_and_capped_hits() {
         let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
         let idx = parse_tsv(&tsv);
-        // search ořízne na 1, count_matches vrátí skutečný počet
-        assert_eq!(idx.search("", 1).len(), 1);
-        assert_eq!(idx.count_matches(""), 2);
+        let (total, hits) = idx.search_counted("", 1);
+        assert_eq!(total, 2);
+        assert_eq!(hits.len(), 1);
+    }
+
+    #[test]
+    fn search_matches_name_plus_strength() {
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        let hits = idx.search("paralen 500", 10);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].kod, "0182362");
+        assert_eq!(idx.search("paralen 999", 10).len(), 0);
+    }
+
+    #[test]
+    fn search_tokens_are_order_independent() {
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        assert_eq!(idx.search("500 paralen", 10).len(), 1);
+    }
+
+    #[test]
+    fn numeric_token_matches_whole_number_only() {
+        // ACYLCOFFIN 450MG/50MG: "50" hits the /50MG component, "45"/"500"/"5" don't —
+        // the whole-number rule keeps "euthyrox 50" off 150MCG and pack sizes.
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        assert_eq!(idx.search("acylcoffin 50", 10).len(), 1);
+        assert_eq!(idx.search("acylcoffin 450", 10).len(), 1);
+        assert_eq!(idx.search("acylcoffin 45", 10).len(), 0);
+        assert_eq!(idx.search("acylcoffin 5", 10).len(), 0);
+    }
+
+    #[test]
+    fn numeric_token_ignores_packaging_count() {
+        // PARALEN's doplnek is "...TBL NOB 24"; "paralen 24" must not match on pack size.
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        assert_eq!(idx.search("paralen 24", 10).len(), 0);
     }
 }

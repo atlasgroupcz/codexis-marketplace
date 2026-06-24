@@ -43,8 +43,8 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
 
-    // Oba testy mutují stejnou process-global env proměnnou; serializujeme je,
-    // ať se neperou pod paralelním během (cargo test default = víc vláken).
+    // Both tests mutate the same process-global env var; serialize them so they
+    // don't race under the parallel test runner (cargo test is multi-threaded).
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]

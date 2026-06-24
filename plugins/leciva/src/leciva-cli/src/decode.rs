@@ -11,7 +11,7 @@ mod tests {
 
     #[test]
     fn decodes_czech_diacritics() {
-        // cp1250: 'TRÁVICÍ' — 0xC1='Á', 0xCD='Í'
+        // cp1250 bytes for 'TRÁVICÍ' — 0xC1='Á', 0xCD='Í'
         let bytes = [b'T', b'R', 0xC1, b'V', b'I', b'C', 0xCD];
         assert_eq!(cp1250_to_utf8(&bytes), "TRÁVICÍ");
     }

@@ -90,13 +90,13 @@ fn build_one(zip: &[u8], csv: &str, out: std::path::PathBuf, key: &str, val: &st
 
 fn build_codelists(zip: &[u8]) -> Result<()> {
     std::fs::create_dir_all(paths::cis_dir())?;
-    // látky mají fallback NAZEV→INN, zvlášť
+    // substances need the NAZEV→INN fallback, so build them separately
     if let Ok(bytes) = extract_csv(zip, "dlp_latky.csv") {
         let csv = cp1250_to_utf8(&bytes);
         if let Ok(tsv) = codelist::build_latky_tsv(&csv) {
             let _ = write_atomic(paths::cis_path("latky.tsv"), tsv);
         }
-        // vyhledávací blob (cz + en + inn + synonyma) pro příkaz `latka`
+        // search blob (cz + en + inn + synonyms) for the `latka` command
         let synonyma = extract_csv(zip, "dlp_synonyma.csv")
             .ok()
             .and_then(|b| codelist::build_synonyma_map(&cp1250_to_utf8(&b)).ok())
@@ -111,7 +111,7 @@ fn build_codelists(zip: &[u8]) -> Result<()> {
     build_one(zip, "dlp_stavyreg.csv", paths::cis_path("stavyreg.tsv"), "REG", "NAZEV");
     build_one(zip, "dlp_atc.csv", paths::cis_path("atc.tsv"), "ATC", "NAZEV");
     build_one(zip, "dlp_zavislost.csv", paths::cis_path("zavislost.tsv"), "ZAV", "NAZEV_CS");
-    // reverzní index látka → léky
+    // reverse index: substance → drugs
     if let Ok(bytes) = extract_csv(zip, "dlp_slozeni.csv") {
         if let Ok(tsv) = codelist::build_latka_drugs_tsv(&cp1250_to_utf8(&bytes)) {
             let _ = write_atomic(paths::latka_drugs_path(), tsv);
@@ -144,14 +144,14 @@ pub fn refresh(client: &SuklClient, force: bool) -> Result<RefreshOutcome> {
 
     let app_dir = paths::app_dir();
     std::fs::create_dir_all(&app_dir)?;
-    // 1) zapiš index do temp, 2) atomicky přejmenuj, 3) až pak manifest
+    // 1) write the index to a temp file, 2) atomic rename, 3) only then the manifest
     let tmp = app_dir.join("index.tsv.tmp");
     std::fs::write(&tmp, tsv)?;
     std::fs::rename(&tmp, paths::index_path())?;
 
-    // Číselníky (kód → název) + reverzní index látka→léky. Neblokující: chyba
-    // číselníků nesmí shodit refresh ani zabránit zápisu manifestu níž
-    // (jinak by nový index zůstal bez manifestu). Detail pak prostě nepřeloží kód.
+    // Codelists (code → name) + the substance→drugs index. Non-blocking: a codelist
+    // failure must not abort the refresh or skip the manifest write below (else the new
+    // index would be left without a manifest). Detail would then just not resolve a code.
     if let Err(e) = build_codelists(&zip_bytes) {
         eprintln!("WARN: codelists: {e}");
     }
