@@ -290,8 +290,22 @@ pub fn run() -> Result<()> {
         Command::Search { query, limit } => {
             ensure_index(&client)?;
             let idx = load_index()?;
+            let total = idx.count_matches(&query);
             let hits = idx.search(&query, limit);
-            print_json(&json!({ "query": query, "count": hits.len(), "results": hits }));
+            let mut out = json!({
+                "query": query,
+                "count": total,          // skutečný počet shod (i když je víc než zobrazeno)
+                "shown": hits.len(),
+                "results": hits,
+            });
+            if total > hits.len() {
+                out["truncated"] = json!(true);
+                out["poznamka"] = json!(format!(
+                    "zobrazeno {} z {} — na úplný výčet přidej `--limit {}`",
+                    hits.len(), total, total
+                ));
+            }
+            print_json(&out);
         }
         Command::Detail { kod, all } => {
             let body = client.get(&format!("/lecive-pripravky/{kod}"))?;
@@ -315,7 +329,7 @@ pub fn run() -> Result<()> {
         }
         Command::Latka { query, limit } => {
             ensure_index(&client)?;
-            let q = query.to_lowercase();
+            let q = crate::text::fold(&query); // diakritika-insensitivní hledání
             // matchuj proti blobu cz+en+inn+synonyma (latky-search.tsv)
             let search_path = paths::cis_path("latky-search.tsv");
             let index_present = search_path.exists();
@@ -324,7 +338,7 @@ pub fn run() -> Result<()> {
                 for line in text.lines() {
                     let mut p = line.splitn(2, '\t');
                     let (k, blob) = (p.next().unwrap_or(""), p.next().unwrap_or(""));
-                    if !k.is_empty() && blob.contains(&q) {
+                    if !k.is_empty() && crate::text::fold(blob).contains(&q) {
                         latka_kody.insert(k.to_string());
                     }
                 }
@@ -352,7 +366,19 @@ pub fn run() -> Result<()> {
             results.sort_by(|a, b| a["kodSukl"].as_str().cmp(&b["kodSukl"].as_str()));
             let count = results.len();
             results.truncate(limit);
-            let mut out = json!({ "query": query, "count": count, "results": results });
+            let shown = results.len();
+            let mut out = json!({
+                "query": query,
+                "count": count,   // skutečný počet shod (i když je víc než zobrazeno)
+                "shown": shown,
+                "results": results,
+            });
+            if count > shown {
+                out["truncated"] = json!(true);
+                out["poznamka"] = json!(format!(
+                    "zobrazeno {shown} z {count} — na úplný výčet přidej `--limit {count}`"
+                ));
+            }
             if !index_present {
                 out["poznamka"] =
                     json!("index účinných látek chybí — spusť `leciva-cli refresh`");

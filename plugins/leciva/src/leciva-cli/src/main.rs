@@ -6,6 +6,7 @@ mod http;
 mod index;
 mod manifest;
 mod paths;
+mod text;
 
 fn main() {
     std::process::exit(match cli::run() {
