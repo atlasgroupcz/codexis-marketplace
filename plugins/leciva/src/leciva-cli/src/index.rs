@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct Entry {
+    #[serde(rename = "kodSukl")] // align with `latka` output and the SKILL.md contract
     pub kod: String,
     pub nazev: String,
     pub sila: String,
@@ -72,11 +73,36 @@ pub fn parse_tsv(tsv: &str) -> Index {
     Index { entries }
 }
 
-// Empty query yields no tokens, which matches everything (keeps `search("")`).
-fn tokens(query: &str) -> Vec<String> {
-    crate::text::fold(query)
+/// One query term: a Number matches a whole-number strength in name+strength;
+/// Text matches as a substring in name+strength+packaging.
+enum Term {
+    Number(String),
+    Text(String),
+}
+
+/// Split the folded query into terms. Any non-alphanumeric char (`/`, `,`, …) and
+/// whitespace break tokens, and a number glued to a unit is split too
+/// ("50mcg" → 50 + "mcg"), so the strength matches as a whole number, not a
+/// substring of "150mcg". Empty query → no terms → matches everything.
+fn query_terms(query: &str) -> Vec<Term> {
+    let normalized: String = crate::text::fold(query)
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c } else { ' ' })
+        .collect();
+    normalized
         .split_whitespace()
-        .map(|s| s.to_string())
+        .flat_map(|tok| {
+            let digits: String = tok.chars().take_while(|c| c.is_ascii_digit()).collect();
+            if digits.is_empty() {
+                return vec![Term::Text(tok.to_string())];
+            }
+            let rest = &tok[digits.len()..]; // digits are ASCII → byte len == char count
+            let mut out = vec![Term::Number(digits)];
+            if !rest.is_empty() {
+                out.push(Term::Text(rest.to_string()));
+            }
+            out
+        })
         .collect()
 }
 
@@ -103,21 +129,22 @@ fn contains_whole_number(hay: &str, num: &str) -> bool {
 }
 
 impl Entry {
-    /// All tokens must match (AND). A numeric token is matched as a whole number
-    /// in `nazev + sila` only — never the package size, so "euthyrox 50" won't hit
-    /// 50-count packs of other strengths. A text token is a substring of
+    /// All terms must match (AND). A Number is matched as a whole number in
+    /// `nazev + sila` only — never the package size, so "euthyrox 50" won't hit
+    /// 50-count packs of other strengths. Text is a substring of
     /// `nazev + sila + doplnek` (so form words like "sup"/"tbl" match). The code is
     /// deliberately not in the haystack: `search` is a name→code resolver.
     /// Haystacks are folded lazily — most queries are text-only and never build `strength`.
-    fn matches(&self, tokens: &[String]) -> bool {
+    fn matches(&self, terms: &[Term]) -> bool {
         let mut strength: Option<String> = None;
         let mut full: Option<String> = None;
-        tokens.iter().all(|t| {
-            if crate::text::is_ascii_digits(t) {
+        terms.iter().all(|term| match term {
+            Term::Number(n) => {
                 let h = strength
                     .get_or_insert_with(|| crate::text::fold(&format!("{} {}", self.nazev, self.sila)));
-                contains_whole_number(h, t)
-            } else {
+                contains_whole_number(h, n)
+            }
+            Term::Text(t) => {
                 let h = full.get_or_insert_with(|| {
                     crate::text::fold(&format!("{} {} {}", self.nazev, self.sila, self.doplnek))
                 });
@@ -131,11 +158,11 @@ impl Index {
     /// Single pass → (true match count, first `limit` results). Combined so the
     /// index isn't scanned (and folded) twice for the count and the listing.
     pub fn search_counted(&self, query: &str, limit: usize) -> (usize, Vec<Entry>) {
-        let toks = tokens(query);
+        let terms = query_terms(query);
         let mut total = 0;
         let mut hits = Vec::new();
         for e in &self.entries {
-            if e.matches(&toks) {
+            if e.matches(&terms) {
                 total += 1;
                 if hits.len() < limit {
                     hits.push(e.clone());
@@ -232,5 +259,25 @@ mod tests {
         let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
         let idx = parse_tsv(&tsv);
         assert_eq!(idx.search("paralen 24", 10).len(), 0);
+    }
+
+    #[test]
+    fn strength_with_attached_unit_is_whole_number() {
+        // "500mg" (unit glued, no space) must still be a whole-number strength match —
+        // "50mg" must NOT hit "500MG" the way a substring would.
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        assert_eq!(idx.search("paralen 500mg", 10).len(), 1);
+        assert_eq!(idx.search("paralen 50mg", 10).len(), 0);
+        assert_eq!(idx.search("acylcoffin 50mg", 10).len(), 1); // /50MG component
+    }
+
+    #[test]
+    fn slash_separates_combined_strengths() {
+        // ACYLCOFFIN 450MG/50MG — a slash splits like a space.
+        let (tsv, _) = build_tsv_from_csv(SAMPLE_CSV).unwrap();
+        let idx = parse_tsv(&tsv);
+        assert_eq!(idx.search("acylcoffin 450/50", 10).len(), 1);
+        assert_eq!(idx.search("acylcoffin 450/99", 10).len(), 0);
     }
 }
