@@ -2,7 +2,7 @@
 uuid: 3f8b1d6a-2c47-4e90-b15a-9d72e0c4a8f1
 name: leciva
 description: Registr léčiv SÚKL (DLP). Use for Czech medicinal product lookups by drug name or SÚKL code — strength, dosage form, packaging, active substances, ATC group, dispensing type. Triggers on "lék", "léčivo", "léčivý přípravek", "SÚKL", "kód SÚKL", "účinná látka", "ATC", "příbalový leták", "SPC", "registrovaný lék", "najdi lék", "složení léku".
-version: 1.2.0
+version: 1.3.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -39,6 +39,7 @@ The index downloads itself on first use. No API key needed.
 
 ```bash
 leciva-cli search "paralen"        # search by name → {count, shown, results:[{kodSukl, nazev, sila, doplnek}]}
+leciva-cli search "paralen 500"    # name + strength together (number = strength, not package size)
 leciva-cli detail 0182362          # readable detail (strength, form, dispensing, ATC, active substances, jeDodavka) — resolved names
 leciva-cli detail 0182362 --all    # full record (all fields) + resolved names
 leciva-cli slozeni 0182362         # active substances (names) + amounts
@@ -54,8 +55,11 @@ endpoints** — when you need more fields, use `detail --all`, not a manual API 
 
 ## Workflow
 
-- Drug by name: `search "<text>"` → pick the code → `detail`/`slozeni`.
-- SÚKL code directly: go straight to `detail`/`slozeni`.
+- Drug by name: `search "<text>"` → pick the code → `detail`/`slozeni`. You can include the
+  strength in the query (`search "paralen 500"`). Text words match the name, strength and form;
+  a numeric word matches the **strength** as a whole number (`50` ≠ `150`) — not the package size.
+- SÚKL code directly: go straight to `detail`/`slozeni`. A SÚKL code is 7 digits; if leading
+  zeros are missing they are added automatically (`254045` → `0254045`).
 - "What contains substance X / which drugs have Y": `latka "<substance>"`.
 
 ## Output

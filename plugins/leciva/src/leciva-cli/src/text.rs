@@ -1,8 +1,10 @@
-//! Skládání textu pro vyhledávání: lowercase + odstranění diakritiky,
-//! ať `"listova"` najde `"listová"` a `"paracetamol"` najde `"paracetamol"`.
-//! Pokrývá českou a slovenskou diakritiku (data SÚKL jsou cz/sk).
+//! Search text normalization: lowercase + strip cs/sk diacritics, so an
+//! accent-free query still matches accented data.
 
-/// Lowercase + fold diakritiky na holé ASCII písmeno.
+pub fn is_ascii_digits(s: &str) -> bool {
+    !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+}
+
 pub fn fold(s: &str) -> String {
     s.to_lowercase()
         .chars()
@@ -45,7 +47,14 @@ mod tests {
 
     #[test]
     fn accent_insensitive_substring_match() {
-        // dotaz bez háčků chytne data s háčky
         assert!(fold("kyselina listová").contains(&fold("listova")));
+    }
+
+    #[test]
+    fn is_ascii_digits_basics() {
+        assert!(is_ascii_digits("254045"));
+        assert!(!is_ascii_digits("")); // prázdné není číselný token
+        assert!(!is_ascii_digits("50mg"));
+        assert!(!is_ascii_digits("12 34"));
     }
 }

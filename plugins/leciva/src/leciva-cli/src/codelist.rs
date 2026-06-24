@@ -22,8 +22,8 @@ pub fn load_map(path: &Path) -> HashMap<String, String> {
             let mut parts = l.splitn(2, '\t');
             let k = parts.next()?.to_string();
             let v = parts.next().unwrap_or("").to_string();
-            // přeskoč prázdný klíč i prázdnou hodnotu (degenerovaný řádek → ať
-            // resolved() vrátí null místo prázdného názvu)
+            // skip rows with an empty key OR value, so resolved() returns null
+            // instead of an empty name
             if k.is_empty() || v.is_empty() {
                 None
             } else {
@@ -116,8 +116,8 @@ pub fn build_latky_tsv(csv: &str) -> Result<String> {
     Ok(out)
 }
 
-/// Seskupí synonyma látek (dlp_synonyma.csv: KOD_LATKY;SQ;ZDROJ;NAZEV; víc řádků
-/// na látku) do mapy `kód → "syn1 syn2 …"` (lowercase). Použije se ve vyhledávání.
+/// Group substance synonyms (dlp_synonyma.csv: KOD_LATKY;SQ;ZDROJ;NAZEV, many rows
+/// per substance) into a `code → "syn1 syn2 …"` map (lowercase) for search.
 pub fn build_synonyma_map(csv: &str) -> Result<HashMap<String, String>> {
     let mut lines = csv.lines();
     let header_line = lines.next().ok_or_else(|| anyhow!("empty CSV"))?;
@@ -144,8 +144,8 @@ pub fn build_synonyma_map(csv: &str) -> Result<HashMap<String, String>> {
     Ok(map)
 }
 
-/// Vyhledávací blob pro `latka`: kód → lower(NAZEV + NAZEV_EN + NAZEV_INN + synonyma),
-/// ať hledání chytne i anglicky / latinsky (INN) / jakékoli synonymum, nejen český název.
+/// Search blob for `latka`: code → lower(NAZEV + NAZEV_EN + NAZEV_INN + synonyms),
+/// so search hits English / Latin (INN) / any synonym, not just the Czech name.
 pub fn build_latky_search_tsv(csv: &str, synonyma: &HashMap<String, String>) -> Result<String> {
     let mut lines = csv.lines();
     let header_line = lines.next().ok_or_else(|| anyhow!("empty CSV"))?;
@@ -237,7 +237,7 @@ mod tests {
 9999;;ONLYINN;;;;;\n";
         let tsv = build_latky_tsv(csv).unwrap();
         assert!(tsv.contains("1064\tPARACETAMOL\n"));
-        assert!(tsv.contains("9999\tONLYINN\n")); // prázdné NAZEV → fallback INN
+        assert!(tsv.contains("9999\tONLYINN\n")); // empty NAZEV → INN fallback
     }
 
     #[test]

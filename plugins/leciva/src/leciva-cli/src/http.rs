@@ -24,7 +24,7 @@ pub fn opendata_base() -> String {
         .to_string()
 }
 
-/// Vybere DLPO dávku ze seznamu /aktualni-davky.
+/// Pick the DLPO batch from /aktualni-davky.
 pub fn pick_dlpo(davky: &[Davka]) -> Result<Davka> {
     davky
         .iter()
@@ -78,10 +78,10 @@ impl SuklClient {
         &self.base_url
     }
 
-    /// Jako `get`, ale 404 vrátí jako tělo (ne chybu). Některé endpointy (cau-scau,
-    /// dokumenty-metadata) signalizují „bez záznamu" přes HTTP 404 + chybový JSON.
-    /// Ostatní ne-2xx (5xx, 403…) jsou reálná chyba serveru → vrať `Err`, ať se to
-    /// nezamění za „bez záznamu".
+    /// Like `get`, but a 404 is returned as the body (not an error): some endpoints
+    /// (cau-scau, dokumenty-metadata) signal "no record" via HTTP 404 + an error JSON.
+    /// Other non-2xx (5xx, 403…) are real server errors → return `Err`, so they're
+    /// not mistaken for "no record".
     pub fn get_lenient(&self, path: &str) -> Result<String> {
         let url = self.url_for(path);
         let resp = self.client.get(&url).header(ACCEPT, "application/json").send()?;

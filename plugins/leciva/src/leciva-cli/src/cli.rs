@@ -12,13 +12,13 @@ use crate::manifest;
 use crate::paths;
 
 const ROOT_HELP: &str = "\
-leciva-cli — vyhledávání léků (SÚKL DLP).
+leciva-cli — Czech medicines search (SÚKL DLP).
 
-Výstup: JSON na stdout (zpracuj `jq`); při chybě `ERROR:` na stderr + nenulový exit.
-Hledání podle názvu jede z lokálního indexu (stáhne se sám při prvním použití),
-detail/složení z živého API podle kódu SÚKL.
+Output: JSON on stdout (process with `jq`); on error `ERROR:` on stderr + non-zero exit.
+Name search runs off a local index (downloaded on first use); detail/composition come
+from the live API by SÚKL code.
 
-Příklady:
+Examples:
   leciva-cli search \"paralen\"
   leciva-cli detail 0182362
   leciva-cli detail 0182362 --all
@@ -37,44 +37,44 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    /// Hledání léku podle názvu (lokální index).
+    /// Search medicines by name (local index).
     Search {
         query: String,
         #[arg(long, default_value_t = 20)]
         limit: usize,
     },
-    /// Detail léku podle kódu SÚKL (živé API + lokální názvy).
+    /// Medicine detail by SÚKL code (live API + local names).
     Detail {
         kod: String,
-        /// Vypíše všechna pole (s dopsanými názvy), ne jen kurátorovaný výběr.
+        /// Print all fields (with resolved names), not just the curated subset.
         #[arg(long)]
         all: bool,
     },
-    /// Složení léku podle kódu SÚKL (živé API + názvy látek).
+    /// Medicine composition by SÚKL code (live API + substance names).
     Slozeni { kod: String },
-    /// Hledání léků podle účinné látky (lokální index).
+    /// Search medicines by active substance (local index).
     Latka {
         query: String,
         #[arg(long, default_value_t = 20)]
         limit: usize,
     },
-    /// Ceny a úhrady léku podle kódu SÚKL (živé API).
+    /// Prices and reimbursement by SÚKL code (live API).
     Ceny { kod: String },
-    /// Dokumenty léku — příbalový leták / SPC (živé API).
+    /// Medicine documents — patient leaflet (PIL) / SPC (live API).
     Dokumenty { kod: String },
-    /// Stáhnout/přestavět lokální index.
+    /// Download/rebuild the local index.
     Refresh {
         #[arg(long)]
         force: bool,
     },
-    /// Stav lokálního indexu.
+    /// Local index status.
     #[command(subcommand)]
     Index(IndexCommand),
 }
 
 #[derive(Subcommand, Debug)]
 pub enum IndexCommand {
-    /// Vypíše manifest (verze/stáří indexu).
+    /// Print the manifest (index version/age).
     Status,
 }
 
@@ -103,6 +103,25 @@ fn s<'a>(v: &'a serde_json::Value, k: &str) -> Option<&'a str> {
     v.get(k).and_then(|x| x.as_str()).filter(|s| !s.is_empty())
 }
 
+/// A SÚKL code is always 7 left-zero-padded digits; users often drop the leading
+/// zeros ("254045" → "0254045"). Pad to 7. Anything longer or non-numeric can't be
+/// a code → a clear error before the API call instead of a raw HTTP 400.
+fn normalize_kod(input: &str) -> Result<String> {
+    let t = input.trim();
+    if !crate::text::is_ascii_digits(t) {
+        return Err(anyhow!(
+            "invalid SÚKL code '{input}': expected 1–7 digits (e.g. 0254045)"
+        ));
+    }
+    if t.len() > 7 {
+        return Err(anyhow!(
+            "invalid SÚKL code '{input}': max 7 digits, got {}",
+            t.len()
+        ));
+    }
+    Ok(format!("{t:0>7}"))
+}
+
 fn resolved(map: &HashMap<String, String>, code: Option<&str>) -> serde_json::Value {
     match code.and_then(|c| map.get(c)) {
         Some(name) => serde_json::Value::String(name.clone()),
@@ -120,7 +139,6 @@ pub fn curate_detail(raw: &serde_json::Value, cl: &Codelists) -> serde_json::Val
     let atc_kod = s(raw, "ATCkod");
     let zav_kod = s(raw, "zavislostKod");
 
-    // účinné látky: pole kódů → názvy (zachovej i syrové kódy)
     let kody: Vec<i64> = raw
         .get("leciveLatky")
         .and_then(|v| v.as_array())
@@ -148,19 +166,18 @@ pub fn curate_detail(raw: &serde_json::Value, cl: &Codelists) -> serde_json::Val
         "stavRegistrace": resolved(&cl.stavyreg, stav_kod),
         "drzitelKod": drz_kod,
         "registracniCislo": raw.get("registracniCislo").cloned().unwrap_or(Value::Null),
-        // jeDodavka = dodáván do lékáren/zdr. zařízení v posledních 6 měsících → prakticky „k dostání" (SÚKL field, zachován)
+        // jeDodavka: delivered to pharmacies in the last 6 months → effectively on the market
         "jeDodavka": raw.get("jeDodavka").cloned().unwrap_or(Value::Null),
         "ucinneLatky": nazvy,
         "ucinneLatkyKody": kody,
     });
-    // závislost jen když je vyplněná
     if zav_kod.is_some() {
         out["zavislost"] = resolved(&cl.zavislost, zav_kod);
     }
     out
 }
 
-/// Plný záznam (nic nezahozeno) + ke kódům dopsané čitelné názvy.
+/// Full record (nothing dropped) with readable names added next to the codes.
 pub fn detail_all(raw: &serde_json::Value, cl: &Codelists) -> serde_json::Value {
     use serde_json::Value;
     let mut out = raw.clone();
@@ -189,7 +206,7 @@ pub fn detail_all(raw: &serde_json::Value, cl: &Codelists) -> serde_json::Value 
     out
 }
 
-/// Složení z živého API + dopsané názvy účinných látek (s deduplikací).
+/// Composition from the live API + substance names, deduplicated.
 pub fn resolve_slozeni(raw: &serde_json::Value, cl: &Codelists) -> serde_json::Value {
     use serde_json::{json, Value};
     let items = match raw.as_array() {
@@ -220,11 +237,11 @@ pub fn resolve_slozeni(raw: &serde_json::Value, cl: &Codelists) -> serde_json::V
     Value::Array(out)
 }
 
-/// Ceny a úhrady z /cau-scau, kurátorované. Bez záznamu (OTC/nehrazený) → null.
+/// Curated prices/reimbursement from /cau-scau. No record (OTC/non-reimbursed) → null.
 pub fn curate_ceny(kod: &str, raw: &serde_json::Value) -> serde_json::Value {
     use serde_json::{json, Value};
-    // „bez záznamu": chybový objekt (kodChyby), prázdné/ne-objektové tělo (404 bez JSON),
-    // nebo objekt bez cenových polí.
+    // "no record" = error object (kodChyby), empty/non-object body (404 without JSON),
+    // or an object with no price fields.
     let has_record = raw.is_object()
         && raw.get("kodChyby").is_none()
         && (raw.get("cenaPuvodce").is_some() || raw.get("uhrady").is_some());
@@ -233,7 +250,7 @@ pub fn curate_ceny(kod: &str, raw: &serde_json::Value) -> serde_json::Value {
             "kodSukl": kod,
             "maZaznam": false,
             "ceny": Value::Null,
-            "poznamka": "bez záznamu o ceně/úhradě (např. volně prodejný nebo nehrazený lék)",
+            "note": "no price/reimbursement record (e.g. over-the-counter or non-reimbursed medicine)",
         });
     }
     let uhrady: Vec<Value> = raw
@@ -261,7 +278,7 @@ pub fn curate_ceny(kod: &str, raw: &serde_json::Value) -> serde_json::Value {
     })
 }
 
-/// Seznam dokumentů z /dokumenty-metadata + odkaz na PDF (typ lowercase).
+/// Document list from /dokumenty-metadata + a PDF link (type lowercased).
 pub fn dokumenty_list(kod: &str, base: &str, raw: &serde_json::Value) -> serde_json::Value {
     use serde_json::{json, Value};
     let items: Vec<Value> = raw
@@ -290,28 +307,36 @@ pub fn run() -> Result<()> {
         Command::Search { query, limit } => {
             ensure_index(&client)?;
             let idx = load_index()?;
-            let total = idx.count_matches(&query);
-            let hits = idx.search(&query, limit);
+            let (total, hits) = idx.search_counted(&query, limit);
             let mut out = json!({
                 "query": query,
-                "count": total,          // skutečný počet shod (i když je víc než zobrazeno)
+                "count": total,          // true match count (even if more than shown)
                 "shown": hits.len(),
                 "results": hits,
             });
             if total > hits.len() {
                 out["truncated"] = json!(true);
-                out["poznamka"] = json!(format!(
-                    "zobrazeno {} z {} — na úplný výčet přidej `--limit {}`",
+                out["note"] = json!(format!(
+                    "showing {} of {} — add `--limit {}` for the full list",
                     hits.len(), total, total
+                ));
+            }
+            // search is a name→code resolver; if the user passes a bare code and
+            // nothing matches, point them to `detail` (search does NOT match codes).
+            let qt = query.trim();
+            if total == 0 && crate::text::is_ascii_digits(qt) {
+                out["note"] = json!(format!(
+                    "'{qt}' looks like a SÚKL code — use `leciva-cli detail {qt}` for the full record"
                 ));
             }
             print_json(&out);
         }
         Command::Detail { kod, all } => {
+            let kod = normalize_kod(&kod)?;
             let body = client.get(&format!("/lecive-pripravky/{kod}"))?;
             let parsed: serde_json::Value = serde_json::from_str(&body)
                 .map_err(|e| anyhow!("cannot parse detail: {e}"))?;
-            // API vrací pole s jedním prvkem
+            // API returns a single-element array
             let rec = parsed.as_array().and_then(|a| a.first()).unwrap_or(&parsed);
             let cl = crate::codelist::Codelists::load();
             if all {
@@ -321,6 +346,7 @@ pub fn run() -> Result<()> {
             }
         }
         Command::Slozeni { kod } => {
+            let kod = normalize_kod(&kod)?;
             let body = client.get(&format!("/slozeni/{kod}"))?;
             let parsed: serde_json::Value = serde_json::from_str(&body)
                 .map_err(|e| anyhow!("cannot parse slozeni: {e}"))?;
@@ -329,7 +355,7 @@ pub fn run() -> Result<()> {
         }
         Command::Latka { query, limit } => {
             ensure_index(&client)?;
-            let q = crate::text::fold(&query); // diakritika-insensitivní hledání
+            let q = crate::text::fold(&query);
             // matchuj proti blobu cz+en+inn+synonyma (latky-search.tsv)
             let search_path = paths::cis_path("latky-search.tsv");
             let index_present = search_path.exists();
@@ -369,31 +395,33 @@ pub fn run() -> Result<()> {
             let shown = results.len();
             let mut out = json!({
                 "query": query,
-                "count": count,   // skutečný počet shod (i když je víc než zobrazeno)
+                "count": count,   // true match count (even if more than shown)
                 "shown": shown,
                 "results": results,
             });
             if count > shown {
                 out["truncated"] = json!(true);
-                out["poznamka"] = json!(format!(
-                    "zobrazeno {shown} z {count} — na úplný výčet přidej `--limit {count}`"
+                out["note"] = json!(format!(
+                    "showing {shown} of {count} — add `--limit {count}` for the full list"
                 ));
             }
             if !index_present {
-                out["poznamka"] =
-                    json!("index účinných látek chybí — spusť `leciva-cli refresh`");
+                out["note"] =
+                    json!("substance index missing — run `leciva-cli refresh`");
             }
             print_json(&out);
         }
         Command::Ceny { kod } => {
+            let kod = normalize_kod(&kod)?;
             let body = client.get_lenient(&format!("/cau-scau/{kod}"))?;
-            // 404 může vrátit prázdné/ne-JSON tělo → Null → curate_ceny vrátí „bez záznamu"
+            // a 404 may return an empty/non-JSON body → Null → curate_ceny reports "no record"
             let parsed = serde_json::from_str(&body).unwrap_or(serde_json::Value::Null);
             print_json(&curate_ceny(&kod, &parsed));
         }
         Command::Dokumenty { kod } => {
+            let kod = normalize_kod(&kod)?;
             let body = client.get_lenient(&format!("/dokumenty-metadata/{kod}"))?;
-            // 404 může vrátit prázdné/ne-JSON tělo → Null → dokumenty_list vrátí prázdný seznam
+            // a 404 may return an empty/non-JSON body → Null → dokumenty_list returns an empty list
             let parsed = serde_json::from_str(&body).unwrap_or(serde_json::Value::Null);
             print_json(&dokumenty_list(&kod, client.base_url(), &parsed));
         }
@@ -447,8 +475,8 @@ mod tests {
         assert_eq!(out["atc"]["nazev"], "ibuprofen");
         assert_eq!(out["drzitelKod"], "OHCCZ");
         assert_eq!(out["ucinneLatky"][0], "IBUPROFEN");
-        assert_eq!(out["jeDodavka"], true); // SÚKL field zachován (k dostání)
-        assert!(out.get("MRPcislo").is_none()); // jiný šum zahozen
+        assert_eq!(out["jeDodavka"], true);
+        assert!(out.get("MRPcislo").is_none());
     }
 
     #[test]
@@ -467,10 +495,8 @@ mod tests {
             "zpusobVydejeKod": "F", "leciveLatky": [1593], "jeDodavka": true
         });
         let out = detail_all(&raw, &cl());
-        // nic se nezahodí
         assert_eq!(out["jeDodavka"], true);
         assert_eq!(out["lekovaFormaKod"], "TBL FLM");
-        // názvy dopsané
         assert_eq!(out["forma"], "Potahovaná tableta");
         assert_eq!(out["cestaPodani"], "Perorální podání");
         assert_eq!(out["vydej"], "volně prodejné léčivé přípravky");
@@ -497,7 +523,7 @@ mod tests {
         let out = curate_ceny("0254297", &raw);
         assert_eq!(out["maZaznam"], false);
         assert_eq!(out["ceny"], serde_json::Value::Null);
-        assert!(out["poznamka"].as_str().unwrap().contains("nehrazený"));
+        assert!(out["note"].as_str().unwrap().contains("non-reimbursed"));
     }
 
     #[test]
@@ -524,15 +550,30 @@ mod tests {
 
     #[test]
     fn ceny_empty_or_null_body_is_no_record() {
-        // 404 s prázdným/ne-JSON tělem → parse dá Null → graceful „bez záznamu", ne pád
+        // an empty/non-JSON 404 body parses to Null → graceful "no record", not a panic
         let out = curate_ceny("0254297", &serde_json::Value::Null);
         assert_eq!(out["ceny"], serde_json::Value::Null);
-        assert!(out["poznamka"].is_string());
+        assert!(out["note"].is_string());
     }
 
     #[test]
     fn dokumenty_non_array_body_is_empty_list() {
         let out = dokumenty_list("0254297", "https://x/dlp/v1", &serde_json::Value::Null);
         assert!(out["dokumenty"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn normalize_kod_pads_short_numeric_to_seven() {
+        assert_eq!(normalize_kod("254045").unwrap(), "0254045");
+        assert_eq!(normalize_kod("017996").unwrap(), "0017996");
+        assert_eq!(normalize_kod("0254045").unwrap(), "0254045");
+        assert_eq!(normalize_kod(" 254045 ").unwrap(), "0254045"); // trimmed
+    }
+
+    #[test]
+    fn normalize_kod_rejects_too_long_or_non_numeric() {
+        assert!(normalize_kod("12345678").is_err());
+        assert!(normalize_kod("254045x").is_err());
+        assert!(normalize_kod("").is_err());
     }
 }

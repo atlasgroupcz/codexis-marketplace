@@ -13,7 +13,7 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    /// Porovnání ISO datumů jako string je lexikografické (YYYY-MM-DD…), funguje.
+    /// ISO dates (YYYY-MM-DD…) compare correctly as plain strings (lexicographic).
     pub fn is_older_than(&self, remote_platnost_od: &str) -> bool {
         self.platnost_od.as_str() < remote_platnost_od
     }
@@ -34,7 +34,7 @@ pub fn load() -> Option<Manifest> {
     serde_json::from_str(&data).ok()
 }
 
-/// Stale = chybí lokální manifest, nebo je lokální starší než vzdálená dávka.
+/// Stale = no local manifest, or the local one is older than the remote batch.
 pub fn is_stale(remote_platnost_od: &str) -> bool {
     match load() {
         None => true,
