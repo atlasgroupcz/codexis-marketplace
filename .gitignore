@@ -133,3 +133,6 @@ __pycache__/
 test-results/
 
 .worktrees/
+
+# Local superpowers design/plan artifacts — not for this repo
+docs/superpowers/
