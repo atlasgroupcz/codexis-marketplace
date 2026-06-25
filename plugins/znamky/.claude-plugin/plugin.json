@@ -35,9 +35,9 @@
     }
   },
   "dependencies": ["codexis"],
-  "postInstall": "mkdir -p \"${HOME}/.local/share/znamky/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/znamky/lib/znamky_core\" && cp -r \"${PLUGIN_DIR}/lib/znamky_core\" \"${HOME}/.local/share/znamky/lib/znamky_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/znamky-cli\" \"${HOME}/.local/bin/znamky-cli\" && (python3 -m pip install --user --quiet Pillow ImageHash || true)",
-  "postUninstall": "rm -f \"${HOME}/.local/bin/znamky-cli\" && rm -rf \"${HOME}/.local/share/znamky\"",
-  "onUpdate": "mkdir -p \"${HOME}/.local/share/znamky/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/znamky/lib/znamky_core\" && cp -r \"${PLUGIN_DIR}/lib/znamky_core\" \"${HOME}/.local/share/znamky/lib/znamky_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/znamky-cli\" \"${HOME}/.local/bin/znamky-cli\" && (python3 -m pip install --user --quiet Pillow ImageHash || true)",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "components": "./components",
   "env": {
