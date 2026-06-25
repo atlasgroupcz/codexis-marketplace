@@ -452,6 +452,30 @@
           "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "health": "Zdravie" }
         }
       }
+    },
+    {
+      "uuid": "c1e4a9d2-7f63-48b0-9a51-3d6c2e8b7041",
+      "name": "rzpro",
+      "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) — device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
+      "source": "./plugins/rzpro",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "RZPRO — registr zdravotnických prostředků",
+          "description": "Registr zdravotnických prostředků (RZPRO, KSRZIS) — vyhledávání prostředků podle názvu nebo evidenčního čísla, výrobce, varianty, registrované osoby a jejich činnosti.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "health": "Zdraví" }
+        },
+        "en": {
+          "displayName": "RZPRO — Medical Devices Registry",
+          "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) — device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "health": "Health" }
+        },
+        "sk": {
+          "displayName": "RZPRO — register zdravotníckych pomôcok",
+          "description": "Register zdravotníckych pomôcok (RZPRO, KSRZIS) — vyhľadávanie pomôcok podľa názvu alebo evidenčného čísla, výrobca, varianty, registrované osoby a ich činnosti.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "health": "Zdravie" }
+        }
+      }
     }
   ]
 }
