@@ -32,9 +32,9 @@
     }
   },
   "dependencies": ["codexis"],
-  "postInstall": "sudo mkdir -p \"${HOME}/.local/share/katastr/lib\" \"${HOME}/.local/bin\" && sudo rm -rf \"${HOME}/.local/share/katastr/lib/katastr_core\" && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" \"${HOME}/.local/share/katastr/lib/katastr_core\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/katastr-cli\" \"${HOME}/.local/bin/katastr-cli\"",
-  "postUninstall": "sudo rm -f \"${HOME}/.local/bin/katastr-cli\" && sudo rm -rf \"${HOME}/.local/share/katastr\"",
-  "onUpdate": "sudo mkdir -p \"${HOME}/.local/share/katastr/lib\" \"${HOME}/.local/bin\" && sudo rm -rf \"${HOME}/.local/share/katastr/lib/katastr_core\" && sudo cp -r \"${PLUGIN_DIR}/lib/katastr_core\" \"${HOME}/.local/share/katastr/lib/katastr_core\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/katastr-cli\" \"${HOME}/.local/bin/katastr-cli\"",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "components": "./components"
 }

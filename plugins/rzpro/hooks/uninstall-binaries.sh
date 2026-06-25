@@ -3,5 +3,11 @@ set -euo pipefail
 
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
-rm -f "${TARGET_BIN_DIR}/rzpro-cli"
-echo "Removed rzpro-cli from ${TARGET_BIN_DIR}"
+remove_path() {
+  local path="$1"
+  [[ -e "${path}" ]] || return 0
+  rm -rf "${path}" 2>/dev/null || sudo rm -rf "${path}"
+  echo "Removed ${path}"
+}
+
+remove_path "${TARGET_BIN_DIR}/rzpro-cli"
