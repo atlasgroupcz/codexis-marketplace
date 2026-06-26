@@ -134,8 +134,11 @@ def build_client() -> DaemonClient:
 
 
 def installed_plugins(client: DaemonClient) -> list[dict]:
-    return client.gql_data(
-        "query { installedPlugins { id name } }", {})["installedPlugins"]
+    data = client.gql_data(
+        "query { marketplaces(filter: { installState: INSTALLED }) { plugins { id name } } }",
+        {},
+    )
+    return [p for mp in data.get("marketplaces", []) for p in (mp.get("plugins") or [])]
 
 
 def marketplace_plugin_id(client: DaemonClient, name: str) -> str:

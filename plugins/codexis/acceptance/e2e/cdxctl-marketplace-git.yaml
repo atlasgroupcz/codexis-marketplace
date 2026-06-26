@@ -47,10 +47,8 @@ steps:
       response:
         contains: "superpowers"
       state:
-        graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
-        variables:
-          m: "{{ official_mkt_id }}"
-        jsonpath: "$.installedPlugins[*].name"
+        graphql: "query { marketplaces(filter: { installState: INSTALLED }) { plugins { name } } }"
+        jsonpath: "$.marketplaces[*].plugins[*].name"
         contains: "superpowers"
 
   - prompt: "Odinstaluj plugin superpowers."
@@ -63,10 +61,8 @@ steps:
       response:
         contains: "superpowers"
       state:
-        graphql: "query($m: ID!){ installedPlugins(marketplace: $m) { name } }"
-        variables:
-          m: "{{ official_mkt_id }}"
-        jsonpath: "$.installedPlugins[*].name"
+        graphql: "query { marketplaces(filter: { installState: INSTALLED }) { plugins { name } } }"
+        jsonpath: "$.marketplaces[*].plugins[*].name"
         not_contains: "superpowers"
 
   - prompt: "Odeber marketplace claude-plugins-official."

@@ -78,9 +78,7 @@ pub const TRIGGER_AUTOMATION: &str = r#"
 mutation TriggerAutomation($id: ID!) {
     triggerAutomation(id: $id) {
         id
-        status
-        startedAt
-        trigger
+        lastRun { id status startedAt trigger }
     }
 }
 "#;
@@ -176,7 +174,7 @@ mutation UpdateMarketplace($id: ID!) {
         newCommit
         status
         error
-        updatedPlugins { id name version marketplace }
+        updatedPlugins { id name version marketplace { id name } }
     }
 }
 "#;
@@ -184,16 +182,18 @@ mutation UpdateMarketplace($id: ID!) {
 // ==================== Plugins ====================
 
 pub const GET_INSTALLED_PLUGINS: &str = r#"
-query GetInstalledPlugins($marketplace: ID!) {
-    installedPlugins(marketplace: $marketplace) {
+query GetInstalledPlugins {
+    marketplaces(filter: { installState: INSTALLED }) {
         id
         name
-        version
-        description
-        homepage
-        marketplace
-        installLocation { absolutePath displayPath }
-        installedAt
+        plugins {
+            id
+            name
+            version
+            description
+            marketplace { id name }
+            installation { installedAt installedVersion }
+        }
     }
 }
 "#;
@@ -222,8 +222,8 @@ mutation InstallPlugin($input: PluginInstallInput!) {
         name
         version
         description
-        marketplace
-        installedAt
+        marketplace { id name }
+        installation { installedAt installedVersion }
     }
 }
 "#;
@@ -235,7 +235,7 @@ mutation UninstallPlugin($input: PluginInstallInput!) {
         name
         version
         description
-        marketplace
+        marketplace { id name }
     }
 }
 "#;
@@ -249,8 +249,7 @@ query GetAgents {
         name
         fullName
         description
-        marketplace
-        plugin
+        plugin { id name }
         tools { toolName displayName kind source }
         skills
         model
@@ -272,8 +271,7 @@ mutation CreateAgent($markdown: Markdown!) {
         name
         fullName
         description
-        marketplace
-        plugin
+        plugin { id name }
         tools { toolName displayName kind source }
         skills
         model
@@ -295,8 +293,7 @@ mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
         name
         fullName
         description
-        marketplace
-        plugin
+        plugin { id name }
         tools { toolName displayName kind source }
         skills
         model
@@ -329,8 +326,7 @@ query GetSkills {
         name
         fullName
         description
-        marketplace
-        plugin
+        plugin { id name }
         allowedTools
         sourceKind
         editable
@@ -348,8 +344,7 @@ mutation CreateSkill($markdown: Markdown!) {
         name
         fullName
         description
-        marketplace
-        plugin
+        plugin { id name }
         allowedTools
         sourceKind
         editable
@@ -367,8 +362,7 @@ mutation UpdateSkill($id: ID!, $markdown: Markdown!) {
         name
         fullName
         description
-        marketplace
-        plugin
+        plugin { id name }
         allowedTools
         sourceKind
         editable

@@ -132,7 +132,7 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
         return
     r.ok("Install succeeded")
 
-    r.log(f"  Version: {installed.get('version', '?')}, at: {installed.get('installedAt', '?')}")
+    r.log(f"  Version: {installed.get('version', '?')}, at: {installed.get('installation', {}).get('installedAt', '?')}")
 
     # --- Skill validation (GraphQL proof the plugin installed and registered) ---
     expected_skills = (expected or {}).get("skills", []) or [s["fullName"] for s in skills]

@@ -78,8 +78,7 @@ _Q_INSTALL_PLUGIN = """
 mutation InstallPlugin($input: PluginInstallInput!) {
     installPlugin(input: $input) {
         id name version
-        installLocation { absolutePath }
-        installedAt
+        installation { installedAt installedVersion }
     }
 }
 """
@@ -91,7 +90,7 @@ mutation UninstallPlugin($input: PluginInstallInput!) {
 """
 
 _Q_SKILLS = """
-{ skills { fullName plugin sourceKind } }
+{ skills { fullName plugin { name } sourceKind } }
 """
 
 _Q_GET_ENTRY = """
@@ -147,7 +146,7 @@ __typename partId
 ... on ReadFileToolMessagePart { path offset limit }
 ... on WriteFileToolMessagePart { path fileContent: content }
 ... on EditFileToolMessagePart { filePath oldString newString replaceAll }
-... on SkillToolMessagePart { skill resolvedSkillName }
+... on SkillToolMessagePart { skill }
 ... on SpawnAgentToolMessagePart { subagentType prompt note maxTurns }
 ... on ExtractToolMessagePart { path query schemaName }
 """

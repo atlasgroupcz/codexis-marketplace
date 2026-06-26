@@ -99,8 +99,8 @@ tests:
       # Legacy did `installedPlugins(marketplace: $captured_id)`; here we
       # check the global installedPlugins list — commit-commands is unique
       # enough (only that marketplace ships it) that name match is fine.
-      graphql: "query { installedPlugins { name } }"
-      jsonpath: "$.installedPlugins[*].name"
+      graphql: "query { marketplaces(filter: { installState: INSTALLED }) { plugins { name } } }"
+      jsonpath: "$.marketplaces[*].plugins[*].name"
       contains: "commit-commands"
     assert:
       - type: python
@@ -132,8 +132,8 @@ tests:
         incorrect:
           - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
-      graphql: "query { installedPlugins { name } }"
-      jsonpath: "$.installedPlugins[*].name"
+      graphql: "query { marketplaces(filter: { installState: INSTALLED }) { plugins { name } } }"
+      jsonpath: "$.marketplaces[*].plugins[*].name"
       not_contains: "commit-commands"
     assert:
       - type: python
