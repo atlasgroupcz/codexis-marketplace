@@ -5,6 +5,13 @@ PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
+# Remove only THIS run's temp artifacts, even on crash or interrupt. Scoped to
+# the current PID so a concurrent install can't delete an in-flight temp file.
+cleanup_own_temps() {
+  rm -f "${TARGET_BIN_DIR}"/.*.tmp.$$ 2>/dev/null || true
+}
+trap cleanup_own_temps EXIT INT TERM
+
 install_binary() {
   local name="$1"
   local source_path="${SOURCE_BIN_DIR}/${name}"
@@ -16,8 +23,7 @@ install_binary() {
   # Atomic install: write to a temp file in the destination dir, flush it to
   # disk, then rename into place. A crash leaves either the old binary or the
   # complete new one — never a truncated/empty file at the real name.
-  local tmp_path="${target_path}.tmp.$$"
-  rm -f "${target_path}".tmp.* 2>/dev/null || true
+  local tmp_path="${TARGET_BIN_DIR}/.${name}.tmp.$$"
   if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
     install -m 0755 "${source_path}" "${tmp_path}"
     sync "${tmp_path}" 2>/dev/null || sync

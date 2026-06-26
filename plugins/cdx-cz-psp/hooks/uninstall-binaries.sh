@@ -11,3 +11,6 @@ remove_path() {
 }
 
 remove_path "${TARGET_BIN_DIR}/cdx-cz-psp"
+
+# Sweep leftover temp files from an interrupted install (e.g. power loss).
+rm -f "${TARGET_BIN_DIR}"/.cdx-cz-psp.tmp.* 2>/dev/null || true

@@ -12,3 +12,6 @@ remove_path() {
 
 remove_path "${TARGET_BIN_DIR}/katastr-cli"
 remove_path "${HOME}/.local/share/katastr"
+
+# Sweep leftover temp files from an interrupted install (e.g. power loss).
+rm -f "${TARGET_BIN_DIR}"/.katastr-cli.tmp.* 2>/dev/null || true
