@@ -15,3 +15,9 @@ remove_path "${TARGET_BIN_DIR}/cdx-sledovane-dokumenty"
 remove_path "${TARGET_BIN_DIR}/cdx-sledovana-judikatura"
 remove_path "${TARGET_BIN_DIR}/cdxctl"
 remove_path "${HOME}/.local/share/codexis"
+
+# Sweep leftover temp files from an interrupted install (e.g. power loss).
+rm -f "${TARGET_BIN_DIR}"/.cdx-cli.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.cdx-sledovane-dokumenty.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.cdx-sledovana-judikatura.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.cdxctl.tmp.* 2>/dev/null || true
