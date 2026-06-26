@@ -1,7 +1,7 @@
 {
   "id": "insolvence",
   "title": "Hlídač insolvencí",
-  "icon": "assets/icon.png",
+  "icon": "icon.svg",
   "route": "insolvence",
   "description": "Sledujte firmy a osoby v insolvenčním rejstříku s automatickou kontrolou změn.",
   "entrypoint": "index.html",

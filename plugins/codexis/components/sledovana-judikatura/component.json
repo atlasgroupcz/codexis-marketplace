@@ -1,7 +1,7 @@
 {
   "id": "sledovana-judikatura",
   "title": "CODEXIS Sledovaná judikatura",
-  "icon": "assets/icon.png",
+  "icon": "icon.svg",
   "route": "sledovana-judikatura",
   "description": "Sledujte novou judikaturu podle tématu s pravidelným AI reportem.",
   "entrypoint": "index.html",
