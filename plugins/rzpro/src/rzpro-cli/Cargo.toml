@@ -11,8 +11,11 @@ serde_json = "1"
 anyhow = "1"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 csv = "1"
-# Statically link OpenSSL so the binary runs regardless of the host's libssl.
-# Required because the KSRZIS server rejects rustls handshakes (native-tls only).
+
+# Statically link OpenSSL so the Linux binary runs regardless of the host's
+# libssl. Required because the KSRZIS server rejects rustls handshakes
+# (native-tls only). macOS uses Secure Transport, so OpenSSL is Linux-only.
+[target.'cfg(target_os = "linux")'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
 
 [profile.release]
