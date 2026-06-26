@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
+    test: {
+      globals: true,
+    },
     plugins: [
       viteReact({
         babel: {
