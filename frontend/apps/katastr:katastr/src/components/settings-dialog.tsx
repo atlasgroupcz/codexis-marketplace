@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import {
   Dialog,
@@ -82,6 +82,18 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          <a
+            href="https://registrace.cuzk.gov.cz/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
+            data-testid="get-key-link"
+          >
+            <ExternalLink className="size-3.5" />
+            {t('settings.getKey')}
+          </a>
+          <p className="text-muted-foreground -mt-2 text-xs">{t('settings.getKeyHint')}</p>
+
           {configured ? (
             <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-900 dark:border-green-900 dark:bg-green-950 dark:text-green-200">
               <CheckCircle2 className="size-4 shrink-0" />
