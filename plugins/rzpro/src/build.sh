@@ -43,4 +43,30 @@ docker run --rm \
 
 install -m 0755 "$crate_dir/target/release/$bin_name" "$BIN_DIR/$bin_name"
 echo "   installed -> $BIN_DIR/$bin_name"
+
+# macOS arm64 cross-build via osxcross (skipped when osxcross isn't installed).
+# On macOS native-tls uses Secure Transport, so the Linux-only vendored OpenSSL
+# (see Cargo.toml) is not built here.
+MACOS_ARM64_TARGET="aarch64-apple-darwin"
+OSXCROSS_BIN="$HOME/opt/macos/target/bin"
+SDK_ROOT="$HOME/opt/macos/target/SDK/MacOSX26.1.sdk"
+MAC_LINKER="aarch64-apple-darwin25.1-clang"
+if [[ -d "$OSXCROSS_BIN" && -d "$SDK_ROOT" ]]; then
+  echo "==> Building $bin_name for darwin/arm64"
+  rustup target add "$MACOS_ARM64_TARGET" >/dev/null
+  (
+    cd "$crate_dir"
+    SDKROOT="$SDK_ROOT" \
+      PATH="$PATH:$OSXCROSS_BIN" \
+      CC_aarch64_apple_darwin="$MAC_LINKER" \
+      CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER="$MAC_LINKER" \
+      cargo build --release --locked --target "$MACOS_ARM64_TARGET"
+  )
+  install -m 0755 "$crate_dir/target/$MACOS_ARM64_TARGET/release/$bin_name" \
+    "$BIN_DIR/${bin_name}-${MACOS_ARM64_TARGET}"
+  echo "   installed -> $BIN_DIR/${bin_name}-${MACOS_ARM64_TARGET}"
+else
+  echo "==> Skipping $bin_name macOS ARM64 build: osxcross not found at $OSXCROSS_BIN"
+fi
+
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

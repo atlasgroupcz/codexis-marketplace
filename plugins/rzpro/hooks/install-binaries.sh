@@ -12,10 +12,28 @@ cleanup_own_temps() {
 }
 trap cleanup_own_temps EXIT INT TERM
 
+select_binary_source() {
+  local binary_name="$1"
+
+  case "$(uname -s):$(uname -m)" in
+    Darwin:arm64|Darwin:aarch64)
+      echo "${binary_name}-aarch64-apple-darwin"
+      ;;
+    Darwin:*)
+      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
+      exit 1
+      ;;
+    *)
+      echo "${binary_name}"
+      ;;
+  esac
+}
+
 install_binary() {
-  local name="$1"
-  local source_path="${SOURCE_BIN_DIR}/${name}"
-  local target_path="${TARGET_BIN_DIR}/${name}"
+  local source_name="$1"
+  local target_name="${2:-$1}"
+  local source_path="${SOURCE_BIN_DIR}/${source_name}"
+  local target_path="${TARGET_BIN_DIR}/${target_name}"
   if [[ ! -x "${source_path}" ]]; then
     echo "ERROR: Missing executable ${source_path}" >&2
     exit 1
@@ -23,7 +41,7 @@ install_binary() {
   # Atomic install: write to a temp file in the destination dir, flush it to
   # disk, then rename into place. A crash leaves either the old binary or the
   # complete new one — never a truncated/empty file at the real name.
-  local tmp_path="${TARGET_BIN_DIR}/.${name}.tmp.$$"
+  local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"
   if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
     install -m 0755 "${source_path}" "${tmp_path}"
     sync "${tmp_path}" 2>/dev/null || sync
@@ -34,10 +52,10 @@ install_binary() {
     sudo sync "${tmp_path}" 2>/dev/null || sudo sync
     sudo mv -f "${tmp_path}" "${target_path}"
   fi
-  echo "Installed ${name} -> ${target_path}"
+  echo "Installed ${target_name} -> ${target_path}"
 }
 
-install_binary "rzpro-cli"
+install_binary "$(select_binary_source "rzpro-cli")" "rzpro-cli"
 
 # Pre-download the datasets, but don't fail the install on a network hiccup.
 "${TARGET_BIN_DIR}/rzpro-cli" refresh >/dev/null 2>&1 \

@@ -1,4 +1,7 @@
-// Pulled in only to force vendored OpenSSL to be statically linked (see Cargo.toml).
+// Pulled in only to force vendored OpenSSL to be statically linked on Linux
+// (see Cargo.toml). On macOS, native-tls uses Secure Transport, so OpenSSL is
+// neither linked nor needed.
+#[cfg(target_os = "linux")]
 use openssl as _;
 
 mod db;
