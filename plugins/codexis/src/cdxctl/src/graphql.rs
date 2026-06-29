@@ -8,8 +8,8 @@ query GetAutomations {
         command
         title
         description
-        agentFullName
-        skillFullNames
+        agent { id fullName }
+        skills { id fullName }
         cron
         prompt
         enabled
@@ -35,8 +35,8 @@ mutation CreateAutomation($input: AutomationInput!) {
         command
         title
         description
-        agentFullName
-        skillFullNames
+        agent { id fullName }
+        skills { id fullName }
         cron
         prompt
         enabled
@@ -54,8 +54,8 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         command
         title
         description
-        agentFullName
-        skillFullNames
+        agent { id fullName }
+        skills { id fullName }
         cron
         prompt
         enabled
@@ -249,7 +249,7 @@ query GetAgents {
         name
         fullName
         description
-        plugin { id name }
+        plugin { id name marketplace { id name } }
         tools { toolName displayName kind source }
         skills
         model
@@ -326,7 +326,7 @@ query GetSkills {
         name
         fullName
         description
-        plugin { id name }
+        plugin { id name marketplace { id name } }
         allowedTools
         sourceKind
         editable
@@ -385,7 +385,8 @@ mutation DeleteSkill($id: ID!) {
 #[cfg(test)]
 mod tests {
     use super::{
-        CREATE_AGENT, DELETE_AGENT, GET_AGENTS, REMOVE_MARKETPLACE, UPDATE_AGENT,
+        CREATE_AGENT, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_SKILLS,
+        REMOVE_MARKETPLACE, UPDATE_AGENT, UPDATE_AUTOMATION,
     };
 
     #[test]
@@ -415,6 +416,27 @@ mod tests {
     fn marketplace_remove_uses_generic_delete_node() {
         assert!(REMOVE_MARKETPLACE.contains("deleteNode(id: $id)"));
         assert!(REMOVE_MARKETPLACE.contains("on Marketplace"));
+    }
+
+    #[test]
+    fn automation_queries_select_agent_and_skills_as_nodes() {
+        // Daemon schema exposes `agent: Agent` / `skills: [Skill!]!` (with id +
+        // fullName), not the legacy flat `agentFullName` / `skillFullNames` fields.
+        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION] {
+            assert!(query.contains("agent { id fullName }"));
+            assert!(query.contains("skills { id fullName }"));
+            assert!(!query.contains("agentFullName"));
+            assert!(!query.contains("skillFullNames"));
+        }
+    }
+
+    #[test]
+    fn agent_and_skill_lists_surface_plugin_and_marketplace() {
+        // Marketplace is reachable only through the owning plugin in the daemon
+        // schema — Agent/Skill have no direct `marketplace` field.
+        for query in [GET_AGENTS, GET_SKILLS] {
+            assert!(query.contains("plugin { id name marketplace { id name } }"));
+        }
     }
 }
 
