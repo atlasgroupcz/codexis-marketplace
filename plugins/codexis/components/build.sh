@@ -91,21 +91,19 @@ sync_component_output() {
 
 build_frontend_apps
 
+# Each component ships its own committed icon.svg at its root (referenced by
+# component.json "icon"). It lives outside assets/ and is not touched by the
+# sync, so it does not need to be listed as a preserved asset or copied around.
+# (The old shared icon.png was dropped in favour of per-component SVGs.)
 sync_component_output \
   "$FRONTEND_DIR/apps/codexis:sledovane-dokumenty/dist" \
   "$SCRIPT_DIR/sledovane-dokumenty" \
   "banner.png" \
-  "icon.png" \
   "logo.svg" \
   "styles.css"
 
 sync_component_output \
   "$FRONTEND_DIR/apps/codexis:sledovana-judikatura/dist" \
-  "$SCRIPT_DIR/sledovana-judikatura" \
-  "icon.png"
-
-install -m 0644 \
-  "$SCRIPT_DIR/sledovane-dokumenty/assets/icon.png" \
-  "$SCRIPT_DIR/sledovana-judikatura/assets/icon.png"
+  "$SCRIPT_DIR/sledovana-judikatura"
 
 echo "Completed component build: $(basename "$PLUGIN_DIR")"
