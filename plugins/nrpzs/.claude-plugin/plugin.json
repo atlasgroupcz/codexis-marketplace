@@ -1,0 +1,31 @@
+{
+  "name": "nrpzs",
+  "iconPath": "icon.svg",
+  "version": "1.0.0",
+  "description": "Czech National Registry of Healthcare Providers (NRPZS, ÚZIS) — provider lookup by IČO/name/specialty, places of care, departments, office hours",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["nrpzs", "zdravotnictvi", "poskytovatel", "uzis", "registr", "czech", "healthcare"],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "registry", "healthcare"],
+  "i18n": {
+    "cs": {
+      "displayName": "NRPZS — registr poskytovatelů zdravotních služeb",
+      "description": "Národní registr poskytovatelů zdravotních služeb (ÚZIS) — vyhledávání poskytovatelů podle IČO/názvu/oboru péče, místa poskytování, oddělení a ordinační doba.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "healthcare": "Zdravotnictví" }
+    },
+    "en": {
+      "displayName": "NRPZS — Czech Healthcare Provider Registry",
+      "description": "National Registry of Healthcare Providers (ÚZIS) — provider lookup by ICO/name/specialty, places of care, departments and office hours.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "healthcare": "Healthcare" }
+    },
+    "sk": {
+      "displayName": "NRPZS — register poskytovateľov zdravotných služieb",
+      "description": "Národný register poskytovateľov zdravotných služieb (ÚZIS) — vyhľadávanie poskytovateľov podľa IČO/názvu/odboru, miesta poskytovania, oddelenia a ordinačné hodiny.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "healthcare": "Zdravotníctvo" }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}

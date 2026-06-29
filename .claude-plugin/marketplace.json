@@ -310,6 +310,26 @@
       }
     },
     {
+      "name": "nrpzs",
+      "description": "Czech National Registry of Healthcare Providers (NRPZS, ÚZIS) — provider lookup by IČO/name/specialty, places of care, departments, office hours",
+      "source": "./plugins/nrpzs",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "NRPZS — registr poskytovatelů zdravotních služeb",
+          "description": "Národní registr poskytovatelů zdravotních služeb (ÚZIS) — vyhledávání poskytovatelů podle IČO/názvu/oboru péče, místa poskytování, oddělení a ordinační doba."
+        },
+        "en": {
+          "displayName": "NRPZS — Czech Healthcare Provider Registry",
+          "description": "National Registry of Healthcare Providers (ÚZIS) — provider lookup by ICO/name/specialty, places of care, departments and office hours."
+        },
+        "sk": {
+          "displayName": "NRPZS — register poskytovateľov zdravotných služieb",
+          "description": "Národný register poskytovateľov zdravotných služieb (ÚZIS) — vyhľadávanie poskytovateľov podľa IČO/názvu/odboru, miesta poskytovania, oddelenia a ordinačné hodiny."
+        }
+      }
+    },
+    {
       "uuid": "4785cc31-461b-4516-8a68-5567b1312dfb",
       "name": "kataster-sk",
       "description": "Slovak land cadastre (kataster nehnuteľností) — parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal",
