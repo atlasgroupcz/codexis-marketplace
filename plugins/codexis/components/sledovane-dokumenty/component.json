@@ -1,7 +1,7 @@
 {
   "id": "sledovane-dokumenty",
   "title": "CODEXIS Sledovane dokumenty",
-  "icon": "assets/icon.png",
+  "icon": "icon.svg",
   "route": "sledovane-dokumenty",
   "description": "Sledujte zmeny legislativy podle CODEXIS ID nebo hlidejte slozky vlastnich dokumentu a legislativu, na kterou odkazuji.",
   "entrypoint": "index.html",

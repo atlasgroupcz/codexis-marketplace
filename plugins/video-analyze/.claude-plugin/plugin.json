@@ -33,8 +33,8 @@
       "tagLabels": { "media": "Médiá", "video": "Video", "ai": "AI" }
     }
   },
-  "postInstall": "sudo mkdir -p \"${HOME}/.local/bin\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/video-analyze\" \"${HOME}/.local/bin/video-analyze\"",
-  "postUninstall": "sudo rm -f \"${HOME}/.local/bin/video-analyze\"",
-  "onUpdate": "sudo mkdir -p \"${HOME}/.local/bin\" && sudo install -m 0755 \"${PLUGIN_DIR}/bin/video-analyze\" \"${HOME}/.local/bin/video-analyze\"",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills"
 }

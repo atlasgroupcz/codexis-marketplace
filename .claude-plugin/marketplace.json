@@ -310,6 +310,26 @@
       }
     },
     {
+      "name": "nrpzs",
+      "description": "Czech National Registry of Healthcare Providers (NRPZS, ÚZIS) — provider lookup by IČO/name/specialty, places of care, departments, office hours",
+      "source": "./plugins/nrpzs",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "NRPZS — registr poskytovatelů zdravotních služeb",
+          "description": "Národní registr poskytovatelů zdravotních služeb (ÚZIS) — vyhledávání poskytovatelů podle IČO/názvu/oboru péče, místa poskytování, oddělení a ordinační doba."
+        },
+        "en": {
+          "displayName": "NRPZS — Czech Healthcare Provider Registry",
+          "description": "National Registry of Healthcare Providers (ÚZIS) — provider lookup by ICO/name/specialty, places of care, departments and office hours."
+        },
+        "sk": {
+          "displayName": "NRPZS — register poskytovateľov zdravotných služieb",
+          "description": "Národný register poskytovateľov zdravotných služieb (ÚZIS) — vyhľadávanie poskytovateľov podľa IČO/názvu/odboru, miesta poskytovania, oddelenia a ordinačné hodiny."
+        }
+      }
+    },
+    {
       "uuid": "4785cc31-461b-4516-8a68-5567b1312dfb",
       "name": "kataster-sk",
       "description": "Slovak land cadastre (kataster nehnuteľností) — parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal",
@@ -449,6 +469,30 @@
         "sk": {
           "displayName": "SÚKL — register liekov",
           "description": "Register liekov SÚKL (DLP) — vyhľadávanie liekov podľa názvu alebo kódu SÚKL, sila, lieková forma, účinné látky, ATC skupina.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "health": "Zdravie" }
+        }
+      }
+    },
+    {
+      "uuid": "c1e4a9d2-7f63-48b0-9a51-3d6c2e8b7041",
+      "name": "rzpro",
+      "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) — device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
+      "source": "./plugins/rzpro",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "RZPRO — registr zdravotnických prostředků",
+          "description": "Registr zdravotnických prostředků (RZPRO, KSRZIS) — vyhledávání prostředků podle názvu nebo evidenčního čísla, výrobce, varianty, registrované osoby a jejich činnosti.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "health": "Zdraví" }
+        },
+        "en": {
+          "displayName": "RZPRO — Medical Devices Registry",
+          "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) — device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "health": "Health" }
+        },
+        "sk": {
+          "displayName": "RZPRO — register zdravotníckych pomôcok",
+          "description": "Register zdravotníckych pomôcok (RZPRO, KSRZIS) — vyhľadávanie pomôcok podľa názvu alebo evidenčného čísla, výrobca, varianty, registrované osoby a ich činnosti.",
           "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "health": "Zdravie" }
         }
       }

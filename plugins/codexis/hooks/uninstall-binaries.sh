@@ -3,28 +3,21 @@ set -euo pipefail
 
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
-remove_binary() {
-  local binary_name="$1"
-  local target_path="${TARGET_BIN_DIR}/${binary_name}"
-
-  if [[ -d "${TARGET_BIN_DIR}" && -w "${TARGET_BIN_DIR}" ]]; then
-    rm -f "${target_path}"
-  else
-    sudo rm -f "${target_path}"
-  fi
+remove_path() {
+  local path="$1"
+  [[ -e "${path}" ]] || return 0
+  rm -rf "${path}" 2>/dev/null || sudo rm -rf "${path}"
+  echo "Removed ${path}"
 }
 
-remove_binary "cdx-cli"
-remove_binary "cdx-sledovane-dokumenty"
-remove_binary "cdx-sledovana-judikatura"
-remove_binary "cdxctl"
+remove_path "${TARGET_BIN_DIR}/cdx-cli"
+remove_path "${TARGET_BIN_DIR}/cdx-sledovane-dokumenty"
+remove_path "${TARGET_BIN_DIR}/cdx-sledovana-judikatura"
+remove_path "${TARGET_BIN_DIR}/cdxctl"
+remove_path "${HOME}/.local/share/codexis"
 
-# Remove the plugin-owned share directory (matches katastr's full-nuke pattern).
-SHARE_DIR="${HOME}/.local/share/codexis"
-if [[ -d "${SHARE_DIR}" ]]; then
-  if [[ -w "${SHARE_DIR}" ]]; then
-    rm -rf "${SHARE_DIR}"
-  else
-    sudo rm -rf "${SHARE_DIR}"
-  fi
-fi
+# Sweep leftover temp files from an interrupted install (e.g. power loss).
+rm -f "${TARGET_BIN_DIR}"/.cdx-cli.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.cdx-sledovane-dokumenty.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.cdx-sledovana-judikatura.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.cdxctl.tmp.* 2>/dev/null || true

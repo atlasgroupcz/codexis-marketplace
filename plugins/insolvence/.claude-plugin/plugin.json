@@ -34,9 +34,9 @@
     }
   },
   "dependencies": ["codexis"],
-  "postInstall": "mkdir -p \"${HOME}/.local/share/insolvence/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && cp -r \"${PLUGIN_DIR}/lib/insolvence_core\" \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/insolvence-cli\" \"${HOME}/.local/bin/insolvence-cli\"",
-  "postUninstall": "rm -f \"${HOME}/.local/bin/insolvence-cli\" && rm -rf \"${HOME}/.local/share/insolvence\"",
-  "onUpdate": "mkdir -p \"${HOME}/.local/share/insolvence/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && cp -r \"${PLUGIN_DIR}/lib/insolvence_core\" \"${HOME}/.local/share/insolvence/lib/insolvence_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/insolvence-cli\" \"${HOME}/.local/bin/insolvence-cli\"",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
   "components": "./components",
   "env": {

@@ -3,15 +3,14 @@ set -euo pipefail
 
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
-remove_binary() {
-  local binary_name="$1"
-  local target_path="${TARGET_BIN_DIR}/${binary_name}"
-
-  if [[ -d "${TARGET_BIN_DIR}" && -w "${TARGET_BIN_DIR}" ]]; then
-    rm -f "${target_path}"
-  else
-    sudo rm -f "${target_path}"
-  fi
+remove_path() {
+  local path="$1"
+  [[ -e "${path}" ]] || return 0
+  rm -rf "${path}" 2>/dev/null || sudo rm -rf "${path}"
+  echo "Removed ${path}"
 }
 
-remove_binary "cdx-nl"
+remove_path "${TARGET_BIN_DIR}/cdx-nl"
+
+# Sweep leftover temp files from an interrupted install (e.g. power loss).
+rm -f "${TARGET_BIN_DIR}"/.cdx-nl.tmp.* 2>/dev/null || true
