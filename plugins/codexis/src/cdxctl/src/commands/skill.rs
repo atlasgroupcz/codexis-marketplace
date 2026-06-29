@@ -1,4 +1,4 @@
-use super::resolve_node_id;
+use super::{flatten_plugin_marketplace, resolve_node_id};
 use crate::client::GraphQLClient;
 use crate::error::CdxctlError;
 use crate::graphql;
@@ -20,7 +20,7 @@ pub fn list(
         .cloned()
         .unwrap_or_default();
 
-    let filtered: Vec<Value> = if editable_only {
+    let mut filtered: Vec<Value> = if editable_only {
         skills
             .into_iter()
             .filter(|skill| skill.get("editable").and_then(Value::as_bool) == Some(true))
@@ -28,6 +28,10 @@ pub fn list(
     } else {
         skills
     };
+
+    for skill in filtered.iter_mut() {
+        flatten_plugin_marketplace(skill);
+    }
 
     print_output(&json!(filtered), format);
     Ok(())

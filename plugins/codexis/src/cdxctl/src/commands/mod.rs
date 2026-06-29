@@ -10,6 +10,40 @@ pub mod tabular;
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
+use serde_json::Value;
+
+/// Find an entity's `id` in a list by matching `needle` against its `id` or any
+/// of `match_fields` (e.g. `fullName`, `name`). Used to turn a human-supplied
+/// agent/skill name into the Node `ID` the daemon's mutation inputs expect.
+pub fn find_node_id(items: &[Value], needle: &str, match_fields: &[&str]) -> Option<Value> {
+    items
+        .iter()
+        .find(|item| {
+            item.get("id").and_then(Value::as_str) == Some(needle)
+                || match_fields
+                    .iter()
+                    .any(|field| item.get(*field).and_then(Value::as_str) == Some(needle))
+        })
+        .and_then(|item| item.get("id").cloned())
+}
+
+/// Flatten a daemon entity's nested `plugin { name marketplace { name } }`
+/// selection into top-level `plugin` / `marketplace` name strings, so they show
+/// up as columns in `--table` output and as flat keys in JSON.
+pub fn flatten_plugin_marketplace(value: &mut Value) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    let plugin = object.remove("plugin").unwrap_or(Value::Null);
+    let plugin_name = plugin.get("name").cloned().unwrap_or(Value::Null);
+    let marketplace_name = plugin
+        .get("marketplace")
+        .and_then(|marketplace| marketplace.get("name"))
+        .cloned()
+        .unwrap_or(Value::Null);
+    object.insert("plugin".into(), plugin_name);
+    object.insert("marketplace".into(), marketplace_name);
+}
 
 /// Encode a single-segment NodeId for the daemon's GraphQL `ID` scalar.
 ///
@@ -81,6 +115,48 @@ fn root_type_name(encoded: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn find_node_id_matches_full_name_or_id() {
+        let items = vec![
+            json!({ "id": "Agent:enc-explorer", "fullName": "codexis:explorer", "name": "explorer" }),
+            json!({ "id": "Agent:enc-writer", "fullName": "writer", "name": "writer" }),
+        ];
+        assert_eq!(
+            find_node_id(&items, "codexis:explorer", &["fullName", "name"]),
+            Some(json!("Agent:enc-explorer"))
+        );
+        assert_eq!(
+            find_node_id(&items, "writer", &["fullName", "name"]),
+            Some(json!("Agent:enc-writer"))
+        );
+        assert_eq!(
+            find_node_id(&items, "Agent:enc-explorer", &["fullName", "name"]),
+            Some(json!("Agent:enc-explorer"))
+        );
+        assert_eq!(find_node_id(&items, "missing", &["fullName", "name"]), None);
+    }
+
+    #[test]
+    fn flatten_plugin_marketplace_lifts_names_to_top_level() {
+        let mut value = json!({
+            "id": "Agent:x",
+            "plugin": { "id": "Plugin:p", "name": "codexis", "marketplace": { "id": "Marketplace:m", "name": "codexis-official" } }
+        });
+        flatten_plugin_marketplace(&mut value);
+        assert_eq!(value["plugin"], json!("codexis"));
+        assert_eq!(value["marketplace"], json!("codexis-official"));
+    }
+
+    #[test]
+    fn flatten_plugin_marketplace_handles_local_entities() {
+        // LOCAL agents/skills have no plugin → both columns null, no panic.
+        let mut value = json!({ "id": "Agent:local", "plugin": Value::Null });
+        flatten_plugin_marketplace(&mut value);
+        assert_eq!(value["plugin"], Value::Null);
+        assert_eq!(value["marketplace"], Value::Null);
+    }
 
     #[test]
     fn encodes_skill_root_node_id() {
