@@ -1,0 +1,98 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-07-01T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/ustavny-sud/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get decision metadata",
+      "description": "Retrieve metadata for a Constitutional Court (Ústavný súd SR) decision by document ID.",
+      "operationId": "getMeta_ustavnysud",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKUS12345"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Decision metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UstavnysudSkDocumentResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "UstavnysudSkDocumentResponse": {
+        "type": "object",
+        "description": "Constitutional Court (Ústavný súd SR) decision metadata. Null fields are omitted. Separate dissents (odlišné stanovisko) are their own records sharing the parent's caseNumber.",
+        "properties": {
+          "docId": { "type": "string", "description": "Public display ID", "example": "SKUS12345" },
+          "url": { "type": "string", "description": "Source identity URL" },
+          "ecli": { "type": "string", "description": "ECLI identifier (null on pre-ECLI records)", "example": "ECLI:SK:USSR:2026:1.US.307.2026.1" },
+          "caseNumber": { "type": "string", "description": "Case number (spisová značka); NOT unique — one case may have several decisions", "example": "III. ÚS 307/2026" },
+          "registryNumber": { "type": "string", "description": "Registry number (distinct scheme from caseNumber)" },
+          "formOfDecision": { "type": "string", "description": "Decision form (empty on dissent records)", "example": "Nález" },
+          "typeOfDecision": {
+            "type": "array",
+            "description": "Decision type(s)",
+            "items": { "type": "string" },
+            "example": ["Uznesenie o odmietnutí"]
+          },
+          "typeOfProceeding": { "type": "string", "description": "Type of proceeding (typ konania)" },
+          "decisionDate": { "type": "string", "description": "Decision date" },
+          "dateOfLegalForce": { "type": "string", "description": "Date the decision took legal force" },
+          "judgeReporter": { "type": "string", "description": "Judge-rapporteur (sudca spravodajca)", "example": "Robert Šorl" },
+          "clauseTitle": { "type": "string", "description": "Legal-headnote title (právna veta)" },
+          "clauseText": { "type": "string", "description": "Legal-headnote text (právna veta)" },
+          "wordRegister": {
+            "type": "array",
+            "description": "Keyword register (kľúčové slová)",
+            "items": { "type": "string" }
+          },
+          "complainedLegalRegulation": {
+            "type": "array",
+            "description": "Challenged legal regulations (napadnuté predpisy)",
+            "items": { "type": "string" }
+          },
+          "decisionInTermsOf": {
+            "type": "array",
+            "description": "Decision in terms of (rozhodnutie v zmysle)",
+            "items": { "type": "string" }
+          },
+          "differentView": { "type": "string", "description": "Dissent opinion type label (null on non-dissent records)", "example": "Odlišné stanovisko k výroku" },
+          "isDissent": { "type": "boolean", "description": "True when this record is a separate dissent (odlišné stanovisko)" },
+          "assets": {
+            "type": "array",
+            "description": "Downloadable attachments (decision PDF)",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source", "example": "III. ÚS 307_2026.pdf" },
+          "download_url": { "type": "string", "description": "cdx-sk:// link to download this attachment", "example": "cdx-sk://doc/SKUS12345/attachment/content_1.pdf" }
+        }
+      }
+    }
+  }
+}

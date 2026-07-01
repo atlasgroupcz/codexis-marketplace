@@ -7,11 +7,18 @@ use crate::core::sources::publish_from_body;
 
 const CDX_SK_SCHEME: &str = "cdx-sk://";
 
-/// Display ID prefix -> API path (only Slovak domains)
+/// Display ID prefix -> API path (only Slovak domains).
+///
+/// Order matters: `lookup_display_id_prefix` matches by `starts_with` in declaration order, and
+/// "SKNS" is a strict prefix of "SKNSS" — so SKNSS MUST appear before SKNS, else `SKNSS123` would
+/// mis-route to najvyssi-sud. Longer prefixes are listed first to preserve this invariant.
 const ID_PREFIXES: &[(&str, &str)] = &[
     ("SKNUS", "SK/najvyssi-ustavny-sud"),
+    ("SKNSS", "SK/najvyssi-spravny-sud"),
     ("SKVS", "SK/vseobecne-sudy"),
+    ("SKUS", "SK/ustavny-sud"),
     ("SKEZ", "SK/ezbierka"),
+    ("SKNS", "SK/najvyssi-sud"),
 ];
 
 pub(crate) fn execute_search_request(
@@ -619,6 +626,51 @@ mod tests {
         assert_eq!(
             resolve_cdx_url(BASE, "search/SKNUS"),
             Ok(format!("{BASE}/SK/najvyssi-ustavny-sud/search"))
+        );
+    }
+
+    #[test]
+    fn search_sknss() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "search/SKNSS"),
+            Ok(format!("{BASE}/SK/najvyssi-spravny-sud/search"))
+        );
+    }
+
+    #[test]
+    fn search_skus() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "search/SKUS"),
+            Ok(format!("{BASE}/SK/ustavny-sud/search"))
+        );
+    }
+
+    #[test]
+    fn search_skns() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "search/SKNS"),
+            Ok(format!("{BASE}/SK/najvyssi-sud/search"))
+        );
+    }
+
+    #[test]
+    fn doc_skus_text() {
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/SKUS9012/text"),
+            Ok(format!("{BASE}/SK/ustavny-sud/doc/SKUS9012/text"))
+        );
+    }
+
+    #[test]
+    fn doc_sknss_and_skns_prefixes_disambiguate() {
+        // "SKNS" is a strict prefix of "SKNSS"; longest-prefix ordering must route each correctly.
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/SKNSS123/meta"),
+            Ok(format!("{BASE}/SK/najvyssi-spravny-sud/doc/SKNSS123/meta"))
+        );
+        assert_eq!(
+            resolve_cdx_url(BASE, "doc/SKNS123/meta"),
+            Ok(format!("{BASE}/SK/najvyssi-sud/doc/SKNS123/meta"))
         );
     }
 

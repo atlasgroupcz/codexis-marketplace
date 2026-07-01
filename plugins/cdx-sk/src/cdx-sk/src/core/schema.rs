@@ -20,6 +20,9 @@ pub(crate) enum SchemaSource {
     Skez,
     Skvs,
     Sknus,
+    Sknss,
+    Skus,
+    Skns,
 }
 
 struct RenderedSchemaDocument {
@@ -203,6 +206,15 @@ fn load_source_aware_schema_bundle(
         (ResourceSchemaKind::Meta, SchemaSource::Sknus) => {
             Ok(include_str!("../../schemas/resource/meta-sknus.bundle.json"))
         }
+        (ResourceSchemaKind::Meta, SchemaSource::Sknss) => {
+            Ok(include_str!("../../schemas/resource/meta-sknss.bundle.json"))
+        }
+        (ResourceSchemaKind::Meta, SchemaSource::Skus) => {
+            Ok(include_str!("../../schemas/resource/meta-skus.bundle.json"))
+        }
+        (ResourceSchemaKind::Meta, SchemaSource::Skns) => {
+            Ok(include_str!("../../schemas/resource/meta-skns.bundle.json"))
+        }
         (ResourceSchemaKind::Parts, SchemaSource::Skez) => {
             Ok(include_str!("../../schemas/resource/parts-skez.bundle.json"))
         }
@@ -211,6 +223,15 @@ fn load_source_aware_schema_bundle(
         }
         (ResourceSchemaKind::Parts, SchemaSource::Sknus) => {
             Ok(include_str!("../../schemas/resource/parts-sknus.bundle.json"))
+        }
+        (ResourceSchemaKind::Parts, SchemaSource::Sknss) => {
+            Ok(include_str!("../../schemas/resource/parts-sknss.bundle.json"))
+        }
+        (ResourceSchemaKind::Parts, SchemaSource::Skus) => {
+            Ok(include_str!("../../schemas/resource/parts-skus.bundle.json"))
+        }
+        (ResourceSchemaKind::Parts, SchemaSource::Skns) => {
+            Ok(include_str!("../../schemas/resource/parts-skns.bundle.json"))
         }
         (ResourceSchemaKind::Versions, SchemaSource::Skez) => Ok(include_str!(
             "../../schemas/resource/versions-skez.bundle.json"
@@ -609,9 +630,17 @@ impl ResourceSchemaKind {
 
     fn available_sources(self) -> Vec<SchemaSource> {
         match self {
-            Self::Meta | Self::Parts | Self::Related => {
-                vec![SchemaSource::Skez, SchemaSource::Skvs, SchemaSource::Sknus]
-            }
+            // The three court sources (SKNSS/SKUS/SKNS) expose /meta and /parts (flat decision
+            // metadata + per-page index) but no /related, /versions, or /toc.
+            Self::Meta | Self::Parts => vec![
+                SchemaSource::Skez,
+                SchemaSource::Skvs,
+                SchemaSource::Sknus,
+                SchemaSource::Sknss,
+                SchemaSource::Skus,
+                SchemaSource::Skns,
+            ],
+            Self::Related => vec![SchemaSource::Skez, SchemaSource::Skvs, SchemaSource::Sknus],
             Self::Versions => vec![SchemaSource::Skez, SchemaSource::Sknus],
             Self::Toc => vec![SchemaSource::Skez],
             _ => vec![],
@@ -625,6 +654,9 @@ impl SchemaSource {
             Self::Skez => "SKEZ",
             Self::Skvs => "SKVS",
             Self::Sknus => "SKNUS",
+            Self::Sknss => "SKNSS",
+            Self::Skus => "SKUS",
+            Self::Skns => "SKNS",
         }
     }
 }

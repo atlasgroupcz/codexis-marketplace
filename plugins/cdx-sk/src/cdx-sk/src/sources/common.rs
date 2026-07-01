@@ -121,6 +121,20 @@ pub(crate) fn insert_string(payload: &mut JsonMap, key: &str, value: &Option<Str
     }
 }
 
+/// Insert a JSON array of trimmed, non-empty strings under `key`. No-op when the slice yields
+/// nothing, so an unset repeatable filter never appears in the payload.
+pub(crate) fn insert_string_vec(payload: &mut JsonMap, key: &str, values: &[String]) {
+    let items: Vec<Value> = values
+        .iter()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(|value| Value::String(value.to_string()))
+        .collect();
+    if !items.is_empty() {
+        payload.insert(key.to_string(), Value::Array(items));
+    }
+}
+
 pub(crate) fn insert_u64(payload: &mut JsonMap, key: &str, value: Option<u64>) {
     if let Some(value) = value {
         payload.insert(key.to_string(), Value::from(value));
@@ -132,6 +146,37 @@ pub(crate) fn insert_bool(payload: &mut JsonMap, key: &str, value: bool) {
     if value {
         payload.insert(key.to_string(), Value::Bool(true));
     }
+}
+
+/// Court-domain default page size — matches the court controllers' DEFAULT_LIMIT (20).
+const DEFAULT_COURT_PAGE_SIZE: u64 = 20;
+
+/// Build a court-domain search payload. The Slovak court `/search` endpoints (nssud_sk,
+/// ustavnysud_sk, nsud_sk) page with `from`/`size` (offset semantics) rather than the
+/// `offset`/`limit` keys the slov-lex sources use — and there are no `@JsonAlias` fallbacks — so
+/// this mirrors the base `query` + paging emission with the correct keys, then applies the domain
+/// filters (`extend`) and any JSON payload override.
+pub(crate) fn build_court_search_payload(
+    base: &SearchBaseArgs,
+    extend: impl FnOnce(&mut JsonMap),
+) -> Result<String, CliError> {
+    let mut payload = JsonMap::new();
+    insert_string(&mut payload, "query", &base.query);
+    insert_u64(
+        &mut payload,
+        "size",
+        Some(base.limit.unwrap_or(DEFAULT_COURT_PAGE_SIZE)),
+    );
+    insert_u64(
+        &mut payload,
+        "from",
+        Some(base.offset.unwrap_or(DEFAULT_RESULT_OFFSET)),
+    );
+    extend(&mut payload);
+    merge_payload_override("", &mut payload, base.payload.as_deref())?;
+    validate_search_payload(&payload)?;
+    serde_json::to_string(&Value::Object(payload))
+        .map_err(|error| CliError::SerializePayload(error.to_string()))
 }
 
 fn merge_payload_override(
@@ -290,5 +335,42 @@ mod tests {
         // but accessible via trait methods
         assert_eq!(args.sort(), Some("date"));
         assert_eq!(args.order(), Some("asc"));
+    }
+
+    #[test]
+    fn court_payload_uses_from_and_size_paging() {
+        let base = SearchBaseArgs {
+            query: Some("dovolanie".to_string()),
+            limit: Some(5),
+            offset: Some(20),
+            ..SearchBaseArgs::default()
+        };
+
+        let payload = build_court_search_payload(&base, |payload| {
+            insert_string_vec(payload, "kolegium", &["Trestnoprávne".to_string()]);
+        })
+        .unwrap();
+
+        let parsed: Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(parsed["query"], "dovolanie");
+        assert_eq!(parsed["size"], 5);
+        assert_eq!(parsed["from"], 20);
+        assert_eq!(parsed["kolegium"], Value::from(vec!["Trestnoprávne"]));
+        // Court sources must NOT emit the slov-lex limit/offset keys.
+        assert!(parsed.get("limit").is_none());
+        assert!(parsed.get("offset").is_none());
+    }
+
+    #[test]
+    fn court_payload_defaults_size_to_twenty() {
+        let base = SearchBaseArgs {
+            query: Some("test".to_string()),
+            ..SearchBaseArgs::default()
+        };
+
+        let payload = build_court_search_payload(&base, |_| {}).unwrap();
+        let parsed: Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(parsed["size"], 20);
+        assert_eq!(parsed["from"], 0);
     }
 }

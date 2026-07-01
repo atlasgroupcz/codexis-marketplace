@@ -7,20 +7,29 @@ use crate::core::schema::{render_resource_schema, ResourceSchemaKind, SchemaSour
 use crate::get::GetArgs;
 use crate::sources::common::SearchPayloadArgs;
 use crate::sources::skez::{SearchSkezArgs, SEARCH_SKEZ_HELP};
+use crate::sources::sknss::{SearchSknssArgs, SEARCH_SKNSS_HELP};
 use crate::sources::sknus::{SearchSknusArgs, SEARCH_SKNUS_HELP};
+use crate::sources::skns::{SearchSknsArgs, SEARCH_SKNS_HELP};
+use crate::sources::skus::{SearchSkusArgs, SEARCH_SKUS_HELP};
 use crate::sources::skvs::{SearchSkvsArgs, SEARCH_SKVS_HELP};
 
 const ROOT_HELP: &str = "\
 Data sources:
   SKEZ     Slovak Legislation   e-Zbierka: Slovak laws, decrees, and regulations
   SKVS     Slovak Case Law      General courts: judicial decisions from Slovak courts
-  SKNUS    Supreme & Const.     Supreme Court and Constitutional Court decisions
+  SKNUS    Supreme & Const.     Supreme Court and Constitutional Court decisions (slov-lex)
+  SKNSS    Admin. Supreme Court Najvyšší správny súd SR: administrative supreme court decisions
+  SKUS     Constitutional Court Ústavný súd SR: constitutional court decisions
+  SKNS     Supreme Court        Najvyšší súd SR: supreme court decisions
 
 Examples:
   cdx-sk search SKEZ --query \"občiansky zákonník\" --limit 5
   cdx-sk search SKEZ --doc-number \"40/1964 Zb.\"
   cdx-sk search SKVS --query \"náhrada škody\" --court OSBA1 --limit 5
   cdx-sk search SKNUS --query \"ústavné právo\" --court NSSR
+  cdx-sk search SKNSS --query \"kasačná sťažnosť\" --forma Rozsudok
+  cdx-sk search SKUS --query \"základné práva\" --form-of-decision Nález
+  cdx-sk search SKNS --query \"dovolanie\" --kolegium Trestnoprávne
   cdx-sk get cdx-sk://doc/SKEZ1234/meta
   cdx-sk get cdx-sk://doc/SKVS5678/text
   cdx-sk get cdx-sk://law/SK/40/1964/meta
@@ -28,11 +37,11 @@ Examples:
 
 Detailed source help:
   cdx-sk search <DATA_SOURCE> --help
-  cdx-sk search [SKEZ|SKVS|SKNUS] --help
+  cdx-sk search [SKEZ|SKVS|SKNUS|SKNSS|SKUS|SKNS] --help
 
 Endpoint schema help:
   cdx-sk schema [meta|text|toc|parts|versions|related|related/counts]
-  cdx-sk schema meta [SKEZ|SKVS|SKNUS]
+  cdx-sk schema meta [SKEZ|SKVS|SKNUS|SKNSS|SKUS|SKNS]
 
 Common get resource suffixes:
   /meta, /toc, /text, /parts, /versions
@@ -189,6 +198,15 @@ enum SchemaSourceCommand {
 
     #[command(name = "SKNUS", visible_alias = "sknus", about = "SKNUS schema")]
     Sknus,
+
+    #[command(name = "SKNSS", visible_alias = "sknss", about = "SKNSS schema")]
+    Sknss,
+
+    #[command(name = "SKUS", visible_alias = "skus", about = "SKUS schema")]
+    Skus,
+
+    #[command(name = "SKNS", visible_alias = "skns", about = "SKNS schema")]
+    Skns,
 }
 
 impl SchemaSourceCommand {
@@ -197,6 +215,9 @@ impl SchemaSourceCommand {
             Self::Skez => SchemaSource::Skez,
             Self::Skvs => SchemaSource::Skvs,
             Self::Sknus => SchemaSource::Sknus,
+            Self::Sknss => SchemaSource::Sknss,
+            Self::Skus => SchemaSource::Skus,
+            Self::Skns => SchemaSource::Skns,
         }
     }
 }
@@ -229,6 +250,33 @@ enum SearchSource {
         arg_required_else_help = true
     )]
     Sknus(SearchSknusArgs),
+
+    #[command(
+        name = "SKNSS",
+        visible_alias = "sknss",
+        about = "Supreme Administrative Court: decisions of the Najvyšší správny súd SR",
+        after_help = SEARCH_SKNSS_HELP,
+        arg_required_else_help = true
+    )]
+    Sknss(SearchSknssArgs),
+
+    #[command(
+        name = "SKUS",
+        visible_alias = "skus",
+        about = "Constitutional Court: decisions of the Ústavný súd SR",
+        after_help = SEARCH_SKUS_HELP,
+        arg_required_else_help = true
+    )]
+    Skus(SearchSkusArgs),
+
+    #[command(
+        name = "SKNS",
+        visible_alias = "skns",
+        about = "Supreme Court: decisions of the Najvyšší súd SR",
+        after_help = SEARCH_SKNS_HELP,
+        arg_required_else_help = true
+    )]
+    Skns(SearchSknsArgs),
 }
 
 impl SearchSource {
@@ -237,6 +285,9 @@ impl SearchSource {
             Self::Skez(_) => "SKEZ",
             Self::Skvs(_) => "SKVS",
             Self::Sknus(_) => "SKNUS",
+            Self::Sknss(_) => "SKNSS",
+            Self::Skus(_) => "SKUS",
+            Self::Skns(_) => "SKNS",
         }
     }
 
@@ -245,6 +296,9 @@ impl SearchSource {
             Self::Skez(args) => args.build_payload("SKEZ"),
             Self::Skvs(args) => args.build_payload("SKVS"),
             Self::Sknus(args) => args.build_payload("SKNUS"),
+            Self::Sknss(args) => args.build_payload("SKNSS"),
+            Self::Skus(args) => args.build_payload("SKUS"),
+            Self::Skns(args) => args.build_payload("SKNS"),
         }
     }
 
@@ -253,6 +307,9 @@ impl SearchSource {
             Self::Skez(args) => args.dry_run(),
             Self::Skvs(args) => args.dry_run(),
             Self::Sknus(args) => args.dry_run(),
+            Self::Sknss(args) => args.dry_run(),
+            Self::Skus(args) => args.dry_run(),
+            Self::Skns(args) => args.dry_run(),
         }
     }
 
@@ -261,6 +318,9 @@ impl SearchSource {
             Self::Skez(args) => args.sort(),
             Self::Skvs(args) => args.sort(),
             Self::Sknus(args) => args.sort(),
+            Self::Sknss(args) => args.sort(),
+            Self::Skus(args) => args.sort(),
+            Self::Skns(args) => args.sort(),
         }
     }
 
@@ -269,6 +329,9 @@ impl SearchSource {
             Self::Skez(args) => args.order(),
             Self::Skvs(args) => args.order(),
             Self::Sknus(args) => args.order(),
+            Self::Sknss(args) => args.order(),
+            Self::Skus(args) => args.order(),
+            Self::Skns(args) => args.order(),
         }
     }
 }

@@ -1,0 +1,63 @@
+{
+  "endpoint": "parts",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-07-01T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/parts"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/najvyssi-spravny-sud/doc/{docId}/parts",
+      "method": "get",
+      "summary": "Get page index",
+      "description": "List the decision's pages (one entry per PDF page) with each page's first heading line. Use a page number as the 'page' query parameter on the /text endpoint to fetch that page.",
+      "operationId": "getParts_nssud",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKNSS12345"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Page index",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NssudSkPartsResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "NssudSkPartsResponse": {
+        "type": "object",
+        "description": "Per-page index of a court decision",
+        "properties": {
+          "docId": { "type": "string", "description": "Document ID", "example": "SKNSS12345" },
+          "parts": {
+            "type": "array",
+            "description": "Pages of the decision, ordered by page number",
+            "items": { "$ref": "#/components/schemas/NssudSkPartItem" }
+          }
+        }
+      },
+      "NssudSkPartItem": {
+        "type": "object",
+        "description": "One page of the decision. Null fields are omitted.",
+        "properties": {
+          "page": { "type": "integer", "description": "Page number (0-based); pass as the 'page' parameter on /text", "example": 0 },
+          "firstLine": { "type": "string", "description": "First heading or first non-empty line on the page", "example": "ROZSUDOK V MENE SLOVENSKEJ REPUBLIKY" }
+        }
+      }
+    }
+  }
+}

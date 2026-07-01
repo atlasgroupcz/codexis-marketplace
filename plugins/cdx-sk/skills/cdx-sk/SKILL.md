@@ -19,7 +19,7 @@ i18n:
 
 # Slovak Legal Database (cdx-sk)
 
-Slovak legal database providing structured access to three sources: e-Zbierka legislation (SKEZ), general court decisions (SKVS, ~4.6M decisions from district and regional courts), and supreme & constitutional court decisions (SKNUS, ~2.9K decisions from Najvyssi sud SR and Ustavny sud SR).
+Slovak legal database providing structured access to six sources: e-Zbierka legislation (SKEZ), general court decisions (SKVS, ~4.6M decisions from district and regional courts), and supreme & constitutional court decisions (SKNUS, ~2.9K decisions from Najvyssi sud SR and Ustavny sud SR). Three first-party court databases add current, higher-volume coverage: Najvyssi spravny sud SR (SKNSS, ~7.6K decisions, 2021→), Ustavny sud SR (SKUS, ~53K decisions, 1993→), and Najvyssi sud SR (SKNS, ~105K decisions, 1996→).
 
 ## Commands
 
@@ -54,8 +54,8 @@ Never resolve URLs yourself and never read `$CODEXIS_PLUGIN_SK_API_URL` for link
 
 Never include any of the following in user-facing text:
 
-- Raw document IDs (e.g., `SKEZ1234`, `SKVS5678`, `SKNUS9012`)
-- Raw search prefixes (e.g., `SKEZ`, `SKVS`, `SKNUS`)
+- Raw document IDs (e.g., `SKEZ1234`, `SKVS5678`, `SKNUS9012`, `SKNSS12345`, `SKUS12345`, `SKNS12345`)
+- Raw search prefixes (e.g., `SKEZ`, `SKVS`, `SKNUS`, `SKNSS`, `SKUS`, `SKNS`)
 - Bare API URLs you construct yourself (e.g., `https://…/api/SK/ezbierka/doc/SKEZ123`) — cite ONLY the `https://…/attachment/…` PDF link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_SK_API_URL`)
 - HTML tags (e.g., `<a href=...>`) — use markdown links only
@@ -69,13 +69,16 @@ When referring to data sources in prose, match the user's conversation language:
 | `SKEZ` | Zbierka zakonov SR | Slovak Legislation |
 | `SKVS` | Vseobecne sudy SR | Slovak General Courts |
 | `SKNUS` | Najvyssi a Ustavny sud SR | Slovak Supreme & Constitutional Courts |
+| `SKNSS` | Najvyssi spravny sud SR | Slovak Supreme Administrative Court |
+| `SKUS` | Ustavny sud SR | Slovak Constitutional Court |
+| `SKNS` | Najvyssi sud SR | Slovak Supreme Court |
 
 ### Document Titles
 
 Use these fields as the link text:
 
 - **SKEZ (legislation):** the link text MUST be the compact law citation, not the bare title: `ČÍSLO NÁZOV` from `docNumber` + `title` (e.g. `[311/2001 Z. z. Zákonník práce](https://…/attachment/content_1.pdf#page=45)`). The collection suffix comes from `docNumber` as the data returns it — never hardcode it: pre-1993 laws are `Zb.`, post-1993 `Z. z.` (e.g. `40/1964 Zb. Občiansky zákonník`). When citing a specific version, append `, v znení účinnom od DD.MM.RRRR` (from the result's `validFrom`). The API's resolved source titles already use this exact format — where one is shown, reuse it verbatim. Never invent a missing segment: no number/year → `title` alone; no `validFrom` → drop only the version suffix.
-- **SKVS/SKNUS (court decisions):** the link text MUST be a compact legal citation, not the generic title: `SÚD - SP. ZN. - DD.MM.RRRR` (e.g. `[OS Bratislava I - 1C/123/2024 - 15.03.2024](https://…/attachment/content_1.pdf#page=1)`). Map the court to its abbreviation per the tables in `references/search-skvs.md` / `references/search-sknus.md`; the reference is the case file number (else `ecli`), and append ` - DD.MM.RRRR` (decision date) when available. The decision type (`Rozsudok`/`Uznesenie`/`Nalez`) may be secondary text, never the primary label; missing date → drop only the date segment.
+- **SKVS/SKNUS/SKNSS/SKUS/SKNS (court decisions):** the link text MUST be a compact legal citation, not the generic title: `SÚD - SP. ZN. - DD.MM.RRRR` (e.g. `[OS Bratislava I - 1C/123/2024 - 15.03.2024](https://…/attachment/content_1.pdf#page=1)`). Map the court to its abbreviation per the tables in `references/search-skvs.md` / `references/search-sknus.md`; for the first-party court databases the court is fixed — `NSS SR` (SKNSS), `ÚS SR` (SKUS), `NS SR` (SKNS). The reference is the case file number (else `ecli`), and append ` - DD.MM.RRRR` (decision date) when available. The decision type (`Rozsudok`/`Uznesenie`/`Nález`) may be secondary text, never the primary label; missing date → drop only the date segment.
 
 If no citation is composable, use a descriptive fallback — never the raw document ID.
 
@@ -103,7 +106,7 @@ Every document reference in user-facing output MUST be a clickable attachment li
 
 - Search results include a ready-made resolved `https://…/attachment/…` URL with `#page=N` built in — use it directly as the link target.
 - **SKEZ (legislation):** The resolved source URL from search already includes `#page=N`. If `pageUrl` is absent (PDF page mapping unavailable), get the filename from `/meta` assets and link without `#page`.
-- **SKVS/SKNUS (court decisions):** Search-result sources include `#page=N` (from the two-stage page lookup). When fetching `/parts` or `/meta` manually for a court decision attachment, the attachment URL has no `#page` — link without it rather than omitting the link.
+- **SKVS/SKNUS/SKNSS/SKUS/SKNS (court decisions):** Search-result sources include `#page=N` (from the two-stage page lookup). When fetching `/parts` or `/meta` manually for a court decision attachment, the attachment URL has no `#page` — link without it rather than omitting the link. For the first-party court databases (SKNSS/SKUS/SKNS), `/parts` returns a per-page index (`page` + `firstLine`); pass a page number as `/text?page=N`.
 
 ### Do Not Use includeAllAssets=true on /meta
 
@@ -116,3 +119,6 @@ Example: Trestný zákonník has ~80 timecut versions, each with its own set of 
 - **`references/search-skez.md`** — Slovak legislation search (e-Zbierka): document types, validity filters, law number lookup
 - **`references/search-skvs.md`** — Slovak general court decisions: court codes, decision forms, case file numbers
 - **`references/search-sknus.md`** — Slovak supreme & constitutional court decisions: legal sentences, ECLI lookup
+- **`references/search-sknss.md`** — Slovak Supreme Administrative Court (NSS SR) decisions: decision forms, first-instance courts, case numbers
+- **`references/search-skus.md`** — Slovak Constitutional Court (ÚS SR) decisions: decision forms, judge-rapporteur, dissents, case numbers
+- **`references/search-skns.md`** — Slovak Supreme Court (NS SR) decisions: collegium, chamber type, case numbers
