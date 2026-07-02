@@ -30,7 +30,7 @@ def get(path: str) -> dict:
             "`katastr-cli settings set <KEY>`."
         )
 
-    url = CUZK_BASE + path if path.startswith("/") else CUZK_BASE + "/" + path
+    url = f"{CUZK_BASE}/{path.lstrip('/')}"
     req = urllib.request.Request(
         url, headers={"ApiKey": api_key, "Accept": "application/json"}
     )

@@ -13,6 +13,7 @@ import { ConfigSetup } from '@/components/config-setup'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { useOverview } from '@/hooks/use-overview'
 import { checkAll } from '@/lib/api'
+import { errorMessage } from '@/lib/format'
 
 export function App() {
   const { t } = useTranslation()
@@ -47,7 +48,7 @@ export function App() {
         }
         refetch()
       })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
+      .catch((e: unknown) => toast.error(errorMessage(e)))
       .finally(() => setChecking(false))
   }
 

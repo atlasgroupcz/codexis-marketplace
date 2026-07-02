@@ -1,22 +1,34 @@
 import { describe, expect, it } from 'vitest'
-import { deriveTimeline, latestMilestone } from './timeline'
+import { deriveTimeline } from './timeline'
 
 const op = (nazev: string, datumProvedeni: string) => ({ nazev, datumProvedeni })
 
 describe('deriveTimeline — event list', () => {
-  it('builds one node per operation, oldest first, last is current', () => {
+  it('renders operations in the given order without re-sorting', () => {
+    // Input intentionally NOT in date order — the FE must preserve it (the
+    // backend already sends oldest→newest). Fails while the .sort() exists.
     const nodes = deriveTimeline({
-      stav: 'Provedení záznamu',
+      stav: 'x',
       datum_prijeti: '2026-06-01',
       provedene_operace: [
-        op('Provedení záznamu', '2026-06-05'),
-        op('Založení řízení', '2026-06-01'),
+        op('Novější operace', '2026-06-05'),
+        op('Starší operace', '2026-06-01'),
       ],
     })
-    expect(nodes).toHaveLength(2)
-    expect(nodes[0].date).toBe('2026-06-01')
-    expect(nodes[0].state).toBe('done')
-    expect(nodes[1].state).toBe('current')
+    expect(nodes.map((n) => n.rawName)).toEqual(['Novější operace', 'Starší operace'])
+    expect(nodes[nodes.length - 1].state).toBe('current')
+  })
+
+  it('preserves same-day order as given', () => {
+    const nodes = deriveTimeline({
+      stav: 'Plomba',
+      datum_prijeti: '2026-06-29',
+      provedene_operace: [
+        op('Založení řízení', '2026-06-29'),
+        op('Zaplombování', '2026-06-29'),
+      ],
+    })
+    expect(nodes.map((n) => n.rawName)).toEqual(['Založení řízení', 'Zaplombování'])
   })
 
   it('never fabricates future steps', () => {
@@ -77,7 +89,6 @@ describe('deriveTimeline — raw ČÚZK names', () => {
       datum_prijeti: '2026-06-01',
       provedene_operace: [op('Vyrozumění o provedení vkladu', '2026-06-09')],
     })[0]
-    expect(n.nameKey).toBeNull()
     expect(n.rawName).toBe('Vyrozumění o provedení vkladu')
   })
 
@@ -113,22 +124,5 @@ describe('deriveTimeline — negative outcome', () => {
     })
     expect(nodes.every((n) => !n.isNegative)).toBe(true)
     expect(nodes[nodes.length - 1].state).toBe('current')
-  })
-})
-
-describe('latestMilestone', () => {
-  it('returns the most recent operation', () => {
-    const m = latestMilestone({
-      stav: 'Povolení vkladu',
-      provedene_operace: [op('Přijetí návrhu', '2026-06-01'), op('Povolení vkladu', '2026-06-12')],
-    })
-    expect(m.name).toBe('Povolení vkladu')
-    expect(m.date).toBe('2026-06-12')
-  })
-
-  it('falls back to stav when there are no operations', () => {
-    const m = latestMilestone({ stav: 'Podáno', provedene_operace: [] })
-    expect(m.name).toBe('Podáno')
-    expect(m.date).toBeNull()
   })
 })

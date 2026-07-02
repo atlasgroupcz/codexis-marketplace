@@ -5,7 +5,7 @@ All heavy logic (ČÚZK API calls, state management, change detection) lives
 here so neither caller has to duplicate it.
 """
 
-from . import api_client, settings, tracking
+from . import api_client, notify, settings, tracking
 from .exceptions import (
     ApiHttpError,
     ApiKeyInvalidError,
@@ -20,6 +20,7 @@ from .exceptions import (
 
 __all__ = [
     "api_client",
+    "notify",
     "settings",
     "tracking",
     "KatastrError",

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '@workspace/ui/components/card'
+import { toast } from '@workspace/ui/components/sonner'
 import type { ProceedingChange } from '@/lib/schemas'
 import { confirmChange } from '@/lib/api'
-import { formatDateTime } from '@/lib/format'
+import { errorMessage, formatDateTime } from '@/lib/format'
 
 interface ChangeHistoryProps {
   uuid: string
@@ -32,6 +33,7 @@ export function ChangeHistory({ uuid, changes, onConfirmed }: ChangeHistoryProps
     setConfirming(true)
     confirmChange(uuid, index)
       .then(() => onConfirmed())
+      .catch((e: unknown) => toast.error(errorMessage(e)))
       .finally(() => setConfirming(false))
   }
 

@@ -173,11 +173,12 @@ class TestOverviewEntry:
         assert entry["stav_uhrady_label"] is None
 
     def test_picks_latest_op_date(self):
+        # provedene_operace is stored as ČÚZK returns it: oldest-first.
         state = {
             "provedene_operace": [
                 {"nazev": "A", "datumProvedeni": "2026-02-01"},
-                {"nazev": "B", "datumProvedeni": "2026-04-01"},
                 {"nazev": "C", "datumProvedeni": "2026-03-01"},
+                {"nazev": "B", "datumProvedeni": "2026-04-01"},
             ],
         }
         entry = state_to_overview_entry(state)

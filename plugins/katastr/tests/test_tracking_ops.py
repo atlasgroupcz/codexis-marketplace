@@ -11,51 +11,14 @@ from katastr_core.exceptions import (
     ProceedingNotFoundError,
     ProceedingNotTrackedError,
 )
-
-
-@pytest.fixture
-def mock_cuzk(monkeypatch):
-    """Mock fetch_from_cuzk with configurable per-proceeding responses.
-
-    Returns dict. Keys: "data" maps parsed-number tuple → response dict, and
-    "raise_exc" allows simulating API errors.
-    """
-    config = {"data": {}, "raise_exc": None}
-
-    def _fetch(parsed):
-        if config["raise_exc"]:
-            raise config["raise_exc"]
-        key = (
-            parsed["typ_rizeni"], parsed["poradove_cislo"],
-            parsed["rok"], parsed["kod_pracoviste"],
-        )
-        return config["data"].get(key)
-
-    monkeypatch.setattr(tracking, "fetch_from_cuzk", _fetch)
-    return config
-
-
-@pytest.fixture
-def noop_automation(monkeypatch):
-    """Disable ensure_automation — it's non-fatal but noisy in tests."""
-    monkeypatch.setattr(tracking, "ensure_automation", lambda: None)
-
-
-def _cuzk_record(stav="V řízení", stav_uhrady="N", operations=None):
-    return {
-        "id": "api-id-xyz",
-        "stav": stav,
-        "stavUhrady": stav_uhrady,
-        "datumPrijeti": "2026-04-01",
-        "provedeneOperace": operations or [],
-    }
+from _helpers import _cuzk_record
 
 
 # ── add ──────────────────────────────────────────────────────────────────────
 
 
 class TestAdd:
-    def test_basic_add(self, app_dir, mock_cuzk, noop_automation):
+    def test_basic_add(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 123, 2026, 701)] = _cuzk_record()
         state = tracking.add("V-123/2026-701")
         assert state["cislo_rizeni"] == "V-123/2026-701"
@@ -66,33 +29,33 @@ class TestAdd:
         assert state["changes"] == []
         assert "uuid" in state
 
-    def test_persists_to_disk(self, app_dir, mock_cuzk, noop_automation):
+    def test_persists_to_disk(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         assert (app_dir / "V-1_2026-701" / "state.json").is_file()
 
-    def test_with_label(self, app_dir, mock_cuzk, noop_automation):
+    def test_with_label(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         state = tracking.add("V-1/2026-701", label="Smith v. Jones")
         assert state["label"] == "Smith v. Jones"
 
-    def test_lowercase_normalized(self, app_dir, mock_cuzk, noop_automation):
+    def test_lowercase_normalized(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         state = tracking.add("v-1/2026-701")
         assert state["cislo_rizeni"] == "V-1/2026-701"
 
-    def test_duplicate_raises(self, app_dir, mock_cuzk, noop_automation):
+    def test_duplicate_raises(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         with pytest.raises(ProceedingAlreadyTrackedError):
             tracking.add("V-1/2026-701")
 
-    def test_not_found_raises(self, app_dir, mock_cuzk, noop_automation):
+    def test_not_found_raises(self, app_dir, mock_cuzk):
         # mock_cuzk["data"] has no entry → fetch returns None
         with pytest.raises(ProceedingNotFoundError):
             tracking.add("V-999/2026-701")
 
-    def test_api_error_propagates(self, app_dir, mock_cuzk, noop_automation):
+    def test_api_error_propagates(self, app_dir, mock_cuzk):
         mock_cuzk["raise_exc"] = KatastrError("API down")
         with pytest.raises(KatastrError):
             tracking.add("V-1/2026-701")
@@ -102,7 +65,7 @@ class TestAdd:
 
 
 class TestShow:
-    def test_returns_state(self, app_dir, mock_cuzk, noop_automation):
+    def test_returns_state(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         assert tracking.show("V-1/2026-701")["cislo_rizeni"] == "V-1/2026-701"
@@ -113,7 +76,7 @@ class TestShow:
 
 
 class TestRemove:
-    def test_removes_state(self, app_dir, mock_cuzk, noop_automation):
+    def test_removes_state(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         tracking.remove("V-1/2026-701")
@@ -126,7 +89,7 @@ class TestRemove:
 
 
 class TestSetLabel:
-    def test_updates_label(self, app_dir, mock_cuzk, noop_automation):
+    def test_updates_label(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         tracking.set_label("V-1/2026-701", "Nový štítek")
@@ -138,7 +101,7 @@ class TestSetLabel:
 
 
 class TestFindByUuid:
-    def test_returns_matching(self, app_dir, mock_cuzk, noop_automation):
+    def test_returns_matching(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         added = tracking.add("V-1/2026-701")
         assert tracking.find_by_uuid(added["uuid"])["cislo_rizeni"] == "V-1/2026-701"
@@ -151,14 +114,14 @@ class TestFindByUuid:
 
 
 class TestConfirm:
-    def _seed_with_changes(self, app_dir, mock_cuzk, noop_automation, changes):
+    def _seed_with_changes(self, app_dir, mock_cuzk, changes):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         state = tracking.add("V-1/2026-701")
         state["changes"] = changes
         tracking._save_state("V-1/2026-701", state)
 
-    def test_mark_all_unconfirmed(self, app_dir, mock_cuzk, noop_automation):
-        self._seed_with_changes(app_dir, mock_cuzk, noop_automation, [
+    def test_mark_all_unconfirmed(self, app_dir, mock_cuzk):
+        self._seed_with_changes(app_dir, mock_cuzk, [
             {"detected_on": "2026-04-01", "confirmed_on": None},
             {"detected_on": "2026-04-05", "confirmed_on": None},
         ])
@@ -167,8 +130,8 @@ class TestConfirm:
         for c in tracking.show("V-1/2026-701")["changes"]:
             assert c["confirmed_on"] is not None
 
-    def test_mark_specific_index(self, app_dir, mock_cuzk, noop_automation):
-        self._seed_with_changes(app_dir, mock_cuzk, noop_automation, [
+    def test_mark_specific_index(self, app_dir, mock_cuzk):
+        self._seed_with_changes(app_dir, mock_cuzk, [
             {"detected_on": "2026-04-01", "confirmed_on": None},
             {"detected_on": "2026-04-05", "confirmed_on": None},
         ])
@@ -179,21 +142,21 @@ class TestConfirm:
         assert changes[1]["confirmed_on"] is not None
 
     def test_already_confirmed_index_returns_zero(
-        self, app_dir, mock_cuzk, noop_automation
+        self, app_dir, mock_cuzk
     ):
-        self._seed_with_changes(app_dir, mock_cuzk, noop_automation, [
+        self._seed_with_changes(app_dir, mock_cuzk, [
             {"confirmed_on": "2026-04-01T00:00:00Z"},
         ])
         assert tracking.confirm("V-1/2026-701", change_index=0) == 0
 
-    def test_no_unconfirmed_returns_zero(self, app_dir, mock_cuzk, noop_automation):
-        self._seed_with_changes(app_dir, mock_cuzk, noop_automation, [
+    def test_no_unconfirmed_returns_zero(self, app_dir, mock_cuzk):
+        self._seed_with_changes(app_dir, mock_cuzk, [
             {"confirmed_on": "2026-04-01T00:00:00Z"},
         ])
         assert tracking.confirm("V-1/2026-701") == 0
 
-    def test_out_of_range_raises(self, app_dir, mock_cuzk, noop_automation):
-        self._seed_with_changes(app_dir, mock_cuzk, noop_automation, [
+    def test_out_of_range_raises(self, app_dir, mock_cuzk):
+        self._seed_with_changes(app_dir, mock_cuzk, [
             {"confirmed_on": None},
         ])
         with pytest.raises(IndexError):
@@ -208,7 +171,7 @@ class TestConfirm:
 
 
 class TestCheckOne:
-    def test_no_change_returns_ok_no_change(self, app_dir, mock_cuzk, noop_automation):
+    def test_no_change_returns_ok_no_change(self, app_dir, mock_cuzk):
         base = _cuzk_record()
         mock_cuzk["data"][("V", 1, 2026, 701)] = base
         tracking.add("V-1/2026-701")
@@ -218,7 +181,7 @@ class TestCheckOne:
         assert result["error"] is None
 
     def test_stav_change_detected_and_recorded(
-        self, app_dir, mock_cuzk, noop_automation
+        self, app_dir, mock_cuzk
     ):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record(stav="V řízení")
         tracking.add("V-1/2026-701")
@@ -231,7 +194,7 @@ class TestCheckOne:
         # Persisted in state.changes
         assert len(tracking.show("V-1/2026-701")["changes"]) == 1
 
-    def test_api_error_returns_ok_false(self, app_dir, mock_cuzk, noop_automation):
+    def test_api_error_returns_ok_false(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         mock_cuzk["raise_exc"] = KatastrError("network down")
@@ -240,7 +203,7 @@ class TestCheckOne:
         assert result["error"] == "network down"
         assert result["change"] is None
 
-    def test_api_not_found_returns_ok_false(self, app_dir, mock_cuzk, noop_automation):
+    def test_api_not_found_returns_ok_false(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         # Remove from mock → next fetch returns None
@@ -249,7 +212,7 @@ class TestCheckOne:
         assert result["ok"] is False
         assert "nebylo nalezeno" in result["error"]
 
-    def test_updates_last_check_at(self, app_dir, mock_cuzk, noop_automation):
+    def test_updates_last_check_at(self, app_dir, mock_cuzk):
         mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
         tracking.add("V-1/2026-701")
         before = tracking.show("V-1/2026-701")["last_check_at"]
@@ -271,10 +234,10 @@ class TestCheckAll:
         assert tracking.check_all() == []
 
     def test_returns_one_result_per_tracked(
-        self, app_dir, mock_cuzk, noop_automation
+        self, app_dir, mock_cuzk
     ):
-        mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
-        mock_cuzk["data"][("V", 2, 2026, 701)] = _cuzk_record()
+        mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record(record_id="id-1")
+        mock_cuzk["data"][("V", 2, 2026, 701)] = _cuzk_record(record_id="id-2")
         tracking.add("V-1/2026-701")
         tracking.add("V-2/2026-701")
         results = tracking.check_all()
@@ -282,10 +245,10 @@ class TestCheckAll:
         assert all(r["ok"] for r in results)
 
     def test_error_in_one_does_not_stop_others(
-        self, app_dir, mock_cuzk, noop_automation
+        self, app_dir, mock_cuzk
     ):
-        mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record()
-        mock_cuzk["data"][("V", 2, 2026, 701)] = _cuzk_record()
+        mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record(record_id="id-1")
+        mock_cuzk["data"][("V", 2, 2026, 701)] = _cuzk_record(record_id="id-2")
         tracking.add("V-1/2026-701")
         tracking.add("V-2/2026-701")
 
@@ -297,3 +260,51 @@ class TestCheckAll:
         fail_results = [r for r in results if not r["ok"]]
         assert len(ok_results) == 1
         assert len(fail_results) == 1
+
+
+# ── check_one uses stored api_id ─────────────────────────────────────────────
+
+
+class TestCheckByApiId:
+    def test_check_uses_api_id_when_present(self, app_dir, monkeypatch):
+        monkeypatch.setattr(tracking, "fetch_from_cuzk", lambda parsed: _cuzk_record())
+        tracking.add("V-1/2026-701")  # stores api_id "api-id-xyz"
+
+        called = {}
+
+        def _by_id(api_id):
+            called["id"] = api_id
+            return _cuzk_record(stav="Povoleno")
+
+        monkeypatch.setattr(tracking, "fetch_by_id", _by_id)
+        # If check_one uses fetch_by_id, this Vyhledani stub must NOT be needed:
+        monkeypatch.setattr(
+            tracking, "fetch_from_cuzk",
+            lambda parsed: (_ for _ in ()).throw(AssertionError("used Vyhledani")),
+        )
+        result = tracking.check_one("V-1/2026-701")
+        assert result["ok"] is True
+        assert called["id"] == "api-id-xyz"
+
+
+# ── state_to_overview_entry ordering ─────────────────────────────────────────
+
+
+class TestOverviewOrdering:
+    def test_preserves_cuzk_oldest_first_order(
+        self, app_dir, mock_cuzk
+    ):
+        # ČÚZK returns provedeneOperace oldest-first (verified live).
+        ops_oldest_first = [
+            {"nazev": "Založení řízení", "datumProvedeni": "2026-06-29"},
+            {"nazev": "Zaplombování", "datumProvedeni": "2026-06-29"},
+            {"nazev": "Informace o vyznačení plomby", "datumProvedeni": "2026-06-30"},
+        ]
+        mock_cuzk["data"][("V", 1, 2026, 701)] = _cuzk_record(operations=ops_oldest_first)
+        tracking.add("V-1/2026-701")
+        entry = tracking.state_to_overview_entry(tracking.show("V-1/2026-701"))
+        names = [o["nazev"] for o in entry["provedene_operace"]]
+        assert names == [
+            "Založení řízení", "Zaplombování", "Informace o vyznačení plomby",
+        ]
+        assert entry["last_op_date"] == "2026-06-30"
