@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
 import { addProceeding } from '@/lib/api'
+import { errorMessage } from '@/lib/format'
 
 interface AddProceedingFormProps {
   onAdded: () => void
@@ -19,16 +20,12 @@ export function AddProceedingForm({ onAdded }: AddProceedingFormProps) {
     if (!value) return
     setAdding(true)
     addProceeding(value)
-      .then((res) => {
-        if (res.ok) {
-          setCislo('')
-          onAdded()
-        } else {
-          toast.error(res.error ?? t('proceedings.addError'))
-        }
+      .then(() => {
+        setCislo('')
+        onAdded()
       })
       .catch((e: unknown) => {
-        toast.error(e instanceof Error ? e.message : String(e))
+        toast.error(errorMessage(e))
       })
       .finally(() => setAdding(false))
   }

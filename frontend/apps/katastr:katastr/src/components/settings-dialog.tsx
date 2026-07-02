@@ -12,6 +12,8 @@ import {
 } from '@workspace/ui/components/dialog'
 import { toast } from '@workspace/ui/components/sonner'
 import { deleteApiKey, saveApiKey } from '@/lib/api'
+import { errorMessage } from '@/lib/format'
+import { CUZK_REGISTRATION_URL } from '@/lib/constants'
 
 interface SettingsDialogProps {
   open: boolean
@@ -41,17 +43,13 @@ export function SettingsDialog({
     if (!apiKey.trim()) return
     setSaving(true)
     saveApiKey(apiKey.trim())
-      .then((res) => {
-        if (res.ok) {
-          setApiKey('')
-          onSaved?.()
-          onOpenChange(false)
-        } else {
-          toast.error(res.error ?? t('settings.saveError'))
-        }
+      .then(() => {
+        setApiKey('')
+        onSaved?.()
+        onOpenChange(false)
       })
       .catch((e: unknown) => {
-        toast.error(e instanceof Error ? e.message : String(e))
+        toast.error(errorMessage(e))
       })
       .finally(() => setSaving(false))
   }
@@ -59,16 +57,12 @@ export function SettingsDialog({
   const handleDelete = () => {
     setSaving(true)
     deleteApiKey()
-      .then((res) => {
-        if (res.ok) {
-          onSaved?.()
-          onOpenChange(false)
-        } else {
-          toast.error(res.error ?? t('settings.saveError'))
-        }
+      .then(() => {
+        onSaved?.()
+        onOpenChange(false)
       })
       .catch((e: unknown) => {
-        toast.error(e instanceof Error ? e.message : String(e))
+        toast.error(errorMessage(e))
       })
       .finally(() => setSaving(false))
   }
@@ -83,7 +77,7 @@ export function SettingsDialog({
 
         <div className="space-y-4 py-2">
           <a
-            href="https://registrace.cuzk.gov.cz/"
+            href={CUZK_REGISTRATION_URL}
             target="_blank"
             rel="noreferrer"
             className="text-primary inline-flex items-center gap-1 text-sm hover:underline"

@@ -1,4 +1,5 @@
 import { Badge } from '@workspace/ui/components/badge'
+import { isPlomba } from '@/lib/timeline'
 
 interface StavBadgeProps {
   stav: string
@@ -10,7 +11,7 @@ function getStavColor(stav: string): string | null {
   if (s.includes('ukončeno')) return 'bg-stone-100 text-stone-600'
   if (s.includes('vyrozumění') || s.includes('provedení vkladu'))
     return 'bg-brand-100 text-brand-700'
-  if (s.includes('plomb')) return 'bg-plomba-soft text-plomba'
+  if (isPlomba(stav)) return 'bg-plomba-soft text-plomba'
   if (
     s.includes('povolení vkladu') ||
     s.includes('probíhá') ||
@@ -30,7 +31,7 @@ function shortStav(stav: string): string {
   if (s.includes('vyrozum')) return 'Vyrozumění'
   if (s.includes('provedení vkladu') || s.includes('proveden')) return 'Provedení vkladu'
   if (s.includes('povolení vkladu') || s.includes('povolen')) return 'Povolení vkladu'
-  if (s.includes('plomb')) return 'Plomba'
+  if (isPlomba(stav)) return 'Plomba'
   if (s.includes('probíhá')) return 'Probíhá'
   if (s.includes('přijet') || s.includes('podáno')) return 'Přijetí návrhu'
   return stav

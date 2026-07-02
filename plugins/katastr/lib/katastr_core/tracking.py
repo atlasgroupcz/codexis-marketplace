@@ -5,7 +5,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import urllib.error
 import uuid as uuid_mod
 from typing import Optional
@@ -18,14 +17,9 @@ from .exceptions import (
     ProceedingNotFoundError,
     ProceedingNotTrackedError,
 )
-from .fs import atomic_write_json
+from .fs import atomic_write_json, app_path
 
-_USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
-APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "katastr", "rizeni")
-CDXCTL_BIN = "cdxctl"
-AUTOMATION_TITLE = "Hlídač katastrálních řízení"
-AUTOMATION_CRON = "0 8 * * 1"
-AUTOMATION_COMMAND = "katastr-cli tracking check"
+APP_DIR = app_path("rizeni")
 
 # TYPE-NUMBER/YEAR-WORKPLACE, e.g. V-123/2026-701
 RIZENI_PATTERN = re.compile(
@@ -85,18 +79,27 @@ def normalize_number(cislo_rizeni: str) -> str:
     return format_proceeding_number(parse_proceeding_number(cislo_rizeni))
 
 
+def is_unconfirmed(change: dict) -> bool:
+    """A change stays unconfirmed (unread) until it has a confirmed_on timestamp."""
+    return not change.get("confirmed_on")
+
+
 def _dir_name(cislo_rizeni: str) -> str:
     """Filesystem-safe directory name (slash → underscore)."""
     return cislo_rizeni.replace("/", "_")
 
 
+def _state_path_for_dir(dir_name: str) -> str:
+    return os.path.join(APP_DIR, dir_name, "state.json")
+
+
 def _state_path(cislo_rizeni: str) -> str:
-    return os.path.join(APP_DIR, _dir_name(cislo_rizeni), "state.json")
+    return _state_path_for_dir(_dir_name(cislo_rizeni))
 
 
 def _load_state_file(dir_name: str) -> Optional[dict]:
     """Load state.json from a given directory name. Returns None if missing/broken."""
-    path = os.path.join(APP_DIR, dir_name, "state.json")
+    path = _state_path_for_dir(dir_name)
     if not os.path.isfile(path):
         return None
     try:
@@ -131,6 +134,19 @@ def fetch_from_cuzk(parsed: dict) -> Optional[dict]:
     result = api_client.get(path)
     data = result.get("data", [])
     return data[0] if data else None
+
+
+def fetch_by_id(api_id) -> Optional[dict]:
+    """Fetch a proceeding directly by its ČÚZK id. Returns the data dict or None.
+
+    Unlike `Rizeni/Vyhledani` (whose `data` is a list), `Rizeni/{id}` wraps a
+    single object under `data` — verified live against api-kn.cuzk.gov.cz
+    2026-07: same envelope key, same field names (`stav`, `stavUhrady`,
+    `provedeneOperace`, `datumPrijeti`, `id`), no `[0]` unwrap needed.
+    """
+    result = api_client.get(f"/api/v1/Rizeni/{api_id}")
+    data = result.get("data")
+    return data or None
 
 
 # ── change detection ─────────────────────────────────────────────────────────
@@ -171,58 +187,6 @@ def _detect_changes(old_state: dict, new_data: dict) -> Optional[dict]:
         "new_stav_uhrady": new_uhrada,
         "confirmed_on": None,
     }
-
-
-# ── automation ───────────────────────────────────────────────────────────────
-
-
-def ensure_automation() -> None:
-    """Ensure the central cron automation exists. Idempotent, non-fatal on failure."""
-    try:
-        result = subprocess.run(
-            [CDXCTL_BIN, "automation", "list"],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-        if result.returncode != 0:
-            return
-        automations = json.loads(result.stdout)
-    except Exception:
-        return
-
-    if not isinstance(automations, list):
-        return
-
-    for a in automations:
-        if (
-            isinstance(a, dict)
-            and a.get("type") == "COMMAND"
-            and a.get("command") == AUTOMATION_COMMAND
-        ):
-            return
-
-    try:
-        subprocess.run(
-            [
-                CDXCTL_BIN,
-                "automation",
-                "create-command",
-                "--title",
-                AUTOMATION_TITLE,
-                "--cron",
-                AUTOMATION_CRON,
-                "--command",
-                AUTOMATION_COMMAND,
-                "--description",
-                "Pravidelná kontrola sledovaných katastrálních řízení.",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-    except Exception:
-        return
 
 
 # ── high-level operations ────────────────────────────────────────────────────
@@ -271,7 +235,6 @@ def add(cislo_rizeni: str, label: str = "") -> dict:
         "changes": [],
     }
     _save_state(canonical, state)
-    ensure_automation()
     return state
 
 
@@ -332,7 +295,7 @@ def list_all() -> list:
             results.append(state)
     def _sort_key(s):
         changes = s.get("changes", [])
-        unconfirmed = [c for c in changes if not c.get("confirmed_on")]
+        unconfirmed = [c for c in changes if is_unconfirmed(c)]
         latest_unconfirmed = max(
             (c.get("detected_on", "") for c in unconfirmed), default=""
         )
@@ -364,6 +327,48 @@ def find_by_uuid(target_uuid: str) -> Optional[dict]:
     return None
 
 
+def _check_result(cislo_rizeni, ok, change=None, error=None) -> dict:
+    """Build the uniform per-proceeding check result dict."""
+    return {"cislo_rizeni": cislo_rizeni, "ok": ok, "change": change, "error": error}
+
+
+def _check_state(state: dict) -> dict:
+    """Check an already-loaded state dict against ČÚZK. Persists + returns result.
+
+    `state` carries the parsed number parts (typ_rizeni/poradove_cislo/rok/
+    kod_pracoviste), so no re-parse is needed and callers that already hold the
+    state (check_all) avoid a second read of state.json.
+    """
+    canonical = state["cislo_rizeni"]
+    try:
+        api_id = state.get("api_id")
+        data = fetch_by_id(api_id) if api_id else fetch_from_cuzk(state)
+    except (KatastrError, urllib.error.URLError) as e:
+        return _check_result(canonical, False, error=str(e))
+    if data is None:
+        return _check_result(
+            canonical, False, error="Řízení nebylo nalezeno v ČÚZK API."
+        )
+
+    change = _detect_changes(state, data)
+
+    state["last_check_at"] = now_utc()
+    # Refresh the ČÚZK-sourced fields, same shape as add(). api_id and
+    # datum_prijeti are backfilled but never wiped: keep the stored value when
+    # ČÚZK omits it (datum_prijeti is immutable; a missing id would else strand
+    # us on the slower Vyhledani path forever).
+    state["api_id"] = data.get("id") or state.get("api_id")
+    state["stav"] = data.get("stav", state.get("stav", ""))
+    state["stav_uhrady"] = data.get("stavUhrady")
+    state["datum_prijeti"] = data.get("datumPrijeti") or state.get("datum_prijeti", "")
+    state["provedene_operace"] = data.get("provedeneOperace", [])
+    if change:
+        state.setdefault("changes", []).append(change)
+    _save_state(canonical, state)
+
+    return _check_result(canonical, True, change=change)
+
+
 def check_one(cislo_rizeni: str) -> dict:
     """Check a single tracked proceeding for changes. Returns:
     {
@@ -379,40 +384,7 @@ def check_one(cislo_rizeni: str) -> dict:
         raise ProceedingNotTrackedError(
             f"Řízení {canonical} není sledováno."
         )
-    parsed = parse_proceeding_number(canonical)
-    try:
-        data = fetch_from_cuzk(parsed)
-    except (KatastrError, urllib.error.URLError) as e:
-        return {
-            "cislo_rizeni": canonical,
-            "ok": False,
-            "change": None,
-            "error": str(e),
-        }
-    if data is None:
-        return {
-            "cislo_rizeni": canonical,
-            "ok": False,
-            "change": None,
-            "error": "Řízení nebylo nalezeno v ČÚZK API.",
-        }
-
-    change = _detect_changes(state, data)
-
-    state["last_check_at"] = now_utc()
-    state["stav"] = data.get("stav", state.get("stav", ""))
-    state["stav_uhrady"] = data.get("stavUhrady")
-    state["provedene_operace"] = data.get("provedeneOperace", [])
-    if change:
-        state.setdefault("changes", []).append(change)
-    _save_state(canonical, state)
-
-    return {
-        "cislo_rizeni": canonical,
-        "ok": True,
-        "change": change,
-        "error": None,
-    }
+    return _check_state(state)
 
 
 def check_all() -> list:
@@ -420,15 +392,10 @@ def check_all() -> list:
     results = []
     for state in list_all():
         try:
-            results.append(check_one(state["cislo_rizeni"]))
+            results.append(_check_state(state))
         except (KatastrError, urllib.error.URLError) as e:
             results.append(
-                {
-                    "cislo_rizeni": state.get("cislo_rizeni", "?"),
-                    "ok": False,
-                    "change": None,
-                    "error": str(e),
-                }
+                _check_result(state.get("cislo_rizeni", "?"), False, error=str(e))
             )
     return results
 
@@ -481,17 +448,49 @@ def uhrada_label(stav_uhrady: Optional[str]) -> Optional[str]:
     return UHRADA_LABELS.get(stav_uhrady)
 
 
+def _uhrada_display(stav_uhrady: Optional[str]) -> str:
+    return uhrada_label(stav_uhrady) or stav_uhrady or "—"
+
+
+def describe_change(change: dict) -> list:
+    """Human-readable, unindented lines describing one detected change.
+
+    Single source shared by the CLI check output and the e-mail summary, so a
+    change (stav / new operations / úhrada) renders the same in both channels.
+    Each caller adds its own prefix/indentation.
+    """
+    lines = []
+    if change.get("old_stav") != change.get("new_stav"):
+        lines.append(f"Stav: {change.get('old_stav', '')} → {change.get('new_stav', '')}")
+    for op in change.get("new_operations", []):
+        lines.append(
+            f"Nová operace: {op.get('nazev', '?')} ({op.get('datumProvedeni', '')})"
+        )
+    if change.get("stav_uhrady_changed"):
+        lines.append(
+            f"Úhrada: {_uhrada_display(change.get('old_stav_uhrady'))} "
+            f"→ {_uhrada_display(change.get('new_stav_uhrady'))}"
+        )
+    return lines
+
+
+def _ordered_operace(state: dict) -> list:
+    """Operations oldest → newest. ČÚZK's `provedeneOperace` is already in
+    chronological (oldest→newest) order — verified live 2026-07-01 across 9
+    proceedings, strictly ascending by datumProvedeni. So pass it through as-is,
+    do NOT reverse. Operations sharing an identical timestamp (e.g. Založení /
+    Zaplombování at intake) keep ČÚZK's own sub-order — we have no signal to
+    reorder them and ČÚZK itself is inconsistent there."""
+    return list(state.get("provedene_operace", []))
+
+
 def state_to_overview_entry(state: dict) -> dict:
     """Convert internal state to a frontend-friendly overview entry."""
-    ops = state.get("provedene_operace", [])
-    last_op_date = None
-    if ops:
-        dates = [op.get("datumProvedeni", "") for op in ops if op.get("datumProvedeni")]
-        if dates:
-            last_op_date = max(dates)
+    ops = _ordered_operace(state)
+    last_op_date = ops[-1].get("datumProvedeni") if ops else None
 
     changes = state.get("changes", [])
-    unconfirmed = sum(1 for c in changes if not c.get("confirmed_on"))
+    unconfirmed = sum(1 for c in changes if is_unconfirmed(c))
 
     return {
         "uuid": state.get("uuid", ""),

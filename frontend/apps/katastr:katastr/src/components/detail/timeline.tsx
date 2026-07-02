@@ -21,8 +21,7 @@ export function ProceedingTimeline({ proc }: ProceedingTimelineProps) {
   const { t } = useTranslation()
   const nodes = deriveTimeline(proc)
 
-  const nodeName = (n: TimelineNode) =>
-    n.nameKey !== null ? t(`proceedings.timeline.${n.nameKey}`) : (n.rawName ?? '')
+  const nodeName = (n: TimelineNode) => n.rawName ?? ''
 
   return (
     <ol className="relative ml-1 space-y-4 border-l pl-6">

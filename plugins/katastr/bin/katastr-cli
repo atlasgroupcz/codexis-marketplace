@@ -19,7 +19,6 @@ Usage:
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -37,8 +36,12 @@ for p in CANDIDATES:
         break
 
 try:
-    from katastr_core import settings, tracking, api_client
-    from katastr_core.exceptions import KatastrError
+    from katastr_core import settings, tracking, api_client, notify
+    from katastr_core.exceptions import (
+        KatastrError,
+        ProceedingAlreadyTrackedError,
+        ProceedingNotTrackedError,
+    )
 except ImportError as e:
     print(f"ERROR: katastr_core library not found: {e}", file=sys.stderr)
     sys.exit(2)
@@ -61,7 +64,7 @@ def fmt_state_short(state):
     stav = state.get("stav", "?")
     ops = len(state.get("provedene_operace", []))
     changes = state.get("changes", [])
-    unconfirmed = sum(1 for c in changes if not c.get("confirmed_on"))
+    unconfirmed = sum(1 for c in changes if tracking.is_unconfirmed(c))
     badge = f" • {unconfirmed} nepřečtených změn" if unconfirmed else ""
     return (
         f"  {state.get('cislo_rizeni', '?')}{label_str}\n"
@@ -74,7 +77,14 @@ def fmt_state_short(state):
 
 
 def cmd_tracking_add(args):
-    state = tracking.add(args.cislo, label=args.label)
+    try:
+        state = tracking.add(args.cislo, label=args.label)
+    except ProceedingAlreadyTrackedError:
+        canonical = tracking.normalize_number(args.cislo)
+        if args.label:
+            tracking.set_label(canonical, args.label)
+        info(f"OK: Řízení {canonical} je již sledováno.")
+        return
     info(f"OK: Řízení {state['cislo_rizeni']} přidáno ke sledování.")
     info(f"  Stav: {state['stav']}")
     info(f"  Operací: {len(state['provedene_operace'])}")
@@ -120,22 +130,23 @@ def cmd_tracking_check(args):
             continue
         total_changes += 1
         info(f"  {cislo}: 1 nová změna")
-        if change.get("old_stav") != change.get("new_stav"):
-            info(f"    Stav: {change['old_stav']} → {change['new_stav']}")
-        for op in change.get("new_operations", []):
-            info(
-                f"    Nová operace: {op.get('nazev', '?')} "
-                f"({op.get('datumProvedeni', '')})"
-            )
-        if change.get("stav_uhrady_changed"):
-            info(
-                f"    Úhrada: {change.get('old_stav_uhrady') or '---'} "
-                f"→ {change.get('new_stav_uhrady') or '---'}"
-            )
+        for line in tracking.describe_change(change):
+            info(f"    {line}")
     info(
         f"\nKontrola dokončena. Celkem {total_changes} nových změn "
         f"u {len(results)} řízení."
     )
+
+    if args.email:
+        try:
+            sent = notify.email_change_summary(results, to=args.to)
+            info(
+                f"E-mailem odeslán souhrn ({sent} řízení se změnou)."
+                if sent
+                else "E-mailem odeslán souhrn (beze změn)."
+            )
+        except KatastrError as e:
+            info(str(e))
 
 
 def cmd_tracking_confirm(args):
@@ -151,7 +162,11 @@ def cmd_tracking_confirm(args):
 
 def cmd_tracking_remove(args):
     canonical = tracking.normalize_number(args.cislo)
-    tracking.remove(canonical)
+    try:
+        tracking.remove(canonical)
+    except ProceedingNotTrackedError:
+        info(f"OK: Řízení {canonical} není sledováno (nic k odebrání).")
+        return
     info(f"OK: Řízení {canonical} odstraněno ze sledování.")
 
 
@@ -175,10 +190,11 @@ def cmd_api_get(args):
 
 
 def cmd_settings_show(args):
-    if not settings.is_configured():
+    status = settings.key_status()
+    if not status["configured"]:
         info("API klíč není nastaven.")
         return
-    info(f"API klíč: {settings.mask_key(settings.read_api_key())} (configured)")
+    info(f"API klíč: {status['masked']} (configured)")
 
 
 def cmd_settings_set(args):
@@ -228,6 +244,17 @@ def build_parser():
         "cislo",
         nargs="?",
         help="Specific proceeding (default: all)",
+    )
+    p_check.add_argument(
+        "--email",
+        action="store_true",
+        help="E-mail a summary of the check (changes, or a 'no new changes' heartbeat)",
+    )
+    p_check.add_argument(
+        "--to",
+        action="append",
+        metavar="ADRESA",
+        help="Recipient e-mail (repeatable). Default: the signed-in user. Requires --email.",
     )
     p_check.set_defaults(func=cmd_tracking_check)
 

@@ -168,13 +168,9 @@ def handle_get(query_string: str) -> None:
     params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
 
     if "settings" in params:
-        if settings.is_configured():
-            emit_json(
-                {
-                    "configured": True,
-                    "maskedKey": settings.mask_key(settings.read_api_key()),
-                }
-            )
+        status = settings.key_status()
+        if status["configured"]:
+            emit_json({"configured": True, "maskedKey": status["masked"]})
         else:
             emit_json({"configured": False})
         return
@@ -198,17 +194,14 @@ def handle_get(query_string: str) -> None:
 
     states = tracking.list_all()
     items = [tracking.state_to_overview_entry(s) for s in states]
+    status = settings.key_status()
     emit_json(
         {
             "mode": "overview",
             "generated_at": tracking.now_utc(),
             "proceedings": items,
-            "api_key_configured": settings.is_configured(),
-            "api_key_masked": (
-                settings.mask_key(settings.read_api_key())
-                if settings.is_configured()
-                else ""
-            ),
+            "api_key_configured": status["configured"],
+            "api_key_masked": status["masked"],
         }
     )
 

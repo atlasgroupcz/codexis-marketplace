@@ -3,7 +3,6 @@ use reqwest::blocking::multipart::Form;
 use serde_json::{json, Value};
 
 const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
-const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
 
 pub struct GraphQLClient {
@@ -96,16 +95,15 @@ impl GraphQLClient {
 }
 
 fn load_api_jwt_auth() -> String {
-    if let Some(secret) = read_secret_file() {
-        return ensure_bearer_prefix(&secret);
-    }
-    if let Ok(val) = std::env::var(CODEXIS_USER_API_TOKEN_ENV) {
-        if !val.is_empty() {
-            return ensure_bearer_prefix(&val);
+    // Daemon/gateway auth is the VM token in ~/.cdx/env/secret. CODEXIS_USER_API_TOKEN
+    // is a JWT for external Codexis sources — not valid here — so there is no env fallback.
+    match read_secret_file() {
+        Some(secret) => ensure_bearer_prefix(&secret),
+        None => {
+            eprintln!("error: no auth available (missing ~/{SECRET_FILE_RELATIVE})");
+            std::process::exit(2);
         }
     }
-    eprintln!("error: no auth available (tried ~/{SECRET_FILE_RELATIVE} and ${CODEXIS_USER_API_TOKEN_ENV})");
-    std::process::exit(2);
 }
 
 fn read_secret_file() -> Option<String> {

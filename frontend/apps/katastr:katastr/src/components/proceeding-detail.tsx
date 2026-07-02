@@ -14,7 +14,7 @@ import { ProceedingTimeline } from './detail/timeline'
 import { ChangeHistory } from './detail/change-history'
 import { useDetail } from '@/hooks/use-detail'
 import { removeProceeding, setLabel } from '@/lib/api'
-import { formatDate, formatRelative } from '@/lib/format'
+import { errorMessage, formatDate, formatRelative } from '@/lib/format'
 
 interface ProceedingDetailProps {
   uuid: string
@@ -80,7 +80,7 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
         onChanged?.()
       })
       .catch((e: unknown) => {
-        toast.error(e instanceof Error ? e.message : String(e))
+        toast.error(errorMessage(e))
         setLabelOverride(null) // rollback to server value
       })
   }
@@ -98,7 +98,7 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
         onChanged?.()
         onBack()
       })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
+      .catch((e: unknown) => toast.error(errorMessage(e)))
       .finally(() => setRemoving(false))
   }
 
@@ -198,7 +198,14 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
           <ProceedingTimeline proc={proc} />
         </TabsContent>
         <TabsContent value="zmeny">
-          <ChangeHistory uuid={uuid} changes={proc.changes} onConfirmed={refetch} />
+          <ChangeHistory
+            uuid={uuid}
+            changes={proc.changes}
+            onConfirmed={() => {
+              refetch()
+              onChanged?.()
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -44,4 +44,14 @@ describe('ProceedingRow', () => {
     render(<ProceedingRow proceeding={proc} onClick={() => {}} selected={false} />)
     expect(screen.getByTestId('unread-dot')).toBeTruthy()
   })
+
+  it('shows the label inline when present', () => {
+    render(<ProceedingRow proceeding={proc} onClick={() => {}} selected={false} />)
+    expect(screen.getByTestId('proceeding-label')).toBeTruthy()
+  })
+
+  it('omits the label (no reserved empty line) when there is none', () => {
+    render(<ProceedingRow proceeding={{ ...proc, label: '' }} onClick={() => {}} selected={false} />)
+    expect(screen.queryByTestId('proceeding-label')).toBeNull()
+  })
 })

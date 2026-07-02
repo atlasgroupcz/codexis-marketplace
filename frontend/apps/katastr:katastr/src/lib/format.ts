@@ -26,6 +26,11 @@ export function formatDateTime(isoString: string): string {
   })
 }
 
+/** Coerce an unknown thrown value into a human-readable message. */
+export function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
 /** Relative time, e.g. "před 2 hodinami" / "2 hours ago". Empty input → em dash. */
 export function formatRelative(isoString: string | null | undefined): string {
   if (!isoString) return '—'

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { ExternalLink, KeyRound } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { CUZK_REGISTRATION_URL } from '@/lib/constants'
 
 /** Full-screen landing shown until a ČÚZK API key is configured. */
 export function ConfigSetup({ onConfigure }: { onConfigure: () => void }) {
@@ -22,7 +23,7 @@ export function ConfigSetup({ onConfigure }: { onConfigure: () => void }) {
           {t('apiKeyBanner.action')}
         </Button>
         <a
-          href="https://registrace.cuzk.gov.cz/"
+          href={CUZK_REGISTRATION_URL}
           target="_blank"
           rel="noreferrer"
           className="text-primary mt-4 inline-flex items-center gap-1 text-sm hover:underline"

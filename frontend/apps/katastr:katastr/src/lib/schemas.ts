@@ -76,9 +76,3 @@ export const checkAllResponseSchema = z.object({
   ),
 })
 export type CheckAllResponse = z.infer<typeof checkAllResponseSchema>
-
-export const settingsStatusSchema = z.object({
-  configured: z.boolean(),
-  maskedKey: z.string().optional(),
-})
-export type SettingsStatus = z.infer<typeof settingsStatusSchema>

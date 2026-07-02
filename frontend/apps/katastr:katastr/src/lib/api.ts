@@ -62,6 +62,12 @@ async function postJson<T>(
         : `HTTP ${response.status}: ${response.statusText}`
     throw new Error(message)
   }
+  // Actions also signal failure via `{ ok: false }` on an HTTP 200. Reject on it
+  // too, so every caller has one error channel: resolve = success, reject = error.
+  if (typeof json === 'object' && json !== null && (json as { ok?: unknown }).ok === false) {
+    const err = (json as { error?: unknown }).error
+    throw new Error(typeof err === 'string' && err ? err : `Akce selhala: ${action}`)
+  }
   return schema.parse(json)
 }
 

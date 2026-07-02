@@ -9,11 +9,10 @@ import urllib.error
 import urllib.request
 
 from .exceptions import ApiKeyInvalidError, ApiHttpError, ApiNetworkError
-from .fs import atomic_replace
+from .fs import atomic_replace, app_path
 
-_USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
-ENV_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "katastr")
-ENV_FILE = os.path.join(ENV_DIR, ".env")
+ENV_DIR = app_path()
+ENV_FILE = app_path(".env")
 CUZK_BASE = "https://api-kn.cuzk.gov.cz"
 HEALTH_CHECK_PATH = "/api/v1/AplikacniSluzby/StavUctu"
 
@@ -47,6 +46,16 @@ def mask_key(key: str) -> str:
 def is_configured() -> bool:
     """True if an API key is stored."""
     return bool(read_api_key())
+
+
+def key_status() -> dict:
+    """Read the stored key once and return its display status.
+
+    Returns {"configured": bool, "masked": str}; `masked` is "" when unset.
+    Callers that need both flags should use this to avoid re-reading .env.
+    """
+    key = read_api_key()
+    return {"configured": bool(key), "masked": mask_key(key) if key else ""}
 
 
 def validate_key(key: str) -> None:

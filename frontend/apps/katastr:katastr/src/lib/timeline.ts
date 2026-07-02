@@ -2,7 +2,6 @@ export type TimelineState = 'done' | 'current'
 
 export interface TimelineNode {
   key: string
-  nameKey: string | null // reserved for known phases; currently always null (raw ČÚZK names)
   rawName: string | null // the operation/stav text exactly as ČÚZK reports it
   date: string | null // ISO date or null
   state: TimelineState
@@ -30,7 +29,7 @@ function isNegativeTerminal(stav: string): boolean {
   return NEGATIVE_TERMINAL_STEMS.some((stem) => s.includes(stem))
 }
 
-function isPlomba(text: string): boolean {
+export function isPlomba(text: string): boolean {
   return text.toLowerCase().includes('plomb')
 }
 
@@ -41,13 +40,10 @@ function isPlomba(text: string): boolean {
  * steps that may not come.
  */
 export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
-  const ops = [...proc.provedene_operace].sort((a, b) =>
-    a.datumProvedeni < b.datumProvedeni ? -1 : a.datumProvedeni > b.datumProvedeni ? 1 : 0,
-  )
+  const ops = proc.provedene_operace
 
   const raw: Array<TimelineNode> = ops.map((op, i) => ({
     key: `op:${i}`,
-    nameKey: null,
     rawName: op.nazev,
     date: op.datumProvedeni,
     state: 'done',
@@ -68,7 +64,6 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
     // The bad outcome is a distinct closing node after everything that happened.
     nodes.push({
       key: 'terminal',
-      nameKey: null,
       rawName: proc.stav,
       date: null,
       state: 'current',
@@ -84,7 +79,6 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
   if (nodes.length === 0) {
     nodes.push({
       key: 'stav',
-      nameKey: null,
       rawName: proc.stav,
       date: proc.datum_prijeti || null,
       state: 'current',
@@ -95,17 +89,4 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
   }
 
   return nodes
-}
-
-export function latestMilestone(proc: {
-  stav: string
-  last_op_date?: string | null
-  provedene_operace: Array<Operace>
-}): { name: string | null; nameKey: string | null; date: string | null } {
-  const ops = proc.provedene_operace
-  if (ops.length > 0) {
-    const last = ops.reduce((a, b) => (a.datumProvedeni >= b.datumProvedeni ? a : b))
-    return { name: last.nazev, nameKey: null, date: last.datumProvedeni }
-  }
-  return { name: proc.stav, nameKey: null, date: proc.last_op_date ?? null }
 }

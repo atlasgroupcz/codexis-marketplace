@@ -4,6 +4,14 @@ import json
 import os
 import tempfile
 
+_USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
+APP_ROOT = os.path.join(_USER_HOME, ".cdx", "apps", "katastr")
+
+
+def app_path(*parts) -> str:
+    """Absolute path under the katastr app-data root (~/.cdx/apps/katastr)."""
+    return os.path.join(APP_ROOT, *parts)
+
 
 def atomic_replace(path, write_fn, mode=None):
     """Atomically replace `path`: tmp file + rename.
