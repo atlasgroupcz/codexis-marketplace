@@ -7,6 +7,7 @@ import pytest
 
 from katastr_core.tracking import (
     _detect_changes,
+    confirm,
     list_all,
     state_to_overview_entry,
     uhrada_label,
@@ -222,38 +223,22 @@ class TestListAllSort:
         os.rmdir(str(app_dir))
         assert list_all() == []
 
-    def test_unconfirmed_beats_confirmed_beats_idle(self, app_dir):
+    def test_orders_by_added_on_desc_regardless_of_confirmation(self, app_dir):
+        # Older added_on, but has an UNCONFIRMED change.
         _seed_state(
             app_dir, "V-1/2026-701",
-            changes=[],  # idle
+            added_on="2026-03-01T00:00:00Z",
+            changes=[{"detected_on": "2026-05-01T00:00:00Z", "confirmed_on": None}],
         )
+        # Newer added_on, everything CONFIRMED.
         _seed_state(
             app_dir, "V-2/2026-701",
+            added_on="2026-04-01T00:00:00Z",
             changes=[{"detected_on": "2026-04-10T00:00:00Z",
                       "confirmed_on": "2026-04-11T00:00:00Z"}],
         )
-        _seed_state(
-            app_dir, "V-3/2026-701",
-            changes=[{"detected_on": "2026-04-15T00:00:00Z",
-                      "confirmed_on": None}],
-        )
-
-        result = list_all()
-        order = [r["cislo_rizeni"] for r in result]
-        assert order == ["V-3/2026-701", "V-2/2026-701", "V-1/2026-701"]
-
-    def test_within_unconfirmed_newest_first(self, app_dir):
-        _seed_state(
-            app_dir, "V-1/2026-701",
-            changes=[{"detected_on": "2026-04-05T00:00:00Z",
-                      "confirmed_on": None}],
-        )
-        _seed_state(
-            app_dir, "V-2/2026-701",
-            changes=[{"detected_on": "2026-04-18T00:00:00Z",
-                      "confirmed_on": None}],
-        )
         order = [r["cislo_rizeni"] for r in list_all()]
+        # Newest added_on first — confirmation state floats nothing up.
         assert order == ["V-2/2026-701", "V-1/2026-701"]
 
     def test_added_on_breaks_tie_among_idle(self, app_dir):
@@ -267,6 +252,28 @@ class TestListAllSort:
         )
         order = [r["cislo_rizeni"] for r in list_all()]
         assert order == ["V-2/2026-701", "V-1/2026-701"]
+
+    def test_confirming_a_change_does_not_reorder(self, app_dir):
+        _seed_state(
+            app_dir, "V-1/2026-701", added_on="2026-04-02T00:00:00Z",
+            changes=[{"detected_on": "2026-05-01T00:00:00Z", "confirmed_on": None}],
+        )
+        _seed_state(
+            app_dir, "V-2/2026-701", added_on="2026-04-01T00:00:00Z", changes=[],
+        )
+        before = [r["cislo_rizeni"] for r in list_all()]
+        confirm("V-1/2026-701")  # mark the change read
+        after = [r["cislo_rizeni"] for r in list_all()]
+        assert before == after == ["V-1/2026-701", "V-2/2026-701"]
+
+    def test_uuid_breaks_tie_when_added_on_equal(self, app_dir):
+        _seed_state(app_dir, "V-1/2026-701", uuid="uuid-aaa",
+                    added_on="2026-04-01T00:00:00Z")
+        _seed_state(app_dir, "V-2/2026-701", uuid="uuid-bbb",
+                    added_on="2026-04-01T00:00:00Z")
+        order = [r["uuid"] for r in list_all()]
+        # reverse=True over (added_on, uuid): larger uuid string first.
+        assert order == ["uuid-bbb", "uuid-aaa"]
 
     def test_ignores_broken_state_files(self, app_dir):
         _seed_state(app_dir, "V-1/2026-701")

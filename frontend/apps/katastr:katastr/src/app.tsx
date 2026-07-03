@@ -4,7 +4,7 @@ import { Landmark, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@workspace/ui/components/button'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { uuidParser, viewParser } from '@/lib/url-state'
+import { filterParser, uuidParser, viewParser } from '@/lib/url-state'
 import { ProceedingsList } from '@/components/proceedings-list'
 import { ProceedingDetail } from '@/components/proceeding-detail'
 import { AddProceedingForm } from '@/components/add-proceeding-form'
@@ -22,6 +22,7 @@ export function App() {
   const [uuid, setUuid] = useQueryState('uuid', uuidParser)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [filter, setFilter] = useQueryState('filter', filterParser)
 
   const apiKeyConfigured = data?.api_key_configured ?? false
   const hasProceedings = (data?.proceedings.length ?? 0) > 0
@@ -115,6 +116,8 @@ export function App() {
                 refetch={refetch}
                 selectedUuid={uuid}
                 onSelect={handleSelect}
+                filter={filter}
+                onFilterChange={setFilter}
               />
             </section>
             <section className={`min-h-0 overflow-y-auto ${detailOpen ? 'block' : 'hidden md:block'}`}>
