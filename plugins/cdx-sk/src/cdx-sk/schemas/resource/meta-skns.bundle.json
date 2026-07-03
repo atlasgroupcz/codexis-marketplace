@@ -1,0 +1,77 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-07-01T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/najvyssi-sud/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get decision metadata",
+      "description": "Retrieve metadata for a Supreme Court (Najvyšší súd SR) decision by document ID.",
+      "operationId": "getMeta_nsud",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKNS12345"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Decision metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NsudSkDocumentResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "NsudSkDocumentResponse": {
+        "type": "object",
+        "description": "Supreme Court (Najvyšší súd SR) decision metadata. Null fields are omitted. Decision text lives only in the attached PDF.",
+        "properties": {
+          "docId": { "type": "string", "description": "Public display ID", "example": "SKNS12345" },
+          "url": { "type": "string", "description": "Canonical detail URL on nsud.sk" },
+          "caseNumber": { "type": "string", "description": "Case number (spisová značka)", "example": "1Tdo/22/2026" },
+          "slug": { "type": "string", "description": "URL slug (lossy transform of the case number; for the source URL only)" },
+          "ecli": { "type": "string", "description": "ECLI identifier (may be empty on older records)", "example": "ECLI:SK:NSSR:2026:1234" },
+          "decisionDate": { "type": "string", "description": "Decision date (ISO)" },
+          "kolegium": { "type": "string", "description": "Collegium (Občianskoprávne / Obchodnoprávne / Správne / Trestnoprávne)", "example": "Trestnoprávne" },
+          "meritoVeci": { "type": "string", "description": "Subject matter (free text; the only reference field)", "example": "§ 188/1 Tr.zák." },
+          "senate": { "type": "string", "description": "Senate composition (API-enriched; often empty)" },
+          "judge": { "type": "string", "description": "Judge (sudca; API-enriched; often empty)" },
+          "chamberType": { "type": "string", "description": "Special-chamber flag: velky_senat | kompetencny_senat | normal (often null)" },
+          "sourceId": { "type": "string", "description": "Internal open-data API id (absent for records not in the API)" },
+          "publishedDate": { "type": "string", "description": "Publication date (ISO)" },
+          "sourceCourtCode": { "type": "string", "description": "Source court code (constant NSSR)", "example": "NSSR" },
+          "assets": {
+            "type": "array",
+            "description": "Downloadable attachments (decision PDF)",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source", "example": "Rozhodnutie.pdf" },
+          "download_url": { "type": "string", "description": "cdx-sk:// link to download this attachment", "example": "cdx-sk://doc/SKNS12345/attachment/content_1.pdf" }
+        }
+      }
+    }
+  }
+}

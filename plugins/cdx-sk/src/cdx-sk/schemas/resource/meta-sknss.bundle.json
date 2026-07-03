@@ -1,0 +1,85 @@
+{
+  "endpoint": "meta",
+  "kind": "resource",
+  "format": "openapi-fragment",
+  "apiDocsUrl": "http://localhost:8081/v3/api-docs",
+  "fetchedAt": "2026-07-01T00:00:00Z",
+  "cdxPatterns": [
+    "cdx-sk://doc/<DOC_ID>/meta"
+  ],
+  "operations": [
+    {
+      "path": "/api/SK/najvyssi-spravny-sud/doc/{docId}/meta",
+      "method": "get",
+      "summary": "Get decision metadata",
+      "description": "Retrieve metadata for a Supreme Administrative Court (NSS SR) decision by document ID.",
+      "operationId": "getMeta_nssud",
+      "parameters": [
+        {
+          "name": "docId",
+          "in": "path",
+          "description": "Document ID",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "SKNSS12345"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Decision metadata",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NssudSkDocumentResponse" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "NssudSkDocumentResponse": {
+        "type": "object",
+        "description": "Supreme Administrative Court (Najvyšší správny súd SR) decision metadata. Null fields are omitted.",
+        "properties": {
+          "docId": { "type": "string", "description": "Public display ID", "example": "SKNSS12345" },
+          "url": { "type": "string", "description": "Source URL of the decision" },
+          "ecli": { "type": "string", "description": "ECLI identifier", "example": "ECLI:SK:NSSSR:2022:1.Vs.1.2021.1" },
+          "spis": { "type": "string", "description": "NSS case number (spisová značka)", "example": "1Vs/1/2021" },
+          "spis1stupna": { "type": "string", "description": "First-instance case number" },
+          "ics": { "type": "string", "description": "Case-file identifier (ICS)" },
+          "senat": { "type": "string", "description": "Senate" },
+          "datumRozhodnutia": { "type": "string", "description": "Decision date (ISO, at midnight)", "example": "2022-02-24T00:00:00" },
+          "sud1stupna": { "type": "string", "description": "First-instance court name", "example": "Krajský súd v Košiciach" },
+          "forma": { "type": "string", "description": "Decision form", "example": "Rozsudok" },
+          "sposobVybavenia": { "type": "string", "description": "Manner of resolution / disposition" },
+          "zr": { "type": "string", "description": "Zbierka (collection) category flag", "example": "A" },
+          "zrZnacka": { "type": "string", "description": "Zbierka mark / reference" },
+          "pravnaVeta": { "type": "string", "description": "Legal headnote (právna veta)" },
+          "zrPravnaVeta": { "type": "string", "description": "Zbierka-collection headnote" },
+          "rozhodnutieVydanePodla": { "type": "string", "description": "Provisions the decision was issued under" },
+          "heslaPreEvidenciu": { "type": "string", "description": "Registry keywords / subject terms" },
+          "keywordsClean": {
+            "type": "array",
+            "description": "Cleaned keyword list",
+            "items": { "type": "string" }
+          },
+          "assets": {
+            "type": "array",
+            "description": "Downloadable attachments (anonymized decision PDF, optional Zbierka extract)",
+            "items": { "$ref": "#/components/schemas/AssetResponse" }
+          }
+        }
+      },
+      "AssetResponse": {
+        "type": "object",
+        "description": "Asset file reference with download URL",
+        "properties": {
+          "file": { "type": "string", "description": "S3 content filename", "example": "content_1.pdf" },
+          "original_name": { "type": "string", "description": "Original filename from source", "example": "Rozhodnutie.pdf" },
+          "download_url": { "type": "string", "description": "cdx-sk:// link to download this attachment", "example": "cdx-sk://doc/SKNSS12345/attachment/content_1.pdf" }
+        }
+      }
+    }
+  }
+}
