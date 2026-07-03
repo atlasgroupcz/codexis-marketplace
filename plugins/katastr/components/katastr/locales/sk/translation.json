@@ -6,6 +6,9 @@
   },
   "proceedings": {
     "title": "Sledované katastrálne konania",
+    "filterAll": "Všetko",
+    "filterUnconfirmed": "Nepotvrdené",
+    "noUnconfirmed": "Žiadne nepotvrdené zmeny",
     "empty": "Zatiaľ nesledujete žiadne konania. Pridajte prvé hore vo formulári, alebo mi napíšte do chatu „sleduj konanie V-123/2026-701\".",
     "emptyTitle": "Zatiaľ nesledujete žiadne konania",
     "emptyText": "Zadajte číslo konania a začnite ho sledovať. Stav sa kontroluje každý týždeň, zmeny uvidíte tu.",
