@@ -285,7 +285,7 @@ def show(cislo_rizeni: str) -> dict:
 
 
 def list_all() -> list:
-    """Return list of all tracked proceeding state dicts, newest first."""
+    """Return list of all tracked proceeding state dicts, newest added first."""
     if not os.path.isdir(APP_DIR):
         return []
     results = []
@@ -293,26 +293,14 @@ def list_all() -> list:
         state = _load_state_file(name)
         if state is not None:
             results.append(state)
-    def _sort_key(s):
-        changes = s.get("changes", [])
-        unconfirmed = [c for c in changes if is_unconfirmed(c)]
-        latest_unconfirmed = max(
-            (c.get("detected_on", "") for c in unconfirmed), default=""
-        )
-        latest_change = max(
-            (c.get("detected_on", "") for c in changes), default=""
-        )
-        # tier 1: needs action (unconfirmed change); tier 0: everything else.
-        # In tier 0 the most recent real event wins (detected change OR initial add),
-        # so confirming an old change drops the proceeding back to its event date
-        # instead of jumping to the top by confirmation timestamp.
-        tier = 1 if unconfirmed else 0
-        activity = latest_unconfirmed if unconfirmed else max(
-            latest_change, s.get("added_on", "")
-        )
-        return (tier, activity)
-
-    results.sort(key=_sort_key, reverse=True)
+    # Newest first, purely by date added. Confirming a change — or a newly
+    # detected one — never reorders; order is stable once a proceeding is
+    # added. uuid is a deterministic tiebreaker when two share an added_on
+    # second.
+    results.sort(
+        key=lambda s: (s.get("added_on", ""), s.get("uuid", "")),
+        reverse=True,
+    )
     return results
 
 

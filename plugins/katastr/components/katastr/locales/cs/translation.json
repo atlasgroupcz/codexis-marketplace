@@ -6,6 +6,9 @@
   },
   "proceedings": {
     "title": "Sledovaná katastrální řízení",
+    "filterAll": "Vše",
+    "filterUnconfirmed": "Nepotvrzené",
+    "noUnconfirmed": "Žádné nepotvrzené změny",
     "empty": "Zatím nesledujete žádná řízení. Přidejte první nahoře přes formulář, nebo mi napište do chatu „sleduj řízení V-123/2026-701\".",
     "emptyTitle": "Zatím nesledujete žádná řízení",
     "emptyText": "Zadejte číslo řízení a začněte ho sledovat. Stav se kontroluje každý týden, změny uvidíte tady.",

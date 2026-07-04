@@ -6,6 +6,9 @@
   },
   "proceedings": {
     "title": "Tracked Cadastral Proceedings",
+    "filterAll": "All",
+    "filterUnconfirmed": "Unconfirmed",
+    "noUnconfirmed": "No unconfirmed changes",
     "empty": "No proceedings tracked yet. Add the first one above, or tell me in chat: \"track proceeding V-123/2026-701\".",
     "emptyTitle": "You're not tracking any proceedings yet",
     "emptyText": "Enter a proceeding number to start tracking it. Its status is checked every week and changes show up here.",
