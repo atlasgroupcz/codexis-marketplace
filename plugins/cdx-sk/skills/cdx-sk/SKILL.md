@@ -5,6 +5,7 @@ icon: icon.svg
 description: This skill should be invoked whenever user needs Slovak law or legal information — legislation from e-Zbierka, general court decisions, or supreme/constitutional court decisions.
 version: 2.3.0
 jurisdictions: [SK]
+jurisdiction-required: true
 i18n:
   cs:
     displayName: "Slovenské právo (e-Zbierka a soudy SR)"

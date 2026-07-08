@@ -496,6 +496,30 @@
           "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "health": "Zdravie" }
         }
       }
+    },
+    {
+      "uuid": "27a9ef2f-15d6-415b-82d7-24e3ad8afa8a",
+      "name": "registr-smluv",
+      "description": "Czech Register of Contracts (smlouvy.gov.cz) — search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date",
+      "source": "./plugins/registr-smluv",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Registr smluv ČR",
+          "description": "Registr smluv (smlouvy.gov.cz) — vyhledávání veřejných smluv podle předmětu, smluvních stran, IČO, hodnoty a data uzavření.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "contracts": "Smlouvy" }
+        },
+        "en": {
+          "displayName": "Czech Register of Contracts",
+          "description": "Czech Register of Contracts (smlouvy.gov.cz) — search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "contracts": "Contracts" }
+        },
+        "sk": {
+          "displayName": "Register zmlúv ČR",
+          "description": "Register zmlúv (smlouvy.gov.cz) — vyhľadávanie verejných zmlúv podľa predmetu, zmluvných strán, IČO, hodnoty a dátumu uzavretia.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "contracts": "Zmluvy" }
+        }
+      }
     }
   ]
 }
