@@ -1,0 +1,37 @@
+{
+  "name": "registr-smluv",
+  "iconPath": "icon.svg",
+  "version": "1.0.0",
+  "description": "Czech Register of Contracts (smlouvy.gov.cz) API access — search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["registr-smluv", "smlouvy", "contracts", "registr", "czech", "procurement", "api"],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "registry", "contracts"],
+  "i18n": {
+    "cs": {
+      "displayName": "Registr smluv ČR",
+      "description": "Registr smluv (smlouvy.gov.cz) — vyhledávání veřejných smluv podle předmětu, smluvních stran, IČO, hodnoty a data uzavření.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "contracts": "Smlouvy" }
+    },
+    "en": {
+      "displayName": "Czech Register of Contracts",
+      "description": "Czech Register of Contracts (smlouvy.gov.cz) — search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "contracts": "Contracts" }
+    },
+    "sk": {
+      "displayName": "Register zmlúv ČR",
+      "description": "Register zmlúv (smlouvy.gov.cz) — vyhľadávanie verejných zmlúv podľa predmetu, zmluvných strán, IČO, hodnoty a dátumu uzavretia.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "contracts": "Zmluvy" }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills",
+  "env": {
+    "CODEXIS_PLUGIN_REGISTR_SMLUV_API_URL": "https://codexis.ai/sources/api"
+  }
+}
