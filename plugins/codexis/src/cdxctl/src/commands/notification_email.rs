@@ -8,6 +8,8 @@ use std::io::Read;
 use std::path::Path;
 
 const SEND_PATH: &str = "/rest/v1/plugin/email/send";
+const SESSION_ID_HEADER: &str = "X-CDX-Session-Id";
+const CODEXIS_PUBLIC_SESSION_ID_ENV: &str = "CODEXIS_PUBLIC_SESSION_ID";
 
 #[derive(Serialize)]
 struct SendPayload<'a> {
@@ -36,6 +38,7 @@ pub fn send(
     body_file: Option<&str>,
     body_html: Option<&str>,
     attachments: &[String],
+    no_thread: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     if body.is_some() && body_file.is_some() {
@@ -61,9 +64,35 @@ pub fn send(
     for attachment_path in attachments {
         form = form.part("attachments", attachment_part(attachment_path)?);
     }
-    let data = client.rest_post_multipart(SEND_PATH, form)?;
+    let data = client.rest_post_multipart(SEND_PATH, form, &thread_headers(no_thread))?;
     print_output(&data, format);
     Ok(())
+}
+
+/// Binds the mail to the chat we are running in, so that a reply threads back into it.
+/// Absent outside a chat VM, or when the caller opts out with `--no-thread`.
+fn thread_headers(no_thread: bool) -> Vec<(&'static str, String)> {
+    thread_headers_from(no_thread, read_env(CODEXIS_PUBLIC_SESSION_ID_ENV))
+}
+
+fn thread_headers_from(no_thread: bool, session_id: Option<String>) -> Vec<(&'static str, String)> {
+    match (no_thread, session_id) {
+        (false, Some(chat_id)) => vec![(SESSION_ID_HEADER, chat_id)],
+        _ => Vec::new(),
+    }
+}
+
+fn read_env(name: &str) -> Option<String> {
+    std::env::var(name).ok().and_then(normalize_env_value)
+}
+
+fn normalize_env_value(value: String) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
 }
 
 fn attachment_part(path_str: &str) -> Result<Part, CdxctlError> {
@@ -129,6 +158,34 @@ mod tests {
         assert!(!json.contains("bodyHtml"), "bodyHtml should be omitted when None");
         assert!(json.contains("\"subject\":\"hi\""));
         assert!(json.contains("\"bodyText\":\"body\""));
+    }
+
+    #[test]
+    fn anchors_to_the_current_chat_when_running_inside_a_chat_vm() {
+        let headers = thread_headers_from(false, Some("3f2b1c00-0000-0000-0000-000000000001".into()));
+
+        assert_eq!(
+            headers,
+            vec![("X-CDX-Session-Id", "3f2b1c00-0000-0000-0000-000000000001".to_string())]
+        );
+    }
+
+    #[test]
+    fn omits_the_anchor_when_no_thread_is_requested() {
+        let headers = thread_headers_from(true, Some("3f2b1c00-0000-0000-0000-000000000001".into()));
+
+        assert!(headers.is_empty(), "--no-thread must suppress the anchor: {headers:?}");
+    }
+
+    #[test]
+    fn omits_the_anchor_outside_a_chat_vm() {
+        assert!(thread_headers_from(false, None).is_empty());
+    }
+
+    #[test]
+    fn treats_a_blank_session_id_as_absent() {
+        assert!(normalize_env_value("   ".to_string()).is_none());
+        assert_eq!(normalize_env_value(" abc ".to_string()), Some("abc".to_string()));
     }
 
     #[test]

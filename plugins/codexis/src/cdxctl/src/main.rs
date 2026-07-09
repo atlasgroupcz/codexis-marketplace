@@ -403,6 +403,9 @@ enum EmailCommands {
         /// Attach a local file (repeatable)
         #[arg(long = "attach")]
         attachments: Vec<String>,
+        /// Do not thread the mail into the current chat (a reply will start a new chat instead)
+        #[arg(long)]
+        no_thread: bool,
     },
 }
 
@@ -616,6 +619,7 @@ fn main() {
                     body_file,
                     body_html,
                     attachments,
+                    no_thread,
                 } => commands::notification_email::send(
                     &client,
                     &to,
@@ -626,6 +630,7 @@ fn main() {
                     body_file.as_deref(),
                     body_html.as_deref(),
                     &attachments,
+                    no_thread,
                     format,
                 ),
             },
@@ -733,4 +738,30 @@ mod tests {
         }
     }
 
+    #[test]
+    fn threads_notification_email_into_the_chat_unless_no_thread_is_given() {
+        assert!(!no_thread_flag(&["cdxctl", "notification", "email", "send", "--subject", "hi"]));
+        assert!(no_thread_flag(&[
+            "cdxctl",
+            "notification",
+            "email",
+            "send",
+            "--subject",
+            "hi",
+            "--no-thread",
+        ]));
+    }
+
+    fn no_thread_flag(args: &[&str]) -> bool {
+        let cli = Cli::try_parse_from(args).expect("notification email send should parse");
+        match cli.command {
+            Commands::Notification {
+                command:
+                    NotificationCommands::Email {
+                        command: EmailCommands::Send { no_thread, .. },
+                    },
+            } => no_thread,
+            _ => panic!("expected notification email send command"),
+        }
+    }
 }
