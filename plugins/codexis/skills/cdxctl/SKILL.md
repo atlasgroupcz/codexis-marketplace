@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, or delete custom agents, skills, scheduled automations (cron), plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 1.5.1
+version: 1.6.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -295,6 +295,17 @@ cdxctl notification email send \
     --body "See attached." \
     --attach /tmp/report.pdf
 ```
+
+The mail is sent from the agent's address and is threaded into the current chat, so when the
+recipient hits **Reply** their answer continues this same conversation. Pass `--no-thread` for mail
+that should not come back — a reply to it starts a new chat instead.
+
+```bash
+cdxctl notification email send --subject "Newsletter" --body "..." --no-thread
+```
+
+Replying into a chat requires the reply to be S/MIME signed with a trusted certificate; unsigned
+replies are dropped.
 
 ## Output
 
