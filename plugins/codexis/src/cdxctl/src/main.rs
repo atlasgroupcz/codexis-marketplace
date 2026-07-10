@@ -138,9 +138,16 @@ enum AutomationCommands {
         max_turns: Option<u32>,
         #[arg(long)]
         work_dir: Option<String>,
-        /// Enable the automation
-        #[arg(long)]
-        enabled: Option<bool>,
+    },
+    /// Enable an automation (works for shipped plugin automations too)
+    Enable {
+        /// Automation ID (Node ID or UUID)
+        id: String,
+    },
+    /// Disable an automation (works for shipped plugin automations too)
+    Disable {
+        /// Automation ID (Node ID or UUID)
+        id: String,
     },
     /// Delete an automation
     Delete {
@@ -442,15 +449,17 @@ fn main() {
                 disabled,
             } => commands::automation::create(
                 &client,
-                &title,
-                &cron,
-                &prompt,
-                description.as_deref(),
-                agent.as_deref(),
-                &skill,
-                max_turns,
-                work_dir.as_deref(),
-                disabled,
+                commands::automation::CreateArgs {
+                    title: &title,
+                    cron: &cron,
+                    prompt: &prompt,
+                    description: description.as_deref(),
+                    agent: agent.as_deref(),
+                    skills: &skill,
+                    max_turns,
+                    work_dir: work_dir.as_deref(),
+                    disabled,
+                },
                 format,
             ),
             AutomationCommands::CreateCommand {
@@ -478,21 +487,27 @@ fn main() {
                 skill,
                 max_turns,
                 work_dir,
-                enabled,
             } => commands::automation::update(
                 &client,
-                &id,
-                title.as_deref(),
-                cron.as_deref(),
-                prompt.as_deref(),
-                description.as_deref(),
-                agent.as_deref(),
-                skill.as_deref(),
-                max_turns,
-                work_dir.as_deref(),
-                enabled,
+                commands::automation::UpdateArgs {
+                    id: &id,
+                    title: title.as_deref(),
+                    cron: cron.as_deref(),
+                    prompt: prompt.as_deref(),
+                    description: description.as_deref(),
+                    agent: agent.as_deref(),
+                    skills: skill.as_deref(),
+                    max_turns,
+                    work_dir: work_dir.as_deref(),
+                },
                 format,
             ),
+            AutomationCommands::Enable { id } => {
+                commands::automation::set_enabled(&client, &id, true, format)
+            }
+            AutomationCommands::Disable { id } => {
+                commands::automation::set_enabled(&client, &id, false, format)
+            }
             AutomationCommands::Delete { id } => commands::automation::delete(&client, &id, format),
             AutomationCommands::Trigger { id } => {
                 commands::automation::trigger(&client, &id, format)
@@ -526,12 +541,8 @@ fn main() {
                 marketplace,
                 available,
             } => commands::plugin::list(&client, marketplace.as_deref(), available, format),
-            PluginCommands::Install { id } => {
-                commands::plugin::install(&client, &id, format)
-            }
-            PluginCommands::Uninstall { id } => {
-                commands::plugin::uninstall(&client, &id, format)
-            }
+            PluginCommands::Install { id } => commands::plugin::install(&client, &id, format),
+            PluginCommands::Uninstall { id } => commands::plugin::uninstall(&client, &id, format),
         },
         Commands::Agent { command } => match command {
             AgentCommands::List { editable_only } => {
@@ -603,9 +614,7 @@ fn main() {
             NotificationCommands::List { days, unseen } => {
                 commands::notification::list(&client, days, unseen, format)
             }
-            NotificationCommands::Seen { id } => {
-                commands::notification::seen(&client, &id, format)
-            }
+            NotificationCommands::Seen { id } => commands::notification::seen(&client, &id, format),
             NotificationCommands::Confirm { id } => {
                 commands::notification::confirm(&client, &id, format)
             }

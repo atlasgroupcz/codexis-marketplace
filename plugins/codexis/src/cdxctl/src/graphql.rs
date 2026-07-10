@@ -65,6 +65,20 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
 }
 "#;
 
+// Toggle only the `enabled` flag. Unlike `updateAutomation` (USER-only, rejects
+// read-only carried/plugin automations), the daemon's `setAutomationEnabled`
+// works for both USER and carried automations — for carried ones it persists a
+// per-user enabled override. This is how a shipped plugin automation is disabled.
+pub const SET_AUTOMATION_ENABLED: &str = r#"
+mutation SetAutomationEnabled($id: ID!, $enabled: Boolean!) {
+    setAutomationEnabled(id: $id, enabled: $enabled) {
+        id
+        title
+        enabled
+    }
+}
+"#;
+
 pub const DELETE_AUTOMATION: &str = r#"
 mutation DeleteAutomation($id: ID!) {
     deleteNode(id: $id) {
@@ -382,64 +396,6 @@ mutation DeleteSkill($id: ID!) {
 }
 "#;
 
-#[cfg(test)]
-mod tests {
-    use super::{
-        CREATE_AGENT, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_SKILLS,
-        REMOVE_MARKETPLACE, UPDATE_AGENT, UPDATE_AUTOMATION,
-    };
-
-    #[test]
-    fn agent_queries_target_canonical_agent_api() {
-        assert!(GET_AGENTS.contains("query GetAgents"));
-        assert!(GET_AGENTS.contains("agents {"));
-        assert!(CREATE_AGENT.contains("createAgent(markdown: $markdown)"));
-        assert!(UPDATE_AGENT.contains("updateAgent(id: $id, markdown: $markdown)"));
-        assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
-    }
-
-    #[test]
-    fn agent_queries_request_local_crud_metadata() {
-        for query in [GET_AGENTS, CREATE_AGENT, UPDATE_AGENT] {
-            assert!(query.contains("sourceKind"));
-            assert!(query.contains("editable"));
-            assert!(query.contains("deletable"));
-            assert!(query.contains("path { absolutePath displayPath }"));
-            assert!(query.contains("sourcePath { absolutePath displayPath }"));
-            assert!(query.contains("maxTurns"));
-            assert!(query.contains("tools { toolName"));
-            assert!(query.contains("disallowedTools { toolName"));
-        }
-    }
-
-    #[test]
-    fn marketplace_remove_uses_generic_delete_node() {
-        assert!(REMOVE_MARKETPLACE.contains("deleteNode(id: $id)"));
-        assert!(REMOVE_MARKETPLACE.contains("on Marketplace"));
-    }
-
-    #[test]
-    fn automation_queries_select_agent_and_skills_as_nodes() {
-        // Daemon schema exposes `agent: Agent` / `skills: [Skill!]!` (with id +
-        // fullName), not the legacy flat `agentFullName` / `skillFullNames` fields.
-        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION] {
-            assert!(query.contains("agent { id fullName }"));
-            assert!(query.contains("skills { id fullName }"));
-            assert!(!query.contains("agentFullName"));
-            assert!(!query.contains("skillFullNames"));
-        }
-    }
-
-    #[test]
-    fn agent_and_skill_lists_surface_plugin_and_marketplace() {
-        // Marketplace is reachable only through the owning plugin in the daemon
-        // schema — Agent/Skill have no direct `marketplace` field.
-        for query in [GET_AGENTS, GET_SKILLS] {
-            assert!(query.contains("plugin { id name marketplace { id name } }"));
-        }
-    }
-}
-
 // ==================== Notifications ====================
 
 pub const NOTIFICATIONS_QUERY: &str = r#"
@@ -622,3 +578,70 @@ mutation StartTabularExtraction($id: ID!) {
     }
 }
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        CREATE_AGENT, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_SKILLS,
+        REMOVE_MARKETPLACE, SET_AUTOMATION_ENABLED, UPDATE_AGENT, UPDATE_AUTOMATION,
+    };
+
+    #[test]
+    fn agent_queries_target_canonical_agent_api() {
+        assert!(GET_AGENTS.contains("query GetAgents"));
+        assert!(GET_AGENTS.contains("agents {"));
+        assert!(CREATE_AGENT.contains("createAgent(markdown: $markdown)"));
+        assert!(UPDATE_AGENT.contains("updateAgent(id: $id, markdown: $markdown)"));
+        assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
+    }
+
+    #[test]
+    fn agent_queries_request_local_crud_metadata() {
+        for query in [GET_AGENTS, CREATE_AGENT, UPDATE_AGENT] {
+            assert!(query.contains("sourceKind"));
+            assert!(query.contains("editable"));
+            assert!(query.contains("deletable"));
+            assert!(query.contains("path { absolutePath displayPath }"));
+            assert!(query.contains("sourcePath { absolutePath displayPath }"));
+            assert!(query.contains("maxTurns"));
+            assert!(query.contains("tools { toolName"));
+            assert!(query.contains("disallowedTools { toolName"));
+        }
+    }
+
+    #[test]
+    fn set_automation_enabled_targets_dedicated_toggle_mutation() {
+        // The enabled toggle must go through `setAutomationEnabled` (works for
+        // carried/plugin automations), NOT `updateAutomation` (USER-only guard).
+        assert!(SET_AUTOMATION_ENABLED.contains("setAutomationEnabled(id: $id, enabled: $enabled)"));
+        assert!(SET_AUTOMATION_ENABLED.contains("$enabled: Boolean!"));
+        assert!(!SET_AUTOMATION_ENABLED.contains("updateAutomation"));
+    }
+
+    #[test]
+    fn marketplace_remove_uses_generic_delete_node() {
+        assert!(REMOVE_MARKETPLACE.contains("deleteNode(id: $id)"));
+        assert!(REMOVE_MARKETPLACE.contains("on Marketplace"));
+    }
+
+    #[test]
+    fn automation_queries_select_agent_and_skills_as_nodes() {
+        // Daemon schema exposes `agent: Agent` / `skills: [Skill!]!` (with id +
+        // fullName), not the legacy flat `agentFullName` / `skillFullNames` fields.
+        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION] {
+            assert!(query.contains("agent { id fullName }"));
+            assert!(query.contains("skills { id fullName }"));
+            assert!(!query.contains("agentFullName"));
+            assert!(!query.contains("skillFullNames"));
+        }
+    }
+
+    #[test]
+    fn agent_and_skill_lists_surface_plugin_and_marketplace() {
+        // Marketplace is reachable only through the owning plugin in the daemon
+        // schema — Agent/Skill have no direct `marketplace` field.
+        for query in [GET_AGENTS, GET_SKILLS] {
+            assert!(query.contains("plugin { id name marketplace { id name } }"));
+        }
+    }
+}

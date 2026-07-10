@@ -115,10 +115,7 @@ fn collect_columns(obj: &Value) -> Vec<String> {
             .keys()
             .filter(|k| {
                 // Skip nested objects/arrays for table display
-                match map.get(*k) {
-                    Some(Value::Object(_)) | Some(Value::Array(_)) => false,
-                    _ => true,
-                }
+                !matches!(map.get(*k), Some(Value::Object(_)) | Some(Value::Array(_)))
             })
             .cloned()
             .collect(),

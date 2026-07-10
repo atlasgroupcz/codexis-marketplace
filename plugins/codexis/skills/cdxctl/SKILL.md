@@ -2,8 +2,8 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, or delete custom agents, skills, scheduled automations (cron), plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 1.6.0
+description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations (cron), plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
+version: 1.7.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -47,10 +47,14 @@ cdxctl automation create-command \
     --command "cdx-sledovane-dokumenty check" \
     --description "Weekly tracked-document change check"
 
-# Update (partial — only specified fields change)
+# Update (partial — only specified fields change; never touches enabled)
 cdxctl automation update <id> --title "New Title"
-cdxctl automation update <id> --cron "0 */2 * * *" --enabled true
+cdxctl automation update <id> --cron "0 */2 * * *"
 cdxctl automation update <id> --prompt "Updated prompt" --max-turns 30
+
+# Enable / disable (separate from update — see note below)
+cdxctl automation enable <id>
+cdxctl automation disable <id>
 
 # Delete
 cdxctl automation delete <id>
@@ -58,6 +62,17 @@ cdxctl automation delete <id>
 # Manually trigger a run
 cdxctl automation trigger <id>
 ```
+
+**Enable / disable vs update:** toggling the on/off state is its own command, not a
+flag on `update`. `enable`/`disable` go through the daemon's `setAutomationEnabled`
+mutation, which works for **both** your own automations and read-only automations
+shipped by a plugin. `update` only edits USER automations (the daemon rejects edits
+to shipped/plugin automations) and never changes the enabled state.
+
+**Disabling a shipped (plugin) automation:** you cannot edit or delete a plugin-shipped
+automation, but you can disable one — e.g. to replace it with your own on a different
+schedule. Find it with `cdxctl automation list`, then `cdxctl automation disable <id>`.
+The disable is remembered per user and survives plugin updates and daemon restarts.
 
 **Required fields for create:** `--title`, `--cron` (5-field unix cron), `--prompt`
 
