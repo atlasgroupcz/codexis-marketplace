@@ -17,6 +17,7 @@ import { Progress } from '@workspace/ui/components/progress'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { HeaderGear } from '@workspace/ui/components/app-header'
 import { SectionSwitch } from './section-switch'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
@@ -29,9 +30,16 @@ interface FolderDetailProps {
   section: 'documents' | 'folders'
   onChangeSection: (section: 'documents' | 'folders') => void
   onBack: () => void
+  onOpenSettings: () => void
 }
 
-export function FolderDetail({ root, section, onChangeSection, onBack }: FolderDetailProps) {
+export function FolderDetail({
+  root,
+  section,
+  onChangeSection,
+  onBack,
+  onOpenSettings,
+}: FolderDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useFolderDetail(root)
   const [busy, setBusy] = useState<string | null>(null)
@@ -125,6 +133,7 @@ export function FolderDetail({ root, section, onChangeSection, onBack }: FolderD
           >
             <Trash2 className="size-4" />
           </Button>
+          <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />
         </div>
       </header>
 

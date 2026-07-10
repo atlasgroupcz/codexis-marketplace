@@ -2,7 +2,7 @@
 
 Adds znamky_core to sys.path and isolates filesystem state per test by
 monkeypatching tracking.APP_DIR to a tmp_path — no test touches the real
-~/.cdx/apps/znamky/ directory — and neutralises the cdxctl automation call.
+~/.cdx/apps/znamky/ directory.
 """
 
 import os
@@ -17,11 +17,10 @@ if _LIB_PATH not in sys.path:
 
 @pytest.fixture
 def app_dir(tmp_path, monkeypatch):
-    """Redirect znamky state I/O to a fresh tmp directory; stub the automation hook."""
+    """Redirect znamky state I/O to a fresh tmp directory."""
     from znamky_core import tracking
 
     target = tmp_path / "sledovane"
     target.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(tracking, "APP_DIR", str(target))
-    monkeypatch.setattr(tracking, "ensure_automation", lambda: None)
     return target

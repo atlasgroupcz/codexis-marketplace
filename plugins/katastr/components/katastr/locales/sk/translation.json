@@ -75,25 +75,49 @@
     }
   },
   "settings": {
-    "title": "Nastavenie API kľúča",
-    "description": "Pre fungovanie katastra je potrebný API kľúč ČÚZK.",
     "getKey": "Kde získam API kľúč?",
     "getKeyHint": "Na stránke ČÚZK zvoľte sekciu API dat katastru nemovitostí.",
-    "currentKey": "Aktuálny API kľúč",
     "newLabel": "Zadajte API kľúč ČÚZK",
-    "replaceLabel": "Zadať nový API kľúč ČÚZK",
-    "placeholder": "Vložte API kľúč",
-    "save": "Uložiť",
-    "saving": "Ukladám...",
-    "savedSuccess": "API kľúč bol overený a uložený.",
-    "saveError": "Nepodarilo sa uložiť kľúč.",
-    "deleteKey": "Odstrániť kľúč",
-    "deleting": "Odstraňujem...",
-    "confirmDelete": "Naozaj odstrániť uložený API kľúč?"
+    "placeholder": "Vložte API kľúč"
   },
   "apiKeyBanner": {
     "title": "API kľúč ČÚZK nie je nastavený",
     "text": "Pre prevádzku tohto modulu je nutné nastaviť API kľúč ČÚZK. Bez neho nemožno pridávať ani sledovať žiadne konania.",
     "action": "Nastaviť kľúč"
+  },
+  "notify": {
+    "title": "Nastavenie katastra",
+    "description": "Upozornenia a prístup k ČÚZK.",
+    "save": "Uložiť",
+    "cancel": "Zrušiť",
+    "emailLabel": "E-mail pri zmene",
+    "emailDescription": "Súhrn zmien príde e-mailom.",
+    "yourAddressLabel": "Vaša adresa",
+    "copyToLabel": "Kópia na",
+    "addRecipient": "Pridať príjemcu",
+    "removeRecipient": "Odobrať",
+    "addPlaceholder": "meno@firma.sk",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámenie v centre notifikácií",
+    "inAppDescription": "",
+    "section": "Oznámenia",
+    "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+    "duplicate": "Táto adresa už je v zozname."
+  },
+  "connection": {
+    "connected": "Pripojené",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "save": "Uložiť",
+    "saving": "Overujem…",
+    "notConnected": "Nepripojené k ČÚZK",
+    "currentKey": "Kľúč nastavený",
+    "change": "Zmeniť",
+    "disconnect": "Odpojiť",
+    "disconnecting": "Odpájam…",
+    "connect": "Pripojiť",
+    "connecting": "Pripájam…",
+    "cancel": "Zrušiť",
+    "section": "Pripojenie ku katastru"
   }
 }

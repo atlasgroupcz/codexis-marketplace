@@ -114,6 +114,16 @@ class TestValidation:
             tracking.add_text("X", territories="US")
 
 
+class TestAddTextDedup:
+    def test_duplicate_add_text_raises_and_keeps_one(self, app_dir, monkeypatch):
+        _patch_search(monkeypatch, [])
+        tracking.add_text("CODEXIS", nice_classes="9,42", territories="CZ,EU")
+        with pytest.raises(tracking.MarkAlreadyTrackedError):
+            # reordered classes + territories prove the key is order-insensitive
+            tracking.add_text("CODEXIS", nice_classes="42,9", territories="EU,CZ")
+        assert len(tracking.list_all()) == 1
+
+
 class TestListSort:
     def test_unconfirmed_high_first(self, app_dir):
         _seed(app_dir, "idle", collisions=[])

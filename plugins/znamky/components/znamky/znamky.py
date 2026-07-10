@@ -24,7 +24,7 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from znamky_core import settings, tracking
+    from znamky_core import notify, notify_settings, settings, tracking
     from znamky_core.exceptions import (
         ApiHttpError,
         ApiNetworkError,
@@ -100,6 +100,28 @@ def with_mark_uuid(body: dict, fn: Callable[[dict], None]) -> None:
     fn(state)
 
 
+def _notify_results(results: list) -> None:
+    """Push e-mail + in-app for freshly detected changes — mirrors the CLI check
+    so a change is notified regardless of which route (automation, chat, FE)
+    first catches it. A change is consumed once, so only the first route to see
+    it actually sends. Best-effort: never raises, so a failed send can't break
+    the FE response."""
+    try:
+        cfg = notify_settings.get_notify()
+    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+        return
+    if cfg.get("email"):
+        try:
+            notify.email_change_summary(results, to=notify.resolve_to(cfg.get("recipients")))
+        except Exception:  # noqa: BLE001
+            pass
+    if cfg.get("inApp"):
+        try:
+            notify.inapp_change_summary(results)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 # ── action dispatch ─────────────────────────────────────────────────────────
 
 
@@ -114,6 +136,19 @@ def handle_post(body: dict) -> None:
     if action == "delete_config":
         settings.write_credentials("", "")
         emit_json({"ok": True})
+        return
+
+    if action == "save_notify_settings":
+        try:
+            notify_settings.set_notify(
+                email=body.get("email"),
+                inApp=body.get("inApp"),
+                recipients=body.get("recipients"),
+            )
+        except ValueError as e:
+            emit_json({"ok": False, "error": str(e)}, status="400 Bad Request")
+            return
+        emit_json({"ok": True, "settings": notify_settings.get_notify()})
         return
 
     if action == "add_text":
@@ -156,11 +191,13 @@ def handle_post(body: dict) -> None:
             if not result["ok"]:
                 emit_json({"ok": False, "error": result["error"]}, status="503 Service Unavailable")
                 return
+            _notify_results([result])
             emit_json({"ok": True, "new_collisions": len(result["new_collisions"])})
         with_mark_uuid(body, _check)
 
     elif action == "check_all":
         results = tracking.check_all()
+        _notify_results(results)
         new = sum(len(r.get("new_collisions", [])) for r in results if r.get("ok"))
         errors = [{"display_name": r["display_name"], "error": r["error"]}
                   for r in results if not r.get("ok")]
@@ -210,6 +247,15 @@ def handle_post(body: dict) -> None:
 
 def handle_get(query_string: str) -> None:
     params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+
+    view = (params.get("view", [""])[0] or "").strip()
+    if view == "notify":
+        emit_json({
+            "mode": "notify",
+            "settings": notify_settings.get_notify(),
+            "userEmail": notify._query_me_email() or "",
+        })
+        return
 
     if "settings" in params:
         if settings.is_configured():

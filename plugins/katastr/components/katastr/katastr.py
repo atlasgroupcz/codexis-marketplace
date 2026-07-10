@@ -22,7 +22,7 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from katastr_core import settings, tracking
+    from katastr_core import notify, notify_settings, settings, tracking
     from katastr_core.exceptions import (
         ApiHttpError,
         ApiKeyInvalidError,
@@ -51,6 +51,36 @@ def emit_json(payload, status: Optional[str] = None) -> None:
     sys.stdout.write("Cache-Control: no-store\r\n")
     sys.stdout.write("\r\n")
     sys.stdout.write(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def signed_in_email() -> str:
+    """Signed-in user's e-mail, or "" if unavailable. Best-effort: never raises."""
+    try:
+        return notify._query_me_email() or ""
+    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+        return ""
+
+
+def _notify_results(results: list) -> None:
+    """Push e-mail + in-app for freshly detected changes — mirrors the CLI check
+    so a change is notified regardless of which route (automation, chat, FE)
+    first catches it. A change is consumed once, so only the first route to see
+    it actually sends; the others find nothing new. Best-effort: never raises, so
+    a failed send can't break the FE response."""
+    try:
+        cfg = notify_settings.get_notify()
+    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+        return
+    if cfg.get("email"):
+        try:
+            notify.email_change_summary(results, to=notify.resolve_to(cfg.get("recipients")))
+        except Exception:  # noqa: BLE001
+            pass
+    if cfg.get("inApp"):
+        try:
+            notify.inapp_change_summary(results)
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def error_status(exc: Exception) -> str:
@@ -126,6 +156,7 @@ def handle_post(body: dict) -> None:
 
     elif action == "check_all":
         results = tracking.check_all()
+        _notify_results(results)
         new_changes = sum(1 for r in results if r.get("ok") and r.get("change"))
         errors = [
             {"cislo_rizeni": r["cislo_rizeni"], "error": r["error"]}
@@ -157,6 +188,18 @@ def handle_post(body: dict) -> None:
             emit_json({"ok": True})
         with_proceeding_uuid(body, _set_label)
 
+    elif action == "save_notify_settings":
+        try:
+            notify_settings.set_notify(
+                email=body.get("email"),
+                inApp=body.get("inApp"),
+                recipients=body.get("recipients"),
+            )
+        except ValueError as e:
+            emit_json({"ok": False, "error": str(e)}, status="400 Bad Request")
+            return
+        emit_json({"ok": True, "settings": notify_settings.get_notify()})
+
     else:
         emit_json(
             {"ok": False, "error": f"Unknown action: {action}"},
@@ -173,6 +216,17 @@ def handle_get(query_string: str) -> None:
             emit_json({"configured": True, "maskedKey": status["masked"]})
         else:
             emit_json({"configured": False})
+        return
+
+    view = (params.get("view", [""])[0] or "").strip()
+    if view == "notify":
+        emit_json(
+            {
+                "mode": "notify",
+                "settings": notify_settings.get_notify(),
+                "userEmail": signed_in_email(),
+            }
+        )
         return
 
     requested_uuid = (params.get("uuid", [None])[0] or "").strip()

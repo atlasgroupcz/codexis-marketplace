@@ -91,7 +91,6 @@ def word_level_changes(old_text, new_text, context_words=10):
         if op == "equal":
             continue
         ctx_start_old = max(0, i1 - context_words)
-        ctx_start_new = max(0, j1 - context_words)
         before = " ".join(old_words[ctx_start_old:i1])
         ctx_end_old = min(len(old_words), i2 + context_words)
         ctx_end_new = min(len(new_words), j2 + context_words)

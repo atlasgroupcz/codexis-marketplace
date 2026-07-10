@@ -87,7 +87,7 @@ def _versions(*vids):
 class TestCheckNoChanges:
     def test_empty_tracked_list(self, dokumenty_app_dir, mock_all):
         result = tracking.check()
-        assert result == {"checked": 0, "changes_found": 0, "errors": []}
+        assert result == {"checked": 0, "changes_found": 0, "errors": [], "changed": []}
 
     def test_no_change_when_baseline_equals_latest(self, dokumenty_app_dir, mock_all):
         _seed("ZAK1", baseline_vid="v1")
@@ -276,3 +276,72 @@ class TestCheckRelatedPhase:
         result = tracking.check()
         assert result["changes_found"] == 2
         assert len(state.load_state("ZAK1")["changes"]) == 2
+
+
+# ── changed list (drives notifications) — deduped per document ───────────────
+
+
+class TestCheckChangedList:
+    def _seed_with_related(self, codexis_id, types, baseline_vid="v1"):
+        s = _seed(codexis_id, baseline_vid=baseline_vid)
+        s["related_tracking"] = {
+            "enabled": True,
+            "types": types,
+            "last_check_at": "2026-03-01T00:00:00Z",
+        }
+        state.save_state(codexis_id, s)
+
+    def test_new_version_records_one_changed_entry(self, dokumenty_app_dir, mock_all):
+        _seed("ZAK1", baseline_vid="v1")
+        mock_all["versions_by_id"]["ZAK1"] = _versions("v2")
+        result = tracking.check()
+        assert result["changed"] == [{"codexisId": "ZAK1", "name": "Zákon ZAK1"}]
+
+    def test_version_and_related_change_deduped_to_one_entry(
+        self, dokumenty_app_dir, mock_all
+    ):
+        # Same document changes in BOTH phase 1 (new version) and phase 1.5
+        # (related type) — it must appear in `changed` exactly once.
+        self._seed_with_related("ZAK1", ["JUDIKATURA"], baseline_vid="v1")
+        mock_all["versions_by_id"]["ZAK1"] = _versions("v2")  # phase-1 change
+        mock_all["related_changes"][("ZAK1", "JUDIKATURA")] = {
+            "change_type": "related_change",
+            "relation_type": "JUDIKATURA",
+            "relation_type_name": "Judikatura",
+            "added_docs": [{"docId": "A", "title": "Rozhodnutí A"}],
+            "removed_docs": [],
+        }
+        result = tracking.check()
+        # Both changes are still recorded on the document...
+        assert result["changes_found"] == 2
+        assert len(state.load_state("ZAK1")["changes"]) == 2
+        # ...but the doc appears only once in the notify-driving list.
+        assert result["changed"] == [{"codexisId": "ZAK1", "name": "Zákon ZAK1"}]
+
+    def test_multiple_related_types_deduped_to_one_entry(
+        self, dokumenty_app_dir, mock_all
+    ):
+        self._seed_with_related("ZAK1", ["JUDIKATURA", "PROVADECI_PREDPIS"])
+        mock_all["versions_by_id"]["ZAK1"] = _versions("v1")  # no version change
+        mock_all["related_changes"][("ZAK1", "JUDIKATURA")] = {
+            "change_type": "related_change", "relation_type": "JUDIKATURA",
+            "relation_type_name": "Judikatura",
+            "added_docs": [{"docId": "J1", "title": "J1"}], "removed_docs": [],
+        }
+        mock_all["related_changes"][("ZAK1", "PROVADECI_PREDPIS")] = {
+            "change_type": "related_change", "relation_type": "PROVADECI_PREDPIS",
+            "relation_type_name": "Prováděcí předpis",
+            "added_docs": [], "removed_docs": [{"docId": "P1", "title": "P1"}],
+        }
+        result = tracking.check()
+        assert result["changes_found"] == 2
+        assert result["changed"] == [{"codexisId": "ZAK1", "name": "Zákon ZAK1"}]
+
+    def test_distinct_docs_each_recorded(self, dokumenty_app_dir, mock_all):
+        _seed("ZAK1", baseline_vid="v1")
+        _seed("ZAK2", baseline_vid="v1")
+        mock_all["versions_by_id"]["ZAK1"] = _versions("v2")
+        mock_all["versions_by_id"]["ZAK2"] = _versions("v2")
+        result = tracking.check()
+        assert {c["codexisId"] for c in result["changed"]} == {"ZAK1", "ZAK2"}
+        assert len(result["changed"]) == 2

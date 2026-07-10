@@ -3,7 +3,7 @@ uuid: 4d8b61c5-641d-4201-85fe-259ca742eaeb
 name: kataster-sk
 icon: icon.svg
 description: Slovenský kataster nehnuteľností (ÚGKK SR). Use for Slovak parcel lookups — parcel number, cadastral unit (katastrálne územie), area (výmera), land use, register C/E parcels, and links to title deeds (list vlastníctva). Triggers on "kataster", "kataster nehnuteľností", "parcela", "parcelné číslo", "list vlastníctva", "LV", "katastrálne územie", "výmera pozemku", "pozemok na Slovensku", "ZBGIS", "ESKN", "kataster portál". Slovak (SK) jurisdiction only — for the Czech cadastre use the katastr skill.
-version: 1.3.0
+version: 1.3.1
 jurisdictions: [SK]
 i18n:
   cs:
@@ -27,9 +27,7 @@ the cadastre WAF requires.
 `curl` or any other tool against `skgeodesy.sk` directly — raw requests are
 rejected by the WAF. Assume `kataster-sk-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** If `kataster-sk-cli` outputs an `ERROR:` line, stop and report it
-to the user. The cadastre services are occasionally unstable (recovery from the
-January 2025 cyberattack) — do not retry blindly.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. The cadastre services are occasionally unstable (recovery from the January 2025 cyberattack), so a network `ERROR:` may be transient — report it, don't loop on it. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 

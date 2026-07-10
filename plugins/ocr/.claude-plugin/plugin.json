@@ -1,7 +1,7 @@
 {
   "name": "ocr",
   "iconPath": "icon.svg",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Document to Markdown conversion via OCR — supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
   "author": {
     "name": "ATLAS GROUP",

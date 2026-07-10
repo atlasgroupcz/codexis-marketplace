@@ -4,7 +4,7 @@ name: nrpzs
 icon: icon.svg
 jurisdictions: [CZ]
 description: Národní registr poskytovatelů zdravotních služeb (NRPZS, ÚZIS). Use for Czech healthcare-provider lookups by IČO, name, or obor péče — provider profile, places of care (adresa, kontakt, GPS, datová schránka), departments and office hours. Triggers on "NRPZS", "poskytovatel zdravotních služeb", "zdravotnické zařízení", "ordinace", "najdi lékaře/nemocnici", "obor péče", "ÚZIS", and IČO + zdravotnictví.
-version: 1.0.0
+version: 1.0.1
 i18n:
   cs:
     displayName: "NRPZS — poskytovatelé zdravotních služeb"
@@ -25,8 +25,7 @@ A single tool — **`nrpzs-cli`** — wraps the public NRPZS REST API
 **IMPORTANT:** The only tool in this skill is `nrpzs-cli`. Do NOT call `curl` or any
 other tool directly. Assume `nrpzs-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** If `nrpzs-cli` prints an `ERROR:` line, stop and report it to the
-user. Do NOT retry blindly.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output
 

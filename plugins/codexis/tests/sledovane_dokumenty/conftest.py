@@ -2,19 +2,15 @@
 
 import pytest
 
-from sledovane_dokumenty_core import folders
-
 
 @pytest.fixture
 def watched_root(tmp_path, monkeypatch, dokumenty_app_dir):
     """A tmp document tree under a tmp home, with app state isolated.
 
     `dokumenty_app_dir` (from the parent conftest) redirects state.APP_DIR, so the
-    watched-folders index + settings land in the tmp app dir. The automation
-    bootstrap is stubbed so tests never shell out to cdxctl.
+    watched-folders index + settings land in the tmp app dir.
     """
     monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
-    monkeypatch.setattr(folders, "ensure_folder_check_automation", lambda: None)
 
     root = tmp_path / "contracts"
     (root / "dogs").mkdir(parents=True)

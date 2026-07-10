@@ -94,6 +94,27 @@ export const configResponseSchema = z.object({
 })
 export type ConfigResponse = z.infer<typeof configResponseSchema>
 
+export const notifySettingsSchema = z.object({
+  email: z.boolean(),
+  inApp: z.boolean(),
+  recipients: z.array(z.string()).optional().default([]),
+})
+export type NotifySettingsValues = z.infer<typeof notifySettingsSchema>
+
+export const notifyResponseSchema = z.object({
+  mode: z.literal('notify'),
+  settings: notifySettingsSchema,
+  userEmail: z.string().optional().default(''),
+})
+export type NotifyResponse = z.infer<typeof notifyResponseSchema>
+
+export const saveNotifyResponseSchema = z.object({
+  ok: z.boolean(),
+  error: z.string().optional(),
+  settings: notifySettingsSchema.optional(),
+})
+export type SaveNotifyResponse = z.infer<typeof saveNotifyResponseSchema>
+
 export const detailResponseSchema = z.object({
   mode: z.literal('detail'),
   generated_at: z.string(),

@@ -1,5 +1,17 @@
-import { actionResponseSchema, detailResponseSchema, overviewResponseSchema, reportResponseSchema } from './schemas'
-import type { ActionResponse, DetailResponse, OverviewResponse, ReportResponse } from './schemas'
+import {
+  actionResponseSchema,
+  detailResponseSchema,
+  notifyResponseSchema,
+  overviewResponseSchema,
+  reportResponseSchema,
+} from './schemas'
+import type {
+  ActionResponse,
+  DetailResponse,
+  NotifySettingsValues,
+  OverviewResponse,
+  ReportResponse,
+} from './schemas'
 
 function getApiBase(): string {
   if (import.meta.env.DEV) {
@@ -48,6 +60,30 @@ export async function fetchReport(uuid: string, reportId: string): Promise<Repor
   }
   const json: unknown = await response.json()
   return reportResponseSchema.parse(json)
+}
+
+export async function fetchNotify(): Promise<{ settings: NotifySettingsValues; userEmail: string }> {
+  const url = new URL(getApiBase(), window.location.href)
+  url.searchParams.set('view', 'notify')
+  const response = await fetch(url.toString(), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  const json: unknown = await response.json()
+  const parsed = notifyResponseSchema.parse(json)
+  return { settings: parsed.settings, userEmail: parsed.userEmail }
+}
+
+export async function saveNotify(values: NotifySettingsValues): Promise<ActionResponse> {
+  return postAction({
+    action: 'save_notify_settings',
+    email: values.email,
+    inApp: values.inApp,
+    recipients: values.recipients,
+  })
 }
 
 export async function postAction(body: Record<string, unknown>): Promise<ActionResponse> {

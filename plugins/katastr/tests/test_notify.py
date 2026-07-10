@@ -1,5 +1,8 @@
 """notify: summary building + send gating (no network — _send_email is stubbed)."""
 
+import json
+from unittest.mock import patch
+
 import pytest
 
 from katastr_core import notify
@@ -53,18 +56,13 @@ class TestBuildSummary:
     def test_none_only_when_no_results(self):
         assert notify.build_summary([]) is None
 
-    def test_heartbeat_when_no_changes(self):
+    def test_no_email_when_no_changes(self):
         summary = notify.build_summary([_result("V-1/2026-701", change=None)])
-        assert summary is not None
-        subject, text, html = summary
-        assert "žádné nové změny" in subject.lower()
-        assert "Zkontrolováno" in text
+        assert summary is None
 
-    def test_heartbeat_notes_errors(self):
+    def test_no_email_when_only_errored_results(self):
         summary = notify.build_summary([_result("V-1/2026-701", ok=False, error="boom")])
-        assert summary is not None
-        _, text, _ = summary
-        assert "nezdařila" in text
+        assert summary is None
 
     def test_single_change_subject_and_body(self):
         r = _result(
@@ -89,17 +87,17 @@ class TestBuildSummary:
 
 
 class TestEmailChangeSummary:
-    def test_no_changes_sends_heartbeat(self, monkeypatch):
+    def test_no_changes_sends_nothing(self, monkeypatch):
         calls = []
         monkeypatch.setattr(notify, "_send_email", lambda *a, **k: calls.append((a, k)))
         n = notify.email_change_summary([_result("V-1/2026-701", change=None)])
         assert n == 0
-        assert len(calls) == 1
+        assert calls == []
 
     def test_empty_results_sends_nothing(self, monkeypatch):
         calls = []
         monkeypatch.setattr(notify, "_send_email", lambda *a, **k: calls.append((a, k)))
-        assert notify.email_change_summary([]) is None
+        assert notify.email_change_summary([]) == 0
         assert calls == []
 
     def test_sends_once_and_returns_count(self, monkeypatch):
@@ -155,3 +153,134 @@ class TestRecipients:
         cap = _stub_daemon(monkeypatch, tmp_path)
         notify._send_email("subj", "body")
         assert '"to"' not in cap["body"]
+
+
+# ── in-app (bell) notification ───────────────────────────────────────────────
+
+_RESULTS_WITH_CHANGE = [_result("V-1/2026-701", change=_change())]
+_RESULTS_NO_CHANGE = [_result("V-1/2026-701", change=None)]
+
+
+class TestInappChangeSummary:
+    def test_sends_subject_and_link_on_change(self, monkeypatch):
+        captured = {}
+
+        def fake_send_inapp(message, *, action=None, link=None):
+            captured["message"] = message
+            captured["action"] = action
+            captured["link"] = link
+            return True
+
+        monkeypatch.setattr(notify, "_send_inapp", fake_send_inapp)
+
+        sent = notify.inapp_change_summary(_RESULTS_WITH_CHANGE)
+
+        assert sent is True
+        expected_subject = notify._change_summary(notify._changed(_RESULTS_WITH_CHANGE))[0]
+        assert captured["message"] == expected_subject
+        assert captured["link"] == "/katastr"
+
+    def test_no_change_does_not_send(self, monkeypatch):
+        # No change: the bell stays silent — no _send_inapp call at all.
+        calls = []
+        monkeypatch.setattr(
+            notify, "_send_inapp", lambda *a, **k: calls.append((a, k)) or True
+        )
+
+        sent = notify.inapp_change_summary(_RESULTS_NO_CHANGE)
+
+        assert sent is False
+        assert calls == []
+
+
+# ── resolve_to (variant 2: signed-in user always included alongside extras) ──
+
+
+class TestResolveTo:
+    def test_resolve_to_empty_returns_none(self):
+        assert notify.resolve_to([]) is None
+        assert notify.resolve_to(None) is None
+
+    def test_resolve_to_prepends_signed_in_user_when_extras(self):
+        with patch.object(notify, "_query_me_email", return_value="me@firma.cz"):
+            assert notify.resolve_to(["a@x.cz"]) == ["me@firma.cz", "a@x.cz"]
+
+    def test_resolve_to_falls_back_to_extras_when_me_unavailable(self):
+        with patch.object(notify, "_query_me_email", return_value=None):
+            assert notify.resolve_to(["a@x.cz"]) == ["a@x.cz"]
+
+    def test_resolve_to_dedupes_signed_in_user_case_insensitive(self):
+        with patch.object(notify, "_query_me_email", return_value="me@x.cz"):
+            assert notify.resolve_to(["ME@X.cz", "a@x.cz"]) == ["me@x.cz", "a@x.cz"]
+
+
+class TestQueryMeEmail:
+    def test_none_when_daemon_url_missing(self, monkeypatch, tmp_path):
+        monkeypatch.delenv("CODEXIS_PUBLIC_DAEMON_URL", raising=False)
+        monkeypatch.setenv("HOME", str(tmp_path))
+        env_dir = tmp_path / ".cdx" / "env"
+        env_dir.mkdir(parents=True, exist_ok=True)
+        (env_dir / "secret").write_text("vm-token", encoding="utf-8")
+        assert notify._query_me_email() is None
+
+    def test_none_when_auth_missing(self, monkeypatch, tmp_path):
+        # No ~/.cdx/env/secret written → _load_auth() returns None.
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("CODEXIS_PUBLIC_DAEMON_URL", "http://daemon")
+        assert notify._query_me_email() is None
+
+    def test_parses_email_from_graphql_response(self, monkeypatch, tmp_path):
+        cap = _stub_daemon(monkeypatch, tmp_path)
+
+        class _Resp:
+            def read(self):
+                return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode("utf-8")
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def fake_urlopen(req, timeout=0):
+            cap["url"] = req.full_url
+            cap["auth"] = req.headers.get("Authorization")
+            return _Resp()
+
+        monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+        assert notify._query_me_email() == "me@firma.cz"
+        assert cap["url"] == "http://daemon"
+        assert cap["auth"] == "Bearer vm-token"
+
+    def test_none_on_transport_error(self, monkeypatch, tmp_path):
+        _stub_daemon(monkeypatch, tmp_path)
+
+        def fake_urlopen(req, timeout=0):
+            raise OSError("boom")
+
+        monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+        assert notify._query_me_email() is None
+
+    @pytest.mark.parametrize("raw", [b"null", b"[]", b'"string"'])
+    def test_none_on_non_dict_json_response(self, monkeypatch, tmp_path, raw):
+        # A gateway/proxy in maintenance mode can return syntactically valid JSON
+        # whose top level isn't an object (e.g. bare `null`, an array, or a string).
+        # json.load succeeds, so this must not crash on the subsequent .get() — it
+        # must return None.
+        _stub_daemon(monkeypatch, tmp_path)
+
+        class _Resp:
+            def read(self):
+                return raw
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def fake_urlopen(req, timeout=0):
+            return _Resp()
+
+        monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+        assert notify._query_me_email() is None

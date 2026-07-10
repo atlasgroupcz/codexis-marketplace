@@ -3,7 +3,7 @@ uuid: 1c427cf8-4d37-4304-b2e1-fbabf245dae4
 name: sledovane-dokumenty
 icon: icon.svg
 description: Track changes in Czech legislation via CODEXIS. Use when user wants to monitor laws, track amendments, or check for legislative changes.
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -21,11 +21,11 @@ i18n:
 
 Track changes in Czech legislation by monitoring CODEXIS documents for new versions and computing text diffs.
 
-**IMPORTANT:** The only tool in this skill is `cdx-sledovane-dokumenty`. Do NOT call `cdx-cli`, `cdxctl`, `curl`, or any other tool directly.
+**IMPORTANT:** For document data use only `cdx-sledovane-dokumenty` — do NOT call `cdx-cli`, `curl`, or any other data tool directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch document data.
 
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovane-dokumenty` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
-**IMPORTANT:** If `cdx-sledovane-dokumenty` outputs an ERROR, stop immediately and report it to the user. Do not retry or guess.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked document or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several documents, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
@@ -165,7 +165,7 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 ## Automations
 
-A periodic `cdx-sledovane-dokumenty check` automation is created automatically when the user adds a document. **Do NOT create additional automations**. The existing COMMAND automation handles periodic checks. The user views changes in the Sledované dokumenty UI component — there is no need for AI-generated reports via automation prompts.
+A periodic `cdx-sledovane-dokumenty check` automation ships with the plugin (`automations/check-dokumenty.md`) and runs on a schedule. **Do NOT create additional automations**. The existing COMMAND automation handles periodic checks. The user views changes in the Sledované dokumenty UI component — there is no need for AI-generated reports via automation prompts.
 
 ## Watched folders (legislation referenced by the user's own documents)
 
@@ -176,7 +176,7 @@ Sledované dokumenty app and starts extraction; everything below is also availab
 from the CLI.
 
 ```bash
-# Start watching a folder (scans files, computes checksums, bootstraps the daily check)
+# Start watching a folder (scans files, computes checksums; the daily check ships via automations/check-slozky.md)
 cdx-sledovane-dokumenty folder add /home/<user>/my-contracts --name "Smlouvy"
 
 # Harvest legislative references with AI (ONE pass per document, only docs that need it)

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, FileText, Scale, Trash2 } from 'lucide-react'
+import { FileText, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Textarea } from '@workspace/ui/components/textarea'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { Card, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card'
 import { ItemGroup } from '@workspace/ui/components/item'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { FeedItem } from './feed-item'
 import { NoReports } from './empty-state'
 import { LoadingSkeleton } from './loading-skeleton'
@@ -19,9 +20,10 @@ interface TopicDetailProps {
   uuid: string
   onBack: () => void
   onSelectReport: (reportId: string) => void
+  onOpenSettings: () => void
 }
 
-export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) {
+export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: TopicDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useTopicDetail(uuid)
   const [noteDraft, setNoteDraft] = useState<string | null>(null)
@@ -93,39 +95,33 @@ export function TopicDetail({ uuid, onBack, onSelectReport }: TopicDetailProps) 
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
-            <ArrowLeft className="size-4" />
-            <span className="hidden sm:inline">{t('judikatura.back')}</span>
-          </Button>
-          <span className="bg-secondary text-primary ring-brand-100 hidden size-9 shrink-0 items-center justify-center rounded-xl ring-1 sm:flex">
-            <Scale className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {topic.name}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {topic.last_check_at
-                ? `${t('judikatura.lastCheck')}: ${formatDate(topic.last_check_at)}`
-                : t('judikatura.areasCount', { count: topic.areas.length })}
-            </p>
-          </div>
-        </div>
-        <Button
-          variant={confirmRemove ? 'destructive' : 'outline'}
-          size="sm"
-          onClick={handleDelete}
-          disabled={removing}
-          data-testid="delete-topic"
-        >
-          <Trash2 className="size-4" />
-          <span className="hidden sm:inline">
-            {confirmRemove ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
-          </span>
-        </Button>
-      </header>
+      <AppHeader
+        back={{
+          onClick: onBack,
+          label: t('judikatura.back'),
+          title: topic.name,
+          subtitle: topic.last_check_at
+            ? `${t('judikatura.lastCheck')}: ${formatDate(topic.last_check_at)}`
+            : t('judikatura.areasCount', { count: topic.areas.length }),
+        }}
+        actions={
+          <>
+            <Button
+              variant={confirmRemove ? 'destructive' : 'outline'}
+              size="sm"
+              onClick={handleDelete}
+              disabled={removing}
+              data-testid="delete-topic"
+            >
+              <Trash2 className="size-4" />
+              <span className="hidden sm:inline">
+                {confirmRemove ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
+              </span>
+            </Button>
+            <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         <ScrollArea className="h-full">

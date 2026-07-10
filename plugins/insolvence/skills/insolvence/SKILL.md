@@ -21,11 +21,9 @@ i18n:
 A single tool — **`insolvence-cli`** — wraps the public ISIR web service (no API key) plus a
 stateful watchdog for insolvency subjects. Source: the public ISIR SOAP service at justice.cz.
 
-**IMPORTANT:** The only tool in this skill is `insolvence-cli`. Do NOT call `curl`, `cdxctl`, or
-any other tool directly. Assume `insolvence-cli` is installed and available in `PATH`.
+**IMPORTANT:** For insolvency data use only `insolvence-cli` — do NOT call `curl` or any other data tool directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch insolvency data. Assume both are installed and available in `PATH`.
 
-**IMPORTANT:** If `insolvence-cli` outputs an `ERROR:` line, stop and report it to the user.
-Do not retry blindly.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked subject or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several subjects, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output format
 
@@ -59,6 +57,7 @@ insolvence-cli sledovani <verb> ...         # stateful tracking of subjects
 "dej vědět, když", "přidej na hlídání".
 → `insolvence-cli sledovani add-firma <IČO> [--label "..."]`
 → `insolvence-cli sledovani add-osoba <PŘÍJMENÍ> <JMÉNO> <RRRR-MM-DD> [--label "..."]`
+`--label` applies only when first adding a subject; to change an existing label use `set-label`.
 
 **The user asks for a list of THEIR tracked subjects?**
 → `insolvence-cli sledovani list`
@@ -120,27 +119,32 @@ Stateful watchdog. State is stored in `~/.cdx/apps/insolvence/subjekty/`. A sing
 automation (`0 7 * * *`) runs `insolvence-cli sledovani check` daily to refresh all tracked
 subjects and record changes.
 
-### E-mailová upozornění (automatizace na míru)
+### E-mailová upozornění
 
-Když uživatel chce být na změny upozorňován e-mailem, spouštěj kontrolu s přepínačem `--email`:
+E-mailová upozornění jsou **trvalé nastavení** aplikace, ne přepínač na jednotlivý běh:
 
 ```bash
-insolvence-cli sledovani check --email
+insolvence-cli notify set --email      # zapnout
+insolvence-cli notify set --no-email   # vypnout
+insolvence-cli notify show             # zobrazit aktuální stav
 ```
 
-`--email` po kontrole pošle uživateli souhrnný e-mail, **pokud byly nalezeny nové změny** (beze
-změn se nic neposílá). E-mail jde automaticky na adresu přihlášeného uživatele — neřeš ani
-nepředávej žádnou adresu, token ani „secret", daemon je doplní sám.
+Když je nastavení zapnuté, `insolvence-cli sledovani check` po kontrole pošle uživateli souhrnný
+e-mail sám, **pokud byly nalezeny nové změny** (beze změn se nic neposílá). Žádný `--email`
+přepínač u `check` už neexistuje. E-mail jde automaticky na adresu přihlášeného uživatele — neřeš
+ani nepředávej žádnou adresu, token ani „secret", daemon je doplní sám.
 
 Když uživatel řekne např. *„hlídej IČO 04863313 a každý týden mi pošli e-mail s novými řízeními"*:
 
 1. Přidej subjekt(y) do sledování (`sledovani add-firma` / `add-osoba`).
-2. Vytvoř uživateli **automatizaci**, která spouští `insolvence-cli sledovani check --email`.
-   Výchozí frekvence je **týdně** (cron `0 7 * * 1`, pondělí ráno), pokud uživatel neřekne jinak.
-3. Stručně potvrď, co jsi nastavil (které subjekty, jak často, že upozornění chodí e-mailem).
+2. Zapni e-mailová upozornění: `insolvence-cli notify set --email`.
+3. Vytvoř uživateli **jednu** automatizaci, která spouští prostý `insolvence-cli sledovani check`
+   (přesně to dělá i dodávaná šablona `automations/check-insolvence.md`). Výchozí frekvence je
+   **týdně** (cron `0 7 * * 1`, pondělí ráno), pokud uživatel neřekne jinak.
+4. Stručně potvrď, co jsi nastavil (které subjekty, jak často, že upozornění chodí e-mailem).
 
-Tato automatizace si kontrolu provádí sama — neplánuj pro stejné subjekty zvlášť ještě `check`
-bez `--email`, jinak by změny zachytil ten dřívější běh a e-mail by nepřišel.
+Nevytvářej pro stejné subjekty druhou paralelní automatizaci — jedna `check` stačí, e-mail
+odešle sama, pokud je nastavení zapnuté.
 
 ### What changes are detected
 

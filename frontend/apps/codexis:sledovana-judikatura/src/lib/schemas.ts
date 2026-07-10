@@ -107,3 +107,17 @@ export const actionResponseSchema = z.object({
   error: z.string().optional(),
 })
 export type ActionResponse = z.infer<typeof actionResponseSchema>
+
+export const notifySettingsValuesSchema = z.object({
+  email: z.boolean(),
+  inApp: z.boolean(),
+  recipients: z.array(z.string()).optional().default([]),
+})
+export type NotifySettingsValues = z.infer<typeof notifySettingsValuesSchema>
+
+export const notifyResponseSchema = z.object({
+  mode: z.literal('notify'),
+  settings: notifySettingsValuesSchema,
+  userEmail: z.string().optional().default(''),
+})
+export type NotifyResponse = z.infer<typeof notifyResponseSchema>

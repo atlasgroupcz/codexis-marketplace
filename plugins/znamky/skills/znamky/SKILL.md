@@ -23,10 +23,9 @@ A single tool — **`znamky-cli`** — searches the public trademark registers v
 every hit for **verbal**, **phonetic** and **visual** similarity, and keeps a stateful watchdog for
 the marks a user wants to protect.
 
-**IMPORTANT:** The only tool in this skill is `znamky-cli`. Do NOT call `curl` or hit TMview/ÚPV
-directly. Assume `znamky-cli` is installed and on `PATH`.
+**IMPORTANT:** For trademark data use only `znamky-cli` — do NOT call `curl` or hit TMview/ÚPV directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch trademark data. Assume both are installed and on `PATH`.
 
-**IMPORTANT:** If `znamky-cli` prints an `ERROR:` line, stop and report it. Do not retry blindly.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked **word** mark (`add-text`), or removing a mark that isn't tracked, is a safe no-op (prints `OK:`) — but re-adding an already-tracked **logo** (`add-logo`) is NOT deduped and creates a duplicate. When acting on several marks, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output format
 
@@ -63,6 +62,7 @@ strongest ones.
 "chraň", "dej vědět, když někdo zaregistruje podobnou".
 → `znamky-cli sledovani add-text "<NÁZEV>" --nice 9,42 --territory CZ,EU [--owner "..."] [--label "..."]`
 → `znamky-cli sledovani add-logo <CESTA> [--text "..."] --nice ... --territory ... [--vienna ...] [--label "..."]`
+`--label` applies only when first adding a subject; to change an existing label use `set-label`.
 
 `--owner` is the mark owner's name — used to recognise the user's own marks among the hits.
 
@@ -127,24 +127,30 @@ record newly appeared similar marks.
 
 ### E-mailová upozornění (automatizace na míru)
 
-When the user wants e-mail alerts, run the check with `--email`:
+E-mail alerts are a **persistent setting** for the app, not a per-run flag:
 
 ```bash
-znamky-cli sledovani check --email
+znamky-cli notify set --email      # turn on
+znamky-cli notify set --no-email   # turn off
+znamky-cli notify show             # show current status
 ```
 
-`--email` sends a summary **only if new collisions were found**. It goes to the signed-in user's
-address automatically — never handle an address, token or secret.
+When the setting is on, `znamky-cli sledovani check` e-mails a summary itself after the check,
+**only if new collisions were found** (nothing is sent when there's no change). The `--email` flag
+on `check` no longer exists. The e-mail goes automatically to the signed-in user's address — never
+handle or pass an address, token or secret.
 
 When the user says e.g. *„hlídej značku CODEXIS ve třídách 9 a 42 a jednou týdně mi pošli e-mail"*:
 
 1. Add the mark(s) (`sledovani add-text` / `add-logo`).
-2. Create an **automation** running `znamky-cli sledovani check --email`. Default cadence is
-   **weekly** (cron `0 7 * * 1`, Monday morning) unless the user says otherwise.
-3. Briefly confirm what you set up (which marks, how often, that alerts go by e-mail).
+2. Turn on e-mail alerts: `znamky-cli notify set --email`.
+3. Create **one** automation running plain `znamky-cli sledovani check` (the shipped
+   `automations/check-znamky.md` template already does this). Default cadence is **weekly**
+   (cron `0 7 * * 1`, Monday morning) unless the user says otherwise.
+4. Briefly confirm what you set up (which marks, how often, that alerts go by e-mail).
 
-That automation does its own check — don't also schedule a plain `check` for the same marks, or the
-earlier run would consume the changes and the e-mail wouldn't arrive.
+Don't create a second parallel automation for the same marks — one plain `check` is enough; it
+sends the e-mail itself when the setting is on.
 
 ---
 

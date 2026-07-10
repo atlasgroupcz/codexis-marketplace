@@ -6,7 +6,6 @@ use std::process::Command;
 
 // OCR endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see ocr_endpoint().
 const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
-const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 
 fn percent_encode(input: &[u8]) -> String {
     let mut out = String::with_capacity(input.len() * 3);
@@ -23,22 +22,14 @@ fn percent_encode(input: &[u8]) -> String {
     out
 }
 
-fn load_api_jwt_auth() -> String {
-    // Match cdxctl/all plugins: read the daemon JWT from the per-user secret file
-    // (~/.cdx/env/secret) first, fall back to the env var, and always send it as a
-    // Bearer token.
+fn load_daemon_auth() -> String {
+    // Daemon/gateway auth is the VM token in ~/.cdx/env/secret (the same token
+    // cdxctl reads), sent as a Bearer token. NOT CODEXIS_USER_API_TOKEN — that JWT
+    // is for external Codexis sources and the gateway rejects it (403).
     if let Some(secret) = read_secret_file() {
         return ensure_bearer_prefix(&secret);
     }
-    if let Ok(val) = env::var(CODEXIS_USER_API_TOKEN_ENV) {
-        if !val.is_empty() {
-            return ensure_bearer_prefix(&val);
-        }
-    }
-    eprintln!(
-        "error: no auth (tried ~/{} and ${})",
-        SECRET_FILE_RELATIVE, CODEXIS_USER_API_TOKEN_ENV
-    );
+    eprintln!("error: no daemon auth (missing ~/{})", SECRET_FILE_RELATIVE);
     std::process::exit(2);
 }
 
@@ -58,7 +49,7 @@ fn ensure_bearer_prefix(value: &str) -> String {
     if let Some(stripped) = s.strip_prefix("Authorization:") {
         s = stripped.trim();
     }
-    if s.len() >= 7 && s[..7].eq_ignore_ascii_case("Bearer ") {
+    if s.len() >= 7 && s.as_bytes()[..7].eq_ignore_ascii_case(b"Bearer ") {
         s.to_string()
     } else {
         format!("Bearer {}", s)
@@ -124,7 +115,7 @@ fn main() {
         std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
     }
 
-    let daemon_auth = load_api_jwt_auth();
+    let daemon_auth = load_daemon_auth();
 
     let path = &args[0];
     let encoded_path = percent_encode(path.as_bytes());

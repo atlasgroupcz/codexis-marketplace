@@ -21,7 +21,7 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} />,
+      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} onOpenSettings={vi.fn()} />,
     )
 
     await waitFor(() => {
@@ -40,7 +40,7 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} />,
+      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} onOpenSettings={vi.fn()} />,
     )
 
     await waitFor(() => {
@@ -61,7 +61,7 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="6a6de088-1909-4d80-a764-d2fcb8ec4eb2" onBack={onBack} />,
+      <DocumentDetail uuid="6a6de088-1909-4d80-a764-d2fcb8ec4eb2" onBack={onBack} onOpenSettings={vi.fn()} />,
     )
 
     await waitFor(() => {
@@ -82,7 +82,7 @@ describe('DocumentDetail', () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} />,
+      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} onOpenSettings={vi.fn()} />,
     )
 
     await waitFor(() => {
@@ -105,7 +105,7 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="nonexistent" onBack={onBack} />,
+      <DocumentDetail uuid="nonexistent" onBack={onBack} onOpenSettings={vi.fn()} />,
     )
 
     await waitFor(() => {

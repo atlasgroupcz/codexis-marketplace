@@ -4,9 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { Plus, RefreshCw, ShieldAlert } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { NotifySettings } from '@workspace/ui/components/notify-settings'
+import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
+import type { NotifyValues } from '@/lib/schemas'
+import { checkAll, saveNotify } from '@/lib/api'
 import { uuidParser } from '@/lib/url-state'
 import { useOverview } from '@/hooks/use-overview'
-import { checkAll } from '@/lib/api'
+import { useNotify } from '@/hooks/use-notify'
 import { SubjectList } from '@/components/subject-list'
 import { SubjectDetail } from '@/components/subject-detail'
 import { AddSubjectDialog } from '@/components/add-subject-dialog'
@@ -14,15 +19,47 @@ import { EmptySubjects, NoSelection } from '@/components/empty-state'
 import { DetailSkeleton, ListSkeleton } from '@/components/loading-skeleton'
 import { ErrorMessage } from '@/components/error-message'
 
+const emptyNotifyValues: NotifyValues = { email: false, inApp: false, recipients: [] }
+
 export function App() {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
+  const { data: notifyData, refetch: refetchNotify } = useNotify()
   const [selectedUuid, setSelectedUuid] = useQueryState('uuid', uuidParser)
   const [addOpen, setAddOpen] = useState(false)
   const [checking, setChecking] = useState(false)
   const [detailNonce, setDetailNonce] = useState(0)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [notifySaving, setNotifySaving] = useState(false)
 
   const subjects = data?.subjects ?? []
+
+  const notifyLabels: NotifyLabels = {
+    title: t('notify.title'),
+    description: t('notify.description'),
+    save: t('notify.save'),
+    cancel: t('common.cancel'),
+    emailLabel: t('notify.emailLabel'),
+    emailDescription: t('notify.emailDescription'),
+    yourAddressLabel: t('notify.yourAddressLabel'),
+    copyToLabel: t('notify.copyToLabel'),
+    addRecipient: t('notify.addRecipient'),
+    removeRecipient: t('notify.removeRecipient'),
+    addPlaceholder: t('notify.addPlaceholder'),
+    invalidEmail: t('notify.invalidEmail'),
+    ownAddress: t('notify.ownAddress'),
+    duplicate: t('notify.duplicate'),
+    inAppLabel: t('notify.inAppLabel'),
+    inAppDescription: t('notify.inAppDescription'),
+  }
+
+  const handleSaveNotify = (values: NotifyValues) => {
+    setNotifySaving(true)
+    saveNotify(values)
+      .then(() => refetchNotify())
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
+      .finally(() => setNotifySaving(false))
+  }
 
   const handleCheckAll = () => {
     setChecking(true)
@@ -44,39 +81,30 @@ export function App() {
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="bg-secondary text-primary ring-brand-100 flex size-9 items-center justify-center rounded-xl ring-1">
-            <ShieldAlert className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('app.title')}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {t('app.subtitle')}
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {subjects.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCheckAll}
-              disabled={checking}
-              data-testid="check-all"
-            >
-              <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{t('app.checkAll')}</span>
+      <AppHeader
+        brand={{ icon: ShieldAlert, title: t('app.title'), subtitle: t('app.subtitle') }}
+        actions={
+          <>
+            {subjects.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCheckAll}
+                disabled={checking}
+                data-testid="check-all"
+              >
+                <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{t('app.checkAll')}</span>
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setAddOpen(true)} data-testid="add-subject">
+              <Plus className="size-4" />
+              <span className="hidden sm:inline">{t('app.add')}</span>
             </Button>
-          )}
-          <Button size="sm" onClick={() => setAddOpen(true)} data-testid="add-subject">
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">{t('app.add')}</span>
-          </Button>
-        </div>
-      </header>
+            <HeaderGear onClick={() => setSettingsOpen(true)} title={t('notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         {loading && !data ? (
@@ -130,6 +158,15 @@ export function App() {
           refetch()
           if (uuid) void setSelectedUuid(uuid)
         }}
+      />
+      <NotifySettings
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        values={notifyData?.settings ?? emptyNotifyValues}
+        userEmail={notifyData?.userEmail ?? ''}
+        labels={notifyLabels}
+        saving={notifySaving}
+        onSave={handleSaveNotify}
       />
       <Toaster position="bottom-right" />
     </div>

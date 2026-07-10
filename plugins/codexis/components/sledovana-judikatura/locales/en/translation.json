@@ -77,6 +77,24 @@
       "step3Text": "A clear summary of new rulings, by email if you like.",
       "chatLead": "Write in chat, for example:",
       "chatPrompt": "Track case law on employment law from the Supreme and Constitutional Courts, check weekly, and email me a summary of new decisions."
+    },
+    "notify": {
+      "title": "Case-law settings",
+      "description": "How we notify you about changes.",
+      "save": "Save",
+      "emailLabel": "E-mail on change",
+      "emailDescription": "A summary of changes arrives by e-mail.",
+      "yourAddressLabel": "Your address",
+      "copyToLabel": "Copy to",
+      "addRecipient": "Add recipient",
+      "removeRecipient": "Remove",
+      "addPlaceholder": "name@company.com",
+      "invalidEmail": "Invalid e-mail address.",
+      "inAppLabel": "In the notification center",
+      "inAppDescription": "",
+      "saved": "Notification settings saved",
+      "ownAddress": "That's your address — you always get the e-mail.",
+      "duplicate": "That address is already in the list."
     }
   }
 }

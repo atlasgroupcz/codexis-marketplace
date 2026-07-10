@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchDetail, fetchOverview } from '@/lib/api'
+import { fetchDetail, fetchNotify, fetchOverview, saveNotify } from '@/lib/api'
 import { detailFixture, overviewFixture } from '@/test/fixtures'
 
 beforeEach(() => {
@@ -98,5 +98,85 @@ describe('fetchDetail', () => {
     )
 
     await expect(fetchDetail('any-uuid')).rejects.toThrow('HTTP 500')
+  })
+})
+
+describe('fetchNotify', () => {
+  it('returns parsed notify settings and userEmail on success', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            mode: 'notify',
+            settings: { email: true, inApp: false, recipients: ['a@b.cz'] },
+            userEmail: 'me@example.com',
+          }),
+      }),
+    )
+
+    const result = await fetchNotify()
+    expect(result.userEmail).toBe('me@example.com')
+    expect(result.settings).toEqual({ email: true, inApp: false, recipients: ['a@b.cz'] })
+  })
+
+  it('requests the notify view', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          mode: 'notify',
+          settings: { email: true, inApp: true, recipients: [] },
+          userEmail: '',
+        }),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    await fetchNotify()
+    const calledUrl = mockFetch.mock.calls[0][0] as string
+    expect(calledUrl).toContain('view=notify')
+  })
+
+  it('propagates HTTP errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Internal Server Error' }),
+    )
+
+    await expect(fetchNotify()).rejects.toThrow('HTTP 500')
+  })
+})
+
+describe('saveNotify', () => {
+  it('posts save_notify_settings with the given values', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ok: true }),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    const result = await saveNotify({ email: true, inApp: false, recipients: ['x@y.cz'] })
+    expect(result.ok).toBe(true)
+
+    const body = JSON.parse((mockFetch.mock.calls[0][1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >
+    expect(body).toEqual({
+      action: 'save_notify_settings',
+      email: true,
+      inApp: false,
+      recipients: ['x@y.cz'],
+    })
+  })
+
+  it('propagates HTTP errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 400, statusText: 'Bad Request' }),
+    )
+
+    await expect(saveNotify({ email: true, inApp: true, recipients: [] })).rejects.toThrow('HTTP 400')
   })
 })

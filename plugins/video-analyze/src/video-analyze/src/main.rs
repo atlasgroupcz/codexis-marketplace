@@ -9,7 +9,6 @@ const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
 const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
-const CODEXIS_USER_API_TOKEN_ENV: &str = "CODEXIS_USER_API_TOKEN";
 // Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see upload_endpoint().
 
 const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
@@ -44,7 +43,7 @@ fn main() {
         }
         let source = &args[1];
         let api_key = load_api_key();
-        let daemon_auth = load_api_jwt_auth();
+        let daemon_auth = load_daemon_auth();
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
@@ -81,7 +80,7 @@ fn main() {
         let source = &args[0];
         let query = args[1..].join(" ");
         let api_key = load_api_key();
-        let daemon_auth = load_api_jwt_auth();
+        let daemon_auth = load_daemon_auth();
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
@@ -144,23 +143,15 @@ fn load_api_key() -> String {
     std::process::exit(2);
 }
 
-fn load_api_jwt_auth() -> String {
-    // Daemon JWT (for the upload endpoint): read the per-user secret file
-    // (~/.cdx/env/secret) first, fall back to the env var, send as Bearer —
-    // same as cdxctl/all plugins. The LiteLLM key still comes from the env
-    // var (CODEXIS_USER_LITELLM_API_KEY) via load_api_key.
+fn load_daemon_auth() -> String {
+    // Daemon auth for the upload endpoint: the VM token in ~/.cdx/env/secret (the
+    // same token cdxctl reads), sent as Bearer. NOT CODEXIS_USER_API_TOKEN — that
+    // JWT is for external Codexis sources and the gateway rejects it (403). The
+    // LiteLLM key is separate (CODEXIS_USER_LITELLM_API_KEY, via load_api_key).
     if let Some(secret) = read_secret_file() {
         return ensure_bearer_prefix(&secret);
     }
-    if let Ok(val) = env::var(CODEXIS_USER_API_TOKEN_ENV) {
-        if !val.is_empty() {
-            return ensure_bearer_prefix(&val);
-        }
-    }
-    eprintln!(
-        "error: no auth (tried ~/{} and ${})",
-        SECRET_FILE_RELATIVE, CODEXIS_USER_API_TOKEN_ENV
-    );
+    eprintln!("error: no daemon auth (missing ~/{})", SECRET_FILE_RELATIVE);
     std::process::exit(2);
 }
 
@@ -180,7 +171,7 @@ fn ensure_bearer_prefix(value: &str) -> String {
     if let Some(stripped) = s.strip_prefix("Authorization:") {
         s = stripped.trim();
     }
-    if s.len() >= 7 && s[..7].eq_ignore_ascii_case("Bearer ") {
+    if s.len() >= 7 && s.as_bytes()[..7].eq_ignore_ascii_case(b"Bearer ") {
         s.to_string()
     } else {
         format!("Bearer {}", s)

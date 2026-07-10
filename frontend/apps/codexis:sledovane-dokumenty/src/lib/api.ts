@@ -4,6 +4,7 @@ import {
   detailResponseSchema,
   folderResponseSchema,
   foldersResponseSchema,
+  notifyResponseSchema,
   overviewResponseSchema,
 } from './schemas'
 import type {
@@ -12,6 +13,8 @@ import type {
   DetailResponse,
   FolderResponse,
   FoldersResponse,
+  NotifyResponse,
+  NotifySettings,
   OverviewResponse,
 } from './schemas'
 
@@ -134,6 +137,14 @@ async function getJson(url: string): Promise<unknown> {
 
 export async function fetchFolders(): Promise<FoldersResponse> {
   return foldersResponseSchema.parse(await getJson(withParams({ view: 'folders' })))
+}
+
+export async function fetchNotify(): Promise<NotifyResponse> {
+  return notifyResponseSchema.parse(await getJson(withParams({ view: 'notify' })))
+}
+
+export async function saveNotify(values: NotifySettings): Promise<ActionResponse> {
+  return postFolderAction('save_notify_settings', values)
 }
 
 export async function fetchFolder(root: string): Promise<FolderResponse> {

@@ -3,7 +3,7 @@ uuid: 9a4c1f72-6b8e-4d03-a5f1-2c7b0e9d6a48
 name: rzpro
 icon: icon.svg
 description: Registr zdravotnických prostředků (RZPRO, KSRZIS). Use for Czech medical device lookups by device name or evidence number — manufacturer, device kind, risk class, intended purpose, notified body, variants/catalogue numbers, and registered persons and their activities. Triggers on "zdravotnický prostředek", "RZPRO", "evidenční číslo", "notifikovaný prostředek", "výrobce zdravotnických prostředků", "registr ZP", "najdi prostředek", "diagnostický prostředek", "IVD".
-version: 1.0.0
+version: 1.0.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -26,8 +26,7 @@ index built from the downloaded CSV files.
 **IMPORTANT:** The only tool in this skill is `rzpro-cli`. Do NOT call `curl` or any
 other tool. Assume `rzpro-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** When `rzpro-cli` prints `ERROR:` (e.g. `no device with Evidenční číslo …`),
-stop and report it to the user. Do NOT blindly retry.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `no device with Evidenční číslo …`, bad input, network) — report it, don't guess workarounds and don't blindly retry. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Keys
 

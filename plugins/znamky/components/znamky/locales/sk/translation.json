@@ -6,24 +6,52 @@
     "close": "Zavrieť"
   },
   "settings": {
-    "title": "Nastavenie prístupu (EUIPO)",
-    "description": "Pre reálne dáta zadajte svoje EUIPO API credentials. Získate ich zdarma na dev.euipo.europa.eu.",
     "getKey": "Získať kľúče na dev.euipo.europa.eu",
     "clientId": "EUIPO client_id",
     "clientSecret": "EUIPO client_secret",
-    "currentKey": "Nastavené",
-    "save": "Uložiť a overiť",
-    "saving": "Overujem…",
     "saved": "Prístup uložený.",
-    "saveError": "Kľúče sa nepodarilo uložiť.",
-    "deleteKey": "Odobrať kľúče",
-    "deleting": "Odoberám…"
+    "saveError": "Kľúče sa nepodarilo uložiť."
   },
   "config": {
     "title": "Najprv nastavte aplikáciu",
     "text": "Hliadač čerpá dáta z oficiálneho EUIPO API. Zadajte svoje vlastné EUIPO API credentials (zdarma, ~5 minút na dev.euipo.europa.eu) — bez nich nie je možné prehľadávať register.",
     "action": "Nastaviť prístup",
-    "hint": "Kľúče sa ukladajú len do tvojho priestoru (~/.cdx) a používajú sa na dopyty na EUIPO."
+    "hint": "Kľúče sa ukladajú len do vášho priestoru (~/.cdx) a používajú sa na dopyty na EUIPO."
+  },
+  "notify": {
+    "title": "Nastavenie známok",
+    "description": "Upozornenia a prístup k EUIPO.",
+    "save": "Uložiť",
+    "cancel": "Zrušiť",
+    "emailLabel": "E-mail pri zmene",
+    "emailDescription": "Súhrn zmien príde e-mailom.",
+    "yourAddressLabel": "Vaša adresa",
+    "copyToLabel": "Kópia na",
+    "addRecipient": "Pridať príjemcu",
+    "removeRecipient": "Odobrať",
+    "addPlaceholder": "meno@firma.sk",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámenie v centre notifikácií",
+    "inAppDescription": "",
+    "section": "Oznámenia",
+    "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+    "duplicate": "Táto adresa už je v zozname."
+  },
+  "connection": {
+    "connected": "Pripojené",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "save": "Uložiť",
+    "saving": "Overujem…",
+    "notConnected": "Nepripojené k EUIPO",
+    "currentKey": "Prístup nastavený",
+    "change": "Zmeniť",
+    "disconnect": "Odpojiť",
+    "disconnecting": "Odpájam…",
+    "connect": "Pripojiť",
+    "connecting": "Pripájam…",
+    "cancel": "Zrušiť",
+    "section": "Pripojenie k EUIPO"
   },
   "app": {
     "title": "Hliadač ochranných známok",

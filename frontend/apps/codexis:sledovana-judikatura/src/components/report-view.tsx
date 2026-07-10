@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, ExternalLink, Scale } from 'lucide-react'
+import { Check, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Badge } from '@workspace/ui/components/badge'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
@@ -30,13 +31,14 @@ interface ReportViewProps {
   uuid: string
   reportId: string
   onBack: () => void
+  onOpenSettings: () => void
 }
 
 function codexisUrl(codexisId: string): string {
   return `https://next.codexis.cz/doc/${codexisId}`
 }
 
-export function ReportView({ uuid, reportId, onBack }: ReportViewProps) {
+export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportViewProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useReport(uuid, reportId)
 
@@ -75,33 +77,29 @@ export function ReportView({ uuid, reportId, onBack }: ReportViewProps) {
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 shrink-0">
-            <ArrowLeft className="size-4" />
-            <span className="hidden sm:inline">{t('judikatura.back')}</span>
-          </Button>
-          <span className="bg-secondary text-primary ring-brand-100 hidden size-9 shrink-0 items-center justify-center rounded-xl ring-1 sm:flex">
-            <Scale className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('judikatura.report')} {report.checked_at ? formatDate(report.checked_at) : reportId}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">{topic.name}</p>
-          </div>
-        </div>
-        {report.confirmed_on ? (
-          <Badge variant="outline" className="shrink-0">
-            <Check className="size-3.5" />
-            {t('judikatura.confirmed')}
-          </Badge>
-        ) : (
-          <Button size="sm" onClick={() => void handleConfirm()}>
-            {t('judikatura.confirmReport')}
-          </Button>
-        )}
-      </header>
+      <AppHeader
+        back={{
+          onClick: onBack,
+          label: t('judikatura.back'),
+          title: `${t('judikatura.report')} ${report.checked_at ? formatDate(report.checked_at) : reportId}`,
+          subtitle: topic.name,
+        }}
+        actions={
+          <>
+            {report.confirmed_on ? (
+              <Badge variant="outline" className="shrink-0">
+                <Check className="size-3.5" />
+                {t('judikatura.confirmed')}
+              </Badge>
+            ) : (
+              <Button size="sm" onClick={() => void handleConfirm()}>
+                {t('judikatura.confirmReport')}
+              </Button>
+            )}
+            <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         <ScrollArea className="h-full">

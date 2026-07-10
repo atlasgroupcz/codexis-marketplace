@@ -22,7 +22,6 @@ if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
 from katastr_core import tracking
-from _helpers import _cuzk_record  # noqa: F401 (re-exported for convenience)
 
 
 @pytest.fixture
