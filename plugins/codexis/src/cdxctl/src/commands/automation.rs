@@ -5,6 +5,32 @@ use crate::graphql;
 use crate::output::{print_output, OutputFormat};
 use serde_json::{json, Value};
 
+/// Fields for creating an AGENT automation.
+pub struct CreateArgs<'a> {
+    pub title: &'a str,
+    pub cron: &'a str,
+    pub prompt: &'a str,
+    pub description: Option<&'a str>,
+    pub agent: Option<&'a str>,
+    pub skills: &'a [String],
+    pub max_turns: Option<u32>,
+    pub work_dir: Option<&'a str>,
+    pub disabled: bool,
+}
+
+/// Fields for a partial automation update. `None` fields keep their current value.
+pub struct UpdateArgs<'a> {
+    pub id: &'a str,
+    pub title: Option<&'a str>,
+    pub cron: Option<&'a str>,
+    pub prompt: Option<&'a str>,
+    pub description: Option<&'a str>,
+    pub agent: Option<&'a str>,
+    pub skills: Option<&'a [String]>,
+    pub max_turns: Option<u32>,
+    pub work_dir: Option<&'a str>,
+}
+
 pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::GET_AUTOMATIONS, json!({}))?;
     let mut automations = data
@@ -21,17 +47,20 @@ pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlEr
 
 pub fn create(
     client: &GraphQLClient,
-    title: &str,
-    cron: &str,
-    prompt: &str,
-    description: Option<&str>,
-    agent: Option<&str>,
-    skills: &[String],
-    max_turns: Option<u32>,
-    work_dir: Option<&str>,
-    disabled: bool,
+    args: CreateArgs,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let CreateArgs {
+        title,
+        cron,
+        prompt,
+        description,
+        agent,
+        skills,
+        max_turns,
+        work_dir,
+        disabled,
+    } = args;
     let mut input = json!({
         "title": title,
         "cron": cron,
@@ -92,18 +121,20 @@ pub fn create_command(
 
 pub fn update(
     client: &GraphQLClient,
-    id: &str,
-    title: Option<&str>,
-    cron: Option<&str>,
-    prompt: Option<&str>,
-    description: Option<&str>,
-    agent: Option<&str>,
-    skills: Option<&[String]>,
-    max_turns: Option<u32>,
-    work_dir: Option<&str>,
-    enabled: Option<bool>,
+    args: UpdateArgs,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let UpdateArgs {
+        id,
+        title,
+        cron,
+        prompt,
+        description,
+        agent,
+        skills,
+        max_turns,
+        work_dir,
+    } = args;
     let node_id = resolve_node_id(id, "Automation");
 
     // Fetch current automation to merge with
@@ -132,7 +163,10 @@ pub fn update(
         "type": auto_type,
         "title": title.map(String::from).or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
         "cron": cron.map(String::from).or_else(|| current.get("cron").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
-        "enabled": json!(enabled.or_else(|| current.get("enabled").and_then(|v| v.as_bool())).unwrap_or(true)),
+        // `update` never changes the enabled flag — preserve the current value.
+        // Toggling enabled goes through `enable`/`disable` (setAutomationEnabled),
+        // which also works for read-only carried automations.
+        "enabled": json!(current.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)),
         "description": description.map(String::from).or_else(|| current.get("description").and_then(|v| v.as_str()).map(String::from)),
     });
 
@@ -169,7 +203,12 @@ pub fn update(
             ),
         };
 
-        input["maxTurns"] = json!(max_turns.or_else(|| current.get("maxTurns").and_then(|v| v.as_u64()).map(|v| v as u32)).unwrap_or(20));
+        input["maxTurns"] = json!(max_turns
+            .or_else(|| current
+                .get("maxTurns")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32))
+            .unwrap_or(20));
     }
 
     input["workDir"] = work_dir
@@ -207,6 +246,29 @@ pub fn trigger(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result
     let data = client.execute(graphql::TRIGGER_AUTOMATION, json!({ "id": node_id }))?;
     let result = data
         .get("triggerAutomation")
+        .cloned()
+        .unwrap_or(Value::Null);
+    print_output(&result, format);
+    Ok(())
+}
+
+/// Enable or disable an automation via the daemon's dedicated `setAutomationEnabled`
+/// mutation. Works for USER automations and for read-only carried (plugin/marketplace)
+/// automations alike — the latter persist a per-user enabled override. This is the
+/// only way to disable a shipped plugin automation; `update` cannot (USER-only guard).
+pub fn set_enabled(
+    client: &GraphQLClient,
+    id: &str,
+    enabled: bool,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let node_id = resolve_node_id(id, "Automation");
+    let data = client.execute(
+        graphql::SET_AUTOMATION_ENABLED,
+        json!({ "id": node_id, "enabled": enabled }),
+    )?;
+    let result = data
+        .get("setAutomationEnabled")
         .cloned()
         .unwrap_or(Value::Null);
     print_output(&result, format);
@@ -294,7 +356,10 @@ mod tests {
         flatten_automation(&mut value);
         assert_eq!(value["agentFullName"], json!("codexis:explorer"));
         assert_eq!(value["agentId"], json!("Agent:a"));
-        assert_eq!(value["skillFullNames"], json!(["codexis:research", "writer"]));
+        assert_eq!(
+            value["skillFullNames"],
+            json!(["codexis:research", "writer"])
+        );
         assert_eq!(value["skillIds"], json!(["Skill:s1", "Skill:s2"]));
         assert!(value.get("agent").is_none());
         assert!(value.get("skills").is_none());
