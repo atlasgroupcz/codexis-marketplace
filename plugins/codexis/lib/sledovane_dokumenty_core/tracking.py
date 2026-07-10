@@ -4,28 +4,18 @@ Also hosts groups + notes CRUD and the check-automation bootstrap, since those
 are small conveniences that don't justify their own modules.
 """
 
-import json
 import os
 import shutil
-import subprocess
 import uuid as uuid_mod
 
 from . import clients, diff, related, state
 from .exceptions import (
     DocumentAlreadyTrackedError,
-    DocumentError,
     DocumentNotFoundError,
     DocumentNotTrackedError,
     GroupNotFoundError,
-    LlmDaemonError,
 )
 from .state import now_utc
-
-CDXCTL_BIN = "cdxctl"
-CHECK_AUTOMATION_TITLE = "Sledované dokumenty – kontrola změn"
-CHECK_AUTOMATION_CRON = "0 8 * * 1"
-CHECK_AUTOMATION_COMMAND = "cdx-sledovane-dokumenty check"
-CHECK_AUTOMATION_DESC = "Pravidelná kontrola sledovaných dokumentů v CODEXIS."
 
 
 # ── add / remove / list / show ───────────────────────────────────────────────
@@ -65,7 +55,6 @@ def add(codexis_id, parts=None):
         "changes": [],
     }
     state.save_state(codexis_id, s)
-    ensure_check_automation()
     return s
 
 
@@ -140,9 +129,11 @@ def show(codexis_id):
 def check(codexis_id=None, printer=None):
     """Run check over one or all tracked documents.
 
-    Returns {"checked": int, "changes_found": int, "errors": [str]}.
-    Use `printer` to surface progress (e.g. print). Never raises on per-doc
-    failures — those go into `errors`.
+    Returns {"checked": int, "changes_found": int, "errors": [str], "changed": [...]}.
+    `changed` lists {"codexisId", "name"} for each document with a newly
+    recorded change this run (used to drive notifications). Use `printer` to
+    surface progress (e.g. print). Never raises on per-doc failures — those
+    go into `errors`.
     """
     def _log(msg):
         if printer:
@@ -157,6 +148,8 @@ def check(codexis_id=None, printer=None):
 
     errors = []
     changes_found = 0
+    changed = []
+    seen = set()  # codexisIds already in `changed` — one entry per document
 
     # Phase 1: new versions
     for cid in ids:
@@ -217,6 +210,9 @@ def check(codexis_id=None, printer=None):
         })
         s["changes"] = changes
         state.save_state(cid, s)
+        if cid not in seen:
+            seen.add(cid)
+            changed.append({"codexisId": cid, "name": name})
 
     # Phase 1.5: related changes
     for cid in ids:
@@ -238,6 +234,9 @@ def check(codexis_id=None, printer=None):
             if not change:
                 continue
             changes_found += 1
+            if cid not in seen:
+                seen.add(cid)
+                changed.append({"codexisId": cid, "name": name})
             _log(
                 f"  {name}: ZMĚNA v {change['relation_type_name']} "
                 f"(+{len(change['added_docs'])}, -{len(change['removed_docs'])})"
@@ -251,7 +250,12 @@ def check(codexis_id=None, printer=None):
     # Phase 2: generate pending AI summaries
     summarize_pending(printer=printer)
 
-    return {"checked": len(ids), "changes_found": changes_found, "errors": errors}
+    return {
+        "checked": len(ids),
+        "changes_found": changes_found,
+        "errors": errors,
+        "changed": changed,
+    }
 
 
 # ── confirm ──────────────────────────────────────────────────────────────────
@@ -459,45 +463,3 @@ def note_remove(codexis_id, index):
     s["user_notes"] = notes
     state.save_state(codexis_id, s)
     return removed
-
-
-# ── automation ───────────────────────────────────────────────────────────────
-
-
-def ensure_check_automation():
-    """Ensure the weekly check automation exists. Idempotent, non-fatal on failure."""
-    try:
-        result = subprocess.run(
-            [CDXCTL_BIN, "automation", "list"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode != 0:
-            return
-        automations = json.loads(result.stdout)
-    except Exception:
-        return
-
-    if not isinstance(automations, list):
-        return
-
-    for a in automations:
-        if (
-            isinstance(a, dict)
-            and a.get("type") == "COMMAND"
-            and a.get("command") == CHECK_AUTOMATION_COMMAND
-        ):
-            return
-
-    try:
-        subprocess.run(
-            [
-                CDXCTL_BIN, "automation", "create-command",
-                "--title", CHECK_AUTOMATION_TITLE,
-                "--cron", CHECK_AUTOMATION_CRON,
-                "--command", CHECK_AUTOMATION_COMMAND,
-                "--description", CHECK_AUTOMATION_DESC,
-            ],
-            capture_output=True, text=True, timeout=15,
-        )
-    except Exception:
-        pass

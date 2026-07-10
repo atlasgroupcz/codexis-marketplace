@@ -3,7 +3,7 @@ uuid: 214caaa4-3728-4d21-b379-ab4b376b7615
 name: ares
 icon: icon.svg
 description: Český registr ekonomických subjektů (ARES, MF ČR). Use for company / sole-trader lookups by IČO or name — basic identification, business register (statutory bodies, partners), statistical register (RES), trade licence registry (ŽR), and VAT payer registry. Triggers on "ares", "ičo", "ico", "obchodní rejstřík", "živnostenský rejstřík", "plátce DPH", "registr ekonomických subjektů", "vyhledej firmu", "kdo je jednatel", "statutární orgán", "ověř firmu", "DIČ".
-version: 0.2.0
+version: 0.2.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -26,9 +26,7 @@ A single tool — **`ares-cli`** — wraps the ARES v3 public REST API
 `cdx-cli`, or any other tool directly. Assume `ares-cli` is installed and available
 in `PATH`.
 
-**IMPORTANT:** If `ares-cli` outputs an `ERROR:` line (e.g. `HTTP 404 …`), stop
-immediately and report it to the user. Do not retry blindly or guess workarounds —
-the message text from ARES is authoritative.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `HTTP 404 …`, bad input, network) — report it, don't guess workarounds and don't blindly retry; the message text from ARES is authoritative. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 

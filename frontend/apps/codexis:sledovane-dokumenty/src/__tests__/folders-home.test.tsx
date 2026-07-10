@@ -45,7 +45,7 @@ beforeEach(() => {
 describe('FoldersHome', () => {
   it('renders folder cards from the overview', async () => {
     stubFolders(foldersFixture)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} />, {
+    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
       searchParams: { lang: 'en' },
     })
 
@@ -59,7 +59,7 @@ describe('FoldersHome', () => {
 
   it('shows the empty landing when no folders are watched', async () => {
     stubFolders(emptyFolders)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} />, {
+    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
       searchParams: { lang: 'en' },
     })
 
@@ -75,7 +75,7 @@ describe('FoldersHome', () => {
     const onSelectFolder = vi.fn()
     const user = userEvent.setup()
     renderApp(
-      <FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={onSelectFolder} />,
+      <FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={onSelectFolder} onOpenSettings={vi.fn()} />,
       { searchParams: { lang: 'en' } },
     )
 

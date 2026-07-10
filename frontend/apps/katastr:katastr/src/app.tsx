@@ -1,32 +1,41 @@
 import { useState } from 'react'
 import { useQueryState } from 'nuqs'
-import { Landmark, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
+import { KeyRound, Landmark, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
+import { ConfigGate } from '@workspace/ui/components/config-gate'
+import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
+import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
+import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
 import { filterParser, uuidParser, viewParser } from '@/lib/url-state'
 import { ProceedingsList } from '@/components/proceedings-list'
 import { ProceedingDetail } from '@/components/proceeding-detail'
 import { AddProceedingForm } from '@/components/add-proceeding-form'
 import { EmptyProceedings, NoSelection } from '@/components/empty-state'
-import { ConfigSetup } from '@/components/config-setup'
-import { SettingsDialog } from '@/components/settings-dialog'
+import { useNotify } from '@/hooks/use-notify'
 import { useOverview } from '@/hooks/use-overview'
-import { checkAll } from '@/lib/api'
+import { checkAll, deleteApiKey, saveApiKey, saveNotify } from '@/lib/api'
+import { CUZK_REGISTRATION_URL } from '@/lib/constants'
 import { errorMessage } from '@/lib/format'
 
 export function App() {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
+  const { data: notifyData, refetch: refetchNotify } = useNotify()
   const [view, setView] = useQueryState('view', viewParser)
   const [uuid, setUuid] = useQueryState('uuid', uuidParser)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [savingNotify, setSavingNotify] = useState(false)
   const [filter, setFilter] = useQueryState('filter', filterParser)
 
   const apiKeyConfigured = data?.api_key_configured ?? false
   const hasProceedings = (data?.proceedings.length ?? 0) > 0
   const detailOpen = view === 'detail' && uuid !== null
+  const notifyValues = notifyData?.settings ?? { email: false, inApp: true, recipients: [] }
+  const userEmail = notifyData?.userEmail ?? ''
 
   const handleSelect = (next: string) => {
     void setView('detail')
@@ -53,55 +62,89 @@ export function App() {
       .finally(() => setChecking(false))
   }
 
+  const notifyLabels: NotifyLabels = {
+    title: t('notify.title'),
+    description: t('notify.description'),
+    save: t('notify.save'),
+    cancel: t('notify.cancel'),
+    emailLabel: t('notify.emailLabel'),
+    emailDescription: t('notify.emailDescription'),
+    yourAddressLabel: t('notify.yourAddressLabel'),
+    copyToLabel: t('notify.copyToLabel'),
+    addRecipient: t('notify.addRecipient'),
+    removeRecipient: t('notify.removeRecipient'),
+    addPlaceholder: t('notify.addPlaceholder'),
+    invalidEmail: t('notify.invalidEmail'),
+    ownAddress: t('notify.ownAddress'),
+    duplicate: t('notify.duplicate'),
+    inAppLabel: t('notify.inAppLabel'),
+    inAppDescription: t('notify.inAppDescription'),
+  }
+  const connectionLabels: ConnectionSectionLabels = {
+    connected: t('connection.connected'),
+    notConnected: t('connection.notConnected'),
+    remove: t('connection.remove'),
+    confirmRemove: t('connection.confirmRemove'),
+    save: t('connection.save'),
+    saving: t('connection.saving'),
+  }
+
+  const handleSaveNotify = (values: typeof notifyValues) => {
+    setSavingNotify(true)
+    saveNotify(values)
+      .then(() => refetchNotify())
+      .catch((e: unknown) => toast.error(errorMessage(e)))
+      .finally(() => setSavingNotify(false))
+  }
+  const handleSaveApiKey = async (values: Record<string, string>) => {
+    // Reject propagates to ConnectionSection, which shows the ČÚZK validation
+    // error inline; success refetches so the masked key + connected state update.
+    await saveApiKey(values.apiKey)
+    refetch()
+  }
+  const handleDeleteApiKey = () => {
+    deleteApiKey()
+      .then(() => refetch())
+      .catch((e: unknown) => toast.error(errorMessage(e)))
+  }
+
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="bg-secondary text-primary ring-brand-100 flex size-9 items-center justify-center rounded-xl ring-1">
-            <Landmark className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('proceedings.title')}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {t('proceedings.subtitle')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {apiKeyConfigured && hasProceedings && (
-            <div className="hidden sm:block">
-              <AddProceedingForm onAdded={refetch} />
-            </div>
-          )}
-          {apiKeyConfigured && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCheck}
-              disabled={checking}
-              data-testid="check-all-button"
-            >
-              <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{t('proceedings.checkAll')}</span>
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSettingsOpen(true)}
-            title={t('settings.title')}
-            data-testid="open-settings"
-          >
-            <SettingsIcon className="size-4" />
-          </Button>
-        </div>
-      </header>
+      <AppHeader
+        brand={{ icon: Landmark, title: t('proceedings.title'), subtitle: t('proceedings.subtitle') }}
+        actions={
+          <>
+            {apiKeyConfigured && hasProceedings && (
+              <div className="hidden sm:block">
+                <AddProceedingForm onAdded={refetch} />
+              </div>
+            )}
+            {apiKeyConfigured && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCheck}
+                disabled={checking}
+                data-testid="check-all-button"
+              >
+                <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{t('proceedings.checkAll')}</span>
+              </Button>
+            )}
+            <HeaderGear onClick={() => setSettingsOpen(true)} title={t('notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         {data && !apiKeyConfigured ? (
-          <ConfigSetup onConfigure={() => setSettingsOpen(true)} />
+          <ConfigGate
+            icon={KeyRound}
+            title={t('apiKeyBanner.title')}
+            text={t('apiKeyBanner.text')}
+            action={{ label: t('apiKeyBanner.action'), onClick: () => setSettingsOpen(true), testId: 'open-settings' }}
+            getKey={{ href: CUZK_REGISTRATION_URL, label: t('settings.getKey'), hint: t('settings.getKeyHint') }}
+          />
         ) : data && apiKeyConfigured && !hasProceedings ? (
           <EmptyProceedings onAdded={refetch} />
         ) : (
@@ -134,9 +177,33 @@ export function App() {
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        configured={data?.api_key_configured ?? false}
-        maskedKey={data?.api_key_masked ?? ''}
-        onSaved={refetch}
+        notify={{
+          values: notifyValues,
+          userEmail,
+          labels: notifyLabels,
+          sectionLabel: t('notify.section'),
+          saving: savingNotify,
+          onSave: handleSaveNotify,
+        }}
+        connection={{
+          configured: apiKeyConfigured,
+          sectionLabel: t('connection.section'),
+          maskedKey: data?.api_key_masked ?? '',
+          fields: [
+            {
+              name: 'apiKey',
+              label: t('settings.newLabel'),
+              type: 'password',
+              placeholder: t('settings.placeholder'),
+              mono: true,
+              testId: 'api-key-input',
+            },
+          ],
+          getKey: { href: CUZK_REGISTRATION_URL, label: t('settings.getKey'), hint: t('settings.getKeyHint') },
+          labels: connectionLabels,
+          onSave: handleSaveApiKey,
+          onDelete: handleDeleteApiKey,
+        }}
       />
       <Toaster position="bottom-right" />
     </div>

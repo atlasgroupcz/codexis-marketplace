@@ -38,8 +38,6 @@ def mock_clients(monkeypatch):
 
     monkeypatch.setattr(clients, "get_meta", _get_meta)
     monkeypatch.setattr(clients, "get_versions", _get_versions)
-    # Neutralize subprocess side effect inside add()
-    monkeypatch.setattr(tracking, "ensure_check_automation", lambda: None)
     return config
 
 
@@ -145,17 +143,3 @@ class TestAddErrors:
         with pytest.raises(DocumentNotFoundError):
             tracking.add("ZAK1")
         assert state.load_state("ZAK1") is None
-
-
-# ── automation side-effect ───────────────────────────────────────────────────
-
-
-class TestAddTriggersAutomation:
-    def test_ensure_check_automation_called(self, dokumenty_app_dir, monkeypatch):
-        # Use direct monkeypatch (bypass the fixture's lambda override)
-        calls = []
-        monkeypatch.setattr(tracking, "ensure_check_automation", lambda: calls.append(1))
-        monkeypatch.setattr(clients, "get_meta", lambda cid: _meta("Test"))
-        monkeypatch.setattr(clients, "get_versions", lambda cid: _versions("v1"))
-        tracking.add("ZAK1")
-        assert calls == [1]

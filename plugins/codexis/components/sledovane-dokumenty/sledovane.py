@@ -27,6 +27,7 @@ try:
         folder_check,
         folders,
         notify,
+        settings,
         state,
         tracking,
     )
@@ -190,6 +191,11 @@ def _spawn_cli(cli_args):
         return False
 
 
+def _signed_in_email():
+    """Signed-in user's e-mail for the notify settings UI, or '' if unknown."""
+    return notify._query_me_email() or ""
+
+
 def folder_to_fe(root):
     """Reshape one watched folder (watched.json + tracking) for the FE."""
     abs_root = os.path.abspath(os.path.expanduser(root))
@@ -250,7 +256,7 @@ def handle_folder_get(view, params):
             "mode": "folders",
             "generated_at": now_utc(),
             "folders": folders.list_watches(),
-            "settings": notify.load_settings(),
+            "settings": settings.get_notify(),
         })
         return
     if view == "folder":
@@ -265,7 +271,11 @@ def handle_folder_get(view, params):
         emit_json({"mode": "browse", "generated_at": now_utc(), **folders.browse(path)})
         return
     if view == "notify":
-        emit_json({"mode": "notify", "settings": notify.load_settings()})
+        emit_json({
+            "mode": "notify",
+            "settings": settings.get_notify(),
+            "userEmail": _signed_in_email(),
+        })
         return
     emit_json({"ok": False, "error": f"unknown view: {view}"}, status="400 Bad Request")
 
@@ -323,12 +333,16 @@ def handle_folder_action(action, body):
         return
 
     if action == "save_notify_settings":
-        saved = notify.save_settings({
-            "email": bool(body.get("email", True)),
-            "inApp": bool(body.get("inApp", True)),
-            "recipients": body.get("recipients", []),
-        })
-        emit_json({"ok": True, "settings": saved})
+        try:
+            settings.set_notify(
+                email=body.get("email"),
+                inApp=body.get("inApp"),
+                recipients=body.get("recipients"),
+            )
+        except ValueError as e:
+            emit_json({"ok": False, "error": str(e)}, status="400 Bad Request")
+            return
+        emit_json({"ok": True, "settings": settings.get_notify()})
         return
 
     emit_json({"ok": False, "error": f"unknown folder action: {action}"}, status="400 Bad Request")

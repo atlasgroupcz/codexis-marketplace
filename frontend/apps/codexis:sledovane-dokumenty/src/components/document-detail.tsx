@@ -5,6 +5,7 @@ import { Input } from '@workspace/ui/components/input'
 import { Textarea } from '@workspace/ui/components/textarea'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { HeaderGear } from '@workspace/ui/components/app-header'
 import { cn } from '@workspace/ui/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { TrackingTypeBadge } from './tracking-type-badge'
@@ -19,9 +20,10 @@ import { formatDate } from '@/lib/format'
 interface DocumentDetailProps {
   uuid: string
   onBack: () => void
+  onOpenSettings: () => void
 }
 
-export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
+export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useDocumentDetail(uuid)
   const [confirmRemove, setConfirmRemove] = useState(false)
@@ -115,18 +117,21 @@ export function DocumentDetail({ uuid, onBack }: DocumentDetailProps) {
             </p>
           </div>
         </div>
-        <Button
-          variant={confirmRemove ? 'destructive' : 'outline'}
-          size="sm"
-          onClick={handleRemove}
-          disabled={removing}
-          data-testid="remove-document"
-        >
-          <Trash2 className="size-4" />
-          <span className="hidden sm:inline">
-            {confirmRemove ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={confirmRemove ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={handleRemove}
+            disabled={removing}
+            data-testid="remove-document"
+          >
+            <Trash2 className="size-4" />
+            <span className="hidden sm:inline">
+              {confirmRemove ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
+            </span>
+          </Button>
+          <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />
+        </div>
       </header>
 
       <main className="min-h-0 flex-1">

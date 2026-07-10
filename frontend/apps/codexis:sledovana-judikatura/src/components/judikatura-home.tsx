@@ -4,6 +4,7 @@ import { ArrowRight, Plus, RefreshCw, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster } from '@workspace/ui/components/sonner'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { TopicRail } from './topic-rail'
 import { ReportsFeed } from './reports-feed'
 import { EmptyTopics } from './empty-state'
@@ -15,9 +16,10 @@ import { topicFilterParser } from '@/lib/url-state'
 interface JudikaturaHomeProps {
   onSelectReport: (topicUuid: string, reportId: string) => void
   onOpenTopic: (uuid: string) => void
+  onOpenSettings: () => void
 }
 
-export function JudikaturaHome({ onSelectReport, onOpenTopic }: JudikaturaHomeProps) {
+export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: JudikaturaHomeProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const [topicFilter, setTopicFilter] = useQueryState('topic', topicFilterParser)
@@ -27,38 +29,36 @@ export function JudikaturaHome({ onSelectReport, onOpenTopic }: JudikaturaHomePr
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="bg-secondary text-primary ring-brand-100 flex size-9 items-center justify-center rounded-xl ring-1">
-            <Scale className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('judikatura.title')}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {t('judikatura.subtitle')}
-            </p>
-          </div>
-        </div>
-        {topics.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm" data-testid="add-monitoring">
-              <a
-                href={`/?draft=${encodeURIComponent(t('judikatura.landing.chatPrompt'))}`}
-                target="_top"
-              >
-                <Plus className="size-4" />
-                <span className="hidden sm:inline">{t('judikatura.addMonitoring')}</span>
-              </a>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={loading}>
-              <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{t('judikatura.refresh')}</span>
-            </Button>
-          </div>
-        )}
-      </header>
+      <AppHeader
+        brand={{ icon: Scale, title: t('judikatura.title'), subtitle: t('judikatura.subtitle') }}
+        actions={
+          <>
+            {topics.length > 0 && (
+              <>
+                <Button asChild size="sm" data-testid="add-monitoring">
+                  <a
+                    href={`/?draft=${encodeURIComponent(t('judikatura.landing.chatPrompt'))}`}
+                    target="_top"
+                  >
+                    <Plus className="size-4" />
+                    <span className="hidden sm:inline">{t('judikatura.addMonitoring')}</span>
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetch()}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{t('judikatura.refresh')}</span>
+                </Button>
+              </>
+            )}
+            <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         {loading && !data ? (

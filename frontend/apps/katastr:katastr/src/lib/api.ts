@@ -2,6 +2,7 @@ import {
   actionResponseSchema,
   checkAllResponseSchema,
   detailResponseSchema,
+  notifyResponseSchema,
   overviewResponseSchema,
 } from './schemas'
 import type { z } from 'zod'
@@ -9,6 +10,8 @@ import type {
   ActionResponse,
   CheckAllResponse,
   DetailResponse,
+  NotifyResponse,
+  NotifySettingsValues,
   OverviewResponse,
 } from './schemas'
 
@@ -81,6 +84,10 @@ export function fetchDetail(uuid: string): Promise<DetailResponse> {
   return getJson(detailResponseSchema, { uuid })
 }
 
+export function fetchNotify(): Promise<NotifyResponse> {
+  return getJson(notifyResponseSchema, { view: 'notify' })
+}
+
 // ─── writes ────────────────────────────────────────────────────────────────
 
 export function addProceeding(
@@ -117,4 +124,8 @@ export function deleteApiKey(): Promise<ActionResponse> {
 
 export function setLabel(uuid: string, label: string): Promise<ActionResponse> {
   return postJson('set_label', actionResponseSchema, { uuid, label })
+}
+
+export function saveNotify(values: NotifySettingsValues): Promise<ActionResponse> {
+  return postJson('save_notify_settings', actionResponseSchema, { ...values })
 }

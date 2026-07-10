@@ -19,6 +19,11 @@ Usage:
     cdx-sledovana-judikatura confirm-report <uuid> <report_id>
     cdx-sledovana-judikatura set-automation <uuid> <automation_id>
     cdx-sledovana-judikatura touch <uuid>
+    cdx-sledovana-judikatura notify show
+    cdx-sledovana-judikatura notify set [--email/--no-email] [--inapp/--no-inapp]
+    cdx-sledovana-judikatura notify recipients add|remove <email>
+    cdx-sledovana-judikatura notify recipients set [<email> ...]
+    cdx-sledovana-judikatura notify recipients clear
 """
 
 import argparse
@@ -38,7 +43,7 @@ for p in CANDIDATES:
         break
 
 try:
-    from sledovana_judikatura_core import tracking
+    from sledovana_judikatura_core import notify, notify_settings, state, tracking
     from sledovana_judikatura_core.exceptions import TopicError
 except ImportError as e:
     print(f"ERROR: sledovana_judikatura_core library not found: {e}", file=sys.stderr)
@@ -49,10 +54,17 @@ except ImportError as e:
 
 
 def cmd_init(args):
+    existing = tracking.find_topic_by_name(args.name)
     topic_uuid, _ = tracking.init(args.name, notes=args.notes)
     # UUID on stdout so `UUID=$(... init ...)` works directly.
     print(topic_uuid)
-    print(f"OK: téma '{args.name}' vytvořeno", file=sys.stderr)
+    if existing:
+        msg = f"OK: téma '{args.name}' už existuje"
+        if args.notes:
+            msg += " (--notes se použije jen při zakládání; kontext přidej příkazem note add)"
+        print(msg, file=sys.stderr)
+    else:
+        print(f"OK: téma '{args.name}' vytvořeno", file=sys.stderr)
 
 
 def cmd_list(args):
@@ -130,18 +142,22 @@ def cmd_show(args):
 
 
 def cmd_delete(args):
-    full_uuid = tracking.delete(args.uuid)
-    print(f"OK: téma '{full_uuid}' smazáno")
+    try:
+        full_uuid = tracking.delete(args.uuid)
+    except tracking.TopicNotFoundError:
+        print(f"OK: téma '{args.uuid}' neexistuje (nic k odebrání)", file=sys.stderr)
+        return
+    print(f"OK: téma '{full_uuid}' smazáno", file=sys.stderr)
 
 
 def cmd_touch(args):
     full_uuid, ts = tracking.touch(args.uuid)
-    print(f"OK: last_check_at aktualizováno na {ts}")
+    print(f"OK: last_check_at aktualizováno na {ts}", file=sys.stderr)
 
 
 def cmd_set_automation(args):
     tracking.set_automation(args.uuid, args.automation_id)
-    print(f"OK: automation_id '{args.automation_id}' uloženo")
+    print(f"OK: automation_id '{args.automation_id}' uloženo", file=sys.stderr)
 
 
 # ── notes ────────────────────────────────────────────────────────────────────
@@ -150,7 +166,7 @@ def cmd_set_automation(args):
 def cmd_note_add(args):
     text = " ".join(args.text)
     idx = tracking.note_add(args.uuid, text)
-    print(f"OK: poznámka přidána (index {idx})")
+    print(f"OK: poznámka přidána (index {idx})", file=sys.stderr)
 
 
 def cmd_note_list(args):
@@ -164,7 +180,7 @@ def cmd_note_list(args):
 
 def cmd_note_remove(args):
     removed = tracking.note_remove(args.uuid, args.index)
-    print(f"OK: poznámka [{args.index}] odstraněna: {removed}")
+    print(f"OK: poznámka [{args.index}] odstraněna: {removed}", file=sys.stderr)
 
 
 # ── areas ────────────────────────────────────────────────────────────────────
@@ -172,8 +188,12 @@ def cmd_note_remove(args):
 
 def cmd_area_add(args):
     name = " ".join(args.name)
-    idx = tracking.area_add(args.uuid, name)
-    print(f"OK: oblast '{name}' přidána (index {idx})")
+    try:
+        idx = tracking.area_add(args.uuid, name)
+    except tracking.AreaAlreadyExistsError:
+        print(f"OK: oblast '{name}' už existuje (nic k přidání)", file=sys.stderr)
+        return
+    print(f"OK: oblast '{name}' přidána (index {idx})", file=sys.stderr)
 
 
 def cmd_area_list(args):
@@ -187,8 +207,12 @@ def cmd_area_list(args):
 
 
 def cmd_area_remove(args):
-    removed = tracking.area_remove(args.uuid, args.index)
-    print(f"OK: oblast [{args.index}] '{removed.get('name', '')}' odstraněna")
+    try:
+        removed = tracking.area_remove(args.uuid, args.index)
+    except (tracking.AreaIndexError, tracking.TopicNotFoundError):
+        print(f"OK: oblast [{args.index}] není k odebrání (nic k odebrání)", file=sys.stderr)
+        return
+    print(f"OK: oblast [{args.index}] '{removed.get('name', '')}' odstraněna", file=sys.stderr)
 
 
 def cmd_area_set_baseline(args):
@@ -196,16 +220,57 @@ def cmd_area_set_baseline(args):
     updated = tracking.area_set_baseline(args.uuid, args.index, summary)
     print(
         f"OK: baseline pro oblast [{args.index}] "
-        f"'{updated.get('name', '')}' nastaven"
+        f"'{updated.get('name', '')}' nastaven",
+        file=sys.stderr,
     )
 
 
 # ── reports ──────────────────────────────────────────────────────────────────
 
 
+def _notify_new_case_law(partial_uuid, report_id):
+    """E-mail + in-app summary when the saved report found new case law.
+
+    Gated by notify settings; a quiet report (no new decisions) sends nothing.
+    Best-effort: a notification problem is reported to stderr, never fatal to the
+    save, and never leaks onto stdout (report_id must stay clean there).
+    """
+    full_uuid, data = tracking.find_topic(partial_uuid)
+    if full_uuid is None:
+        return
+    report = state.load_report(full_uuid, report_id)
+    if report is None:
+        return
+    results = [{
+        "topic_name": data.get("name", ""),
+        "report": report,
+        "ok": True,
+        "error": None,
+    }]
+
+    cfg = notify_settings.get_notify()
+    if cfg.get("email"):
+        try:
+            to = notify.resolve_to(cfg.get("recipients"))
+            sent = notify.email_change_summary(results, to=to)
+            if sent:
+                print(
+                    f"E-mailem odeslán souhrn ({sent} tématu s novou judikaturou).",
+                    file=sys.stderr,
+                )
+        except TopicError as e:
+            print(str(e), file=sys.stderr)
+    if cfg.get("inApp"):
+        if notify.inapp_change_summary(results):
+            print("Upozornění odesláno do aplikace (zvoneček).", file=sys.stderr)
+
+
 def cmd_save_report(args):
     report_id = tracking.save_report(args.uuid, file_path=args.file)
-    print(f"OK: report '{report_id}' uložen")
+    # report_id on stdout so `ID=$(... save-report ...)` works directly.
+    print(report_id)
+    print(f"OK: report '{report_id}' uložen", file=sys.stderr)
+    _notify_new_case_law(args.uuid, report_id)
 
 
 def cmd_list_reports(args):
@@ -231,7 +296,38 @@ def cmd_show_report(args):
 
 def cmd_confirm_report(args):
     tracking.confirm_report(args.uuid, args.report_id)
-    print(f"OK: report '{args.report_id}' potvrzen")
+    print(f"OK: report '{args.report_id}' potvrzen", file=sys.stderr)
+
+
+# ── notify ───────────────────────────────────────────────────────────────────
+
+
+def cmd_notify_show(args):
+    print(json.dumps(notify_settings.get_notify(), indent=2, ensure_ascii=False))
+
+
+def cmd_notify_set(args):
+    eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
+    print(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.", file=sys.stderr)
+
+
+def cmd_notify_recipients(args):
+    current = list(notify_settings.get_notify().get("recipients", []))
+    if args.rcmd == "add":
+        current.append(args.email.strip())
+    elif args.rcmd == "remove":
+        current = [r for r in current if r.lower() != args.email.strip().lower()]
+    elif args.rcmd == "set":
+        current = list(args.emails)
+    elif args.rcmd == "clear":
+        current = []
+    try:
+        eff = notify_settings.set_notify(recipients=current)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
+    print(f"OK: Příjemci — {joined}.", file=sys.stderr)
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────
@@ -321,6 +417,27 @@ def build_parser():
     pcr.add_argument("report_id")
     pcr.set_defaults(func=cmd_confirm_report)
 
+    # ─── notify ────
+    nt = sub.add_parser("notify", help="Manage notification settings")
+    nt_sub = nt.add_subparsers(dest="sub", required=True)
+    p_ns = nt_sub.add_parser("show", help="Show current notification settings")
+    p_ns.set_defaults(func=cmd_notify_show)
+    p_nset = nt_sub.add_parser("set", help="Change notification settings")
+    p_nset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.set_defaults(func=cmd_notify_set)
+
+    p_nrec = nt_sub.add_parser("recipients", help="Manage e-mail recipients")
+    nr_sub = p_nrec.add_subparsers(dest="rcmd", required=True)
+    nr_add = nr_sub.add_parser("add", help="Add a recipient e-mail")
+    nr_add.add_argument("email")
+    nr_rm = nr_sub.add_parser("remove", help="Remove a recipient e-mail")
+    nr_rm.add_argument("email")
+    nr_set = nr_sub.add_parser("set", help="Replace the whole recipient list")
+    nr_set.add_argument("emails", nargs="*")
+    nr_sub.add_parser("clear", help="Remove all recipients")
+    p_nrec.set_defaults(func=cmd_notify_recipients)
+
     return p
 
 
@@ -328,9 +445,10 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     try:
+        notify_settings.ensure_settings()
         args.func(args)
     except TopicError as e:
-        print(f"ERROR: {e}")
+        print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
 

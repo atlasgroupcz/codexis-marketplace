@@ -75,25 +75,49 @@
     }
   },
   "settings": {
-    "title": "Nastavení API klíče",
-    "description": "Pro fungování katastru je potřeba API klíč ČÚZK.",
     "getKey": "Kde získám API klíč?",
     "getKeyHint": "Na stránce ČÚZK zvolte sekci API dat katastru nemovitostí.",
-    "currentKey": "Aktuální API klíč",
     "newLabel": "Zadejte API klíč ČÚZK",
-    "replaceLabel": "Zadat nový API klíč ČÚZK",
-    "placeholder": "Vložte API klíč",
-    "save": "Uložit",
-    "saving": "Ukládám...",
-    "savedSuccess": "API klíč byl ověřen a uložen.",
-    "saveError": "Nepodařilo se uložit klíč.",
-    "deleteKey": "Odstranit klíč",
-    "deleting": "Odstraňuji...",
-    "confirmDelete": "Opravdu odstranit uložený API klíč?"
+    "placeholder": "Vložte API klíč"
   },
   "apiKeyBanner": {
     "title": "API klíč ČÚZK není nastaven",
     "text": "Pro provoz tohoto modulu je nutné nastavit API klíč ČÚZK. Bez něj nelze přidávat ani sledovat žádná řízení.",
     "action": "Nastavit klíč"
+  },
+  "notify": {
+    "title": "Nastavení katastru",
+    "description": "Upozornění a přístup k ČÚZK.",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "emailLabel": "E-mail při změně",
+    "emailDescription": "Souhrn změn přijde e-mailem.",
+    "yourAddressLabel": "Vaše adresa",
+    "copyToLabel": "Kopie na",
+    "addRecipient": "Přidat příjemce",
+    "removeRecipient": "Odebrat",
+    "addPlaceholder": "jmeno@firma.cz",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámení v centru notifikací",
+    "inAppDescription": "",
+    "section": "Oznámení",
+    "ownAddress": "Tato adresa je vaše — e-mail vám chodí vždy.",
+    "duplicate": "Tato adresa už je v seznamu."
+  },
+  "connection": {
+    "connected": "Připojeno",
+    "remove": "Odebrat",
+    "confirmRemove": "Opravdu odebrat?",
+    "save": "Uložit",
+    "saving": "Ověřuji…",
+    "notConnected": "Nepřipojeno k ČÚZK",
+    "currentKey": "Klíč nastaven",
+    "change": "Změnit",
+    "disconnect": "Odpojit",
+    "disconnecting": "Odpojuji…",
+    "connect": "Připojit",
+    "connecting": "Připojuji…",
+    "cancel": "Zrušit",
+    "section": "Připojení ke katastru"
   }
 }

@@ -36,7 +36,7 @@ for p in CANDIDATES:
         break
 
 try:
-    from insolvence_core import api_client, notify, tracking
+    from insolvence_core import api_client, notify, notify_settings, tracking
     from insolvence_core.exceptions import InsolvenceError
 except ImportError as e:
     print(f"ERROR: insolvence_core library not found: {e}", file=sys.stderr)
@@ -51,6 +51,10 @@ def err(msg):
 
 
 def info(msg):
+    print(msg, file=sys.stderr)
+
+
+def out(msg):
     print(msg)
 
 
@@ -91,16 +95,28 @@ def _fmt_subject_short(state: dict) -> str:
 
 
 def cmd_add_firma(args):
-    state = tracking.add_company(args.ico, label=args.label)
+    try:
+        state = tracking.add_company(args.ico, label=args.label)
+    except tracking.SubjectAlreadyTrackedError:
+        info(f"OK: Firma s IČO {args.ico} je již sledována (nic k přidání).")
+        if args.label:
+            info("  Pozn.: --label platí jen při prvním přidání; štítek změníš příkazem set-label.")
+        return
     info(f"OK: Firma {tracking.display_name(state)} (IČO {state['ico']}) přidána ke sledování.")
     info(f"  Aktivní insolvence: {'ano' if state['ma_aktivni_insolvenci'] else 'ne'}")
     info(f"  Řízení: {len(state['rizeni'])}")
 
 
 def cmd_add_osoba(args):
-    state = tracking.add_person(
-        args.prijmeni, args.jmeno, args.datum_narozeni, label=args.label
-    )
+    try:
+        state = tracking.add_person(
+            args.prijmeni, args.jmeno, args.datum_narozeni, label=args.label
+        )
+    except tracking.SubjectAlreadyTrackedError:
+        info(f"OK: Osoba {args.jmeno} {args.prijmeni} ({args.datum_narozeni}) je již sledována (nic k přidání).")
+        if args.label:
+            info("  Pozn.: --label platí jen při prvním přidání; štítek změníš příkazem set-label.")
+        return
     info(f"OK: Osoba {tracking.display_name(state)} ({state['datum_narozeni']}) přidána ke sledování.")
     info(f"  Aktivní insolvence: {'ano' if state['ma_aktivni_insolvenci'] else 'ne'}")
     info(f"  Řízení: {len(state['rizeni'])}")
@@ -109,12 +125,12 @@ def cmd_add_osoba(args):
 def cmd_list(args):
     subjects = tracking.list_all()
     if not subjects:
-        info("Žádné sledované subjekty.")
+        out("Žádné sledované subjekty.")
         return
-    info(f"Sledované subjekty ({len(subjects)}):\n")
+    out(f"Sledované subjekty ({len(subjects)}):\n")
     for state in subjects:
-        info(_fmt_subject_short(state))
-        info("")
+        out(_fmt_subject_short(state))
+        out("")
 
 
 def cmd_show(args):
@@ -128,33 +144,36 @@ def cmd_check(args):
     else:
         results = tracking.check_all()
     if not results:
-        info("Žádné sledované subjekty ke kontrole.")
+        out("Žádné sledované subjekty ke kontrole.")
         return
     total = 0
     for r in results:
         name = r["display_name"]
         if not r["ok"]:
-            info(f"  {name}: CHYBA — {r['error']}")
+            out(f"  {name}: CHYBA — {r['error']}")
             continue
         changes = r["changes"]
         if not changes:
-            info(f"  {name}: beze změn")
+            out(f"  {name}: beze změn")
             continue
         total += len(changes)
-        info(f"  {name}: {len(changes)} nových změn")
+        out(f"  {name}: {len(changes)} nových změn")
         for c in changes:
-            info(f"    • {c.get('popis', c.get('typ', ''))}")
-    info(f"\nKontrola dokončena. Celkem {total} nových změn u {len(results)} subjektů.")
+            out(f"    • {c.get('popis', c.get('typ', ''))}")
+    out(f"\nKontrola dokončena. Celkem {total} nových změn u {len(results)} subjektů.")
 
-    if getattr(args, "email", False):
+    notify_cfg = notify_settings.get_notify()
+    if notify_cfg.get("email"):
         try:
-            sent = notify.email_change_summary(results)
-            if sent:
-                info(f"E-mailem odeslán souhrn {sent} nových změn.")
-            else:
-                info("Žádné nové změny — e-mail neodeslán.")
+            to = notify.resolve_to(notify_cfg.get("recipients"))
+            sent = notify.email_change_summary(results, to=to)
+            info(f"E-mailem odeslán souhrn {sent} nových změn." if sent
+                 else "Žádné nové změny — e-mail neodeslán.")
         except InsolvenceError as e:
             info(f"E-mail se nepodařilo odeslat: {e}")
+    if notify_cfg.get("inApp"):
+        if notify.inapp_change_summary(results):
+            info("Upozornění odesláno do aplikace (zvoneček).")
 
 
 def cmd_confirm(args):
@@ -170,7 +189,11 @@ def cmd_confirm(args):
 
 
 def cmd_remove(args):
-    state = _resolve(args.id)
+    try:
+        state = _resolve(args.id)
+    except tracking.SubjectNotTrackedError:
+        info(f"OK: Subjekt {args.id!r} není sledován (nic k odebrání).")
+        return
     name = tracking.display_name(state)
     tracking.remove(state["uuid"])
     info(f"OK: Subjekt {name} odstraněn ze sledování.")
@@ -200,6 +223,37 @@ def cmd_lustrace_osoba(args):
         tracking.normalize_birthdate(args.datum_narozeni),
     )
     print(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+# ── notify commands ─────────────────────────────────────────────────────────
+
+
+def cmd_notify_show(args):
+    print(json.dumps(notify_settings.get_notify(), indent=2, ensure_ascii=False))
+
+
+def cmd_notify_set(args):
+    eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
+    info(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+
+
+def cmd_notify_recipients(args):
+    current = list(notify_settings.get_notify().get("recipients", []))
+    if args.rcmd == "add":
+        current.append(args.email.strip())
+    elif args.rcmd == "remove":
+        current = [r for r in current if r.lower() != args.email.strip().lower()]
+    elif args.rcmd == "set":
+        current = list(args.emails)
+    elif args.rcmd == "clear":
+        current = []
+    try:
+        eff = notify_settings.set_notify(recipients=current)
+    except ValueError as e:
+        err(str(e))
+        sys.exit(1)
+    joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
+    info(f"OK: Příjemci — {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────
@@ -237,11 +291,6 @@ def build_parser():
 
     p_check = tr_sub.add_parser("check", help="Check for changes against ISIR")
     p_check.add_argument("id", nargs="?", help="Specific subject (default: all)")
-    p_check.add_argument(
-        "--email",
-        action="store_true",
-        help="E-mailem poslat uživateli souhrn nových změn (pro automatizaci)",
-    )
     p_check.set_defaults(func=cmd_check)
 
     p_conf = tr_sub.add_parser("confirm", help="Mark changes as read")
@@ -273,6 +322,27 @@ def build_parser():
     p_lo.add_argument("datum_narozeni", help="Date of birth, ISO YYYY-MM-DD")
     p_lo.set_defaults(func=cmd_lustrace_osoba)
 
+    # ─── notify ────
+    nt = sub.add_parser("notify", help="Manage notification settings")
+    nt_sub = nt.add_subparsers(dest="cmd", required=True)
+    p_ns = nt_sub.add_parser("show", help="Show current notification settings")
+    p_ns.set_defaults(func=cmd_notify_show)
+    p_nset = nt_sub.add_parser("set", help="Change notification settings")
+    p_nset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.set_defaults(func=cmd_notify_set)
+
+    p_nrec = nt_sub.add_parser("recipients", help="Manage e-mail recipients")
+    nr_sub = p_nrec.add_subparsers(dest="rcmd", required=True)
+    nr_add = nr_sub.add_parser("add", help="Add a recipient e-mail")
+    nr_add.add_argument("email")
+    nr_rm = nr_sub.add_parser("remove", help="Remove a recipient e-mail")
+    nr_rm.add_argument("email")
+    nr_set = nr_sub.add_parser("set", help="Replace the whole recipient list")
+    nr_set.add_argument("emails", nargs="*")
+    nr_sub.add_parser("clear", help="Remove all recipients")
+    p_nrec.set_defaults(func=cmd_notify_recipients)
+
     return p
 
 
@@ -280,6 +350,7 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     try:
+        notify_settings.ensure_settings()
         args.func(args)
     except InsolvenceError as e:
         err(str(e))

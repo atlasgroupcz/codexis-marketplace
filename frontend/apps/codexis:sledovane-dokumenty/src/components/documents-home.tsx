@@ -5,6 +5,7 @@ import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster } from '@workspace/ui/components/sonner'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { ChangesFeed } from './changes-feed'
 import { DocumentGrid } from './document-grid'
 import { EmptyDocuments } from './empty-state'
@@ -18,9 +19,15 @@ interface DocumentsHomeProps {
   section: 'documents' | 'folders'
   onChangeSection: (section: 'documents' | 'folders') => void
   onSelectDocument: (uuid: string) => void
+  onOpenSettings: () => void
 }
 
-export function DocumentsHome({ section, onChangeSection, onSelectDocument }: DocumentsHomeProps) {
+export function DocumentsHome({
+  section,
+  onChangeSection,
+  onSelectDocument,
+  onOpenSettings,
+}: DocumentsHomeProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const [tab, setTab] = useQueryState('tab', tabParser)
@@ -31,30 +38,21 @@ export function DocumentsHome({ section, onChangeSection, onSelectDocument }: Do
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="bg-secondary text-primary ring-brand-100 flex size-9 items-center justify-center rounded-xl ring-1">
-            <BookMarked className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('followedDocs.title')}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {t('followedDocs.subtitle')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <SectionSwitch section={section} onChange={onChangeSection} />
-          {documents.length > 0 && (
-            <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
-              <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{t('followedDocs.refresh')}</span>
-            </Button>
-          )}
-        </div>
-      </header>
+      <AppHeader
+        brand={{ icon: BookMarked, title: t('followedDocs.title'), subtitle: t('followedDocs.subtitle') }}
+        actions={
+          <>
+            <SectionSwitch section={section} onChange={onChangeSection} />
+            {documents.length > 0 && (
+              <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+                <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{t('followedDocs.refresh')}</span>
+              </Button>
+            )}
+            <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         {loading && !data ? (

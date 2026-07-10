@@ -19,7 +19,6 @@ All writes go through ``state.atomic_write_json`` (tmp file + rename).
 
 import json
 import os
-import subprocess
 import uuid as uuid_mod
 
 from . import state
@@ -36,15 +35,6 @@ CONTRACT_VERSION = 1
 SUPPORTED_EXTS = {
     ".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt", ".md",
 }
-
-CDXCTL_BIN = "cdxctl"
-FOLDER_CHECK_AUTOMATION_TITLE = "Sledované složky – kontrola legislativy"
-FOLDER_CHECK_AUTOMATION_CRON = "0 6 * * *"
-FOLDER_CHECK_AUTOMATION_COMMAND = "cdx-sledovane-dokumenty folder check"
-FOLDER_CHECK_AUTOMATION_DESC = (
-    "Denní deterministická kontrola změn legislativy odkazované ve sledovaných "
-    "složkách."
-)
 
 
 class WatchedFolderError(DocumentError):
@@ -386,8 +376,6 @@ def add_watch(root, name=None):
         entries.append(entry)
         save_index(entries)
 
-    ensure_folder_check_automation()
-
     result = dict(entry)
     result.update(summary)
     return result
@@ -466,44 +454,3 @@ def browse(path=None):
 
     parent = os.path.dirname(target) if target != home else None
     return {"path": target, "parent": parent, "home": home, "entries": dirs}
-
-
-# ── automation ───────────────────────────────────────────────────────────────
-
-
-def ensure_folder_check_automation():
-    """Ensure the daily folder-check automation exists. Idempotent, non-fatal."""
-    try:
-        result = subprocess.run(
-            [CDXCTL_BIN, "automation", "list"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode != 0:
-            return
-        automations = json.loads(result.stdout)
-    except Exception:
-        return
-
-    if not isinstance(automations, list):
-        return
-    for a in automations:
-        if (
-            isinstance(a, dict)
-            and a.get("type") == "COMMAND"
-            and a.get("command") == FOLDER_CHECK_AUTOMATION_COMMAND
-        ):
-            return
-
-    try:
-        subprocess.run(
-            [
-                CDXCTL_BIN, "automation", "create-command",
-                "--title", FOLDER_CHECK_AUTOMATION_TITLE,
-                "--cron", FOLDER_CHECK_AUTOMATION_CRON,
-                "--command", FOLDER_CHECK_AUTOMATION_COMMAND,
-                "--description", FOLDER_CHECK_AUTOMATION_DESC,
-            ],
-            capture_output=True, text=True, timeout=15,
-        )
-    except Exception:
-        pass

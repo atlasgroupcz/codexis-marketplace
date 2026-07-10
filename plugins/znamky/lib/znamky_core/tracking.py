@@ -18,13 +18,13 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import uuid as uuid_mod
 from typing import Optional
 
 from . import image_similarity, scoring, sources
 from .exceptions import (
     InvalidMarkError,
+    MarkAlreadyTrackedError,
     MarkNotTrackedError,
     ZnamkyError,
 )
@@ -32,11 +32,6 @@ from .fs import atomic_write_bytes, atomic_write_json
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "znamky", "sledovane")
-
-CDXCTL_BIN = "cdxctl"
-AUTOMATION_TITLE = "Hlídač ochranných známek"
-AUTOMATION_CRON = "0 7 * * *"
-AUTOMATION_COMMAND = "znamky-cli sledovani check"
 
 VALID_KINDS = ("word", "figurative", "combined")
 VALID_TERRITORIES = ("CZ", "EU")
@@ -324,21 +319,42 @@ def _baseline_collisions(state: dict) -> dict:
     return {"ok": not search["errors"], "errors": search["errors"], "found": len(collisions)}
 
 
+def _find_word_mark(text, nice_classes, territories):
+    """Return an existing word mark with the same identity, or None.
+
+    Identity = (verbal text, nice classes, territories), order-insensitive.
+    """
+    key = (text, tuple(sorted(nice_classes)), tuple(sorted(territories)))
+    for m in list_all():
+        if m.get("kind") != "word":
+            continue
+        if (m.get("text", ""),
+                tuple(sorted(m.get("nice_classes", []))),
+                tuple(sorted(m.get("territories", [])))) == key:
+            return m
+    return None
+
+
 def add_text(text, nice_classes=None, territories=None, owner_name="", label="", threshold=None) -> dict:
     """Watch a word mark by its verbal element."""
     verbal = normalize_text(text)
     if len(verbal) < 1:
         raise InvalidMarkError("Text slovní známky je povinný.")
+    nice = parse_nice_classes(nice_classes)
+    terr = parse_territories(territories)
+    if _find_word_mark(verbal, nice, terr) is not None:
+        raise MarkAlreadyTrackedError(
+            f"Slovní známka „{verbal}“ se stejným zněním, třídami a územím je již sledována."
+        )
     state = _new_mark_skeleton("word", label)
     state["text"] = verbal
-    state["nice_classes"] = parse_nice_classes(nice_classes)
-    state["territories"] = parse_territories(territories)
+    state["nice_classes"] = nice
+    state["territories"] = terr
     state["owner_name"] = normalize_text(owner_name)
     if threshold is not None:
         state["threshold"] = float(threshold)
     _baseline_collisions(state)
     _save_state(state)
-    ensure_automation()
     return state
 
 
@@ -366,7 +382,6 @@ def add_logo(logo_bytes, mime="image/png", text="", nice_classes=None, territori
 
     _baseline_collisions(state)
     _save_state(state)
-    ensure_automation()
     return state
 
 
@@ -566,38 +581,6 @@ def lookup_logo(logo_bytes, mime="image/png", text="", nice_classes=None,
         return {"candidates": scored, "errors": search["errors"]}
     finally:
         shutil.rmtree(_mark_dir(state["uuid"]), ignore_errors=True)
-
-
-# ── automation ───────────────────────────────────────────────────────────────
-
-
-def ensure_automation() -> None:
-    """Ensure the central daily cron automation exists. Idempotent, non-fatal."""
-    try:
-        result = subprocess.run(
-            [CDXCTL_BIN, "automation", "list"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode != 0:
-            return
-        automations = json.loads(result.stdout)
-    except Exception:  # noqa: BLE001
-        return
-    if not isinstance(automations, list):
-        return
-    for a in automations:
-        if isinstance(a, dict) and a.get("type") == "COMMAND" and a.get("command") == AUTOMATION_COMMAND:
-            return
-    try:
-        subprocess.run(
-            [CDXCTL_BIN, "automation", "create-command",
-             "--title", AUTOMATION_TITLE, "--cron", AUTOMATION_CRON,
-             "--command", AUTOMATION_COMMAND,
-             "--description", "Pravidelná kontrola podobných ochranných známek (ÚPV, EUIPO přes TMview)."],
-            capture_output=True, text=True, timeout=15,
-        )
-    except Exception:  # noqa: BLE001
-        return
 
 
 # ── presentation helpers ─────────────────────────────────────────────────────

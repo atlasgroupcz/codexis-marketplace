@@ -17,7 +17,7 @@ function ConversationHint() {
     <div className="border-border/70 w-full max-w-sm border-t pt-6">
       <p className="text-muted-foreground text-sm">{t('followedDocs.landing.chatLead')}</p>
       <a
-        href={`/?prompt=${encodeURIComponent(t('followedDocs.landing.chatPrompt'))}`}
+        href={`/?draft=${encodeURIComponent(t('followedDocs.landing.chatPrompt'))}`}
         target="_top"
         className="group border-brand-100 bg-secondary/60 hover:bg-secondary mt-2 flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm transition-colors"
         data-testid="empty-chat-example"

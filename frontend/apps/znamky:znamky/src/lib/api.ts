@@ -3,7 +3,9 @@ import {
   checkAllResponseSchema,
   configResponseSchema,
   detailResponseSchema,
+  notifyResponseSchema,
   overviewResponseSchema,
+  saveNotifyResponseSchema,
 } from './schemas'
 import type { z } from 'zod'
 import type {
@@ -11,7 +13,10 @@ import type {
   CheckAllResponse,
   ConfigResponse,
   DetailResponse,
+  NotifyResponse,
+  NotifySettingsValues,
   OverviewResponse,
+  SaveNotifyResponse,
 } from './schemas'
 
 function getApiBase(): string {
@@ -166,4 +171,14 @@ export function saveConfig(clientId: string, clientSecret: string): Promise<Acti
 
 export function deleteConfig(): Promise<ActionResponse> {
   return postJson('delete_config', actionResponseSchema)
+}
+
+// ─── notification settings ────────────────────────────────────────────────────
+
+export function fetchNotify(): Promise<NotifyResponse> {
+  return getJson(notifyResponseSchema, { view: 'notify' })
+}
+
+export function saveNotify(values: NotifySettingsValues): Promise<SaveNotifyResponse> {
+  return postJson('save_notify_settings', saveNotifyResponseSchema, values)
 }

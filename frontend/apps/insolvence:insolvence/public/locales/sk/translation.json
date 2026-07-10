@@ -92,5 +92,23 @@
     "noSelection": "Vyberte subjekt v zozname vľavo.",
     "chatLead": "Alebo si sledovanie nastavte v konverzácii — napíšte napríklad:",
     "chatPrompt": "Sleduj insolvenciu firmy s IČO 04863313 a každý týždeň mi pošli e-mailom súhrn nových a zmenených konaní."
+  },
+  "notify": {
+    "title": "Nastavenie insolvencií",
+    "description": "Ako vás upozorníme na zmeny.",
+    "save": "Uložiť",
+    "emailLabel": "E-mail pri zmene",
+    "emailDescription": "Súhrn zmien príde e-mailom.",
+    "yourAddressLabel": "Vaša adresa",
+    "copyToLabel": "Kópia na",
+    "addRecipient": "Pridať príjemcu",
+    "removeRecipient": "Odobrať",
+    "addPlaceholder": "meno@firma.sk",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámenie v centre notifikácií",
+    "inAppDescription": "",
+    "saved": "Nastavenia oznámení uložené.",
+    "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+    "duplicate": "Táto adresa už je v zozname."
   }
 }

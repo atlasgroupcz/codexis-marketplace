@@ -24,7 +24,7 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from sledovana_judikatura_core import state, tracking
+    from sledovana_judikatura_core import notify, notify_settings, state, tracking
     from sledovana_judikatura_core.exceptions import (
         NoteIndexError,
         ReportNotFoundError,
@@ -141,6 +141,19 @@ def handle_post(body):
         emit_json({"ok": True})
         return
 
+    if action == "save_notify_settings":
+        try:
+            notify_settings.set_notify(
+                email=body.get("email"),
+                inApp=body.get("inApp"),
+                recipients=body.get("recipients"),
+            )
+        except ValueError as e:
+            emit_json({"ok": False, "error": str(e)}, status="400 Bad Request")
+            return
+        emit_json({"ok": True, "settings": notify_settings.get_notify()})
+        return
+
     emit_json({"error": f"Unknown action: {action}"}, status="400 Bad Request")
 
 
@@ -149,6 +162,16 @@ def handle_post(body):
 
 def handle_get(query_string):
     params = urllib.parse.parse_qs(query_string)
+
+    view = (params.get("view", [""])[0] or "").strip()
+    if view == "notify":
+        emit_json({
+            "mode": "notify",
+            "settings": notify_settings.get_notify(),
+            "userEmail": notify._query_me_email() or "",
+        })
+        return
+
     topic_uuid = params.get("uuid", [None])[0]
     report_id = params.get("report", [None])[0]
     if topic_uuid:

@@ -40,8 +40,20 @@ def _require_topic(partial_uuid):
 # ── topic lifecycle ──────────────────────────────────────────────────────────
 
 
+def find_topic_by_name(name):
+    """Return (uuid, data) of an existing topic whose name matches (case-insensitive), or None."""
+    target = name.strip().lower()
+    for uuid, data in state.all_topics():
+        if data.get("name", "").strip().lower() == target:
+            return uuid, data
+    return None
+
+
 def init(name, notes=None):
-    """Create a new tracked topic. Returns (uuid, topic_data)."""
+    """Create a new tracked topic, or return the existing one with the same name."""
+    existing = find_topic_by_name(name)
+    if existing is not None:
+        return existing
     topic_uuid = str(uuid_mod.uuid4())
     data = {
         "uuid": topic_uuid,

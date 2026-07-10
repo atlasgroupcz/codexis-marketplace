@@ -75,25 +75,49 @@
     }
   },
   "settings": {
-    "title": "API Key Settings",
-    "description": "Katastr requires a ČÚZK API key.",
     "getKey": "Where do I get an API key?",
     "getKeyHint": "On the ČÚZK page choose the API dat katastru nemovitostí section.",
-    "currentKey": "Current API key",
     "newLabel": "Enter ČÚZK API key",
-    "replaceLabel": "Enter new ČÚZK API key",
-    "placeholder": "Paste API key",
-    "save": "Save",
-    "saving": "Saving...",
-    "savedSuccess": "API key validated and saved.",
-    "saveError": "Failed to save key.",
-    "deleteKey": "Remove key",
-    "deleting": "Removing...",
-    "confirmDelete": "Really remove the stored API key?"
+    "placeholder": "Paste API key"
   },
   "apiKeyBanner": {
     "title": "ČÚZK API key not configured",
     "text": "This module requires a ČÚZK API key. Without it no proceedings can be added or tracked.",
     "action": "Set API key"
+  },
+  "notify": {
+    "title": "Cadastre settings",
+    "description": "Notifications and ČÚZK access.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "emailLabel": "E-mail on change",
+    "emailDescription": "A summary of changes arrives by e-mail.",
+    "yourAddressLabel": "Your address",
+    "copyToLabel": "Copy to",
+    "addRecipient": "Add recipient",
+    "removeRecipient": "Remove",
+    "addPlaceholder": "name@company.com",
+    "invalidEmail": "Invalid e-mail address.",
+    "inAppLabel": "In the notification center",
+    "inAppDescription": "",
+    "section": "Notifications",
+    "ownAddress": "That's your address — you always get the e-mail.",
+    "duplicate": "That address is already in the list."
+  },
+  "connection": {
+    "connected": "Connected",
+    "remove": "Remove",
+    "confirmRemove": "Remove key?",
+    "save": "Save",
+    "saving": "Verifying…",
+    "notConnected": "Not connected to ČÚZK",
+    "currentKey": "Key set",
+    "change": "Change",
+    "disconnect": "Disconnect",
+    "disconnecting": "Disconnecting…",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "cancel": "Cancel",
+    "section": "Cadastre connection"
   }
 }

@@ -3,8 +3,6 @@
 import json
 import os
 
-import pytest
-
 from katastr_core.tracking import (
     _detect_changes,
     confirm,

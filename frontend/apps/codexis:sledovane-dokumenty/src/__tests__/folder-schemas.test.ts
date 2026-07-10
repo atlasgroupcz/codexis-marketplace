@@ -3,6 +3,7 @@ import {
   browseResponseSchema,
   folderResponseSchema,
   foldersResponseSchema,
+  notifyResponseSchema,
 } from '@/lib/schemas'
 
 describe('folder schemas', () => {
@@ -70,5 +71,15 @@ describe('folder schemas', () => {
     })
     expect(parsed.entries[0].name).toBe('docs')
     expect(parsed.parent).toBeNull()
+  })
+
+  it('parses a notify response, including an empty userEmail outside a CDX daemon', () => {
+    const parsed = notifyResponseSchema.parse({
+      mode: 'notify',
+      settings: { email: true, inApp: false },
+      userEmail: '',
+    })
+    expect(parsed.settings.recipients).toEqual([])
+    expect(parsed.userEmail).toBe('')
   })
 })

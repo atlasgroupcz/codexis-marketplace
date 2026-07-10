@@ -81,7 +81,10 @@
     }
   },
   "folders": {
-    "section": { "documents": "Acts", "folders": "Folders" },
+    "section": {
+      "documents": "Acts",
+      "folders": "Folders"
+    },
     "title": "Watched folders",
     "subtitle": "We track the legislation your documents reference",
     "add": "Add folder",
@@ -107,7 +110,10 @@
     "extracted": "Processed",
     "pending": "Pending",
     "refCount": "{{count}} legislation references",
-    "tabs": { "legislation": "Legislation", "documents": "Documents" },
+    "tabs": {
+      "legislation": "Legislation",
+      "documents": "Documents"
+    },
     "card": {
       "documents": "{{count}} documents",
       "legislation": "{{count}} acts",
@@ -123,14 +129,25 @@
       "noSubfolders": "No sub-folders",
       "home": "Home",
       "up": "Up one level"
-    },
-    "notify": {
-      "title": "Notification settings",
-      "description": "How we alert you when watched legislation changes.",
-      "email": "By e-mail",
-      "inApp": "In the app",
-      "save": "Save",
-      "saved": "Settings saved"
     }
+  },
+  "notify": {
+    "title": "Document settings",
+    "description": "How we notify you about changes.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "emailLabel": "E-mail on change",
+    "emailDescription": "A summary of changes arrives by e-mail.",
+    "yourAddressLabel": "Your address",
+    "copyToLabel": "Copy to",
+    "addRecipient": "Add recipient",
+    "removeRecipient": "Remove",
+    "addPlaceholder": "name@company.com",
+    "invalidEmail": "Invalid e-mail address.",
+    "inAppLabel": "In the notification center",
+    "inAppDescription": "",
+    "saved": "Settings saved",
+    "ownAddress": "That's your address — you always get the e-mail.",
+    "duplicate": "That address is already in the list."
   }
 }

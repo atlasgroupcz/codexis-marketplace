@@ -6,7 +6,7 @@ Usage:
     znamky-cli sledovani add-logo <PATH> [--text "..."] [--nice 9,42] [--territory CZ,EU] [--vienna 26.4.1,27.5] [--label "..."]
     znamky-cli sledovani list
     znamky-cli sledovani show <ID>
-    znamky-cli sledovani check [<ID>] [--email]
+    znamky-cli sledovani check [<ID>]
     znamky-cli sledovani confirm <ID> [--all | --change <INDEX>]
     znamky-cli sledovani set-label <ID> <LABEL>
     znamky-cli sledovani remove <ID>
@@ -34,7 +34,7 @@ for p in CANDIDATES:
         break
 
 try:
-    from znamky_core import notify, tracking
+    from znamky_core import notify, notify_settings, tracking
     from znamky_core.exceptions import ZnamkyError
 except ImportError as e:
     print(f"ERROR: znamky_core library not found: {e}", file=sys.stderr)
@@ -46,6 +46,10 @@ def err(msg):
 
 
 def info(msg):
+    print(msg, file=sys.stderr)
+
+
+def out(msg):
     print(msg)
 
 
@@ -85,10 +89,16 @@ def _fmt_mark_short(state: dict) -> str:
 
 
 def cmd_add_text(args):
-    state = tracking.add_text(
-        args.text, nice_classes=args.nice, territories=args.territory,
-        owner_name=args.owner, label=args.label,
-    )
+    try:
+        state = tracking.add_text(
+            args.text, nice_classes=args.nice, territories=args.territory,
+            owner_name=args.owner, label=args.label,
+        )
+    except tracking.MarkAlreadyTrackedError:
+        info(f"OK: Slovní známka „{args.text}“ je již sledována (nic k přidání).")
+        if args.label:
+            info("  Pozn.: --label platí jen při prvním přidání; štítek změníš příkazem set-label.")
+        return
     e = tracking.state_to_overview_entry(state)
     info(f"OK: Slovní známka „{state['text']}\" přidána ke sledování (id: {state['uuid']}).")
     info(f"  Nalezeno podobných známek: {e['collisions_count']}")
@@ -109,12 +119,12 @@ def cmd_add_logo(args):
 def cmd_list(args):
     marks = tracking.list_all()
     if not marks:
-        info("Žádné sledované známky.")
+        out("Žádné sledované známky.")
         return
-    info(f"Sledované známky ({len(marks)}):\n")
+    out(f"Sledované známky ({len(marks)}):\n")
     for state in marks:
-        info(_fmt_mark_short(state))
-        info("")
+        out(_fmt_mark_short(state))
+        out("")
 
 
 def cmd_show(args):
@@ -128,31 +138,36 @@ def cmd_check(args):
     else:
         results = tracking.check_all()
     if not results:
-        info("Žádné sledované známky ke kontrole.")
+        out("Žádné sledované známky ke kontrole.")
         return
     total = 0
     for r in results:
         name = r["display_name"]
         if not r["ok"]:
-            info(f"  {name}: CHYBA — {r['error']}")
+            out(f"  {name}: CHYBA — {r['error']}")
             continue
         new = r["new_collisions"]
         if not new:
-            info(f"  {name}: beze změn")
+            out(f"  {name}: beze změn")
             continue
         total += len(new)
-        info(f"  {name}: {len(new)} nových podobných známek")
+        out(f"  {name}: {len(new)} nových podobných známek")
         for c in new:
             label = c.get("mark_text") or "(obrazová známka)"
-            info(f"    • {label} [{c['tier']}, skóre {c['scores']['overall']}] — {c.get('applicant', '')}")
-    info(f"\nKontrola dokončena. Celkem {total} nových u {len(results)} známek.")
+            out(f"    • {label} [{c['tier']}, skóre {c['scores']['overall']}] — {c.get('applicant', '')}")
+    out(f"\nKontrola dokončena. Celkem {total} nových u {len(results)} známek.")
 
-    if getattr(args, "email", False):
+    notify_cfg = notify_settings.get_notify()
+    if notify_cfg.get("email"):
         try:
-            sent = notify.email_change_summary(results)
+            to = notify.resolve_to(notify_cfg.get("recipients"))
+            sent = notify.email_change_summary(results, to=to)
             info(f"E-mailem odeslán souhrn {sent} nových." if sent else "Žádné nové — e-mail neodeslán.")
         except ZnamkyError as e:
             info(f"E-mail se nepodařilo odeslat: {e}")
+    if notify_cfg.get("inApp"):
+        if notify.inapp_change_summary(results):
+            info("Upozornění odesláno do aplikace (zvoneček).")
 
 
 def cmd_confirm(args):
@@ -178,7 +193,11 @@ def cmd_assess(args):
 
 
 def cmd_remove(args):
-    state = _resolve(args.id)
+    try:
+        state = _resolve(args.id)
+    except tracking.MarkNotTrackedError:
+        info(f"OK: Známka {args.id!r} není sledována (nic k odebrání).")
+        return
     name = tracking.display_name(state)
     tracking.remove(state["uuid"])
     info(f"OK: Známka {name} odstraněna ze sledování.")
@@ -211,6 +230,37 @@ def _split(value):
     if not value:
         return []
     return [p.strip() for p in str(value).replace(";", ",").split(",") if p.strip()]
+
+
+# ── notify commands ─────────────────────────────────────────────────────────
+
+
+def cmd_notify_show(args):
+    print(json.dumps(notify_settings.get_notify(), indent=2, ensure_ascii=False))
+
+
+def cmd_notify_set(args):
+    eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
+    info(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+
+
+def cmd_notify_recipients(args):
+    current = list(notify_settings.get_notify().get("recipients", []))
+    if args.rcmd == "add":
+        current.append(args.email.strip())
+    elif args.rcmd == "remove":
+        current = [r for r in current if r.lower() != args.email.strip().lower()]
+    elif args.rcmd == "set":
+        current = list(args.emails)
+    elif args.rcmd == "clear":
+        current = []
+    try:
+        eff = notify_settings.set_notify(recipients=current)
+    except ValueError as e:
+        err(str(e))
+        sys.exit(1)
+    joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
+    info(f"OK: Příjemci — {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────
@@ -256,7 +306,6 @@ def build_parser():
 
     p_check = tr_sub.add_parser("check", help="Re-search registers for new similar marks")
     p_check.add_argument("id", nargs="?", help="Specific mark (default: all)")
-    p_check.add_argument("--email", action="store_true", help="E-mail a summary of new collisions")
     p_check.set_defaults(func=cmd_check)
 
     p_conf = tr_sub.add_parser("confirm", help="Mark collisions as reviewed")
@@ -300,12 +349,34 @@ def build_parser():
     p_ll.add_argument("--vienna", default="", help="Vienna codes")
     p_ll.set_defaults(func=cmd_lustrace_logo)
 
+    # ─── notify ────
+    nt = sub.add_parser("notify", help="Manage notification settings")
+    nt_sub = nt.add_subparsers(dest="cmd", required=True)
+    p_ns = nt_sub.add_parser("show", help="Show current notification settings")
+    p_ns.set_defaults(func=cmd_notify_show)
+    p_nset = nt_sub.add_parser("set", help="Change notification settings")
+    p_nset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.set_defaults(func=cmd_notify_set)
+
+    p_nrec = nt_sub.add_parser("recipients", help="Manage e-mail recipients")
+    nr_sub = p_nrec.add_subparsers(dest="rcmd", required=True)
+    nr_add = nr_sub.add_parser("add", help="Add a recipient e-mail")
+    nr_add.add_argument("email")
+    nr_rm = nr_sub.add_parser("remove", help="Remove a recipient e-mail")
+    nr_rm.add_argument("email")
+    nr_set = nr_sub.add_parser("set", help="Replace the whole recipient list")
+    nr_set.add_argument("emails", nargs="*")
+    nr_sub.add_parser("clear", help="Remove all recipients")
+    p_nrec.set_defaults(func=cmd_notify_recipients)
+
     return p
 
 
 def main():
     args = build_parser().parse_args()
     try:
+        notify_settings.ensure_settings()
         args.func(args)
     except ZnamkyError as e:
         err(str(e))

@@ -3,7 +3,9 @@ import {
   checkAllResponseSchema,
   detailResponseSchema,
   dphResponseSchema,
+  notifyResponseSchema,
   overviewResponseSchema,
+  saveNotifyResponseSchema,
 } from './schemas'
 import type { z } from 'zod'
 import type {
@@ -11,7 +13,10 @@ import type {
   CheckAllResponse,
   DetailResponse,
   DphResponse,
+  NotifyResponse,
+  NotifyValues,
   OverviewResponse,
+  SaveNotifyResponse,
 } from './schemas'
 
 function getApiBase(): string {
@@ -82,6 +87,10 @@ export function fetchDph(dic: string): Promise<DphResponse> {
   return getJson(dphResponseSchema, { dph: dic })
 }
 
+export function fetchNotify(): Promise<NotifyResponse> {
+  return getJson(notifyResponseSchema, { view: 'notify' })
+}
+
 // ─── writes ────────────────────────────────────────────────────────────────
 
 export function addCompany(ico: string, label = ''): Promise<ActionResponse> {
@@ -125,4 +134,8 @@ export function confirmChange(
 
 export function setLabel(uuid: string, label: string): Promise<ActionResponse> {
   return postJson('set_label', actionResponseSchema, { uuid, label })
+}
+
+export function saveNotify(values: NotifyValues): Promise<SaveNotifyResponse> {
+  return postJson('save_notify_settings', saveNotifyResponseSchema, { ...values })
 }

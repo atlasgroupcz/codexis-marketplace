@@ -116,3 +116,24 @@ export const dphResponseSchema = z.object({
   ucty: z.array(dphAccountSchema).optional().default([]),
 })
 export type DphResponse = z.infer<typeof dphResponseSchema>
+
+export const notifySettingsSchema = z.object({
+  email: z.boolean(),
+  inApp: z.boolean(),
+  recipients: z.array(z.string()),
+})
+export type NotifyValues = z.infer<typeof notifySettingsSchema>
+
+export const notifyResponseSchema = z.object({
+  mode: z.literal('notify'),
+  settings: notifySettingsSchema,
+  userEmail: z.string(),
+})
+export type NotifyResponse = z.infer<typeof notifyResponseSchema>
+
+export const saveNotifyResponseSchema = z.object({
+  ok: z.boolean(),
+  error: z.string().optional(),
+  settings: notifySettingsSchema.optional(),
+})
+export type SaveNotifyResponse = z.infer<typeof saveNotifyResponseSchema>

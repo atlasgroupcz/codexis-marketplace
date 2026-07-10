@@ -1,7 +1,6 @@
-"""E-mail a summary of a proceeding-tracking check run.
+"""E-mail a summary of newly detected changes from a proceeding-tracking check run.
 
-Every run e-mails something — the newly detected changes, or a "no new changes"
-heartbeat so the user sees the watchdog is alive.
+Sends only when a change was actually detected; a quiet run sends nothing.
 
 Uses the daemon's plugin e-mail API (POST /rest/v1/plugin/email/send). Auth is the
 VM/daemon token the host writes to ~/.cdx/env/secret (the same token cdxctl uses) —
@@ -27,6 +26,10 @@ _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 # rejects it (403). This is the same token cdxctl reads.
 _SECRET_FILE = os.path.join(".cdx", "env", "secret")
 
+# Deep link into the plugin's app + notification type tag for the bell.
+APP_LINK = "/katastr"
+_NOTIFICATION_TYPE = "cadastre-changed"
+
 
 def _load_auth() -> str | None:
     """Bearer authorization header from ~/.cdx/env/secret, or None if unavailable."""
@@ -38,11 +41,54 @@ def _load_auth() -> str | None:
         return None
     if not token:
         return None
-    if token.startswith("Authorization:"):
+    if token.lower().startswith("authorization:"):
         token = token[len("Authorization:"):].strip()
     if token[:7].lower() == "bearer ":
         return token
     return f"Bearer {token}"
+
+
+def _query_me_email() -> str | None:
+    """Signed-in user's e-mail from the daemon (GraphQL `me`), or None. Best-effort."""
+    daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
+    auth = _load_auth()
+    if not daemon_url or not auth:
+        return None
+    body = json.dumps({"query": "query { me { email } }"}).encode("utf-8")
+    try:
+        req = urllib.request.Request(
+            daemon_url,
+            data=body,
+            headers={"Content-Type": "application/json", "Authorization": auth},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.load(resp)
+        if not isinstance(data, dict):
+            return None
+        me = (data.get("data") or {}).get("me") or {}
+        email = me.get("email")
+        return email if isinstance(email, str) and email else None
+    except Exception:
+        return None
+
+
+def resolve_to(recipients: list | None) -> list | None:
+    """Compose the e-mail `to` list (variant 2): the signed-in user is always
+    included when there are extra recipients.
+
+    - no extras  -> None (daemon delivers to the authenticated user)
+    - extras     -> [signed_in_user, *extras] with any extra matching the signed-in
+      user (case-insensitive) dropped to avoid a duplicate, or just extras if `me`
+      can't be resolved
+    """
+    extras = [r for r in (recipients or []) if str(r).strip()]
+    if not extras:
+        return None
+    me = _query_me_email()
+    if not me:
+        return list(extras)
+    me_key = me.strip().lower()
+    return [me, *[e for e in extras if e.strip().lower() != me_key]]
 
 
 def _rest_base(daemon_url: str) -> str:
@@ -121,36 +167,6 @@ def _email_shell(heading: str, inner_html: str) -> str:
     )
 
 
-def _no_change_summary(results: list):
-    """Heartbeat (subject, body_text, body_html) for a run with no new changes.
-
-    Sent so the user sees the watchdog is alive even on a quiet run. Notes any
-    proceedings whose check failed rather than silently claiming "all clear".
-    """
-    ok = [r for r in results if r.get("ok")]
-    errored = [r for r in results if not r.get("ok")]
-
-    subject = "Katastr: žádné nové změny" if ok else "Katastr: kontrolu se nepodařilo dokončit"
-
-    text_lines = ["Hlídač katastrálních řízení — pravidelná kontrola:", ""]
-    inner = ""
-    if ok:
-        text_lines.append(f"Zkontrolováno {len(ok)} řízení — žádné nové změny.")
-        inner += (
-            '<p style="margin:0;font:14px/1.5 sans-serif;color:#333">'
-            f"Zkontrolováno {len(ok)} řízení — žádné nové změny.</p>"
-        )
-    if errored:
-        text_lines.append(f"U {len(errored)} řízení se kontrola nezdařila.")
-        inner += (
-            '<p style="margin:6px 0 0;font:14px/1.5 sans-serif;color:#b45309">'
-            f"U {len(errored)} řízení se kontrola nezdařila.</p>"
-        )
-    text_lines += ["", _FOOTER]
-
-    return subject, "\n".join(text_lines), _email_shell("Žádné nové změny", inner)
-
-
 def _change_summary(changed: list):
     """(subject, body_text, body_html) for proceedings with a newly detected change."""
     if len(changed) == 1:
@@ -179,28 +195,68 @@ def _change_summary(changed: list):
 
 
 def build_summary(results: list):
-    """Build (subject, body_text, body_html) for a check run, or None if nothing was checked.
-
-    Always summarises a run: the detected changes, or a "no new changes"
-    heartbeat. Returns None only when there were no proceedings to check.
-    """
-    if not results:
-        return None
+    """Build (subject, body_text, body_html) for proceedings with a new change, or None."""
     changed = _changed(results)
-    return _change_summary(changed) if changed else _no_change_summary(results)
+    if not changed:
+        return None
+    return _change_summary(changed)
 
 
 def email_change_summary(results: list, to: list | None = None):
-    """Send one summary e-mail for a check run.
+    """Send one summary e-mail for proceedings with newly detected changes.
 
-    Sends the detected changes, or a "no new changes" heartbeat so the user sees
-    the watchdog is alive. Pass `to` to override the recipient (default: the
-    signed-in user). Returns the number of proceedings with a new change (0 for a
-    heartbeat), or None when there was nothing to check (no e-mail sent).
+    Returns the number of proceedings with a new change (0 → nothing sent). Pass
+    `to` to override the recipient (default: the signed-in user).
     """
-    if not results:
-        return None
     changed = _changed(results)
-    summary = _change_summary(changed) if changed else _no_change_summary(results)
-    _send_email(*summary, to=to)
+    if not changed:
+        return 0
+    _send_email(*_change_summary(changed), to=to)
     return len(changed)
+
+
+def _send_inapp(message: str, *, action: str | None = None, link: str | None = None) -> bool:
+    """Create an in-app (notification-center bell) notification via the daemon's
+    GraphQL createNotification. Best-effort: returns False on missing config or a
+    transport error, never raises (a notification must not fail the check)."""
+    graphql_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
+    auth = _load_auth()
+    if not graphql_url or not auth:
+        return False
+    mutation = (
+        "mutation Create($input: CreateNotificationInput!) "
+        "{ createNotification(input: $input) { id } }"
+    )
+    notification_input = {"message": message, "type": _NOTIFICATION_TYPE}
+    if action:
+        notification_input["action"] = action
+    if link:
+        notification_input["link"] = link
+    body = json.dumps(
+        {"query": mutation, "variables": {"input": notification_input}},
+        ensure_ascii=False,
+    ).encode("utf-8")
+    req = urllib.request.Request(
+        graphql_url,
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": auth,
+            "Content-Type": "application/json; charset=utf-8",
+        },
+    )
+    try:
+        urllib.request.urlopen(req, timeout=30).close()
+        return True
+    except (urllib.error.URLError, OSError, ValueError):
+        return False
+
+
+def inapp_change_summary(results: list) -> bool:
+    """Send an in-app (bell) notification only when there is a real change
+    (no heartbeat bell). Returns True if sent."""
+    changed = _changed(results)
+    if not changed:
+        return False
+    subject = _change_summary(changed)[0]
+    return _send_inapp(subject, link=APP_LINK)

@@ -369,3 +369,14 @@ class TestFindTopic:
         state.save_topic("dup-2", {"name": "B"})
         # resolve_uuid would raise AmbiguousTopicPrefixError, find_topic swallows
         assert tracking.find_topic("dup") == (None, None)
+
+
+# ── init dedup ────────────────────────────────────────────────────────────────
+
+
+class TestInitDedup:
+    def test_init_same_name_returns_existing(self, judikatura_app_dir):
+        u1, _ = tracking.init("Náhrada škody")
+        u2, _ = tracking.init("náhrada škody")   # case-insensitive match
+        assert u2 == u1
+        assert len(state.all_topics()) == 1

@@ -1,9 +1,6 @@
 """sledovane-dokumenty state.py — slugify, find_group, atomic I/O, related baselines."""
 
-import json
 import os
-
-import pytest
 
 from sledovane_dokumenty_core import state
 

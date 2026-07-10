@@ -76,3 +76,17 @@ export const checkAllResponseSchema = z.object({
   ),
 })
 export type CheckAllResponse = z.infer<typeof checkAllResponseSchema>
+
+export const notifySettingsSchema = z.object({
+  email: z.boolean(),
+  inApp: z.boolean(),
+  recipients: z.array(z.string()),
+})
+export type NotifySettingsValues = z.infer<typeof notifySettingsSchema>
+
+export const notifyResponseSchema = z.object({
+  mode: z.literal('notify'),
+  settings: notifySettingsSchema,
+  userEmail: z.string(),
+})
+export type NotifyResponse = z.infer<typeof notifyResponseSchema>

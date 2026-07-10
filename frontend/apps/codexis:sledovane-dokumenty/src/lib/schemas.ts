@@ -112,6 +112,13 @@ export const notifySettingsSchema = z.object({
 })
 export type NotifySettings = z.infer<typeof notifySettingsSchema>
 
+export const notifyResponseSchema = z.object({
+  mode: z.literal('notify'),
+  settings: notifySettingsSchema,
+  userEmail: z.string(),
+})
+export type NotifyResponse = z.infer<typeof notifyResponseSchema>
+
 export const folderChangeSchema = z.object({
   detected_on: z.string(),
   effective_on: z.string().nullable().optional(),

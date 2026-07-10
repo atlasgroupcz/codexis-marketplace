@@ -3,7 +3,7 @@ uuid: 5cdb1ccf-e079-49a9-a618-a3f3bb60dc20
 name: sledovana-judikatura
 icon: icon.svg
 description: Track case law topics and generate periodic reports. Use when user wants to monitor new jurisprudence, track judicial decisions, or get regular case law summaries. Triggers on "sleduj judikaturu", "judikatura", "nová rozhodnutí", "case law monitoring", "soudní rozhodnutí".
-version: 1.1.1
+version: 1.2.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -27,7 +27,7 @@ Monitor Czech (and European) case law by topic. AI searches for new judicial dec
 
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovana-judikatura` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
-**IMPORTANT:** If `cdx-sledovana-judikatura` outputs an ERROR, stop immediately and report it to the user. Do not retry or guess.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-existing topic/area or removing one that isn't there is a safe no-op (prints `OK:`), so re-running is fine. When acting on several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
@@ -51,6 +51,7 @@ Monitor Czech (and European) case law by topic. AI searches for new judicial dec
 # Create a new tracked topic
 cdx-sledovana-judikatura init "Náhrada škody"
 cdx-sledovana-judikatura init "Okamžité zrušení PP" --notes "zajímá mě role GDPR"
+# --notes on init seeds context only at creation; add context to an existing topic with note add.
 
 # List all tracked topics
 cdx-sledovana-judikatura list

@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileText, FolderClock, FolderPlus, Loader2, Scale, Settings2 } from 'lucide-react'
+import { FileText, FolderClock, FolderPlus, Loader2, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { SectionSwitch } from './section-switch'
 import { FolderPicker } from './folder-picker'
-import { NotifySettingsDialog } from './notify-settings'
 import { FeedSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
-import type { FolderSummary, NotifySettings } from '@/lib/schemas'
+import type { FolderSummary } from '@/lib/schemas'
 import { useFolders } from '@/hooks/use-folders'
 import { postFolderAction } from '@/lib/api'
 
@@ -17,18 +17,21 @@ interface FoldersHomeProps {
   section: 'documents' | 'folders'
   onChangeSection: (section: 'documents' | 'folders') => void
   onSelectFolder: (root: string) => void
+  onOpenSettings: () => void
 }
 
-export function FoldersHome({ section, onChangeSection, onSelectFolder }: FoldersHomeProps) {
+export function FoldersHome({
+  section,
+  onChangeSection,
+  onSelectFolder,
+  onOpenSettings,
+}: FoldersHomeProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useFolders()
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [settings, setSettings] = useState<NotifySettings | null>(null)
 
   const folders = data?.folders ?? []
-  const effectiveSettings = settings ?? data?.settings ?? { email: true, inApp: true, recipients: [] }
 
   const handleAdd = (path: string) => {
     setAdding(true)
@@ -44,36 +47,19 @@ export function FoldersHome({ section, onChangeSection, onSelectFolder }: Folder
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="folders-root">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="bg-secondary text-primary ring-brand-100 flex size-9 items-center justify-center rounded-xl ring-1">
-            <FolderClock className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-foreground truncate text-[15px] leading-tight">
-              {t('folders.title')}
-            </h1>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {t('folders.subtitle')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <SectionSwitch section={section} onChange={onChangeSection} />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSettingsOpen(true)}
-            aria-label={t('folders.notify.title')}
-          >
-            <Settings2 className="size-4" />
-          </Button>
-          <Button size="sm" onClick={() => setPickerOpen(true)}>
-            <FolderPlus className="size-4" />
-            <span className="hidden sm:inline">{t('folders.add')}</span>
-          </Button>
-        </div>
-      </header>
+      <AppHeader
+        brand={{ icon: FolderClock, title: t('folders.title'), subtitle: t('folders.subtitle') }}
+        actions={
+          <>
+            <SectionSwitch section={section} onChange={onChangeSection} />
+            <Button size="sm" onClick={() => setPickerOpen(true)}>
+              <FolderPlus className="size-4" />
+              <span className="hidden sm:inline">{t('folders.add')}</span>
+            </Button>
+            <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />
+          </>
+        }
+      />
 
       <main className="min-h-0 flex-1">
         {loading && !data ? (
@@ -98,12 +84,6 @@ export function FoldersHome({ section, onChangeSection, onSelectFolder }: Folder
       </main>
 
       <FolderPicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={handleAdd} busy={adding} />
-      <NotifySettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        settings={effectiveSettings}
-        onSaved={setSettings}
-      />
       <Toaster position="bottom-right" />
     </div>
   )

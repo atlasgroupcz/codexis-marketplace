@@ -1,7 +1,5 @@
 """Stateful katastr ops: add, remove, show, set_label, find_by_uuid, confirm, check_one."""
 
-import os
-
 import pytest
 
 from katastr_core import tracking

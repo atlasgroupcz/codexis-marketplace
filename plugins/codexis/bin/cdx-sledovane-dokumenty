@@ -44,8 +44,8 @@ try:
         folder_check,
         folders,
         harvest,
-        notify,
         related as related_mod,
+        settings,
         state,
         tracking,
     )
@@ -60,7 +60,11 @@ except ImportError as e:
 
 
 def err(msg):
-    print(f"ERROR: {msg}")
+    print(f"ERROR: {msg}", file=sys.stderr)
+
+
+def status(msg):
+    print(msg, file=sys.stderr)
 
 
 def print_progress(msg):
@@ -74,16 +78,24 @@ def cmd_add(args):
     parts = None
     if args.parts:
         parts = [p.strip() for p in args.parts.split(",") if p.strip()]
-    s = tracking.add(args.codexis_id, parts=parts)
-    print(f"OK: Sledování zahájeno pro {s['name']} ({s['codexisId']}).")
-    print(f"  Aktuální verze: {s['baseline_version_id']}")
+    try:
+        s = tracking.add(args.codexis_id, parts=parts)
+    except tracking.DocumentAlreadyTrackedError:
+        status(f"OK: {args.codexis_id} je už sledován (nic k přidání).")
+        return
+    status(f"OK: Sledování zahájeno pro {s['name']} ({s['codexisId']}).")
+    status(f"  Aktuální verze: {s['baseline_version_id']}")
     if s.get("parts"):
-        print(f"  Sledované části: {', '.join(s['parts'])}")
+        status(f"  Sledované části: {', '.join(s['parts'])}")
 
 
 def cmd_remove(args):
-    s = tracking.remove(args.codexis_id)
-    print(f"OK: Sledování ukončeno pro {s.get('name', args.codexis_id)}.")
+    try:
+        s = tracking.remove(args.codexis_id)
+    except tracking.DocumentNotTrackedError:
+        status(f"OK: {args.codexis_id} není sledován (nic k odebrání).")
+        return
+    status(f"OK: Sledování ukončeno pro {s.get('name', args.codexis_id)}.")
 
 
 def cmd_list(args):
@@ -96,17 +108,17 @@ def cmd_list(args):
         changes = s.get("changes", [])
         unconfirmed = [c for c in changes if not c.get("confirmed_on")]
         if unconfirmed:
-            status = f"NOVÁ ZMĚNA ({len(unconfirmed)} nepotvrzená/é)"
+            stav = f"NOVÁ ZMĚNA ({len(unconfirmed)} nepotvrzená/é)"
         elif changes:
-            status = f"potvrzeno ({len(changes)} změn v historii)"
+            stav = f"potvrzeno ({len(changes)} změn v historii)"
         else:
-            status = "bez změn"
+            stav = "bez změn"
         print(f"  {cid}  {s.get('name', '')}")
         print(
             f"    Baseline: {s.get('baseline_version_id')}  "
             f"Aktuální: {s.get('last_known_version_id')}"
         )
-        print(f"    Poslední kontrola: {s.get('last_check_at')}  Stav: {status}")
+        print(f"    Poslední kontrola: {s.get('last_check_at')}  Stav: {stav}")
         rt = s.get("related_tracking") or {}
         if rt.get("enabled"):
             parts_info = []
@@ -124,8 +136,11 @@ def cmd_list(args):
 
 def cmd_check(args):
     result = tracking.check(args.codexis_id, printer=print_progress)
+    if result.get("changed"):
+        from sledovane_dokumenty_core import notify
+        notify.notify_document_changes(result["changed"])
     if result["changes_found"] == 0 and not result["errors"]:
-        print("Žádné nové změny.")
+        status("Žádné nové změny.")
 
 
 def cmd_confirm(args):
@@ -133,9 +148,9 @@ def cmd_confirm(args):
     s = state.load_state(args.codexis_id)
     name = s.get("name", args.codexis_id) if s else args.codexis_id
     if marked == 0:
-        print(f"{args.codexis_id}: žádná nepotvrzená změna.")
+        status(f"{args.codexis_id}: žádná nepotvrzená změna.")
     else:
-        print(
+        status(
             f"OK: {marked} změna/y potvrzena pro {name}. "
             f"Baseline posunuta na {s['baseline_version_id']}."
         )
@@ -155,23 +170,27 @@ def cmd_group_add(args):
     s = state.load_state(args.codexis_id)
     name = s.get("name", args.codexis_id) if s else args.codexis_id
     if result == "already":
-        print(f"{args.codexis_id} je již ve skupině '{group_name}'.")
+        status(f"{args.codexis_id} je již ve skupině '{group_name}'.")
     else:
-        print(f"OK: {name} přidán do skupiny '{group_name}'.")
+        status(f"OK: {name} přidán do skupiny '{group_name}'.")
 
 
 def cmd_group_remove(args):
     group_name = " ".join(args.name)
-    tracking.group_remove(args.codexis_id, group_name)
+    try:
+        tracking.group_remove(args.codexis_id, group_name)
+    except (tracking.GroupNotFoundError, tracking.DocumentNotTrackedError):
+        status(f"OK: {args.codexis_id} není ve skupině '{group_name}' (nic k odebrání).")
+        return
     s = state.load_state(args.codexis_id)
     name = s.get("name", args.codexis_id) if s else args.codexis_id
-    print(f"OK: {name} odebrán ze skupiny '{group_name}'.")
+    status(f"OK: {name} odebrán ze skupiny '{group_name}'.")
 
 
 def cmd_group_delete(args):
     group_name = " ".join(args.name)
     tracking.group_delete(group_name)
-    print(f"OK: Skupina '{group_name}' smazána.")
+    status(f"OK: Skupina '{group_name}' smazána.")
 
 
 def cmd_group_list(args):
@@ -195,7 +214,7 @@ def cmd_group_list(args):
 def cmd_note_add(args):
     text = " ".join(args.text)
     tracking.note_add(args.codexis_id, text)
-    print(f"OK: Poznámka přidána k {args.codexis_id}.")
+    status(f"OK: Poznámka přidána k {args.codexis_id}.")
 
 
 def cmd_note_list(args):
@@ -212,7 +231,7 @@ def cmd_note_list(args):
 
 def cmd_note_remove(args):
     removed = tracking.note_remove(args.codexis_id, args.index)
-    print(f"OK: Poznámka [{args.index}] odstraněna: {removed}")
+    status(f"OK: Poznámka [{args.index}] odstraněna: {removed}")
 
 
 # ── related ──────────────────────────────────────────────────────────────────
@@ -227,31 +246,31 @@ def cmd_related_add(args):
         s.get("related_tracking") or {}
     ).get("enabled") else []
     if args.type in existing:
-        print(f"{args.type} už je sledováno pro {args.codexis_id}.")
+        status(f"{args.type} už je sledováno pro {args.codexis_id}.")
         return
-    print(f"Přidávám sledování {args.type} pro {s.get('name', args.codexis_id)}...")
+    status(f"Přidávám sledování {args.type} pro {s.get('name', args.codexis_id)}...")
     related_mod.enable_tracking(args.codexis_id, args.type)
     s = state.load_state(args.codexis_id)
     types = (s.get("related_tracking") or {}).get("types", [])
-    print(f"OK: Sledované typy: {', '.join(types)}")
+    status(f"OK: Sledované typy: {', '.join(types)}")
 
 
 def cmd_related_remove(args):
     s = state.load_state(args.codexis_id)
     if s is None:
-        err(f"{args.codexis_id} není sledován.")
-        sys.exit(1)
+        status(f"OK: {args.codexis_id} není sledován (nic k odebrání).")
+        return
     existing = (s.get("related_tracking") or {}).get("types", [])
     if args.type not in existing:
-        err(f"{args.type} není sledováno pro {args.codexis_id}.")
-        sys.exit(1)
+        status(f"OK: {args.type} není sledováno pro {args.codexis_id} (nic k odebrání).")
+        return
     related_mod.disable_tracking(args.codexis_id, args.type)
     s = state.load_state(args.codexis_id)
     remaining = (s.get("related_tracking") or {}).get("types", [])
     if remaining:
-        print(f"OK: {args.type} odebráno. Zbývající typy: {', '.join(remaining)}")
+        status(f"OK: {args.type} odebráno. Zbývající typy: {', '.join(remaining)}")
     else:
-        print(f"OK: {args.type} odebráno. Sledování related vypnuto.")
+        status(f"OK: {args.type} odebráno. Sledování related vypnuto.")
 
 
 def cmd_related_list(args):
@@ -307,12 +326,12 @@ def _print_json(obj):
 
 def cmd_folder_add(args):
     res = folders.add_watch(args.root, name=args.name)
-    print(
+    status(
         f"OK: Sledování složky „{res['name']}“ zahájeno "
         f"({res['total']} dokumentů, {res['added']} nových)."
     )
     if res.get("total"):
-        print(f"  Spusťte extrakci: cdx-sledovane-dokumenty folder harvest {res['root']}")
+        status(f"  Spusťte extrakci: cdx-sledovane-dokumenty folder harvest {res['root']}")
 
 
 def cmd_folder_list(args):
@@ -326,17 +345,17 @@ def cmd_folder_list(args):
             f"    Dokumentů: {w['documents']}  K extrakci: {w['pending_harvest']}  "
             f"Odkazů: {w['legislation']}"
         )
-        status = (
+        stav = (
             f"NOVÉ ZMĚNY ({w['unconfirmed_changes']})"
             if w.get("unconfirmed_changes") else "bez změn"
         )
-        print(f"    Poslední kontrola: {w.get('last_check_at')}  Stav: {status}")
+        print(f"    Poslední kontrola: {w.get('last_check_at')}  Stav: {stav}")
         print()
 
 
 def cmd_folder_scan(args):
     _, summary = folders.sync_watched(folders.normalize_root(args.root))
-    print(
+    status(
         f"OK: Sken hotov — {summary['total']} dokumentů "
         f"(+{summary['added']} nových, ~{summary['changed']} změněných, "
         f"-{summary['removed']} odebraných)."
@@ -348,7 +367,7 @@ def cmd_folder_harvest(args):
     suffix = (
         f", {res['failed']} selhalo (zkusí se příště)" if res["failed"] else ""
     )
-    print(
+    status(
         f"OK: Extrakce hotova — {res['documents']} dokumentů, "
         f"{res['references']} odkazů{suffix}."
     )
@@ -359,7 +378,7 @@ def cmd_folder_refresh(args):
     folders.sync_watched(abs_root)
     folders.mark_all_for_reharvest(abs_root)
     res = harvest.harvest_folder(abs_root, printer=print_progress)
-    print(
+    status(
         f"OK: Složka obnovena — {res['documents']} dokumentů přeextrahováno, "
         f"{res['references']} odkazů."
     )
@@ -372,9 +391,9 @@ def cmd_folder_check(args):
     for e in result["errors"]:
         print(f"  ! {e}")
     if result["changes_found"] == 0:
-        print("Žádné nové změny legislativy.")
+        status("Žádné nové změny legislativy.")
     else:
-        print(f"OK: {result['changes_found']} nových změn legislativy.")
+        status(f"OK: {result['changes_found']} nových změn legislativy.")
 
 
 def cmd_folder_show(args):
@@ -387,12 +406,12 @@ def cmd_folder_show(args):
 
 def cmd_folder_confirm(args):
     marked = folder_check.confirm_folder(args.root, args.codexis_id)
-    print(f"OK: {marked} změn potvrzeno." if marked else "Žádná nepotvrzená změna.")
+    status(f"OK: {marked} změn potvrzeno." if marked else "Žádná nepotvrzená změna.")
 
 
 def cmd_folder_remove(args):
     removed = folders.remove_watch(args.root, purge=args.purge)
-    print("OK: Složka odebrána ze sledování." if removed else "Složka nebyla sledována.")
+    status("OK: Složka odebrána ze sledování." if removed else "Složka nebyla sledována.")
 
 
 def cmd_folder_browse(args):
@@ -400,17 +419,43 @@ def cmd_folder_browse(args):
 
 
 def cmd_folder_notify_show(args):
-    _print_json(notify.load_settings())
+    _print_json(settings.get_notify())
 
 
 def cmd_folder_notify_set(args):
-    settings = notify.load_settings()
-    if args.email is not None:
-        settings["email"] = args.email
-    if args.inapp is not None:
-        settings["inApp"] = args.inapp
-    saved = notify.save_settings(settings)
-    print(f"OK: Notifikace — e-mail: {saved['email']}, in-app: {saved['inApp']}.")
+    eff = settings.set_notify(email=args.email, inApp=args.inapp)
+    status(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+
+
+# ── notify (unified) ─────────────────────────────────────────────────────────
+
+
+def cmd_notify_show(args):
+    _print_json(settings.get_notify())
+
+
+def cmd_notify_set(args):
+    eff = settings.set_notify(email=args.email, inApp=args.inapp)
+    status(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+
+
+def cmd_notify_recipients(args):
+    current = list(settings.get_notify().get("recipients", []))
+    if args.rcmd == "add":
+        current.append(args.email.strip())
+    elif args.rcmd == "remove":
+        current = [r for r in current if r.lower() != args.email.strip().lower()]
+    elif args.rcmd == "set":
+        current = list(args.emails)
+    elif args.rcmd == "clear":
+        current = []
+    try:
+        eff = settings.set_notify(recipients=current)
+    except ValueError as e:
+        err(str(e))
+        sys.exit(1)
+    joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
+    status(f"OK: Příjemci — {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────
@@ -549,6 +594,26 @@ def build_parser():
     pfnset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
     pfnset.set_defaults(func=cmd_folder_notify_set)
 
+    pnf = sub.add_parser("notify", help="Manage notification settings")
+    pnf_sub = pnf.add_subparsers(dest="sub", required=True)
+    pnfs = pnf_sub.add_parser("show")
+    pnfs.set_defaults(func=cmd_notify_show)
+    pnfset = pnf_sub.add_parser("set")
+    pnfset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
+    pnfset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
+    pnfset.set_defaults(func=cmd_notify_set)
+
+    p_nrec = pnf_sub.add_parser("recipients", help="Manage e-mail recipients")
+    nr_sub = p_nrec.add_subparsers(dest="rcmd", required=True)
+    nr_add = nr_sub.add_parser("add", help="Add a recipient e-mail")
+    nr_add.add_argument("email")
+    nr_rm = nr_sub.add_parser("remove", help="Remove a recipient e-mail")
+    nr_rm.add_argument("email")
+    nr_set = nr_sub.add_parser("set", help="Replace the whole recipient list")
+    nr_set.add_argument("emails", nargs="*")
+    nr_sub.add_parser("clear", help="Remove all recipients")
+    p_nrec.set_defaults(func=cmd_notify_recipients)
+
     return p
 
 
@@ -556,6 +621,7 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     try:
+        settings.ensure_settings()
         args.func(args)
     except DocumentError as e:
         err(str(e))
