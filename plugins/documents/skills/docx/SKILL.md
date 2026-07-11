@@ -30,8 +30,9 @@ A `.docx` is a ZIP of XML files. You never have to read that XML by hand: genera
 `docx-js`, then **look at the rendered result** before you hand it over.
 
 **IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
-retry. A missing `soffice` or `pdftoppm` means the guest image has no renderer; that is a setup
-problem to report, not something to work around with a hand-rolled conversion.
+retry. LibreOffice and poppler are part of the guest image, so a missing `soffice` or `pdftoppm`
+means something is broken with the image, not with your command. Report it; never work around it
+with a hand-rolled conversion that skips the visual check.
 
 ## Reading a document — always do both
 

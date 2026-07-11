@@ -36,21 +36,29 @@ Without this step you cannot know whether the model shipped a workbook full of e
 
 ## Guest image requirements
 
-The plugin ships no binaries; it depends on the guest rootfs providing:
+The plugin ships no binaries; it depends on the guest rootfs
+(`vm-os-assets-plane`, `rootfs/Ubuntu 26.04/Dockerfile`) providing:
 
-| Requirement | Used for |
-|---|---|
-| `libreoffice` (headless) | docx/xlsx/pptx → PDF, formula recalculation |
-| `poppler-utils` (`pdftoppm`, `pdftotext`, `pdfimages`) | PDF → page PNGs |
-| `qpdf` | shell-side merge, split, rotate, decrypt |
-| `pandoc` | tracked changes in `.docx` |
-| npm globals: `docx`, `exceljs`, `pptxgenjs`, `pdf-lib` | document generation |
+| Requirement | Used for | Status |
+|---|---|---|
+| `libreoffice` (headless) | docx/xlsx/pptx → PDF, formula recalculation | already in the rootfs |
+| `poppler-utils` (`pdftoppm`, `pdftotext`) | PDF → page PNGs | already in the rootfs |
+| `qpdf` | shell-side merge, split, rotate, decrypt | already in the rootfs |
+| `pandoc` | tracked changes in `.docx` | already in the rootfs |
+| `unzip`, `nodejs`, `npm`, DejaVu/Liberation fonts | scripts, generation, glyph coverage | already in the rootfs |
+| npm globals: `docx`, `exceljs`, `pptxgenjs`, `pdf-lib` | document generation | **added by vm-os-assets-plane!5** |
 
-`NODE_PATH=/usr/lib/node_modules` is declared in `plugin.json`, so `require('docx')` resolves
-against the global install from any working directory.
+Only the npm libraries were ever missing — the rootfs has carried the conversion and rendering
+tooling since it was created. `NODE_PATH=/usr/local/lib/node_modules` is declared in
+`plugin.json` (and exported from `/etc/profile.d` by the rootfs) because npm's global root is
+**not** one of node's default resolution paths on Debian/Ubuntu: without it `require('docx')`
+throws `MODULE_NOT_FOUND`.
 
-These live in the base rootfs, not in the per-user overlay — the image is shared read-only, so
-LibreOffice costs disk once, not once per user.
+These all live in the base rootfs, not in the per-user overlay. The rootfs is immutable,
+hash-addressed and mounted read-only as `/dev/vda`, shared by every microVM on the node — so
+LibreOffice costs disk once per node, not once per user. The per-VM writable overlay
+(`writableRoot/<vmUuid>/<rootfsHash>/overlayfs.ext4`) and the per-uid home sit on top of it, and
+the home survives a rootfs bump.
 
 `hooks/install-scripts.sh` warns at install time if `soffice` or `pdftoppm` is missing rather
 than letting the model discover it halfway through a task.

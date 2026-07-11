@@ -28,8 +28,9 @@ Slides are the one format where the render *is* the product. Text extraction tel
 about whether a deck works.
 
 **IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
-retry. A missing `soffice` or `pdftoppm` means the guest image has no renderer; that is a setup
-problem to report, not something to work around with a hand-rolled conversion.
+retry. LibreOffice and poppler are part of the guest image, so a missing `soffice` or `pdftoppm`
+means something is broken with the image, not with your command. Report it; never work around it
+with a hand-rolled conversion that skips the visual check.
 
 ## Reading a deck
 

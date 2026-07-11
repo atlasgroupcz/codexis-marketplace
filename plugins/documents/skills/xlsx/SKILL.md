@@ -27,8 +27,9 @@ i18n:
 # XLSX — creation, editing, verification
 
 **IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` or `cdx-recalc` — report it and
-don't blindly retry. A missing `soffice` means the guest image has no renderer; that is a setup
-problem to report, not something to work around by computing the values yourself.
+don't blindly retry. LibreOffice is part of the guest image, so a missing `soffice` means the
+image is broken, not your command. Report it; never work around it by computing the values
+yourself in JavaScript and writing them in as constants.
 
 `cdx-recalc` exiting with code **2 is not a tool failure** — it is the finding you asked for:
 the workbook has error cells. Read the reported types, fix the formulas, run it again. That is
