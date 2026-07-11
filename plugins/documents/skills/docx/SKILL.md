@@ -61,16 +61,26 @@ Use `docx-js` (installed in the guest image; `require('docx')` resolves with no 
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, HeadingLevel, TableOfContents,
-        PageNumber, WidthType, BorderStyle } = require('docx');
+        LineRuleType, PageNumber, WidthType, BorderStyle } = require('docx');
+
+const FONT = 'Times New Roman';
 
 const doc = new Document({
   styles: {
-    default: { document: { run: { font: 'Times New Roman', size: 24 } } }, // 24 half-points = 12pt
-    paragraphStyles: [
-      { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
-        run: { size: 32, bold: true },
-        paragraph: { spacing: { before: 240, after: 240 }, outlineLevel: 0 } }, // outlineLevel is required for the TOC
-    ],
+    default: {
+      document: {
+        run: { font: FONT, size: 24 },                                     // 24 half-points = 12pt
+        paragraph: { spacing: { line: 360, lineRule: LineRuleType.AUTO } }, // 360 = 1.5 lines
+      },
+      heading1: {
+        run: { font: FONT, size: 32, bold: true, color: '000000' },
+        paragraph: { spacing: { before: 240, after: 240, line: 360, lineRule: LineRuleType.AUTO } },
+      },
+      heading2: {
+        run: { font: FONT, size: 28, bold: true, color: '000000' },
+        paragraph: { spacing: { before: 240, after: 120, line: 360, lineRule: LineRuleType.AUTO } },
+      },
+    },
   },
   sections: [{
     properties: {
@@ -139,6 +149,49 @@ ocr /home/codexis/smlouva.docx && unzip -p /home/codexis/smlouva.docx-ocr.zip |
 
 **4. Fix, then re-render the affected pages** (`cdx-render -i file.docx -f 3 -l 3`). One fix
 routinely creates the next problem. Do not declare success until a full pass finds nothing new.
+
+## Word compatibility — the render is LibreOffice, not Word
+
+`cdx-render` draws the document with LibreOffice. The user opens it in Word. A file can look
+perfect in the render and wrong on their machine, and the render will never tell you. Close the
+gap in the generator instead:
+
+**Always pass `lineRule` with `line`.** `{ line: 360 }` alone leaves the rule unset, and Word and
+LibreOffice do not have to agree on the default.
+
+```javascript
+paragraph: { spacing: { line: 360, lineRule: LineRuleType.AUTO } }   // 360 = 1.5 lines
+```
+
+**Override headings through `styles.default.heading1`, never through `paragraphStyles`.** A
+`paragraphStyles` entry with `id: 'Heading1'` is silently half-applied: `docx-js` keeps your
+`size` but drops `font` and `bold`, and leaves Word's built-in heading blue (`2E74B5`) in place.
+The heading then comes out **blue and in the wrong font in Word** — while LibreOffice re-styles it
+and the render looks fine, so the QA loop never catches it.
+
+```javascript
+// WRONG — font and bold are dropped, the heading stays blue
+paragraphStyles: [{ id: 'Heading1', run: { font: FONT, size: 32, bold: true } }]
+
+// RIGHT
+styles: {
+  default: {
+    heading1: { run: { font: FONT, size: 32, bold: true, color: '000000' } },
+  },
+}
+```
+
+Set `color` explicitly. Without it the blue survives.
+
+Verify it landed — the style must carry `rFonts`, `<w:b/>` and your colour:
+
+```bash
+unzip -p smlouva.docx word/styles.xml | grep -o '<w:style [^>]*Heading1.*\?</w:style>'
+```
+
+**Use fonts the user actually has.** Times New Roman, Arial and Calibri are safe. LibreOffice
+substitutes a metric-compatible face (Liberation Serif for Times New Roman) and the render looks
+right even when the real font is missing — which is exactly how a font problem hides from you.
 
 ## Quality bar
 
