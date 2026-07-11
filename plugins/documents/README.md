@@ -49,10 +49,11 @@ The plugin ships no binaries; it depends on the guest rootfs
 | npm globals: `docx`, `exceljs`, `pptxgenjs`, `pdf-lib` | document generation | **added by vm-os-assets-plane!5** |
 
 Only the npm libraries were ever missing — the rootfs has carried the conversion and rendering
-tooling since it was created. `NODE_PATH=/usr/local/lib/node_modules` is declared in
-`plugin.json` (and exported from `/etc/profile.d` by the rootfs) because npm's global root is
-**not** one of node's default resolution paths on Debian/Ubuntu: without it `require('docx')`
-throws `MODULE_NOT_FOUND`.
+tooling since it was created. The plugin needs **no `NODE_PATH`**: npm's global root
+(`/usr/local/lib/node_modules`) is not one of node's default resolution paths on Debian/Ubuntu,
+so the rootfs links the packages into `/usr/share/nodejs`, which is. `require('docx')` therefore
+works in any shell, including the non-login shells `cdx-remote-exec` runs commands in — where an
+exported variable from `/etc/profile.d` would never have been set.
 
 These all live in the base rootfs, not in the per-user overlay. The rootfs is immutable,
 hash-addressed and mounted read-only as `/dev/vda`, shared by every microVM on the node — so

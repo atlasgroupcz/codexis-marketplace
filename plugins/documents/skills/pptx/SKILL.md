@@ -44,7 +44,7 @@ the entire content.
 
 ## Creating a deck
 
-Use `pptxgenjs` (preinstalled; `NODE_PATH` is set, so `require('pptxgenjs')` just works).
+Use `pptxgenjs` (installed in the guest image; `require('pptxgenjs')` resolves with no setup).
 
 ```javascript
 const PptxGenJS = require('pptxgenjs');

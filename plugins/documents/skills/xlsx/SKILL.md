@@ -53,7 +53,7 @@ into a formula — put it in an input cell and reference it: `=H6*(1+$B$3)`, not
 
 ## Creating a workbook
 
-Use `ExcelJS` (preinstalled; `NODE_PATH` is set, so `require('exceljs')` just works).
+Use `ExcelJS` (installed in the guest image; `require('exceljs')` resolves with no setup).
 
 ```javascript
 const ExcelJS = require('exceljs');

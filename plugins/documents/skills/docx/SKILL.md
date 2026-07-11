@@ -62,7 +62,7 @@ pandoc --track-changes=all smlouva.docx -o /tmp/smlouva-revisions.md
 
 ## Creating a document
 
-Use `docx-js` (already installed; `NODE_PATH` is set, so `require('docx')` just works).
+Use `docx-js` (installed in the guest image; `require('docx')` resolves with no setup).
 
 ```javascript
 const fs = require('fs');
