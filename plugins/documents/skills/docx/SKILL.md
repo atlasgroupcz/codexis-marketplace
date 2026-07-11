@@ -2,14 +2,7 @@
 uuid: 30a77323-ca87-415f-b4de-d8c5f166a11d
 name: docx
 icon: icon.svg
-description: >-
-  Use whenever a Word document (.docx) is the input or the output. Covers creating documents
-  (contracts, memos, letters, reports, submissions, templates), editing or reformatting an
-  existing .docx, and reading one when layout matters (stamps, signatures, tables, letterheads).
-  Triggers on "Word", "wordovský dokument", ".docx", "smlouva", "podání", "memo", "dopis",
-  "sepiš", "vygeneruj dokument", "uprav dokument", "přeformátuj".
-  Do NOT use for spreadsheets, slide decks, or plain-text extraction where layout is irrelevant —
-  for pure text extraction use the ocr skill alone.
+description: "Word dokumenty (.docx) — smlouva, podání, memo, dopis, report, šablona. Vytvoř, uprav či přeformátuj Word a zkontroluj, jak vypadá. Ne pro Excel, PDF ani prezentace."
 version: 1.0.0
 allowed-tools: shell
 i18n:

@@ -2,12 +2,7 @@
 uuid: 6c7ba16b-f527-4dd3-b71d-0d627eae4198
 name: pptx
 icon: icon.svg
-description: >-
-  Use any time a .pptx is involved — as input, output, or both. Covers building slide decks and
-  presentations, reading or extracting content from an existing deck (even when the content is
-  destined for something else), editing a deck, and working with templates or speaker notes.
-  Triggers on "prezentace", "slidy", "deck", "pptx", "PowerPoint", "připrav prezentaci",
-  "shrň do slidů", "školení", "pitch".
+description: "PowerPoint (.pptx) — prezentace, slidy, deck, pitch, školení. Připrav nebo uprav prezentaci, shrň obsah do slidů a zkontroluj, jak slidy vypadají."
 version: 1.0.0
 allowed-tools: shell
 i18n:

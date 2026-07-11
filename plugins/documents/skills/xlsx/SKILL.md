@@ -2,14 +2,7 @@
 uuid: e99d4d14-570c-433b-870d-4a146fb02019
 name: xlsx
 icon: icon.svg
-description: >-
-  Use whenever a spreadsheet is the primary input or output — creating an .xlsx from scratch or
-  from other data, editing an existing workbook without breaking its formulas, building financial
-  models, cleaning messy tabular data, or converting between .xlsx/.csv/.tsv. Trigger even on a
-  casual file reference ("ten excel ve stažených"). Triggers on "Excel", "xlsx", "tabulka",
-  "sešit", "vzorec", "výpočet", "rozpočet", "model", "cash flow", "přehled nákladů", "spreadsheet".
-  Do NOT trigger when the deliverable is a Word document, a chart image, an HTML report or a
-  standalone script, even if tabular data is involved.
+description: "Excel (.xlsx, .csv) — tabulka, sešit, vzorce, výpočet, rozpočet, cash flow, finanční model, úklid rozbitých dat. Vytvoř či uprav sešit a ověř vzorce. Ne pro Word ani grafy."
 version: 1.0.0
 allowed-tools: shell
 i18n:

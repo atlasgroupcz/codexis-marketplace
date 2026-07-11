@@ -2,14 +2,7 @@
 uuid: 2aeefd95-cd11-431e-9b6c-b7dd54f3bbae
 name: pdf
 icon: icon.svg
-description: >-
-  Use whenever a PDF is the input or the output. Covers reading a PDF where layout matters
-  (scanned contracts, stamped filings, court decisions, invoices, tables, charts), producing
-  a PDF deliverable, filling PDF forms, and merging, splitting, rotating or watermarking pages.
-  Triggers on "PDF", "pdfko", "naskenovaná smlouva", "rozsudek", "vygeneruj PDF", "slouč PDF",
-  "rozděl PDF", "vyplň formulář", "orazítkovaný dokument", "faktura".
-  Do NOT use when the user only needs the plain text of a PDF and layout is irrelevant —
-  the ocr skill alone is cheaper for that.
+description: "PDF — vygeneruj PDF, vyplň formulář, slouč/rozděl/orazítkuj, přečti naskenovanou smlouvu, rozsudek, fakturu (kde záleží na vzhledu). Ne pro čistý text — na ten stačí ocr."
 version: 1.0.0
 allowed-tools: shell
 i18n:
