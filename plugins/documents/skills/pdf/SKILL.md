@@ -10,6 +10,7 @@ description: >-
   "rozděl PDF", "vyplň formulář", "orazítkovaný dokument", "faktura".
   Do NOT use when the user only needs the plain text of a PDF and layout is irrelevant —
   the ocr skill alone is cheaper for that.
+version: 1.0.0
 allowed-tools: shell
 i18n:
   cs:
@@ -24,6 +25,10 @@ i18n:
 ---
 
 # PDF — reading, creation, forms
+
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
+retry. A missing `soffice` or `pdftoppm` means the guest image has no renderer; that is a setup
+problem to report, not something to work around with a hand-rolled conversion.
 
 ## Reading a PDF — text and images, not one or the other
 

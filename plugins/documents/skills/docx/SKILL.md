@@ -10,6 +10,7 @@ description: >-
   "sepiš", "vygeneruj dokument", "uprav dokument", "přeformátuj".
   Do NOT use for spreadsheets, slide decks, or plain-text extraction where layout is irrelevant —
   for pure text extraction use the ocr skill alone.
+version: 1.0.0
 allowed-tools: shell
 i18n:
   cs:
@@ -27,6 +28,10 @@ i18n:
 
 A `.docx` is a ZIP of XML files. You never have to read that XML by hand: generate with
 `docx-js`, then **look at the rendered result** before you hand it over.
+
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
+retry. A missing `soffice` or `pdftoppm` means the guest image has no renderer; that is a setup
+problem to report, not something to work around with a hand-rolled conversion.
 
 ## Reading a document — always do both
 

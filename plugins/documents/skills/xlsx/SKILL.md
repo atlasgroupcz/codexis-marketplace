@@ -10,6 +10,7 @@ description: >-
   "sešit", "vzorec", "výpočet", "rozpočet", "model", "cash flow", "přehled nákladů", "spreadsheet".
   Do NOT trigger when the deliverable is a Word document, a chart image, an HTML report or a
   standalone script, even if tabular data is involved.
+version: 1.0.0
 allowed-tools: shell
 i18n:
   cs:
@@ -24,6 +25,14 @@ i18n:
 ---
 
 # XLSX — creation, editing, verification
+
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` or `cdx-recalc` — report it and
+don't blindly retry. A missing `soffice` means the guest image has no renderer; that is a setup
+problem to report, not something to work around by computing the values yourself.
+
+`cdx-recalc` exiting with code **2 is not a tool failure** — it is the finding you asked for:
+the workbook has error cells. Read the reported types, fix the formulas, run it again. That is
+the loop working, not a reason to give up or to hardcode the values.
 
 ## The rule that matters most: derived values are formulas, never constants
 

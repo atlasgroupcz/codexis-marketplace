@@ -8,6 +8,7 @@ description: >-
   destined for something else), editing a deck, and working with templates or speaker notes.
   Triggers on "prezentace", "slidy", "deck", "pptx", "PowerPoint", "připrav prezentaci",
   "shrň do slidů", "školení", "pitch".
+version: 1.0.0
 allowed-tools: shell
 i18n:
   cs:
@@ -25,6 +26,10 @@ i18n:
 
 Slides are the one format where the render *is* the product. Text extraction tells you nothing
 about whether a deck works.
+
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
+retry. A missing `soffice` or `pdftoppm` means the guest image has no renderer; that is a setup
+problem to report, not something to work around with a hand-rolled conversion.
 
 ## Reading a deck
 
