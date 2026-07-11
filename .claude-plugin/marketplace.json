@@ -142,6 +142,30 @@
       }
     },
     {
+      "uuid": "25c0713a-7c9b-439e-ae0f-80683aa29825",
+      "name": "documents",
+      "description": "Create, edit and visually verify Word, PDF, Excel and PowerPoint documents — every deliverable is rendered to page images so the layout is inspected before hand-off",
+      "source": "./plugins/documents",
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "Dokumenty — Word, PDF, Excel, PowerPoint",
+          "description": "Tvorba, úprava a vizuální kontrola dokumentů. Každý výstup se vyrenderuje do obrázků stránek, takže AI vidí výsledné rozvržení dřív, než ho předá.",
+          "tagLabels": { "documents": "Dokumenty", "office": "Office", "pdf": "PDF", "spreadsheet": "Tabulky", "legal": "Právo" }
+        },
+        "en": {
+          "displayName": "Documents — Word, PDF, Excel, PowerPoint",
+          "description": "Create, edit and visually verify documents. Every deliverable is rendered to page images so the AI inspects the final layout before handing it over.",
+          "tagLabels": { "documents": "Documents", "office": "Office", "pdf": "PDF", "spreadsheet": "Spreadsheets", "legal": "Law" }
+        },
+        "sk": {
+          "displayName": "Dokumenty — Word, PDF, Excel, PowerPoint",
+          "description": "Tvorba, úprava a vizuálna kontrola dokumentov. Každý výstup sa vyrenderuje do obrázkov stránok, takže AI vidí výsledné rozloženie skôr, než ho odovzdá.",
+          "tagLabels": { "documents": "Dokumenty", "office": "Office", "pdf": "PDF", "spreadsheet": "Tabuľky", "legal": "Právo" }
+        }
+      }
+    },
+    {
       "uuid": "4d7e6ced-f344-438f-9d12-141ac694fe65",
       "name": "video-analyze",
       "description": "Audio & video content analysis using Gemini — transcripts, summaries and Q&A over YouTube URLs and local video/audio files (MP4, WebM, MOV, MP3, WAV and more)",

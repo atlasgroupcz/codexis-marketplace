@@ -1,0 +1,25 @@
+name: docx-create-and-verify
+description: Verify the docx skill generates a .docx with docx-js and then renders it to page images for visual inspection instead of shipping it blind.
+
+# The whole point of this plugin is the verification loop: generate → render → look.
+# A test that only asserts "a .docx exists" would pass even if the model skipped the
+# render step, which is exactly the failure we are guarding against. So the oracle is
+# two-part: the document exists AND cdx-render ran against it.
+#
+# Deterministic content: fixed heading and two fixed paragraphs, nothing to look up,
+# so the run does not depend on external state.
+
+steps:
+  - prompt: "Vytvoř wordový dokument /home/codexis/memo-{{ run_id }}.docx s nadpisem 'Interní memorandum' a dvěma odstavci: 'Předmět: revize smluvní dokumentace.' a 'Termín: 30. 9. 2026.' Zkontroluj, že vypadá dobře."
+    expect:
+      tool_calls_min: 2
+      # generate (node) + render + read the page images, plus headroom for a fix cycle
+      tool_calls_max: 15
+      tool_call:
+        name: shell
+        input_matches: "cdx-render"
+      state:
+        file: /home/codexis/memo-{{ run_id }}.docx
+        type: file
+      response:
+        contains: ".docx"

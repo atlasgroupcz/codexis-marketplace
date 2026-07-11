@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <style>
+      .page { fill: #ffffff; stroke: #9f9faa; stroke-width: 6; }
+      .fold { fill: #fbe6e0; }
+      .accent { fill: #d24726; }
+      .muted { fill: #d9dade; }
+      .glass { fill: none; stroke: #d24726; stroke-width: 12; }
+      .label { fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 40px; font-weight: bold; }
+    </style>
+  </defs>
+  <path class="page" d="M62 28h115l61 61v183a12 12 0 0 1-12 12H62a12 12 0 0 1-12-12V40a12 12 0 0 1 12-12z"/>
+  <path class="fold" d="M177 28l61 61h-49a12 12 0 0 1-12-12z"/>
+  <rect class="muted" x="78" y="104" width="96" height="12" rx="6"/>
+  <rect class="muted" x="78" y="134" width="130" height="12" rx="6"/>
+  <rect class="muted" x="78" y="164" width="112" height="12" rx="6"/>
+  <rect class="accent" x="50" y="222" width="200" height="62" rx="12"/>
+  <text class="label" x="150" y="264" text-anchor="middle">P</text>
+  <circle class="glass" cx="212" cy="150" r="42"/>
+  <line class="glass" x1="243" y1="181" x2="272" y2="210" stroke-linecap="round"/>
+</svg>
