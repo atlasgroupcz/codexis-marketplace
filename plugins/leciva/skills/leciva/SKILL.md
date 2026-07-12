@@ -3,7 +3,7 @@ uuid: 3f8b1d6a-2c47-4e90-b15a-9d72e0c4a8f1
 name: leciva
 icon: icon.svg
 description: Registr léčiv SÚKL (DLP). Use for Czech medicinal product lookups by drug name or SÚKL code — strength, dosage form, packaging, active substances, ATC group, dispensing type. Triggers on "lék", "léčivo", "léčivý přípravek", "SÚKL", "kód SÚKL", "účinná látka", "ATC", "příbalový leták", "SPC", "registrovaný lék", "najdi lék", "složení léku".
-version: 1.3.2
+version: 1.3.3
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -25,8 +25,7 @@ A single tool — **`leciva-cli`** — wraps the public SÚKL DLP REST API
 **IMPORTANT:** The only tool in this skill is `leciva-cli`. Do NOT call `curl` or any
 other tool. Assume `leciva-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** When `leciva-cli` prints `ERROR:` (e.g. `HTTP 404 …`), stop and report it
-to the user. Do NOT blindly retry.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `HTTP 404 …`, bad input, network) — report it, don't guess workarounds and don't blindly retry. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Keys
 

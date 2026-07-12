@@ -36,7 +36,7 @@ for p in CANDIDATES:
         break
 
 try:
-    from katastr_core import settings, tracking, api_client, notify
+    from katastr_core import settings, notify_settings, tracking, api_client, notify
     from katastr_core.exceptions import (
         KatastrError,
         ProceedingAlreadyTrackedError,
@@ -55,6 +55,10 @@ def err(msg):
 
 
 def info(msg):
+    print(msg, file=sys.stderr)
+
+
+def out(msg):
     print(msg)
 
 
@@ -81,9 +85,9 @@ def cmd_tracking_add(args):
         state = tracking.add(args.cislo, label=args.label)
     except ProceedingAlreadyTrackedError:
         canonical = tracking.normalize_number(args.cislo)
-        if args.label:
-            tracking.set_label(canonical, args.label)
         info(f"OK: Řízení {canonical} je již sledováno.")
+        if args.label:
+            info("  Pozn.: --label platí jen při prvním přidání; štítek změníš příkazem set-label.")
         return
     info(f"OK: Řízení {state['cislo_rizeni']} přidáno ke sledování.")
     info(f"  Stav: {state['stav']}")
@@ -95,12 +99,12 @@ def cmd_tracking_add(args):
 def cmd_tracking_list(args):
     proceedings = tracking.list_all()
     if not proceedings:
-        info("Žádná sledovaná řízení.")
+        out("Žádná sledovaná řízení.")
         return
-    info(f"Sledovaná řízení ({len(proceedings)}):\n")
+    out(f"Sledovaná řízení ({len(proceedings)}):\n")
     for state in proceedings:
-        info(fmt_state_short(state))
-        info("")
+        out(fmt_state_short(state))
+        out("")
 
 
 def cmd_tracking_show(args):
@@ -115,38 +119,40 @@ def cmd_tracking_check(args):
         results = tracking.check_all()
 
     if not results:
-        info("Žádná sledovaná řízení ke kontrole.")
+        out("Žádná sledovaná řízení ke kontrole.")
         return
 
     total_changes = 0
     for r in results:
         cislo = r["cislo_rizeni"]
         if not r["ok"]:
-            info(f"  {cislo}: CHYBA — {r['error']}")
+            out(f"  {cislo}: CHYBA — {r['error']}")
             continue
         change = r["change"]
         if not change:
-            info(f"  {cislo}: beze změn")
+            out(f"  {cislo}: beze změn")
             continue
         total_changes += 1
-        info(f"  {cislo}: 1 nová změna")
+        out(f"  {cislo}: 1 nová změna")
         for line in tracking.describe_change(change):
-            info(f"    {line}")
-    info(
+            out(f"    {line}")
+    out(
         f"\nKontrola dokončena. Celkem {total_changes} nových změn "
         f"u {len(results)} řízení."
     )
 
-    if args.email:
+    notify_cfg = notify_settings.get_notify()
+    if notify_cfg.get("email"):
         try:
-            sent = notify.email_change_summary(results, to=args.to)
-            info(
-                f"E-mailem odeslán souhrn ({sent} řízení se změnou)."
-                if sent
-                else "E-mailem odeslán souhrn (beze změn)."
-            )
+            to = notify.resolve_to(notify_cfg.get("recipients"))
+            sent = notify.email_change_summary(results, to=to)
+            info(f"E-mailem odeslán souhrn ({sent} řízení se změnou)." if sent
+                 else "Žádné nové změny — e-mail neodeslán.")
         except KatastrError as e:
             info(str(e))
+    if notify_cfg.get("inApp"):
+        if notify.inapp_change_summary(results):
+            info("Upozornění odesláno do aplikace (zvoneček).")
 
 
 def cmd_tracking_confirm(args):
@@ -192,9 +198,9 @@ def cmd_api_get(args):
 def cmd_settings_show(args):
     status = settings.key_status()
     if not status["configured"]:
-        info("API klíč není nastaven.")
+        out("API klíč není nastaven.")
         return
-    info(f"API klíč: {status['masked']} (configured)")
+    out(f"API klíč: {status['masked']} (configured)")
 
 
 def cmd_settings_set(args):
@@ -211,6 +217,37 @@ def cmd_settings_test(args):
         sys.exit(1)
     settings.validate_key(settings.read_api_key())
     info("OK: API klíč funguje (ČÚZK odpovědělo).")
+
+
+# ── notify commands ──────────────────────────────────────────────────────────
+
+
+def cmd_notify_show(args):
+    print(json.dumps(notify_settings.get_notify(), indent=2, ensure_ascii=False))
+
+
+def cmd_notify_set(args):
+    eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
+    info(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+
+
+def cmd_notify_recipients(args):
+    current = list(notify_settings.get_notify().get("recipients", []))
+    if args.rcmd == "add":
+        current.append(args.email.strip())
+    elif args.rcmd == "remove":
+        current = [r for r in current if r.lower() != args.email.strip().lower()]
+    elif args.rcmd == "set":
+        current = list(args.emails)
+    elif args.rcmd == "clear":
+        current = []
+    try:
+        eff = notify_settings.set_notify(recipients=current)
+    except ValueError as e:
+        err(str(e))
+        sys.exit(1)
+    joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
+    info(f"OK: Příjemci — {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────
@@ -244,17 +281,6 @@ def build_parser():
         "cislo",
         nargs="?",
         help="Specific proceeding (default: all)",
-    )
-    p_check.add_argument(
-        "--email",
-        action="store_true",
-        help="E-mail a summary of the check (changes, or a 'no new changes' heartbeat)",
-    )
-    p_check.add_argument(
-        "--to",
-        action="append",
-        metavar="ADRESA",
-        help="Recipient e-mail (repeatable). Default: the signed-in user. Requires --email.",
     )
     p_check.set_defaults(func=cmd_tracking_check)
 
@@ -316,6 +342,27 @@ def build_parser():
     p_test = st_sub.add_parser("test", help="Test current API key against ČÚZK")
     p_test.set_defaults(func=cmd_settings_test)
 
+    # ─── notify ────
+    nt = sub.add_parser("notify", help="Manage notification settings")
+    nt_sub = nt.add_subparsers(dest="cmd", required=True)
+    p_ns = nt_sub.add_parser("show", help="Show current notification settings")
+    p_ns.set_defaults(func=cmd_notify_show)
+    p_nset = nt_sub.add_parser("set", help="Change notification settings")
+    p_nset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
+    p_nset.set_defaults(func=cmd_notify_set)
+
+    p_nrec = nt_sub.add_parser("recipients", help="Manage e-mail recipients")
+    nr_sub = p_nrec.add_subparsers(dest="rcmd", required=True)
+    nr_add = nr_sub.add_parser("add", help="Add a recipient e-mail")
+    nr_add.add_argument("email")
+    nr_rm = nr_sub.add_parser("remove", help="Remove a recipient e-mail")
+    nr_rm.add_argument("email")
+    nr_set = nr_sub.add_parser("set", help="Replace the whole recipient list")
+    nr_set.add_argument("emails", nargs="*")
+    nr_sub.add_parser("clear", help="Remove all recipients")
+    p_nrec.set_defaults(func=cmd_notify_recipients)
+
     return p
 
 
@@ -323,6 +370,7 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     try:
+        notify_settings.ensure_settings()
         args.func(args)
     except KatastrError as e:
         err(str(e))

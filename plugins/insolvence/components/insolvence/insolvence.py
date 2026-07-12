@@ -21,7 +21,7 @@ LIB_DIR = PLUGIN_DIR / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 try:
-    from insolvence_core import dph, tracking
+    from insolvence_core import dph, notify, notify_settings, tracking
     from insolvence_core.exceptions import (
         ApiHttpError,
         ApiNetworkError,
@@ -85,6 +85,28 @@ def with_subject_uuid(body: dict, fn: Callable[[dict], None]) -> None:
     fn(state)
 
 
+def _notify_results(results: list) -> None:
+    """Push e-mail + in-app for freshly detected changes — mirrors the CLI check
+    so a change is notified regardless of which route (automation, chat, FE)
+    first catches it. A change is consumed once, so only the first route to see
+    it actually sends. Best-effort: never raises, so a failed send can't break
+    the FE response."""
+    try:
+        cfg = notify_settings.get_notify()
+    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+        return
+    if cfg.get("email"):
+        try:
+            notify.email_change_summary(results, to=notify.resolve_to(cfg.get("recipients")))
+        except Exception:  # noqa: BLE001
+            pass
+    if cfg.get("inApp"):
+        try:
+            notify.inapp_change_summary(results)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 # ── action dispatch ─────────────────────────────────────────────────────────
 
 
@@ -120,11 +142,13 @@ def handle_post(body: dict) -> None:
                     status="503 Service Unavailable",
                 )
                 return
+            _notify_results([result])
             emit_json({"ok": True, "new_changes": len(result["changes"])})
         with_subject_uuid(body, _check)
 
     elif action == "check_all":
         results = tracking.check_all()
+        _notify_results(results)
         new_changes = sum(len(r.get("changes", [])) for r in results if r.get("ok"))
         errors = [
             {"display_name": r["display_name"], "error": r["error"]}
@@ -156,6 +180,18 @@ def handle_post(body: dict) -> None:
             emit_json({"ok": True})
         with_subject_uuid(body, _set_label)
 
+    elif action == "save_notify_settings":
+        try:
+            notify_settings.set_notify(
+                email=body.get("email"),
+                inApp=body.get("inApp"),
+                recipients=body.get("recipients"),
+            )
+        except ValueError as e:
+            emit_json({"ok": False, "error": str(e)}, status="400 Bad Request")
+            return
+        emit_json({"ok": True, "settings": notify_settings.get_notify()})
+
     else:
         emit_json(
             {"ok": False, "error": f"Unknown action: {action}"},
@@ -165,6 +201,17 @@ def handle_post(body: dict) -> None:
 
 def handle_get(query_string: str) -> None:
     params = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+
+    view = (params.get("view", [None])[0] or "").strip()
+    if view == "notify":
+        emit_json(
+            {
+                "mode": "notify",
+                "settings": notify_settings.get_notify(),
+                "userEmail": notify._query_me_email() or "",
+            }
+        )
+        return
 
     dph_dic = (params.get("dph", [None])[0] or "").strip()
     if dph_dic:

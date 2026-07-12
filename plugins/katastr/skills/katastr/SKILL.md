@@ -54,6 +54,7 @@ are in **`references/api.md`** — read it when doing raw lookups.
 
 **START MONITORING a proceeding?** Trigger words: "sleduj", "hlídej", "monitoruj", "informuj mě o změnách", "začni hlídat".
 → `katastr-cli tracking add <CISLO_RIZENI> [--label "..."]`
+`--label` applies only when first adding a subject; to change an existing label use `set-label`.
 **Never add tracking without explicit user intent** (a trigger word or an affirmative answer to the offer below).
 
 **A list of THEIR tracked proceedings?** → `katastr-cli tracking list`
@@ -74,7 +75,7 @@ Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron a
 katastr-cli tracking add V-123/2026-701 [--label "Novákovi"]       # verify in ČÚZK + save baseline
 katastr-cli tracking list                                          # all tracked
 katastr-cli tracking show V-123/2026-701                           # full state (JSON)
-katastr-cli tracking check [V-123/2026-701] [--email] [--to ADR]   # diff vs ČÚZK (all/one); --email mails a summary every run, --to sets recipient(s)
+katastr-cli tracking check [V-123/2026-701]                        # diff vs ČÚZK (all/one); sends e-mail/in-app per notify settings (see below)
 katastr-cli tracking confirm V-123/2026-701 [--all | --change <N>] # mark changes read
 katastr-cli tracking set-label V-123/2026-701 "Novákovi"           # "" clears the label
 katastr-cli tracking remove V-123/2026-701
@@ -87,45 +88,73 @@ katastr-cli tracking remove V-123/2026-701
 - **provedené operace** — new operations appended to the timeline (Založení řízení, Zaplombování, Rozhodnutí o povolení vkladu, Provedení vkladu, Ukončení řízení, …)
 - **stav úhrady** — `U` Uhrazeno, `N` Neuhrazeno, `O` Osvobozeno, `null` neuvedeno
 
-### Monitoring & e-mail
+### Monitoring & notifications
 
-Two separate things: the **shipped weekly refresh** (no e-mail) and **opt-in e-mail**
-you set up per user.
-
-**Shipped default — no e-mail.** `automations/check-rizeni.md` runs a plain
-`tracking check` weekly to keep state fresh and the UI unread badge current. It
-**does not** send e-mail. Leave it as-is unless the user asks for e-mail.
-
-**`--email`** mails a summary of the run **every time**: the detected changes, or a
-**"no new changes" heartbeat** so the user sees the watchdog is alive. Recipient is
-the **signed-in user** by default; add **`--to adresa`** (repeatable) to send
-elsewhere — the daemon validates the address and handles auth. You never touch a
-token, SMTP or cron yourself.
-
-**One-off "e-mail me the status now":**
+E-mail and in-app (bell) notifications are a **persistent app setting**, not a
+per-run flag on `check`:
 
 ```bash
-katastr-cli tracking check --email
+katastr-cli notify set --email      # turn on e-mail
+katastr-cli notify set --no-email   # turn off e-mail
+katastr-cli notify set --inapp      # turn on the in-app bell
+katastr-cli notify set --no-inapp   # turn off the in-app bell
+katastr-cli notify show             # show current settings
+```
+
+`tracking check` reads this setting every run — there is no `--email`/`--to` flag on
+`check` anymore. Recipient is always the **signed-in user**; you never touch a
+token, SMTP or cron yourself.
+
+**Extra recipients (optional):** the signed-in user always gets the e-mail; add
+others who should get a copy:
+
+```bash
+katastr-cli notify recipients add <email>       # add an extra recipient
+katastr-cli notify recipients remove <email>    # remove one (case-insensitive)
+katastr-cli notify recipients set <email...>    # replace the whole extra-recipient list
+katastr-cli notify recipients clear             # remove all extras — e-mail then goes only to the signed-in user
+```
+
+- **E-mail (if on):** sent **every run**, either the detected changes or a
+  **"no new changes" heartbeat** — so the user sees the watchdog is alive even on a
+  quiet week.
+- **In-app bell (if on):** fires **only when a proceeding actually changed** — no
+  heartbeat spam in the notification center.
+
+**Shipped default — no notifications sent by `check` unless the setting is on.**
+`automations/check-rizeni.md` runs a plain `tracking check` weekly to keep state
+fresh and the UI unread badge current; it sends e-mail/bell only if the user has
+turned the corresponding setting on. Leave it as-is unless the user asks for
+notifications.
+
+**One-off "e-mail me / notify me now":** turn the setting on, then run
+`katastr-cli tracking check` once — no flags needed:
+
+```bash
+katastr-cli notify set --email
+katastr-cli tracking check
 ```
 
 (Sends a summary even right after `tracking add`, when nothing has changed yet — the
-heartbeat confirms it works.)
+e-mail heartbeat confirms it works; the bell stays quiet until a real change.)
 
 **Recurring ("sleduj a každý den/týden mi pošli e-mail"):** the recurrence *is* a
 scheduled automation — one prompt run fires at most once. Set it up with `cdxctl`
 (the one place you may call it):
 
 1. Add the proceeding(s) (`tracking add`).
-2. Create the e-mail automation:
+2. Turn on the wanted setting(s): `katastr-cli notify set --email` and/or
+   `katastr-cli notify set --inapp`.
+3. Create the automation running plain `tracking check` (no flags):
    ```bash
    cdxctl automation create-command \
-     --title "Katastr: e-mailové hlídání řízení" \
+     --title "Katastr: hlídání řízení" \
      --cron "0 8 * * *" \
-     --command "katastr-cli tracking check --email"
+     --command "katastr-cli tracking check"
    ```
    Pick the cron from the user's cadence (daily `0 8 * * *`, weekly `0 8 * * 1`, …).
-   Append `--to adresa` to the `--command` for a different recipient.
-3. Briefly confirm what you set up (which proceedings, how often, recipient).
+4. Briefly confirm what you set up (which proceedings, how often, which
+   notification channels).
 
 ## `katastr-cli api` — raw ČÚZK lookups
 

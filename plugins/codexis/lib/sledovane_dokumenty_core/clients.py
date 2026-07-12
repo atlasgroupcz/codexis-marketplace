@@ -5,7 +5,8 @@ import os
 import subprocess
 import tempfile
 
-from .exceptions import CdxClientError, LlmDaemonError
+from ._daemon import load_auth, rest_base
+from .exceptions import CdxClientError
 
 CDX_CLI_BIN = "cdx-cli"
 DEFAULT_DAEMON_URL = "http://localhost:8086"
@@ -177,11 +178,6 @@ def fetch_related_counts(codexis_id):
 # ── LLM daemon client ────────────────────────────────────────────────────────
 
 
-def load_api_jwt_auth():
-    """Load CODEXIS_USER_API_TOKEN from the process environment."""
-    return os.environ.get("CODEXIS_USER_API_TOKEN", "").strip()
-
-
 # Plugin-facing extract endpoint (backed by the daemon ExtractAgentExecutor).
 EXTRACT_PATH = "/rest/v1/plugin/llm/extract"
 
@@ -194,15 +190,15 @@ def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
     supplied, otherwise a string), or None on any failure — callers degrade
     gracefully rather than crash a scheduled run.
     """
-    daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL)
-    token = load_api_jwt_auth()
-    if not token:
+    daemon_url = rest_base(os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL))
+    auth = load_auth()
+    if not auth:
         return None
 
     cmd = [
         "curl", "-sS", "-X", "POST",
         f"{daemon_url}{EXTRACT_PATH}",
-        "-H", f"Authorization: Bearer {token}",
+        "-H", f"Authorization: {auth}",
         "-F", f"path={file_path}",
         "-F", f"query={query}",
     ]

@@ -3,7 +3,7 @@ uuid: 499b1cf8-5a26-49ef-8840-d664fdd30582
 name: obchodny-register-sk
 icon: icon.svg
 description: Slovenský obchodný register a register právnických osôb (RPO, Štatistický úrad SR). Use for Slovak company / legal-entity lookups by IČO or name — identification, registered office, statutory bodies (konatelia, predstavenstvo), partners (spoločníci), share capital (základné imanie), legal form, registration court and number, and full historical changes. Triggers on "obchodný register", "ORSR", "RPO", "slovenská firma", "slovenské IČO", "výpis z obchodného registra", "konateľ", "spoločník", "základné imanie", "register právnických osôb", "sídlo firmy na Slovensku". Slovak (SK) jurisdiction only — for Czech companies use the ares skill.
-version: 1.2.0
+version: 1.2.1
 jurisdictions: [SK]
 i18n:
   cs:
@@ -26,8 +26,7 @@ extract-link resolver, and the registeruz.sk financial-statements API.
 **IMPORTANT:** The only tool in this skill is `orsr-cli`. Do NOT call `curl` or
 any other tool directly. Assume `orsr-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** If `orsr-cli` outputs an `ERROR:` line (e.g. `HTTP 404 …`), stop
-and report it to the user. Do not retry blindly.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `HTTP 404 …`, bad input, network) — report it, don't guess workarounds and don't blindly retry. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 

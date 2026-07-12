@@ -77,6 +77,24 @@
       "step3Text": "Prehľadný súhrn nových rozhodnutí, pokojne aj e-mailom.",
       "chatLead": "Napíšte do chatu napríklad:",
       "chatPrompt": "Sleduj judikatúru k téme pracovné právo od Najvyššieho a Ústavného súdu, kontroluj týždenne a posielaj mi e-mailom súhrn nových rozhodnutí."
+    },
+    "notify": {
+      "title": "Nastavenie judikatúry",
+      "description": "Ako vás upozorníme na zmeny.",
+      "save": "Uložiť",
+      "emailLabel": "E-mail pri zmene",
+      "emailDescription": "Súhrn zmien príde e-mailom.",
+      "yourAddressLabel": "Vaša adresa",
+      "copyToLabel": "Kópia na",
+      "addRecipient": "Pridať príjemcu",
+      "removeRecipient": "Odobrať",
+      "addPlaceholder": "meno@firma.sk",
+      "invalidEmail": "Neplatná e-mailová adresa.",
+      "inAppLabel": "Oznámenie v centre notifikácií",
+      "inAppDescription": "",
+      "saved": "Nastavenia oznámení uložené",
+      "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+      "duplicate": "Táto adresa už je v zozname."
     }
   }
 }

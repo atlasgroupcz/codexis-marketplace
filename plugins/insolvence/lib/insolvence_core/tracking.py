@@ -11,7 +11,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import unicodedata
 import uuid as uuid_mod
 from typing import Optional
@@ -27,10 +26,6 @@ from .fs import atomic_write_json
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
 APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "insolvence", "subjekty")
-CDXCTL_BIN = "cdxctl"
-AUTOMATION_TITLE = "Hlídač insolvencí"
-AUTOMATION_CRON = "0 7 * * *"
-AUTOMATION_COMMAND = "insolvence-cli sledovani check"
 
 DRUH_LABELS = {
     "konkurs": "Konkurs",
@@ -200,6 +195,20 @@ def _find_existing_person(
     return None
 
 
+def find_company(ico: str) -> Optional[dict]:
+    """Public: the tracked company with this IČO, or None."""
+    return _find_existing_company(normalize_ico(ico))
+
+
+def find_person(prijmeni: str, jmeno: str, datum_narozeni: str) -> Optional[dict]:
+    """Public: the tracked person with this identity, or None."""
+    return _find_existing_person(
+        _fold(normalize_prijmeni(prijmeni)),
+        _fold(normalize_jmeno(jmeno)),
+        normalize_birthdate(datum_narozeni),
+    )
+
+
 # ── change detection ─────────────────────────────────────────────────────────
 
 
@@ -268,57 +277,6 @@ def detect_changes(old_rizeni: list, new_rizeni: list) -> list:
     return out
 
 
-# ── automation ───────────────────────────────────────────────────────────────
-
-
-def ensure_automation() -> None:
-    """Ensure the central daily cron automation exists. Idempotent, non-fatal."""
-    try:
-        result = subprocess.run(
-            [CDXCTL_BIN, "automation", "list"],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-        if result.returncode != 0:
-            return
-        automations = json.loads(result.stdout)
-    except Exception:
-        return
-
-    if not isinstance(automations, list):
-        return
-    for a in automations:
-        if (
-            isinstance(a, dict)
-            and a.get("type") == "COMMAND"
-            and a.get("command") == AUTOMATION_COMMAND
-        ):
-            return
-
-    try:
-        subprocess.run(
-            [
-                CDXCTL_BIN,
-                "automation",
-                "create-command",
-                "--title",
-                AUTOMATION_TITLE,
-                "--cron",
-                AUTOMATION_CRON,
-                "--command",
-                AUTOMATION_COMMAND,
-                "--description",
-                "Pravidelná kontrola sledovaných subjektů v insolvenčním rejstříku (ISIR).",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-    except Exception:
-        return
-
-
 # ── high-level operations ────────────────────────────────────────────────────
 
 
@@ -348,7 +306,6 @@ def add_company(ico: str, label: str = "") -> dict:
     state["rizeni"] = lookup.get("rizeni", [])
     state["ma_aktivni_insolvenci"] = any(r.get("aktivni") for r in state["rizeni"])
     _save_state(state)
-    ensure_automation()
     return state
 
 
@@ -370,7 +327,6 @@ def add_person(prijmeni: str, jmeno: str, datum_narozeni: str, label: str = "") 
     state["rizeni"] = lookup.get("rizeni", [])
     state["ma_aktivni_insolvenci"] = any(r.get("aktivni") for r in state["rizeni"])
     _save_state(state)
-    ensure_automation()
     return state
 
 

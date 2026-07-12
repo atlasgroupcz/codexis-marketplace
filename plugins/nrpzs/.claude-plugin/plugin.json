@@ -1,7 +1,7 @@
 {
   "name": "nrpzs",
   "iconPath": "icon.svg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Czech National Registry of Healthcare Providers (NRPZS, ÚZIS) — provider lookup by IČO/name/specialty, places of care, departments, office hours",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["nrpzs", "zdravotnictvi", "poskytovatel", "uzis", "registr", "czech", "healthcare"],

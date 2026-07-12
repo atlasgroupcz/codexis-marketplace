@@ -4,7 +4,7 @@ Used by both the `cdx-sledovana-judikatura` CLI binary and the component
 CGI handler.
 """
 
-from . import state, tracking
+from . import notify, notify_settings, state, tracking
 from .exceptions import (
     AmbiguousTopicPrefixError,
     AreaAlreadyExistsError,
@@ -17,6 +17,8 @@ from .exceptions import (
 )
 
 __all__ = [
+    "notify",
+    "notify_settings",
     "state",
     "tracking",
     "AmbiguousTopicPrefixError",

@@ -1,7 +1,7 @@
 {
   "name": "rzpro",
   "iconPath": "icon.svg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) — device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["rzpro", "zdravotnicke-prostredky", "ksrzis", "registr", "czech", "medical-devices"],
