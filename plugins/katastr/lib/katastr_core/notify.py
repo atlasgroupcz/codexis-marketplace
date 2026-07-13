@@ -91,6 +91,27 @@ def resolve_to(recipients: list | None) -> list | None:
     return [me, *[e for e in extras if e.strip().lower() != me_key]]
 
 
+def without_self(recipients: list | None) -> list:
+    """Extra recipients with the signed-in user's own address removed.
+
+    The signed-in user always receives the e-mail, so listing their own address
+    as an extra is redundant (and shows as a duplicate pill in the UI). This is
+    the store-time guard for the CLI and daemon write paths — the FE dialog
+    already blocks it on entry. Case-insensitive. When the signed-in user can't
+    be resolved, the list is returned unchanged (keep an extra rather than drop a
+    real recipient on a transient lookup failure). No `me` lookup for an empty
+    list.
+    """
+    items = [r for r in (recipients or []) if str(r).strip()]
+    if not items:
+        return items
+    me = _query_me_email()
+    if not me:
+        return items
+    me_key = me.strip().lower()
+    return [r for r in items if str(r).strip().lower() != me_key]
+
+
 def _rest_base(daemon_url: str) -> str:
     """REST base from CODEXIS_PUBLIC_DAEMON_URL, which is the GraphQL URL (…/graphql)."""
     base = daemon_url.rstrip("/")

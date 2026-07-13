@@ -214,6 +214,31 @@ class TestResolveTo:
             assert notify.resolve_to(["ME@X.cz", "a@x.cz"]) == ["me@x.cz", "a@x.cz"]
 
 
+# ── without_self (store-time guard: signed-in user is never an extra) ─────────
+
+
+class TestWithoutSelf:
+    def test_drops_signed_in_user_case_insensitive(self):
+        with patch.object(notify, "_query_me_email", return_value="me@firma.cz"):
+            assert notify.without_self(["ME@firma.CZ", "a@x.cz"]) == ["a@x.cz"]
+
+    def test_keeps_others_untouched(self):
+        with patch.object(notify, "_query_me_email", return_value="me@firma.cz"):
+            assert notify.without_self(["a@x.cz", "b@y.cz"]) == ["a@x.cz", "b@y.cz"]
+
+    def test_keeps_all_when_me_unavailable(self):
+        with patch.object(notify, "_query_me_email", return_value=None):
+            assert notify.without_self(["me@firma.cz", "a@x.cz"]) == ["me@firma.cz", "a@x.cz"]
+
+    def test_empty_returns_empty_without_querying_me(self):
+        # No extras → nothing to filter, so it must not make the GraphQL `me` call.
+        with patch.object(
+            notify, "_query_me_email", side_effect=AssertionError("must not query me")
+        ):
+            assert notify.without_self([]) == []
+            assert notify.without_self(None) == []
+
+
 class TestQueryMeEmail:
     def test_none_when_daemon_url_missing(self, monkeypatch, tmp_path):
         monkeypatch.delenv("CODEXIS_PUBLIC_DAEMON_URL", raising=False)

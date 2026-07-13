@@ -106,7 +106,8 @@ katastr-cli notify show             # show current settings
 token, SMTP or cron yourself.
 
 **Extra recipients (optional):** the signed-in user always gets the e-mail; add
-others who should get a copy:
+others who should get a copy. You don't need to add the signed-in user's own
+address — it's redundant (they're always a recipient) and gets dropped automatically.
 
 ```bash
 katastr-cli notify recipients add <email>       # add an extra recipient

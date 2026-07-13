@@ -1,7 +1,7 @@
 {
   "name": "ares",
   "iconPath": "icon.svg",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Czech business registry (ARES) — IČO lookup, company search, business register, trade licence and VAT payer status",
   "author": {
     "name": "ATLAS GROUP",

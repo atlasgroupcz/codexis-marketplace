@@ -119,32 +119,36 @@ Stateful watchdog. State is stored in `~/.cdx/apps/insolvence/subjekty/`. A sing
 automation (`0 7 * * *`) runs `insolvence-cli sledovani check` daily to refresh all tracked
 subjects and record changes.
 
-### E-mailová upozornění
+### E-mail alerts
 
-E-mailová upozornění jsou **trvalé nastavení** aplikace, ne přepínač na jednotlivý běh:
+E-mail alerts are a **persistent setting** for the app, not a per-run flag:
 
 ```bash
-insolvence-cli notify set --email      # zapnout
-insolvence-cli notify set --no-email   # vypnout
-insolvence-cli notify show             # zobrazit aktuální stav
+insolvence-cli notify set --email      # turn on
+insolvence-cli notify set --no-email   # turn off
+insolvence-cli notify show             # show current status
 ```
 
-Když je nastavení zapnuté, `insolvence-cli sledovani check` po kontrole pošle uživateli souhrnný
-e-mail sám, **pokud byly nalezeny nové změny** (beze změn se nic neposílá). Žádný `--email`
-přepínač u `check` už neexistuje. E-mail jde automaticky na adresu přihlášeného uživatele — neřeš
-ani nepředávej žádnou adresu, token ani „secret", daemon je doplní sám.
+When the setting is on, `insolvence-cli sledovani check` e-mails the user a summary itself after the
+check, **only if new changes were found** (nothing is sent when there's no change). The `--email`
+flag on `check` no longer exists. The e-mail goes automatically to the signed-in user's address —
+never handle or pass an address, token or secret; the daemon fills them in.
 
-Když uživatel řekne např. *„hlídej IČO 04863313 a každý týden mi pošli e-mail s novými řízeními"*:
+The signed-in user always gets the e-mail; `notify recipients add/remove/set/clear` manage **extra**
+recipients on top. You don't need to add the signed-in user's own address — it's redundant (they're
+always a recipient) and gets dropped automatically.
 
-1. Přidej subjekt(y) do sledování (`sledovani add-firma` / `add-osoba`).
-2. Zapni e-mailová upozornění: `insolvence-cli notify set --email`.
-3. Vytvoř uživateli **jednu** automatizaci, která spouští prostý `insolvence-cli sledovani check`
-   (přesně to dělá i dodávaná šablona `automations/check-insolvence.md`). Výchozí frekvence je
-   **týdně** (cron `0 7 * * 1`, pondělí ráno), pokud uživatel neřekne jinak.
-4. Stručně potvrď, co jsi nastavil (které subjekty, jak často, že upozornění chodí e-mailem).
+When the user says e.g. *„hlídej IČO 04863313 a každý týden mi pošli e-mail s novými řízeními"*:
 
-Nevytvářej pro stejné subjekty druhou paralelní automatizaci — jedna `check` stačí, e-mail
-odešle sama, pokud je nastavení zapnuté.
+1. Add the subject(s) to monitoring (`sledovani add-firma` / `add-osoba`).
+2. Turn on e-mail alerts: `insolvence-cli notify set --email`.
+3. Create **one** automation for the user that runs a plain `insolvence-cli sledovani check` (exactly
+   what the shipped `automations/check-insolvence.md` template does). Default frequency is **weekly**
+   (cron `0 7 * * 1`, Monday morning) unless the user says otherwise.
+4. Briefly confirm what you set up (which subjects, how often, that alerts go by e-mail).
+
+Don't create a second parallel automation for the same subjects — one `check` is enough; it sends the
+e-mail itself when the setting is on.
 
 ### What changes are detected
 

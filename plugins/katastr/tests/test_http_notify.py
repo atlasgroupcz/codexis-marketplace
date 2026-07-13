@@ -86,6 +86,32 @@ def test_post_save_notify_settings_persists(home, capsys):
     assert on_disk["notify"] == {"email": True, "inApp": False, "recipients": ["a@x.cz"]}
 
 
+def test_post_save_notify_settings_drops_signed_in_user(home, monkeypatch, capsys):
+    # The UI already blocks adding your own address, but the CLI/automation can
+    # store it. The handler must strip it so it isn't persisted (and legacy dupes
+    # self-heal on the next save).
+    monkeypatch.setattr(_component.notify, "_query_me_email", lambda: "me@firma.cz")
+    _component.handle_post({
+        "action": "save_notify_settings",
+        "email": True,
+        "inApp": False,
+        "recipients": ["ME@firma.cz", "a@x.cz"],
+    })
+    _, payload = _parse_emitted(capsys)
+    assert payload["settings"]["recipients"] == ["a@x.cz"]
+
+
+def test_post_save_notify_settings_absent_recipients_left_untouched(home, monkeypatch, capsys):
+    # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
+    # not clear the stored list — self-stripping must not turn None into [].
+    monkeypatch.setattr(_component.notify, "_query_me_email", lambda: "me@firma.cz")
+    _component.handle_post({"action": "save_notify_settings", "recipients": ["a@x.cz"]})
+    capsys.readouterr()
+    _component.handle_post({"action": "save_notify_settings", "email": True})
+    _, payload = _parse_emitted(capsys)
+    assert payload["settings"]["recipients"] == ["a@x.cz"]
+
+
 def test_post_save_notify_settings_invalid_recipient_returns_400(home, capsys):
     _component.handle_post({
         "action": "save_notify_settings",

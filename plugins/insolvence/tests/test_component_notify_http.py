@@ -93,6 +93,32 @@ def test_post_save_notify_settings_persists(cgi, monkeypatch):
     assert body2["settings"] == expected_settings
 
 
+def test_post_save_notify_settings_drops_signed_in_user(cgi, monkeypatch):
+    # The UI already blocks adding your own address, but the CLI/automation can
+    # store it. The handler must strip it so it isn't persisted (and legacy dupes
+    # self-heal on the next save).
+    monkeypatch.setattr(cgi.notify, "_query_me_email", lambda: "me@firma.cz")
+    _, body = _capture(
+        cgi.handle_post,
+        {
+            "action": "save_notify_settings",
+            "email": True,
+            "inApp": False,
+            "recipients": ["ME@firma.cz", "a@x.cz"],
+        },
+    )
+    assert body["settings"]["recipients"] == ["a@x.cz"]
+
+
+def test_post_save_notify_settings_absent_recipients_left_untouched(cgi, monkeypatch):
+    # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
+    # not clear the stored list — self-stripping must not turn None into [].
+    monkeypatch.setattr(cgi.notify, "_query_me_email", lambda: "me@firma.cz")
+    _capture(cgi.handle_post, {"action": "save_notify_settings", "recipients": ["a@x.cz"]})
+    _, body = _capture(cgi.handle_post, {"action": "save_notify_settings", "email": True})
+    assert body["settings"]["recipients"] == ["a@x.cz"]
+
+
 def test_post_save_notify_settings_invalid_recipient_is_400(cgi):
     header, body = _capture(
         cgi.handle_post,
