@@ -79,6 +79,26 @@ def test_recipients_add_invalid_errors(judikatura_app_dir, capsys):
     assert "Neplatná" in capsys.readouterr().err
 
 
+# ── self-guard: adding your own address is a no-op (you always receive it) ────
+#
+# Driven in-process (not via subprocess) because dropping self needs
+# notify._query_me_email mocked, which a subprocess can't reach.
+
+
+def test_recipients_add_drops_signed_in_user(judikatura_app_dir):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    assert _recipients(judikatura_app_dir) == []
+
+
+def test_recipients_set_drops_signed_in_user_keeps_others(judikatura_app_dir):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(
+            argparse.Namespace(rcmd="set", emails=["me@firma.cz", "a@x.cz"])
+        )
+    assert _recipients(judikatura_app_dir) == ["a@x.cz"]
+
+
 # ── save-report → notify wiring ─────────────────────────────────────────────
 #
 # This can't be driven via subprocess: verifying the composed `to` value

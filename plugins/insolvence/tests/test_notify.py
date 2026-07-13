@@ -1,6 +1,7 @@
 """notify: daemon e-mail auth + transport (no network — urlopen is stubbed)."""
 
 import json
+from unittest.mock import patch
 
 import pytest
 
@@ -148,6 +149,33 @@ def test_resolve_to_falls_back_to_extras_when_me_unavailable(monkeypatch):
 def test_resolve_to_dedupes_signed_in_user_case_insensitive(monkeypatch):
     monkeypatch.setattr(notify, "_query_me_email", lambda: "me@x.cz")
     assert notify.resolve_to(["ME@X.cz", "a@x.cz"]) == ["me@x.cz", "a@x.cz"]
+
+
+# ── without_self (store-time guard: signed-in user is never an extra) ─────────
+
+
+def test_without_self_drops_signed_in_user_case_insensitive():
+    with patch.object(notify, "_query_me_email", return_value="me@firma.cz"):
+        assert notify.without_self(["ME@firma.CZ", "a@x.cz"]) == ["a@x.cz"]
+
+
+def test_without_self_keeps_others_untouched():
+    with patch.object(notify, "_query_me_email", return_value="me@firma.cz"):
+        assert notify.without_self(["a@x.cz", "b@y.cz"]) == ["a@x.cz", "b@y.cz"]
+
+
+def test_without_self_keeps_all_when_me_unavailable():
+    with patch.object(notify, "_query_me_email", return_value=None):
+        assert notify.without_self(["me@firma.cz", "a@x.cz"]) == ["me@firma.cz", "a@x.cz"]
+
+
+def test_without_self_empty_returns_empty_without_querying_me():
+    # No extras → nothing to filter, so it must not make the GraphQL `me` call.
+    with patch.object(
+        notify, "_query_me_email", side_effect=AssertionError("must not query me")
+    ):
+        assert notify.without_self([]) == []
+        assert notify.without_self(None) == []
 
 
 # ── _query_me_email (best-effort GraphQL `me` lookup) ────────────────────────

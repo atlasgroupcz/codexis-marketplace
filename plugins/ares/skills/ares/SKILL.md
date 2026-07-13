@@ -3,7 +3,7 @@ uuid: 214caaa4-3728-4d21-b379-ab4b376b7615
 name: ares
 icon: icon.svg
 description: Český registr ekonomických subjektů (ARES, MF ČR). Use for company / sole-trader lookups by IČO or name — basic identification, business register (statutory bodies, partners), statistical register (RES), trade licence registry (ŽR), and VAT payer registry. Triggers on "ares", "ičo", "ico", "obchodní rejstřík", "živnostenský rejstřík", "plátce DPH", "registr ekonomických subjektů", "vyhledej firmu", "kdo je jednatel", "statutární orgán", "ověř firmu", "DIČ".
-version: 0.2.1
+version: 0.2.2
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -60,10 +60,10 @@ ares-cli api {get|post} <PATH> [<JSON_BODY>]
 | `res`     | `/ekonomicke-subjekty-res`       | Registr ekonomických subjektů (statistical: NACE, počet zaměstnanců, …).     |
 | `rzp`     | `/ekonomicke-subjekty-rzp`       | Živnostenský rejstřík — list of trade licences (živnosti).                   |
 
-> **Pozor:** ARES v3 nemá samostatný endpoint pro Registr plátců DPH. DIČ a
-> aktuální stav plátcovství najdeš v **základním detailu** (`basic`) v polích
-> `dic` a `seznamRegistraci.stavZdrojeDph` (`AKTIVNI` / `UKONCENY` /
-> `NEEXISTUJICI`). Skupinová registrace DPH: `seznamRegistraci.stavZdrojeSkDph`.
+> **Note:** ARES v3 has no dedicated VAT-payer register endpoint. The VAT number
+> (`dic`) and current VAT-payer status live in the **basic detail** (`basic`), in
+> the `dic` and `seznamRegistraci.stavZdrojeDph` fields (`AKTIVNI` / `UKONCENY` /
+> `NEEXISTUJICI`). VAT group registration: `seznamRegistraci.stavZdrojeSkDph`.
 
 ### Search filters (`ares-cli search`)
 
@@ -97,8 +97,8 @@ Use only when the structured `detail`/`search` commands cannot express the reque
 → `ares-cli detail <ICO> --register vr`
 
 **User asks "je X plátce DPH" / "od kdy plátce DPH" / "DIČ"?**
-→ `ares-cli detail <ICO>` a vyzobni `dic` + `seznamRegistraci.stavZdrojeRpdph`
-   (ARES v3 nemá samostatný RPDPH endpoint).
+→ `ares-cli detail <ICO>`, then pull `dic` + `seznamRegistraci.stavZdrojeRpdph`
+   (ARES v3 has no dedicated RPDPH endpoint).
 
 **User asks about živnosti (trade licences) of a sole trader / company?**
 → `ares-cli detail <ICO> --register rzp`

@@ -3,7 +3,7 @@ uuid: 1c427cf8-4d37-4304-b2e1-fbabf245dae4
 name: sledovane-dokumenty
 icon: icon.svg
 description: Track changes in Czech legislation via CODEXIS. Use when user wants to monitor laws, track amendments, or check for legislative changes.
-version: 1.1.0
+version: 1.1.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -204,7 +204,12 @@ cdx-sledovane-dokumenty folder remove /home/<user>/my-contracts
 cdx-sledovane-dokumenty folder browse [/some/dir]
 cdx-sledovane-dokumenty folder notify show
 cdx-sledovane-dokumenty folder notify set --email --no-inapp
+
+# Extra e-mail recipients (the signed-in user always gets a copy)
+cdx-sledovane-dokumenty notify recipients add|remove|set|clear <email...>
 ```
+
+The signed-in user always receives the notification e-mail; extra recipients are additive. You don't need to add their own address — it's redundant and gets dropped automatically.
 
 ### How it works
 

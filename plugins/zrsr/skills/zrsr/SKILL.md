@@ -3,7 +3,7 @@ uuid: 7a5c2a2e-0e89-4c93-841a-0788e7aa8f13
 name: zrsr
 icon: icon.svg
 description: Slovenský register právnických osôb a podnikateľov (RPO, Štatistický úrad SR), ktorý agreguje aj Živnostenský register SR (zrsr.sk) a Obchodný register. Use for Slovak company / sole-trader (živnostník, SZČO) lookups by IČO or name — identification, trade licences (predmety podnikania), source register, addresses, legal form, name history. Triggers on "zrsr", "rpo", "živnostenský register", "živnostník", "živnosť", "SZČO", "IČO" (Slovak entity), "obchodný register SR", "vyhľadaj živnostníka", "over firmu na Slovensku", "živnostenské oprávnenie", "slovenská firma".
-version: 0.1.1
+version: 0.1.2
 jurisdictions: [SK]
 i18n:
   cs:
@@ -118,7 +118,7 @@ request (RPO is GET-only).
 → `zrsr-cli detail <ICO>`
 
 **User asks about živnosti / predmety podnikania (trade licences)?**
-→ `zrsr-cli detail <ICO>` a vyzobni `activities` (current = bez `validTo`).
+→ `zrsr-cli detail <ICO>`, then pull `activities` (current = those without `validTo`).
 
 **User asks "je subjekt aktívny / zaniknutý" or "v akom registri je zapísaný"?**
 → `zrsr-cli detail <ICO>`, check `termination` + `sourceRegister`.

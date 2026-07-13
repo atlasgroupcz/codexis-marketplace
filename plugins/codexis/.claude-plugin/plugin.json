@@ -1,7 +1,7 @@
 {
   "name": "codexis",
   "iconPath": "icon.svg",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
   "author": {
     "name": "ATLAS GROUP",

@@ -125,7 +125,7 @@ record newly appeared similar marks.
 - Each detected collision carries the full score breakdown and a `tier` (`high`/`medium`/`low`); it
   stays unconfirmed until the user (or you, after assessment) marks it reviewed.
 
-### E-mailová upozornění (automatizace na míru)
+### E-mail alerts (custom automation)
 
 E-mail alerts are a **persistent setting** for the app, not a per-run flag:
 
@@ -139,6 +139,10 @@ When the setting is on, `znamky-cli sledovani check` e-mails a summary itself af
 **only if new collisions were found** (nothing is sent when there's no change). The `--email` flag
 on `check` no longer exists. The e-mail goes automatically to the signed-in user's address — never
 handle or pass an address, token or secret.
+
+The signed-in user always gets the e-mail; `znamky-cli notify recipients add|remove|set|clear <email...>`
+manage **extra** recipients on top. You don't need to add the signed-in user's own address — it's
+redundant and gets dropped automatically.
 
 When the user says e.g. *„hlídej značku CODEXIS ve třídách 9 a 42 a jednou týdně mi pošli e-mail"*:
 

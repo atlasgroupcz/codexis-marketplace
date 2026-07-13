@@ -1,10 +1,16 @@
 """CLI-layer notify recipients management for cdx-sledovane-dokumenty."""
 
+import argparse
+import importlib.machinery
+import importlib.util
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 BIN = Path(__file__).resolve().parents[2] / "bin" / "cdx-sledovane-dokumenty"
 LIB = Path(__file__).resolve().parents[2] / "lib"
@@ -48,3 +54,49 @@ def test_recipients_add_invalid_errors(tmp_path):
     result = _run(["notify", "recipients", "add", "nope"], tmp_path)
     assert result.returncode == 1
     assert "Neplatná" in result.stderr
+
+
+# ── self-guard: adding your own address is a no-op (you always receive it) ────
+#
+# Driven in-process (not via _run) because dropping self needs
+# notify._query_me_email mocked, which a subprocess can't reach.
+
+
+def _load_cli():
+    loader = importlib.machinery.SourceFileLoader("cdx_sledovane_dokumenty_notify", str(BIN))
+    spec = importlib.util.spec_from_file_location(
+        "cdx_sledovane_dokumenty_notify", str(BIN), loader=loader
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_cli = _load_cli()  # defs-only/stateless — load once, reuse across tests
+
+
+def _recipients_dir(app_dir):
+    return json.loads((app_dir / "settings.json").read_text())["notify"]["recipients"]
+
+
+@pytest.fixture
+def _cli_home(dokumenty_app_dir, monkeypatch, tmp_path):
+    # dokumenty_app_dir redirects state.APP_DIR; pin HOME so settings.defaults_path()
+    # (which reads the real ``~``) can't pick up dev-machine data.
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    return dokumenty_app_dir
+
+
+def test_recipients_add_drops_signed_in_user(_cli_home):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    assert _recipients_dir(_cli_home) == []
+
+
+def test_recipients_set_drops_signed_in_user_keeps_others(_cli_home):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(
+            argparse.Namespace(rcmd="set", emails=["me@firma.cz", "a@x.cz"])
+        )
+    assert _recipients_dir(_cli_home) == ["a@x.cz"]

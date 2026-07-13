@@ -3,6 +3,7 @@ import importlib.machinery
 import importlib.util
 import json, os, subprocess, sys
 from pathlib import Path
+from unittest.mock import patch
 
 BIN = Path(__file__).resolve().parents[1] / "bin" / "insolvence-cli"
 
@@ -45,6 +46,31 @@ def test_recipients_add_invalid_errors(tmp_path):
     result = _run(["notify", "recipients", "add", "nope"], tmp_path)
     assert result.returncode == 1
     assert "Neplatná" in result.stderr
+
+
+# ── self-guard: adding your own address is a no-op (you always receive it) ────
+#
+# Driven in-process (not via _run) because dropping self needs
+# notify._query_me_email mocked, which a subprocess can't reach — same reason
+# the check-wiring tests below load the CLI in-process.
+
+
+def test_recipients_add_drops_signed_in_user(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    assert _recipients(tmp_path) == []
+
+
+def test_recipients_set_drops_signed_in_user_keeps_others(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(
+            argparse.Namespace(rcmd="set", emails=["me@firma.cz", "a@x.cz"])
+        )
+    assert _recipients(tmp_path) == ["a@x.cz"]
 
 
 # ── check wiring: resolve_to() feeds email_change_summary(to=...) ────────────

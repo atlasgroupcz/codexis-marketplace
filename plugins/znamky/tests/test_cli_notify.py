@@ -48,6 +48,30 @@ def test_recipients_add_invalid_errors(tmp_path):
     assert "Neplatná" in result.stderr
 
 
+# ── self-guard: adding your own address is a no-op (you always receive it) ────
+#
+# Driven in-process (not via _run) because dropping self needs notify._query_me_email
+# mocked, which a subprocess can't reach — same reason test_check_* below load _cli.
+
+
+def test_recipients_add_drops_signed_in_user(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    assert _recipients(tmp_path) == []
+
+
+def test_recipients_set_drops_signed_in_user_keeps_others(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(
+            argparse.Namespace(rcmd="set", emails=["me@firma.cz", "a@x.cz"])
+        )
+    assert _recipients(tmp_path) == ["a@x.cz"]
+
+
 # ── check wiring: resolve_to() feeds email_change_summary(to=...) ────────────
 #
 # This can't be driven through the subprocess `_run()` helper above: verifying
