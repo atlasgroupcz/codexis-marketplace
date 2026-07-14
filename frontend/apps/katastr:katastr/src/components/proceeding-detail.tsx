@@ -5,6 +5,7 @@ import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
 import { toast } from '@workspace/ui/components/sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
 import { ListSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { StavBadge } from './stav-badge'
@@ -31,9 +32,14 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
   const [labelDraft, setLabelDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const [confirmRemove, setConfirmRemove] = useState(false)
-  const [removing, setRemoving] = useState(false)
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const remove = useConfirmAction(() =>
+    removeProceeding(uuid)
+      .then(() => {
+        onChanged?.()
+        onBack()
+      })
+      .catch((e: unknown) => toast.error(errorMessage(e))),
+  )
 
   useEffect(() => {
     if (editing) {
@@ -41,12 +47,6 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
       inputRef.current?.select()
     }
   }, [editing])
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    }
-  }, [])
 
   // Drop the optimistic label once the server confirms it via refetched data.
   useEffect(() => {
@@ -83,23 +83,6 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
         toast.error(errorMessage(e))
         setLabelOverride(null) // rollback to server value
       })
-  }
-
-  const handleRemove = () => {
-    if (!confirmRemove) {
-      setConfirmRemove(true)
-      confirmTimerRef.current = setTimeout(() => setConfirmRemove(false), 3000)
-      return
-    }
-    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    setRemoving(true)
-    removeProceeding(uuid)
-      .then(() => {
-        onChanged?.()
-        onBack()
-      })
-      .catch((e: unknown) => toast.error(errorMessage(e)))
-      .finally(() => setRemoving(false))
   }
 
   const sep = <span className="text-border">·</span>
@@ -168,16 +151,16 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
           </div>
         </div>
         <Button
-          variant={confirmRemove ? 'destructive' : 'outline'}
+          variant={remove.confirming ? 'destructive' : 'outline'}
           size="sm"
-          onClick={handleRemove}
-          disabled={removing}
+          onClick={remove.trigger}
+          disabled={remove.pending}
           data-testid="remove-proceeding"
           className="shrink-0"
         >
           <Trash2 className="size-4" />
           <span className="hidden sm:inline">
-            {confirmRemove ? t('proceedings.confirmRemove') : t('proceedings.remove')}
+            {remove.confirming ? t('proceedings.confirmRemove') : t('proceedings.remove')}
           </span>
         </Button>
       </div>

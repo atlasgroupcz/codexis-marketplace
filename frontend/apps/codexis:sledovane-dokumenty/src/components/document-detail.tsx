@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { ArrowLeft, BookMarked, FileText, Hash, Info, Link2, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
@@ -7,6 +7,7 @@ import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { HeaderGear } from '@workspace/ui/components/app-header'
 import { cn } from '@workspace/ui/lib/utils'
+import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
 import { useTranslation } from 'react-i18next'
 import { TrackingTypeBadge } from './tracking-type-badge'
 import { ChangeItem } from './change-item'
@@ -26,19 +27,18 @@ interface DocumentDetailProps {
 export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useDocumentDetail(uuid)
-  const [confirmRemove, setConfirmRemove] = useState(false)
-  const [removing, setRemoving] = useState(false)
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const remove = useConfirmAction(() =>
+    postAction('remove', uuid)
+      .then(() => {
+        toast.success(t('followedDocs.removed'))
+        onBack()
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e))),
+  )
   const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [noteDraft, setNoteDraft] = useState<string | null>(null)
   const [savingNotes, setSavingNotes] = useState(false)
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    }
-  }, [])
 
   if (loading && !data) {
     return <DetailSkeleton />
@@ -59,25 +59,6 @@ export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailP
   const noteValue = noteDraft ?? notesText
   const notesDirty = noteValue !== notesText
   const ordered = [...document.changes].sort((a, b) => (a.detected_on < b.detected_on ? 1 : -1))
-
-  const handleRemove = (): void => {
-    if (!confirmRemove) {
-      setConfirmRemove(true)
-      confirmTimerRef.current = setTimeout(() => setConfirmRemove(false), 3000)
-      return
-    }
-    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    setRemoving(true)
-    postAction('remove', uuid)
-      .then(() => {
-        toast.success(t('followedDocs.removed'))
-        onBack()
-      })
-      .catch((e: unknown) => {
-        toast.error(e instanceof Error ? e.message : String(e))
-        setRemoving(false)
-      })
-  }
 
   const handleSaveNotes = async (): Promise<void> => {
     setSavingNotes(true)
@@ -119,15 +100,15 @@ export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailP
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant={confirmRemove ? 'destructive' : 'outline'}
+            variant={remove.confirming ? 'destructive' : 'outline'}
             size="sm"
-            onClick={handleRemove}
-            disabled={removing}
+            onClick={remove.trigger}
+            disabled={remove.pending}
             data-testid="remove-document"
           >
             <Trash2 className="size-4" />
             <span className="hidden sm:inline">
-              {confirmRemove ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
+              {remove.confirming ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
             </span>
           </Button>
           <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />

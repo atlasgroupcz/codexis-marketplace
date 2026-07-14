@@ -6,6 +6,7 @@ import { Input } from '@workspace/ui/components/input'
 import { toast } from '@workspace/ui/components/sonner'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import { InsolvencyStatus } from './status-badge'
@@ -29,9 +30,17 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
 
   const [editing, setEditing] = useState(false)
   const [labelDraft, setLabelDraft] = useState('')
-  const [confirmRemove, setConfirmRemove] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const remove = useConfirmAction(() =>
+    removeSubject(uuid)
+      .then(() => {
+        toast.success(t('detail.removed'))
+        onRemoved()
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e))),
+  )
 
   useEffect(() => {
     if (editing) inputRef.current?.focus()
@@ -87,20 +96,6 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
       })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
       .finally(() => setRefreshing(false))
-  }
-
-  const handleRemove = () => {
-    if (!confirmRemove) {
-      setConfirmRemove(true)
-      setTimeout(() => setConfirmRemove(false), 3000)
-      return
-    }
-    removeSubject(uuid)
-      .then(() => {
-        toast.success(t('detail.removed'))
-        onRemoved()
-      })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
   }
 
   return (
@@ -185,14 +180,14 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
               <span className="hidden sm:inline">{t('detail.refresh')}</span>
             </Button>
             <Button
-              variant={confirmRemove ? 'destructive' : 'outline'}
+              variant={remove.confirming ? 'destructive' : 'outline'}
               size="sm"
-              onClick={handleRemove}
+              onClick={remove.trigger}
               data-testid="remove-subject"
             >
               <Trash2 className="size-4" />
               <span className="hidden sm:inline">
-                {confirmRemove ? t('detail.confirmRemove') : t('detail.remove')}
+                {remove.confirming ? t('detail.confirmRemove') : t('detail.remove')}
               </span>
             </Button>
           </div>

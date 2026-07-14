@@ -8,10 +8,10 @@ import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { NotifySettings } from '@workspace/ui/components/notify-settings'
 import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
 import type { NotifyValues } from '@/lib/schemas'
-import { checkAll, saveNotify } from '@/lib/api'
+import { checkAll, fetchNotify, saveNotify } from '@/lib/api'
 import { uuidParser } from '@/lib/url-state'
 import { useOverview } from '@/hooks/use-overview'
-import { useNotify } from '@/hooks/use-notify'
+import { useNotify } from '@workspace/ui/hooks/use-notify'
 import { SubjectList } from '@/components/subject-list'
 import { SubjectDetail } from '@/components/subject-detail'
 import { AddSubjectDialog } from '@/components/add-subject-dialog'
@@ -24,7 +24,7 @@ const emptyNotifyValues: NotifyValues = { email: false, inApp: false, recipients
 export function App() {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
-  const { data: notifyData, refetch: refetchNotify } = useNotify()
+  const { data: notifyData, refetch: refetchNotify } = useNotify(fetchNotify)
   const [selectedUuid, setSelectedUuid] = useQueryState('uuid', uuidParser)
   const [addOpen, setAddOpen] = useState(false)
   const [checking, setChecking] = useState(false)
