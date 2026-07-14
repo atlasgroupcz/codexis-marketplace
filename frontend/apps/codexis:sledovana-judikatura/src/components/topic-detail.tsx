@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FileText, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
@@ -8,6 +8,7 @@ import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { Card, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card'
 import { ItemGroup } from '@workspace/ui/components/item'
 import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
 import { FeedItem } from './feed-item'
 import { NoReports } from './empty-state'
 import { LoadingSkeleton } from './loading-skeleton'
@@ -28,15 +29,14 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
   const { data, loading, error, refetch } = useTopicDetail(uuid)
   const [noteDraft, setNoteDraft] = useState<string | null>(null)
   const [savingNotes, setSavingNotes] = useState(false)
-  const [confirmRemove, setConfirmRemove] = useState(false)
-  const [removing, setRemoving] = useState(false)
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    }
-  }, [])
+  const remove = useConfirmAction(() =>
+    postAction({ action: 'delete', uuid })
+      .then(() => {
+        toast.success(t('judikatura.removed'))
+        onBack()
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e))),
+  )
 
   if (loading && !data) return <LoadingSkeleton />
   if (error) {
@@ -55,25 +55,6 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
   const reports = [...data.reports].sort((a, b) =>
     (a.checked_at ?? '') < (b.checked_at ?? '') ? 1 : -1,
   )
-
-  const handleDelete = () => {
-    if (!confirmRemove) {
-      setConfirmRemove(true)
-      confirmTimerRef.current = setTimeout(() => setConfirmRemove(false), 3000)
-      return
-    }
-    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current)
-    setRemoving(true)
-    postAction({ action: 'delete', uuid })
-      .then(() => {
-        toast.success(t('judikatura.removed'))
-        onBack()
-      })
-      .catch((e: unknown) => {
-        toast.error(e instanceof Error ? e.message : String(e))
-        setRemoving(false)
-      })
-  }
 
   const handleSaveNotes = async () => {
     setSavingNotes(true)
@@ -107,15 +88,15 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
         actions={
           <>
             <Button
-              variant={confirmRemove ? 'destructive' : 'outline'}
+              variant={remove.confirming ? 'destructive' : 'outline'}
               size="sm"
-              onClick={handleDelete}
-              disabled={removing}
+              onClick={remove.trigger}
+              disabled={remove.pending}
               data-testid="delete-topic"
             >
               <Trash2 className="size-4" />
               <span className="hidden sm:inline">
-                {confirmRemove ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
+                {remove.confirming ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
               </span>
             </Button>
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />

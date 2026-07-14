@@ -1,4 +1,4 @@
-import { useFetch } from './use-fetch'
+import { useFetch } from '@workspace/ui/hooks/use-fetch'
 import { fetchDph } from '@/lib/api'
 
 /** VAT-payer reliability (+ published accounts) for a company, by IČO/DIČ. */

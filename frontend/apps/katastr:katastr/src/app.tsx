@@ -14,16 +14,16 @@ import { ProceedingsList } from '@/components/proceedings-list'
 import { ProceedingDetail } from '@/components/proceeding-detail'
 import { AddProceedingForm } from '@/components/add-proceeding-form'
 import { EmptyProceedings, NoSelection } from '@/components/empty-state'
-import { useNotify } from '@/hooks/use-notify'
+import { useNotify } from '@workspace/ui/hooks/use-notify'
 import { useOverview } from '@/hooks/use-overview'
-import { checkAll, deleteApiKey, saveApiKey, saveNotify } from '@/lib/api'
+import { checkAll, deleteApiKey, fetchNotify, saveApiKey, saveNotify } from '@/lib/api'
 import { CUZK_REGISTRATION_URL } from '@/lib/constants'
 import { errorMessage } from '@/lib/format'
 
 export function App() {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
-  const { data: notifyData, refetch: refetchNotify } = useNotify()
+  const { data: notifyData, refetch: refetchNotify } = useNotify(fetchNotify)
   const [view, setView] = useQueryState('view', viewParser)
   const [uuid, setUuid] = useQueryState('uuid', uuidParser)
   const [settingsOpen, setSettingsOpen] = useState(false)
