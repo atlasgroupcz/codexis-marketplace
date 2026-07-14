@@ -45,7 +45,7 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
   const hasHistory = s.rizeni_count > 0 && !s.ma_aktivni_insolvenci
   const Icon = s.kind === 'company' ? Building2 : User
   // Subject-level eISIR fallback (search by IČO / register root) for proceedings
-  // that carry no record id; each card deep-links to its own řízení when it can.
+  // that carry no detail URL; each card deep-links to its own řízení when it can.
   const isirUrl =
     s.kind === 'company' && s.ico
       ? `https://eisir.justice.cz/insolvencni-rejstrik/dle-ico/${s.ico}`
