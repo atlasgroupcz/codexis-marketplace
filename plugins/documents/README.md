@@ -1,71 +1,46 @@
-# documents
+# Dokumenty — Word, PDF, Excel, PowerPoint
 
-Create, edit and **visually verify** Word, PDF, Excel and PowerPoint documents.
+**Řekněte si o dokument. Dostanete hotový soubor, ne návod, jak si ho vyrobit.**
 
-The premise: an AI that writes a document and never looks at it ships broken tables, clipped
-text and empty formula cells. Every skill here ends in the same loop — **generate → render to
-page images → look → fix → re-render**. The render is the deliverable, not the code that
-produced it.
+## Co to je?
 
-## Skills
+Doplněk, díky kterému umí asistent pracovat s běžnými kancelářskými dokumenty — smlouvami,
+podáními, tabulkami i prezentacemi. Umí je **přečíst**, **upravit** a hlavně **vytvořit od nuly**.
 
-| Skill | Reads | Writes |
-|---|---|---|
-| `docx` | `ocr` (text) + `cdx-render` (pages), `pandoc` for tracked changes | `docx-js` |
-| `pdf` | `ocr` + `cdx-render` | `.docx` → LibreOffice; `pdf-lib` for page ops and forms |
-| `xlsx` | `ocr` + `cdx-render` | `ExcelJS`, gated by `cdx-recalc` |
-| `pptx` | `ocr` + `cdx-render` | `pptxgenjs` |
+Podstatné je to, co dělá navíc: než vám dokument předá, **podívá se na něj**. Vyrenderuje si ho
+stránku po stránce jako obrázky a projde je očima — jestli se nerozjela tabulka, neuťal text u
+okraje, nechybí diakritika nebo nezůstala prázdná stránka. Když něco najde, opraví to a podívá se
+znovu.
 
-Reading is always **text and images together**. Text is exact but blind to layout; the render
-shows stamps, signatures and merged cells that extraction flattens away. Neither alone is enough.
+Bez téhle kontroly se běžně stává, že AI napíše dokument, který vypadá dobře v kódu a rozbitě na
+papíře. Tenhle doplněk to nedovolí.
 
-## Commands installed on PATH
+## Co si můžete říct
 
-`postInstall` copies two scripts into `${HOME}/.local/bin`:
+**Word (.docx)** — smlouvy, žaloby a podání, memoranda, dopisy, reporty, šablony.
+Třeba: *„Připrav nájemní smlouvu podle těchhle podkladů a dej tam naši hlavičku."*
 
-- **`cdx-render -i <file> [-o <dir>] [-r <dpi>] [-f <n>] [-l <n>]`** — any document to one PNG
-  per page. Everything routes through LibreOffice → PDF → poppler. 150 DPI by default: readable,
-  and cheap enough on vision tokens to render a whole document.
-- **`cdx-recalc -i <file.xlsx> [--in-place]`** — recalculates formulas and reports error cells as
-  JSON. Exit code 2 means the workbook has `#REF!` / `#DIV/0!` / `#NAME?` cells.
+**PDF** — čtení i naskenovaných dokumentů, tvorba PDF, vyplňování formulářů, slučování a dělení.
+Třeba: *„Slouč tyhle tři PDF do jednoho a vyhoď prázdné strany."*
 
-`cdx-recalc` exists because spreadsheet libraries write formulas as strings with **no cached
-result**. A freshly written `.xlsx` literally contains `<c r="C6"><f>B6*(1+$B$3)</f></c>` — a
-formula and no value. LibreOffice recalculates on load and caches the values back into the file.
-Without this step you cannot know whether the model shipped a workbook full of errors.
+**Excel (.xlsx)** — tabulky, vzorce, finanční modely, přehledy.
+Třeba: *„Udělej mi z těch faktur přehled po měsících a spočítej součty."*
+Vzorce navíc nechá přepočítat, takže v tabulce nezůstanou chybové buňky.
 
-## Guest image requirements
+**PowerPoint (.pptx)** — prezentace, u kterých si asistent zkontroluje každý slajd.
+Třeba: *„Připrav desetislajdovou prezentaci pro klienta z tohohle reportu."*
 
-The plugin ships no binaries; it depends on the guest rootfs
-(`vm-os-assets-plane`, `rootfs/Ubuntu 26.04/Dockerfile`) providing:
+## Na co je dobré myslet
 
-| Requirement | Used for | Status |
-|---|---|---|
-| `libreoffice` (headless) | docx/xlsx/pptx → PDF, formula recalculation | already in the rootfs |
-| `poppler-utils` (`pdftoppm`, `pdftotext`) | PDF → page PNGs | already in the rootfs |
-| `qpdf` | shell-side merge, split, rotate, decrypt | already in the rootfs |
-| `pandoc` | tracked changes in `.docx` | already in the rootfs |
-| `unzip`, `nodejs`, `npm`, DejaVu/Liberation fonts | scripts, generation, glyph coverage | already in the rootfs |
-| npm globals: `docx`, `exceljs`, `pptxgenjs`, `pdf-lib` | document generation | **added by vm-os-assets-plane!5** |
+- **Řekněte si o vzhled.** Firemní barvy, logo, font, styl hlavičky — čím konkrétnější zadání, tím
+  lepší výsledek. Bez zadání dostanete čistý a střídmý dokument, ne ten váš.
+- **Podklady pomáhají.** Nahrajte starou smlouvu, šablonu nebo ceník a řekněte „drž se tohohle".
+- **Kontrola chvíli trvá.** U delších dokumentů si asistent projde všechny strany, takže to zabere
+  pár minut. Je to záměr — cílem je dokument, který můžete rovnou poslat, ne draft k přepisování.
+- **Hotové soubory najdete mezi svými soubory**, můžete si je stáhnout a otevřít ve Wordu, Excelu
+  nebo PowerPointu.
 
-Only the npm libraries were ever missing — the rootfs has carried the conversion and rendering
-tooling since it was created. The plugin needs **no `NODE_PATH`**: npm's global root
-(`/usr/local/lib/node_modules`) is not one of node's default resolution paths on Debian/Ubuntu,
-so the rootfs links the packages into `/usr/share/nodejs`, which is. `require('docx')` therefore
-works in any shell, including the non-login shells `cdx-remote-exec` runs commands in — where an
-exported variable from `/etc/profile.d` would never have been set.
+## Doporučená kombinace
 
-These all live in the base rootfs, not in the per-user overlay. The rootfs is immutable,
-hash-addressed and mounted read-only as `/dev/vda`, shared by every microVM on the node — so
-LibreOffice costs disk once per node, not once per user. The per-VM writable overlay
-(`writableRoot/<vmUuid>/<rootfsHash>/overlayfs.ext4`) and the per-uid home sit on top of it, and
-the home survives a rootfs bump.
-
-`hooks/install-scripts.sh` warns at install time if `soffice` or `pdftoppm` is missing rather
-than letting the model discover it halfway through a task.
-
-## Relationship to the `ocr` plugin
-
-`ocr` is the text half and this plugin depends on it — it converts any document to Markdown via
-a server-side endpoint. `documents` adds the two things `ocr` cannot do: **see** the page, and
-**author** the file. Install both.
+Nainstalujte si k tomu i doplněk **OCR dokumentů**. Ten se stará o vytěžení textu z dokumentů —
+společně pak asistent dokument přečte, uvidí i vytvoří.
