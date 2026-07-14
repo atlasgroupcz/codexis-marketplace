@@ -1,9 +1,9 @@
-use std::io::{self, Write};
-use std::process::{Command, Output, Stdio};
-
 use crate::core::config::DaemonConfig;
 use crate::core::error::CliError;
-use crate::core::sources::publish_from_body;
+use cdx_common::curl::{
+    execute_curl, format_command, handle_curl_output, redact_curl_args, write_stdout,
+};
+use cdx_common::sources::publish_from_body;
 
 const CDX_SCHEME: &str = "cdx://";
 const API_PREFIX: &str = "/rest/cdx-api/v2";
@@ -78,33 +78,6 @@ fn try_publish_sources(sources: Option<&serde_json::Value>) {
     }
 }
 
-fn execute_curl(curl_args: &[String]) -> Result<Output, CliError> {
-    Command::new("curl")
-        .args(curl_args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(CliError::CurlSpawn)
-}
-
-fn handle_curl_output<F>(output: &Output, handle: F) -> Result<(), CliError>
-where
-    F: Fn(&[u8]) -> Result<(), CliError>,
-{
-    let body = &output.stdout[..];
-    match output.status.code() {
-        Some(0) => handle(body),
-        Some(code) => {
-            if !body.is_empty() {
-                handle(body)?;
-            }
-            Err(CliError::RequestFailed { code })
-        }
-        None => Err(CliError::CommandTerminated { command: "curl" }),
-    }
-}
-
 /// Parses the v2 envelope `{content, sources}`. Returns `(content_json, sources_value)`.
 /// If the body is not a JSON object with a `content` field, falls back to returning the
 /// raw body as `content` and `None` sources — keeps the CLI usable against non-v2
@@ -157,27 +130,6 @@ fn print_get_content(content: EnvelopeContent) -> Result<(), CliError> {
             write_stdout(&rendered)
         }
     }
-}
-
-fn write_stdout(rendered: &str) -> Result<(), CliError> {
-    if rendered.is_empty() {
-        return Ok(());
-    }
-
-    let mut stdout = io::stdout().lock();
-    stdout
-        .write_all(rendered.as_bytes())
-        .map_err(|source| CliError::Io {
-            context: "failed to write response to stdout".to_string(),
-            source,
-        })?;
-    if !rendered.ends_with('\n') {
-        stdout.write_all(b"\n").map_err(|source| CliError::Io {
-            context: "failed to write trailing newline to stdout".to_string(),
-            source,
-        })?;
-    }
-    Ok(())
 }
 
 fn apply_facet_mode(value: &mut serde_json::Value, facet_mode: SearchFacetMode) {
@@ -248,76 +200,6 @@ fn build_api_url(base_url: &str, rest: &str) -> String {
         format!("{base_url}{API_PREFIX}")
     } else {
         format!("{base_url}{API_PREFIX}/{path}")
-    }
-}
-
-fn format_command(program: &str, args: &[String]) -> String {
-    let mut rendered = Vec::with_capacity(args.len() + 1);
-    rendered.push(shell_escape(program));
-    rendered.extend(args.iter().map(|arg| shell_escape(arg)));
-    rendered.join(" ")
-}
-
-fn redact_curl_args(args: &[String]) -> Vec<String> {
-    args.iter()
-        .map(|arg| {
-            if is_authorization_header(arg) {
-                redact_authorization_header(arg)
-            } else {
-                arg.clone()
-            }
-        })
-        .collect()
-}
-
-fn shell_escape(value: &str) -> String {
-    if value.is_empty() {
-        return "''".to_string();
-    }
-
-    if value.chars().all(is_shell_safe_char) {
-        return value.to_string();
-    }
-
-    format!("'{}'", value.replace('\'', "'\"'\"'"))
-}
-
-fn is_shell_safe_char(ch: char) -> bool {
-    matches!(
-        ch,
-        'a'..='z'
-            | 'A'..='Z'
-            | '0'..='9'
-            | '-'
-            | '_'
-            | '.'
-            | '/'
-            | ':'
-            | '='
-            | '@'
-            | '%'
-    )
-}
-
-fn is_authorization_header(value: &str) -> bool {
-    value
-        .trim_start()
-        .to_ascii_lowercase()
-        .starts_with("authorization:")
-}
-
-fn redact_authorization_header(header: &str) -> String {
-    let value = header
-        .split_once(':')
-        .map(|(_, value)| value.trim())
-        .unwrap_or_default();
-
-    if value.to_ascii_lowercase().starts_with("bearer ") {
-        "Authorization: Bearer <redacted>".to_string()
-    } else if let Some((scheme, _)) = value.split_once(' ') {
-        format!("Authorization: {scheme} <redacted>")
-    } else {
-        "Authorization: <redacted>".to_string()
     }
 }
 

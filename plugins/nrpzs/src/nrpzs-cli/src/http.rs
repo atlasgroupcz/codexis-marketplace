@@ -3,7 +3,6 @@ use std::time::Duration;
 use anyhow::{anyhow, Result};
 use reqwest::blocking::Client;
 use reqwest::header::ACCEPT;
-use reqwest::StatusCode;
 use serde_json::Value;
 
 const DEFAULT_BASE_URL: &str = "https://nrpzs-api.uzis.cz/api/v1";
@@ -36,7 +35,7 @@ impl NrpzsClient {
             .query(params)
             .header(ACCEPT, "application/json")
             .send()?;
-        read_body(resp, &url)
+        cdx_common::http::read_body(resp, &url, "GET")
     }
 
     /// Like get_raw, but maps HTTP 404 (NRPZS "Empty result") to an empty JSON array.
@@ -51,7 +50,7 @@ impl NrpzsClient {
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
             return Ok("[]".to_string());
         }
-        read_body(resp, &url)
+        cdx_common::http::read_body(resp, &url, "GET")
     }
 
     /// GET parsed as a JSON array.
@@ -87,35 +86,6 @@ impl NrpzsClient {
     }
 
     fn url_for(&self, path: &str) -> String {
-        if path.starts_with("http://") || path.starts_with("https://") {
-            return path.to_string();
-        }
-        if path.starts_with('/') {
-            format!("{}{}", self.base_url, path)
-        } else {
-            format!("{}/{}", self.base_url, path)
-        }
-    }
-}
-
-fn read_body(resp: reqwest::blocking::Response, url: &str) -> Result<String> {
-    let status = resp.status();
-    let body = resp.text().unwrap_or_default();
-    if status.is_success() {
-        Ok(body)
-    } else {
-        Err(anyhow!(
-            "HTTP {status} on GET {url}\n{body}",
-            status = format_status(status),
-            url = url,
-            body = body.trim()
-        ))
-    }
-}
-
-fn format_status(status: StatusCode) -> String {
-    match status.canonical_reason() {
-        Some(reason) => format!("{} {}", status.as_u16(), reason),
-        None => status.as_u16().to_string(),
+        cdx_common::http::resolve_url(&self.base_url, path)
     }
 }

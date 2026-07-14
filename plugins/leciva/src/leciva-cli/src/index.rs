@@ -172,6 +172,7 @@ impl Index {
         (total, hits)
     }
 
+    #[cfg(test)]
     pub fn search(&self, query: &str, limit: usize) -> Vec<Entry> {
         self.search_counted(query, limit).1
     }

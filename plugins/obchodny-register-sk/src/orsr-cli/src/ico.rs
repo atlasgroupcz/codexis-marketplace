@@ -1,21 +1,6 @@
 use anyhow::{anyhow, Result};
 
-pub fn normalize_ico(raw: &str) -> Result<String> {
-    let trimmed = raw.trim();
-    if trimmed.is_empty() {
-        return Err(anyhow!("IČO is empty"));
-    }
-    if !trimmed.chars().all(|c| c.is_ascii_digit()) {
-        return Err(anyhow!("IČO must contain only digits, got {trimmed:?}"));
-    }
-    if trimmed.len() > 8 {
-        return Err(anyhow!(
-            "IČO is at most 8 digits long, got {} digits ({trimmed:?})",
-            trimmed.len()
-        ));
-    }
-    Ok(format!("{trimmed:0>8}"))
-}
+pub(crate) use cdx_common::ico::normalize_ico;
 
 pub fn validate_date(raw: &str, name: &str) -> Result<()> {
     let value = raw.trim();
@@ -36,21 +21,6 @@ pub fn validate_date(raw: &str, name: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn normalize_ico_pads_to_eight_digits() {
-        assert_eq!(normalize_ico("123").unwrap(), "00000123");
-    }
-
-    #[test]
-    fn normalize_ico_rejects_non_digits() {
-        assert!(normalize_ico("31A33532").is_err());
-    }
-
-    #[test]
-    fn normalize_ico_rejects_more_than_eight_digits() {
-        assert!(normalize_ico("123456789").is_err());
-    }
 
     #[test]
     fn validate_date_accepts_iso_day() {

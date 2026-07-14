@@ -53,6 +53,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "cdx-common"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "clap"
 version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -150,6 +157,7 @@ dependencies = [
 name = "registr-smluv"
 version = "1.0.0"
 dependencies = [
+ "cdx-common",
  "clap",
  "serde_json",
 ]

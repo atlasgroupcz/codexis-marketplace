@@ -1,8 +1,8 @@
 use clap::Args;
 use serde_json::{Map, Value};
-use std::io::{self, Read};
 
 use crate::core::error::CliError;
+pub(crate) use cdx_common::search::{insert_string, insert_u64, load_search_payload, get_non_negative_integer};
 
 pub(crate) type JsonMap = Map<String, Value>;
 
@@ -79,29 +79,6 @@ impl SearchBaseArgs {
     }
 }
 
-pub(crate) fn insert_string(payload: &mut JsonMap, key: &str, value: &Option<String>) {
-    if let Some(value) = value
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
-        payload.insert(key.to_string(), Value::String(value.to_string()));
-    }
-}
-
-pub(crate) fn insert_u64(payload: &mut JsonMap, key: &str, value: Option<u64>) {
-    if let Some(value) = value {
-        payload.insert(key.to_string(), Value::from(value));
-    }
-}
-
-#[allow(dead_code)]
-pub(crate) fn insert_bool(payload: &mut JsonMap, key: &str, value: bool) {
-    if value {
-        payload.insert(key.to_string(), Value::Bool(true));
-    }
-}
-
 fn merge_payload_override(
     _source_code: &str,
     payload: &mut JsonMap,
@@ -114,51 +91,9 @@ fn merge_payload_override(
     Ok(())
 }
 
-fn load_search_payload(raw_payload: Option<&str>) -> Result<Option<JsonMap>, CliError> {
-    let Some(raw_payload) = raw_payload else {
-        return Ok(None);
-    };
-
-    let payload = if raw_payload == "-" {
-        let mut payload = String::new();
-        io::stdin()
-            .read_to_string(&mut payload)
-            .map_err(|source| CliError::Io {
-                context: "failed to read search payload from stdin".to_string(),
-                source,
-            })?;
-        payload
-    } else {
-        raw_payload.to_string()
-    };
-
-    let value: Value =
-        serde_json::from_str(&payload).map_err(|error| CliError::InvalidJson(error.to_string()))?;
-
-    match value {
-        Value::Object(object) => Ok(Some(object)),
-        _ => Err(CliError::SearchPayloadMustBeObject),
-    }
-}
-
 fn validate_search_payload(payload: &JsonMap) -> Result<(), CliError> {
     let _ = get_non_negative_integer(payload, "offset")?;
     Ok(())
-}
-
-fn get_non_negative_integer(payload: &JsonMap, key: &str) -> Result<Option<u64>, CliError> {
-    match payload.get(key) {
-        None => Ok(None),
-        Some(Value::Number(number)) => number
-            .as_u64()
-            .ok_or_else(|| {
-                CliError::InvalidSearchArgument(format!("{key} must be a non-negative integer"))
-            })
-            .map(Some),
-        Some(_) => Err(CliError::InvalidSearchArgument(format!(
-            "{key} must be a non-negative integer"
-        ))),
-    }
 }
 
 #[cfg(test)]

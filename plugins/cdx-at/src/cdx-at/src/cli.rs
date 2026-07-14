@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::core::config::Config;
+use crate::core::config::{Config, CODEXIS_PLUGIN_AT_API_URL_ENV};
 use crate::core::error::CliError;
 use crate::core::http::{execute_get_request, execute_search_request};
 use crate::core::schema::{render_resource_schema, ResourceSchemaKind, SchemaSource};
@@ -254,7 +254,7 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
 }
 
 fn execute_search(source: SearchSource) -> Result<(), CliError> {
-    let config = Config::load()?;
+    let config = Config::load(CODEXIS_PLUGIN_AT_API_URL_ENV)?;
     let payload = source.build_payload()?;
     execute_search_request(
         &config.base_url,
@@ -268,7 +268,7 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 }
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
-    let config = Config::load()?;
+    let config = Config::load(CODEXIS_PLUGIN_AT_API_URL_ENV)?;
     execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
 }
 

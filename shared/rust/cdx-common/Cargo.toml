@@ -1,0 +1,31 @@
+[package]
+name = "cdx-common"
+version = "0.1.0"
+edition = "2021"
+description = "Shared building blocks for codexis-marketplace Rust CLI plugins (daemon source publishing, config, errors)."
+license = "PROPRIETARY"
+
+[dependencies]
+serde_json = { version = "1", optional = true }
+anyhow = { version = "1", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
+
+[features]
+default = ["sources"]
+# The `sources` module (daemon source publishing). Pulls in `serde_json`.
+# On by default for the search plugins; disable it (default-features = false)
+# for plugins that only need the std-only helpers (e.g. ocr, video-analyze).
+sources = ["dep:serde_json"]
+# The `curl` module (curl HTTP plumbing for the search plugins). Pulls in `serde_json`.
+curl = ["dep:serde_json"]
+# The `schema` module (generic JSON-schema machinery). Pulls in `serde_json`.
+schema = ["dep:serde_json"]
+# The `search` module (search-payload building blocks). Pulls in `serde_json`.
+search = ["dep:serde_json"]
+# The `search_engine` module (the shared search/get request flow). Needs curl +
+# sources (and thus serde_json).
+search-engine = ["curl", "sources"]
+# The `http` module (small reqwest helpers). Pulls in `reqwest` + `anyhow`.
+http = ["dep:reqwest", "dep:anyhow"]
+# The `ico` module (IČO normalization). Pulls in `anyhow`.
+ico = ["dep:anyhow"]

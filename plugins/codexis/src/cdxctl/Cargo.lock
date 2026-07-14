@@ -129,10 +129,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cdx-common"
+version = "0.1.0"
+
+[[package]]
 name = "cdxctl"
 version = "0.2.0"
 dependencies = [
  "base64",
+ "cdx-common",
  "chrono",
  "clap",
  "reqwest",

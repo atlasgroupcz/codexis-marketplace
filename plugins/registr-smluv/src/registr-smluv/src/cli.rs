@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::core::config::Config;
+use crate::core::config::{Config, CODEXIS_PLUGIN_REGISTR_SMLUV_API_URL_ENV, DEFAULT_API_BASE_URL};
 use crate::core::error::CliError;
 use crate::core::http::{execute_get_request, execute_search_request};
 use crate::get::GetArgs;
@@ -110,7 +110,10 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
 }
 
 fn execute_search(source: SearchSource) -> Result<(), CliError> {
-    let config = Config::load();
+    let config = Config::load_or_default(
+        CODEXIS_PLUGIN_REGISTR_SMLUV_API_URL_ENV,
+        DEFAULT_API_BASE_URL,
+    );
     let payload = source.build_payload()?;
     execute_search_request(
         &config.base_url,
@@ -124,7 +127,10 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 }
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
-    let config = Config::load();
+    let config = Config::load_or_default(
+        CODEXIS_PLUGIN_REGISTR_SMLUV_API_URL_ENV,
+        DEFAULT_API_BASE_URL,
+    );
     execute_get_request(
         &config.base_url,
         config.auth_header.as_deref(),

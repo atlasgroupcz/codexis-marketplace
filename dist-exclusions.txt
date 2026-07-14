@@ -13,6 +13,7 @@ build.sh
 .gitignore
 .idea/
 src/
+/shared/
 /frontend/
 tests/
 acceptance/
