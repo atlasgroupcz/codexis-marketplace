@@ -17,7 +17,7 @@ Examples:
   ares-cli detail 27082440 --register vr
   ares-cli detail 27082440 --register rzp
   ares-cli search --name \"ATLAS\" --pocet 5
-  ares-cli search --obec \"Praha\" --pravni-forma 112
+  ares-cli search --name \"ATLAS\" --pravni-forma 112
   ares-cli api get \"/ekonomicke-subjekty/27082440\"
   ares-cli api post \"/ekonomicke-subjekty/vyhledat\" '{\"obchodniJmeno\":\"ATLAS\",\"pocet\":5}'
 
@@ -41,7 +41,7 @@ pub struct Cli {
 pub enum Command {
     /// Fetch detail of a single ekonomický subjekt by IČO.
     Detail(DetailArgs),
-    /// Search ekonomické subjekty by name / address / legal form.
+    /// Search ekonomické subjekty by name / IČO / legal form.
     Search(SearchArgs),
     /// Raw HTTP access (escape hatch).
     #[command(subcommand)]
@@ -68,21 +68,9 @@ pub struct SearchArgs {
     #[arg(long)]
     pub name: Option<String>,
 
-    /// Obec (city/town).
-    #[arg(long)]
-    pub obec: Option<String>,
-
-    /// PSČ (postal code).
-    #[arg(long)]
-    pub psc: Option<String>,
-
     /// Právní forma — ARES code (e.g. 112 for s.r.o.).
     #[arg(long = "pravni-forma")]
     pub pravni_forma: Option<String>,
-
-    /// Okres (district code or name as accepted by ARES).
-    #[arg(long)]
-    pub okres: Option<String>,
 
     /// Specific IČO (server-side filter; useful only with paging).
     #[arg(long)]
@@ -191,26 +179,12 @@ fn search(client: &AresClient, args: SearchArgs) -> Result<String> {
         payload.insert("pravniForma".into(), json!([pf]));
     }
 
-    let mut sidlo = serde_json::Map::new();
-    if let Some(obec) = args.obec {
-        sidlo.insert("obec".into(), json!(obec));
-    }
-    if let Some(psc) = args.psc {
-        sidlo.insert("psc".into(), json!(psc));
-    }
-    if let Some(okres) = args.okres {
-        sidlo.insert("okres".into(), json!(okres));
-    }
-    if !sidlo.is_empty() {
-        payload.insert("sidlo".into(), Value::Object(sidlo));
-    }
-
     payload.insert("start".into(), json!(args.start));
     payload.insert("pocet".into(), json!(args.pocet));
 
     if payload.len() == 2 {
         return Err(anyhow!(
-            "search needs at least one filter — use --name, --ico, --obec, --psc, --pravni-forma or --okres"
+            "search needs at least one filter — use --name, --ico or --pravni-forma"
         ));
     }
 
