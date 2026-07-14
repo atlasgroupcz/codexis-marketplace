@@ -1,7 +1,7 @@
 {
   "name": "insolvence",
   "iconPath": "icon.svg",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Hlídač insolvencí ČR (ISIR)",
   "author": {
     "name": "ATLAS GROUP",

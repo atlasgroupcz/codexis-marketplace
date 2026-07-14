@@ -254,6 +254,9 @@ def cmd_notify_recipients(args):
         current = list(args.emails)
     elif args.rcmd == "clear":
         current = []
+    # The signed-in user always receives the e-mail, so drop their own address —
+    # listing yourself as an extra is redundant (the FE dialog blocks it too).
+    current = notify.without_self(current)
     try:
         eff = notify_settings.set_notify(recipients=current)
     except ValueError as e:

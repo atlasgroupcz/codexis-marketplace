@@ -139,11 +139,16 @@ def handle_post(body: dict) -> None:
         return
 
     if action == "save_notify_settings":
+        # Drop the signed-in user's own address (they always receive it); guard
+        # None so a save that omits `recipients` leaves the stored list untouched.
+        recipients = body.get("recipients")
+        if recipients is not None:
+            recipients = notify.without_self(recipients)
         try:
             notify_settings.set_notify(
                 email=body.get("email"),
                 inApp=body.get("inApp"),
-                recipients=body.get("recipients"),
+                recipients=recipients,
             )
         except ValueError as e:
             emit_json({"ok": False, "error": str(e)}, status="400 Bad Request")

@@ -118,6 +118,27 @@ def resolve_to(recipients):
     return [me, *[e for e in extras if e.strip().lower() != me_key]]
 
 
+def without_self(recipients):
+    """Extra recipients with the signed-in user's own address removed.
+
+    The signed-in user always receives the e-mail, so listing their own address
+    as an extra is redundant (and shows as a duplicate pill in the UI). This is
+    the store-time guard for the CLI and daemon write paths — the FE dialog
+    already blocks it on entry. Case-insensitive. When the signed-in user can't
+    be resolved, the list is returned unchanged (keep an extra rather than drop a
+    real recipient on a transient lookup failure). No `me` lookup for an empty
+    list.
+    """
+    items = [r for r in (recipients or []) if str(r).strip()]
+    if not items:
+        return items
+    me = _query_me_email()
+    if not me:
+        return items
+    me_key = me.strip().lower()
+    return [r for r in items if str(r).strip().lower() != me_key]
+
+
 def _send_inapp(message, *, action=None, link=None, ntype="legislation-changed"):
     daemon_url, auth = _daemon_url(), load_auth()
     if not daemon_url or not auth:

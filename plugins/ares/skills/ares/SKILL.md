@@ -3,7 +3,7 @@ uuid: 214caaa4-3728-4d21-b379-ab4b376b7615
 name: ares
 icon: icon.svg
 description: Český registr ekonomických subjektů (ARES, MF ČR). Use for company / sole-trader lookups by IČO or name — basic identification, business register (statutory bodies, partners), statistical register (RES), trade licence registry (ŽR), and VAT payer registry. Triggers on "ares", "ičo", "ico", "obchodní rejstřík", "živnostenský rejstřík", "plátce DPH", "registr ekonomických subjektů", "vyhledej firmu", "kdo je jednatel", "statutární orgán", "ověř firmu", "DIČ".
-version: 0.2.1
+version: 0.2.3
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -60,24 +60,28 @@ ares-cli api {get|post} <PATH> [<JSON_BODY>]
 | `res`     | `/ekonomicke-subjekty-res`       | Registr ekonomických subjektů (statistical: NACE, počet zaměstnanců, …).     |
 | `rzp`     | `/ekonomicke-subjekty-rzp`       | Živnostenský rejstřík — list of trade licences (živnosti).                   |
 
-> **Pozor:** ARES v3 nemá samostatný endpoint pro Registr plátců DPH. DIČ a
-> aktuální stav plátcovství najdeš v **základním detailu** (`basic`) v polích
-> `dic` a `seznamRegistraci.stavZdrojeDph` (`AKTIVNI` / `UKONCENY` /
-> `NEEXISTUJICI`). Skupinová registrace DPH: `seznamRegistraci.stavZdrojeSkDph`.
+> **Note:** ARES v3 has no dedicated VAT-payer register endpoint. The VAT number
+> (`dic`) and current VAT-payer status live in the **basic detail** (`basic`), in
+> the `dic` and `seznamRegistraci.stavZdrojeDph` fields (`AKTIVNI` / `UKONCENY` /
+> `NEEXISTUJICI`). VAT group registration: `seznamRegistraci.stavZdrojeSkDph`.
 
 ### Search filters (`ares-cli search`)
 
-At least one of `--name`, `--ico`, `--obec`, `--psc`, `--pravni-forma`, `--okres`
-is required. Paging via `--start` (default 0) and `--pocet` (default 10, max 1000).
+At least one of `--name`, `--ico`, `--pravni-forma` is required. Paging via
+`--start` (default 0) and `--pocet` (default 10, max 1000).
 
 ```bash
 ares-cli search --name "ATLAS GROUP"
-ares-cli search --obec "Praha" --pravni-forma 112 --pocet 20
-ares-cli search --psc 11000 --name "advokát"
+ares-cli search --name "ATLAS" --pravni-forma 112 --pocet 20
 ```
 
 `--pravni-forma` takes the ARES legal-form code (e.g. `112` = s.r.o., `121` = a.s.,
-`101` = OSVČ podnikající dle živnostenského zákona).
+`101` = OSVČ podnikající dle živnostenského zákona). It can't stand alone for a
+common form (too many results); combine it with `--name`.
+
+> **Note:** ARES v3 `/vyhledat` has **no obec / PSČ / okres filter** — you cannot
+> search companies by address. Filter by `--name`, `--ico` or `--pravni-forma`,
+> then read the address (`sidlo.textovaAdresa`) from each result.
 
 ### Raw API
 
@@ -97,8 +101,8 @@ Use only when the structured `detail`/`search` commands cannot express the reque
 → `ares-cli detail <ICO> --register vr`
 
 **User asks "je X plátce DPH" / "od kdy plátce DPH" / "DIČ"?**
-→ `ares-cli detail <ICO>` a vyzobni `dic` + `seznamRegistraci.stavZdrojeRpdph`
-   (ARES v3 nemá samostatný RPDPH endpoint).
+→ `ares-cli detail <ICO>`, then pull `dic` + `seznamRegistraci.stavZdrojeDph`
+   (ARES v3 has no dedicated RPDPH endpoint).
 
 **User asks about živnosti (trade licences) of a sole trader / company?**
 → `ares-cli detail <ICO> --register rzp`
@@ -107,13 +111,13 @@ Use only when the structured `detail`/`search` commands cannot express the reque
 → `ares-cli detail <ICO> --register res`
 
 **User does NOT know the IČO and gives a name/address?**
-→ `ares-cli search --name "..."` (combine with `--obec` / `--psc` if available
-to narrow down). Pick the right candidate from `ekonomickeSubjekty[]`, then run
-`detail` on that IČO.
+→ `ares-cli search --name "..."`. Pick the right candidate from
+`ekonomickeSubjekty[]`, then run `detail` on that IČO. ARES has no address
+filter, so narrow by name (and `--pravni-forma`), not by obec/PSČ.
 
-**User wants a list of companies in a region / by legal form?**
-→ `ares-cli search --obec "..." --pravni-forma <CODE> --pocet 100` (paginate
-with `--start` if needed).
+**User wants a list of companies by legal form?**
+→ `ares-cli search --pravni-forma <CODE> --name "..." --pocet 100` (paginate
+with `--start` if needed; a common form alone exceeds the 1000-result cap).
 
 ## Chat sources
 
@@ -127,7 +131,7 @@ your answer, cite that same URL in prose.
 - Always show **`obchodniJmeno`** + **`ico`** as the canonical company identifier.
 - Address comes from `sidlo.textovaAdresa` (preformatted by ARES) — prefer it
   over reconstructing from parts.
-- For statutory bodies / partners (`vr`), data sit under `zaznamy[].statutarniOrgan`
+- For statutory bodies / partners (`vr`), data sit under `zaznamy[].statutarniOrgany`
   / `zaznamy[].spolecnici`. Iterate, don't assume single record.
 - Never fabricate data ARES did not return — if a field is missing, say so.
 
@@ -138,12 +142,12 @@ your answer, cite that same URL in prose.
 ares-cli detail 27082440 | jq '{ico, name: .obchodniJmeno, address: .sidlo.textovaAdresa, active: (.datumZaniku == null)}'
 
 # Statutory bodies of a s.r.o.
-ares-cli detail 27082440 --register vr | jq '.zaznamy[].statutarniOrgan'
+ares-cli detail 27082440 --register vr | jq '.zaznamy[].statutarniOrgany'
 
 # Is this company a VAT payer right now? (ARES v3 has no separate RPDPH endpoint)
 ares-cli detail 27082440 | jq '{dic, dph: .seznamRegistraci.stavZdrojeDph, dphSkup: .seznamRegistraci.stavZdrojeSkDph}'
 
-# Find advokátní kanceláře v Praze
-ares-cli search --obec "Praha" --name "advokát" --pocet 50 \
+# Find advokátní kanceláře by name (ARES has no address filter)
+ares-cli search --name "advokátní kancelář" --pocet 50 \
   | jq '.ekonomickeSubjekty[] | {ico, obchodniJmeno, sidlo: .sidlo.textovaAdresa}'
 ```

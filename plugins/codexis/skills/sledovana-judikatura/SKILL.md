@@ -3,7 +3,7 @@ uuid: 5cdb1ccf-e079-49a9-a618-a3f3bb60dc20
 name: sledovana-judikatura
 icon: icon.svg
 description: Track case law topics and generate periodic reports. Use when user wants to monitor new jurisprudence, track judicial decisions, or get regular case law summaries. Triggers on "sleduj judikaturu", "judikatura", "nová rozhodnutí", "case law monitoring", "soudní rozhodnutí".
-version: 1.2.0
+version: 1.2.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -216,6 +216,8 @@ AUTO_ID=$(cdxctl automation create \
 
 cdx-sledovana-judikatura set-automation "$UUID" "$AUTO_ID"
 ```
+
+When a check saves a report, the summary e-mail goes to the **signed-in user**; add others who should get a copy with `cdx-sledovana-judikatura notify recipients add|remove|set|clear <email...>`. You don't need to add the signed-in user's own address — it's redundant (they're always a recipient) and gets dropped automatically.
 
 ## Tailoring Reports to User
 
