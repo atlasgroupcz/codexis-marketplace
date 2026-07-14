@@ -90,8 +90,8 @@ katastr-cli tracking remove V-123/2026-701
 
 ### Monitoring & notifications
 
-E-mail and in-app (bell) notifications are a **persistent app setting**, not a
-per-run flag on `check`:
+E-mail and in-app (bell) notifications are a **persistent app setting** — turn them
+on or off with `notify set`:
 
 ```bash
 katastr-cli notify set --email      # turn on e-mail
@@ -101,9 +101,8 @@ katastr-cli notify set --no-inapp   # turn off the in-app bell
 katastr-cli notify show             # show current settings
 ```
 
-`tracking check` reads this setting every run — there is no `--email`/`--to` flag on
-`check` anymore. Recipient is always the **signed-in user**; you never touch a
-token, SMTP or cron yourself.
+`tracking check` reads this setting on every run; the recipient is always the
+**signed-in user**, and you never touch a token, SMTP or cron yourself.
 
 **Extra recipients (optional):** the signed-in user always gets the e-mail; add
 others who should get a copy. You don't need to add the signed-in user's own
@@ -116,11 +115,9 @@ katastr-cli notify recipients set <email...>    # replace the whole extra-recipi
 katastr-cli notify recipients clear             # remove all extras — e-mail then goes only to the signed-in user
 ```
 
-- **E-mail (if on):** sent **every run**, either the detected changes or a
-  **"no new changes" heartbeat** — so the user sees the watchdog is alive even on a
-  quiet week.
-- **In-app bell (if on):** fires **only when a proceeding actually changed** — no
-  heartbeat spam in the notification center.
+- **E-mail (if on):** sent **only when a proceeding actually changed** — a quiet run
+  sends nothing.
+- **In-app bell (if on):** fires **only when a proceeding actually changed.**
 
 **Shipped default — no notifications sent by `check` unless the setting is on.**
 `automations/check-rizeni.md` runs a plain `tracking check` weekly to keep state
@@ -128,16 +125,12 @@ fresh and the UI unread badge current; it sends e-mail/bell only if the user has
 turned the corresponding setting on. Leave it as-is unless the user asks for
 notifications.
 
-**One-off "e-mail me / notify me now":** turn the setting on, then run
-`katastr-cli tracking check` once — no flags needed:
+**"Give me the status / e-mail me now":** for an on-demand status, run
+`tracking show <V-…>` and summarise the state in your reply:
 
 ```bash
-katastr-cli notify set --email
-katastr-cli tracking check
+katastr-cli tracking show V-123/2026-701
 ```
-
-(Sends a summary even right after `tracking add`, when nothing has changed yet — the
-e-mail heartbeat confirms it works; the bell stays quiet until a real change.)
 
 **Recurring ("sleduj a každý den/týden mi pošli e-mail"):** the recurrence *is* a
 scheduled automation — one prompt run fires at most once. Set it up with `cdxctl`
