@@ -1,16 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="insolvence" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
-  <defs>
-    <style>
-      .cls-bg { fill: #fff3c7; }
-      .cls-shield { fill: #4fba6f; }
-      .cls-shield-dark { fill: #269968; }
-      .cls-mark { fill: #fdc800; }
-    </style>
-  </defs>
-  <rect class="cls-bg" width="300" height="300"/>
-  <path class="cls-shield" d="M150,46 L248,84 V150 C248,206 207,245 150,259 C93,245 52,206 52,150 V84 Z"/>
-  <path class="cls-shield-dark" d="M150,259 C207,245 248,206 248,150 V84 L150,46 Z" opacity="0.18"/>
-  <rect class="cls-mark" x="141" y="92" width="18" height="74" rx="9"/>
-  <circle class="cls-mark" cx="150" cy="190" r="11"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.4 -0.4 64.8 64.8" width="64" height="64"><rect x="2" y="2" width="60" height="60" rx="12" fill="#164228"/><path d="M32 12 v34" stroke="#d7e04a" stroke-width="3.2" stroke-linecap="round"/><path d="M18 20 h28" stroke="#d7e04a" stroke-width="3.2" stroke-linecap="round"/><circle cx="32" cy="13" r="3.4" fill="#d7e04a"/><path d="M18 20 L12 33 h12 z" fill="#ffffff"/><path d="M46 20 L40 33 h12 z" fill="#ffffff"/><rect x="22" y="46" width="20" height="5" rx="2.5" fill="#ffffff"/></svg>

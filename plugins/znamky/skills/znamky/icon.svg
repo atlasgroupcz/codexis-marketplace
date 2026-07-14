@@ -1,15 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="znamky" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
-  <defs>
-    <style>
-      .cls-bg { fill: #e8f0ff; }
-      .cls-shield { fill: #3f6fde; }
-      .cls-shield-dark { fill: #2748a8; }
-      .cls-mark { fill: #ffffff; }
-    </style>
-  </defs>
-  <rect class="cls-bg" width="300" height="300"/>
-  <path class="cls-shield" d="M150,46 L248,84 V150 C248,206 207,245 150,259 C93,245 52,206 52,150 V84 Z"/>
-  <path class="cls-shield-dark" d="M150,259 C207,245 248,206 248,150 V84 L150,46 Z" opacity="0.18"/>
-  <text class="cls-mark" x="150" y="178" text-anchor="middle" font-family="Georgia, serif" font-size="120" font-weight="700">™</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.4 -0.4 64.8 64.8" width="64" height="64"><rect x="2" y="2" width="60" height="60" rx="12" fill="#2362a2"/><rect x="8" y="10" width="32" height="32" rx="5" fill="#ffffff"/><text x="24" y="33" font-family="Helvetica,Arial" font-size="15" font-weight="700" text-anchor="middle" fill="#2362a2">TM</text><circle cx="41" cy="41" r="12" fill="none" stroke="#ffffff" stroke-width="4"/><circle cx="41" cy="41" r="9" fill="#2362a2" fill-opacity=".25"/><path d="M50 50 L57 57" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/></svg>
