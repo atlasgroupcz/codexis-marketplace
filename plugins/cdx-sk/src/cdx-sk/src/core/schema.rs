@@ -1,8 +1,9 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 
 use crate::core::error::CliError;
+use cdx_common::schema::make_standalone_json_schema;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ResourceSchemaKind {
@@ -307,124 +308,6 @@ fn resource_output_schema(
     Err(CliError::InvalidStoredSchema(
         "resource bundle is missing a 200 response schema".to_string(),
     ))
-}
-
-fn make_standalone_json_schema(
-    mut schema: Value,
-    components: Option<&Map<String, Value>>,
-) -> Result<Value, CliError> {
-    rewrite_component_refs_to_defs(&mut schema);
-
-    let root = schema.as_object_mut().ok_or_else(|| {
-        CliError::InvalidStoredSchema("output schema must be a JSON object".to_string())
-    })?;
-    root.insert(
-        "$schema".to_string(),
-        Value::String("https://json-schema.org/draft/2020-12/schema".to_string()),
-    );
-
-    let Some(components) = components else {
-        return Ok(schema);
-    };
-
-    let referenced_names = referenced_component_closure(&schema, components)?;
-    if referenced_names.is_empty() {
-        return Ok(schema);
-    }
-
-    let mut defs = Map::new();
-    for name in referenced_names {
-        let mut component_schema = components.get(&name).cloned().ok_or_else(|| {
-            CliError::InvalidStoredSchema(format!("missing referenced schema {name}"))
-        })?;
-        rewrite_component_refs_to_defs(&mut component_schema);
-        defs.insert(name, component_schema);
-    }
-
-    if let Some(root) = schema.as_object_mut() {
-        root.insert("$defs".to_string(), Value::Object(defs));
-    }
-
-    Ok(schema)
-}
-
-fn rewrite_component_refs_to_defs(schema: &mut Value) {
-    match schema {
-        Value::Object(object) => {
-            if let Some(reference) = object.get_mut("$ref") {
-                if let Some(reference) = reference.as_str() {
-                    if let Some(name) = reference.strip_prefix("#/components/schemas/") {
-                        *object.get_mut("$ref").expect("$ref just checked") =
-                            Value::String(format!("#/$defs/{name}"));
-                    }
-                }
-            }
-
-            for value in object.values_mut() {
-                rewrite_component_refs_to_defs(value);
-            }
-        }
-        Value::Array(items) => {
-            for item in items {
-                rewrite_component_refs_to_defs(item);
-            }
-        }
-        _ => {}
-    }
-}
-
-fn referenced_component_closure(
-    schema: &Value,
-    components: &Map<String, Value>,
-) -> Result<Vec<String>, CliError> {
-    let mut names = BTreeSet::new();
-    let mut queue = direct_referenced_schema_names(schema);
-
-    while let Some(name) = queue.pop_first() {
-        if !names.insert(name.clone()) {
-            continue;
-        }
-
-        let component = components.get(&name).ok_or_else(|| {
-            CliError::InvalidStoredSchema(format!("missing referenced schema {name}"))
-        })?;
-        for dep in direct_referenced_schema_names(component) {
-            if !names.contains(&dep) {
-                queue.insert(dep);
-            }
-        }
-    }
-
-    Ok(names.into_iter().collect())
-}
-
-fn direct_referenced_schema_names(schema: &Value) -> BTreeSet<String> {
-    let mut names = BTreeSet::new();
-    collect_direct_referenced_schema_names(schema, &mut names);
-    names
-}
-
-fn collect_direct_referenced_schema_names(schema: &Value, names: &mut BTreeSet<String>) {
-    match schema {
-        Value::Object(object) => {
-            if let Some(reference) = object.get("$ref").and_then(Value::as_str) {
-                if let Some(name) = reference.strip_prefix("#/$defs/") {
-                    names.insert(name.to_string());
-                } else if let Some(name) = reference.strip_prefix("#/components/schemas/") {
-                    names.insert(name.to_string());
-                }
-            }
-            for value in object.values() {
-                collect_direct_referenced_schema_names(value, names);
-            }
-        }
-        Value::Array(items) => {
-            for item in items {
-                collect_direct_referenced_schema_names(item, names);
-            }
-        }
-        _ => {}
-    }
 }
 
 fn simplify_query_parameters(kind: ResourceSchemaKind, operations: &[Value]) -> Vec<String> {

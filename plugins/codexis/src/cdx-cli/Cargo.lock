@@ -56,7 +56,15 @@ dependencies = [
 name = "cdx-cli"
 version = "0.2.0"
 dependencies = [
+ "cdx-common",
  "clap",
+ "serde_json",
+]
+
+[[package]]
+name = "cdx-common"
+version = "0.1.0"
+dependencies = [
  "serde_json",
 ]
 

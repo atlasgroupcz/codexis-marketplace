@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 serde_json = "1"
+cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["curl", "schema", "search", "search-engine"] }
 
 [profile.release]
 strip = true

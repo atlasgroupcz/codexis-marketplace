@@ -7,7 +7,8 @@ use std::{env, fs};
 use anyhow::{anyhow, Result};
 use reqwest::blocking::Client;
 use reqwest::header::ACCEPT;
-use reqwest::{StatusCode, Url};
+use reqwest::Url;
+use cdx_common::http::{backoff, base_url_from_env, format_status, join_url, retryable_status};
 
 const DEFAULT_RPO_BASE_URL: &str = "https://api.statistics.sk/rpo/v1";
 const DEFAULT_RUZ_BASE_URL: &str = "https://www.registeruz.sk/cruz-public/api";
@@ -157,13 +158,6 @@ impl RegistryClient {
     }
 }
 
-fn base_url_from_env(var: &str, default: &str) -> String {
-    std::env::var(var)
-        .unwrap_or_else(|_| default.to_string())
-        .trim_end_matches('/')
-        .to_string()
-}
-
 fn build_url(base: &str, path: &str, query: &[(&str, &str)]) -> Result<String> {
     let mut url = Url::parse(&join_url(base, path))
         .map_err(|error| anyhow!("invalid API URL: {error}"))?;
@@ -182,21 +176,6 @@ fn build_url(base: &str, path: &str, query: &[(&str, &str)]) -> Result<String> {
         ));
     }
     Ok(url)
-}
-
-fn join_url(base: &str, path: &str) -> String {
-    if path.starts_with("http://") || path.starts_with("https://") {
-        return path.to_string();
-    }
-    format!("{base}/{}", path.trim_start_matches('/'))
-}
-
-fn retryable_status(status: StatusCode) -> bool {
-    status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error()
-}
-
-fn backoff(attempt: usize) -> Duration {
-    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
 }
 
 fn configured_cache_ttl() -> Duration {
@@ -225,13 +204,6 @@ fn cache_key(url: &str) -> String {
         hash = hash.wrapping_mul(0x100000001b3);
     }
     format!("{hash:016x}")
-}
-
-fn format_status(status: StatusCode) -> String {
-    match status.canonical_reason() {
-        Some(reason) => format!("{} {}", status.as_u16(), reason),
-        None => status.as_u16().to_string(),
-    }
 }
 
 #[cfg(test)]
@@ -269,17 +241,4 @@ mod tests {
         assert!(build_url("https://api.statistics.sk/rpo/v1", "search", &[("fullName", &long_value)]).is_err());
     }
 
-    #[test]
-    fn retryable_status_matches_429_and_5xx_only() {
-        assert!(retryable_status(StatusCode::TOO_MANY_REQUESTS));
-        assert!(retryable_status(StatusCode::SERVICE_UNAVAILABLE));
-        assert!(!retryable_status(StatusCode::NOT_FOUND));
-    }
-
-    #[test]
-    fn backoff_grows_exponentially() {
-        assert_eq!(backoff(0), Duration::from_millis(250));
-        assert_eq!(backoff(1), Duration::from_millis(500));
-        assert_eq!(backoff(2), Duration::from_millis(1000));
-    }
 }

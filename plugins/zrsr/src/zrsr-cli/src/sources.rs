@@ -1,27 +1,15 @@
 use std::collections::HashSet;
-use std::fmt;
-use std::process::{Command, Output, Stdio};
 
 use serde_json::{json, Value};
 
-use crate::config::DaemonConfig;
 
 const RPO_ENTITY_BASE_URL: &str = "https://api.statistics.sk/rpo/v1/entity";
 const SNIPPET_MAX_CHARS: usize = 300;
 pub(crate) const SEARCH_SOURCES_CAP: usize = 10;
 
-/// Best-effort publish of chat sources; silently a no-op outside a chat-VM
-/// context, never fails the command.
+/// Best-effort publish of chat sources; delegates to the shared publisher.
 pub(crate) fn try_publish(entries: &[Value]) {
-    if entries.is_empty() {
-        return;
-    }
-    let Some(daemon) = DaemonConfig::load() else {
-        return;
-    };
-    if let Err(err) = publish(entries, &daemon) {
-        eprintln!("zrsr-cli: failed to attach sources to chat: {err}");
-    }
+    cdx_common::sources::try_publish("zrsr-cli", entries);
 }
 
 /// One source for `detail` — the public RPO record of the subject.
@@ -129,62 +117,6 @@ fn format_address(address: &Value) -> Option<String> {
 
 fn truncate_chars(value: &str, max: usize) -> String {
     value.chars().take(max).collect()
-}
-
-fn publish(entries: &[Value], daemon: &DaemonConfig) -> Result<(), SourcesError> {
-    let body = serde_json::to_string(&json!({ "sources": entries }))
-        .map_err(|e| SourcesError::Parse(e.to_string()))?;
-    post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
-}
-
-fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), SourcesError> {
-    let output = Command::new("curl")
-        .args([
-            "-sS", "--fail-with-body", "-H", auth_header, "-X", "POST",
-            "-H", "Content-Type: application/json", url, "-d", body,
-        ])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(|e| SourcesError::Spawn(e.to_string()))?;
-    match output.status.code() {
-        Some(0) => Ok(()),
-        Some(code) => Err(SourcesError::Http { code, detail: response_detail(&output) }),
-        None => Err(SourcesError::Spawn("curl terminated without status".into())),
-    }
-}
-
-fn response_detail(output: &Output) -> String {
-    let body = String::from_utf8_lossy(&output.stdout);
-    let body = body.trim();
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let stderr = stderr.trim();
-    match (body.is_empty(), stderr.is_empty()) {
-        (false, false) => format!("{body} ({stderr})"),
-        (false, true) => body.to_string(),
-        (true, false) => stderr.to_string(),
-        (true, true) => "no response body".to_string(),
-    }
-}
-
-#[derive(Debug)]
-pub(crate) enum SourcesError {
-    Parse(String),
-    Spawn(String),
-    Http { code: i32, detail: String },
-}
-
-impl fmt::Display for SourcesError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Parse(msg) => write!(f, "could not serialize sources: {msg}"),
-            Self::Spawn(msg) => write!(f, "could not POST sources to daemon: {msg}"),
-            Self::Http { code, detail } => {
-                write!(f, "daemon rejected sources (curl exit {code}): {detail}")
-            }
-        }
-    }
 }
 
 #[cfg(test)]

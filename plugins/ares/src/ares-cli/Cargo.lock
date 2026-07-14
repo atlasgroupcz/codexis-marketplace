@@ -63,6 +63,7 @@ name = "ares-cli"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "cdx-common",
  "clap",
  "reqwest",
  "serde",
@@ -107,6 +108,15 @@ checksum = "d16d90359e986641506914ba71350897565610e87ce0ad9e6f28569db3dd5c6d"
 dependencies = [
  "find-msvc-tools",
  "shlex",
+]
+
+[[package]]
+name = "cdx-common"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reqwest",
+ "serde_json",
 ]
 
 [[package]]

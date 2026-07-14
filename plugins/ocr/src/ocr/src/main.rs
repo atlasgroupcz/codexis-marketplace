@@ -1,11 +1,11 @@
 use std::env;
 use std::fmt::Write;
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 
+use cdx_common::daemon_rest::daemon_bearer;
+
 // OCR endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see ocr_endpoint().
-const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
 
 fn percent_encode(input: &[u8]) -> String {
     let mut out = String::with_capacity(input.len() * 3);
@@ -22,40 +22,6 @@ fn percent_encode(input: &[u8]) -> String {
     out
 }
 
-fn load_daemon_auth() -> String {
-    // Daemon/gateway auth is the VM token in ~/.cdx/env/secret (the same token
-    // cdxctl reads), sent as a Bearer token. NOT CODEXIS_USER_API_TOKEN — that JWT
-    // is for external Codexis sources and the gateway rejects it (403).
-    if let Some(secret) = read_secret_file() {
-        return ensure_bearer_prefix(&secret);
-    }
-    eprintln!("error: no daemon auth (missing ~/{})", SECRET_FILE_RELATIVE);
-    std::process::exit(2);
-}
-
-fn read_secret_file() -> Option<String> {
-    let home = env::var("HOME").ok()?;
-    let contents = fs::read_to_string(Path::new(&home).join(SECRET_FILE_RELATIVE)).ok()?;
-    let trimmed = contents.trim();
-    if trimmed.is_empty() {
-        None
-    } else {
-        Some(trimmed.to_string())
-    }
-}
-
-fn ensure_bearer_prefix(value: &str) -> String {
-    let mut s = value.trim();
-    if let Some(stripped) = s.strip_prefix("Authorization:") {
-        s = stripped.trim();
-    }
-    if s.len() >= 7 && s.as_bytes()[..7].eq_ignore_ascii_case(b"Bearer ") {
-        s.to_string()
-    } else {
-        format!("Bearer {}", s)
-    }
-}
-
 fn ocr_endpoint() -> String {
     // CODEXIS_PUBLIC_DAEMON_URL is the daemon GraphQL URL (…/graphql); the OCR
     // REST endpoint is its sibling. Strip /graphql, append /rest/ocr. Fall back
@@ -69,44 +35,6 @@ fn ocr_endpoint() -> String {
     format!("{}/rest/ocr", base)
 }
 
-fn extract_json_field(json: &str, field: &str) -> String {
-    let pattern = format!("\"{}\"", field);
-    if let Some(pos) = json.find(&pattern) {
-        let after = &json[pos + pattern.len()..];
-        let trimmed = after.trim_start();
-        if let Some(rest) = trimmed.strip_prefix(':') {
-            let rest = rest.trim_start();
-            if rest.starts_with('"') {
-                return parse_json_string(&rest[1..]);
-            }
-        }
-    }
-    String::new()
-}
-
-fn parse_json_string(s: &str) -> String {
-    let mut out = String::new();
-    let mut chars = s.chars();
-    while let Some(c) = chars.next() {
-        match c {
-            '"' => break,
-            '\\' => {
-                if let Some(e) = chars.next() {
-                    match e {
-                        'n' => out.push('\n'),
-                        't' => out.push('\t'),
-                        'r' => out.push('\r'),
-                        '/' => out.push('/'),
-                        other => out.push(other),
-                    }
-                }
-            }
-            other => out.push(other),
-        }
-    }
-    out
-}
-
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -115,7 +43,10 @@ fn main() {
         std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
     }
 
-    let daemon_auth = load_daemon_auth();
+    let daemon_auth = daemon_bearer().unwrap_or_else(|| {
+        eprintln!("error: no daemon auth (missing ~/.cdx/env/secret)");
+        std::process::exit(2);
+    });
 
     let path = &args[0];
     let encoded_path = percent_encode(path.as_bytes());
@@ -143,7 +74,10 @@ fn main() {
         }
     };
 
-    let result_path = extract_json_field(&resp, "resultPath");
+    let result_path = serde_json::from_str::<serde_json::Value>(&resp)
+        .ok()
+        .and_then(|v| v.get("resultPath").and_then(|s| s.as_str()).map(str::to_string))
+        .unwrap_or_default();
     if result_path.is_empty() {
         eprintln!("error: ocr response has no resultPath: {}", resp);
         std::process::exit(1);

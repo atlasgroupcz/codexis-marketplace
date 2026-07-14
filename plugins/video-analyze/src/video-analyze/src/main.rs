@@ -4,11 +4,12 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+use cdx_common::daemon_rest::daemon_bearer;
+
 const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
 const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
-const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
 // Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see upload_endpoint().
 
 const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
@@ -43,7 +44,10 @@ fn main() {
         }
         let source = &args[1];
         let api_key = load_api_key();
-        let daemon_auth = load_daemon_auth();
+        let daemon_auth = daemon_bearer().unwrap_or_else(|| {
+            eprintln!("error: no daemon auth (missing ~/.cdx/env/secret)");
+            std::process::exit(2);
+        });
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
@@ -80,7 +84,10 @@ fn main() {
         let source = &args[0];
         let query = args[1..].join(" ");
         let api_key = load_api_key();
-        let daemon_auth = load_daemon_auth();
+        let daemon_auth = daemon_bearer().unwrap_or_else(|| {
+            eprintln!("error: no daemon auth (missing ~/.cdx/env/secret)");
+            std::process::exit(2);
+        });
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
@@ -99,8 +106,13 @@ fn upload_source(source: &str, daemon_auth: &str, is_youtube: bool) -> (String, 
         (source.to_string(), String::new())
     } else {
         let upload_json = upload_file(source, daemon_auth);
-        let uri = extract_json_field(&upload_json, "uri");
-        let mime = extract_json_field(&upload_json, "mimeType");
+        let parsed: serde_json::Value = serde_json::from_str(&upload_json).unwrap_or_default();
+        let uri = parsed.get("uri").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let mime = parsed
+            .get("mimeType")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
         if uri.is_empty() {
             eprintln!("error: upload failed: {}", upload_json);
             std::process::exit(1);
@@ -141,41 +153,6 @@ fn load_api_key() -> String {
     }
     eprintln!("error: CODEXIS_USER_LITELLM_API_KEY not set");
     std::process::exit(2);
-}
-
-fn load_daemon_auth() -> String {
-    // Daemon auth for the upload endpoint: the VM token in ~/.cdx/env/secret (the
-    // same token cdxctl reads), sent as Bearer. NOT CODEXIS_USER_API_TOKEN — that
-    // JWT is for external Codexis sources and the gateway rejects it (403). The
-    // LiteLLM key is separate (CODEXIS_USER_LITELLM_API_KEY, via load_api_key).
-    if let Some(secret) = read_secret_file() {
-        return ensure_bearer_prefix(&secret);
-    }
-    eprintln!("error: no daemon auth (missing ~/{})", SECRET_FILE_RELATIVE);
-    std::process::exit(2);
-}
-
-fn read_secret_file() -> Option<String> {
-    let home = env::var("HOME").ok()?;
-    let contents = fs::read_to_string(Path::new(&home).join(SECRET_FILE_RELATIVE)).ok()?;
-    let trimmed = contents.trim();
-    if trimmed.is_empty() {
-        None
-    } else {
-        Some(trimmed.to_string())
-    }
-}
-
-fn ensure_bearer_prefix(value: &str) -> String {
-    let mut s = value.trim();
-    if let Some(stripped) = s.strip_prefix("Authorization:") {
-        s = stripped.trim();
-    }
-    if s.len() >= 7 && s.as_bytes()[..7].eq_ignore_ascii_case(b"Bearer ") {
-        s.to_string()
-    } else {
-        format!("Bearer {}", s)
-    }
 }
 
 fn litellm_base() -> String {
@@ -290,73 +267,21 @@ fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_
     }
 }
 
-/// Extract candidates[0].content.parts[0].text from Gemini response.
+/// Extract candidates[0].content.parts[0].text from a Gemini response.
 fn extract_response_text(json: &str) -> String {
-    if let Some(parts_pos) = json.find("\"parts\"") {
-        let after_parts = &json[parts_pos..];
-        if let Some(text_pos) = after_parts.find("\"text\"") {
-            let after_text = &after_parts[text_pos + 6..];
-            let trimmed = after_text.trim_start();
-            if let Some(rest) = trimmed.strip_prefix(':') {
-                let rest = rest.trim_start();
-                if rest.starts_with('"') {
-                    return parse_json_string(&rest[1..]);
-                }
-            }
-        }
-    }
-    String::new()
-}
-
-fn parse_json_string(s: &str) -> String {
-    let mut result = String::new();
-    let mut chars = s.chars();
-    while let Some(c) = chars.next() {
-        match c {
-            '"' => return result,
-            '\\' => {
-                if let Some(esc) = chars.next() {
-                    match esc {
-                        '"' => result.push('"'),
-                        '\\' => result.push('\\'),
-                        '/' => result.push('/'),
-                        'n' => result.push('\n'),
-                        'r' => result.push('\r'),
-                        't' => result.push('\t'),
-                        'u' => {
-                            let hex: String = chars.by_ref().take(4).collect();
-                            if let Ok(code) = u32::from_str_radix(&hex, 16) {
-                                if let Some(ch) = char::from_u32(code) {
-                                    result.push(ch);
-                                }
-                            }
-                        }
-                        _ => {
-                            result.push('\\');
-                            result.push(esc);
-                        }
-                    }
-                }
-            }
-            _ => result.push(c),
-        }
-    }
-    result
-}
-
-fn extract_json_field(json: &str, field: &str) -> String {
-    let pattern = format!("\"{}\"", field);
-    if let Some(pos) = json.find(&pattern) {
-        let after = &json[pos + pattern.len()..];
-        let trimmed = after.trim_start();
-        if let Some(rest) = trimmed.strip_prefix(':') {
-            let rest = rest.trim_start();
-            if rest.starts_with('"') {
-                return parse_json_string(&rest[1..]);
-            }
-        }
-    }
-    String::new()
+    serde_json::from_str::<serde_json::Value>(json)
+        .ok()
+        .and_then(|v| {
+            v.get("candidates")?
+                .get(0)?
+                .get("content")?
+                .get("parts")?
+                .get(0)?
+                .get("text")?
+                .as_str()
+                .map(str::to_string)
+        })
+        .unwrap_or_default()
 }
 
 fn escape_json(s: &str) -> String {
