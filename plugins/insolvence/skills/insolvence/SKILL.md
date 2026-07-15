@@ -21,7 +21,7 @@ i18n:
 A single tool — **`insolvence-cli`** — wraps the public ISIR web service (no API key) plus a
 stateful watchdog for insolvency subjects. Source: the public ISIR SOAP service at justice.cz.
 
-**IMPORTANT:** For insolvency data use only `insolvence-cli` — do NOT call `curl` or any other data tool directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch insolvency data. Assume both are installed and available in `PATH`.
+**IMPORTANT:** For insolvency data use only `insolvence-cli` — do NOT call `curl` or any other data tool directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch insolvency data. Assume both are installed and available in `PATH`.
 
 **IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked subject or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several subjects, run each independently; one `ERROR:` doesn't mean skip the rest.
 
@@ -121,7 +121,7 @@ subjects and record changes.
 
 ### E-mail alerts
 
-E-mail alerts are a **persistent setting** for the app, not a per-run flag:
+E-mail alerts are a **persistent setting** for the app — turn them on or off with `notify set`:
 
 ```bash
 insolvence-cli notify set --email      # turn on
@@ -130,9 +130,12 @@ insolvence-cli notify show             # show current status
 ```
 
 When the setting is on, `insolvence-cli sledovani check` e-mails the user a summary itself after the
-check, **only if new changes were found** (nothing is sent when there's no change). The `--email`
-flag on `check` no longer exists. The e-mail goes automatically to the signed-in user's address —
-never handle or pass an address, token or secret; the daemon fills them in.
+check, **only if new changes were found** (nothing is sent when there's no change). The e-mail goes
+automatically to the signed-in user's address — never handle or pass an address, token or secret; the
+daemon fills them in.
+
+If the user explicitly wants a status e-mail even when nothing changed, send it yourself with
+`cdxctl notification email send` (see the cdxctl skill) — `check` only e-mails on a real change.
 
 The signed-in user always gets the e-mail; `notify recipients add/remove/set/clear` manage **extra**
 recipients on top. You don't need to add the signed-in user's own address — it's redundant (they're

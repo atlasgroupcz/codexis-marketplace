@@ -20,7 +20,7 @@ i18n:
 
 A single tool — **`katastr-cli`** — wraps the entire ČÚZK REST API KN plus a stateful tracker for cadastral proceedings.
 
-**IMPORTANT:** For cadastral data use only `katastr-cli` — do NOT call `kn`, `cdx-cli`, or `curl` (the one data exception is the RUIAN address lookup in `references/api.md`). `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring (see *Monitoring & e-mail*), never to fetch cadastral data. Stop only on genuine `ERROR:` lines (invalid number, API key rejected/missing, network, "nebylo nalezeno v ČÚZK") — report them, don't guess workarounds. When acting on several proceedings, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** For cadastral data use only `katastr-cli` — do NOT call `kn`, `cdx-cli`, or `curl` (the one data exception is the RUIAN address lookup in `references/api.md`). `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail (see *Monitoring & e-mail*), never to fetch cadastral data. Stop only on genuine `ERROR:` lines (invalid number, API key rejected/missing, network, "nebylo nalezeno v ČÚZK") — report them, don't guess workarounds. When acting on several proceedings, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
@@ -131,6 +131,10 @@ notifications.
 ```bash
 katastr-cli tracking show V-123/2026-701
 ```
+
+If the user explicitly wants that status **as an e-mail** even on a quiet run, send it
+yourself with `cdxctl notification email send` (see the cdxctl skill) — `check` only
+e-mails on a real change.
 
 **Recurring ("sleduj a každý den/týden mi pošli e-mail"):** the recurrence *is* a
 scheduled automation — one prompt run fires at most once. Set it up with `cdxctl`
