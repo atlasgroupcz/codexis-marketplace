@@ -98,6 +98,13 @@ cdx-sledovana-judikatura set-automation <uuid> <automation_id>
 
 # Update last_check_at without creating a report (use when no new decisions found)
 cdx-sledovana-judikatura touch <uuid>
+
+# Notification settings — a persistent app-wide setting
+cdx-sledovana-judikatura notify show
+cdx-sledovana-judikatura notify set --email      # or --no-email / --inapp / --no-inapp
+
+# Extra e-mail recipients (the signed-in user always gets a copy)
+cdx-sledovana-judikatura notify recipients add|remove|set|clear <email...>
 ```
 
 ## Notes vs Automation
@@ -217,7 +224,14 @@ AUTO_ID=$(cdxctl automation create \
 cdx-sledovana-judikatura set-automation "$UUID" "$AUTO_ID"
 ```
 
-When a check saves a report, the summary e-mail goes to the **signed-in user**; add others who should get a copy with `cdx-sledovana-judikatura notify recipients add|remove|set|clear <email...>`. You don't need to add the signed-in user's own address — it's redundant (they're always a recipient) and gets dropped automatically.
+E-mail and the in-app bell are a **persistent app setting** — turn them on or off with `notify set` (see the command list above). When e-mail is on, `save-report` sends a summary **only if the report found new case law**; a report with nothing new sends nothing.
+
+The signed-in user always gets the e-mail; `notify recipients add|remove|set|clear <email...>` manage **extra** recipients on top. You don't need to add the signed-in user's own address — it's redundant (they're always a recipient) and gets dropped automatically.
+
+| User wants | Do |
+|---|---|
+| an alert when new case law appears | `notify set --email` — the scheduled automation then e-mails on a real find |
+| a status e-mail right now, new case law or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 ## Tailoring Reports to User
 

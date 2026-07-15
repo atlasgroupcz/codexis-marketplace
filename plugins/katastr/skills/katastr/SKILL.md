@@ -132,13 +132,13 @@ notifications.
 katastr-cli tracking show V-123/2026-701
 ```
 
-If the user explicitly wants that status **as an e-mail** even on a quiet run, send it
-yourself with `cdxctl notification email send` (see the cdxctl skill) — `check` only
-e-mails on a real change.
+| User wants | Do |
+|---|---|
+| alerted when a proceeding changes | `notify set --email` — `check` then e-mails on a real change |
+| a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 **Recurring ("sleduj a každý den/týden mi pošli e-mail"):** the recurrence *is* a
-scheduled automation — one prompt run fires at most once. Set it up with `cdxctl`
-(the one place you may call it):
+scheduled automation — one prompt run fires at most once. Set it up with `cdxctl`:
 
 1. Add the proceeding(s) (`tracking add`).
 2. Turn on the wanted setting(s): `katastr-cli notify set --email` and/or
