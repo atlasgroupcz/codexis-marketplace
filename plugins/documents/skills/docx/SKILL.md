@@ -99,6 +99,12 @@ const doc = new Document({
 Packer.toBuffer(doc).then((buf) => fs.writeFileSync('/home/codexis/smlouva.docx', buf));
 ```
 
+**Only the `.docx` is the deliverable — write it under `./`.** Everything you produce merely to
+build or check it is throwaway scratch that belongs under `./.tmp`, never next to the document:
+your generator script (`./.tmp/create-smlouva.js`), the LibreOffice intermediate `.pdf`, and the
+page PNGs. `cdx-render` already writes its output under `./.tmp` by default, so just `Read` the
+paths it prints — do not pass `-o` pointing back into the working directory.
+
 **Page size:** `docx-js` defaults to A4 (11906 × 16838 DXA), which is what Czech and Slovak
 documents want — but set it explicitly anyway. US Letter is 12240 × 15840.
 
