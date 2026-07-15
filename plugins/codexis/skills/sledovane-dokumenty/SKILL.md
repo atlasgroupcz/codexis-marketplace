@@ -165,7 +165,11 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 ## Automations
 
-A periodic `cdx-sledovane-dokumenty check` automation ships with the plugin (`automations/check-dokumenty.md`) and runs on a schedule. **Do NOT create additional automations**. The existing COMMAND automation handles periodic checks. The user views changes in the Sledované dokumenty UI component — there is no need for AI-generated reports via automation prompts.
+Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-slozky.md` (a plain `folder check`, daily) for watched folders.
+
+**Don't create an automation for periodic checks** — the shipped ones already run them. A change is recorded once; a later run finds it already in the change log and skips it, so a second automation would have nothing to report and would never notify. The user reads changes in the Sledované dokumenty UI component, so an AI-prompt automation generating reports adds nothing either.
+
+Only if the user wants a different cadence: disable the shipped automation first (`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement — otherwise the shipped run records the change first and yours sees it as already handled.
 
 ## Watched folders (legislation referenced by the user's own documents)
 
