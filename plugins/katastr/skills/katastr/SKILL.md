@@ -63,13 +63,13 @@ are in **`references/api.md`** — read it when doing raw lookups.
 1. `katastr-cli tracking show V-XYZ` (or `tracking list`)
 2. **If tracked** → `tracking show V-XYZ` (rich state + change history); optionally `tracking check V-XYZ` first to refresh from ČÚZK.
 3. **If NOT tracked** → `api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=...&Rok=...&KodPracoviste=..."`, present it, and offer:
-   *"Pokud chceš, můžu řízení přidat ke sledování — budu hlídat změny stavu a operací každý týden."*
+   *"Pokud chceš, můžu řízení přidat ke sledování — budu hlídat změny stavu a operací každý den."*
 
 **API key error** (`ERROR: API klíč ... není nastaven` / `... byl odmítnut`) → see **settings** below.
 
 ## `katastr-cli tracking` — proceeding monitoring
 
-Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
+Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron automation (`0 7 * * *`) runs `katastr-cli tracking check` daily at 7:00 to refresh all tracked proceedings.
 
 ```bash
 katastr-cli tracking add V-123/2026-701 [--label "Novákovi"]       # verify in ČÚZK + save baseline
@@ -120,7 +120,7 @@ katastr-cli notify recipients clear             # remove all extras — e-mail t
 - **In-app bell (if on):** fires **only when a proceeding actually changed.**
 
 **Shipped default — no notifications sent by `check` unless the setting is on.**
-`automations/check-rizeni.md` runs a plain `tracking check` weekly to keep state
+`automations/check-rizeni.md` runs a plain `tracking check` daily to keep state
 fresh and the UI unread badge current; it sends e-mail/bell only if the user has
 turned the corresponding setting on. Leave it as-is unless the user asks for
 notifications.
