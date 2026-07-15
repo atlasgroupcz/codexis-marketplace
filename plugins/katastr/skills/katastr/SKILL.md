@@ -137,22 +137,22 @@ katastr-cli tracking show V-123/2026-701
 | alerted when a proceeding changes | `notify set --email` — `check` then e-mails on a real change |
 | a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
-**Recurring ("sleduj a každý den/týden mi pošli e-mail"):** the recurrence *is* a
-scheduled automation — one prompt run fires at most once. Set it up with `cdxctl`:
+**Recurring ("sleduj a každý den/týden mi pošli e-mail"):** one prompt run fires at most
+once, so the recurrence has to come from a schedule — and the schedule already exists:
 
 1. Add the proceeding(s) (`tracking add`).
 2. Turn on the wanted setting(s): `katastr-cli notify set --email` and/or
    `katastr-cli notify set --inapp`.
-3. Create the automation running plain `tracking check` (no flags):
-   ```bash
-   cdxctl automation create-command \
-     --title "Katastr: hlídání řízení" \
-     --cron "0 8 * * *" \
-     --command "katastr-cli tracking check"
-   ```
-   Pick the cron from the user's cadence (daily `0 8 * * *`, weekly `0 8 * * 1`, …).
-4. Briefly confirm what you set up (which proceedings, how often, which
-   notification channels).
+3. Confirm what that gives them: the shipped `automations/check-rizeni.md` runs a plain
+   `tracking check` daily at 7:00 and notifies as soon as a proceeding changes.
+
+That is the whole setup — **don't create an automation for this.** The shipped one already
+runs the same `tracking check`, and `check` advances the stored snapshot, so a second
+automation would compare fresh data against fresh data, find nothing, and never notify.
+
+Only if the user wants a cadence other than daily: disable the shipped automation first
+(`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the
+replacement — otherwise the daily run keeps consuming changes before yours sees them.
 
 ## `katastr-cli api` — raw ČÚZK lookups
 

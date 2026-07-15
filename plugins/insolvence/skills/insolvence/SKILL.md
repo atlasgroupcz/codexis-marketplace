@@ -147,13 +147,17 @@ When the user says e.g. *„hlídej IČO 04863313 a každý týden mi pošli e-m
 
 1. Add the subject(s) to monitoring (`sledovani add-firma` / `add-osoba`).
 2. Turn on e-mail alerts: `insolvence-cli notify set --email`.
-3. Create **one** automation for the user that runs a plain `insolvence-cli sledovani check` (exactly
-   what the shipped `automations/check-insolvence.md` template does). Default frequency is **weekly**
-   (cron `0 7 * * 1`, Monday morning) unless the user says otherwise.
-4. Briefly confirm what you set up (which subjects, how often, that alerts go by e-mail).
+3. Confirm what that gives them: the shipped `automations/check-insolvence.md` checks every tracked
+   subject daily at 7:00 and e-mails as soon as something changes — sooner than the weekly they asked
+   for.
 
-Don't create a second parallel automation for the same subjects — one `check` is enough; it sends the
-e-mail itself when the setting is on.
+That is the whole setup — **don't create an automation for this.** The shipped one already runs the
+same `sledovani check`, and `check` advances the stored snapshot, so a second automation would compare
+fresh data against fresh data, find nothing, and never e-mail.
+
+Only if the user wants a cadence other than daily: disable the shipped automation first
+(`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement —
+otherwise the daily run keeps consuming changes before yours sees them.
 
 ### What changes are detected
 
