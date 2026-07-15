@@ -134,8 +134,10 @@ check, **only if new changes were found** (nothing is sent when there's no chang
 automatically to the signed-in user's address — never handle or pass an address, token or secret; the
 daemon fills them in.
 
-If the user explicitly wants a status e-mail even when nothing changed, send it yourself with
-`cdxctl notification email send` (see the cdxctl skill) — `check` only e-mails on a real change.
+| User wants | Do |
+|---|---|
+| alerted when a subject changes | `notify set --email` — `check` then e-mails on a real change |
+| a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 The signed-in user always gets the e-mail; `notify recipients add/remove/set/clear` manage **extra**
 recipients on top. You don't need to add the signed-in user's own address — it's redundant (they're
