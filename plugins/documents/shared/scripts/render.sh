@@ -24,7 +24,7 @@ usage: ${SCRIPT_NAME} -i <file> [-o <dir>] [-r <dpi>] [-f <n>] [-l <n>]
 
 options:
     -i|--input     <file>    Document to render (required)
-    -o|--output    <dir>     Output directory (default: <input-dir>/<basename>-pages)
+    -o|--output    <dir>     Output directory (default: <input-dir>/.tmp/<basename>-pages)
     -r|--dpi       <n>       Resolution (default: 150 — readable, cheap on tokens)
     -f|--first     <n>       First page to render
     -l|--last      <n>       Last page to render
@@ -76,7 +76,7 @@ function main() {
     ext="${input##*.}"
 
     if [ -z "$outdir" ]; then
-        outdir="$(cd "$(dirname "$input")" && pwd)/${basename}-pages"
+        outdir="$(cd "$(dirname "$input")" && pwd)/.tmp/${basename}-pages"
     fi
     mkdir -p "$outdir" || {
         echo -e "${RED}Error: cannot create ${outdir}${NC}" >&2
