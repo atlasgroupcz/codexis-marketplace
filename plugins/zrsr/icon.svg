@@ -1,5 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="2" y="2" width="60" height="60" rx="10" fill="#0b4ea2"/>
-  <text x="32" y="39" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#ffffff" letter-spacing="1">ZRSR</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect x="2" y="2" width="60" height="60" rx="12" fill="#003078"/><rect x="25" y="14" width="14" height="7" rx="2.5" fill="none" stroke="#ffffff" stroke-width="3.4"/><rect x="11" y="21" width="42" height="30" rx="4" fill="#ffffff"/><path d="M11 33 h42" stroke="#003078" stroke-width="2.6"/><rect x="28" y="30" width="8" height="7" rx="2" fill="#003078"/></svg>
