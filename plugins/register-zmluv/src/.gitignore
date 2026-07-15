@@ -1,0 +1,15 @@
+# Rust build outputs
+target/
+**/target/
+
+# Temporary and local artifacts
+tmp/
+**/tmp/
+*.tmp
+*.temp
+*.log
+*.out
+*.profraw
+*.profdata
+.DS_Store
+*~
