@@ -23,7 +23,7 @@ A single tool — **`znamky-cli`** — searches the public trademark registers v
 every hit for **verbal**, **phonetic** and **visual** similarity, and keeps a stateful watchdog for
 the marks a user wants to protect.
 
-**IMPORTANT:** For trademark data use only `znamky-cli` — do NOT call `curl` or hit TMview/ÚPV directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch trademark data. Assume both are installed and on `PATH`.
+**IMPORTANT:** For trademark data use only `znamky-cli` — do NOT call `curl` or hit TMview/ÚPV directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch trademark data. Assume both are installed and on `PATH`.
 
 **IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked **word** mark (`add-text`), or removing a mark that isn't tracked, is a safe no-op (prints `OK:`) — but re-adding an already-tracked **logo** (`add-logo`) is NOT deduped and creates a duplicate. When acting on several marks, run each independently; one `ERROR:` doesn't mean skip the rest.
 
@@ -127,7 +127,7 @@ record newly appeared similar marks.
 
 ### E-mail alerts (custom automation)
 
-E-mail alerts are a **persistent setting** for the app, not a per-run flag:
+E-mail alerts are a **persistent setting** for the app — turn them on or off with `notify set`:
 
 ```bash
 znamky-cli notify set --email      # turn on
@@ -136,9 +136,11 @@ znamky-cli notify show             # show current status
 ```
 
 When the setting is on, `znamky-cli sledovani check` e-mails a summary itself after the check,
-**only if new collisions were found** (nothing is sent when there's no change). The `--email` flag
-on `check` no longer exists. The e-mail goes automatically to the signed-in user's address — never
-handle or pass an address, token or secret.
+**only if new collisions were found** (nothing is sent when there's no change). The e-mail goes
+automatically to the signed-in user's address — never handle or pass an address, token or secret.
+
+If the user explicitly wants a status e-mail even when nothing changed, send it yourself with
+`cdxctl notification email send` (see the cdxctl skill) — `check` only e-mails on a real change.
 
 The signed-in user always gets the e-mail; `znamky-cli notify recipients add|remove|set|clear <email...>`
 manage **extra** recipients on top. You don't need to add the signed-in user's own address — it's
