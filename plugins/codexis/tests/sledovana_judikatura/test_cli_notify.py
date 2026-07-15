@@ -99,6 +99,25 @@ def test_recipients_set_drops_signed_in_user_keeps_others(judikatura_app_dir):
     assert _recipients(judikatura_app_dir) == ["a@x.cz"]
 
 
+# Dropping the caller's address without a word reads as a silent failure — an agent
+# that asked for it goes digging (`notify show`, `--help`) to find out what happened.
+
+
+def test_recipients_add_self_says_it_was_dropped(judikatura_app_dir, capsys):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    err = capsys.readouterr().err
+    assert "ME@firma.cz vynechán" in err
+    assert "přihlášeného uživatele" in err
+
+
+def test_recipients_add_other_address_stays_quiet(judikatura_app_dir, capsys):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="a@x.cz"))
+    assert "vynechán" not in capsys.readouterr().err
+    assert _recipients(judikatura_app_dir) == ["a@x.cz"]
+
+
 # ── save-report → notify wiring ─────────────────────────────────────────────
 #
 # This can't be driven via subprocess: verifying the composed `to` value
