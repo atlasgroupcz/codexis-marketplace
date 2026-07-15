@@ -94,6 +94,25 @@ def test_recipients_add_drops_signed_in_user(_cli_home):
     assert _recipients_dir(_cli_home) == []
 
 
+# Dropping the caller's address without a word reads as a silent failure — an agent
+# that asked for it goes digging (`notify show`, `--help`) to find out what happened.
+
+
+def test_recipients_add_self_says_it_was_dropped(_cli_home, capsys):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    err = capsys.readouterr().err
+    assert "ME@firma.cz vynechán" in err
+    assert "přihlášeného uživatele" in err
+
+
+def test_recipients_add_other_address_stays_quiet(_cli_home, capsys):
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="a@x.cz"))
+    assert "vynechán" not in capsys.readouterr().err
+    assert _recipients_dir(_cli_home) == ["a@x.cz"]
+
+
 def test_recipients_set_drops_signed_in_user_keeps_others(_cli_home):
     with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
         _cli.cmd_notify_recipients(

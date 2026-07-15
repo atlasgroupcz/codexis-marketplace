@@ -72,6 +72,29 @@ def test_recipients_set_drops_signed_in_user_keeps_others(monkeypatch, tmp_path)
     assert _recipients(tmp_path) == ["a@x.cz"]
 
 
+# Dropping the caller's address without a word reads as a silent failure — an agent
+# that asked for it goes digging (`notify show`, `--help`) to find out what happened.
+
+
+def test_recipients_add_self_says_it_was_dropped(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="ME@firma.cz"))
+    err = capsys.readouterr().err
+    assert "ME@firma.cz vynechán" in err
+    assert "přihlášeného uživatele" in err
+
+
+def test_recipients_add_other_address_stays_quiet(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"):
+        _cli.cmd_notify_recipients(argparse.Namespace(rcmd="add", email="a@x.cz"))
+    assert "vynechán" not in capsys.readouterr().err
+    assert _recipients(tmp_path) == ["a@x.cz"]
+
+
 # ── check wiring: resolve_to() feeds email_change_summary(to=...) ────────────
 #
 # This can't be driven through the subprocess `_run()` helper above: verifying
