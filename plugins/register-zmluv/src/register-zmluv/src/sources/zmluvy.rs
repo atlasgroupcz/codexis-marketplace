@@ -1,7 +1,7 @@
 use clap::Args;
 
 use crate::sources::common::{
-    insert_number, insert_string, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+    insert_number, insert_string, parse_ico, JsonMap, SearchBaseArgs, SearchPayloadArgs,
 };
 
 pub(crate) const SEARCH_ZMLUVY_HELP: &str = r#"Example:
@@ -16,7 +16,11 @@ pub(crate) struct SearchZmluvyArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long, help = "Party IČO — matches either contract party, exact match")]
+    #[arg(
+        long,
+        value_parser = parse_ico,
+        help = "Party IČO — matches either contract party, exact match (canonicalized to 8 digits)"
+    )]
     pub(crate) ico: Option<String>,
     #[arg(long, help = "Publishing sector/ministry id (rezort), exact match")]
     pub(crate) rezort: Option<String>,

@@ -204,43 +204,16 @@ impl SearchSource {
         }
     }
 
-    fn build_payload(&self) -> Result<String, CliError> {
+    /// The selected source's filter args as a trait object. Payload building and
+    /// the sort/order/dry-run accessors all go through the shared trait, so only
+    /// `source_code` needs its own per-variant match.
+    fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Atbr(args) => args.build_payload("ATBR"),
-            Self::Atjd(args) => args.build_payload("ATJD"),
-            Self::Atlr(args) => args.build_payload("ATLR"),
-            Self::Atso(args) => args.build_payload("ATSO"),
-            Self::Athi(args) => args.build_payload("ATHI"),
-        }
-    }
-
-    fn dry_run(&self) -> bool {
-        match self {
-            Self::Atbr(args) => args.dry_run(),
-            Self::Atjd(args) => args.dry_run(),
-            Self::Atlr(args) => args.dry_run(),
-            Self::Atso(args) => args.dry_run(),
-            Self::Athi(args) => args.dry_run(),
-        }
-    }
-
-    fn sort(&self) -> Option<&str> {
-        match self {
-            Self::Atbr(args) => args.sort(),
-            Self::Atjd(args) => args.sort(),
-            Self::Atlr(args) => args.sort(),
-            Self::Atso(args) => args.sort(),
-            Self::Athi(args) => args.sort(),
-        }
-    }
-
-    fn order(&self) -> Option<&str> {
-        match self {
-            Self::Atbr(args) => args.order(),
-            Self::Atjd(args) => args.order(),
-            Self::Atlr(args) => args.order(),
-            Self::Atso(args) => args.order(),
-            Self::Athi(args) => args.order(),
+            Self::Atbr(args) => args,
+            Self::Atjd(args) => args,
+            Self::Atlr(args) => args,
+            Self::Atso(args) => args,
+            Self::Athi(args) => args,
         }
     }
 }
@@ -255,15 +228,16 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
 
 fn execute_search(source: SearchSource) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_AT_API_URL_ENV)?;
-    let payload = source.build_payload()?;
+    let args = source.args();
+    let payload = args.build_payload(source.source_code())?;
     execute_search_request(
         &config.base_url,
         config.auth_header.as_deref(),
         source.source_code(),
         &payload,
-        source.dry_run(),
-        source.sort(),
-        source.order(),
+        args.dry_run(),
+        args.sort(),
+        args.order(),
     )
 }
 

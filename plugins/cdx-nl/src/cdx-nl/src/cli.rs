@@ -287,35 +287,14 @@ impl SearchSource {
         }
     }
 
-    fn build_payload(&self) -> Result<String, CliError> {
+    /// The selected source's filter args as a trait object. Payload building and
+    /// the sort/order/dry-run accessors all go through the shared trait, so only
+    /// `source_code` needs its own per-variant match.
+    fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Nlbwb(args) => args.build_payload("NLBWB"),
-            Self::Nluit(args) => args.build_payload("NLUIT"),
-            Self::Nlcvdr(args) => args.build_payload("NLCVDR"),
-        }
-    }
-
-    fn dry_run(&self) -> bool {
-        match self {
-            Self::Nlbwb(args) => args.dry_run(),
-            Self::Nluit(args) => args.dry_run(),
-            Self::Nlcvdr(args) => args.dry_run(),
-        }
-    }
-
-    fn sort(&self) -> Option<&str> {
-        match self {
-            Self::Nlbwb(args) => args.sort(),
-            Self::Nluit(args) => args.sort(),
-            Self::Nlcvdr(args) => args.sort(),
-        }
-    }
-
-    fn order(&self) -> Option<&str> {
-        match self {
-            Self::Nlbwb(args) => args.order(),
-            Self::Nluit(args) => args.order(),
-            Self::Nlcvdr(args) => args.order(),
+            Self::Nlbwb(args) => args,
+            Self::Nluit(args) => args,
+            Self::Nlcvdr(args) => args,
         }
     }
 }
@@ -330,15 +309,16 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
 
 fn execute_search(source: SearchSource) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_NL_API_URL_ENV)?;
-    let payload = source.build_payload()?;
+    let args = source.args();
+    let payload = args.build_payload(source.source_code())?;
     execute_search_request(
         &config.base_url,
         config.auth_header.as_deref(),
         source.source_code(),
         &payload,
-        source.dry_run(),
-        source.sort(),
-        source.order(),
+        args.dry_run(),
+        args.sort(),
+        args.order(),
     )
 }
 

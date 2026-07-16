@@ -1,10 +1,10 @@
 {
   "name": "leciva",
   "iconPath": "icon.svg",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "description": "Czech medicines registry (SÚKL DLP) — drug lookup by name or SÚKL code, strength, form, active substances, ATC.",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
-  "keywords": ["leciva", "leky", "sukl", "dlp", "registr", "czech", "medicines", "drugs"],
+  "keywords": ["leciva", "leky", "sukl", "dlp", "registr", "czech", "medicines", "drugs", "api"],
   "license": "PROPRIETARY",
   "tags": ["legal", "czech", "registry", "health"],
   "i18n": {
@@ -27,5 +27,8 @@
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
-  "skills": "./skills"
+  "skills": "./skills",
+  "env": {
+    "CODEXIS_PLUGIN_LECIVA_API_URL": "https://codexis.ai/sources/api"
+  }
 }

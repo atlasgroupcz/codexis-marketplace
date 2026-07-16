@@ -213,31 +213,13 @@ impl SearchSource {
         }
     }
 
-    fn build_payload(&self) -> Result<String, CliError> {
+    /// The selected source's filter args as a trait object. Payload building and
+    /// the sort/order/dry-run accessors all go through the shared trait, so only
+    /// `source_code` needs its own per-variant match.
+    fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Czpspdok(args) => args.build_payload("CZPSPDOK"),
-            Self::Czpsppre(args) => args.build_payload("CZPSPPRE"),
-        }
-    }
-
-    fn dry_run(&self) -> bool {
-        match self {
-            Self::Czpspdok(args) => args.dry_run(),
-            Self::Czpsppre(args) => args.dry_run(),
-        }
-    }
-
-    fn sort(&self) -> Option<&str> {
-        match self {
-            Self::Czpspdok(args) => args.sort(),
-            Self::Czpsppre(args) => args.sort(),
-        }
-    }
-
-    fn order(&self) -> Option<&str> {
-        match self {
-            Self::Czpspdok(args) => args.order(),
-            Self::Czpsppre(args) => args.order(),
+            Self::Czpspdok(args) => args,
+            Self::Czpsppre(args) => args,
         }
     }
 }
@@ -252,15 +234,16 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
 
 fn execute_search(source: SearchSource) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_CZ_PSP_API_URL_ENV)?;
-    let payload = source.build_payload()?;
+    let args = source.args();
+    let payload = args.build_payload(source.source_code())?;
     execute_search_request(
         &config.base_url,
         config.auth_header.as_deref(),
         source.source_code(),
         &payload,
-        source.dry_run(),
-        source.sort(),
-        source.order(),
+        args.dry_run(),
+        args.sort(),
+        args.order(),
     )
 }
 

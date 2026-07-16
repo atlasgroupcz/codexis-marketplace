@@ -1,7 +1,8 @@
 use clap::Args;
 
 use crate::sources::common::{
-    insert_bool, insert_number, insert_string, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+    insert_bool, insert_number, insert_string, parse_ico, JsonMap, SearchBaseArgs,
+    SearchPayloadArgs,
 };
 
 pub(crate) const SEARCH_SMLOUVY_HELP: &str = r#"Example:
@@ -16,11 +17,23 @@ pub(crate) struct SearchSmlouvyArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long, help = "IČO of the publisher OR the counterparty")]
+    #[arg(
+        long,
+        value_parser = parse_ico,
+        help = "IČO of the publisher OR the counterparty (canonicalized to 8 digits)"
+    )]
     pub(crate) ico: Option<String>,
-    #[arg(long = "publisher-ico", help = "Publisher (contracting authority) IČO, exact match")]
+    #[arg(
+        long = "publisher-ico",
+        value_parser = parse_ico,
+        help = "Publisher (contracting authority) IČO, exact match (canonicalized to 8 digits)"
+    )]
     pub(crate) publisher_ico: Option<String>,
-    #[arg(long = "counterparty-ico", help = "Counterparty (supplier) IČO, exact match")]
+    #[arg(
+        long = "counterparty-ico",
+        value_parser = parse_ico,
+        help = "Counterparty (supplier) IČO, exact match (canonicalized to 8 digits)"
+    )]
     pub(crate) counterparty_ico: Option<String>,
     #[arg(long = "value-min", help = "Minimum contract value incl. VAT (hodnotaVcetneDph >=)")]
     pub(crate) value_min: Option<f64>,
