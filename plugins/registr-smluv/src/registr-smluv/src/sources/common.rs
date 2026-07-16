@@ -9,6 +9,15 @@ pub(crate) type JsonMap = Map<String, Value>;
 const DEFAULT_RESULT_LIMIT: u64 = 20;
 const DEFAULT_RESULT_OFFSET: u64 = 0;
 
+/// clap value parser for an `--ico` flag: normalize an IČO to its canonical
+/// 8-digit, zero-padded form (rejecting non-digits / >8 digits). The register
+/// stores IČO zero-padded to 8 digits and the backend matches it exactly, so
+/// canonicalizing here lets users omit leading zeros. Invalid input is rejected
+/// at parse time with a clear message.
+pub(crate) fn parse_ico(raw: &str) -> Result<String, String> {
+    cdx_common::ico::normalize_ico(raw).map_err(|error| error.to_string())
+}
+
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchBaseArgs {
     #[arg(long, short = 'q', help = "Fulltext query (predmet + party names)")]
@@ -206,5 +215,13 @@ mod tests {
         assert_eq!(payload["valueMin"], 1000.0);
         assert!(payload.get("valueMax").is_none());
         assert!(payload.get("bad").is_none());
+    }
+
+    #[test]
+    fn parse_ico_pads_and_validates() {
+        assert_eq!(parse_ico("565474").unwrap(), "00565474");
+        assert_eq!(parse_ico("00565474").unwrap(), "00565474");
+        assert!(parse_ico("12a45").is_err());
+        assert!(parse_ico("123456789").is_err());
     }
 }

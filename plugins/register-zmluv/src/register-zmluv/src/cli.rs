@@ -211,6 +211,29 @@ mod tests {
     }
 
     #[test]
+    fn ico_flag_is_canonicalized_at_parse() {
+        // A user-supplied IČO missing leading zeros is padded to 8 digits so it
+        // matches the backend's zero-padded stored value.
+        let cli = Cli::try_parse_from([
+            "register-zmluv",
+            "search",
+            "SKCRZ",
+            "--ico",
+            "151513",
+        ])
+        .unwrap();
+
+        match cli.command {
+            Commands::Search {
+                source: SearchSource::Skcrz(args),
+            } => {
+                assert_eq!(args.ico.as_deref(), Some("00151513"));
+            }
+            _ => panic!("expected SKCRZ search command"),
+        }
+    }
+
+    #[test]
     fn cli_parses_search_with_date_filters() {
         let cli = Cli::try_parse_from([
             "register-zmluv",

@@ -291,47 +291,17 @@ impl SearchSource {
         }
     }
 
-    fn build_payload(&self) -> Result<String, CliError> {
+    /// The selected source's filter args as a trait object. Payload building and
+    /// the sort/order/dry-run accessors all go through the shared trait, so only
+    /// `source_code` needs its own per-variant match.
+    fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Skez(args) => args.build_payload("SKEZ"),
-            Self::Skvs(args) => args.build_payload("SKVS"),
-            Self::Sknus(args) => args.build_payload("SKNUS"),
-            Self::Sknss(args) => args.build_payload("SKNSS"),
-            Self::Skus(args) => args.build_payload("SKUS"),
-            Self::Skns(args) => args.build_payload("SKNS"),
-        }
-    }
-
-    fn dry_run(&self) -> bool {
-        match self {
-            Self::Skez(args) => args.dry_run(),
-            Self::Skvs(args) => args.dry_run(),
-            Self::Sknus(args) => args.dry_run(),
-            Self::Sknss(args) => args.dry_run(),
-            Self::Skus(args) => args.dry_run(),
-            Self::Skns(args) => args.dry_run(),
-        }
-    }
-
-    fn sort(&self) -> Option<&str> {
-        match self {
-            Self::Skez(args) => args.sort(),
-            Self::Skvs(args) => args.sort(),
-            Self::Sknus(args) => args.sort(),
-            Self::Sknss(args) => args.sort(),
-            Self::Skus(args) => args.sort(),
-            Self::Skns(args) => args.sort(),
-        }
-    }
-
-    fn order(&self) -> Option<&str> {
-        match self {
-            Self::Skez(args) => args.order(),
-            Self::Skvs(args) => args.order(),
-            Self::Sknus(args) => args.order(),
-            Self::Sknss(args) => args.order(),
-            Self::Skus(args) => args.order(),
-            Self::Skns(args) => args.order(),
+            Self::Skez(args) => args,
+            Self::Skvs(args) => args,
+            Self::Sknus(args) => args,
+            Self::Sknss(args) => args,
+            Self::Skus(args) => args,
+            Self::Skns(args) => args,
         }
     }
 }
@@ -346,15 +316,16 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
 
 fn execute_search(source: SearchSource) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_SK_API_URL_ENV)?;
-    let payload = source.build_payload()?;
+    let args = source.args();
+    let payload = args.build_payload(source.source_code())?;
     execute_search_request(
         &config.base_url,
         config.auth_header.as_deref(),
         source.source_code(),
         &payload,
-        source.dry_run(),
-        source.sort(),
-        source.order(),
+        args.dry_run(),
+        args.sort(),
+        args.order(),
     )
 }
 

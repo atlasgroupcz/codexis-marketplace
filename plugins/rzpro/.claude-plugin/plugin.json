@@ -1,10 +1,10 @@
 {
   "name": "rzpro",
   "iconPath": "icon.svg",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) — device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
-  "keywords": ["rzpro", "zdravotnicke-prostredky", "ksrzis", "registr", "czech", "medical-devices"],
+  "keywords": ["rzpro", "zdravotnicke-prostredky", "ksrzis", "registr", "czech", "medical-devices", "api"],
   "license": "PROPRIETARY",
   "tags": ["legal", "czech", "registry", "health"],
   "i18n": {
@@ -27,5 +27,8 @@
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
-  "skills": "./skills"
+  "skills": "./skills",
+  "env": {
+    "CODEXIS_PLUGIN_RZPRO_API_URL": "https://codexis.ai/sources/api"
+  }
 }

@@ -5,29 +5,10 @@ PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
 
-# Remove only THIS run's temp artifacts, even on crash or interrupt. Scoped to
-# the current PID so a concurrent install can't delete an in-flight temp file.
 cleanup_own_temps() {
   rm -f "${TARGET_BIN_DIR}"/.*.tmp.$$ 2>/dev/null || true
 }
 trap cleanup_own_temps EXIT INT TERM
-
-select_binary_source() {
-  local binary_name="$1"
-
-  case "$(uname -s):$(uname -m)" in
-    Darwin:arm64|Darwin:aarch64)
-      echo "${binary_name}-aarch64-apple-darwin"
-      ;;
-    Darwin:*)
-      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
-      exit 1
-      ;;
-    *)
-      echo "${binary_name}"
-      ;;
-  esac
-}
 
 install_binary() {
   local source_name="$1"
@@ -38,9 +19,6 @@ install_binary() {
     echo "ERROR: Missing executable ${source_path}" >&2
     exit 1
   fi
-  # Atomic install: write to a temp file in the destination dir, flush it to
-  # disk, then rename into place. A crash leaves either the old binary or the
-  # complete new one — never a truncated/empty file at the real name.
   local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"
   if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
     install -m 0755 "${source_path}" "${tmp_path}"
@@ -55,8 +33,29 @@ install_binary() {
   echo "Installed ${target_name} -> ${target_path}"
 }
 
+select_binary_source() {
+  local binary_name="$1"
+  case "$(uname -s):$(uname -m)" in
+    Darwin:arm64|Darwin:aarch64)
+      echo "${binary_name}-aarch64-apple-darwin"
+      ;;
+    Darwin:*)
+      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
+      exit 1
+      ;;
+    *)
+      echo "${binary_name}"
+      ;;
+  esac
+}
+
 install_binary "$(select_binary_source "rzpro-cli")" "rzpro-cli"
 
-# Pre-download the datasets, but don't fail the install on a network hiccup.
-"${TARGET_BIN_DIR}/rzpro-cli" refresh >/dev/null 2>&1 \
-  || echo "WARN: rzpro-cli refresh failed (will retry lazily on first use)" >&2
+# Migrate off the pre-1.1 local index. Old versions downloaded ~57 MB of KSRZIS
+# CSV datasets to ~/.cdx/apps/rzpro; the API client needs none of it. Best-effort
+# — MUST NOT fail install/update, hence || true (no sudo: the dir is user-owned).
+USER_HOME="${CODEXIS_PUBLIC_USER_HOME:-$HOME}"
+if [[ -e "${USER_HOME}/.cdx/apps/rzpro" ]]; then
+  rm -rf "${USER_HOME}/.cdx/apps/rzpro" 2>/dev/null || true
+  echo "Removed legacy local index: ${USER_HOME}/.cdx/apps/rzpro" >&2
+fi
