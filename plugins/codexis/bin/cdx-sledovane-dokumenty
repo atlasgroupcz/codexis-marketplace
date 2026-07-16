@@ -419,15 +419,6 @@ def cmd_folder_browse(args):
     _print_json(folders.browse(args.path))
 
 
-def cmd_folder_notify_show(args):
-    _print_json(settings.get_notify())
-
-
-def cmd_folder_notify_set(args):
-    eff = settings.set_notify(email=args.email, inApp=args.inapp)
-    status(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
-
-
 # ── notify (unified) ─────────────────────────────────────────────────────────
 
 
@@ -452,12 +443,20 @@ def cmd_notify_recipients(args):
         current = []
     # The signed-in user always receives the e-mail, so drop their own address —
     # listing yourself as an extra is redundant (the FE dialog blocks it too).
+    # Say so: dropping the caller's input without a word reads as a silent failure.
+    requested = list(current)
     current = notify.without_self(current)
+    dropped = [r for r in requested if r not in current]
     try:
         eff = settings.set_notify(recipients=current)
     except ValueError as e:
         err(str(e))
         sys.exit(1)
+    if dropped:
+        status(
+            f"OK: {dropped[0]} vynechán — je to adresa přihlášeného uživatele, "
+            f"ten e-mail dostává vždy."
+        )
     joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
     status(f"OK: Příjemci — {joined}.")
 
@@ -588,15 +587,6 @@ def build_parser():
     pfb = pf_sub.add_parser("browse", help="List sub-directories (folder picker)")
     pfb.add_argument("path", nargs="?")
     pfb.set_defaults(func=cmd_folder_browse)
-
-    pfn = pf_sub.add_parser("notify", help="Manage notification settings")
-    pfn_sub = pfn.add_subparsers(dest="subsub", required=True)
-    pfns = pfn_sub.add_parser("show")
-    pfns.set_defaults(func=cmd_folder_notify_show)
-    pfnset = pfn_sub.add_parser("set")
-    pfnset.add_argument("--email", action=argparse.BooleanOptionalAction, default=None)
-    pfnset.add_argument("--inapp", action=argparse.BooleanOptionalAction, default=None)
-    pfnset.set_defaults(func=cmd_folder_notify_set)
 
     pnf = sub.add_parser("notify", help="Manage notification settings")
     pnf_sub = pnf.add_subparsers(dest="sub", required=True)

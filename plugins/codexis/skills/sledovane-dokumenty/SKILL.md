@@ -21,7 +21,7 @@ i18n:
 
 Track changes in Czech legislation by monitoring CODEXIS documents for new versions and computing text diffs.
 
-**IMPORTANT:** For document data use only `cdx-sledovane-dokumenty` — do NOT call `cdx-cli`, `curl`, or any other data tool directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch document data.
+**IMPORTANT:** For document data use only `cdx-sledovane-dokumenty` — do NOT call `cdx-cli`, `curl`, or any other data tool directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch document data.
 
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovane-dokumenty` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
@@ -165,7 +165,11 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 ## Automations
 
-A periodic `cdx-sledovane-dokumenty check` automation ships with the plugin (`automations/check-dokumenty.md`) and runs on a schedule. **Do NOT create additional automations**. The existing COMMAND automation handles periodic checks. The user views changes in the Sledované dokumenty UI component — there is no need for AI-generated reports via automation prompts.
+Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-slozky.md` (a plain `folder check`, daily) for watched folders.
+
+**Don't create an automation for periodic checks** — the shipped ones already run them. A change is recorded once; a later run finds it already in the change log and skips it, so a second automation would have nothing to report and would never notify. The user reads changes in the Sledované dokumenty UI component, so an AI-prompt automation generating reports adds nothing either.
+
+Only if the user wants a different cadence: disable the shipped automation first (`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement — otherwise the shipped run records the change first and yours sees it as already handled.
 
 ## Watched folders (legislation referenced by the user's own documents)
 
@@ -200,16 +204,24 @@ cdx-sledovane-dokumenty folder show /home/<user>/my-contracts
 # Stop watching (add --purge to also delete the hidden .watched/ folder)
 cdx-sledovane-dokumenty folder remove /home/<user>/my-contracts
 
-# Folder picker support + notification settings (used by the app)
+# Folder picker support
 cdx-sledovane-dokumenty folder browse [/some/dir]
-cdx-sledovane-dokumenty folder notify show
-cdx-sledovane-dokumenty folder notify set --email --no-inapp
+
+# Notification settings — a persistent app-wide setting
+cdx-sledovane-dokumenty notify show
+cdx-sledovane-dokumenty notify set --email --no-inapp
 
 # Extra e-mail recipients (the signed-in user always gets a copy)
 cdx-sledovane-dokumenty notify recipients add|remove|set|clear <email...>
 ```
 
 The signed-in user always receives the notification e-mail; extra recipients are additive. You don't need to add their own address — it's redundant and gets dropped automatically.
+
+| User wants | Do |
+|---|---|
+| alerted when a referenced act changes | `notify set --email` — `folder check` then e-mails on a real change |
+| the current status in your reply | `folder show <root>` |
+| a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 ### How it works
 

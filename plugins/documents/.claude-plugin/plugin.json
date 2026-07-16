@@ -1,0 +1,66 @@
+{
+  "name": "documents",
+  "iconPath": "icon.svg",
+  "version": "1.0.0",
+  "description": "Create, edit and visually verify Word, PDF, Excel and PowerPoint documents — renders every deliverable to page images so the AI can inspect the layout before handing it over",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "docx",
+    "word",
+    "pdf",
+    "xlsx",
+    "excel",
+    "pptx",
+    "powerpoint",
+    "document",
+    "spreadsheet",
+    "presentation",
+    "office",
+    "legal",
+    "law"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["documents", "office", "pdf", "spreadsheet", "legal"],
+  "i18n": {
+    "cs": {
+      "displayName": "Dokumenty — Word, PDF, Excel, PowerPoint",
+      "description": "Tvorba, úprava a vizuální kontrola dokumentů. Každý výstup se vyrenderuje do obrázků stránek, takže AI vidí výsledné rozvržení dřív, než ho předá — a nedodá dokument s rozbitou tabulkou nebo useknutým textem.",
+      "tagLabels": {
+        "documents": "Dokumenty",
+        "office": "Office",
+        "pdf": "PDF",
+        "spreadsheet": "Tabulky",
+        "legal": "Právo"
+      }
+    },
+    "en": {
+      "displayName": "Documents — Word, PDF, Excel, PowerPoint",
+      "description": "Create, edit and visually verify documents. Every deliverable is rendered to page images so the AI inspects the final layout before handing it over — no broken tables, no clipped text.",
+      "tagLabels": {
+        "documents": "Documents",
+        "office": "Office",
+        "pdf": "PDF",
+        "spreadsheet": "Spreadsheets",
+        "legal": "Law"
+      }
+    },
+    "sk": {
+      "displayName": "Dokumenty — Word, PDF, Excel, PowerPoint",
+      "description": "Tvorba, úprava a vizuálna kontrola dokumentov. Každý výstup sa vyrenderuje do obrázkov stránok, takže AI vidí výsledné rozloženie skôr, než ho odovzdá — žiadne rozbité tabuľky ani odseknutý text.",
+      "tagLabels": {
+        "documents": "Dokumenty",
+        "office": "Office",
+        "pdf": "PDF",
+        "spreadsheet": "Tabuľky",
+        "legal": "Právo"
+      }
+    }
+  },
+  "skills": "./skills",
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-scripts.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-scripts.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-scripts.sh\""
+}

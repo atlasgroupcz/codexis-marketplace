@@ -23,7 +23,7 @@ A single tool — **`znamky-cli`** — searches the public trademark registers v
 every hit for **verbal**, **phonetic** and **visual** similarity, and keeps a stateful watchdog for
 the marks a user wants to protect.
 
-**IMPORTANT:** For trademark data use only `znamky-cli` — do NOT call `curl` or hit TMview/ÚPV directly. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring, never to fetch trademark data. Assume both are installed and on `PATH`.
+**IMPORTANT:** For trademark data use only `znamky-cli` — do NOT call `curl` or hit TMview/ÚPV directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch trademark data. Assume both are installed and on `PATH`.
 
 **IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked **word** mark (`add-text`), or removing a mark that isn't tracked, is a safe no-op (prints `OK:`) — but re-adding an already-tracked **logo** (`add-logo`) is NOT deduped and creates a duplicate. When acting on several marks, run each independently; one `ERROR:` doesn't mean skip the rest.
 
@@ -127,7 +127,7 @@ record newly appeared similar marks.
 
 ### E-mail alerts (custom automation)
 
-E-mail alerts are a **persistent setting** for the app, not a per-run flag:
+E-mail alerts are a **persistent setting** for the app — turn them on or off with `notify set`:
 
 ```bash
 znamky-cli notify set --email      # turn on
@@ -136,9 +136,13 @@ znamky-cli notify show             # show current status
 ```
 
 When the setting is on, `znamky-cli sledovani check` e-mails a summary itself after the check,
-**only if new collisions were found** (nothing is sent when there's no change). The `--email` flag
-on `check` no longer exists. The e-mail goes automatically to the signed-in user's address — never
-handle or pass an address, token or secret.
+**only if new collisions were found** (nothing is sent when there's no change). The e-mail goes
+automatically to the signed-in user's address — never handle or pass an address, token or secret.
+
+| User wants | Do |
+|---|---|
+| alerted when a new collision appears | `notify set --email` — `check` then e-mails on a real find |
+| a status e-mail right now, collision or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 The signed-in user always gets the e-mail; `znamky-cli notify recipients add|remove|set|clear <email...>`
 manage **extra** recipients on top. You don't need to add the signed-in user's own address — it's
@@ -148,13 +152,17 @@ When the user says e.g. *„hlídej značku CODEXIS ve třídách 9 a 42 a jedno
 
 1. Add the mark(s) (`sledovani add-text` / `add-logo`).
 2. Turn on e-mail alerts: `znamky-cli notify set --email`.
-3. Create **one** automation running plain `znamky-cli sledovani check` (the shipped
-   `automations/check-znamky.md` template already does this). Default cadence is **weekly**
-   (cron `0 7 * * 1`, Monday morning) unless the user says otherwise.
-4. Briefly confirm what you set up (which marks, how often, that alerts go by e-mail).
+3. Confirm what that gives them: the shipped `automations/check-znamky.md` re-searches every tracked
+   mark daily at 7:00 and e-mails as soon as a new collision appears — sooner than the weekly they
+   asked for.
 
-Don't create a second parallel automation for the same marks — one plain `check` is enough; it
-sends the e-mail itself when the setting is on.
+That is the whole setup — **don't create an automation for this.** The shipped one already runs the
+same `sledovani check`, and `check` advances the stored snapshot, so a second automation would compare
+fresh data against fresh data, find nothing, and never e-mail.
+
+Only if the user wants a cadence other than daily: disable the shipped automation first
+(`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement —
+otherwise the daily run keeps consuming changes before yours sees them.
 
 ---
 
