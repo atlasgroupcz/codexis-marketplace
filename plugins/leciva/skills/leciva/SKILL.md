@@ -62,7 +62,8 @@ skip the rest.
 ## Result fields (search)
 
 Each item in `results[]`: `id` (internal doc id — for `get`, never shown to the
-user), `kodSukl`, `nazev`, `sila` (strength), `forma`, `vydej` (dispensing),
+user), `url` (the medicine's public SÚKL page — the **citable source link**),
+`kodSukl`, `nazev`, `sila` (strength), `forma`, `vydej` (dispensing),
 `atc`, `jeDodavka`, `konecPlatnostiRegistrace`.
 
 The **`jeDodavka`** field = whether the drug is actually **on the market /
@@ -72,7 +73,8 @@ technical definition (delivered in the last 6 months) unless asked.
 ## Presenting results
 
 Present readably — drug, strength, form, dispensing (prescription /
-over-the-counter), active substances. Do NOT dump raw JSON; the JSON is a machine
+over-the-counter), active substances — and cite the `url` (the medicine's public
+SÚKL page) as the source link. Do NOT dump raw JSON; the JSON is a machine
 intermediate — pull only the fields you need with `jq`. Never show a raw `id`
 (`CZSUKL…`), the `CZSUKL` prefix, a `leciva://` address, or an env-var name to the
 user.
