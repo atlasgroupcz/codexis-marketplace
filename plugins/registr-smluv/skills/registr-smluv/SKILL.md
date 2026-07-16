@@ -3,7 +3,7 @@ uuid: 9c2f1b7a-4e83-4d16-b0a5-7f3c6e21d904
 name: registr-smluv
 icon: icon.svg
 description: This skill should be invoked whenever the user needs Czech public-sector contracts from the Register of Contracts (Registr smluv, smlouvy.gov.cz) — search by subject, contracting parties, IČO, contract value, or conclusion date. Triggers on "smlouva", "registr smluv", "veřejná smlouva", "smlouvy.gov.cz", "dodavatel", "objednatel", "zadavatel", "hodnota smlouvy", "kdo podepsal smlouvu s".
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ]
 i18n:
   cs:
