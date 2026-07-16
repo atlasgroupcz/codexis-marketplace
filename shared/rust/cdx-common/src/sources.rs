@@ -24,8 +24,7 @@ pub fn publish_from_body(
     if entries.is_empty() {
         return Ok(());
     }
-    let body = serde_json::to_string(&serde_json::json!({ "sources": entries }))
-        .map_err(|e| SourcesError::Parse(e.to_string()))?;
+    let body = build_publish_body(entries)?;
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
 }
 
@@ -38,9 +37,15 @@ pub fn publish_entries(
     if entries.is_empty() {
         return Ok(());
     }
-    let body = serde_json::to_string(&serde_json::json!({ "sources": entries }))
-        .map_err(|e| SourcesError::Parse(e.to_string()))?;
+    let body = build_publish_body(entries)?;
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
+}
+
+/// Entries are forwarded to the daemon verbatim — every upstream field, including
+/// ones this crate does not know about (e.g. `previewUrl`), must survive publish.
+fn build_publish_body(entries: &[serde_json::Value]) -> Result<String, SourcesError> {
+    serde_json::to_string(&serde_json::json!({ "sources": entries }))
+        .map_err(|e| SourcesError::Parse(e.to_string()))
 }
 
 /// Best-effort publish of source entries: a no-op when empty or outside a
@@ -116,5 +121,33 @@ impl fmt::Display for SourcesError {
                 write!(f, "daemon rejected sources (curl exit {code}): {detail}")
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn publish_body_keeps_unknown_entry_fields_verbatim() {
+        let entries = vec![
+            serde_json::json!({
+                "__kind": "url",
+                "url": "https://app.codexis.cz/doc/CR10#paragraf3",
+                "title": "OZ",
+                "previewUrl": "https://app.codexis.cz/document/CR10/text#paragraf3"
+            }),
+            serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" }),
+        ];
+
+        let body = build_publish_body(&entries).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
+
+        assert_eq!(
+            parsed["sources"][0]["previewUrl"],
+            serde_json::json!("https://app.codexis.cz/document/CR10/text#paragraf3")
+        );
+        assert!(parsed["sources"][1].get("previewUrl").is_none());
+        assert_eq!(parsed["sources"], serde_json::json!(entries));
     }
 }
