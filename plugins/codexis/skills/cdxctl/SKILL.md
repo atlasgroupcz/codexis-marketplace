@@ -123,7 +123,7 @@ cdxctl plugin uninstall <id>
 
 ## Agents
 
-Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API.
+Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API. Agents live one markdown file per agent at `~/.cdx/agents/<name>.md` on the daemon side — always go through `cdxctl agent create`/`update`, never write that file directly.
 
 ```bash
 # List all agents
@@ -142,6 +142,16 @@ name: custom-local-agent
 description: Helps with a focused local workflow.
 tools: Read, Bash
 maxTurns: 8
+i18n:
+  cs:
+    displayName: "Vlastní lokální agent"
+    summary: "Pomáhá s konkrétním lokálním workflow."
+  en:
+    displayName: "Custom Local Agent"
+    summary: "Helps with a focused local workflow."
+  sk:
+    displayName: "Vlastný lokálny agent"
+    summary: "Pomáha s konkrétnym lokálnym workflow."
 ---
 
 You are a custom local agent.
@@ -159,7 +169,22 @@ cdxctl agent delete <id>
 
 **IDs:** `cdxctl agent update` and `cdxctl agent delete` accept the GraphQL `id` from `cdxctl agent list`, a base64 Node ID, or a raw local agent name like `my-agent`.
 
-**Recommended agent workflow:**
+**Agent frontmatter contract:**
+- `name` — required, `^[a-z][a-z0-9-]*$`, max 64 chars, no consecutive hyphens (e.g. `contract-reviewer`). If omitted from a `--file` payload, it falls back to the filename.
+- `description` — required, max 1024 chars, one sentence. This is tool-facing context, not the user-facing summary.
+- `uuid` — optional; the daemon generates one automatically when omitted. Only include it when updating an existing agent (preserve the original) — never invent one for a new agent.
+- `model`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `jurisdictions` — all optional; set only what the user actually asked for.
+- `i18n.<lang>.displayName` and `i18n.<lang>.summary` — **mandatory** for `cs`, `sk`, and `en`. This is what the Agents page renders instead of the raw `name` slug, so a missing translation shows a blank or fallback title. `displayName` must be human-formatted (e.g. "Contract Reviewer", not `contract-reviewer`); `summary` is a one-sentence, user-facing description in that language — distinct from the frontmatter-level `description`, which stays a single technical sentence for tool-facing context.
+- The persona body (everything after the closing `---`) is the system prompt: who the agent is, what it is expert at, how it answers, what it refuses. Write it in the user's language.
+
+**Creating an agent from a persona description:** when the user describes an agent they want (rather than handing you a ready markdown file), design it yourself before calling `cdxctl agent create`:
+1. If the purpose, name, or personality is unclear, ask one short clarifying question before writing anything.
+2. Pick a concise `name` slug, a one-sentence `description`, and write the persona instructions that define the agent's expertise, tone, and boundaries.
+3. Fill in `i18n.cs`, `i18n.sk`, and `i18n.en` with a human-formatted `displayName` and a one-sentence `summary` for each.
+4. Run `cdxctl agent create --stdin` with the composed markdown. `cdxctl` rejects a `name` that collides with an existing agent — on that error, pick a different name and retry instead of overwriting the existing one.
+5. Confirm to the user what was created and that the agent is now available on the Agents page.
+
+**Recommended agent edit workflow:**
 1. Run `cdxctl agent list --editable-only` to find the target agent and its `sourcePath.absolutePath`.
 2. Read or edit the markdown file in the shell.
 3. Apply the change with `cdxctl agent update <id> --file <path>` or pipe the markdown with `--stdin`.
