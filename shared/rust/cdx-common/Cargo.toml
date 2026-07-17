@@ -11,7 +11,6 @@ serde_json = { version = "1", optional = true }
 anyhow = { version = "1", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"], optional = true }
-uuid = { version = "1", features = ["v4"], optional = true }
 
 [features]
 default = ["sources"]
@@ -39,8 +38,12 @@ fs = ["dep:serde", "dep:serde_json"]
 # watcher plugins' state/change logs; off by default for the search CLIs.
 time = ["dep:chrono"]
 # The `store` module (keyed atomic JSON item store). Builds on `fs` + `paths`;
-# uuid names the crash-safe trash directory on remove. For the watcher plugins.
-store = ["fs", "dep:uuid"]
+# the crash-safe trash dir on remove reuses fs's pid+counter token (no rand dep).
+# For the watcher plugins.
+store = ["fs"]
+# Re-export the `test_support` home fixture so sibling capability crates can share
+# it via a dev-dependency instead of copy-pasting it. No runtime effect.
+test-support = []
 
 [dev-dependencies]
 tempfile = "3"

@@ -117,7 +117,7 @@ fn check_snapshot<W: Watcher>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::home_guard;
+    use cdx_common::test_support::home_guard;
     use serde::Deserialize;
     use tempfile::tempdir;
 

@@ -16,6 +16,18 @@ use serde::Serialize;
 /// Monotonic counter for temp-file names — avoids a rand dependency.
 static NEXT_COUNTER: AtomicU64 = AtomicU64::new(0);
 
+/// A process-unique token (pid + monotonic counter) for temp / trash file names,
+/// avoiding a rand dependency. Unique within a process run; not globally unique
+/// across restarts, so callers probe with an `exists()` loop (as `atomic_replace`
+/// and the item store's trash-rename do).
+pub fn unique_token() -> String {
+    format!(
+        "{}.{}",
+        std::process::id(),
+        NEXT_COUNTER.fetch_add(1, Ordering::Relaxed)
+    )
+}
+
 /// Atomically replace the file at `path` with whatever `writer` emits.
 /// `mode` (if set) applies before the rename — use `0o600` for secrets.
 pub fn atomic_replace<F>(path: &Path, mode: Option<u32>, writer: F) -> io::Result<()>
@@ -31,10 +43,8 @@ where
     let base_name = path.file_name().and_then(|n| n.to_str()).ok_or_else(|| {
         io::Error::new(io::ErrorKind::InvalidInput, "target path has no filename")
     })?;
-    let pid = std::process::id();
     let tmp_path = loop {
-        let counter = NEXT_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let candidate = parent_dir.join(format!(".{base_name}.{pid}.{counter}.tmp"));
+        let candidate = parent_dir.join(format!(".{base_name}.{}.tmp", unique_token()));
         if !candidate.exists() {
             break candidate;
         }

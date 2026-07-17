@@ -18,3 +18,5 @@ cdx-common = { path = "../cdx-common", default-features = false, features = ["fs
 
 [dev-dependencies]
 tempfile = "3"
+# Share the home-fixture test helper instead of copy-pasting it.
+cdx-common = { path = "../cdx-common", default-features = false, features = ["test-support"] }
