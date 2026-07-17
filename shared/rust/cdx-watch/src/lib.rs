@@ -1,15 +1,19 @@
-//! Shared building blocks for the codexis-marketplace hosted-component plugins
-//! (katastr, insolvence, znamky, codexis): daemon notify transport, layered
-//! settings, and the CGI runtime their handlers share. Builds on `cdx-common`
-//! for config/daemon-token/fs/paths. Plugin-specific logic (change detection,
-//! API clients, the tracking lifecycle) stays in each plugin's own `*-core`.
+//! The watcher domain shared by the CODEXIS "sledování" plugins (katastr,
+//! insolvence, znamky, …): the change-log confirm mechanics and the
+//! poll → persist → collect-result check orchestration over a keyed item store.
+//!
+//! A *capability* crate: it owns the parts of a watcher that are identical
+//! across apps (the change-log confirm/count and the check loop), and leaves the
+//! app-specific parts — fetching, diffing, the snapshot and change shapes — to
+//! the plugin via the [`Watcher`](track::Watcher) trait. Independent of the
+//! notify (`cdx-notify`) and CGI (`cdx-cgi`) capabilities; a plugin wires them
+//! together (e.g. "check → if change → notify").
 
+pub mod change;
 pub mod error;
-pub mod notify;
-pub mod notify_settings;
-pub mod cgi;
+pub mod track;
 
-pub use error::{ComponentError, Result};
+pub use error::WatchError;
 
 #[cfg(test)]
 pub(crate) mod test_support {

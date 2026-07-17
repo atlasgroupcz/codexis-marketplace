@@ -1,5 +1,5 @@
 //! Per-app notify settings: shipped defaults merged with a sparse user
-//! override. Port of Python's `katastr_core.notify_settings`.
+//! override. Port of Python's `<app>_core.notify_settings`.
 //!
 //! - default → `~/.local/share/<app_id>/settings/defaults.json` (delivered by the
 //!   install hook, sibling of the plugin's binaries)
@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 use serde_json::{json, Map, Value};
 
-use crate::error::{ComponentError, Result};
+use crate::error::{NotifyError, Result};
 use cdx_common::paths;
 
 pub const SCHEMA_VERSION: u64 = 1;
@@ -54,7 +54,7 @@ where
             continue;
         }
         if !is_valid_email(addr) {
-            return Err(ComponentError::InvalidRecipient(format!(
+            return Err(NotifyError::InvalidRecipient(format!(
                 "Neplatná e-mailová adresa: {addr}"
             )));
         }
