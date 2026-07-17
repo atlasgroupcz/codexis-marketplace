@@ -44,9 +44,10 @@ pub mod time;
 #[cfg(feature = "store")]
 pub mod store;
 
-/// Test-only helpers. `#[cfg(test)]` so nothing ships in release builds.
-#[cfg(test)]
-pub(crate) mod test_support {
+/// Test-only helpers, shared with sibling crates via the `test-support` feature.
+/// Gated so nothing ships in normal release builds.
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_support {
     use std::path::Path;
     use std::sync::{Mutex, MutexGuard};
 

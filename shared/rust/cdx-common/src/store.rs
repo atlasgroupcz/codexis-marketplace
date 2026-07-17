@@ -63,15 +63,12 @@ impl ItemStore {
     }
 
     /// Load one item. `None` when missing or corrupt (a half-written file after
-    /// a crash simply drops out instead of failing the whole run).
+    /// a crash simply drops out instead of failing the whole run). `fs::read`
+    /// already yields `Err` (→ `None`) for a missing path or a directory, so no
+    /// separate existence check is needed.
     pub fn load<T: DeserializeOwned>(&self, slug: &str) -> Option<T> {
-        let path = self.path(slug);
-        if !crate::paths::is_regular_file(&path) {
-            return None;
-        }
-        fs::read(&path)
-            .ok()
-            .and_then(|bytes| serde_json::from_slice::<T>(&bytes).ok())
+        let bytes = fs::read(self.path(slug)).ok()?;
+        serde_json::from_slice(&bytes).ok()
     }
 
     /// Load every readable item in the collection, skipping corrupt files and
@@ -88,7 +85,13 @@ impl ItemStore {
             if name.contains(TRASH_MARKER) {
                 continue;
             }
-            if let Some(item) = self.load::<T>(name) {
+            // Reuse the DirEntry's path instead of re-deriving app_dir/collection
+            // per item; read the file directly (missing/dir → skip).
+            let path = entry.path().join(&self.file_name);
+            if let Some(item) = fs::read(&path)
+                .ok()
+                .and_then(|bytes| serde_json::from_slice::<T>(&bytes).ok())
+            {
                 out.push(item);
             }
         }
@@ -105,10 +108,15 @@ impl ItemStore {
     /// ignores the `.deleted-*` directory.
     pub fn remove(&self, slug: &str) -> std::io::Result<()> {
         let target = self.item_dir(slug);
-        let trash = target.with_file_name(format!(
-            "{slug}{TRASH_MARKER}{}",
-            uuid::Uuid::new_v4().simple()
-        ));
+        // Unique sibling name via the shared fs token (pid + counter), probing
+        // for a free name — same scheme atomic_replace uses, no rand dependency.
+        let trash = loop {
+            let candidate =
+                target.with_file_name(format!("{slug}{TRASH_MARKER}{}", crate::fs::unique_token()));
+            if !candidate.exists() {
+                break candidate;
+            }
+        };
         fs::rename(&target, &trash)?;
         let _ = fs::remove_dir_all(&trash); // best-effort: orphan cleanup can run later
         Ok(())

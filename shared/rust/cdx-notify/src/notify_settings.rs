@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn set_and_get_roundtrip_against_temp_home() {
         let tmp = tempfile::tempdir().unwrap();
-        let _g = crate::test_support::home_guard(tmp.path());
+        let _g = cdx_common::test_support::home_guard(tmp.path());
         let store = NotifySettings::new("katastr");
         let cfg = store.get_notify();
         assert!(!cfg.email);
@@ -301,7 +301,7 @@ mod tests {
     #[test]
     fn ensure_settings_creates_versioned_file() {
         let tmp = tempfile::tempdir().unwrap();
-        let _g = crate::test_support::home_guard(tmp.path());
+        let _g = cdx_common::test_support::home_guard(tmp.path());
         let store = NotifySettings::new("katastr");
         store.ensure_settings().unwrap();
         let raw = std::fs::read_to_string(store.user_path()).unwrap();
