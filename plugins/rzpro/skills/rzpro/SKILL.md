@@ -66,14 +66,14 @@ See `rzpro-cli search CZRZP --help` / `CZRZP-OS --help` or
 ## Result fields (device search)
 
 Each item in `results[]`: `docId` (internal id — for `get`, never shown to the
-user), `url` (public KSRZIS portal link — the **citable source**), `evidencniCislo`,
-`nazev`, `obchodniNazev`, `stav`, `isActive`, `druh`, `miraRizika`, `vyrobce`
-(manufacturer-of-record, incl. foreign makers), `platnostDo`.
+user), `evidencniCislo`, `nazev`, `obchodniNazev`, `stav`, `isActive`, `druh`,
+`miraRizika`, `vyrobce` (manufacturer-of-record, incl. foreign makers),
+`platnostDo`.
 
 ## Presenting results
 
-Present readably — device name, kind, risk class, manufacturer, validity — and
-cite the `url`. Do NOT dump raw JSON; pull only what you need with `jq`. Never
+Present readably — device name, kind, risk class, manufacturer, validity. Do NOT
+dump raw JSON; pull only what you need with `jq`. Never
 show a raw `docId` (`CZRZP…`), a `CZRZP` / `CZRZP-OS` source code, a `rzpro://`
 address, or an env-var name to the user.
 
