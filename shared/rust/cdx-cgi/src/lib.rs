@@ -1,5 +1,6 @@
-//! Minimal CGI runtime shared by hosted-component handlers: query parsing,
-//! body reading, and JSON/error response emission. No plugin specifics.
+//! Minimal CGI runtime shared by the hosted-component handlers: query parsing,
+//! body reading, and JSON/error response emission. No plugin specifics — a pure
+//! capability crate, independent of the notify and watcher capabilities.
 
 use std::env;
 use std::io::{self, Read, Write};

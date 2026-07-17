@@ -1,4 +1,4 @@
-//! Daemon notification transport shared by every hosted-component plugin —
+//! Daemon notification transport shared by every watcher/component plugin —
 //! e-mail via the plugin e-mail API and in-app via the notification bell.
 //!
 //! Auth is the VM/daemon token (`~/.cdx/env/secret`), read via
@@ -12,7 +12,7 @@ use cdx_common::daemon_rest::daemon_bearer;
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::error::{ComponentError, Result};
+use crate::error::{NotifyError, Result};
 
 const EMAIL_ENDPOINT: &str = "/rest/v1/plugin/email/send";
 
@@ -144,7 +144,7 @@ pub fn send_email(
     boundary_tag: &str,
 ) -> Result<()> {
     let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
-        return Err(ComponentError::Notify(
+        return Err(NotifyError::Notify(
             "E-mail nelze odeslat — chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací \
              token (~/.cdx/env/secret). Spouštějte přes automatizaci v CODEXIS."
                 .into(),
@@ -190,11 +190,11 @@ pub fn send_email(
                 .chars()
                 .take(300)
                 .collect();
-            Err(ComponentError::Notify(format!(
+            Err(NotifyError::Notify(format!(
                 "E-mail se nepodařilo odeslat (HTTP {code}): {detail}"
             )))
         }
-        Err(ureq::Error::Transport(t)) => Err(ComponentError::Notify(format!(
+        Err(ureq::Error::Transport(t)) => Err(NotifyError::Notify(format!(
             "E-mail se nepodařilo odeslat: {t}"
         ))),
     }

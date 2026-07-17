@@ -10,6 +10,8 @@ serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 anyhow = { version = "1", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"], optional = true }
+uuid = { version = "1", features = ["v4"], optional = true }
 
 [features]
 default = ["sources"]
@@ -33,6 +35,12 @@ ico = ["dep:anyhow"]
 # The `fs` module (atomic file writes). Needs serde + serde_json for the JSON
 # helper. Off by default so the search CLIs (which don't persist state) stay lean.
 fs = ["dep:serde", "dep:serde_json"]
+# The `time` module (UTC timestamp helper). Pulls in chrono. Shared by the
+# watcher plugins' state/change logs; off by default for the search CLIs.
+time = ["dep:chrono"]
+# The `store` module (keyed atomic JSON item store). Builds on `fs` + `paths`;
+# uuid names the crash-safe trash directory on remove. For the watcher plugins.
+store = ["fs", "dep:uuid"]
 
 [dev-dependencies]
 tempfile = "3"

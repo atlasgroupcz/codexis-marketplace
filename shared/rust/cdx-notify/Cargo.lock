@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cdx-component"
+name = "cdx-notify"
 version = "0.1.0"
 dependencies = [
  "cdx-common",

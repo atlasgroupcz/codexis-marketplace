@@ -38,6 +38,12 @@ pub mod ico;
 #[cfg(feature = "fs")]
 pub mod fs;
 
+#[cfg(feature = "time")]
+pub mod time;
+
+#[cfg(feature = "store")]
+pub mod store;
+
 /// Test-only helpers. `#[cfg(test)]` so nothing ships in release builds.
 #[cfg(test)]
 pub(crate) mod test_support {
