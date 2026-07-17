@@ -6,6 +6,7 @@ description = "Shared building blocks for codexis-marketplace Rust CLI plugins (
 license = "PROPRIETARY"
 
 [dependencies]
+serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 anyhow = { version = "1", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
@@ -29,3 +30,9 @@ search-engine = ["curl", "sources"]
 http = ["dep:reqwest", "dep:anyhow"]
 # The `ico` module (IČO normalization). Pulls in `anyhow`.
 ico = ["dep:anyhow"]
+# The `fs` module (atomic file writes). Needs serde + serde_json for the JSON
+# helper. Off by default so the search CLIs (which don't persist state) stay lean.
+fs = ["dep:serde", "dep:serde_json"]
+
+[dev-dependencies]
+tempfile = "3"
