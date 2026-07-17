@@ -71,7 +71,7 @@ mutation RemoveMarketplace($id: ID!) {
 """
 
 _Q_LIST_MARKETPLACES = """
-{ marketplaces { id name pluginCount error source { url ref } plugins { id name } } }
+{ marketplaces { id name deletable pluginCount error source { url ref } plugins { id name } } }
 """
 
 _Q_INSTALL_PLUGIN = """
@@ -305,6 +305,14 @@ class DaemonClient:
         """
         target = _normalize_git_url(git_url)
         for m in self.list_marketplaces():
+            # Skip records the daemon marks as protected (e.g. the builtin
+            # marketplace). It reports `deletable=false` and rejects the delete
+            # with a 400, which would otherwise abort the whole sweep. Ask the
+            # daemon rather than guessing from the URL — the builtin shares this
+            # repo's git URL when its checkout is stale, so URL matching alone
+            # cannot tell them apart.
+            if not m.get("deletable"):
+                continue
             if _normalize_git_url((m.get("source") or {}).get("url") or "") == target:
                 self.remove_marketplace(m["id"])
 
@@ -318,6 +326,10 @@ class DaemonClient:
                 raise
             names = {manifest.get("name"), _git_url_basename(git_url)}
             for m in self.list_marketplaces():
+                # Same protected-record guard as the URL sweep above: the
+                # builtin's URL-basename fallback name can land in `names`.
+                if not m.get("deletable"):
+                    continue
                 if m.get("name") in names:
                     self.remove_marketplace(m["id"])
             return self.add_marketplace(git_url, git_ref)
