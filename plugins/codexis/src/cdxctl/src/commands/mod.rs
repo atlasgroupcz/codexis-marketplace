@@ -5,6 +5,7 @@ pub mod marketplace;
 pub mod notification;
 pub mod notification_email;
 pub mod plugin;
+pub mod schedule;
 pub mod skill;
 pub mod tabular;
 

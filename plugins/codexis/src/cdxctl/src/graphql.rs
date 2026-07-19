@@ -10,7 +10,7 @@ query GetAutomations {
         description
         agent { id fullName }
         skills { id fullName }
-        cron
+        schedule { repeat dayPart daysOfWeek dayOfMonth }
         prompt
         enabled
         maxTurns
@@ -37,7 +37,7 @@ mutation CreateAutomation($input: AutomationInput!) {
         description
         agent { id fullName }
         skills { id fullName }
-        cron
+        schedule { repeat dayPart daysOfWeek dayOfMonth }
         prompt
         enabled
         maxTurns
@@ -56,7 +56,7 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         description
         agent { id fullName }
         skills { id fullName }
-        cron
+        schedule { repeat dayPart daysOfWeek dayOfMonth }
         prompt
         enabled
         maxTurns

@@ -2,7 +2,7 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations (cron), plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
+description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
 version: 1.7.0
 i18n:
   cs:
@@ -31,9 +31,9 @@ cdxctl automation list
 # Create an automation
 cdxctl automation create \
     --title "Daily Report" \
-    --cron "0 9 * * *" \
+    --repeat DAILY --day-part MORNING \
     --prompt "Generate a daily summary report" \
-    --description "Runs every morning at 9 AM" \
+    --description "Runs every morning" \
     --agent "<id>" \
     --skill "<id>" \
     --skill "<id>" \
@@ -43,13 +43,13 @@ cdxctl automation create \
 # Create a COMMAND automation
 cdxctl automation create-command \
     --title "Tracked Documents Check" \
-    --cron "0 8 * * 1" \
+    --repeat WEEKLY --day-part MORNING --days-of-week 1 \
     --command "cdx-sledovane-dokumenty check" \
     --description "Weekly tracked-document change check"
 
 # Update (partial — only specified fields change; never touches enabled)
 cdxctl automation update <id> --title "New Title"
-cdxctl automation update <id> --cron "0 */2 * * *"
+cdxctl automation update <id> --repeat WEEKLY --day-part EVENING --days-of-week 1 --days-of-week 4
 cdxctl automation update <id> --prompt "Updated prompt" --max-turns 30
 
 # Enable / disable (separate from update — see note below)
@@ -74,11 +74,11 @@ automation, but you can disable one — e.g. to replace it with your own on a di
 schedule. Find it with `cdxctl automation list`, then `cdxctl automation disable <id>`.
 The disable is remembered per user and survives plugin updates and daemon restarts.
 
-**Required fields for create:** `--title`, `--cron` (5-field unix cron), `--prompt`
+**Required fields for create:** `--title`, `--repeat` (+ `--day-part`), `--prompt`
 
-**Required fields for create-command:** `--title`, `--cron`, `--command`
+**Required fields for create-command:** `--title`, `--repeat` (+ `--day-part`), `--command`
 
-**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative — e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--cron`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt — this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
+**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative — e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--repeat`/`--day-part`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt — this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
 
 **IDs:** Use the `id` or `uuid` from `automation list` output. Both Node IDs (base64) and raw UUIDs work.
 
@@ -353,14 +353,32 @@ replies are dropped.
 - **Table:** Add `--table` flag for human-readable columns
 - **Errors:** Printed to stderr
 
-## Cron Format
+## Schedule Format
 
-5-field unix cron: `minute hour day-of-month month day-of-week`
+An automation repeats `DAILY`, `WEEKLY` or `MONTHLY` and runs inside a six-hour
+window, not at an exact time. The daemon picks a time within the window that stays
+the same for a given automation and day, which spreads load across users.
 
-| Expression | Meaning |
+| Flag | Values |
 |---|---|
-| `0 9 * * *` | Daily at 9:00 |
-| `0 */2 * * *` | Every 2 hours |
-| `*/15 * * * *` | Every 15 minutes |
-| `0 9 * * 1-5` | Weekdays at 9:00 |
-| `0 0 1 * *` | First day of each month at midnight |
+| `--repeat` | `DAILY`, `WEEKLY`, `MONTHLY` |
+| `--day-part` | `NIGHT` 00:00-06:00, `MORNING` 06:00-12:00, `AFTERNOON` 12:00-18:00, `EVENING` 18:00-24:00 (default `MORNING`) |
+| `--days-of-week` | Required for `WEEKLY`. `0`=Sunday..`6`=Saturday, repeat the flag for several days |
+| `--day-of-month` | Required for `MONTHLY`. `1`-`28`, so every month has the day and no run is ever skipped |
+
+| Example | Meaning |
+|---|---|
+| `--repeat DAILY --day-part MORNING` | Every day, some time between 06:00 and 12:00 |
+| `--repeat WEEKLY --day-part EVENING --days-of-week 1 --days-of-week 4` | Mondays and Thursdays, between 18:00 and 24:00 |
+| `--repeat MONTHLY --day-part NIGHT --day-of-month 15` | 15th of each month, between 00:00 and 06:00 |
+
+**Exact times and sub-daily schedules are not supported.** There is no "every 15
+minutes" or "at 9:00 sharp" — pick the window the work belongs in.
+
+### Deprecated: `--cron`
+
+`--cron` still accepts a 5-field expression and translates it to the nearest
+day-part window (`0 9 * * *` becomes `DAILY MORNING`). It is a client-side shim —
+the daemon has no cron field any more — and it rejects anything that cannot be
+expressed as a window, such as `*/15 * * * *` or `0 9 * * 1-5`. Use
+`--repeat`/`--day-part` in new work.

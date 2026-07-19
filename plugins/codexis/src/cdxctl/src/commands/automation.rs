@@ -1,5 +1,6 @@
 use super::{find_node_id, resolve_node_id};
 use crate::client::GraphQLClient;
+use crate::commands::schedule::ScheduleArgs;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
@@ -8,7 +9,7 @@ use serde_json::{json, Value};
 /// Fields for creating an AGENT automation.
 pub struct CreateArgs<'a> {
     pub title: &'a str,
-    pub cron: &'a str,
+    pub schedule: ScheduleArgs<'a>,
     pub prompt: &'a str,
     pub description: Option<&'a str>,
     pub agent: Option<&'a str>,
@@ -22,7 +23,7 @@ pub struct CreateArgs<'a> {
 pub struct UpdateArgs<'a> {
     pub id: &'a str,
     pub title: Option<&'a str>,
-    pub cron: Option<&'a str>,
+    pub schedule: ScheduleArgs<'a>,
     pub prompt: Option<&'a str>,
     pub description: Option<&'a str>,
     pub agent: Option<&'a str>,
@@ -52,7 +53,7 @@ pub fn create(
 ) -> Result<(), CdxctlError> {
     let CreateArgs {
         title,
-        cron,
+        schedule,
         prompt,
         description,
         agent,
@@ -63,7 +64,7 @@ pub fn create(
     } = args;
     let mut input = json!({
         "title": title,
-        "cron": cron,
+        "schedule": require_schedule(&schedule)?,
         "prompt": prompt,
         "enabled": !disabled,
     });
@@ -94,7 +95,7 @@ pub fn create(
 pub fn create_command(
     client: &GraphQLClient,
     title: &str,
-    cron: &str,
+    schedule: ScheduleArgs<'_>,
     command: &str,
     description: Option<&str>,
     disabled: bool,
@@ -103,7 +104,7 @@ pub fn create_command(
     let mut input = json!({
         "type": "COMMAND",
         "title": title,
-        "cron": cron,
+        "schedule": require_schedule(&schedule)?,
         "command": command,
         "enabled": !disabled,
     });
@@ -127,7 +128,7 @@ pub fn update(
     let UpdateArgs {
         id,
         title,
-        cron,
+        schedule,
         prompt,
         description,
         agent,
@@ -162,7 +163,7 @@ pub fn update(
     let mut input = json!({
         "type": auto_type,
         "title": title.map(String::from).or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
-        "cron": cron.map(String::from).or_else(|| current.get("cron").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
+        "schedule": schedule.to_input()?.or_else(|| current.get("schedule").cloned()).unwrap_or(Value::Null),
         // `update` never changes the enabled flag — preserve the current value.
         // Toggling enabled goes through `enable`/`disable` (setAutomationEnabled),
         // which also works for read-only carried automations.
@@ -305,6 +306,48 @@ fn flatten_automation(value: &mut Value) {
         object.insert("skillFullNames".into(), Value::Array(full_names));
         object.insert("skillIds".into(), Value::Array(ids));
     }
+    if let Some(schedule) = object.remove("schedule") {
+        object.insert("schedule".into(), json!(format_schedule(&schedule)));
+    }
+}
+
+/// Renders the nested `AutomationSchedule` as one cell. Table output drops object
+/// and array columns, so the schedule has to reach it as a scalar.
+fn format_schedule(schedule: &Value) -> String {
+    let Some(repeat) = schedule.get("repeat").and_then(Value::as_str) else {
+        return "-".to_string();
+    };
+    let day_part = schedule
+        .get("dayPart")
+        .and_then(Value::as_str)
+        .unwrap_or("-");
+    match repeat {
+        "WEEKLY" => {
+            let days: Vec<String> = schedule
+                .get("daysOfWeek")
+                .and_then(Value::as_array)
+                .map(|days| days.iter().map(|day| day.to_string()).collect())
+                .unwrap_or_default();
+            format!("WEEKLY {day_part} {}", days.join(","))
+        }
+        "MONTHLY" => {
+            let day = schedule
+                .get("dayOfMonth")
+                .and_then(Value::as_u64)
+                .map(|day| day.to_string())
+                .unwrap_or_else(|| "-".to_string());
+            format!("MONTHLY {day_part} day {day}")
+        }
+        other => format!("{other} {day_part}"),
+    }
+}
+
+fn require_schedule(schedule: &ScheduleArgs<'_>) -> Result<Value, CdxctlError> {
+    schedule.to_input()?.ok_or_else(|| {
+        CdxctlError::Parse(
+            "a schedule is required: pass --repeat (with --day-part) or --cron".to_string(),
+        )
+    })
 }
 
 /// Resolve a `--agent` value (Node ID, full name, or bare name) to the Node `ID`
