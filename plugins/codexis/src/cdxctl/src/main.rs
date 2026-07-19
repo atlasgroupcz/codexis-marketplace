@@ -75,9 +75,21 @@ enum AutomationCommands {
         /// Automation title
         #[arg(long)]
         title: String,
-        /// Cron expression (5-field unix cron)
+        /// How often it repeats: DAILY, WEEKLY or MONTHLY
         #[arg(long)]
-        cron: String,
+        repeat: Option<String>,
+        /// Six-hour window it runs in: NIGHT, MORNING, AFTERNOON or EVENING (default MORNING)
+        #[arg(long)]
+        day_part: Option<String>,
+        /// Days of week for WEEKLY (0=Sunday..6=Saturday), repeatable
+        #[arg(long)]
+        days_of_week: Vec<u32>,
+        /// Day of month for MONTHLY (1-28)
+        #[arg(long)]
+        day_of_month: Option<u32>,
+        /// Deprecated: 5-field unix cron, translated to the nearest day-part window
+        #[arg(long)]
+        cron: Option<String>,
         /// Prompt to execute
         #[arg(long)]
         prompt: String,
@@ -105,9 +117,21 @@ enum AutomationCommands {
         /// Automation title
         #[arg(long)]
         title: String,
-        /// Cron expression (5-field unix cron)
+        /// How often it repeats: DAILY, WEEKLY or MONTHLY
         #[arg(long)]
-        cron: String,
+        repeat: Option<String>,
+        /// Six-hour window it runs in: NIGHT, MORNING, AFTERNOON or EVENING (default MORNING)
+        #[arg(long)]
+        day_part: Option<String>,
+        /// Days of week for WEEKLY (0=Sunday..6=Saturday), repeatable
+        #[arg(long)]
+        days_of_week: Vec<u32>,
+        /// Day of month for MONTHLY (1-28)
+        #[arg(long)]
+        day_of_month: Option<u32>,
+        /// Deprecated: 5-field unix cron, translated to the nearest day-part window
+        #[arg(long)]
+        cron: Option<String>,
         /// Shell command to execute
         #[arg(long)]
         command: String,
@@ -124,6 +148,19 @@ enum AutomationCommands {
         id: String,
         #[arg(long)]
         title: Option<String>,
+        /// How often it repeats: DAILY, WEEKLY or MONTHLY
+        #[arg(long)]
+        repeat: Option<String>,
+        /// Six-hour window it runs in: NIGHT, MORNING, AFTERNOON or EVENING (default MORNING)
+        #[arg(long)]
+        day_part: Option<String>,
+        /// Days of week for WEEKLY (0=Sunday..6=Saturday), repeatable
+        #[arg(long)]
+        days_of_week: Vec<u32>,
+        /// Day of month for MONTHLY (1-28)
+        #[arg(long)]
+        day_of_month: Option<u32>,
+        /// Deprecated: 5-field unix cron, translated to the nearest day-part window
         #[arg(long)]
         cron: Option<String>,
         #[arg(long)]
@@ -439,6 +476,10 @@ fn main() {
             AutomationCommands::List => commands::automation::list(&client, format),
             AutomationCommands::Create {
                 title,
+                repeat,
+                day_part,
+                days_of_week,
+                day_of_month,
                 cron,
                 prompt,
                 description,
@@ -451,7 +492,13 @@ fn main() {
                 &client,
                 commands::automation::CreateArgs {
                     title: &title,
-                    cron: &cron,
+                    schedule: commands::schedule::ScheduleArgs {
+                        repeat: repeat.as_deref(),
+                        day_part: day_part.as_deref(),
+                        days_of_week: &days_of_week,
+                        day_of_month,
+                        cron: cron.as_deref(),
+                    },
                     prompt: &prompt,
                     description: description.as_deref(),
                     agent: agent.as_deref(),
@@ -464,6 +511,10 @@ fn main() {
             ),
             AutomationCommands::CreateCommand {
                 title,
+                repeat,
+                day_part,
+                days_of_week,
+                day_of_month,
                 cron,
                 command,
                 description,
@@ -471,7 +522,13 @@ fn main() {
             } => commands::automation::create_command(
                 &client,
                 &title,
-                &cron,
+                commands::schedule::ScheduleArgs {
+                    repeat: repeat.as_deref(),
+                    day_part: day_part.as_deref(),
+                    days_of_week: &days_of_week,
+                    day_of_month,
+                    cron: cron.as_deref(),
+                },
                 &command,
                 description.as_deref(),
                 disabled,
@@ -480,6 +537,10 @@ fn main() {
             AutomationCommands::Update {
                 id,
                 title,
+                repeat,
+                day_part,
+                days_of_week,
+                day_of_month,
                 cron,
                 prompt,
                 description,
@@ -492,7 +553,13 @@ fn main() {
                 commands::automation::UpdateArgs {
                     id: &id,
                     title: title.as_deref(),
-                    cron: cron.as_deref(),
+                    schedule: commands::schedule::ScheduleArgs {
+                        repeat: repeat.as_deref(),
+                        day_part: day_part.as_deref(),
+                        days_of_week: &days_of_week,
+                        day_of_month,
+                        cron: cron.as_deref(),
+                    },
                     prompt: prompt.as_deref(),
                     description: description.as_deref(),
                     agent: agent.as_deref(),
@@ -749,7 +816,14 @@ mod tests {
 
     #[test]
     fn threads_notification_email_into_the_chat_unless_no_thread_is_given() {
-        assert!(!no_thread_flag(&["cdxctl", "notification", "email", "send", "--subject", "hi"]));
+        assert!(!no_thread_flag(&[
+            "cdxctl",
+            "notification",
+            "email",
+            "send",
+            "--subject",
+            "hi"
+        ]));
         assert!(no_thread_flag(&[
             "cdxctl",
             "notification",
