@@ -4,7 +4,8 @@ import { EXIT } from "../config"
 import { documentUrl, resolveRole } from "../links"
 
 const USAGE =
-  "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] " +
+  "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] [--attribute ID]… " +
+  "[--from YYYY-MM-DD] [--to YYYY-MM-DD] [--type pdf|word|excel|image] [--personal] " +
   "[--sort newest|oldest|title|size] [--page N] [--page-size N] | sid-cli docs get <id>"
 
 export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
@@ -27,6 +28,12 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
         sort: { type: "string" },
         page: { type: "string" },
         "page-size": { type: "string" },
+        // Repeatable: the API ANDs the attributes together.
+        attribute: { type: "string", multiple: true },
+        from: { type: "string" },
+        to: { type: "string" },
+        type: { type: "string" },
+        personal: { type: "boolean", default: false },
       },
     })
     const sp = new URLSearchParams()
@@ -34,8 +41,13 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
     if (values.folder) sp.set("folderId", values.folder)
     if (values.author) sp.set("authorId", values.author)
     if (values.sort) sp.set("sortBy", values.sort)
+    if (values.from) sp.set("dateFrom", values.from)
+    if (values.to) sp.set("dateTo", values.to)
+    if (values.type) sp.set("mimeType", values.type)
+    if (values.personal) sp.set("personalOnly", "true")
     if (values.page) sp.set("page", values.page)
     if (values["page-size"]) sp.set("pageSize", values["page-size"])
+    for (const id of values.attribute ?? []) sp.append("attributeIds", id)
     const qs = sp.toString()
     const res = (await apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f)) as {
       documents?: { id?: string }[]

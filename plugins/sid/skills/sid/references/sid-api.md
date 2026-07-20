@@ -11,6 +11,8 @@ without guessing.
 | `search` | `GET /api/search` |
 | `docs list` | `GET /api/v1/documents` |
 | `docs get <id>` | `GET /api/v1/documents/{id}` |
+| `folders list` | `GET /api/v1/folders` |
+| `attributes list` | `GET /api/v1/attributes` |
 | `download <fileId>` | `GET /api/files/download/{fileId}` |
 | `confirmations list` | `GET /api/v1/confirmations` |
 | `notifications` | `GET /api/notifications` |
@@ -72,9 +74,15 @@ Two traps:
 ## `docs list`
 
 ```
-sid-cli docs list [--query T] [--folder ID] [--author ID]
+sid-cli docs list [--query T] [--folder ID] [--author ID] [--attribute ID]…
+                  [--from YYYY-MM-DD] [--to YYYY-MM-DD]
+                  [--type pdf|word|excel|image] [--personal]
                   [--sort newest|oldest|title|size] [--page N] [--page-size N]
 ```
+
+`--attribute` repeats and the API ANDs the values together. `--personal`
+restricts the listing to documents with no group assigned. Ids for `--folder`
+and `--attribute` come from `folders list` / `attributes list`.
 
 `--page-size` is capped at 100 server-side. Response:
 
@@ -83,6 +91,18 @@ sid-cli docs list [--query T] [--folder ID] [--author ID]
 ```
 
 Here `total` **is** the real count — unlike `search`.
+
+## `folders list` and `attributes list`
+
+Both are ACL-scoped: the caller only sees folders they have access to
+(ancestors included, so paths stay complete) and attributes reachable through
+those folders.
+
+`folders` returns a flat list with `parentId`; the CLI adds `path`
+("Směrnice / Bezpečnost") and a `url` into the browser filtered to that
+folder. `attributes` hides archived entries — they can no longer be assigned
+— unless `--all` is given, and keeps `type` and `options` so a value can be
+picked without guessing.
 
 ## `confirmations`
 

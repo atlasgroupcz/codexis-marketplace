@@ -44,3 +44,32 @@ describe("docs", () => {
     expect(err.exitCode).toBe(2)
   })
 })
+
+describe("docs list — the rest of the documented filters", () => {
+  it("passes attributes through, repeatable (AND across attributes)", async () => {
+    await run(["list", "--attribute", "a1", "--attribute", "a2"], f)
+    expect(cap.url).toBe("http://s/api/v1/documents?attributeIds=a1&attributeIds=a2")
+  })
+
+  it("passes a date range", async () => {
+    await run(["list", "--from", "2026-01-01", "--to", "2026-06-30"], f)
+    expect(cap.url).toBe("http://s/api/v1/documents?dateFrom=2026-01-01&dateTo=2026-06-30")
+  })
+
+  it("passes the file type", async () => {
+    await run(["list", "--type", "pdf"], f)
+    expect(cap.url).toBe("http://s/api/v1/documents?mimeType=pdf")
+  })
+
+  it("--personal asks for documents with no group", async () => {
+    await run(["list", "--personal"], f)
+    expect(cap.url).toBe("http://s/api/v1/documents?personalOnly=true")
+  })
+
+  it("combines filters in a stable order", async () => {
+    await run(["list", "--query", "řád", "--type", "pdf", "--attribute", "a1", "--personal"], f)
+    expect(cap.url).toBe(
+      "http://s/api/v1/documents?query=%C5%99%C3%A1d&mimeType=pdf&personalOnly=true&attributeIds=a1",
+    )
+  })
+})

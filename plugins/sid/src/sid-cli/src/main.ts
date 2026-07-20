@@ -7,6 +7,8 @@ type CommandModule = { run: (argv: string[]) => Promise<unknown> }
 const COMMANDS: Record<string, () => Promise<CommandModule>> = {
   search: () => import("./commands/search"),
   docs: () => import("./commands/docs"),
+  folders: () => import("./commands/folders"),
+  attributes: () => import("./commands/attributes"),
   download: () => import("./commands/download"),
   confirmations: () => import("./commands/confirmations"),
   notifications: () => import("./commands/notifications"),
@@ -18,8 +20,10 @@ const HELP = `sid-cli — přístup k SID (Systém interních dokumentů) přes 
 
 Příkazy:
   search <dotaz> [--size N]                fulltextové hledání
-  docs list [--query|--folder|--sort…]     výpis dokumentů s filtry
+  docs list [--query|--folder|--attribute…] výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
+  folders list                             složky, do kterých vidím
+  attributes list [--all]                  katalog atributů pro filtrování
   download <fileId> [--out CESTA]          stažení souboru
   confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
   notifications [--all] [--limit N]        notifikace (default nepřečtené)

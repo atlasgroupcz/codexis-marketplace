@@ -221,7 +221,12 @@ async function run2(argv, f) {
         author: { type: "string" },
         sort: { type: "string" },
         page: { type: "string" },
-        "page-size": { type: "string" }
+        "page-size": { type: "string" },
+        attribute: { type: "string", multiple: true },
+        from: { type: "string" },
+        to: { type: "string" },
+        type: { type: "string" },
+        personal: { type: "boolean", default: false }
       }
     });
     const sp = new URLSearchParams;
@@ -233,10 +238,20 @@ async function run2(argv, f) {
       sp.set("authorId", values.author);
     if (values.sort)
       sp.set("sortBy", values.sort);
+    if (values.from)
+      sp.set("dateFrom", values.from);
+    if (values.to)
+      sp.set("dateTo", values.to);
+    if (values.type)
+      sp.set("mimeType", values.type);
+    if (values.personal)
+      sp.set("personalOnly", "true");
     if (values.page)
       sp.set("page", values.page);
     if (values["page-size"])
       sp.set("pageSize", values["page-size"]);
+    for (const id of values.attribute ?? [])
+      sp.append("attributeIds", id);
     const qs = sp.toString();
     const res = await apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f);
     const role = await resolveRole(f);
@@ -253,13 +268,81 @@ var init_docs = __esm(() => {
   init_config();
   init_links();
   import_node_util2 = require("node:util");
-  USAGE = "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] " + "[--sort newest|oldest|title|size] [--page N] [--page-size N] | sid-cli docs get <id>";
+  USAGE = "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] [--attribute ID]… " + "[--from YYYY-MM-DD] [--to YYYY-MM-DD] [--type pdf|word|excel|image] [--personal] " + "[--sort newest|oldest|title|size] [--page N] [--page-size N] | sid-cli docs get <id>";
+});
+
+// src/commands/folders.ts
+var exports_folders = {};
+__export(exports_folders, {
+  run: () => run3
+});
+function folderUrl(id, role) {
+  const base = role === "ADMIN" ? "/admin/files" : "/files";
+  return `${getBaseUrl()}${base}?folderId=${encodeURIComponent(id)}`;
+}
+function pathOf(folder, byId) {
+  const names = [];
+  let current = folder;
+  const seen = new Set;
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    names.unshift(current.name);
+    current = current.parentId ? byId.get(current.parentId) : undefined;
+  }
+  return names.join(" / ");
+}
+async function run3(argv, f) {
+  if (argv[0] !== "list")
+    throw new CliError(USAGE2, EXIT.USAGE);
+  const folders = await apiGet("/api/v1/folders", f);
+  const byId = new Map(folders.map((x) => [x.id, x]));
+  const role = await resolveRole(f);
+  return {
+    folders: folders.map((x) => ({ ...x, path: pathOf(x, byId), url: folderUrl(x.id, role) })).sort((a, b) => a.path.localeCompare(b.path, "cs"))
+  };
+}
+var USAGE2 = "Použití: sid-cli folders list";
+var init_folders = __esm(() => {
+  init_http();
+  init_config();
+  init_links();
+});
+
+// src/commands/attributes.ts
+var exports_attributes = {};
+__export(exports_attributes, {
+  run: () => run4
+});
+async function run4(argv, f) {
+  const [sub, ...rest] = argv;
+  if (sub !== "list")
+    throw new CliError(USAGE3, EXIT.USAGE);
+  const { values } = import_node_util3.parseArgs({ args: rest, options: { all: { type: "boolean", default: false } } });
+  const all = await apiGet("/api/v1/attributes", f);
+  const attributes = values.all ? all : all.filter((a) => !a.archivedAt);
+  return {
+    attributes: attributes.map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      options: a.options ?? [],
+      documentCount: a.documentCount ?? 0,
+      ...a.scopeFolderId ? { scopeFolderId: a.scopeFolderId } : {},
+      ...a.archivedAt ? { archivedAt: a.archivedAt } : {}
+    }))
+  };
+}
+var import_node_util3, USAGE3 = "Použití: sid-cli attributes list [--all]";
+var init_attributes = __esm(() => {
+  init_http();
+  init_config();
+  import_node_util3 = require("node:util");
 });
 
 // src/commands/download.ts
 var exports_download = {};
 __export(exports_download, {
-  run: () => run3
+  run: () => run5
 });
 function filenameFrom(res, fileId) {
   const cd = res.headers.get("content-disposition") ?? "";
@@ -268,8 +351,8 @@ function filenameFrom(res, fileId) {
   const safe = import_node_path2.basename(raw.trim().replace(/\\/g, "/"));
   return safe && safe !== "." && safe !== ".." ? safe : import_node_path2.basename(fileId) || "stazeny-soubor";
 }
-async function run3(argv, f) {
-  const { values, positionals } = import_node_util3.parseArgs({
+async function run5(argv, f) {
+  const { values, positionals } = import_node_util4.parseArgs({
     args: argv,
     allowPositionals: true,
     options: { out: { type: "string" } }
@@ -285,11 +368,11 @@ async function run3(argv, f) {
   await import_promises.pipeline(import_node_stream.Readable.fromWeb(res.body), import_node_fs2.createWriteStream(target));
   return { savedTo: target, bytes: import_node_fs2.statSync(target).size };
 }
-var import_node_util3, import_node_fs2, import_node_stream, import_promises, import_node_path2;
+var import_node_util4, import_node_fs2, import_node_stream, import_promises, import_node_path2;
 var init_download = __esm(() => {
   init_http();
   init_config();
-  import_node_util3 = require("node:util");
+  import_node_util4 = require("node:util");
   import_node_fs2 = require("node:fs");
   import_node_stream = require("node:stream");
   import_promises = require("node:stream/promises");
@@ -299,15 +382,15 @@ var init_download = __esm(() => {
 // src/commands/confirmations.ts
 var exports_confirmations = {};
 __export(exports_confirmations, {
-  run: () => run4
+  run: () => run6
 });
-async function run4(argv, f) {
+async function run6(argv, f) {
   const [sub, ...rest] = argv;
   if (sub === "confirm") {
     throw new CliError("Potvrzení se provádí v aplikaci SID, ne z příkazové řádky — " + "otevřete dokument v SID a potvrďte ho tam. " + `Seznam čekajících: ${confirmationsUrl(await resolveRole(f))}`, EXIT.USAGE);
   }
   if (sub === "list") {
-    const { values } = import_node_util4.parseArgs({ args: rest, options: { state: { type: "string" } } });
+    const { values } = import_node_util5.parseArgs({ args: rest, options: { state: { type: "string" } } });
     const qs = values.state ? `?state=${encodeURIComponent(values.state)}` : "";
     const items = await apiGet(`/api/v1/confirmations${qs}`, f);
     const role = await resolveRole(f);
@@ -316,23 +399,23 @@ async function run4(argv, f) {
       confirmInApp: confirmationsUrl(role)
     };
   }
-  throw new CliError(USAGE2, EXIT.USAGE);
+  throw new CliError(USAGE4, EXIT.USAGE);
 }
-var import_node_util4, USAGE2 = "Použití: sid-cli confirmations list [--state pending|confirmed]";
+var import_node_util5, USAGE4 = "Použití: sid-cli confirmations list [--state pending|confirmed]";
 var init_confirmations = __esm(() => {
   init_http();
   init_config();
   init_links();
-  import_node_util4 = require("node:util");
+  import_node_util5 = require("node:util");
 });
 
 // src/commands/notifications.ts
 var exports_notifications = {};
 __export(exports_notifications, {
-  run: () => run5
+  run: () => run7
 });
-async function run5(argv, f) {
-  const { values } = import_node_util5.parseArgs({
+async function run7(argv, f) {
+  const { values } = import_node_util6.parseArgs({
     args: argv,
     options: { all: { type: "boolean", default: false }, limit: { type: "string", default: "50" } }
   });
@@ -342,10 +425,10 @@ async function run5(argv, f) {
   sp.set("limit", String(values.limit));
   return apiGet(`/api/notifications?${sp}`, f);
 }
-var import_node_util5;
+var import_node_util6;
 var init_notifications = __esm(() => {
   init_http();
-  import_node_util5 = require("node:util");
+  import_node_util6 = require("node:util");
 });
 
 // src/notify-settings.ts
@@ -510,10 +593,10 @@ var init_notify = __esm(() => {
 // src/commands/check.ts
 var exports_check = {};
 __export(exports_check, {
-  run: () => run6
+  run: () => run8
 });
-async function run6(argv, f) {
-  const { values } = import_node_util6.parseArgs({ args: argv, options: { notify: { type: "boolean", default: false } } });
+async function run8(argv, f) {
+  const { values } = import_node_util7.parseArgs({ args: argv, options: { notify: { type: "boolean", default: false } } });
   const [notifications, confirmations] = await Promise.all([
     apiGet("/api/notifications?unreadOnly=true&limit=50", f),
     apiGet("/api/v1/confirmations?state=pending", f)
@@ -541,18 +624,18 @@ async function run6(argv, f) {
   }
   return digest;
 }
-var import_node_util6;
+var import_node_util7;
 var init_check = __esm(() => {
   init_http();
   init_notify();
   init_links();
-  import_node_util6 = require("node:util");
+  import_node_util7 = require("node:util");
 });
 
 // src/commands/settings.ts
 var exports_settings = {};
 __export(exports_settings, {
-  run: () => run7
+  run: () => run9
 });
 async function readStdin() {
   const chunks = [];
@@ -570,12 +653,12 @@ async function verifyKey(key, f) {
     throw new CliError(`${reason} Původní nastavení zůstalo beze změny.`, code);
   }
 }
-async function run7(argv, f, stdin = readStdin) {
+async function run9(argv, f, stdin = readStdin) {
   const [sub] = argv;
   if (sub === "set-key") {
     const key = (await stdin()).trim();
     if (!key)
-      throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE3}`, EXIT.USAGE);
+      throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE5}`, EXIT.USAGE);
     const user = await verifyKey(key, f);
     writeApiKey(key);
     writeEnvValue("SID_USER_ROLE", user?.role === "ADMIN" ? "ADMIN" : "USER");
@@ -593,13 +676,13 @@ async function run7(argv, f, stdin = readStdin) {
     deleteApiKey();
     return { deleted: true };
   }
-  throw new CliError(USAGE3, EXIT.USAGE);
+  throw new CliError(USAGE5, EXIT.USAGE);
 }
-var USAGE3;
+var USAGE5;
 var init_settings = __esm(() => {
   init_http();
   init_config();
-  USAGE3 = "Použití: sid-cli settings set-key|test|status|delete-key  " + "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)";
+  USAGE5 = "Použití: sid-cli settings set-key|test|status|delete-key  " + "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)";
 });
 
 // src/main.ts
@@ -608,6 +691,8 @@ init_config();
 var COMMANDS = {
   search: () => Promise.resolve().then(() => (init_search(), exports_search)),
   docs: () => Promise.resolve().then(() => (init_docs(), exports_docs)),
+  folders: () => Promise.resolve().then(() => (init_folders(), exports_folders)),
+  attributes: () => Promise.resolve().then(() => (init_attributes(), exports_attributes)),
   download: () => Promise.resolve().then(() => (init_download(), exports_download)),
   confirmations: () => Promise.resolve().then(() => (init_confirmations(), exports_confirmations)),
   notifications: () => Promise.resolve().then(() => (init_notifications(), exports_notifications)),
@@ -618,8 +703,10 @@ var HELP = `sid-cli — přístup k SID (Systém interních dokumentů) přes AP
 
 Příkazy:
   search <dotaz> [--size N]                fulltextové hledání
-  docs list [--query|--folder|--sort…]     výpis dokumentů s filtry
+  docs list [--query|--folder|--attribute…] výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
+  folders list                             složky, do kterých vidím
+  attributes list [--all]                  katalog atributů pro filtrování
   download <fileId> [--out CESTA]          stažení souboru
   confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
   notifications [--all] [--limit N]        notifikace (default nepřečtené)

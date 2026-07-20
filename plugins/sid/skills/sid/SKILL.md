@@ -68,6 +68,8 @@ Exit codes are a stable contract:
 sid-cli search "smlouva o dílo" --size 5          # full-text across content
 sid-cli docs list --query "spisový řád" --sort newest
 sid-cli docs get <documentId>                     # metadata + files
+sid-cli folders list                              # folders you can see, with paths
+sid-cli attributes list                           # the attribute catalogue
 sid-cli download <fileId> --out ./smernice.pdf
 sid-cli confirmations list --state pending        # what the user must confirm
 sid-cli notifications                             # unread updates
@@ -80,13 +82,21 @@ Combine with `jq`:
 ```bash
 sid-cli search "bezpečnost práce" --size 5 | jq '.hits[] | {title, snippet, url}'
 sid-cli confirmations list --state pending | jq '.confirmations | length'
-sid-cli docs list --sort newest --page-size 5 | jq '.documents[] | {id, title}'
+sid-cli docs list --sort newest --page-size 5 | jq '.documents[] | {title, url}'
+sid-cli folders list | jq '.folders[] | {id, path, documentCount}'
+sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 ```
 
 ## Decision tree
 
 - **"find / search …"** → `search` for wording inside documents;
   `docs list --query` for titles and filtered listings.
+- **A filter needs an id you don't have** → `folders list` and
+  `attributes list` first. Both return ids together with the names a person
+  recognises; never guess an id or ask the user for one.
+- **"what's in folder X" / "documents tagged Y" / "added since June"** →
+  `docs list` with `--folder`, `--attribute` (repeatable, ANDed), `--from` /
+  `--to`, `--type pdf|word|excel|image`, `--personal`.
 - **`search` returned a `warning` field** → full-text is temporarily down.
   An empty result does **not** mean the document is missing — retry with
   `docs list --query` and tell the user why.
