@@ -1,0 +1,29 @@
+name: sid-search
+description: Verify the sid skill drives sid-cli for internal document lookups and never reaches for curl against SID.
+
+# Scénář nepředpokládá naplněnou databázi ani nastavený klíč: prostředí bez
+# klíče vrací exit 3 s návodem, což je legitimní (a testovatelná) odpověď.
+# Testujeme tedy VOLBU NÁSTROJE a zpracování výsledku, ne konkrétní data.
+
+steps:
+  # 1. Vyhledání — musí sáhnout po sid-cli, ne po curl.
+  - prompt: "Najdi mi v SID interní směrnice o bezpečnosti práce."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "sid-cli\\s+(search|docs\\s+list)\\s+"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        # Buď našel/nenašel dokumenty, nebo hlásí chybějící klíč — obojí OK.
+        matches: "(?is)(směrnic|dokument|nenalez|nedostupn|API klíč|klíč není)"
+
+  # 2. Osobní dotaz na potvrzení — jiný podpříkaz téhož nástroje.
+  - prompt: "Co mám v SID potvrdit?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "sid-cli\\s+confirmations\\s+list"
+      tool_calls_max: 5
+      response:
+        matches: "(?is)(potvr|nic|žádn|API klíč|klíč není)"

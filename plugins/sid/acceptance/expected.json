@@ -1,0 +1,20 @@
+{
+  "skills": [
+    "sid:sid"
+  ],
+  "env_vars": [
+    "CODEXIS_PLUGIN_SID_API_URL"
+  ],
+  "post_install": [
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/sid-cli"
+    }
+  ],
+  "post_uninstall": [
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/sid-cli"
+    }
+  ]
+}
