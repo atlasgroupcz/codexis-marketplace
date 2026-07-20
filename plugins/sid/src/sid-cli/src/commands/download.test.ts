@@ -49,3 +49,46 @@ describe("download", () => {
     expect(err.exitCode).toBe(2)
   })
 })
+
+describe("download — bezpečnost jména souboru", () => {
+  it("server nemůže path traversalem zapsat mimo cílový adresář", async () => {
+    // content-disposition řídí server; bez basename() by ../ uteklo z cwd.
+    const f = (async () =>
+      new Response("X", {
+        status: 200,
+        headers: { "content-disposition": 'attachment; filename="../../../evil.sh"' },
+      })) as unknown as typeof fetch
+    const prev = process.cwd()
+    process.chdir(dir)
+    try {
+      const res = (await run(["file-x"], f)) as { savedTo: string }
+      expect(res.savedTo).toBe(join(dir, "evil.sh"))
+      expect(res.savedTo).not.toContain("..")
+    } finally {
+      process.chdir(prev)
+    }
+  })
+
+  it("absolutní cestu ze serveru zahodí a vezme jen jméno", async () => {
+    const f = (async () =>
+      new Response("X", {
+        status: 200,
+        headers: { "content-disposition": 'attachment; filename="/etc/cron.d/pwn"' },
+      })) as unknown as typeof fetch
+    const prev = process.cwd()
+    process.chdir(dir)
+    try {
+      const res = (await run(["file-y"], f)) as { savedTo: string }
+      expect(res.savedTo).toBe(join(dir, "pwn"))
+    } finally {
+      process.chdir(prev)
+    }
+  })
+
+  it("--out od uživatele zůstává respektovaný (i mimo cwd)", async () => {
+    const f = (async () => new Response("X", { status: 200 })) as unknown as typeof fetch
+    const out = join(dir, "sub", "moje.pdf")
+    const res = (await run(["file-z", "--out", out], f)) as { savedTo: string }
+    expect(res.savedTo).toBe(out)
+  })
+})

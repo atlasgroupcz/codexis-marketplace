@@ -12,8 +12,8 @@
  *
  * Klíč se odsud NIKDY nevrací zpět do UI; jen prefix (`start`).
  */
-import { apiGet, type FetchLike } from "./http"
-import { getApiKey, getBaseUrl, writeApiKey, deleteApiKey } from "./config"
+import { apiGet, type CliError, type FetchLike } from "./http"
+import { EXIT, getApiKey, getBaseUrl, writeApiKey, deleteApiKey } from "./config"
 
 type Body = { action?: string; api_key?: string }
 
@@ -30,20 +30,22 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
     case "save_config": {
       const key = (body.api_key ?? "").trim()
       if (!key) return { ok: false, error: "Vložte API klíč." }
-      writeApiKey(key)
-      const verified = await apiGet("/api/v1/users/me", f).then(
-        () => true,
-        () => false,
-      )
-      if (!verified) {
-        // Neplatný klíč neukládáme — jinak by zůstal v .env a každé další
-        // volání by hlásilo 401 bez zjevné příčiny.
-        deleteApiKey()
+      // Ověřit PŘED zápisem — dřív se klíč zapsal a při jakékoli chybě
+      // (i výpadku sítě) smazal, takže uživatel přišel i o dosud funkční
+      // klíč. `apiGet` bere kandidáta explicitně, .env se nedotýkáme.
+      try {
+        await apiGet("/api/v1/users/me", f, key)
+      } catch (e) {
+        const err = e as CliError
         return {
           ok: false,
-          error: "SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel.",
+          error:
+            err.exitCode === EXIT.AUTH
+              ? "SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel."
+              : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`,
         }
       }
+      writeApiKey(key)
       return { ok: true, verified: true, start: key.slice(0, 7) }
     }
 

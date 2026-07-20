@@ -11,6 +11,25 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf8")
 }
 
+/**
+ * Ověří kandidátský klíč, aniž by ho uložil. Chyba se přeformuluje podle
+ * příčiny — „SID klíč odmítl" smí zaznít jen u skutečného odmítnutí, ne
+ * když byl server nedostupný.
+ */
+async function verifyKey(key: string, f?: FetchLike): Promise<unknown> {
+  try {
+    return await apiGet("/api/v1/users/me", f, key)
+  } catch (e) {
+    const err = e as CliError
+    const code = err.exitCode ?? EXIT.ERROR
+    const reason =
+      code === EXIT.AUTH
+        ? `SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel. ${err.message}`
+        : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`
+    throw new CliError(`${reason} Původní nastavení zůstalo beze změny.`, code)
+  }
+}
+
 export async function run(
   argv: string[],
   f?: FetchLike,
@@ -23,18 +42,13 @@ export async function run(
     const key = (await stdin()).trim()
     if (!key) throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE}`, EXIT.USAGE)
 
+    // Ověřit PŘED zápisem: dřív se nový klíč zapsal a při jakékoli chybě
+    // (i pouhém výpadku sítě) smazal — čímž zmizel i dosud funkční klíč
+    // uživatele. Teď se na .env sáhne až po úspěšném ověření.
+    const user = await verifyKey(key, f)
     writeApiKey(key)
-    try {
-      const user = await apiGet("/api/v1/users/me", f)
-      // Vracíme jen prefix — plný klíč zná uživatel, do výstupu nepatří.
-      return { verified: true, user, start: key.slice(0, 7) }
-    } catch (e) {
-      // Neplatný klíč neukládáme — jinak by zůstal v .env a každý další
-      // příkaz by hlásil 401 bez zjevné příčiny.
-      deleteApiKey()
-      const err = e as CliError
-      throw new CliError(`Klíč nebyl uložen — SID ho odmítl: ${err.message}`, err.exitCode ?? EXIT.ERROR)
-    }
+    // Vracíme jen prefix — plný klíč zná uživatel, do výstupu nepatří.
+    return { verified: true, user, start: key.slice(0, 7) }
   }
 
   if (sub === "test") {

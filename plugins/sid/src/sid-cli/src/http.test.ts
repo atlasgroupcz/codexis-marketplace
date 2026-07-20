@@ -96,3 +96,26 @@ describe("apiPatch", () => {
     expect(JSON.parse(sentBody)).toEqual({ state: "CONFIRMED" })
   })
 })
+
+describe("timeouty", () => {
+  it("každý požadavek nese AbortSignal (jinak může cron viset navždy)", async () => {
+    let sawSignal: unknown = null
+    const f = (async (_u: unknown, init: RequestInit) => {
+      sawSignal = init.signal
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await apiGet("/api/x", f)
+    expect(sawSignal).toBeInstanceOf(AbortSignal)
+  })
+
+  it("vypršení timeoutu se hlásí srozumitelně, ne syrovým AbortError", async () => {
+    const f = (async () => {
+      const e = new Error("The operation was aborted due to timeout")
+      e.name = "TimeoutError"
+      throw e
+    }) as unknown as typeof fetch
+    const err = (await apiGet("/api/x", f).catch((e: unknown) => e)) as CliError
+    expect(err).toBeInstanceOf(CliError)
+    expect(err.message).toMatch(/vypršel|timeout/i)
+  })
+})

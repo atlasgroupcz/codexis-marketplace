@@ -45,3 +45,15 @@ describe("config", () => {
     expect(getBaseUrl()).toBe("https://z-daemona")
   })
 })
+
+describe("getBaseUrl — normalizace", () => {
+  it("odřízne koncové lomítko (jinak vznikne //api/... na drátě)", () => {
+    process.env.CODEXIS_PLUGIN_SID_API_URL = "https://sid.codexis.cz/"
+    expect(getBaseUrl()).toBe("https://sid.codexis.cz")
+  })
+
+  it("odřízne i víc lomítek a bílé znaky", () => {
+    process.env.CODEXIS_PLUGIN_SID_API_URL = "  https://sid.codexis.cz//  "
+    expect(getBaseUrl()).toBe("https://sid.codexis.cz")
+  })
+})

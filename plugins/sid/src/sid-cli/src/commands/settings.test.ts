@@ -66,3 +66,24 @@ describe("settings", () => {
     expect(err.exitCode).toBe(2)
   })
 })
+
+describe("set-key — neničí funkční klíč", () => {
+  it("při nedostupném SID ponechá původní klíč a nehlásí 'odmítl'", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_puvodni\n", { mode: 0o600 })
+    const down = (async () => {
+      throw new Error("ECONNREFUSED")
+    }) as unknown as typeof fetch
+    const err = (await run(["set-key"], down, async () => "sid_novy").catch((e: unknown) => e)) as CliError
+    // Původní funkční klíč musí přežít výpadek sítě.
+    expect(getApiKey()).toBe("sid_puvodni")
+    // Hláška nesmí tvrdit, že klíč byl odmítnut, když SID nebyl dostupný.
+    expect(err.message).not.toMatch(/odmítl/i)
+  })
+
+  it("při 401 původní klíč taky zůstane (nový se neuloží)", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_puvodni\n", { mode: 0o600 })
+    const reject = (async () => new Response("nope", { status: 401 })) as unknown as typeof fetch
+    await run(["set-key"], reject, async () => "sid_spatny").catch(() => undefined)
+    expect(getApiKey()).toBe("sid_puvodni")
+  })
+})

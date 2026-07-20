@@ -32,13 +32,30 @@ function statusToError(status: number, bodyText: string): CliError {
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR)
 }
 
-async function request(path: string, init: RequestInit, f: FetchLike): Promise<Response> {
-  const key = getApiKey()
+/**
+ * Strop na jeden požadavek. Bez něj zaseknuté spojení zablokuje denní
+ * automatizaci navždy — referenční pluginy proto mají timeout na každém
+ * volání (katastr/znamky: 10–30 s).
+ */
+const REQUEST_TIMEOUT_MS = 30_000
+
+async function request(path: string, init: RequestInit, f: FetchLike, keyOverride?: string): Promise<Response> {
+  // `keyOverride` umožní ověřit kandidátský klíč, aniž by se zapsal do
+  // .env — viz `settings set-key`.
+  const key = keyOverride ?? getApiKey()
   if (!key) throw new CliError(NO_KEY_MSG, EXIT.AUTH)
   const res = await f(`${getBaseUrl()}${path}`, {
     ...init,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: { ...(init.headers ?? {}), "x-api-key": key },
   }).catch((e: unknown) => {
+    const name = e instanceof Error ? e.name : ""
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new CliError(
+        `Požadavek na SID vypršel (${REQUEST_TIMEOUT_MS / 1000} s) — server neodpovídá.`,
+        EXIT.ERROR,
+      )
+    }
     throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR)
   })
   if (!res.ok) throw statusToError(res.status, await res.text().catch(() => ""))
@@ -63,8 +80,8 @@ async function parseJson(res: Response): Promise<unknown> {
   }
 }
 
-export async function apiGet(path: string, f: FetchLike = fetch): Promise<unknown> {
-  return parseJson(await request(path, {}, f))
+export async function apiGet(path: string, f: FetchLike = fetch, keyOverride?: string): Promise<unknown> {
+  return parseJson(await request(path, {}, f, keyOverride))
 }
 
 export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch): Promise<unknown> {

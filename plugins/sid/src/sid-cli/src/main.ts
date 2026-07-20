@@ -38,7 +38,21 @@ async function main(): Promise<void> {
   }
   const loader = COMMANDS[cmd]
   if (!loader) throw new CliError(`Neznámý příkaz '${cmd}'.\n\n${HELP}`, EXIT.USAGE)
-  const result = await (await loader()).run(rest)
+
+  const command = await loader()
+  let result: unknown
+  try {
+    result = await command.run(rest)
+  } catch (e) {
+    // `parseArgs` hlásí špatné argumenty obyčejnou chybou s kódem
+    // ERR_PARSE_ARGS_*; bez tohohle převodu by špatné použití skončilo
+    // exitem 1 místo 2, který slibuje tabulka v SKILL.md.
+    const code = (e as { code?: string }).code
+    if (typeof code === "string" && code.startsWith("ERR_PARSE_ARGS")) {
+      throw new CliError(`${(e as Error).message}\n\nsid-cli ${cmd} --help`, EXIT.USAGE)
+    }
+    throw e
+  }
   if (result !== undefined) process.stdout.write(JSON.stringify(result, null, 2) + "\n")
 }
 

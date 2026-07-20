@@ -35,8 +35,14 @@ export function getApiKey(): string {
   return readEnvFile().SID_API_KEY ?? ""
 }
 
+/**
+ * Base URL bez koncového lomítka — cesty se připojují jako `${base}/api/…`,
+ * takže `https://sid/` by dalo `https://sid//api/…`. Trailing slash je
+ * přitom to, co uživatel při ručním nastavení napíše úplně přirozeně.
+ */
 export function getBaseUrl(): string {
-  return process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL
+  const raw = process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL
+  return raw.trim().replace(/\/+$/, "")
 }
 
 /** Atomický zápis (tmp + rename), mode 0600, zachová ostatní klíče souboru. */
