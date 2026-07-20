@@ -1,39 +1,41 @@
 {
-  "title": "SID — API kľúč",
-  "lead": "Kľúč prepojí tento doplnok s vaším účtom v SID. Má rovnaké oprávnenia ako vy — chráňte ho ako heslo.",
-  "settings": {
-    "legend": "Nastavenie kľúča",
-    "label": "API kľúč zo SID",
-    "save": "Uložiť a overiť",
-    "delete": "Zmazať kľúč"
-  },
-  "status": {
-    "loading": "Načítavam stav…",
-    "configured": "Kľúč je nastavený ({{start}}…), server {{baseUrl}}.",
-    "missing": "Kľúč zatiaľ nie je nastavený. Server {{baseUrl}}.",
-    "failed": "Stav sa nepodarilo načítať."
-  },
-  "msg": {
-    "empty": "Vložte API kľúč.",
-    "verifying": "Overujem kľúč voči SID…",
-    "saved": "Kľúč uložený a overený.",
+  "app": {
+    "title": "SID — Interné dokumenty",
+    "lead": "Kľúč prepojí tento doplnok s vaším účtom v SID. Má rovnaké oprávnenia ako vy — chráňte ho ako heslo.",
+    "connectionSection": "Pripojenie k SID",
+    "notifySection": "Upozornenia",
+    "loadFailed": "Stav sa nepodarilo načítať.",
+    "saved": "Nastavenie upozornení uložené.",
     "saveFailed": "Uloženie sa nepodarilo.",
-    "deleted": "Kľúč zmazaný.",
-    "deleteFailed": "Zmazanie sa nepodarilo."
+    "keyDeleted": "Kľúč bol zmazaný."
   },
-  "help": {
-    "heading": "Kde kľúč získam?",
-    "body": "V SID otvorte Profil → API kľúče ({{path}}), vytvorte nový kľúč a skopírujte ho — zobrazí sa iba raz."
+  "connection": {
+    "connected": "Pripojené",
+    "notConnected": "Nepripojené k SID",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "save": "Uložiť",
+    "saving": "Overujem…"
+  },
+  "settings": {
+    "getKey": "Kde získam API kľúč?",
+    "getKeyHint": "V SID otvorte Profil → API kľúče a vytvorte nový. Zobrazí sa iba raz.",
+    "newLabel": "API kľúč zo SID",
+    "placeholder": "sid_…"
   },
   "notify": {
-    "legend": "Upozornenia",
-    "hint": "Denná kontrola hlási nové dokumenty a čakajúce potvrdenia.",
-    "inAppLabel": "Upozornenie v aplikácii",
-    "emailLabel": "Poslať e-mailom",
-    "copyToLabel": "Kópia na ďalšie adresy",
-    "copyToHint": "Oddeľte čiarkou. Vám samotným chodia upozornenia vždy.",
-    "save": "Uložiť upozornenia",
-    "saved": "Nastavenie upozornení uložené.",
-    "saveFailed": "Uloženie sa nepodarilo."
+    "emailLabel": "E-mail pri novinkách",
+    "emailDescription": "Denný súhrn príde e-mailom.",
+    "yourAddressLabel": "Vaša adresa",
+    "copyToLabel": "Kópia na",
+    "addRecipient": "Pridať príjemcu",
+    "removeRecipient": "Odobrať",
+    "addPlaceholder": "meno@firma.sk",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámenie v centre notifikácií",
+    "inAppDescription": "",
+    "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+    "duplicate": "Táto adresa už je v zozname.",
+    "save": "Uložiť upozornenia"
   }
 }

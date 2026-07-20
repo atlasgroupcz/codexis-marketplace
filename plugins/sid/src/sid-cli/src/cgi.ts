@@ -14,6 +14,7 @@
  */
 import { apiGet, type CliError, type FetchLike } from "./http"
 import { EXIT, getApiKey, getBaseUrl, writeApiKey, writeEnvValue, deleteApiKey } from "./config"
+import { currentUserEmail } from "./notify"
 import {
   getNotifySettings,
   isEmail,
@@ -29,19 +30,21 @@ type Body = {
   recipients?: unknown[]
 }
 
-function status(): {
+async function status(f?: FetchLike): Promise<{
   ok: true
   configured: boolean
   baseUrl: string
   start?: string
+  userEmail: string
   notify: NotifySettings
-} {
+}> {
   const key = getApiKey()
   return {
     ok: true,
     configured: key !== "",
     baseUrl: getBaseUrl(),
     ...(key ? { start: key.slice(0, 7) } : {}),
+    userEmail: await currentUserEmail(f),
     notify: getNotifySettings(),
   }
 }
@@ -49,7 +52,7 @@ function status(): {
 export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown> {
   switch (body.action) {
     case "get_status":
-      return status()
+      return status(f)
 
     case "save_config": {
       const key = (body.api_key ?? "").trim()
@@ -132,7 +135,7 @@ export async function serve(f: FetchLike = fetch): Promise<string> {
   const method = (process.env.REQUEST_METHOD ?? "GET").toUpperCase()
   try {
     // GET returns the configuration state for the panel's initial render.
-    if (method !== "POST") return renderCgi(status())
+    if (method !== "POST") return renderCgi(await status(f))
 
     const raw = await readStdin()
     let body: Body

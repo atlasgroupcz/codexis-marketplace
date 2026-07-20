@@ -82,7 +82,7 @@ async function sendEmail(
 }
 
 /** Signed-in user's e-mail from the daemon, or null. Best-effort. */
-async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Promise<string | null> {
+export async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Promise<string | null> {
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
@@ -135,6 +135,14 @@ async function sendBell(message: string, auth: string, daemonUrl: string, f: Fet
   } catch {
     return false
   }
+}
+
+/** Signed-in user's address for the settings panel, or "" when unavailable. */
+export async function currentUserEmail(f: FetchLike = fetch): Promise<string> {
+  const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL
+  const auth = daemonAuth()
+  if (!daemonUrl || !auth) return ""
+  return (await queryMeEmail(auth, daemonUrl, f)) ?? ""
 }
 
 /**
