@@ -6,12 +6,8 @@ import { confirmationsUrl, documentUrl, resolveRole } from "../links"
 const USAGE = "Použití: sid-cli confirmations list [--state pending|confirmed]"
 
 /**
- * Read-only on purpose.
- *
- * Confirming a document is a legal acknowledgement ("I have read this"), so it
- * belongs in SID where the document is actually on screen — not in a chat
- * where it could be clicked through without ever opening the file. The CLI
- * reports what is pending and links to the app.
+ * Read-only on purpose: confirming is a legal acknowledgement and belongs in
+ * SID with the document on screen, not behind a chat message.
  */
 export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   const [sub, ...rest] = argv

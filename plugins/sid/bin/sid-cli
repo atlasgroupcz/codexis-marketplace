@@ -65,7 +65,7 @@ function deleteApiKey() {
   }
   writeEnvFile(rest);
 }
-var import_node_fs, import_node_path, import_node_os, EXIT, DEFAULT_BASE_URL = "https://sid.codexis.cz";
+var import_node_fs, import_node_path, import_node_os, EXIT, DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev";
 var init_config = __esm(() => {
   import_node_fs = require("node:fs");
   import_node_path = require("node:path");

@@ -20,6 +20,12 @@ without guessing.
 Authentication is always the `x-api-key` header; the key is read from
 `~/.cdx/apps/sid/.env` (mode 0600) and never passed as an argument.
 
+The plugin currently targets the **onprem** instance
+(`https://sid.onprem.agrp.dev`), declared as `CODEXIS_PLUGIN_SID_API_URL` in
+the manifest. Production (`sid.codexis.cz`) does not have headless API-key
+auth deployed yet; switching over is a one-line manifest change once it does.
+`SID_API_URL` in the env file overrides it per user.
+
 ## Links back into SID
 
 Every result naming a document carries a `url`. The route depends on the

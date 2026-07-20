@@ -5,7 +5,9 @@ import { homedir } from "node:os"
 /** Stable contract — SKILL.md documents these and the automation relies on them. */
 export const EXIT = { OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 } as const
 
-const DEFAULT_BASE_URL = "https://sid.codexis.cz"
+// Onprem for now — production (sid.codexis.cz) does not have headless auth
+// deployed yet. Overridable via CODEXIS_PLUGIN_SID_API_URL.
+const DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev"
 
 export function userHome(): string {
   return process.env.CODEXIS_PUBLIC_USER_HOME || homedir()

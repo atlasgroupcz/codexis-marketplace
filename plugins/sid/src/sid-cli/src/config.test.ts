@@ -19,7 +19,7 @@ describe("config", () => {
 
   it("bez souboru: prázdný klíč, default baseUrl", () => {
     expect(getApiKey()).toBe("")
-    expect(getBaseUrl()).toBe("https://sid.codexis.cz")
+    expect(getBaseUrl()).toBe("https://sid.onprem.agrp.dev")
   })
 
   it("writeApiKey zapíše 0600 a getApiKey ho přečte", () => {
@@ -48,12 +48,12 @@ describe("config", () => {
 
 describe("getBaseUrl — normalizace", () => {
   it("odřízne koncové lomítko (jinak vznikne //api/... na drátě)", () => {
-    process.env.CODEXIS_PLUGIN_SID_API_URL = "https://sid.codexis.cz/"
-    expect(getBaseUrl()).toBe("https://sid.codexis.cz")
+    process.env.CODEXIS_PLUGIN_SID_API_URL = "https://sid.onprem.agrp.dev/"
+    expect(getBaseUrl()).toBe("https://sid.onprem.agrp.dev")
   })
 
   it("odřízne i víc lomítek a bílé znaky", () => {
-    process.env.CODEXIS_PLUGIN_SID_API_URL = "  https://sid.codexis.cz//  "
-    expect(getBaseUrl()).toBe("https://sid.codexis.cz")
+    process.env.CODEXIS_PLUGIN_SID_API_URL = "  https://sid.onprem.agrp.dev//  "
+    expect(getBaseUrl()).toBe("https://sid.onprem.agrp.dev")
   })
 })

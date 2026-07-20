@@ -47,12 +47,12 @@ describe("settings", () => {
   it("status vrací jen configured/baseUrl/start", async () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_abcdef123456\n", { mode: 0o600 })
     const out = await run(["status"])
-    expect(out).toEqual({ configured: true, baseUrl: "https://sid.codexis.cz", start: "sid_abc" })
+    expect(out).toEqual({ configured: true, baseUrl: "https://sid.onprem.agrp.dev", start: "sid_abc" })
   })
 
   it("status bez klíče nemá start", async () => {
     const out = await run(["status"])
-    expect(out).toEqual({ configured: false, baseUrl: "https://sid.codexis.cz" })
+    expect(out).toEqual({ configured: false, baseUrl: "https://sid.onprem.agrp.dev" })
   })
 
   it("delete-key smaže klíč", async () => {

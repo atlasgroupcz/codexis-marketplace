@@ -45,8 +45,7 @@ export async function run(
     // that still works.
     const user = await verifyKey(key, f)
     writeApiKey(key)
-    // Cache the role so links can point at the right route without an extra
-    // request on every command.
+    // Cached so links pick the right route without an extra request.
     writeEnvValue("SID_USER_ROLE", (user as { role?: unknown })?.role === "ADMIN" ? "ADMIN" : "USER")
     // Only the prefix goes back out; the user already has the key itself.
     return { verified: true, user, start: key.slice(0, 7) }
