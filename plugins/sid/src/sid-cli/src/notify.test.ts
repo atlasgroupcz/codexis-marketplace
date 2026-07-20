@@ -164,3 +164,63 @@ describe("recipients v e-mailu", () => {
     expect(body).toContain('"to":["sef@firma.cz"]')
   })
 })
+
+describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
+  function withRecipients(list: string[]): void {
+    writeFileSync(
+      process.env.SID_DEFAULTS_FILE!,
+      JSON.stringify({ notify: { email: true, inApp: false, recipients: list } }),
+    )
+  }
+
+  it("k adresátům navíc přidá adresu přihlášeného uživatele", async () => {
+    writeSecret("t")
+    withRecipients(["sef@firma.cz"])
+    let body = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).endsWith("/graphql")) {
+        return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
+      }
+      body = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    // Bez tohohle by si uživatel přidáním kolegy vypnul vlastní e-maily:
+    // daemon doručuje VÝHRADNĚ na `to`, když je uvedené.
+    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual([
+      "ja@firma.cz",
+      "sef@firma.cz",
+    ])
+  })
+
+  it("nezdvojí adresu, když si ji uživatel přidal sám", async () => {
+    writeSecret("t")
+    withRecipients(["JA@firma.cz", "sef@firma.cz"])
+    let body = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).endsWith("/graphql")) {
+        return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
+      }
+      body = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual([
+      "ja@firma.cz",
+      "sef@firma.cz",
+    ])
+  })
+
+  it("když se `me` nepodaří zjistit, pošle aspoň extras (nezahodí je)", async () => {
+    writeSecret("t")
+    withRecipients(["sef@firma.cz"])
+    let body = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).endsWith("/graphql")) return new Response("{}", { status: 500 })
+      body = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual(["sef@firma.cz"])
+  })
+})

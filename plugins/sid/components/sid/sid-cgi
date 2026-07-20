@@ -81,18 +81,19 @@ function statusToError(status, bodyText) {
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR);
 }
 var REQUEST_TIMEOUT_MS = 30000;
-async function request(path, init, f, keyOverride) {
+var DOWNLOAD_TIMEOUT_MS = 15 * 60000;
+async function request(path, init, f, keyOverride, timeoutMs = REQUEST_TIMEOUT_MS) {
   const key = keyOverride ?? getApiKey();
   if (!key)
     throw new CliError(NO_KEY_MSG, EXIT.AUTH);
   const res = await f(`${getBaseUrl()}${path}`, {
     ...init,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { ...init.headers ?? {}, "x-api-key": key }
   }).catch((e) => {
     const name = e instanceof Error ? e.name : "";
     if (name === "TimeoutError" || name === "AbortError") {
-      throw new CliError(`Požadavek na SID vypršel (${REQUEST_TIMEOUT_MS / 1000} s) — server neodpovídá.`, EXIT.ERROR);
+      throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR);
     }
     throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
   });
@@ -211,9 +212,9 @@ async function handle(body, f = fetch) {
       if (typeof body.inApp === "boolean")
         patch.inApp = body.inApp;
       if (Array.isArray(body.recipients)) {
-        const invalid = body.recipients.filter((r) => typeof r === "string" && r.trim() && !isEmail(r));
+        const invalid = body.recipients.filter((r) => typeof r !== "string" || r.trim() !== "" && !isEmail(r));
         if (invalid.length > 0) {
-          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.join(", ")}` };
+          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.map(String).join(", ")}` };
         }
         patch.recipients = body.recipients.filter((r) => typeof r === "string").map((r) => r.trim()).filter(Boolean);
       }

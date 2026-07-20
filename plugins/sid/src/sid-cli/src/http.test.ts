@@ -119,3 +119,27 @@ describe("timeouty", () => {
     expect(err.message).toMatch(/vypršel|timeout/i)
   })
 })
+
+describe("download timeout", () => {
+  it("apiRaw nesmí useknout dlouhý přenos JSON timeoutem", async () => {
+    // AbortSignal.timeout ruší i tělo odpovědi, takže velký dokument po pomalé
+    // lince by po 30 s spadl. Stahování má vlastní, mnohem delší strop.
+    const { DOWNLOAD_TIMEOUT_MS, REQUEST_TIMEOUT_MS } = await import("./http")
+    expect(DOWNLOAD_TIMEOUT_MS).toBeGreaterThan(REQUEST_TIMEOUT_MS)
+  })
+
+  it("apiRaw s krátkým stropem přenos přeruší (parametr funguje)", async () => {
+    const { apiRaw } = await import("./http")
+    const f = (async (_u: unknown, init: RequestInit) =>
+      new Promise((_res, rej) => {
+        init.signal?.addEventListener("abort", () => {
+          const e = new Error("aborted")
+          e.name = "TimeoutError"
+          rej(e)
+        })
+      })) as unknown as typeof fetch
+    const err = (await apiRaw("/api/files/download/x", f, 50).catch((e: unknown) => e)) as CliError
+    expect(err).toBeInstanceOf(CliError)
+    expect(err.message).toMatch(/vypršel/i)
+  })
+})

@@ -80,9 +80,13 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
       if (typeof body.email === "boolean") patch.email = body.email
       if (typeof body.inApp === "boolean") patch.inApp = body.inApp
       if (Array.isArray(body.recipients)) {
-        const invalid = body.recipients.filter((r) => typeof r === "string" && r.trim() && !isEmail(r))
+        // Nestringové položky odmítáme, ne tiše zahazujeme — jinak by se
+        // překlep v UI projevil jako "uloženo" s chybějícím adresátem.
+        const invalid = body.recipients.filter(
+          (r) => typeof r !== "string" || (r.trim() !== "" && !isEmail(r)),
+        )
         if (invalid.length > 0) {
-          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.join(", ")}` }
+          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.map(String).join(", ")}` }
         }
         patch.recipients = body.recipients
           .filter((r): r is string => typeof r === "string")

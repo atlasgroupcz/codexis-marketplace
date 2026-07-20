@@ -95,7 +95,7 @@
       </p>
 
       <div class="row">
-        <button id="n-save" type="button" data-i18n="notify.save">Uložit upozornění</button>
+        <button id="n-save" type="button" disabled data-i18n="notify.save">Uložit upozornění</button>
       </div>
       <div id="n-msg"></div>
     </fieldset>
@@ -175,10 +175,14 @@
       }
 
       function renderNotify(n) {
+        // Dokud stav nedorazí, zůstává tlačítko zamčené: uložit obsah
+        // formuláře v jeho výchozím stavu by uživateli tiše vyplo
+        // upozornění a smazalo adresáty.
         if (!n) return
         $("n-inapp").checked = n.inApp !== false
         $("n-email").checked = n.email === true
         $("n-recipients").value = (n.recipients || []).join(", ")
+        $("n-save").disabled = false
       }
 
       $("n-save").addEventListener("click", async () => {

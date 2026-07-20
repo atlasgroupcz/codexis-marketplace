@@ -52,13 +52,11 @@ async function sendEmail(
   auth: string,
   daemonUrl: string,
   f: FetchLike,
-  recipients: string[] = [],
+  to: string[] | null,
 ): Promise<boolean> {
   // Bez `to` doručí daemon přihlášenému uživateli; pole se přikládá jen
   // když si uživatel nastavil adresáty navíc (vzor katastr/znamky).
-  const payload = JSON.stringify(
-    recipients.length > 0 ? { subject, bodyText, to: recipients } : { subject, bodyText },
-  )
+  const payload = JSON.stringify(to && to.length > 0 ? { subject, bodyText, to } : { subject, bodyText })
   const boundary = `----sid-${randomUUID().replace(/-/g, "")}`
   const body =
     `--${boundary}\r\n` +
@@ -76,6 +74,47 @@ async function sendEmail(
   } catch {
     return false
   }
+}
+
+/** E-mail přihlášeného uživatele z daemona, nebo null. Best-effort. */
+async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Promise<string | null> {
+  try {
+    const res = await f(graphqlUrl(daemonUrl), {
+      method: "POST",
+      headers: { authorization: auth, "content-type": "application/json" },
+      body: JSON.stringify({ query: "query { me { email } }" }),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { data?: { me?: { email?: unknown } } }
+    const email = data?.data?.me?.email
+    return typeof email === "string" && email ? email : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Sestaví seznam `to`.
+ *
+ * Když daemon dostane `to`, doručí VÝHRADNĚ na něj — takže bez přidání
+ * vlastní adresy by si uživatel přidáním kolegy vypnul vlastní e-maily.
+ * Reference (`sledovane_dokumenty_core/notify.py resolve_to`) to řeší
+ * stejně: bez extras nic (daemon pošle přihlášenému), s extras
+ * `[já, ...extras]` bez duplicity. Když se `me` nepodaří zjistit, pošleme
+ * aspoň extras — lepší než zahodit reálného adresáta kvůli výpadku dotazu.
+ */
+async function resolveTo(
+  recipients: string[],
+  auth: string,
+  daemonUrl: string,
+  f: FetchLike,
+): Promise<string[] | null> {
+  const extras = recipients.filter((r) => r.trim())
+  if (extras.length === 0) return null
+  const me = await queryMeEmail(auth, daemonUrl, f)
+  if (!me) return extras
+  const meKey = me.trim().toLowerCase()
+  return [me, ...extras.filter((e) => e.trim().toLowerCase() !== meKey)]
 }
 
 async function sendBell(message: string, auth: string, daemonUrl: string, f: FetchLike): Promise<boolean> {
@@ -107,8 +146,9 @@ export async function sendDigest(subject: string, bodyText: string, f: FetchLike
   const { email, inApp, recipients } = getNotifySettings()
   if (!email && !inApp) return false
 
+  const to = email ? await resolveTo(recipients, auth, daemonUrl, f) : null
   const results = await Promise.all([
-    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, recipients) : Promise.resolve(false),
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, to) : Promise.resolve(false),
     inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false),
   ])
   return results.some(Boolean)

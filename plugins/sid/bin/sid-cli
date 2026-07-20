@@ -85,18 +85,18 @@ function statusToError(status, bodyText) {
   }
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR);
 }
-async function request(path, init, f, keyOverride) {
+async function request(path, init, f, keyOverride, timeoutMs = REQUEST_TIMEOUT_MS) {
   const key = keyOverride ?? getApiKey();
   if (!key)
     throw new CliError(NO_KEY_MSG, EXIT.AUTH);
   const res = await f(`${getBaseUrl()}${path}`, {
     ...init,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { ...init.headers ?? {}, "x-api-key": key }
   }).catch((e) => {
     const name = e instanceof Error ? e.name : "";
     if (name === "TimeoutError" || name === "AbortError") {
-      throw new CliError(`Požadavek na SID vypršel (${REQUEST_TIMEOUT_MS / 1000} s) — server neodpovídá.`, EXIT.ERROR);
+      throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR);
     }
     throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
   });
@@ -118,10 +118,10 @@ async function apiGet(path, f = fetch, keyOverride) {
 async function apiPatch(path, body, f = fetch) {
   return parseJson(await request(path, { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } }, f));
 }
-async function apiRaw(path, f = fetch) {
-  return request(path, {}, f);
+async function apiRaw(path, f = fetch, timeoutMs = DOWNLOAD_TIMEOUT_MS) {
+  return request(path, {}, f, undefined, timeoutMs);
 }
-var CliError, NO_KEY_MSG, REQUEST_TIMEOUT_MS = 30000;
+var CliError, NO_KEY_MSG, REQUEST_TIMEOUT_MS = 30000, DOWNLOAD_TIMEOUT_MS;
 var init_http = __esm(() => {
   init_config();
   CliError = class CliError extends Error {
@@ -132,6 +132,7 @@ var init_http = __esm(() => {
     }
   };
   NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
+  DOWNLOAD_TIMEOUT_MS = 15 * 60000;
 });
 
 // src/commands/search.ts
@@ -379,8 +380,8 @@ function daemonAuth() {
     return null;
   }
 }
-async function sendEmail(subject, bodyText, auth, daemonUrl, f, recipients = []) {
-  const payload = JSON.stringify(recipients.length > 0 ? { subject, bodyText, to: recipients } : { subject, bodyText });
+async function sendEmail(subject, bodyText, auth, daemonUrl, f, to) {
+  const payload = JSON.stringify(to && to.length > 0 ? { subject, bodyText, to } : { subject, bodyText });
   const boundary = `----sid-${import_node_crypto.randomUUID().replace(/-/g, "")}`;
   const body = `--${boundary}\r
 ` + `Content-Disposition: form-data; name="payload"\r
@@ -399,6 +400,32 @@ async function sendEmail(subject, bodyText, auth, daemonUrl, f, recipients = [])
   } catch {
     return false;
   }
+}
+async function queryMeEmail(auth, daemonUrl, f) {
+  try {
+    const res = await f(graphqlUrl(daemonUrl), {
+      method: "POST",
+      headers: { authorization: auth, "content-type": "application/json" },
+      body: JSON.stringify({ query: "query { me { email } }" })
+    });
+    if (!res.ok)
+      return null;
+    const data = await res.json();
+    const email = data?.data?.me?.email;
+    return typeof email === "string" && email ? email : null;
+  } catch {
+    return null;
+  }
+}
+async function resolveTo(recipients, auth, daemonUrl, f) {
+  const extras = recipients.filter((r) => r.trim());
+  if (extras.length === 0)
+    return null;
+  const me = await queryMeEmail(auth, daemonUrl, f);
+  if (!me)
+    return extras;
+  const meKey = me.trim().toLowerCase();
+  return [me, ...extras.filter((e) => e.trim().toLowerCase() !== meKey)];
 }
 async function sendBell(message, auth, daemonUrl, f) {
   const query = "mutation Create($input: CreateNotificationInput!) { createNotification(input: $input) { id } }";
@@ -421,8 +448,9 @@ async function sendDigest(subject, bodyText, f = fetch) {
   const { email, inApp, recipients } = getNotifySettings();
   if (!email && !inApp)
     return false;
+  const to = email ? await resolveTo(recipients, auth, daemonUrl, f) : null;
   const results = await Promise.all([
-    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, recipients) : Promise.resolve(false),
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, to) : Promise.resolve(false),
     inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false)
   ]);
   return results.some(Boolean);

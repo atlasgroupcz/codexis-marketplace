@@ -37,22 +37,36 @@ function statusToError(status: number, bodyText: string): CliError {
  * automatizaci navždy — referenční pluginy proto mají timeout na každém
  * volání (katastr/znamky: 10–30 s).
  */
-const REQUEST_TIMEOUT_MS = 30_000
+export const REQUEST_TIMEOUT_MS = 30_000
 
-async function request(path: string, init: RequestInit, f: FetchLike, keyOverride?: string): Promise<Response> {
+/**
+ * Stahování má vlastní, mnohem delší strop: `AbortSignal.timeout` ruší i
+ * čtení těla, ne jen navazování spojení, takže 30 s by useklo každý větší
+ * dokument na pomalé lince. Pořád je to strop — zaseknuté spojení se
+ * nakonec ukončí.
+ */
+export const DOWNLOAD_TIMEOUT_MS = 15 * 60_000
+
+async function request(
+  path: string,
+  init: RequestInit,
+  f: FetchLike,
+  keyOverride?: string,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
   // `keyOverride` umožní ověřit kandidátský klíč, aniž by se zapsal do
   // .env — viz `settings set-key`.
   const key = keyOverride ?? getApiKey()
   if (!key) throw new CliError(NO_KEY_MSG, EXIT.AUTH)
   const res = await f(`${getBaseUrl()}${path}`, {
     ...init,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { ...(init.headers ?? {}), "x-api-key": key },
   }).catch((e: unknown) => {
     const name = e instanceof Error ? e.name : ""
     if (name === "TimeoutError" || name === "AbortError") {
       throw new CliError(
-        `Požadavek na SID vypršel (${REQUEST_TIMEOUT_MS / 1000} s) — server neodpovídá.`,
+        `Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`,
         EXIT.ERROR,
       )
     }
@@ -95,6 +109,10 @@ export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch
 }
 
 /** Pro download — vrací Response, tělo si vystreamuje volající. */
-export async function apiRaw(path: string, f: FetchLike = fetch): Promise<Response> {
-  return request(path, {}, f)
+export async function apiRaw(
+  path: string,
+  f: FetchLike = fetch,
+  timeoutMs: number = DOWNLOAD_TIMEOUT_MS,
+): Promise<Response> {
+  return request(path, {}, f, undefined, timeoutMs)
 }
