@@ -94,6 +94,12 @@ enum Commands {
     Get(GetArgs),
 
     #[command(
+        about = "Render an HTML preview of a document (CGI handler for the daemon preview endpoint)",
+        hide = true
+    )]
+    Preview,
+
+    #[command(
         about = "Print cdx-cli-oriented output schema and query parameters for get endpoints",
         arg_required_else_help = true,
         subcommand_value_name = "ENDPOINT",
@@ -349,6 +355,7 @@ pub(crate) fn run(cli: Cli) -> Result<(), CliError> {
     match cli.command {
         Commands::Search { source } => execute_search(source),
         Commands::Get(args) => execute_get(args),
+        Commands::Preview => crate::preview::execute_preview(),
         Commands::Schema { endpoint } => execute_schema(endpoint),
     }
 }

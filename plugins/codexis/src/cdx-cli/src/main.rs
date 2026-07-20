@@ -1,6 +1,7 @@
 mod cli;
 mod core;
 mod get;
+mod preview;
 mod sources;
 
 use clap::Parser;

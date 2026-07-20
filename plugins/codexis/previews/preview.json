@@ -1,0 +1,4 @@
+{
+  "id": "preview",
+  "runtime": { "type": "cgi", "binary": "../bin/cdx-cli", "args": ["preview"] }
+}

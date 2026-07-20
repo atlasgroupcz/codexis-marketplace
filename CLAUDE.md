@@ -150,6 +150,16 @@ Example (from codexis plugin):
 
 For multi-binary plugins, prefer extracting these commands into `hooks/install-binaries.sh` and `hooks/uninstall-binaries.sh` (see the `codexis`, `cdx-sk`, `ares`, `cdx-at`, `cdx-cz-psp`, `cdx-cz-spp` plugins). Those scripts default `TARGET_BIN_DIR` to `${HOME}/.local/bin` and can be overridden via the `TARGET_BIN_DIR` env var if a different prefix is needed.
 
+### Source Previews (`previews/`)
+
+A plugin can render an in-chat HTML preview for the sources it publishes. Publish sources with `previewUrl` in the `<plugin-name>://<resource-path>` form; the daemon resolves it through the plugin's preview handler declared by `previews/preview.json`:
+
+```json
+{ "id": "preview", "runtime": { "type": "cgi", "binary": "../bin/<cli>", "args": ["preview"] } }
+```
+
+The binary path is resolved relative to `previews/` and may point into the plugin's `bin/` (it must stay inside the plugin directory). The daemon executes it CGI-style in the user's VM with the resource path in `PATH_INFO` (+ `QUERY_STRING`); the handler prints a CGI response (`Status`/`Content-Type` headers, blank line, HTML body). Static assets placed next to the descriptor (e.g. `previews/preview.css`) are served as-is, so the page can reference them relatively (`<link rel="stylesheet" href="./preview.css">`). The rendered HTML drives the chat panel: `<title>` becomes the panel title and an optional `<link rel="canonical" href="…">` becomes the "open in new tab" target. See the `codexis` plugin (`cdx-cli preview`) for the reference implementation.
+
 ## Localization (i18n)
 
 Every `marketplace.json` / `plugin.json` / `component.json` and every top-level

@@ -6,7 +6,7 @@ use cdx_common::curl::{
 use cdx_common::sources::publish_from_body;
 
 const CDX_SCHEME: &str = "cdx://";
-const API_PREFIX: &str = "/rest/cdx-api/v2";
+pub(crate) const API_PREFIX: &str = "/rest/cdx-api/v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum SearchFacetMode {
@@ -73,9 +73,58 @@ fn try_publish_sources(sources: Option<&serde_json::Value>) {
     let Some(daemon) = DaemonConfig::load() else {
         return;
     };
-    if let Err(err) = publish_from_body(sources, &daemon) {
+    let sources = rewrite_preview_references(sources);
+    if let Err(err) = publish_from_body(&sources, &daemon) {
         eprintln!("cdx-cli: failed to attach sources to chat: {err}");
     }
+}
+
+/// The upstream API emits `previewUrl` values pointing at the CODEXIS web app
+/// (`https://…/document/<DOC_ID>/text[/<PART>][#<PART>]`). The chat preview panel
+/// renders documents through this plugin instead (LM-207), so rewrite them to
+/// `codexis://preview/doc/<DOC_ID>[/<PART>]` references the daemon resolves back
+/// to `cdx-cli preview`. Values that don't match the document-text pattern are
+/// forwarded verbatim.
+fn rewrite_preview_references(sources: &serde_json::Value) -> serde_json::Value {
+    let mut rewritten = sources.clone();
+    if let Some(items) = rewritten.as_array_mut() {
+        for item in items {
+            let Some(object) = item.as_object_mut() else {
+                continue;
+            };
+            let Some(preview_url) = object.get("previewUrl").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            if let Some(reference) = to_plugin_preview_reference(preview_url) {
+                object.insert(
+                    "previewUrl".to_string(),
+                    serde_json::Value::String(reference),
+                );
+            }
+        }
+    }
+    rewritten
+}
+
+fn to_plugin_preview_reference(preview_url: &str) -> Option<String> {
+    if !preview_url.starts_with("http://") && !preview_url.starts_with("https://") {
+        return None;
+    }
+    let (without_fragment, fragment) = match preview_url.split_once('#') {
+        Some((head, fragment)) => (head, Some(fragment)),
+        None => (preview_url, None),
+    };
+    let (_, document_path) = without_fragment.split_once("/document/")?;
+    let mut segments = document_path.split('/');
+    let doc_id = segments.next().filter(|segment| !segment.is_empty())?;
+    let part = match (segments.next(), segments.next()) {
+        (None, _) | (Some("text"), None) => None,
+        (Some("text"), Some(part)) if !part.is_empty() => Some(part),
+        _ => return None,
+    };
+    let part = fragment.filter(|value| !value.is_empty()).or(part);
+    let suffix = part.map(|value| format!("/{value}")).unwrap_or_default();
+    Some(format!("codexis://preview/doc/{doc_id}{suffix}"))
 }
 
 /// Parses the v2 envelope `{content, sources}`. Returns `(content_json, sources_value)`.
@@ -336,6 +385,56 @@ mod tests {
             rendered,
             "curl -H 'Authorization: Bearer <redacted>' -d '{\"query\":\"test\"}'"
         );
+    }
+
+    #[test]
+    fn rewrites_web_preview_urls_to_plugin_references() {
+        assert_eq!(
+            to_plugin_preview_reference("https://app.codexis.cz/document/CR10/text"),
+            Some("codexis://preview/doc/CR10".to_string())
+        );
+        assert_eq!(
+            to_plugin_preview_reference("https://app.codexis.cz/document/CR10/text#paragraf3"),
+            Some("codexis://preview/doc/CR10/paragraf3".to_string())
+        );
+        assert_eq!(
+            to_plugin_preview_reference(
+                "https://next.codexis.cz/document/CR10_2026_04_01/text/paragraf10"
+            ),
+            Some("codexis://preview/doc/CR10_2026_04_01/paragraf10".to_string())
+        );
+        assert_eq!(
+            to_plugin_preview_reference("https://next.codexis.cz/document/CR10"),
+            Some("codexis://preview/doc/CR10".to_string())
+        );
+    }
+
+    #[test]
+    fn keeps_unrecognized_preview_urls_verbatim() {
+        assert_eq!(
+            to_plugin_preview_reference("https://example.com/no-document/here"),
+            None
+        );
+        assert_eq!(to_plugin_preview_reference("codexis://doc/CR10/text"), None);
+
+        let sources: serde_json::Value = serde_json::from_str(
+            r#"[{"url":"https://x","previewUrl":"https://example.com/other"},{"url":"https://y"}]"#,
+        )
+        .unwrap();
+        let rewritten = rewrite_preview_references(&sources);
+        assert_eq!(rewritten[0]["previewUrl"], "https://example.com/other");
+        assert!(rewritten[1].get("previewUrl").is_none());
+    }
+
+    #[test]
+    fn rewrites_preview_urls_inside_the_sources_array() {
+        let sources: serde_json::Value = serde_json::from_str(
+            r#"[{"url":"https://app.codexis.cz/doc/CR10","previewUrl":"https://app.codexis.cz/document/CR10/text#paragraf3"}]"#,
+        )
+        .unwrap();
+        let rewritten = rewrite_preview_references(&sources);
+        assert_eq!(rewritten[0]["previewUrl"], "codexis://preview/doc/CR10/paragraf3");
+        assert_eq!(rewritten[0]["url"], "https://app.codexis.cz/doc/CR10");
     }
 
     #[test]
