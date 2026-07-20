@@ -30,7 +30,7 @@ cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
-An agent is a reusable persona with its own model, tools and instructions. `create` takes the model and jurisdictions from the chat you are in unless you pass `--model` or `--jurisdiction`, so never ask the user which model to use — pass one only when they name it. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
+An agent is a reusable persona with its own model, tools and instructions. `create` takes the model and jurisdictions from the active chat. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
 
 ### Writing `--memory`
 
