@@ -1,0 +1,162 @@
+/*
+ * Document preview stylesheet for `cdx-cli preview` (LM-207).
+ * Mirrors the codexis-next document page design: theme tokens from
+ * apps/web/src/styles/theme/{variables,light-theme-variables}.css and the
+ * document typography from FormatHTML/Container.module.css + global.style.css.
+ */
+:root {
+    --document-main-width: 700px;
+    --document-content-padding: 20px;
+
+    --theme-gap-xs: 2px;
+    --theme-gap-sm: 5px;
+    --theme-gap-md: 10px;
+    --theme-gap-lg: 15px;
+    --theme-gap-xl: 20px;
+    --theme-radius: 4px;
+    --theme-font-size-sm: 12px;
+    --theme-font-size-md: 14px;
+    --theme-font-size-lg: 16px;
+    --theme-font-size-xl: 18px;
+    --theme-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial;
+
+    --theme-color-primary-alpha: #3b82f6; /* blue-500 */
+    --theme-color-primary-delta: #bfdbfe; /* blue-200 */
+    --theme-color-border-alpha: #d4d4d8; /* zinc-300 */
+    --theme-color-text-alpha: #000000; /* black */
+    --theme-color-text-beta: #737373; /* neutral-500 */
+    --theme-color-background-alpha: #ffffff; /* white */
+    --theme-color-background-beta: #f4f4f5; /* zinc-100 */
+    --theme-color-warning-epsilon: #fef3c7; /* amber-100 */
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--theme-color-background-alpha);
+}
+
+body {
+    color: var(--theme-color-text-alpha);
+    font-size: var(--theme-font-size-md);
+    font-family: var(--theme-font-family);
+}
+
+.document {
+    max-width: var(--document-main-width);
+    margin: 0 auto;
+    padding: var(--document-content-padding);
+    text-align: justify;
+    word-break: break-word;
+    line-height: 1.6;
+}
+
+.document h1,
+.document h2,
+.document h3,
+.document h4,
+.document h5,
+.document h6 {
+    text-align: center;
+    line-height: 1.3;
+    margin: var(--theme-gap-xl) 0 var(--theme-gap-md);
+}
+
+.document h1 {
+    font-size: var(--theme-font-size-xl);
+}
+
+.document h2 {
+    font-size: var(--theme-font-size-lg);
+}
+
+.document h3,
+.document h4,
+.document h5,
+.document h6 {
+    font-size: var(--theme-font-size-md);
+}
+
+.document p {
+    margin: var(--theme-gap-md) 0;
+}
+
+.document a {
+    color: var(--theme-color-primary-alpha);
+}
+
+.document mark {
+    display: inline;
+    background-color: var(--theme-color-warning-epsilon);
+    padding: 0 var(--theme-gap-xs);
+    color: var(--theme-color-text-alpha);
+}
+
+.document table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--theme-gap-lg) 0;
+    text-align: left;
+}
+
+.document th,
+.document td {
+    border: 1px solid var(--theme-color-border-alpha);
+    padding: var(--theme-gap-sm) var(--theme-gap-md);
+    vertical-align: top;
+}
+
+.document th {
+    background: var(--theme-color-background-beta);
+    font-weight: 600;
+}
+
+.document blockquote {
+    margin: var(--theme-gap-lg) 0;
+    padding: 0 var(--theme-gap-lg);
+    border-left: 3px solid var(--theme-color-primary-delta);
+    color: var(--theme-color-text-beta);
+}
+
+.document hr {
+    border: 0;
+    border-top: 1px solid var(--theme-color-border-alpha);
+    margin: var(--theme-gap-xl) 0;
+}
+
+.document ul,
+.document ol {
+    padding-left: var(--theme-gap-xl);
+    margin: var(--theme-gap-md) 0;
+}
+
+.document pre {
+    background: var(--theme-color-background-beta);
+    border-radius: var(--theme-radius);
+    padding: var(--theme-gap-md);
+    overflow-x: auto;
+    text-align: left;
+}
+
+.document code {
+    background: var(--theme-color-background-beta);
+    border-radius: var(--theme-radius);
+    padding: 0 var(--theme-gap-xs);
+    font-size: var(--theme-font-size-sm);
+}
+
+.document pre code {
+    background: none;
+    padding: 0;
+}
+
+.document-error {
+    text-align: center;
+    color: var(--theme-color-text-beta);
+    padding-top: 40px;
+}
