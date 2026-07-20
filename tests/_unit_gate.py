@@ -29,11 +29,6 @@ class Suite:
     cwd: Path
 
 
-# Shared Rust crates. Plugin crates are deliberately excluded: each is a separate
-# Cargo project and compiling all 22 from cold would cost more than the daemon
-# test this gate is meant to front-run.
-_RUST_CRATES = ("cdx-common", "cdx-notify", "cdx-cgi", "cdx-watch")
-
 # Suite groups, one per pipeline stage. Grouped by what they cover rather than by
 # language: the plugin cores are being migrated from Python to Rust, so a split
 # along toolchain lines would have to be renamed as that migration progresses.
@@ -90,6 +85,10 @@ def _build_suite(repo_root: Path, name: str) -> Suite:
     if name == "pytest":
         return Suite("pytest", [sys.executable, "-m", "pytest", "-q"], repo_root)
     if name == "cargo":
+        # shared/rust is one workspace, so this covers every shared crate. The
+        # plugin crates sit outside it on purpose: each is its own project and
+        # compiling all 22 from cold would cost more than the daemon test this
+        # gate front-runs.
         return Suite("cargo", ["cargo", "test", "--all-features", "-q"],
                      repo_root / "shared" / "rust")
     if name == "frontend":
@@ -113,15 +112,6 @@ def select_suites(repo_root: Path, cargo: bool, frontend: bool) -> list[Suite]:
 
 
 def _default_runner(suite: Suite) -> int:
-    if suite.name == "cargo":
-        # No workspace at shared/rust — run each crate in turn.
-        worst = 0
-        for crate in _RUST_CRATES:
-            crate_dir = suite.cwd / crate
-            if not crate_dir.is_dir():
-                continue
-            worst = max(worst, subprocess.run(suite.argv, cwd=crate_dir).returncode)
-        return worst
     return subprocess.run(suite.argv, cwd=suite.cwd).returncode
 
 
