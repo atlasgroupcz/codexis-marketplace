@@ -101,6 +101,10 @@ pub fn create(
         let description = fields.description.clone().ok_or_else(|| {
             CdxctlError::Parse("Creating an agent needs --description".into())
         })?;
+        // The server has no per-chat context to guess a model from, so the caller states it.
+        if fields.model.is_none() {
+            return Err(CdxctlError::Parse("Creating an agent needs --model".into()));
+        }
         let mut input = Map::new();
         input.insert("name".into(), json!(name));
         input.insert("description".into(), json!(description));

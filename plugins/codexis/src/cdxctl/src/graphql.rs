@@ -284,9 +284,6 @@ pub const GET_AGENT_DEFAULTS: &str = r#"
 query GetAgentDefaults {
     agentDefaults {
         maxTurns
-        model
-        jurisdictions
-        skills
     }
 }
 "#;
