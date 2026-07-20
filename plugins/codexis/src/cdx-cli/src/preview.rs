@@ -16,10 +16,6 @@ use cdx_common::config::{read_env, to_authorization_header};
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
-/// Daemon-injected admin Basic authorization (preview executions only) — the
-/// same credential codexis-next uses to resolve document text, so the preview
-/// does not depend on the user's own license. Never log or embed its value.
-const PREVIEW_AUTHORIZATION_ENV: &str = "CODEXIS_USER_PREVIEW_AUTHORIZATION";
 
 pub(crate) fn execute_preview() -> Result<(), CliError> {
     let path_info = env::var("PATH_INFO").unwrap_or_default();
@@ -99,11 +95,11 @@ fn render_preview(
     let document = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
     let config = PreviewConfig::load()?;
 
-    // The GraphQL HtmlDoc content is the exact markup the CODEXIS web app renders
+    // The preview endpoint returns the exact markup the CODEXIS web app renders
     // (`.sN`/`.csn-*` classes styled by preview.css), so the preview is 1:1 with
-    // the web. Documents outside the LCR GraphQL surface (case law, EU, …) fall
-    // back to the cdx-api markdown text.
-    let content_html = match fetch_html_doc(&config, &document) {
+    // the web. Backends without the preview endpoint fall back to the markdown
+    // text render.
+    let content_html = match fetch_preview_html(&config, &document) {
         Some(html) => html,
         None => render_markdown(&fetch_content(
             &config,
@@ -123,9 +119,8 @@ fn render_preview(
     ))
 }
 
-/// Preview needs the API base; the user token is optional — previews render
-/// with the daemon-injected admin authorization even for users without their
-/// own CODEXIS token.
+/// Preview needs the API base; the user token is optional so a missing token
+/// degrades to an error page instead of failing configuration outright.
 struct PreviewConfig {
     base_url: String,
     user_auth_header: Option<String>,
@@ -142,77 +137,23 @@ impl PreviewConfig {
         })
     }
 
-    fn admin_auth_header() -> Option<String> {
-        read_env(PREVIEW_AUTHORIZATION_ENV).map(|value| format!("Authorization: {value}"))
-    }
-
-    /// Authorization for plain cdx-api requests (meta/markdown). cdx-api accepts
-    /// only Bearer tokens, so the user token comes first; the admin Basic header
-    /// is a last resort for token-less executions.
+    /// Authorization for cdx-api requests — the user's Bearer token.
     fn api_auth_header(&self) -> Option<String> {
-        self.user_auth_header.clone().or_else(Self::admin_auth_header)
+        self.user_auth_header.clone()
     }
 }
 
-/// Fetches the document HTML the CODEXIS web app renders. Returns `None` when
-/// the document has no `HtmlDoc` content (unknown doc type) so the caller can
-/// fall back to the markdown text. Prefers the daemon-injected admin
-/// authorization (full document access, like the codexis-next text route),
-/// then the user's token, then anonymous access for public documents.
-fn fetch_html_doc(config: &PreviewConfig, document: &DocumentPreviewPath) -> Option<String> {
-    if let Some(admin_header) = PreviewConfig::admin_auth_header() {
-        if let Some(html) = fetch_html_doc_request(config, document, Some(&admin_header)) {
-            return Some(html);
-        }
-    }
-    if let Some(user_header) = &config.user_auth_header {
-        if let Some(html) = fetch_html_doc_request(config, document, Some(user_header)) {
-            return Some(html);
-        }
-    }
-    fetch_html_doc_request(config, document, None)
-}
-
-fn fetch_html_doc_request(
-    config: &PreviewConfig,
-    document: &DocumentPreviewPath,
-    authorization_header: Option<&str>,
-) -> Option<String> {
-    // A part preview renders just the part itself; the document header belongs
-    // only to the full-document preview (mirrors the codexis-next part view).
-    let variables = match &document.part_id {
-        Some(part) => {
-            serde_json::json!({ "id": document.doc_id, "parts": [part], "includeHeader": false })
-        }
-        None => {
-            serde_json::json!({ "id": document.doc_id, "parts": Value::Null, "includeHeader": true })
-        }
+/// Fetches the rendered document HTML from the cdx-api preview endpoint —
+/// the exact markup the CODEXIS web app displays. Returns `None` (markdown
+/// fallback) when the backend does not expose the endpoint yet or the
+/// document cannot be rendered.
+fn fetch_preview_html(config: &PreviewConfig, document: &DocumentPreviewPath) -> Option<String> {
+    let resource_path = match &document.part_id {
+        Some(part) => format!("doc/{}/preview/{part}", document.doc_id),
+        None => format!("doc/{}/preview", document.doc_id),
     };
-    let body = serde_json::json!({
-        "query": "query preview($id: String!, $parts: [String!], $includeHeader: Boolean) { globalItem(itemId: $id) { ... on Document { docContent { ... on HtmlDoc { content { html(contentItemIds: $parts, includeHeader: $includeHeader, markingType: NONE) } } } } } }",
-        "variables": variables,
-    });
-    let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
-    if let Some(header) = authorization_header {
-        curl_args.push("-H".to_string());
-        curl_args.push(header.to_string());
-    }
-    curl_args.extend([
-        "-H".to_string(),
-        "Content-Type: application/json".to_string(),
-        "-X".to_string(),
-        "POST".to_string(),
-        format!("{}/graphql", config.base_url),
-        "-d".to_string(),
-        body.to_string(),
-    ]);
-    let output = execute_curl(&curl_args).ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let response: Value = serde_json::from_slice(&output.stdout).ok()?;
-    let html = response["data"]["globalItem"]["docContent"]["content"]["html"].as_str()?;
-    (!html.trim().is_empty()).then(|| html.to_string())
+    let html = fetch_content(config, &resource_path, "").ok()?;
+    (!html.trim().is_empty()).then_some(html)
 }
 
 /// The stylesheet lives at the previews root, while the page is served under the
