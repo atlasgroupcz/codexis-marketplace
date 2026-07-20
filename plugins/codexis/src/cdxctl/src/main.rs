@@ -267,7 +267,8 @@ enum AgentCommands {
         #[arg(long, default_value = "false")]
         editable_only: bool,
     },
-    /// Create an agent from field flags, or from markdown with --file/--stdin
+    /// Create an agent. Needs --name and --description; the model and jurisdictions
+    /// come from the active chat unless you pass them
     Create {
         /// Agent name: lowercase letters, digits and hyphens
         #[arg(long)]
@@ -275,25 +276,27 @@ enum AgentCommands {
         /// What the agent is for; the orchestrator picks agents by it
         #[arg(long)]
         description: Option<String>,
-        /// Tool the agent may call; repeat for more
+        /// Tool the agent may call, e.g. shell or readFile; repeat for more
         #[arg(long = "tool")]
         tools: Vec<String>,
         /// Tool the agent may never call; repeat for more
         #[arg(long = "disallowed-tool")]
         disallowed_tools: Vec<String>,
-        /// Skill granted to the agent, by full name; repeat for more
+        /// Skill granted to the agent by full name, e.g. codexis:cdxctl; repeat for more.
+        /// `cdxctl skill list` shows the names
         #[arg(long = "skill")]
         skills: Vec<String>,
-        /// Jurisdiction the agent works in; repeat for more
+        /// Jurisdiction the agent works in, e.g. CZ; repeat for more. Taken from the
+        /// active chat when omitted
         #[arg(long = "jurisdiction")]
         jurisdictions: Vec<String>,
-        /// Model to run on; see `cdxctl agent defaults` for the fallback
+        /// Model to run on, e.g. CLAUDE_OPUS_4_8; taken from the active chat when omitted
         #[arg(long)]
         model: Option<String>,
-        /// Turn budget for one run
+        /// Turn budget for one run; the server applies its own when omitted
         #[arg(long)]
         max_turns: Option<u32>,
-        /// Instructions the agent runs with
+        /// Instructions the agent runs with, as markdown
         #[arg(long)]
         memory: Option<String>,
         /// Read agent markdown content from a file
@@ -325,7 +328,7 @@ enum AgentCommands {
         /// Replaces the whole jurisdiction list; repeat for more
         #[arg(long = "jurisdiction")]
         jurisdictions: Option<Vec<String>>,
-        /// Model to run on
+        /// Model to run on, e.g. CLAUDE_OPUS_4_8
         #[arg(long)]
         model: Option<String>,
         /// Turn budget for one run
