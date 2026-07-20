@@ -1,6 +1,6 @@
 //! `cdx-cli preview` — CGI handler behind the daemon's plugin preview endpoint
 //! (`/rest/plugin-previews/…`, LM-207). The daemon passes the resource path of a
-//! `codexis://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
+//! `cdx://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
 //! `PATH_INFO` / `QUERY_STRING`; the handler fetches the document markdown +
 //! metadata from the CODEXIS API and emits a standalone HTML page (CGI response
 //! on stdout).

@@ -1,4 +1,5 @@
 {
   "id": "preview",
+  "scheme": "cdx",
   "runtime": { "type": "cgi", "binary": "../bin/cdx-cli", "args": ["preview"] }
 }
