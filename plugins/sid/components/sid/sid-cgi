@@ -1,0 +1,175 @@
+#!/usr/bin/env node
+
+// src/config.ts
+var import_node_fs = require("node:fs");
+var import_node_path = require("node:path");
+var import_node_os = require("node:os");
+var EXIT = { OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 };
+var DEFAULT_BASE_URL = "https://sid.codexis.cz";
+function userHome() {
+  return process.env.CODEXIS_PUBLIC_USER_HOME || import_node_os.homedir();
+}
+function envFilePath() {
+  return process.env.SID_ENV_FILE || import_node_path.join(userHome(), ".cdx", "apps", "sid", ".env");
+}
+function readEnvFile() {
+  const out = {};
+  try {
+    for (const line of import_node_fs.readFileSync(envFilePath(), "utf8").split(`
+`)) {
+      const t = line.trim();
+      if (!t || t.startsWith("#") || !t.includes("="))
+        continue;
+      const i = t.indexOf("=");
+      out[t.slice(0, i).trim()] = t.slice(i + 1).trim();
+    }
+  } catch {}
+  return out;
+}
+function getApiKey() {
+  return readEnvFile().SID_API_KEY ?? "";
+}
+function getBaseUrl() {
+  return process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL;
+}
+function writeEnvFile(entries) {
+  const path = envFilePath();
+  import_node_fs.mkdirSync(import_node_path.dirname(path), { recursive: true, mode: 448 });
+  const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join(`
+`) + `
+`;
+  const tmp = `${path}.tmp-${process.pid}`;
+  import_node_fs.writeFileSync(tmp, body, { mode: 384 });
+  import_node_fs.renameSync(tmp, path);
+}
+function writeApiKey(key) {
+  writeEnvFile({ ...readEnvFile(), SID_API_KEY: key });
+}
+function deleteApiKey() {
+  const rest = readEnvFile();
+  delete rest.SID_API_KEY;
+  if (Object.keys(rest).length === 0) {
+    if (import_node_fs.existsSync(envFilePath()))
+      import_node_fs.rmSync(envFilePath());
+    return;
+  }
+  writeEnvFile(rest);
+}
+
+// src/http.ts
+class CliError extends Error {
+  exitCode;
+  constructor(message, exitCode) {
+    super(message);
+    this.exitCode = exitCode;
+  }
+}
+var NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
+function statusToError(status, bodyText) {
+  const detail = bodyText.slice(0, 300);
+  if (status === 401) {
+    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /profile/api-klice. ${detail}`, EXIT.AUTH);
+  }
+  if (status === 403)
+    return new CliError(`Přístup odepřen (403). ${detail}`, EXIT.AUTH);
+  if (status === 404)
+    return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND);
+  if (status === 429) {
+    return new CliError(`Rate limit SID (429) — zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT);
+  }
+  return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR);
+}
+async function request(path, init, f) {
+  const key = getApiKey();
+  if (!key)
+    throw new CliError(NO_KEY_MSG, EXIT.AUTH);
+  const res = await f(`${getBaseUrl()}${path}`, {
+    ...init,
+    headers: { ...init.headers ?? {}, "x-api-key": key }
+  }).catch((e) => {
+    throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
+  });
+  if (!res.ok)
+    throw statusToError(res.status, await res.text().catch(() => ""));
+  return res;
+}
+async function parseJson(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new CliError(`Odpověď ze SID není JSON — zkontrolujte adresu (${getBaseUrl()}); ` + `server vrátil: ${text.slice(0, 120).replace(/\s+/g, " ").trim()}`, EXIT.ERROR);
+  }
+}
+async function apiGet(path, f = fetch) {
+  return parseJson(await request(path, {}, f));
+}
+
+// src/cgi.ts
+function status() {
+  const key = getApiKey();
+  return { ok: true, configured: key !== "", baseUrl: getBaseUrl(), ...key ? { start: key.slice(0, 7) } : {} };
+}
+async function handle(body, f = fetch) {
+  switch (body.action) {
+    case "get_status":
+      return status();
+    case "save_config": {
+      const key = (body.api_key ?? "").trim();
+      if (!key)
+        return { ok: false, error: "Vložte API klíč." };
+      writeApiKey(key);
+      const verified = await apiGet("/api/v1/users/me", f).then(() => true, () => false);
+      if (!verified) {
+        deleteApiKey();
+        return {
+          ok: false,
+          error: "SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel."
+        };
+      }
+      return { ok: true, verified: true, start: key.slice(0, 7) };
+    }
+    case "delete_config":
+      deleteApiKey();
+      return { ok: true };
+    default:
+      return { ok: false, error: `Neznámá akce '${body.action ?? ""}'.` };
+  }
+}
+function renderCgi(payload, cgiStatus) {
+  const head = (cgiStatus ? `Status: ${cgiStatus}\r
+` : "") + `Content-Type: application/json; charset=utf-8\r
+` + `Cache-Control: no-store\r
+`;
+  return `${head}\r
+${JSON.stringify(payload, null, 2)}`;
+}
+async function readStdin() {
+  const declared = Number(process.env.CONTENT_LENGTH ?? "0");
+  if (!Number.isFinite(declared) || declared <= 0)
+    return "";
+  const chunks = [];
+  for await (const c of process.stdin)
+    chunks.push(c);
+  return Buffer.concat(chunks).toString("utf8");
+}
+async function serve(f = fetch) {
+  const method = (process.env.REQUEST_METHOD ?? "GET").toUpperCase();
+  try {
+    if (method !== "POST")
+      return renderCgi(status());
+    const raw = await readStdin();
+    let body;
+    try {
+      body = raw ? JSON.parse(raw) : {};
+    } catch {
+      return renderCgi({ ok: false, error: "Neplatné JSON tělo." }, "400 Bad Request");
+    }
+    return renderCgi(await handle(body, f));
+  } catch (e) {
+    return renderCgi({ ok: false, error: `Interní chyba: ${e instanceof Error ? e.message : String(e)}` }, "500 Internal Server Error");
+  }
+}
+
+// src/cgi-main.ts
+serve().then((out) => process.stdout.write(out));

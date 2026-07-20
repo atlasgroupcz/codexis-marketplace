@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SID — API klíč</title>
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 2rem 1.25rem;
+        font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        max-width: 40rem;
+      }
+      h1 { font-size: 1.35rem; margin: 0 0 .35rem; }
+      p.lead { margin: 0 0 1.5rem; opacity: .75; }
+      fieldset { border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+                 border-radius: .6rem; padding: 1rem 1.1rem 1.2rem; margin: 0 0 1.25rem; }
+      legend { padding: 0 .4rem; font-weight: 600; }
+      label { display: block; font-weight: 500; margin-bottom: .4rem; }
+      input[type="password"] {
+        width: 100%; padding: .55rem .7rem; font: inherit; font-family: ui-monospace, monospace;
+        border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+        border-radius: .4rem; background: transparent; color: inherit;
+      }
+      .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
+      button {
+        font: inherit; padding: .5rem 1rem; border-radius: .4rem; cursor: pointer;
+        border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+        background: transparent; color: inherit;
+      }
+      button.primary { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+      button.danger { color: #b91c1c; border-color: #b91c1c55; }
+      button[disabled] { opacity: .55; cursor: default; }
+      #status { padding: .7rem .9rem; border-radius: .45rem; margin-bottom: 1.25rem;
+                background: color-mix(in srgb, currentColor 7%, transparent); }
+      #msg:empty { display: none; }
+      #msg { padding: .7rem .9rem; border-radius: .45rem; margin-top: .9rem; }
+      #msg.ok { background: #16a34a22; }
+      #msg.err { background: #b91c1c22; }
+      code { font-family: ui-monospace, monospace; }
+      a { color: inherit; }
+    </style>
+  </head>
+  <body>
+    <h1>SID — API klíč</h1>
+    <p class="lead">
+      Klíč propojí tento doplněk s vaším účtem v SID. Má stejná oprávnění jako
+      vy — chraňte ho jako heslo.
+    </p>
+
+    <div id="status">Načítám stav…</div>
+
+    <fieldset>
+      <legend>Nastavení klíče</legend>
+      <label for="key">API klíč ze SID</label>
+      <input id="key" type="password" autocomplete="off" spellcheck="false"
+             placeholder="sid_…" />
+      <div class="row">
+        <button id="save" class="primary" type="button">Uložit a ověřit</button>
+        <button id="del" class="danger" type="button">Smazat klíč</button>
+      </div>
+      <div id="msg"></div>
+    </fieldset>
+
+    <p>
+      <strong>Kde klíč získám?</strong> V SID otevřete <em>Profil → API klíče</em>
+      (<code>/profile/api-klice</code>), vytvořte nový klíč a zkopírujte ho —
+      zobrazí se jen jednou.
+    </p>
+
+    <script>
+      const $ = (id) => document.getElementById(id)
+      const msg = (text, kind) => {
+        const el = $("msg")
+        el.textContent = text
+        el.className = kind || ""
+      }
+
+      // Daemon servíruje existující soubory staticky; požadavek na cestu,
+      // která souborem není, jde na CGI binárku (sid-cgi).
+      async function call(payload) {
+        const res = await fetch("api", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        return res.json()
+      }
+
+      function renderStatus(s) {
+        $("status").textContent = s.configured
+          ? `Klíč je nastavený (${s.start}…), server ${s.baseUrl}.`
+          : `Klíč zatím není nastavený. Server ${s.baseUrl}.`
+      }
+
+      async function refresh() {
+        try {
+          renderStatus(await call({ action: "get_status" }))
+        } catch {
+          $("status").textContent = "Stav se nepodařilo načíst."
+        }
+      }
+
+      $("save").addEventListener("click", async () => {
+        const key = $("key").value.trim()
+        if (!key) return msg("Vložte API klíč.", "err")
+        $("save").disabled = true
+        msg("Ověřuji klíč proti SID…")
+        try {
+          const r = await call({ action: "save_config", api_key: key })
+          if (r.ok) {
+            $("key").value = ""
+            msg("Klíč uložen a ověřen.", "ok")
+          } else {
+            msg(r.error || "Uložení se nezdařilo.", "err")
+          }
+        } catch {
+          msg("Uložení se nezdařilo.", "err")
+        } finally {
+          $("save").disabled = false
+          refresh()
+        }
+      })
+
+      $("del").addEventListener("click", async () => {
+        $("del").disabled = true
+        try {
+          await call({ action: "delete_config" })
+          msg("Klíč smazán.", "ok")
+        } catch {
+          msg("Smazání se nezdařilo.", "err")
+        } finally {
+          $("del").disabled = false
+          refresh()
+        }
+      })
+
+      refresh()
+    </script>
+  </body>
+</html>

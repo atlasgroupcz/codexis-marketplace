@@ -24,7 +24,7 @@ docker run --rm \
   sh -c "bun install --frozen-lockfile \
     && bun test \
     && bun build src/main.ts --target=node --format=cjs --outdir=dist --entry-naming=sid-cli.cjs \
-    && { [ -f src/cgi.ts ] && bun build src/cgi.ts --target=node --format=cjs --outdir=dist --entry-naming=sid-cgi.cjs || true; }"
+    && { [ -f src/cgi-main.ts ] && bun build src/cgi-main.ts --target=node --format=cjs --outdir=dist --entry-naming=sid-cgi.cjs || true; }"
 
 # Bundle → spustitelný artefakt.
 #
@@ -45,5 +45,5 @@ emit() {
 
 emit sid-cli.cjs bin/sid-cli
 # Komponenta (CGI backend) je volitelná — build ji přeskočí, dokud
-# src/cgi.ts neexistuje.
+# src/cgi-main.ts neexistuje.
 [ -f "${SCRIPT_DIR}/sid-cli/dist/sid-cgi.cjs" ] && emit sid-cgi.cjs components/sid/sid-cgi

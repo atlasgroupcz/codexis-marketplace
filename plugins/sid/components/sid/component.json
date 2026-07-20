@@ -1,0 +1,23 @@
+{
+  "id": "sid",
+  "title": "SID — API klíč",
+  "icon": "icon.svg",
+  "route": "sid",
+  "description": "Nastavení osobního API klíče pro přístup k SID.",
+  "entrypoint": "index.html",
+  "binary": "sid-cgi",
+  "i18n": {
+    "cs": {
+      "displayName": "SID — API klíč",
+      "description": "Vložte osobní API klíč vygenerovaný v SID (Profil → API klíče) a odemkněte vyhledávání, potvrzování a hlídání dokumentů."
+    },
+    "en": {
+      "displayName": "SID — API key",
+      "description": "Paste your personal API key generated in SID (Profile → API keys) to enable document search, confirmations and watchdog."
+    },
+    "sk": {
+      "displayName": "SID — API kľúč",
+      "description": "Vložte osobný API kľúč vygenerovaný v SID (Profil → API kľúče) a odomknite vyhľadávanie, potvrdzovanie a stráženie dokumentov."
+    }
+  }
+}
