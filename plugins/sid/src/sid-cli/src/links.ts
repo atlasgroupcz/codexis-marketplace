@@ -20,6 +20,12 @@ export function confirmationsUrl(role: Role | null): string {
   return `${getBaseUrl()}${role === "ADMIN" ? "/admin/confirmations" : "/confirmations"}`
 }
 
+/** The file browser scoped to one folder. Admins land on the admin tree. */
+export function folderUrl(folderId: string, role: Role | null): string {
+  const base = role === "ADMIN" ? "/admin/files" : "/files"
+  return `${getBaseUrl()}${base}?folderId=${encodeURIComponent(folderId)}`
+}
+
 /**
  * The signed-in user's role. Written when the key is stored, so this normally
  * costs nothing; otherwise fetched once and cached. A failed lookup returns

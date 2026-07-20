@@ -71,6 +71,8 @@ sid-cli docs get <documentId>                     # metadata + files
 sid-cli docs legislation <documentId>             # regulations it rests on
 sid-cli docs set-validity <documentId> --from 2026-01-01 --to 2026-12-31
 sid-cli folders list                              # folders you can see, with paths
+sid-cli access user <email|name|id>               # (admin) a user's folder rights
+sid-cli access group <name|id>                    # (admin) a group's folder rights
 sid-cli attributes list                           # the attribute catalogue
 sid-cli download <fileId> --out ./smernice.pdf
 sid-cli confirmations list --state pending        # what the user must confirm
@@ -123,6 +125,13 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 - **"who am I / am I an admin"** → `settings whoami`, which returns `role`
   and `isAdmin`. Use it when a request depends on being an admin — checking
   first is cheaper than attempting an admin-scoped action and reading the 403.
+- **"what can user X / group Y reach"** → `access user <email|name|id>` or
+  `access group <name|id>`. Admin reporting: lists every folder the principal
+  can open, at what role, and (for a user) whether it is a direct grant or via
+  a group. The answer is scoped to folders you administer, so an empty list
+  with a `note` means either the principal has no access or you don't
+  administer those folders — not a failure. To *change* a grant, open the
+  folder link in SID; permissions are edited there, never from the CLI.
 - **"set validity from / until"** → `docs set-validity`. This is the only
   command that changes anything in SID. It needs EDITOR rights on the document
   — which admins have across every folder, and a regular user has only where

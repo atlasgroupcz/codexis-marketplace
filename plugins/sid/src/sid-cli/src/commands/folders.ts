@@ -1,7 +1,6 @@
 import { apiGet, CliError, type FetchLike } from "../http"
-import { EXIT, getBaseUrl } from "../config"
-import { resolveRole } from "../links"
-import type { Role } from "../links"
+import { EXIT } from "../config"
+import { folderUrl, resolveRole } from "../links"
 
 const USAGE = "Použití: sid-cli folders list"
 
@@ -10,12 +9,6 @@ type Folder = {
   name: string
   parentId: string | null
   documentCount?: number
-}
-
-/** Folder listing in the app, filtered to one folder. */
-function folderUrl(id: string, role: Role | null): string {
-  const base = role === "ADMIN" ? "/admin/files" : "/files"
-  return `${getBaseUrl()}${base}?folderId=${encodeURIComponent(id)}`
 }
 
 /**

@@ -14,6 +14,8 @@ without guessing.
 | `docs legislation <id>` | `GET /api/v1/documents/{id}/legislation` |
 | `docs set-validity <id>` | `PATCH /api/v1/documents/{id}` |
 | `folders list` | `GET /api/v1/folders` |
+| `access user <email\|name\|id>` | `GET /api/v1/users` (resolve) + `GET /api/v1/access/users/{id}` |
+| `access group <name\|id>` | `GET /api/v1/groups` (resolve) + `GET /api/v1/access/groups/{id}` |
 | `attributes list` | `GET /api/v1/attributes` |
 | `download <fileId>` | `GET /api/files/download/{fileId}` |
 | `confirmations list` | `GET /api/v1/confirmations` |

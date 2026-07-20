@@ -8,6 +8,7 @@ const COMMANDS: Record<string, () => Promise<CommandModule>> = {
   search: () => import("./commands/search"),
   docs: () => import("./commands/docs"),
   folders: () => import("./commands/folders"),
+  access: () => import("./commands/access"),
   attributes: () => import("./commands/attributes"),
   download: () => import("./commands/download"),
   confirmations: () => import("./commands/confirmations"),
@@ -25,6 +26,7 @@ Příkazy:
   docs legislation <id>                    sledovaná legislativa dokumentu
   docs set-validity <id> --from|--to       datum platnosti (nutné EDITOR právo)
   folders list                             složky, do kterých vidím
+  access user|group <email|název|id>       (admin) jaká práva má user/skupina ke složkám
   attributes list [--all]                  katalog atributů pro filtrování
   download <fileId> [--out CESTA]          stažení souboru
   confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
