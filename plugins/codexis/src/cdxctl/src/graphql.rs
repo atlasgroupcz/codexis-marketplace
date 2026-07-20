@@ -286,6 +286,7 @@ query GetAgentDefaults {
         maxTurns
         model
         jurisdictions
+        skills
     }
 }
 "#;
