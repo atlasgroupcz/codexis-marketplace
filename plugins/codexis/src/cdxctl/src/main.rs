@@ -296,9 +296,9 @@ enum AgentCommands {
         /// Turn budget for one run; the server applies its own when omitted
         #[arg(long)]
         max_turns: Option<u32>,
-        /// Instructions the agent runs with, as markdown
+        /// The agent's system prompt, as markdown
         #[arg(long)]
-        memory: Option<String>,
+        instructions: Option<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -334,9 +334,9 @@ enum AgentCommands {
         /// Turn budget for one run
         #[arg(long)]
         max_turns: Option<u32>,
-        /// Instructions the agent runs with
+        /// The agent's system prompt, as markdown
         #[arg(long)]
-        memory: Option<String>,
+        instructions: Option<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -691,7 +691,7 @@ fn main() {
                 jurisdictions,
                 model,
                 max_turns,
-                memory,
+                instructions,
                 file,
                 stdin,
             } => commands::agent::create(
@@ -707,7 +707,7 @@ fn main() {
                     jurisdictions: none_if_empty(jurisdictions),
                     model,
                     max_turns,
-                    memory,
+                    instructions,
                 },
                 format,
             ),
@@ -721,7 +721,7 @@ fn main() {
                 jurisdictions,
                 model,
                 max_turns,
-                memory,
+                instructions,
                 file,
                 stdin,
             } => commands::agent::update(
@@ -738,7 +738,7 @@ fn main() {
                     jurisdictions,
                     model,
                     max_turns,
-                    memory,
+                    instructions,
                 },
                 format,
             ),
@@ -920,7 +920,7 @@ mod tests {
             "CLAUDE_OPUS_4_8",
             "--max-turns",
             "7",
-            "--memory",
+            "--instructions",
             "Posud zakonnost vypovedi.",
         ])
         .expect("agent create should parse");
@@ -935,7 +935,7 @@ mod tests {
                         skills,
                         model,
                         max_turns,
-                        memory,
+                        instructions,
                         file,
                         stdin,
                         ..
@@ -947,7 +947,7 @@ mod tests {
                 assert_eq!(skills, vec!["debugger"]);
                 assert_eq!(model.as_deref(), Some("CLAUDE_OPUS_4_8"));
                 assert_eq!(max_turns, Some(7));
-                assert_eq!(memory.as_deref(), Some("Posud zakonnost vypovedi."));
+                assert_eq!(instructions.as_deref(), Some("Posud zakonnost vypovedi."));
                 assert!(file.is_none());
                 assert!(!stdin);
             }

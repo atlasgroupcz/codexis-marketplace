@@ -25,14 +25,14 @@ i18n:
 ```bash
 cdxctl agent list --editable-only
 cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
-  --tool shell --memory "Posuď zákonnost výpovědi. …"
+  --tool shell --instructions "Posuď zákonnost výpovědi. …"
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
 An agent is a reusable persona with its own model, tools and instructions. `create` takes the model and jurisdictions from the active chat. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
 
-### Writing `--memory`
+### Writing `--instructions`
 
 Five sentences, one job each, and skip the role — it is already in the name. In order: the task, the input, the sources to use, what to check, the output and its shape.
 
@@ -60,7 +60,7 @@ cdxctl automation update <id> --title "New title"
 cdxctl automation enable <id>   # or disable / trigger / delete
 ```
 
-Write `--prompt` the same way as `--memory` above. An automation may never create another automation.
+Write `--prompt` the same way as `--instructions` above. An automation may never create another automation.
 
 ### Schedule
 

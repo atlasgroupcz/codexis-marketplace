@@ -269,7 +269,7 @@ query GetAgents {
         jurisdictions
         model
         maxTurns
-        memory
+        instructions
         disallowedTools { toolName displayName kind source }
         sourceKind
         editable
@@ -346,7 +346,7 @@ mutation SaveAgent($id: ID, $input: AgentInput!) {
             jurisdictions
             model
             maxTurns
-            memory
+            instructions
             disallowedTools { toolName displayName kind source }
             sourceKind
             editable

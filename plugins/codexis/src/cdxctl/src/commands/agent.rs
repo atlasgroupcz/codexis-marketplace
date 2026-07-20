@@ -18,7 +18,7 @@ pub struct AgentFields {
     pub jurisdictions: Option<Vec<String>>,
     pub model: Option<String>,
     pub max_turns: Option<u32>,
-    pub memory: Option<String>,
+    pub instructions: Option<String>,
 }
 
 impl AgentFields {
@@ -31,7 +31,7 @@ impl AgentFields {
             && self.jurisdictions.is_none()
             && self.model.is_none()
             && self.max_turns.is_none()
-            && self.memory.is_none()
+            && self.instructions.is_none()
     }
 }
 
@@ -264,7 +264,7 @@ fn fetch_agent(client: &GraphQLClient, id: &str, node_id: &str) -> Result<Value,
 
 fn merge_current(current: &Value) -> Map<String, Value> {
     let mut input = Map::new();
-    for key in ["name", "description", "memory"] {
+    for key in ["name", "description", "instructions"] {
         if let Some(value) = current.get(key).and_then(Value::as_str) {
             input.insert(key.into(), json!(value));
         }
@@ -327,8 +327,8 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
     if let Some(max_turns) = fields.max_turns {
         input.insert("maxTurns".into(), json!(max_turns));
     }
-    if let Some(memory) = &fields.memory {
-        input.insert("memory".into(), json!(memory));
+    if let Some(instructions) = &fields.instructions {
+        input.insert("instructions".into(), json!(instructions));
     }
 }
 
@@ -421,7 +421,7 @@ mod tests {
         let current = json!({
             "name": "reviewer",
             "description": "Reviews merge requests",
-            "memory": "Read the diff first.",
+            "instructions": "Read the diff first.",
             "tools": [{ "toolName": "shell" }, { "toolName": "readFile" }],
             "disallowedTools": [{ "toolName": "writeFile" }],
             "skills": ["debugger"],
@@ -433,7 +433,7 @@ mod tests {
         let merged = merge_current(&current);
 
         assert_eq!(merged["name"], json!("reviewer"));
-        assert_eq!(merged["memory"], json!("Read the diff first."));
+        assert_eq!(merged["instructions"], json!("Read the diff first."));
         assert_eq!(merged["tools"], json!(["shell", "readFile"]));
         assert_eq!(merged["disallowedTools"], json!(["writeFile"]));
         assert_eq!(merged["skills"], json!(["debugger"]));
