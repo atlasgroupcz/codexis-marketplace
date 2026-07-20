@@ -1,0 +1,88 @@
+import { describe, it, expect, beforeEach } from "bun:test"
+import { mkdtempSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { apiGet, apiPatch, CliError } from "./http"
+import { EXIT } from "./config"
+
+function fakeFetch(status: number, body: unknown): typeof fetch {
+  return (async () =>
+    new Response(typeof body === "string" ? body : JSON.stringify(body), {
+      status,
+      headers: { "content-type": "application/json" },
+    })) as unknown as typeof fetch
+}
+
+beforeEach(() => {
+  const dir = mkdtempSync(join(tmpdir(), "sid-http-"))
+  process.env.SID_ENV_FILE = join(dir, ".env")
+  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_test\nSID_API_URL=http://sid.local\n", { mode: 0o600 })
+  delete process.env.CODEXIS_PLUGIN_SID_API_URL
+})
+
+describe("apiGet", () => {
+  it("posílá x-api-key a vrací JSON", async () => {
+    let seen: Record<string, string> = {}
+    const f = (async (url: unknown, init: RequestInit) => {
+      seen = Object.fromEntries(new Headers(init.headers))
+      expect(String(url)).toBe("http://sid.local/api/v1/users/me")
+      return new Response(JSON.stringify({ id: "u1" }), { status: 200 })
+    }) as unknown as typeof fetch
+    const out = await apiGet("/api/v1/users/me", f)
+    expect(out).toEqual({ id: "u1" })
+    expect(seen["x-api-key"]).toBe("sid_test")
+  })
+
+  it("bez klíče → CliError AUTH s návodem na /profile/api-klice, fetch se nevolá", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_URL=http://sid.local\n")
+    let called = false
+    const f = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    const err = await apiGet("/api/search?q=x", f).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(CliError)
+    expect((err as CliError).exitCode).toBe(EXIT.AUTH)
+    expect((err as CliError).message).toContain("/profile/api-klice")
+    expect(called).toBe(false)
+  })
+
+  it("401 → AUTH, 404 → NOT_FOUND, 429 → RATE_LIMIT, 500 → ERROR", async () => {
+    const cases = [
+      [401, EXIT.AUTH],
+      [404, EXIT.NOT_FOUND],
+      [429, EXIT.RATE_LIMIT],
+      [500, EXIT.ERROR],
+    ] as const
+    for (const [status, code] of cases) {
+      const err = await apiGet("/api/x", fakeFetch(status, { error: { code: "X" } })).catch((e: unknown) => e)
+      expect((err as CliError).exitCode).toBe(code)
+    }
+  })
+
+  it("chybová hláška nikdy neobsahuje klíč", async () => {
+    const err = await apiGet("/api/x", fakeFetch(500, "boom")).catch((e: unknown) => e)
+    expect(String((err as CliError).message)).not.toContain("sid_test")
+  })
+
+  it("síťová chyba → ERROR, ne pád", async () => {
+    const f = (async () => {
+      throw new Error("ECONNREFUSED")
+    }) as unknown as typeof fetch
+    const err = await apiGet("/api/x", f).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(CliError)
+    expect((err as CliError).exitCode).toBe(EXIT.ERROR)
+  })
+})
+
+describe("apiPatch", () => {
+  it("posílá JSON body", async () => {
+    let sentBody = ""
+    const f = (async (_u: unknown, init: RequestInit) => {
+      sentBody = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await apiPatch("/api/v1/confirmations/c1", { state: "CONFIRMED" }, f)
+    expect(JSON.parse(sentBody)).toEqual({ state: "CONFIRMED" })
+  })
+})
