@@ -3,7 +3,7 @@ uuid: af41bf2b-3172-48e3-a47f-f2b2aa5e5a67
 name: register-zmluv
 icon: icon.svg
 description: This skill should be invoked whenever the user needs Slovak public-sector contracts from the Central Register of Contracts (Centrálny register zmlúv, crz.gov.sk) — search by subject, contracting parties, IČO, contract value, or contract date. Triggers on "zmluva", "register zmlúv", "centrálny register zmlúv", "crz.gov.sk", "verejná zmluva", "dodávateľ", "objednávateľ", "obstarávateľ", "hodnota zmluvy", "kto podpísal zmluvu s", "slovenské zmluvy".
-version: 1.1.0
+version: 1.2.0
 jurisdictions: [SK]
 i18n:
   cs:
@@ -36,7 +36,12 @@ report it to the user. Do NOT blindly retry.
 Search contracts: `register-zmluv search SKCRZ [OPTIONS]`
 
 Use `register-zmluv search SKCRZ --help` for the full filter list. Output is JSON on stdout:
-`{ "results": [...], "total": N, "offset": N, "limit": N }`. Process it with `jq`.
+`{ "results": [...], "total": N, "offset": N, "limit": N }`.
+
+**Always pipe it through `jq`** and select only the fields you need. A bare call puts
+every field of every result into the context window; with a pipe, only the `jq` output
+does. **Always keep `url` in the selection** — it is the citable link, and a filter that
+drops it leaves you unable to cite the contract.
 
 ### get
 Fetch a contract's full record: `register-zmluv get register-zmluv://doc/<DOC_ID>/meta [--dry-run]`
@@ -45,9 +50,24 @@ Fetch a contract's full record: `register-zmluv get register-zmluv://doc/<DOC_ID
 
 ## Workflow
 
-1. Find contracts: `register-zmluv search SKCRZ --query "<text>"` (+ filters). Each result carries
-   a `docId` (e.g. `SKCRZ123456`) and a `url` (its public detail page).
-2. Need the full record: `register-zmluv get register-zmluv://doc/<docId>/meta`.
+1. Find contracts — keep `url` for citing and `docId` for the follow-up `get`. Select
+   `predmet` as the headline, `nazov` only as a secondary reference:
+   ```
+   register-zmluv search SKCRZ --query "poskytovanie služieb" \
+     | jq '.total, (.results[] | {docId, url, predmet, nazov, party1Name, party2Name, sumaSpolu, datum})'
+   ```
+2. Just how many there are — one call, read `total`, stop:
+   ```
+   register-zmluv search SKCRZ --query "poskytovanie služieb" --limit 1 | jq '.total'
+   ```
+3. Need the full record — `meta` wraps it as `{docId, contract}`, so the raw columns
+   are under `.contract`. List the keys once, then select:
+   ```
+   register-zmluv get register-zmluv://doc/SKCRZ123456/meta | jq '.contract | keys'
+   ```
+
+When a filter yields `null`, inspect the keys with `jq 'keys'` (or `.contract | keys`)
+rather than guessing the field name.
 
 ## Result fields (search)
 
@@ -132,8 +152,17 @@ register-zmluv://doc/SKCRZ123456/meta — wrong, internal address
 
 - `search` returns `total` (all matches) but only `limit` results (**default 20, max 100**). When
   `total` is larger than what you received, there are more contracts.
-- Page with `--offset`, or raise `--limit` (up to 100). **Do NOT draw a global conclusion** (e.g.
-  "there is only one such contract") from a truncated first page.
+- **Pick the page size before the call.** Re-running the same search with a bigger `--limit` costs
+  an extra round trip and leaves both outputs in context — the first page is paid for twice.
+
+  | What you need | Call |
+  |---|---|
+  | A specific contract, or the top few matches | default `--limit 20` |
+  | Completeness — every contract of a party, all contracts in a range | `--limit 100` straight away |
+  | Just a count | `--limit 1`, read `total`, stop |
+
+- When `total` still exceeds what you received, page with `--offset`. **Do NOT draw a global
+  conclusion** (e.g. "there is only one such contract") from a truncated first page.
 - Deep paging is capped: `offset + limit` must not exceed **10000**. For broader coverage, narrow
   the query with filters instead.
 - For a count, read `total` from one `--limit 1` search — never page through to count, and never
