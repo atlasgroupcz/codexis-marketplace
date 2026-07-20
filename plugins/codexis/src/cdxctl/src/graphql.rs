@@ -285,6 +285,7 @@ query GetAgentDefaults {
     agentDefaults {
         maxTurns
         model
+        jurisdictions
     }
 }
 "#;
