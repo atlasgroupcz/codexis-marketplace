@@ -7,6 +7,9 @@ type CommandModule = { run: (argv: string[]) => Promise<unknown> }
 const COMMANDS: Record<string, () => Promise<CommandModule>> = {
   search: () => import("./commands/search"),
   docs: () => import("./commands/docs"),
+  download: () => import("./commands/download"),
+  confirmations: () => import("./commands/confirmations"),
+  notifications: () => import("./commands/notifications"),
 }
 
 const HELP = `sid-cli — přístup k SID (Systém interních dokumentů) přes API klíč
@@ -15,6 +18,10 @@ Příkazy:
   search <dotaz> [--size N]                fulltextové hledání
   docs list [--query|--folder|--sort…]     výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
+  download <fileId> [--out CESTA]          stažení souboru
+  confirmations list [--state pending]     co mám potvrdit
+  confirmations confirm <id>               potvrdit přečtení
+  notifications [--all] [--limit N]        notifikace (default nepřečtené)
 
 Klíč: vygenerujte v SID na /profile/api-klice, vložte v panelu pluginu.
 Ukládá se do ~/.cdx/apps/sid/.env — nikdy ho nevkládejte do chatu.`
