@@ -144,15 +144,26 @@ impl PreviewConfig {
 }
 
 /// Fetches the rendered document HTML from the cdx-api preview endpoint —
-/// the exact markup the CODEXIS web app displays. Returns `None` (markdown
-/// fallback) when the backend does not expose the endpoint yet or the
-/// document cannot be rendered.
+/// the exact markup the CODEXIS web app displays, streamed as raw text/html
+/// (no JSON envelope). Returns `None` (markdown fallback) when the backend
+/// does not expose the endpoint yet or the document cannot be rendered.
 fn fetch_preview_html(config: &PreviewConfig, document: &DocumentPreviewPath) -> Option<String> {
     let resource_path = match &document.part_id {
         Some(part) => format!("doc/{}/preview/{part}", document.doc_id),
         None => format!("doc/{}/preview", document.doc_id),
     };
-    let html = fetch_content(config, &resource_path, "").ok()?;
+    let url = format!("{}{}/{resource_path}", config.base_url, crate::core::http::API_PREFIX);
+    let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
+    if let Some(header) = config.api_auth_header() {
+        curl_args.push("-H".to_string());
+        curl_args.push(header);
+    }
+    curl_args.push(url);
+    let output = execute_curl(&curl_args).ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let html = String::from_utf8_lossy(&output.stdout).into_owned();
     (!html.trim().is_empty()).then_some(html)
 }
 
