@@ -65,6 +65,16 @@ describe("apiGet", () => {
     expect(String((err as CliError).message)).not.toContain("sid_test")
   })
 
+  it("200 s ne-JSON tělem → srozumitelná chyba, ne syrové 'Failed to parse JSON'", async () => {
+    // Reálný případ: špatná base URL vrátí HTML login/proxy stránku se statusem 200.
+    const f = (async () => new Response("<html><body>Login</body></html>", { status: 200 })) as unknown as typeof fetch
+    const err = (await apiGet("/api/v1/users/me", f).catch((e: unknown) => e)) as CliError
+    expect(err).toBeInstanceOf(CliError)
+    expect(err.exitCode).toBe(EXIT.ERROR)
+    expect(err.message).toContain("není JSON")
+    expect(err.message).toContain("http://sid.local")
+  })
+
   it("síťová chyba → ERROR, ne pád", async () => {
     const f = (async () => {
       throw new Error("ECONNREFUSED")

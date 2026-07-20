@@ -45,18 +45,36 @@ async function request(path: string, init: RequestInit, f: FetchLike): Promise<R
   return res
 }
 
+/**
+ * Odpověď 2xx, která není JSON, znamená, že jsme nemluvili se SID API —
+ * typicky proxy/captive portal/login stránka na špatné base URL. Bez
+ * tohohle obalu by prosákla syrová hláška "Failed to parse JSON".
+ */
+async function parseJson(res: Response): Promise<unknown> {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new CliError(
+      `Odpověď ze SID není JSON — zkontrolujte adresu (${getBaseUrl()}); ` +
+        `server vrátil: ${text.slice(0, 120).replace(/\s+/g, " ").trim()}`,
+      EXIT.ERROR,
+    )
+  }
+}
+
 export async function apiGet(path: string, f: FetchLike = fetch): Promise<unknown> {
-  return (await request(path, {}, f)).json()
+  return parseJson(await request(path, {}, f))
 }
 
 export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch): Promise<unknown> {
-  return (
+  return parseJson(
     await request(
       path,
       { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } },
       f,
-    )
-  ).json()
+    ),
+  )
 }
 
 /** Pro download — vrací Response, tělo si vystreamuje volající. */

@@ -11,6 +11,7 @@ const COMMANDS: Record<string, () => Promise<CommandModule>> = {
   confirmations: () => import("./commands/confirmations"),
   notifications: () => import("./commands/notifications"),
   check: () => import("./commands/check"),
+  settings: () => import("./commands/settings"),
 }
 
 const HELP = `sid-cli — přístup k SID (Systém interních dokumentů) přes API klíč
@@ -24,6 +25,7 @@ Příkazy:
   confirmations confirm <id>               potvrdit přečtení
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení
+  settings set-key|test|status             správa klíče (set-key čte STDIN)
 
 Klíč: vygenerujte v SID na /profile/api-klice, vložte v panelu pluginu.
 Ukládá se do ~/.cdx/apps/sid/.env — nikdy ho nevkládejte do chatu.`
