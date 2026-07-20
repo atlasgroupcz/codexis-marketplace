@@ -9,6 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import _unit_gate
 from _unit_gate import (
     SUITE_GROUPS,
     Suite,
@@ -100,6 +101,32 @@ class TestSelectSuites:
         names = [s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)]
         assert names[0] == "pytest"
         assert names.index("pytest") < names.index("cargo")
+
+
+class TestDefaultRunner:
+    def test_cargo_runs_once_at_the_workspace_root(self, monkeypatch):
+        """shared/rust is one Cargo workspace, so a single `cargo test` covers
+        every member. Walking the crates by hand re-resolves the workspace once
+        per crate and silently skips any member not on the hardcoded list.
+        """
+        calls = []
+
+        class _Completed:
+            returncode = 0
+
+        monkeypatch.setattr(
+            _unit_gate.subprocess,
+            "run",
+            lambda argv, cwd: calls.append((argv, cwd)) or _Completed(),
+        )
+
+        repo_root = Path(__file__).resolve().parent.parent
+        suite = next(
+            s for s in select_suites(repo_root, cargo=True, frontend=False)
+            if s.name == "cargo"
+        )
+        assert _unit_gate._default_runner(suite) == 0
+        assert calls == [(suite.argv, repo_root / "shared" / "rust")]
 
 
 class TestRunGate:
