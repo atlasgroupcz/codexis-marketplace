@@ -267,8 +267,6 @@ enum AgentCommands {
         #[arg(long, default_value = "false")]
         editable_only: bool,
     },
-    /// Show the values the server fills in for fields you leave out
-    Defaults,
     /// Create an agent from field flags, or from markdown with --file/--stdin
     Create {
         /// Agent name: lowercase letters, digits and hyphens
@@ -681,7 +679,6 @@ fn main() {
             AgentCommands::List { editable_only } => {
                 commands::agent::list(&client, editable_only, format)
             }
-            AgentCommands::Defaults => commands::agent::defaults(&client, format),
             AgentCommands::Create {
                 name,
                 description,
@@ -953,19 +950,6 @@ mod tests {
             }
             _ => panic!("expected agent create command"),
         }
-    }
-
-    #[test]
-    fn parses_agent_defaults_command() {
-        let cli = Cli::try_parse_from(["cdxctl", "agent", "defaults"])
-            .expect("agent defaults should parse");
-
-        assert!(matches!(
-            cli.command,
-            Commands::Agent {
-                command: AgentCommands::Defaults
-            }
-        ));
     }
 
     #[test]

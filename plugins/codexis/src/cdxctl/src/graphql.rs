@@ -280,14 +280,6 @@ query GetAgents {
 }
 "#;
 
-pub const GET_AGENT_DEFAULTS: &str = r#"
-query GetAgentDefaults {
-    agentDefaults {
-        maxTurns
-    }
-}
-"#;
-
 // The chat the shell runs in carries the model and jurisdictions actually in use, which
 // is per chat -- unlike a stored preference, which two concurrent chats would share.
 pub const GET_CHAT_CONTEXT: &str = r#"
@@ -627,8 +619,8 @@ mutation StartTabularExtraction($id: ID!) {
 #[cfg(test)]
 mod tests {
     use super::{
-        CREATE_AGENT_MARKDOWN, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AGENT_DEFAULTS,
-        GET_AUTOMATIONS, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SET_AUTOMATION_ENABLED,
+        CREATE_AGENT_MARKDOWN, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS,
+        GET_CHAT_CONTEXT, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SET_AUTOMATION_ENABLED,
         UPDATE_AGENT_MARKDOWN, UPDATE_AUTOMATION,
     };
 
@@ -642,7 +634,7 @@ mod tests {
         assert!(CREATE_AGENT_MARKDOWN.contains("createAgent(markdown: $markdown)"));
         assert!(UPDATE_AGENT_MARKDOWN.contains("updateAgent(id: $id, markdown: $markdown)"));
         assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
-        assert!(GET_AGENT_DEFAULTS.contains("agentDefaults {"));
+        assert!(GET_CHAT_CONTEXT.contains("... on Chat {"));
     }
 
     #[test]

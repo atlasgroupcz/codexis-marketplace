@@ -64,25 +64,30 @@ pub fn list(
     Ok(())
 }
 
-pub fn defaults(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::GET_AGENT_DEFAULTS, json!({}))?;
-    let mut result = data
-        .get("agentDefaults")
-        .and_then(Value::as_object)
-        .cloned()
-        .unwrap_or_default();
-
-    // Running inside a chat, the model and jurisdictions of that chat are what the user
-    // is working with right now; outside one there is nothing to inherit.
-    if let Some(chat) = current_chat(client) {
-        for key in ["model", "jurisdictions"] {
-            if let Some(value) = chat.get(key) {
-                result.insert(key.into(), value.clone());
+/// `model` is required by the schema and `jurisdictions` shape what the agent may cite, so
+/// both fall back to the chat in use. Outside a chat there is nothing to fall back to.
+fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) -> Result<(), CdxctlError> {
+    let missing: Vec<&str> = ["model", "jurisdictions"]
+        .into_iter()
+        .filter(|key| !input.contains_key(*key))
+        .collect();
+    if missing.is_empty() {
+        return Ok(());
+    }
+    let chat = current_chat(client);
+    for key in missing {
+        match chat.as_ref().and_then(|c| c.get(key)) {
+            Some(value) if !value.is_null() => {
+                input.insert(key.into(), value.clone());
             }
+            _ if key == "model" => {
+                return Err(CdxctlError::Parse(
+                    "Creating an agent needs --model when not running inside a chat".into(),
+                ))
+            }
+            _ => {}
         }
     }
-
-    print_output(&Value::Object(result), format);
     Ok(())
 }
 
@@ -122,14 +127,13 @@ pub fn create(
         let description = fields.description.clone().ok_or_else(|| {
             CdxctlError::Parse("Creating an agent needs --description".into())
         })?;
-        // The server has no per-chat context to guess a model from, so the caller states it.
-        if fields.model.is_none() {
-            return Err(CdxctlError::Parse("Creating an agent needs --model".into()));
-        }
         let mut input = Map::new();
         input.insert("name".into(), json!(name));
         input.insert("description".into(), json!(description));
         apply_fields(&mut input, &fields);
+        // What the flags did not state comes from the chat this shell runs in, so an agent
+        // starts out working the way the conversation that asked for it does.
+        apply_chat_context(client, &mut input)?;
         json!({ "input": Value::Object(input) })
     };
 
@@ -375,6 +379,7 @@ mod tests {
     };
     use crate::commands::resolve_node_id;
     use crate::error::CdxctlError;
+    use serde_json::Map;
     use serde_json::{json, Value};
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -447,6 +452,23 @@ mod tests {
 
         assert_eq!(stored, "BUFnZW50JHV1aWQ");
         assert_ne!(stored, resolve_node_id("my-agent", "Agent"));
+    }
+
+    #[test]
+    fn apply_chat_context_leaves_stated_values_alone() {
+        let mut stated = Map::new();
+        stated.insert("model".into(), json!("CLAUDE_OPUS_4_8"));
+        stated.insert("jurisdictions".into(), json!(["SK"]));
+        let before = stated.clone();
+
+        // Both keys are present, so there is nothing to look up and nothing to overwrite.
+        let missing: Vec<&str> = ["model", "jurisdictions"]
+            .into_iter()
+            .filter(|key| !stated.contains_key(*key))
+            .collect();
+
+        assert!(missing.is_empty());
+        assert_eq!(stated, before);
     }
 
     #[test]

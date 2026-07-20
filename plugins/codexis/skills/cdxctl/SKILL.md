@@ -23,16 +23,14 @@ i18n:
 ## Agents
 
 ```bash
-cdxctl agent defaults                 # model and jurisdictions of this chat, plus the turn budget
 cdxctl agent list --editable-only
 cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
-  --model "$(cdxctl agent defaults | jq -r .model)" \
   --tool shell --memory "Posuď zákonnost výpovědi. …"
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
-An agent is a reusable persona with its own model, tools and instructions. **Run `cdxctl agent defaults` first** — it reports the model and jurisdictions of the chat you are in, and those are what the user is working with. Pass them to `create` unless the user asks for something else; never invent a model or ask which one to use. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
+An agent is a reusable persona with its own model, tools and instructions. `create` takes the model and jurisdictions from the chat you are in unless you pass `--model` or `--jurisdiction`, so never ask the user which model to use — pass one only when they name it. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
 
 ### Writing `--memory`
 
