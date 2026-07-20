@@ -73,3 +73,75 @@ describe("docs list — the rest of the documented filters", () => {
     )
   })
 })
+
+describe("docs legislation", () => {
+  it("lists what the document tracks", async () => {
+    const legis = [{ id: "l1", title: "Zákoník práce", reference: "262/2006 Sb.", type: "LAW" }]
+    const ff = (async (u: unknown) => {
+      cap.url = String(u)
+      return new Response(JSON.stringify(legis), { status: 200 })
+    }) as unknown as typeof fetch
+    const out = (await run(["legislation", "doc-1"], ff)) as { legislation: unknown[] }
+    expect(cap.url).toBe("http://s/api/v1/documents/doc-1/legislation")
+    expect(out.legislation).toHaveLength(1)
+  })
+
+  it("without an id → USAGE", async () => {
+    const err = (await run(["legislation"]).catch((e: unknown) => e)) as CliError
+    expect(err.exitCode).toBe(2)
+  })
+})
+
+describe("docs set-validity", () => {
+  function capturingPatch(cap: { url?: string; method?: string; body?: string }): typeof fetch {
+    return (async (u: unknown, init: RequestInit) => {
+      cap.url = String(u)
+      cap.method = String(init.method)
+      cap.body = String(init.body)
+      return new Response(JSON.stringify({ id: "doc-1" }), { status: 200 })
+    }) as unknown as typeof fetch
+  }
+
+  it("PATCHes only the dates that were given", async () => {
+    const c: { url?: string; method?: string; body?: string } = {}
+    await run(["set-validity", "doc-1", "--from", "2026-01-01"], capturingPatch(c))
+    expect(c.url).toBe("http://s/api/v1/documents/doc-1")
+    expect(c.method).toBe("PATCH")
+    expect(JSON.parse(c.body!)).toEqual({ effectiveFrom: "2026-01-01" })
+  })
+
+  it("sends both ends when both are given", async () => {
+    const c: { url?: string; body?: string } = {}
+    await run(["set-validity", "doc-1", "--from", "2026-01-01", "--to", "2026-12-31"], capturingPatch(c as never))
+    expect(JSON.parse(c.body!)).toEqual({ effectiveFrom: "2026-01-01", effectiveTo: "2026-12-31" })
+  })
+
+  it("--clear-to removes the end date", async () => {
+    const c: { body?: string } = {}
+    await run(["set-validity", "doc-1", "--clear-to"], capturingPatch(c as never))
+    expect(JSON.parse(c.body!)).toEqual({ effectiveTo: null })
+  })
+
+  it("rejects a date that is not YYYY-MM-DD before calling the API", async () => {
+    let called = false
+    const f2 = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    const err = (await run(["set-validity", "doc-1", "--from", "1.1.2026"], f2).catch(
+      (e: unknown) => e,
+    )) as CliError
+    expect(err.exitCode).toBe(2)
+    expect(called).toBe(false)
+  })
+
+  it("refuses to do nothing — no dates at all is a mistake", async () => {
+    const err = (await run(["set-validity", "doc-1"]).catch((e: unknown) => e)) as CliError
+    expect(err.exitCode).toBe(2)
+  })
+
+  it("without an id → USAGE", async () => {
+    const err = (await run(["set-validity"]).catch((e: unknown) => e)) as CliError
+    expect(err.exitCode).toBe(2)
+  })
+})

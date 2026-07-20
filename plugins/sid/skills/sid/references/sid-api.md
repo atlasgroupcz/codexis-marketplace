@@ -11,6 +11,8 @@ without guessing.
 | `search` | `GET /api/search` |
 | `docs list` | `GET /api/v1/documents` |
 | `docs get <id>` | `GET /api/v1/documents/{id}` |
+| `docs legislation <id>` | `GET /api/v1/documents/{id}/legislation` |
+| `docs set-validity <id>` | `PATCH /api/v1/documents/{id}` |
 | `folders list` | `GET /api/v1/folders` |
 | `attributes list` | `GET /api/v1/attributes` |
 | `download <fileId>` | `GET /api/files/download/{fileId}` |
@@ -188,6 +190,31 @@ and the signed-in user always receives it regardless.
 - 120 requests/min per key (independent of IP)
 - Keys have a 90-day TTL; once expired the API returns 401 (`sid-cli` → exit 3)
 - Every request times out after 30 s
+
+## `docs legislation`
+
+What the document tracks, as detected by the Codexis hypertexter or added by
+hand. Each entry carries `title`, `reference` ("262/2006 Sb."), optional
+`section` and `url`, a `type` (LAW, DECREE, …) and a `status` — `OK`, or a
+flag that the source changed, with `changedAt`.
+
+Requires `view` on the document, the same as reading it. Adding or approving
+a change is not exposed: that belongs in the app.
+
+## `docs set-validity`
+
+```
+sid-cli docs set-validity <id> [--from YYYY-MM-DD] [--to YYYY-MM-DD]
+                               [--clear-from] [--clear-to]
+```
+
+The one write the CLI performs. Sends only the fields given, so setting the
+start does not disturb the end. Needs EDITOR rights on the document — not
+admin — and 403 means the caller lacks them.
+
+Dates are validated before the call, so `1.1.2026` fails as misuse (exit 2)
+rather than reaching the server. Changing an effective date makes SID notify
+the people it concerns (`effectiveness_date_changed`).
 
 ## Versions and attachments
 

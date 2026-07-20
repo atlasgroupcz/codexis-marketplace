@@ -68,6 +68,8 @@ Exit codes are a stable contract:
 sid-cli search "smlouva o dílo" --size 5          # full-text across content
 sid-cli docs list --query "spisový řád" --sort newest
 sid-cli docs get <documentId>                     # metadata + files
+sid-cli docs legislation <documentId>             # regulations it rests on
+sid-cli docs set-validity <documentId> --from 2026-01-01 --to 2026-12-31
 sid-cli folders list                              # folders you can see, with paths
 sid-cli attributes list                           # the attribute catalogue
 sid-cli download <fileId> --out ./smernice.pdf
@@ -115,6 +117,13 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
   digest with pending confirmations.
 - **"download / send me the file"** → `docs get` for the `fileId`, then
   `download`.
+- **"which laws does this document rest on"** → `docs legislation <id>`.
+  Read-only: what a document tracks is managed in SID, where the Codexis
+  picker and the change-approval flow live.
+- **"set validity from / until"** → `docs set-validity`. This is the only
+  command that changes anything in SID, and it needs EDITOR rights on the
+  document — a 403 means missing permission, not a broken tool. Dates are
+  `YYYY-MM-DD`; `--clear-from` / `--clear-to` remove a date.
 
 ## User-facing output rules
 
@@ -127,6 +136,10 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
   user stuck in the chat; the point of the plugin is to get them into SID.
 - **Confirming is not available here.** It is a legal acknowledgement and is
   done in SID; point at `confirmInApp` instead of trying to work around it.
+- **`docs set-validity` writes to SID.** Run it only on an explicit
+  instruction naming the document and the dates, never inferred from context,
+  and say afterwards what was set — an effective date governs when a
+  directive binds people.
 - The key carries the same permissions as the user. If something isn't
   visible, that is a missing folder permission, not a tool failure — say so
   instead of suggesting workarounds.

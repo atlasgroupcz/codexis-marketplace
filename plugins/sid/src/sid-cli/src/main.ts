@@ -22,6 +22,8 @@ Příkazy:
   search <dotaz> [--size N]                fulltextové hledání
   docs list [--query|--folder|--attribute…] výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
+  docs legislation <id>                    sledovaná legislativa dokumentu
+  docs set-validity <id> --from|--to       datum platnosti (nutné EDITOR právo)
   folders list                             složky, do kterých vidím
   attributes list [--all]                  katalog atributů pro filtrování
   download <fileId> [--out CESTA]          stažení souboru

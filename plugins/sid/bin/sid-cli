@@ -118,6 +118,9 @@ async function parseJson(res) {
 async function apiGet(path, f = fetch, keyOverride) {
   return parseJson(await request(path, {}, f, keyOverride));
 }
+async function apiPatch(path, body, f = fetch) {
+  return parseJson(await request(path, { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } }, f));
+}
 async function apiRaw(path, f = fetch, timeoutMs = DOWNLOAD_TIMEOUT_MS) {
   return request(path, {}, f, undefined, timeoutMs);
 }
@@ -212,6 +215,45 @@ async function run2(argv, f) {
     const doc = await apiGet(`/api/v1/documents/${encodeURIComponent(id)}`, f);
     return { ...doc, url: documentUrl(doc.id ?? id, await resolveRole(f)) };
   }
+  if (sub === "legislation") {
+    const id = rest[0];
+    if (!id)
+      throw new CliError(USAGE, EXIT.USAGE);
+    const legislation = await apiGet(`/api/v1/documents/${encodeURIComponent(id)}/legislation`, f);
+    return { documentId: id, legislation };
+  }
+  if (sub === "set-validity") {
+    const id = rest[0];
+    if (!id)
+      throw new CliError(USAGE, EXIT.USAGE);
+    const { values } = import_node_util2.parseArgs({
+      args: rest.slice(1),
+      options: {
+        from: { type: "string" },
+        to: { type: "string" },
+        "clear-from": { type: "boolean", default: false },
+        "clear-to": { type: "boolean", default: false }
+      }
+    });
+    const patch = {};
+    for (const [flag, field] of [["from", "effectiveFrom"], ["to", "effectiveTo"]]) {
+      const raw = values[flag];
+      if (raw === undefined)
+        continue;
+      if (!ISO_DATE.test(raw)) {
+        throw new CliError(`Datum musí být ve formátu YYYY-MM-DD, dostal jsem '${raw}'.`, EXIT.USAGE);
+      }
+      patch[field] = raw;
+    }
+    if (values["clear-from"])
+      patch.effectiveFrom = null;
+    if (values["clear-to"])
+      patch.effectiveTo = null;
+    if (Object.keys(patch).length === 0) {
+      throw new CliError("Nebylo co nastavit — uveďte --from, --to, --clear-from nebo --clear-to.", EXIT.USAGE);
+    }
+    return apiPatch(`/api/v1/documents/${encodeURIComponent(id)}`, patch, f);
+  }
   if (sub === "list") {
     const { values } = import_node_util2.parseArgs({
       args: rest,
@@ -262,13 +304,17 @@ async function run2(argv, f) {
   }
   throw new CliError(USAGE, EXIT.USAGE);
 }
-var import_node_util2, USAGE;
+var import_node_util2, ISO_DATE, USAGE;
 var init_docs = __esm(() => {
   init_http();
   init_config();
   init_links();
   import_node_util2 = require("node:util");
-  USAGE = "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] [--attribute ID]… " + "[--from YYYY-MM-DD] [--to YYYY-MM-DD] [--type pdf|word|excel|image] [--personal] " + "[--sort newest|oldest|title|size] [--page N] [--page-size N] | sid-cli docs get <id>";
+  ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  USAGE = "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] [--attribute ID]… " + "[--from YYYY-MM-DD] [--to YYYY-MM-DD] [--type pdf|word|excel|image] [--personal] " + `[--sort newest|oldest|title|size] [--page N] [--page-size N]
+` + `         sid-cli docs get <id>
+` + `         sid-cli docs legislation <id>
+` + "         sid-cli docs set-validity <id> [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--clear-from] [--clear-to]";
 });
 
 // src/commands/folders.ts
@@ -705,6 +751,8 @@ Příkazy:
   search <dotaz> [--size N]                fulltextové hledání
   docs list [--query|--folder|--attribute…] výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
+  docs legislation <id>                    sledovaná legislativa dokumentu
+  docs set-validity <id> --from|--to       datum platnosti (nutné EDITOR právo)
   folders list                             složky, do kterých vidím
   attributes list [--all]                  katalog atributů pro filtrování
   download <fileId> [--out CESTA]          stažení souboru
