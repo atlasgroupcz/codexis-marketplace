@@ -10,9 +10,9 @@ use std::env;
 use pulldown_cmark::{html, Options, Parser};
 use serde_json::Value;
 
-use crate::core::config::Config;
+use crate::core::config::{CODEXIS_PLUGIN_API_URL_ENV, CODEXIS_USER_API_TOKEN_ENV};
 use crate::core::error::CliError;
-use cdx_common::config::read_env;
+use cdx_common::config::{read_env, to_authorization_header};
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
@@ -88,7 +88,7 @@ fn render_preview(
     stylesheet_href: &str,
 ) -> Result<String, PreviewError> {
     let document = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
-    let config = Config::load()?;
+    let config = PreviewConfig::load()?;
 
     // The GraphQL HtmlDoc content is the exact markup the CODEXIS web app renders
     // (`.sN`/`.csn-*` classes styled by preview.css), so the preview is 1:1 with
@@ -114,25 +114,56 @@ fn render_preview(
     ))
 }
 
+/// Preview needs the API base; the user token is optional — previews render
+/// with the daemon-injected admin authorization even for users without their
+/// own CODEXIS token.
+struct PreviewConfig {
+    base_url: String,
+    user_auth_header: Option<String>,
+}
+
+impl PreviewConfig {
+    fn load() -> Result<Self, CliError> {
+        let base_url = read_env(CODEXIS_PLUGIN_API_URL_ENV)
+            .ok_or_else(|| CliError::MissingConfigVars(vec![CODEXIS_PLUGIN_API_URL_ENV]))?;
+        Ok(Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+            user_auth_header: read_env(CODEXIS_USER_API_TOKEN_ENV)
+                .map(|token| to_authorization_header(&token)),
+        })
+    }
+
+    fn admin_auth_header() -> Option<String> {
+        read_env(PREVIEW_AUTHORIZATION_ENV).map(|value| format!("Authorization: {value}"))
+    }
+
+    /// Best available authorization for plain cdx-api requests: admin → user.
+    fn api_auth_header(&self) -> Option<String> {
+        Self::admin_auth_header().or_else(|| self.user_auth_header.clone())
+    }
+}
+
 /// Fetches the document HTML the CODEXIS web app renders. Returns `None` when
 /// the document has no `HtmlDoc` content (unknown doc type) so the caller can
 /// fall back to the markdown text. Prefers the daemon-injected admin
 /// authorization (full document access, like the codexis-next text route),
 /// then the user's token, then anonymous access for public documents.
-fn fetch_html_doc(config: &Config, document: &DocumentPreviewPath) -> Option<String> {
-    if let Some(admin_authorization) = read_env(PREVIEW_AUTHORIZATION_ENV) {
-        if let Some(html) =
-            fetch_html_doc_request(config, document, Some(&format!("Authorization: {admin_authorization}")))
-        {
+fn fetch_html_doc(config: &PreviewConfig, document: &DocumentPreviewPath) -> Option<String> {
+    if let Some(admin_header) = PreviewConfig::admin_auth_header() {
+        if let Some(html) = fetch_html_doc_request(config, document, Some(&admin_header)) {
             return Some(html);
         }
     }
-    fetch_html_doc_request(config, document, Some(&config.auth_header))
-        .or_else(|| fetch_html_doc_request(config, document, None))
+    if let Some(user_header) = &config.user_auth_header {
+        if let Some(html) = fetch_html_doc_request(config, document, Some(user_header)) {
+            return Some(html);
+        }
+    }
+    fetch_html_doc_request(config, document, None)
 }
 
 fn fetch_html_doc_request(
-    config: &Config,
+    config: &PreviewConfig,
     document: &DocumentPreviewPath,
     authorization_header: Option<&str>,
 ) -> Option<String> {
@@ -213,7 +244,7 @@ fn text_query(document: &DocumentPreviewPath, query_string: &str) -> String {
 }
 
 fn fetch_content(
-    config: &Config,
+    config: &PreviewConfig,
     resource_path: &str,
     query_string: &str,
 ) -> Result<String, CliError> {
@@ -222,13 +253,12 @@ fn fetch_content(
         url.push('?');
         url.push_str(query_string);
     }
-    let curl_args = vec![
-        "-sS".to_string(),
-        "--fail-with-body".to_string(),
-        "-H".to_string(),
-        config.auth_header.clone(),
-        url,
-    ];
+    let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
+    if let Some(header) = config.api_auth_header() {
+        curl_args.push("-H".to_string());
+        curl_args.push(header);
+    }
+    curl_args.push(url);
     let output = execute_curl(&curl_args)?;
     let body = String::from_utf8_lossy(&output.stdout).into_owned();
     if !output.status.success() {
@@ -240,7 +270,7 @@ fn fetch_content(
     Ok(content)
 }
 
-fn fetch_title(config: &Config, doc_id: &str) -> Option<String> {
+fn fetch_title(config: &PreviewConfig, doc_id: &str) -> Option<String> {
     let meta = fetch_content(config, &format!("doc/{doc_id}/meta"), "").ok()?;
     let value: Value = serde_json::from_str(&meta).ok()?;
     first_title(&value)
