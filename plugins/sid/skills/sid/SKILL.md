@@ -41,7 +41,7 @@ open it. Never present a document as "handled" from the chat alone.
 **IMPORTANT:** Stop on a genuine error line — report it, don't guess
 workarounds and don't blindly retry; the message on stderr is authoritative.
 Exit code 3 means the key is missing or expired: tell the user to issue a new
-one in SID (Profil → API klíče, `/profile/api-klice`) and paste it into the
+one in SID (Profil → API klíče, `/api-klice`) and paste it into the
 plugin settings. When acting on several documents, run each independently; one
 error doesn't mean skip the rest.
 
@@ -58,7 +58,7 @@ Exit codes are a stable contract:
 | 0 | success | — |
 | 1 | other error | read the stderr message |
 | 2 | bad usage | fix the arguments |
-| 3 | key missing or expired | send the user to `/profile/api-klice` (see above) |
+| 3 | key missing or expired | send the user to `/api-klice` (see above) |
 | 4 | not found | verify the id |
 | 5 | rate limited | slow down, retry shortly |
 

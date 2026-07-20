@@ -33,7 +33,7 @@ describe("apiGet", () => {
     expect(seen["x-api-key"]).toBe("sid_test")
   })
 
-  it("bez klíče → CliError AUTH s návodem na /profile/api-klice, fetch se nevolá", async () => {
+  it("bez klíče → CliError AUTH s návodem na /api-klice, fetch se nevolá", async () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_URL=http://sid.local\n")
     let called = false
     const f = (async () => {
@@ -43,7 +43,7 @@ describe("apiGet", () => {
     const err = await apiGet("/api/search?q=x", f).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(CliError)
     expect((err as CliError).exitCode).toBe(EXIT.AUTH)
-    expect((err as CliError).message).toContain("/profile/api-klice")
+    expect((err as CliError).message).toContain("/api-klice")
     expect(called).toBe(false)
   })
 

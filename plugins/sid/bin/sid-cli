@@ -77,7 +77,7 @@ var init_config = __esm(() => {
 function statusToError(status, bodyText) {
   const detail = bodyText.slice(0, 300);
   if (status === 401) {
-    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /profile/api-klice. ${detail}`, EXIT.AUTH);
+    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
   }
   if (status === 403)
     return new CliError(`Přístup odepřen (403). ${detail}`, EXIT.AUTH);
@@ -131,7 +131,7 @@ var init_http = __esm(() => {
       this.exitCode = exitCode;
     }
   };
-  NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
+  NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
   DOWNLOAD_TIMEOUT_MS = 15 * 60000;
 });
 
@@ -626,7 +626,7 @@ Příkazy:
   check [--notify]                         digest: novinky + čekající potvrzení
   settings set-key|test|status             správa klíče (set-key čte STDIN)
 
-Klíč: vygenerujte v SID na /profile/api-klice, vložte v panelu pluginu.
+Klíč: vygenerujte v SID na /api-klice, vložte v panelu pluginu.
 Ukládá se do ~/.cdx/apps/sid/.env — nikdy ho nevkládejte do chatu.`;
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);

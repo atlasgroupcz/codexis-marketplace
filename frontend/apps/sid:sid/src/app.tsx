@@ -121,7 +121,7 @@ export function App() {
             },
           ]}
           getKey={{
-            href: `${status?.baseUrl ?? ''}/profile/api-klice`,
+            href: `${status?.baseUrl ?? ''}/api-klice`,
             label: t('settings.getKey'),
             hint: t('settings.getKeyHint'),
           }}

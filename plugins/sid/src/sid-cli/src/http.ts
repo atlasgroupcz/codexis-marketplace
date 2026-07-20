@@ -13,14 +13,14 @@ export type FetchLike = typeof fetch
 
 const NO_KEY_MSG =
   "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " +
-  "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis."
+  "/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis."
 
 function statusToError(status: number, bodyText: string): CliError {
   // Truncate the body and never attach headers — the key must not leak into errors.
   const detail = bodyText.slice(0, 300)
   if (status === 401) {
     return new CliError(
-      `SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /profile/api-klice. ${detail}`,
+      `SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`,
       EXIT.AUTH,
     )
   }

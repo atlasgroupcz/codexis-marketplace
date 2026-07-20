@@ -68,11 +68,11 @@ class CliError extends Error {
     this.exitCode = exitCode;
   }
 }
-var NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
+var NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
 function statusToError(status, bodyText) {
   const detail = bodyText.slice(0, 300);
   if (status === 401) {
-    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /profile/api-klice. ${detail}`, EXIT.AUTH);
+    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
   }
   if (status === 403)
     return new CliError(`Přístup odepřen (403). ${detail}`, EXIT.AUTH);
