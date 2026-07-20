@@ -80,11 +80,11 @@ fn try_publish_sources(sources: Option<&serde_json::Value>) {
 }
 
 /// The upstream API emits `previewUrl` values pointing at the CODEXIS web app
-/// (`https://…/document/<DOC_ID>/text[#<PART>]`). The chat preview panel renders
-/// documents through this plugin instead (LM-207), so rewrite them to
-/// `codexis://doc/<DOC_ID>/text[?part=<PART>]` references the daemon resolves
-/// back to `cdx-cli preview`. Values that don't match the document-text pattern
-/// are forwarded verbatim.
+/// (`https://…/document/<DOC_ID>/text[/<PART>][#<PART>]`). The chat preview panel
+/// renders documents through this plugin instead (LM-207), so rewrite them to
+/// `codexis://preview/doc/<DOC_ID>[/<PART>]` references the daemon resolves back
+/// to `cdx-cli preview`. Values that don't match the document-text pattern are
+/// forwarded verbatim.
 fn rewrite_preview_references(sources: &serde_json::Value) -> serde_json::Value {
     let mut rewritten = sources.clone();
     if let Some(items) = rewritten.as_array_mut() {
@@ -123,10 +123,8 @@ fn to_plugin_preview_reference(preview_url: &str) -> Option<String> {
         _ => return None,
     };
     let part = fragment.filter(|value| !value.is_empty()).or(part);
-    let suffix = part
-        .map(|value| format!("?part={value}"))
-        .unwrap_or_default();
-    Some(format!("codexis://doc/{doc_id}/text{suffix}"))
+    let suffix = part.map(|value| format!("/{value}")).unwrap_or_default();
+    Some(format!("codexis://preview/doc/{doc_id}{suffix}"))
 }
 
 /// Parses the v2 envelope `{content, sources}`. Returns `(content_json, sources_value)`.
@@ -393,21 +391,21 @@ mod tests {
     fn rewrites_web_preview_urls_to_plugin_references() {
         assert_eq!(
             to_plugin_preview_reference("https://app.codexis.cz/document/CR10/text"),
-            Some("codexis://doc/CR10/text".to_string())
+            Some("codexis://preview/doc/CR10".to_string())
         );
         assert_eq!(
             to_plugin_preview_reference("https://app.codexis.cz/document/CR10/text#paragraf3"),
-            Some("codexis://doc/CR10/text?part=paragraf3".to_string())
+            Some("codexis://preview/doc/CR10/paragraf3".to_string())
         );
         assert_eq!(
             to_plugin_preview_reference(
                 "https://next.codexis.cz/document/CR10_2026_04_01/text/paragraf10"
             ),
-            Some("codexis://doc/CR10_2026_04_01/text?part=paragraf10".to_string())
+            Some("codexis://preview/doc/CR10_2026_04_01/paragraf10".to_string())
         );
         assert_eq!(
             to_plugin_preview_reference("https://next.codexis.cz/document/CR10"),
-            Some("codexis://doc/CR10/text".to_string())
+            Some("codexis://preview/doc/CR10".to_string())
         );
     }
 
@@ -435,7 +433,7 @@ mod tests {
         )
         .unwrap();
         let rewritten = rewrite_preview_references(&sources);
-        assert_eq!(rewritten[0]["previewUrl"], "codexis://doc/CR10/text?part=paragraf3");
+        assert_eq!(rewritten[0]["previewUrl"], "codexis://preview/doc/CR10/paragraf3");
         assert_eq!(rewritten[0]["url"], "https://app.codexis.cz/doc/CR10");
     }
 

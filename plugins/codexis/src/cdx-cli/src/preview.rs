@@ -1,8 +1,9 @@
 //! `cdx-cli preview` — CGI handler behind the daemon's plugin preview endpoint
 //! (`/rest/plugin-previews/…`, LM-207). The daemon passes the resource path of a
-//! `codexis://doc/<DOC_ID>/text[?part=<PART>]` preview reference via `PATH_INFO`
-//! / `QUERY_STRING`; the handler fetches the document markdown + metadata from
-//! the CODEXIS API and emits a standalone HTML page (CGI response on stdout).
+//! `codexis://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
+//! `PATH_INFO` / `QUERY_STRING`; the handler fetches the document markdown +
+//! metadata from the CODEXIS API and emits a standalone HTML page (CGI response
+//! on stdout).
 
 use std::env;
 
@@ -82,21 +83,69 @@ fn render_preview(
     query_string: &str,
     stylesheet_href: &str,
 ) -> Result<String, PreviewError> {
-    let doc_id = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
+    let document = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
     let config = Config::load()?;
 
-    let markdown = fetch_content(&config, &format!("doc/{doc_id}/text"), query_string)?;
-    let title = fetch_title(&config, &doc_id)
-        .or_else(|| markdown_heading(&markdown))
-        .unwrap_or_else(|| doc_id.clone());
-    let canonical_url = canonical_url(&doc_id);
+    // The GraphQL HtmlDoc content is the exact markup the CODEXIS web app renders
+    // (`.sN`/`.csn-*` classes styled by preview.css), so the preview is 1:1 with
+    // the web. Documents outside the LCR GraphQL surface (case law, EU, …) fall
+    // back to the cdx-api markdown text.
+    let content_html = match fetch_html_doc(&config, &document) {
+        Some(html) => html,
+        None => render_markdown(&fetch_content(
+            &config,
+            &format!("doc/{}/text", document.doc_id),
+            &text_query(&document, query_string),
+        )?),
+    };
+    let title = fetch_title(&config, &document.doc_id)
+        .unwrap_or_else(|| document.doc_id.clone());
+    let canonical_url = canonical_url(&document);
 
     Ok(document_page(
         &title,
         canonical_url.as_deref(),
-        &render_markdown(&markdown),
+        &content_html,
         stylesheet_href,
     ))
+}
+
+/// Fetches the document HTML the CODEXIS web app renders. Returns `None` when
+/// the document has no accessible `HtmlDoc` content (unknown doc type, no
+/// license) so the caller can fall back to the markdown text.
+fn fetch_html_doc(config: &Config, document: &DocumentPreviewPath) -> Option<String> {
+    let variables = match &document.part_id {
+        Some(part) => serde_json::json!({ "id": document.doc_id, "parts": [part] }),
+        None => serde_json::json!({ "id": document.doc_id, "parts": Value::Null }),
+    };
+    let body = serde_json::json!({
+        "query": "query preview($id: String!, $parts: [String!]) { lcrDoc(docId: {docId: $id}) { docContent { __typename ... on HtmlDoc { accessible content { html(contentItemIds: $parts) } } } } }",
+        "variables": variables,
+    });
+    let curl_args = vec![
+        "-sS".to_string(),
+        "--fail-with-body".to_string(),
+        "-H".to_string(),
+        config.auth_header.clone(),
+        "-H".to_string(),
+        "Content-Type: application/json".to_string(),
+        "-X".to_string(),
+        "POST".to_string(),
+        format!("{}/graphql", config.base_url),
+        "-d".to_string(),
+        body.to_string(),
+    ];
+    let output = execute_curl(&curl_args).ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let response: Value = serde_json::from_slice(&output.stdout).ok()?;
+    let doc_content = &response["data"]["lcrDoc"]["docContent"];
+    if doc_content["__typename"] != "HtmlDoc" || doc_content["accessible"] != true {
+        return None;
+    }
+    let html = doc_content["content"]["html"].as_str()?;
+    (!html.trim().is_empty()).then(|| html.to_string())
 }
 
 /// The stylesheet lives at the previews root, while the page is served under the
@@ -107,21 +156,35 @@ fn stylesheet_href(path_info: &str) -> String {
     format!("{}preview.css", "../".repeat(segments.saturating_sub(1)))
 }
 
-/// Accepts `/doc/<DOC_ID>` and `/doc/<DOC_ID>/text`; anything else has no preview.
-fn parse_document_path(path_info: &str) -> Option<String> {
+struct DocumentPreviewPath {
+    doc_id: String,
+    part_id: Option<String>,
+}
+
+/// Accepts `/preview/doc/<DOC_ID>` and `/preview/doc/<DOC_ID>/<DOC_PART_ID>`;
+/// anything else has no preview.
+fn parse_document_path(path_info: &str) -> Option<DocumentPreviewPath> {
     let mut segments = path_info.trim_matches('/').split('/');
-    if segments.next() != Some("doc") {
+    if segments.next() != Some("preview") || segments.next() != Some("doc") {
         return None;
     }
     let doc_id = segments.next().filter(|segment| !segment.is_empty())?;
-    match segments.next() {
-        None | Some("text") => {}
-        Some(_) => return None,
-    }
+    let part_id = segments.next().filter(|segment| !segment.is_empty());
     if segments.next().is_some() {
         return None;
     }
-    Some(doc_id.to_string())
+    Some(DocumentPreviewPath {
+        doc_id: doc_id.to_string(),
+        part_id: part_id.map(str::to_string),
+    })
+}
+
+fn text_query(document: &DocumentPreviewPath, query_string: &str) -> String {
+    match (&document.part_id, query_string.is_empty()) {
+        (Some(part), true) => format!("part={part}"),
+        (Some(part), false) => format!("part={part}&{query_string}"),
+        (None, _) => query_string.to_string(),
+    }
 }
 
 fn fetch_content(
@@ -177,19 +240,17 @@ fn first_title(value: &Value) -> Option<String> {
     }
 }
 
-fn markdown_heading(markdown: &str) -> Option<String> {
-    markdown.lines().find_map(|line| {
-        let heading = line.trim_start().strip_prefix('#')?;
-        let heading = heading.trim_start_matches('#').trim();
-        (!heading.is_empty()).then(|| heading.to_string())
-    })
-}
-
-fn canonical_url(doc_id: &str) -> Option<String> {
+fn canonical_url(document: &DocumentPreviewPath) -> Option<String> {
     let base = read_env(WEB_BASE_URL_ENV)?;
+    let part_suffix = document
+        .part_id
+        .as_ref()
+        .map(|part| format!("/{part}"))
+        .unwrap_or_default();
     Some(format!(
-        "{}/document/{doc_id}/text",
-        base.trim_end_matches('/')
+        "{}/document/{}/text{part_suffix}",
+        base.trim_end_matches('/'),
+        document.doc_id
     ))
 }
 
@@ -240,22 +301,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_document_paths_with_and_without_text_suffix() {
-        assert_eq!(
-            parse_document_path("/doc/CR10_2026_04_01/text"),
-            Some("CR10_2026_04_01".to_string())
-        );
-        assert_eq!(parse_document_path("doc/JD1"), Some("JD1".to_string()));
+    fn parses_document_paths_with_and_without_a_part() {
+        let plain = parse_document_path("/preview/doc/CR10_2026_04_01").unwrap();
+        assert_eq!(plain.doc_id, "CR10_2026_04_01");
+        assert_eq!(plain.part_id, None);
+
+        let with_part = parse_document_path("preview/doc/CR10_2026_04_01/paragraf10").unwrap();
+        assert_eq!(with_part.doc_id, "CR10_2026_04_01");
+        assert_eq!(with_part.part_id.as_deref(), Some("paragraf10"));
     }
 
     #[test]
-    fn rejects_paths_outside_the_doc_namespace() {
-        assert_eq!(parse_document_path("/"), None);
-        assert_eq!(parse_document_path("/doc"), None);
-        assert_eq!(parse_document_path("/doc//text"), None);
-        assert_eq!(parse_document_path("/doc/CR10/toc"), None);
-        assert_eq!(parse_document_path("/doc/CR10/text/extra"), None);
-        assert_eq!(parse_document_path("/search/CR"), None);
+    fn rejects_paths_outside_the_preview_doc_namespace() {
+        assert!(parse_document_path("/").is_none());
+        assert!(parse_document_path("/preview").is_none());
+        assert!(parse_document_path("/preview/doc").is_none());
+        assert!(parse_document_path("/doc/CR10").is_none());
+        assert!(parse_document_path("/preview/doc/CR10/part/extra").is_none());
+        assert!(parse_document_path("/preview/search/CR").is_none());
+    }
+
+    #[test]
+    fn builds_the_text_query_from_the_part_and_query_string() {
+        let with_part = DocumentPreviewPath {
+            doc_id: "CR10".to_string(),
+            part_id: Some("paragraf10".to_string()),
+        };
+        let without_part = DocumentPreviewPath { doc_id: "CR10".to_string(), part_id: None };
+
+        assert_eq!(text_query(&with_part, ""), "part=paragraf10");
+        assert_eq!(text_query(&with_part, "foo=1"), "part=paragraf10&foo=1");
+        assert_eq!(text_query(&without_part, "foo=1"), "foo=1");
+        assert_eq!(text_query(&without_part, ""), "");
     }
 
     #[test]
@@ -265,15 +342,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(first_title(&meta), Some("Zákon č. 586/1992 Sb.".to_string()));
-    }
-
-    #[test]
-    fn falls_back_to_the_first_markdown_heading() {
-        assert_eq!(
-            markdown_heading("intro\n## 586/1992 Sb.\ntext"),
-            Some("586/1992 Sb.".to_string())
-        );
-        assert_eq!(markdown_heading("no heading"), None);
     }
 
     #[test]
@@ -307,9 +375,12 @@ mod tests {
 
     #[test]
     fn stylesheet_href_climbs_one_level_per_extra_path_segment() {
-        assert_eq!(stylesheet_href("/doc/CR10_2026_04_01/text"), "../../preview.css");
-        assert_eq!(stylesheet_href("/doc/CR10"), "../preview.css");
-        assert_eq!(stylesheet_href("/doc"), "preview.css");
+        assert_eq!(
+            stylesheet_href("/preview/doc/CR10_2026_04_01/paragraf10"),
+            "../../../preview.css"
+        );
+        assert_eq!(stylesheet_href("/preview/doc/CR10"), "../../preview.css");
+        assert_eq!(stylesheet_href("/preview"), "preview.css");
         assert_eq!(stylesheet_href("/"), "preview.css");
     }
 
