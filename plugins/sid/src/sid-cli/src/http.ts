@@ -91,16 +91,6 @@ export async function apiGet(path: string, f: FetchLike = fetch, keyOverride?: s
   return parseJson(await request(path, {}, f, keyOverride))
 }
 
-export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch): Promise<unknown> {
-  return parseJson(
-    await request(
-      path,
-      { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } },
-      f,
-    ),
-  )
-}
-
 /** For downloads — returns the Response so the caller can stream the body. */
 export async function apiRaw(
   path: string,

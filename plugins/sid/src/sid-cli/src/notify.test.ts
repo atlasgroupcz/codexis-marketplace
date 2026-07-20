@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test"
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { sendDigest, restBase, graphqlUrl } from "./notify"
@@ -12,6 +12,7 @@ beforeEach(() => {
   process.env.CODEXIS_PUBLIC_DAEMON_URL = "http://daemon.local/graphql"
   // E-mail is OFF by default (matching the peers), so tests of the e-mail
   // path have to enable it through the shipped defaults.
+  process.env.SID_ENV_FILE = join(home, ".env")
   const defaults = join(home, "defaults.json")
   writeFileSync(defaults, JSON.stringify({ notify: { email: true, inApp: true } }))
   process.env.SID_DEFAULTS_FILE = defaults
@@ -262,5 +263,45 @@ describe("timeouty na volání daemona", () => {
     }) as unknown as typeof fetch
     // sendDigest is best-effort: it must return false, not throw.
     expect(await sendDigest("s", "b", f)).toBe(false)
+  })
+})
+
+describe("currentUserEmail", () => {
+  it("uses the cached address without touching the daemon", async () => {
+    const { currentUserEmail } = await import("./notify")
+    writeSecret("t")
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_USER_EMAIL=ja@firma.cz\n", { mode: 0o600 })
+    let called = false
+    const f = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    expect(await currentUserEmail(f)).toBe("ja@firma.cz")
+    expect(called).toBe(false)
+  })
+
+  it("queries once and caches, so opening the panel again is free", async () => {
+    const { currentUserEmail } = await import("./notify")
+    writeSecret("t")
+    let calls = 0
+    const f = (async () => {
+      calls += 1
+      return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
+    }) as unknown as typeof fetch
+    expect(await currentUserEmail(f)).toBe("ja@firma.cz")
+    expect(await currentUserEmail(f)).toBe("ja@firma.cz")
+    expect(calls).toBe(1)
+  })
+
+  it("returns an empty string when the daemon is unreachable and caches nothing", async () => {
+    const { currentUserEmail } = await import("./notify")
+    writeSecret("t")
+    const f = (async () => new Response("x", { status: 500 })) as unknown as typeof fetch
+    expect(await currentUserEmail(f)).toBe("")
+    // Nothing cached — the file may not even exist, which is also "not cached".
+    const envFile = existsSync(process.env.SID_ENV_FILE!)
+      ? readFileSync(process.env.SID_ENV_FILE!, "utf8")
+      : ""
+    expect(envFile).not.toContain("SID_USER_EMAIL")
   })
 })

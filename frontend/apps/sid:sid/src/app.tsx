@@ -17,17 +17,26 @@ export function App() {
   const [notify, setNotify] = useState<NotifyValues>(EMPTY_NOTIFY)
   const [savingNotify, setSavingNotify] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
+  // Set once the user edits the notification form. Saving the API key also
+  // refetches, and without this those edits would be silently reverted.
+  const [notifyDirty, setNotifyDirty] = useState(false)
 
-  const refetch = useCallback(async () => {
-    try {
-      const next = await fetchStatus()
-      setStatus(next)
-      setNotify(next.notify)
-      setLoadFailed(false)
-    } catch {
-      setLoadFailed(true)
-    }
-  }, [])
+  const refetch = useCallback(
+    async (resetNotify = true) => {
+      try {
+        const next = await fetchStatus()
+        setStatus(next)
+        if (resetNotify) {
+          setNotify(next.notify)
+          setNotifyDirty(false)
+        }
+        setLoadFailed(false)
+      } catch {
+        setLoadFailed(true)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     void refetch()
@@ -66,12 +75,12 @@ export function App() {
     if (!result.ok) {
       throw new Error(result.error ?? t('app.saveFailed'))
     }
-    await refetch()
+    await refetch(!notifyDirty)
   }
 
   const handleDeleteKey = () => {
     deleteApiKey()
-      .then(() => refetch())
+      .then(() => refetch(!notifyDirty))
       .then(() => toast.success(t('app.keyDeleted')))
       .catch(() => toast.error(t('app.saveFailed')))
   }
@@ -126,7 +135,10 @@ export function App() {
         <h2 className="text-sm font-semibold">{t('app.notifySection')}</h2>
         <NotifySettingsBody
           value={notify}
-          onChange={setNotify}
+          onChange={(next) => {
+            setNotify(next)
+            setNotifyDirty(true)
+          }}
           userEmail={status?.userEmail ?? ''}
           labels={notifyLabels}
         />

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test"
 import { mkdtempSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { apiGet, apiPatch, CliError } from "./http"
+import { apiGet, CliError } from "./http"
 import { EXIT } from "./config"
 
 function fakeFetch(status: number, body: unknown): typeof fetch {
@@ -85,17 +85,6 @@ describe("apiGet", () => {
   })
 })
 
-describe("apiPatch", () => {
-  it("posílá JSON body", async () => {
-    let sentBody = ""
-    const f = (async (_u: unknown, init: RequestInit) => {
-      sentBody = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await apiPatch("/api/v1/confirmations/c1", { state: "CONFIRMED" }, f)
-    expect(JSON.parse(sentBody)).toEqual({ state: "CONFIRMED" })
-  })
-})
 
 describe("timeouty", () => {
   it("každý požadavek nese AbortSignal (jinak může cron viset navždy)", async () => {

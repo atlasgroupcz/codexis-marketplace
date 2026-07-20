@@ -1,5 +1,6 @@
 import { actionResponseSchema, statusResponseSchema } from './schemas'
 import type { ActionResponse, StatusResponse } from './schemas'
+import type { z } from 'zod'
 
 /**
  * In dev the Vite proxy maps /api to the component endpoint; in the VM the
@@ -13,7 +14,8 @@ function getApiBase(): string {
   return './api'
 }
 
-async function post(body: Record<string, unknown>): Promise<ActionResponse> {
+/** Every call is a POST carrying an `action`; only the response shape differs. */
+async function request<T>(schema: z.ZodType<T>, body: Record<string, unknown>): Promise<T> {
   const response = await fetch(new URL(getApiBase(), window.location.href), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -23,28 +25,19 @@ async function post(body: Record<string, unknown>): Promise<ActionResponse> {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`)
   }
-  return actionResponseSchema.parse(await response.json())
+  return schema.parse(await response.json())
 }
 
-export async function fetchStatus(): Promise<StatusResponse> {
-  const response = await fetch(new URL(getApiBase(), window.location.href), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    cache: 'no-store',
-    body: JSON.stringify({ action: 'get_status' }),
-  })
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
-  return statusResponseSchema.parse(await response.json())
+export function fetchStatus(): Promise<StatusResponse> {
+  return request(statusResponseSchema, { action: 'get_status' })
 }
 
 export function saveApiKey(apiKey: string): Promise<ActionResponse> {
-  return post({ action: 'save_config', api_key: apiKey })
+  return request(actionResponseSchema, { action: 'save_config', api_key: apiKey })
 }
 
 export function deleteApiKey(): Promise<ActionResponse> {
-  return post({ action: 'delete_config' })
+  return request(actionResponseSchema, { action: 'delete_config' })
 }
 
 export function saveNotifySettings(values: {
@@ -52,5 +45,5 @@ export function saveNotifySettings(values: {
   inApp: boolean
   recipients: Array<string>
 }): Promise<ActionResponse> {
-  return post({ action: 'save_notify_settings', ...values })
+  return request(actionResponseSchema, { action: 'save_notify_settings', ...values })
 }

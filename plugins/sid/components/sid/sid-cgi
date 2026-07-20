@@ -218,11 +218,18 @@ async function queryMeEmail(auth, daemonUrl, f) {
   }
 }
 async function currentUserEmail(f = fetch) {
+  const cached = readEnvFile().SID_USER_EMAIL;
+  if (cached)
+    return cached;
   const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL;
   const auth = daemonAuth();
   if (!daemonUrl || !auth)
     return "";
-  return await queryMeEmail(auth, daemonUrl, f) ?? "";
+  const email = await queryMeEmail(auth, daemonUrl, f);
+  if (!email)
+    return "";
+  writeEnvValue("SID_USER_EMAIL", email);
+  return email;
 }
 
 // src/cgi.ts

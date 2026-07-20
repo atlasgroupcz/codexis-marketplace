@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { randomUUID } from "node:crypto"
-import { userHome } from "./config"
+import { readEnvFile, userHome, writeEnvValue } from "./config"
 import { getNotifySettings } from "./notify-settings"
 import type { FetchLike } from "./http"
 
@@ -82,7 +82,7 @@ async function sendEmail(
 }
 
 /** Signed-in user's e-mail from the daemon, or null. Best-effort. */
-export async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Promise<string | null> {
+async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Promise<string | null> {
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
@@ -137,12 +137,25 @@ async function sendBell(message: string, auth: string, daemonUrl: string, f: Fet
   }
 }
 
-/** Signed-in user's address for the settings panel, or "" when unavailable. */
+/**
+ * Signed-in user's address for the settings panel, or "" when unavailable.
+ *
+ * Cached in the env file: the panel asks on every open and the address does
+ * not change, so without this each render would cost a daemon round trip.
+ * A failed lookup caches nothing, so it retries next time.
+ */
 export async function currentUserEmail(f: FetchLike = fetch): Promise<string> {
+  const cached = readEnvFile().SID_USER_EMAIL
+  if (cached) return cached
+
   const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL
   const auth = daemonAuth()
   if (!daemonUrl || !auth) return ""
-  return (await queryMeEmail(auth, daemonUrl, f)) ?? ""
+
+  const email = await queryMeEmail(auth, daemonUrl, f)
+  if (!email) return ""
+  writeEnvValue("SID_USER_EMAIL", email)
+  return email
 }
 
 /**
