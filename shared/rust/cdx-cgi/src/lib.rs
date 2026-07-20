@@ -43,7 +43,13 @@ pub fn emit_error(status: u16, message: &str) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Read the request body (`CONTENT_LENGTH` bytes) from stdin.
+/// Upper bound on an accepted request body. `CONTENT_LENGTH` is attacker- (or
+/// bug-) controlled input; without a cap a bogus value makes the per-request
+/// CGI process allocate the whole claimed size up front.
+pub const MAX_BODY_BYTES: usize = 64 * 1024 * 1024;
+
+/// Read the request body (`CONTENT_LENGTH` bytes, at most [`MAX_BODY_BYTES`])
+/// from stdin.
 pub fn read_body() -> io::Result<String> {
     let content_length: usize = env::var("CONTENT_LENGTH")
         .ok()
@@ -51,6 +57,12 @@ pub fn read_body() -> io::Result<String> {
         .unwrap_or(0);
     if content_length == 0 {
         return Ok(String::new());
+    }
+    if content_length > MAX_BODY_BYTES {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("request body of {content_length} bytes exceeds the {MAX_BODY_BYTES}-byte limit"),
+        ));
     }
     let mut buf = vec![0u8; content_length];
     io::stdin().read_exact(&mut buf)?;
@@ -110,6 +122,17 @@ fn hex_digit(b: u8) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn read_body_rejects_content_length_over_cap() {
+        // 64 MiB + 1 — over the cap, but small enough that the pre-fix code
+        // fails by hitting EOF on stdin rather than by refusing the length.
+        std::env::set_var("CONTENT_LENGTH", (64 * 1024 * 1024 + 1).to_string());
+        let result = read_body();
+        std::env::remove_var("CONTENT_LENGTH");
+        let err = result.unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput, "got: {err}");
+    }
 
     #[test]
     fn percent_decode_handles_plus_and_hex() {
