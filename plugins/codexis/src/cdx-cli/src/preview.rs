@@ -125,12 +125,18 @@ fn fetch_html_doc_request(
     document: &DocumentPreviewPath,
     with_auth: bool,
 ) -> Option<String> {
+    // A part preview renders just the part itself; the document header belongs
+    // only to the full-document preview (mirrors the codexis-next part view).
     let variables = match &document.part_id {
-        Some(part) => serde_json::json!({ "id": document.doc_id, "parts": [part] }),
-        None => serde_json::json!({ "id": document.doc_id, "parts": Value::Null }),
+        Some(part) => {
+            serde_json::json!({ "id": document.doc_id, "parts": [part], "includeHeader": false })
+        }
+        None => {
+            serde_json::json!({ "id": document.doc_id, "parts": Value::Null, "includeHeader": true })
+        }
     };
     let body = serde_json::json!({
-        "query": "query preview($id: String!, $parts: [String!]) { globalItem(itemId: $id) { ... on Document { docContent { ... on HtmlDoc { content { html(contentItemIds: $parts, markingType: NONE) } } } } } }",
+        "query": "query preview($id: String!, $parts: [String!], $includeHeader: Boolean) { globalItem(itemId: $id) { ... on Document { docContent { ... on HtmlDoc { content { html(contentItemIds: $parts, includeHeader: $includeHeader, markingType: NONE) } } } } } }",
         "variables": variables,
     });
     let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
