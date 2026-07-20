@@ -1,14 +1,18 @@
 name: sid-search
 description: Verify the sid skill drives sid-cli for internal document lookups and relays real SID data back to the user.
 
-# The API key is supplied at runtime via `--var sid_api_key=…` and dropped into
-# the per-app env file the CLI reads (src/config.ts loads SID_API_KEY= from
-# $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/.env). Same pattern as the katastr
-# plugin — without it the run would only ever exercise the "no key" path and
-# would pass whether SID works or not.
-#
-# `sid_api_base` lets CI point at a staging SID; production is the default via
-# the CODEXIS_PLUGIN_SID_API_URL declared in plugin.json.
+# Needs `--var sid_api_key=…`, and a SID instance that accepts API keys.
+# Neither exists yet: headless auth is still an unmerged SID branch, so
+# onprem answers /api/v1/* with a 307 to /login. Remove this `skip` once SID
+# is deployed and CI has a key to pass — the steps below are ready as they
+# are. Skipping is deliberate: without a key the run would only ever exercise
+# the "no key" path and would pass whether SID works or not.
+skip: "waiting for SID headless auth to be deployed and a CI key to be provisioned"
+
+# The key lands in the per-app env file the CLI reads (config.ts loads
+# SID_API_KEY= from $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/.env), the same
+# way the katastr plugin does it. `sid_api_base` lets CI point at a staging
+# SID; otherwise CODEXIS_PLUGIN_SID_API_URL from plugin.json applies.
 
 setup:
   - upload:
