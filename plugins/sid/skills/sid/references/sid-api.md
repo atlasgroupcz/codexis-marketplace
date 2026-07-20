@@ -62,6 +62,29 @@ Response:
 }
 ```
 
+### Query syntax
+
+The query goes to OpenSearch with Czech stemming, and supports Google-style
+operators:
+
+| Input | Meaning |
+|-------|---------|
+| `slovo` | one word, stemmed — also matches *slovy*, *slovem* |
+| `slovo1 slovo2` | AND — both must appear |
+| `"přesná fráze"` | exact phrase, adjacent, **not** stemmed |
+| `slo*` | prefix |
+| `-slovo` | exclude |
+| `+slovo` | required |
+| `a OR b` | explicit OR |
+| `(a OR b) +c` | grouping |
+
+Diacritics are folded, so `pravni` finds `právní`. Fields are weighted:
+title ×3, description ×2, content ×1.
+
+Stemming has limits — `smluvní` and `smlouva` are different roots. When a
+search returns less than expected, retry with a prefix (`smlou*`) or an
+explicit OR rather than concluding nothing exists.
+
 Two traps:
 
 - **`total` is not a total.** The route recomputes it to `hits.length` after
@@ -165,6 +188,16 @@ and the signed-in user always receives it regardless.
 - 120 requests/min per key (independent of IP)
 - Keys have a 90-day TTL; once expired the API returns 401 (`sid-cli` → exit 3)
 - Every request times out after 30 s
+
+## Versions and attachments
+
+`docs get` returns `currentFile` (the current version), plus `fileCount`,
+`attachmentCount` and `attachmentsPreview` (id + title). Attachments are
+documents in their own right, so `docs get <attachmentId>` works on them.
+
+Older versions are **not reachable**: SID exposes no endpoint listing a
+document's files, so only the current one can be downloaded. Someone needing
+an earlier version has to open the document in SID.
 
 ## Out of scope
 

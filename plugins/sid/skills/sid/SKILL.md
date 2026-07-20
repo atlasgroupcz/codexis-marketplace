@@ -91,6 +91,12 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 
 - **"find / search …"** → `search` for wording inside documents;
   `docs list --query` for titles and filtered listings.
+- **`search` takes Google-style operators** and it is worth using them:
+  `"smlouva o dílo"` for an exact phrase, `smlou*` for a prefix, `-faktura`
+  to exclude, `a OR b`, `+word` to require, parentheses to group. Bare words
+  are ANDed and stemmed, so `smlouva` also matches *smlouvy*, *smlouvou*.
+  The stemmer is not perfect — `smluvní` is a different root than `smlouva`,
+  so reach for `smlou*` or an explicit OR when a search comes back thin.
 - **A filter needs an id you don't have** → `folders list` and
   `attributes list` first. Both return ids together with the names a person
   recognises; never guess an id or ask the user for one.
