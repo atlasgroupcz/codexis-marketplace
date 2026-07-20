@@ -81,9 +81,15 @@ pub fn create(
     fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let variables = if fields.is_empty() {
-        json!({ "markdown": load_markdown(file, stdin)? })
-    } else {
+    if fields.is_empty() {
+        let data = client.execute(
+            graphql::CREATE_AGENT_MARKDOWN,
+            json!({ "markdown": load_markdown(file, stdin)? }),
+        )?;
+        print_output(&data.get("createAgent").cloned().unwrap_or(Value::Null), format);
+        return Ok(());
+    }
+    let variables = {
         if file.is_some() || stdin {
             return Err(CdxctlError::Parse(
                 "Choose one input style: the field flags, or --file/--stdin markdown".into(),
@@ -102,8 +108,8 @@ pub fn create(
         json!({ "input": Value::Object(input) })
     };
 
-    let data = client.execute(graphql::CREATE_AGENT, variables)?;
-    print_payload(data.get("createAgent"), format)
+    let data = client.execute(graphql::SAVE_AGENT, variables)?;
+    print_payload(data.get("saveAgent"), format)
 }
 
 pub fn update(
@@ -116,9 +122,15 @@ pub fn update(
 ) -> Result<(), CdxctlError> {
     let node_id = resolve_node_id(id, "Agent");
 
-    let variables = if fields.is_empty() {
-        json!({ "id": node_id, "markdown": load_markdown(file, stdin)? })
-    } else {
+    if fields.is_empty() {
+        let data = client.execute(
+            graphql::UPDATE_AGENT_MARKDOWN,
+            json!({ "id": node_id, "markdown": load_markdown(file, stdin)? }),
+        )?;
+        print_output(&data.get("updateAgent").cloned().unwrap_or(Value::Null), format);
+        return Ok(());
+    }
+    let variables = {
         if file.is_some() || stdin {
             return Err(CdxctlError::Parse(
                 "Choose one input style: the field flags, or --file/--stdin markdown".into(),
@@ -132,8 +144,8 @@ pub fn update(
         json!({ "id": node_id, "input": Value::Object(input) })
     };
 
-    let data = client.execute(graphql::UPDATE_AGENT, variables)?;
-    print_payload(data.get("updateAgent"), format)
+    let data = client.execute(graphql::SAVE_AGENT, variables)?;
+    print_payload(data.get("saveAgent"), format)
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
