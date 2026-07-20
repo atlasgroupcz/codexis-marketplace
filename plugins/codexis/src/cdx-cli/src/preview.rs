@@ -137,9 +137,11 @@ impl PreviewConfig {
         read_env(PREVIEW_AUTHORIZATION_ENV).map(|value| format!("Authorization: {value}"))
     }
 
-    /// Best available authorization for plain cdx-api requests: admin → user.
+    /// Authorization for plain cdx-api requests (meta/markdown). cdx-api accepts
+    /// only Bearer tokens, so the user token comes first; the admin Basic header
+    /// is a last resort for token-less executions.
     fn api_auth_header(&self) -> Option<String> {
-        Self::admin_auth_header().or_else(|| self.user_auth_header.clone())
+        self.user_auth_header.clone().or_else(Self::admin_auth_header)
     }
 }
 
