@@ -234,8 +234,9 @@ without a server-side change:
 
 - folder permission management,
 - group writes,
-- legislation and Hypertexter,
-- access introspection ("what can this user see").
+- access introspection ("what can this user see"),
+- **changing** what legislation a document tracks, and the Hypertexter
+  detection run. Reading it is available — see `docs legislation` above.
 
 Document upload *is* supported by the API but not wrapped by `sid-cli` — use
 the SID web interface for that.
