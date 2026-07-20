@@ -139,9 +139,16 @@ pub fn update(
         // AgentInput replaces the whole agent, so anything the flags do not set has to be
         // carried over from the stored agent or the update would clear it.
         let current = fetch_agent(client, id, &node_id)?;
+        // `resolve_node_id` fabricates an id from a raw name; the daemon only knows the
+        // stored one, so the fetched agent's id is what the mutation has to carry.
+        let stored_id = current
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| CdxctlError::Parse(format!("Agent {id} has no id")))?
+            .to_string();
         let mut input = merge_current(&current);
         apply_fields(&mut input, &fields);
-        json!({ "id": node_id, "input": Value::Object(input) })
+        json!({ "id": stored_id, "input": Value::Object(input) })
     };
 
     let data = client.execute(graphql::SAVE_AGENT, variables)?;
@@ -327,8 +334,9 @@ mod tests {
         format_input_error, load_markdown, load_markdown_from_file, merge_current,
         validate_markdown, AgentFields,
     };
+    use crate::commands::resolve_node_id;
     use crate::error::CdxctlError;
-    use serde_json::json;
+    use serde_json::{json, Value};
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -388,6 +396,18 @@ mod tests {
         assert_eq!(merged["jurisdictions"], json!(["CZ"]));
         assert_eq!(merged["model"], json!("CLAUDE_OPUS_4_8"));
         assert_eq!(merged["maxTurns"], json!(7));
+    }
+
+    #[test]
+    fn merge_current_keeps_the_stored_id_not_the_one_built_from_a_name() {
+        // `cdxctl agent update my-agent` fabricates Agent:my-agent as the node id, but the
+        // daemon only knows the stored uuid -- sending the fabricated one made the update
+        // look like a second agent claiming the name.
+        let current = json!({ "id": "BUFnZW50JHV1aWQ", "name": "my-agent" });
+        let stored = current.get("id").and_then(Value::as_str).unwrap();
+
+        assert_eq!(stored, "BUFnZW50JHV1aWQ");
+        assert_ne!(stored, resolve_node_id("my-agent", "Agent"));
     }
 
     #[test]
