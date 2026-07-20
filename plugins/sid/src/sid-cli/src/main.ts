@@ -21,8 +21,7 @@ Příkazy:
   docs list [--query|--folder|--sort…]     výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
   download <fileId> [--out CESTA]          stažení souboru
-  confirmations list [--state pending]     co mám potvrdit
-  confirmations confirm <id>               potvrdit přečtení
+  confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení
   settings set-key|test|status             správa klíče (set-key čte STDIN)

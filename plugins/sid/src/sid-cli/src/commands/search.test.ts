@@ -8,7 +8,7 @@ import type { CliError } from "../http"
 beforeEach(() => {
   const dir = mkdtempSync(join(tmpdir(), "sid-search-"))
   process.env.SID_ENV_FILE = join(dir, ".env")
-  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\n", { mode: 0o600 })
+  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\nSID_USER_ROLE=USER\n", { mode: 0o600 })
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
 })
 
@@ -28,6 +28,9 @@ describe("search", () => {
     )) as { hits: unknown[]; warning?: string }
     expect(cap.url).toBe("http://s/api/search?q=smlouva+o+d%C3%ADlo&size=5")
     expect(out.hits).toHaveLength(1)
+    // Every hit must carry the link into SID — the plugin leads users to the
+    // app, it does not stand in for it.
+    expect((out.hits[0] as { url: string }).url).toBe("http://s/files/d1")
     expect(out.warning).toBeUndefined()
   })
 

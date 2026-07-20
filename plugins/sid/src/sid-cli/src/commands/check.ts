@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util"
 import { apiGet, type FetchLike } from "../http"
 import { sendDigest } from "../notify"
+import { confirmationsUrl, documentUrl, resolveRole } from "../links"
 
 /**
  * Daily digest for `automations/check-sid.md`.
@@ -12,15 +13,19 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   const { values } = parseArgs({ args: argv, options: { notify: { type: "boolean", default: false } } })
 
   const [notifications, confirmations] = await Promise.all([
-    apiGet("/api/notifications?unreadOnly=true&limit=50", f) as Promise<unknown[]>,
-    apiGet("/api/v1/confirmations?state=pending", f) as Promise<unknown[]>,
+    apiGet("/api/notifications?unreadOnly=true&limit=50", f) as Promise<{ documentId?: string }[]>,
+    apiGet("/api/v1/confirmations?state=pending", f) as Promise<{ documentId?: string }[]>,
   ])
+  const role = await resolveRole(f)
+  const withUrl = <T extends { documentId?: string }>(items: T[]) =>
+    items.map((i) => (i.documentId ? { ...i, url: documentUrl(i.documentId, role) } : i))
 
   const digest = {
     unreadNotifications: notifications.length,
     pendingConfirmations: confirmations.length,
-    notifications,
-    confirmations,
+    notifications: withUrl(notifications),
+    confirmations: withUrl(confirmations),
+    confirmInApp: confirmationsUrl(role),
     notified: false,
   }
 
@@ -30,7 +35,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
       `Nepřečtené notifikace: ${digest.unreadNotifications}`,
       `Čekající potvrzení: ${digest.pendingConfirmations}`,
       "",
-      "Detaily najdete v SID.",
+      `Otevřete v SID: ${confirmationsUrl(role)}`,
     ]
     digest.notified = await sendDigest(subject, lines.join("\n"), f)
   }

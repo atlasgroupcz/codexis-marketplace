@@ -43,6 +43,9 @@ function writeEnvFile(entries) {
   import_node_fs.writeFileSync(tmp, body, { mode: 384 });
   import_node_fs.renameSync(tmp, path);
 }
+function writeEnvValue(key, value) {
+  writeEnvFile({ ...readEnvFile(), [key]: value });
+}
 function writeApiKey(key) {
   writeEnvFile({ ...readEnvFile(), SID_API_KEY: key });
 }
@@ -193,8 +196,9 @@ async function handle(body, f = fetch) {
       const key = (body.api_key ?? "").trim();
       if (!key)
         return { ok: false, error: "Vložte API klíč." };
+      let me;
       try {
-        await apiGet("/api/v1/users/me", f, key);
+        me = await apiGet("/api/v1/users/me", f, key);
       } catch (e) {
         const err = e;
         return {
@@ -203,6 +207,7 @@ async function handle(body, f = fetch) {
         };
       }
       writeApiKey(key);
+      writeEnvValue("SID_USER_ROLE", me.role === "ADMIN" ? "ADMIN" : "USER");
       return { ok: true, verified: true, start: key.slice(0, 7) };
     }
     case "save_notify_settings": {

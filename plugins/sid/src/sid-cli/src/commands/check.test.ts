@@ -10,7 +10,7 @@ beforeEach(() => {
   // No ~/.cdx/env/secret → notify is a no-op, notified stays false.
   process.env.CODEXIS_PUBLIC_USER_HOME = dir
   process.env.CODEXIS_PUBLIC_DAEMON_URL = "http://daemon.local/graphql"
-  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\n", { mode: 0o600 })
+  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\nSID_USER_ROLE=USER\n", { mode: 0o600 })
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
 })
 

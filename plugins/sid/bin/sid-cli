@@ -49,6 +49,9 @@ function writeEnvFile(entries) {
   import_node_fs.writeFileSync(tmp, body, { mode: 384 });
   import_node_fs.renameSync(tmp, path);
 }
+function writeEnvValue(key, value) {
+  writeEnvFile({ ...readEnvFile(), [key]: value });
+}
 function writeApiKey(key) {
   writeEnvFile({ ...readEnvFile(), SID_API_KEY: key });
 }
@@ -115,9 +118,6 @@ async function parseJson(res) {
 async function apiGet(path, f = fetch, keyOverride) {
   return parseJson(await request(path, {}, f, keyOverride));
 }
-async function apiPatch(path, body, f = fetch) {
-  return parseJson(await request(path, { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } }, f));
-}
 async function apiRaw(path, f = fetch, timeoutMs = DOWNLOAD_TIMEOUT_MS) {
   return request(path, {}, f, undefined, timeoutMs);
 }
@@ -133,6 +133,32 @@ var init_http = __esm(() => {
   };
   NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
   DOWNLOAD_TIMEOUT_MS = 15 * 60000;
+});
+
+// src/links.ts
+function documentUrl(documentId, role) {
+  const base = role === "ADMIN" ? "/admin/files" : "/files";
+  return `${getBaseUrl()}${base}/${encodeURIComponent(documentId)}`;
+}
+function confirmationsUrl(role) {
+  return `${getBaseUrl()}${role === "ADMIN" ? "/admin/confirmations" : "/confirmations"}`;
+}
+async function resolveRole(f) {
+  const cached = readEnvFile().SID_USER_ROLE;
+  if (cached === "ADMIN" || cached === "USER")
+    return cached;
+  try {
+    const me = await apiGet("/api/v1/users/me", f);
+    const role = me?.role === "ADMIN" ? "ADMIN" : "USER";
+    writeEnvValue("SID_USER_ROLE", role);
+    return role;
+  } catch {
+    return null;
+  }
+}
+var init_links = __esm(() => {
+  init_http();
+  init_config();
 });
 
 // src/commands/search.ts
@@ -153,18 +179,22 @@ async function run(argv, f) {
   if (values.from)
     sp.set("from", String(values.from));
   const res = await apiGet(`/api/search?${sp}`, f);
+  const role = await resolveRole(f);
+  const hits = res.hits.map((h) => h.documentId ? { ...h, url: documentUrl(h.documentId, role) } : h);
   if (res.source === "opensearch_unavailable") {
     return {
       ...res,
+      hits,
       warning: "Fulltext je dočasně nedostupný (opensearch_unavailable) — prázdný výsledek NEZNAMENÁ, " + "že nic neexistuje. Zkuste to později nebo použijte `sid-cli docs list --query`."
     };
   }
-  return res;
+  return { ...res, hits };
 }
 var import_node_util;
 var init_search = __esm(() => {
   init_http();
   init_config();
+  init_links();
   import_node_util = require("node:util");
 });
 
@@ -179,7 +209,8 @@ async function run2(argv, f) {
     const id = rest[0];
     if (!id)
       throw new CliError(USAGE, EXIT.USAGE);
-    return apiGet(`/api/v1/documents/${encodeURIComponent(id)}`, f);
+    const doc = await apiGet(`/api/v1/documents/${encodeURIComponent(id)}`, f);
+    return { ...doc, url: documentUrl(doc.id ?? id, await resolveRole(f)) };
   }
   if (sub === "list") {
     const { values } = import_node_util2.parseArgs({
@@ -207,7 +238,12 @@ async function run2(argv, f) {
     if (values["page-size"])
       sp.set("pageSize", values["page-size"]);
     const qs = sp.toString();
-    return apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f);
+    const res = await apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f);
+    const role = await resolveRole(f);
+    return {
+      ...res,
+      documents: (res.documents ?? []).map((d) => d.id ? { ...d, url: documentUrl(d.id, role) } : d)
+    };
   }
   throw new CliError(USAGE, EXIT.USAGE);
 }
@@ -215,6 +251,7 @@ var import_node_util2, USAGE;
 var init_docs = __esm(() => {
   init_http();
   init_config();
+  init_links();
   import_node_util2 = require("node:util");
   USAGE = "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] " + "[--sort newest|oldest|title|size] [--page N] [--page-size N] | sid-cli docs get <id>";
 });
@@ -266,23 +303,26 @@ __export(exports_confirmations, {
 });
 async function run4(argv, f) {
   const [sub, ...rest] = argv;
+  if (sub === "confirm") {
+    throw new CliError("Potvrzení se provádí v aplikaci SID, ne z příkazové řádky — " + "otevřete dokument v SID a potvrďte ho tam. " + `Seznam čekajících: ${confirmationsUrl(await resolveRole(f))}`, EXIT.USAGE);
+  }
   if (sub === "list") {
     const { values } = import_node_util4.parseArgs({ args: rest, options: { state: { type: "string" } } });
     const qs = values.state ? `?state=${encodeURIComponent(values.state)}` : "";
-    return apiGet(`/api/v1/confirmations${qs}`, f);
-  }
-  if (sub === "confirm") {
-    const id = rest[0];
-    if (!id)
-      throw new CliError(USAGE2, EXIT.USAGE);
-    return apiPatch(`/api/v1/confirmations/${encodeURIComponent(id)}`, { state: "CONFIRMED" }, f);
+    const items = await apiGet(`/api/v1/confirmations${qs}`, f);
+    const role = await resolveRole(f);
+    return {
+      confirmations: items.map((c) => c.documentId ? { ...c, url: documentUrl(c.documentId, role) } : c),
+      confirmInApp: confirmationsUrl(role)
+    };
   }
   throw new CliError(USAGE2, EXIT.USAGE);
 }
-var import_node_util4, USAGE2 = "Použití: sid-cli confirmations list [--state pending|confirmed] | sid-cli confirmations confirm <id>";
+var import_node_util4, USAGE2 = "Použití: sid-cli confirmations list [--state pending|confirmed]";
 var init_confirmations = __esm(() => {
   init_http();
   init_config();
+  init_links();
   import_node_util4 = require("node:util");
 });
 
@@ -478,11 +518,14 @@ async function run6(argv, f) {
     apiGet("/api/notifications?unreadOnly=true&limit=50", f),
     apiGet("/api/v1/confirmations?state=pending", f)
   ]);
+  const role = await resolveRole(f);
+  const withUrl = (items) => items.map((i) => i.documentId ? { ...i, url: documentUrl(i.documentId, role) } : i);
   const digest = {
     unreadNotifications: notifications.length,
     pendingConfirmations: confirmations.length,
-    notifications,
-    confirmations,
+    notifications: withUrl(notifications),
+    confirmations: withUrl(confirmations),
+    confirmInApp: confirmationsUrl(role),
     notified: false
   };
   if (values.notify && (digest.unreadNotifications > 0 || digest.pendingConfirmations > 0)) {
@@ -491,7 +534,7 @@ async function run6(argv, f) {
       `Nepřečtené notifikace: ${digest.unreadNotifications}`,
       `Čekající potvrzení: ${digest.pendingConfirmations}`,
       "",
-      "Detaily najdete v SID."
+      `Otevřete v SID: ${confirmationsUrl(role)}`
     ];
     digest.notified = await sendDigest(subject, lines.join(`
 `), f);
@@ -502,6 +545,7 @@ var import_node_util6;
 var init_check = __esm(() => {
   init_http();
   init_notify();
+  init_links();
   import_node_util6 = require("node:util");
 });
 
@@ -534,6 +578,7 @@ async function run7(argv, f, stdin = readStdin) {
       throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE3}`, EXIT.USAGE);
     const user = await verifyKey(key, f);
     writeApiKey(key);
+    writeEnvValue("SID_USER_ROLE", user?.role === "ADMIN" ? "ADMIN" : "USER");
     return { verified: true, user, start: key.slice(0, 7) };
   }
   if (sub === "test") {
@@ -576,8 +621,7 @@ Příkazy:
   docs list [--query|--folder|--sort…]     výpis dokumentů s filtry
   docs get <id>                            metadata dokumentu
   download <fileId> [--out CESTA]          stažení souboru
-  confirmations list [--state pending]     co mám potvrdit
-  confirmations confirm <id>               potvrdit přečtení
+  confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení
   settings set-key|test|status             správa klíče (set-key čte STDIN)

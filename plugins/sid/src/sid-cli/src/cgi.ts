@@ -13,7 +13,7 @@
  * The key is never returned to the UI, only its prefix.
  */
 import { apiGet, type CliError, type FetchLike } from "./http"
-import { EXIT, getApiKey, getBaseUrl, writeApiKey, deleteApiKey } from "./config"
+import { EXIT, getApiKey, getBaseUrl, writeApiKey, writeEnvValue, deleteApiKey } from "./config"
 import {
   getNotifySettings,
   isEmail,
@@ -56,8 +56,9 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
       if (!key) return { ok: false, error: "Vložte API klíč." }
       // Verify before touching .env, so a failed attempt can't destroy a key
       // that still works.
+      let me: { role?: unknown }
       try {
-        await apiGet("/api/v1/users/me", f, key)
+        me = (await apiGet("/api/v1/users/me", f, key)) as { role?: unknown }
       } catch (e) {
         const err = e as CliError
         return {
@@ -69,6 +70,7 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
         }
       }
       writeApiKey(key)
+      writeEnvValue("SID_USER_ROLE", me.role === "ADMIN" ? "ADMIN" : "USER")
       return { ok: true, verified: true, start: key.slice(0, 7) }
     }
 

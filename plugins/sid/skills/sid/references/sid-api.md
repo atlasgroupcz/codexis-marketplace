@@ -13,13 +13,20 @@ without guessing.
 | `docs get <id>` | `GET /api/v1/documents/{id}` |
 | `download <fileId>` | `GET /api/files/download/{fileId}` |
 | `confirmations list` | `GET /api/v1/confirmations` |
-| `confirmations confirm <id>` | `PATCH /api/v1/confirmations/{id}` |
 | `notifications` | `GET /api/notifications` |
 | `check` | notifications + confirmations in one call each |
 | `settings test` | `GET /api/v1/users/me` |
 
 Authentication is always the `x-api-key` header; the key is read from
 `~/.cdx/apps/sid/.env` (mode 0600) and never passed as an argument.
+
+## Links back into SID
+
+Every result naming a document carries a `url`. The route depends on the
+signed-in role — SID's `(user)` layout redirects admins to the admin
+dashboard, so admins get `/admin/files/<id>` and everyone else `/files/<id>`.
+The role is cached as `SID_USER_ROLE` when the key is stored, so building the
+link normally costs no extra request.
 
 ## `search`
 
@@ -77,8 +84,10 @@ Here `total` **is** the real count — unlike `search`.
 returns the settled ones. Confirmation states are `UNSEEN` → `SEEN` →
 `CONFIRMED`.
 
-`confirmations confirm <id>` sends `PATCH { "state": "CONFIRMED" }`. It is a
-legal acknowledgement — only ever on the user's explicit instruction.
+Confirming is deliberately **not** exposed by the CLI. It is a legal
+acknowledgement, so it happens in SID with the document on screen rather than
+through a chat message. The response carries `confirmInApp`, the URL of the
+confirmations page.
 
 ## `notifications`
 

@@ -54,6 +54,11 @@ function writeEnvFile(entries: Record<string, string>): void {
   renameSync(tmp, path)
 }
 
+/** Sets a single key in the env file, leaving the others untouched. */
+export function writeEnvValue(key: string, value: string): void {
+  writeEnvFile({ ...readEnvFile(), [key]: value })
+}
+
 export function writeApiKey(key: string): void {
   writeEnvFile({ ...readEnvFile(), SID_API_KEY: key })
 }

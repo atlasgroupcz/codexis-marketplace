@@ -8,7 +8,7 @@ import type { CliError } from "../http"
 beforeEach(() => {
   const dir = mkdtempSync(join(tmpdir(), "sid-conf-"))
   process.env.SID_ENV_FILE = join(dir, ".env")
-  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\n", { mode: 0o600 })
+  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\nSID_USER_ROLE=USER\n", { mode: 0o600 })
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
 })
 
@@ -33,21 +33,21 @@ describe("confirmations", () => {
     expect(cap.url).toBe("http://s/api/v1/confirmations")
   })
 
-  it("confirm <id> → PATCH {state: CONFIRMED}", async () => {
-    let method = ""
-    let body = ""
-    const f = (async (_u: unknown, init: RequestInit) => {
-      method = String(init.method)
-      body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await run(["confirm", "c1"], f)
-    expect(method).toBe("PATCH")
-    expect(JSON.parse(body)).toEqual({ state: "CONFIRMED" })
+  it("each pending item carries the SID link and the app URL", async () => {
+    const f = (async () =>
+      new Response(JSON.stringify([{ id: "c1", documentId: "d1" }]), { status: 200 })) as unknown as typeof fetch
+    const out = (await run(["list", "--state", "pending"], f)) as {
+      confirmations: { url: string }[]
+      confirmInApp: string
+    }
+    expect(out.confirmations[0]!.url).toBe("http://s/files/d1")
+    // Confirming is a legal act and belongs in SID, so the CLI points there.
+    expect(out.confirmInApp).toBe("http://s/confirmations")
   })
 
-  it("confirm bez id → USAGE", async () => {
-    const err = (await run(["confirm"]).catch((e: unknown) => e)) as CliError
+  it("confirm is no longer a CLI command — it must happen in SID", async () => {
+    const err = (await run(["confirm", "c1"]).catch((e: unknown) => e)) as CliError
     expect(err.exitCode).toBe(2)
+    expect(err.message).toMatch(/SID/)
   })
 })

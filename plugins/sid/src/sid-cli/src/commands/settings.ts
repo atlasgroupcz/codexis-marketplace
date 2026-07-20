@@ -1,5 +1,5 @@
 import { apiGet, CliError, type FetchLike } from "../http"
-import { EXIT, getApiKey, getBaseUrl, writeApiKey, deleteApiKey } from "../config"
+import { EXIT, getApiKey, getBaseUrl, writeApiKey, writeEnvValue, deleteApiKey } from "../config"
 
 const USAGE =
   "Použití: sid-cli settings set-key|test|status|delete-key  " +
@@ -45,6 +45,9 @@ export async function run(
     // that still works.
     const user = await verifyKey(key, f)
     writeApiKey(key)
+    // Cache the role so links can point at the right route without an extra
+    // request on every command.
+    writeEnvValue("SID_USER_ROLE", (user as { role?: unknown })?.role === "ADMIN" ? "ADMIN" : "USER")
     // Only the prefix goes back out; the user already has the key itself.
     return { verified: true, user, start: key.slice(0, 7) }
   }

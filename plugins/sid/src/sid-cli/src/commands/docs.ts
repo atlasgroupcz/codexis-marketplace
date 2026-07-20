@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util"
 import { apiGet, CliError, type FetchLike } from "../http"
 import { EXIT } from "../config"
+import { documentUrl, resolveRole } from "../links"
 
 const USAGE =
   "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] " +
@@ -12,7 +13,8 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   if (sub === "get") {
     const id = rest[0]
     if (!id) throw new CliError(USAGE, EXIT.USAGE)
-    return apiGet(`/api/v1/documents/${encodeURIComponent(id)}`, f)
+    const doc = (await apiGet(`/api/v1/documents/${encodeURIComponent(id)}`, f)) as { id?: string }
+    return { ...doc, url: documentUrl(doc.id ?? id, await resolveRole(f)) }
   }
 
   if (sub === "list") {
@@ -35,7 +37,14 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
     if (values.page) sp.set("page", values.page)
     if (values["page-size"]) sp.set("pageSize", values["page-size"])
     const qs = sp.toString()
-    return apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f)
+    const res = (await apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f)) as {
+      documents?: { id?: string }[]
+    }
+    const role = await resolveRole(f)
+    return {
+      ...res,
+      documents: (res.documents ?? []).map((d) => (d.id ? { ...d, url: documentUrl(d.id, role) } : d)),
+    }
   }
 
   throw new CliError(USAGE, EXIT.USAGE)

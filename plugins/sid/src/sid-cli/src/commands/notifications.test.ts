@@ -7,7 +7,7 @@ import { run } from "./notifications"
 beforeEach(() => {
   const dir = mkdtempSync(join(tmpdir(), "sid-notif-"))
   process.env.SID_ENV_FILE = join(dir, ".env")
-  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\n", { mode: 0o600 })
+  writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\nSID_USER_ROLE=USER\n", { mode: 0o600 })
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
 })
 
