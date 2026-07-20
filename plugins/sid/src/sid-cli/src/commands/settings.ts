@@ -1,9 +1,14 @@
 import { apiGet, CliError, type FetchLike } from "../http"
-import { EXIT, getApiKey, getBaseUrl, writeApiKey, writeEnvValue, deleteApiKey } from "../config"
+import { EXIT, getApiKey, getBaseUrl, readEnvFile, writeApiKey, writeEnvValue, deleteApiKey } from "../config"
 
 const USAGE =
-  "Použití: sid-cli settings set-key|test|status|delete-key  " +
+  "Použití: sid-cli settings set-key|test|status|whoami|delete-key  " +
   "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)"
+
+/** Only ADMIN is admin; anything else — including an unknown value — is not. */
+function isAdmin(role: unknown): boolean {
+  return role === "ADMIN"
+}
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = []
@@ -56,9 +61,36 @@ export async function run(
     return { ok: true, user }
   }
 
+  if (sub === "whoami") {
+    // The one place role is asked for live: it drives whether admin-scoped
+    // actions are worth attempting. USER and ADMIN are SID's only roles.
+    const user = (await apiGet("/api/v1/users/me", f)) as {
+      id?: string
+      email?: string
+      name?: string
+      role?: unknown
+    }
+    const admin = isAdmin(user.role)
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: admin ? "ADMIN" : "USER",
+      isAdmin: admin,
+    }
+  }
+
   if (sub === "status") {
     const key = getApiKey()
-    return { configured: key !== "", baseUrl: getBaseUrl(), ...(key ? { start: key.slice(0, 7) } : {}) }
+    // Role is only known once it has been cached (at set-key), so it is
+    // surfaced when present rather than fetched here — status stays offline.
+    const cachedRole = readEnvFile().SID_USER_ROLE
+    return {
+      configured: key !== "",
+      baseUrl: getBaseUrl(),
+      ...(key ? { start: key.slice(0, 7) } : {}),
+      ...(cachedRole ? { role: cachedRole, isAdmin: isAdmin(cachedRole) } : {}),
+    }
   }
 
   if (sub === "delete-key") {

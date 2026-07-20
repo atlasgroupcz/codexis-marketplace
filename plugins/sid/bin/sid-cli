@@ -683,6 +683,9 @@ var exports_settings = {};
 __export(exports_settings, {
   run: () => run9
 });
+function isAdmin(role) {
+  return role === "ADMIN";
+}
 async function readStdin() {
   const chunks = [];
   for await (const c of process.stdin)
@@ -714,9 +717,26 @@ async function run9(argv, f, stdin = readStdin) {
     const user = await apiGet("/api/v1/users/me", f);
     return { ok: true, user };
   }
+  if (sub === "whoami") {
+    const user = await apiGet("/api/v1/users/me", f);
+    const admin = isAdmin(user.role);
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: admin ? "ADMIN" : "USER",
+      isAdmin: admin
+    };
+  }
   if (sub === "status") {
     const key = getApiKey();
-    return { configured: key !== "", baseUrl: getBaseUrl(), ...key ? { start: key.slice(0, 7) } : {} };
+    const cachedRole = readEnvFile().SID_USER_ROLE;
+    return {
+      configured: key !== "",
+      baseUrl: getBaseUrl(),
+      ...key ? { start: key.slice(0, 7) } : {},
+      ...cachedRole ? { role: cachedRole, isAdmin: isAdmin(cachedRole) } : {}
+    };
   }
   if (sub === "delete-key") {
     deleteApiKey();
@@ -728,7 +748,7 @@ var USAGE5;
 var init_settings = __esm(() => {
   init_http();
   init_config();
-  USAGE5 = "Použití: sid-cli settings set-key|test|status|delete-key  " + "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)";
+  USAGE5 = "Použití: sid-cli settings set-key|test|status|whoami|delete-key  " + "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)";
 });
 
 // src/main.ts
@@ -760,6 +780,7 @@ Příkazy:
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení
   settings set-key|test|status             správa klíče (set-key čte STDIN)
+  settings whoami                          kdo jsem a jestli jsem admin
 
 Klíč: vygenerujte v SID na /api-klice, vložte v panelu pluginu.
 Ukládá se do ~/.cdx/apps/sid/.env — nikdy ho nevkládejte do chatu.`;

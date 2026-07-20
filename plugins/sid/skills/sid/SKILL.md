@@ -120,10 +120,14 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 - **"which laws does this document rest on"** → `docs legislation <id>`.
   Read-only: what a document tracks is managed in SID, where the Codexis
   picker and the change-approval flow live.
+- **"who am I / am I an admin"** → `settings whoami`, which returns `role`
+  and `isAdmin`. Use it when a request depends on being an admin — checking
+  first is cheaper than attempting an admin-scoped action and reading the 403.
 - **"set validity from / until"** → `docs set-validity`. This is the only
-  command that changes anything in SID, and it needs EDITOR rights on the
-  document — a 403 means missing permission, not a broken tool. Dates are
-  `YYYY-MM-DD`; `--clear-from` / `--clear-to` remove a date.
+  command that changes anything in SID. It needs EDITOR rights on the document
+  — which admins have across every folder, and a regular user has only where
+  they were granted it — so a 403 means missing permission, not a broken tool.
+  Dates are `YYYY-MM-DD`; `--clear-from` / `--clear-to` remove a date.
 
 ## User-facing output rules
 

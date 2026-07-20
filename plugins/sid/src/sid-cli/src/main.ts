@@ -31,6 +31,7 @@ Příkazy:
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení
   settings set-key|test|status             správa klíče (set-key čte STDIN)
+  settings whoami                          kdo jsem a jestli jsem admin
 
 Klíč: vygenerujte v SID na /api-klice, vložte v panelu pluginu.
 Ukládá se do ~/.cdx/apps/sid/.env — nikdy ho nevkládejte do chatu.`

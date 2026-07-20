@@ -87,3 +87,54 @@ describe("set-key — neničí funkční klíč", () => {
     expect(getApiKey()).toBe("sid_puvodni")
   })
 })
+
+describe("settings whoami", () => {
+  it("reports who the key belongs to and whether they are an admin", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
+    const me = (async () =>
+      new Response(JSON.stringify({ id: "u1", email: "sef@firma.cz", name: "Šéf", role: "ADMIN" }), {
+        status: 200,
+      })) as unknown as typeof fetch
+    const out = (await run(["whoami"], me)) as {
+      userId: string
+      email: string
+      role: string
+      isAdmin: boolean
+    }
+    expect(out).toMatchObject({ userId: "u1", email: "sef@firma.cz", role: "ADMIN", isAdmin: true })
+  })
+
+  it("a regular user is not flagged as admin", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
+    const me = (async () =>
+      new Response(JSON.stringify({ id: "u2", email: "a@b.cz", role: "USER" }), {
+        status: 200,
+      })) as unknown as typeof fetch
+    const out = (await run(["whoami"], me)) as { role: string; isAdmin: boolean }
+    expect(out.role).toBe("USER")
+    expect(out.isAdmin).toBe(false)
+  })
+
+  it("an unknown role degrades to non-admin, never the other way", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
+    const me = (async () =>
+      new Response(JSON.stringify({ id: "u3", email: "a@b.cz" }), { status: 200 })) as unknown as typeof fetch
+    const out = (await run(["whoami"], me)) as { role: string; isAdmin: boolean }
+    expect(out.isAdmin).toBe(false)
+  })
+})
+
+describe("settings status — role", () => {
+  it("surfaces the cached role so a caller can tell it is an admin", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\nSID_USER_ROLE=ADMIN\n", { mode: 0o600 })
+    const out = (await run(["status"])) as { role?: string; isAdmin?: boolean }
+    expect(out.role).toBe("ADMIN")
+    expect(out.isAdmin).toBe(true)
+  })
+
+  it("omits the role when it has not been cached yet", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
+    const out = (await run(["status"])) as Record<string, unknown>
+    expect(out).not.toHaveProperty("role")
+  })
+})
