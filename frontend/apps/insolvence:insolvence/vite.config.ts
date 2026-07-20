@@ -20,6 +20,14 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
+    test: {
+      globals: true,
+      // Vitest externalizes deps for its SSR transform by default, which leaves
+      // zod's ESM entry resolving to an empty module (`z.object` is undefined at
+      // import time). Inlining makes Vitest bundle zod the way the app build
+      // does. Same setting katastr already uses.
+      server: { deps: { inline: ['zod'] } },
+    },
     plugins: [
       viteReact({
         babel: {

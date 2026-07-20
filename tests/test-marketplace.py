@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _daemon_client import DaemonClient
 from _output import Results
+from _unit_gate import run_default_gate
 
 
 # ---------------------------------------------------------------------------
@@ -200,9 +201,19 @@ def main() -> int:
                              "auto-refresh the bearer token on 401.")
     parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
                         help="oauth2-proxy URL (default: http://localhost:4182)")
+    parser.add_argument("--skip-unit-tests", action="store_true",
+                        help="Skip the local unit-test gate and go straight to the daemon.")
     args = parser.parse_args()
 
     marketplace_path = Path(__file__).resolve().parent.parent
+
+    # Local unit suites first: they need no daemon and finish in seconds, so a
+    # broken commit fails here rather than after the ~2min install/uninstall run.
+    if not args.skip_unit_tests:
+        gate = run_default_gate(marketplace_path)
+        if gate != 0:
+            print("Unit tests failed — not proceeding to the daemon test.", file=sys.stderr)
+            return gate
     refresher = None
     if args.cookie:
         from _daemon_client import make_oauth2_proxy_refresher
