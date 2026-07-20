@@ -16,10 +16,6 @@ use cdx_common::config::{read_env, to_authorization_header};
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
-/// Daemon-injected admin Basic authorization (preview executions only) — the
-/// same credential codexis-next uses to resolve document text, so the preview
-/// does not depend on the user's own license. Never log or embed its value.
-const PREVIEW_AUTHORIZATION_ENV: &str = "CODEXIS_USER_PREVIEW_AUTHORIZATION";
 
 pub(crate) fn execute_preview() -> Result<(), CliError> {
     let path_info = env::var("PATH_INFO").unwrap_or_default();
@@ -133,27 +129,17 @@ impl PreviewConfig {
         })
     }
 
-    fn admin_auth_header() -> Option<String> {
-        read_env(PREVIEW_AUTHORIZATION_ENV).map(|value| format!("Authorization: {value}"))
-    }
-
-    /// Best available authorization for plain cdx-api requests: admin → user.
     fn api_auth_header(&self) -> Option<String> {
-        Self::admin_auth_header().or_else(|| self.user_auth_header.clone())
+        self.user_auth_header.clone()
     }
 }
 
 /// Fetches the document HTML the CODEXIS web app renders. Returns `None` when
 /// the document has no `HtmlDoc` content (unknown doc type) so the caller can
-/// fall back to the markdown text. Prefers the daemon-injected admin
-/// authorization (full document access, like the codexis-next text route),
-/// then the user's token, then anonymous access for public documents.
+/// fall back to the markdown text. Uses the user's token — the preview shows
+/// exactly what the user is licensed for — with anonymous access as the
+/// fallback for public documents in token-less executions.
 fn fetch_html_doc(config: &PreviewConfig, document: &DocumentPreviewPath) -> Option<String> {
-    if let Some(admin_header) = PreviewConfig::admin_auth_header() {
-        if let Some(html) = fetch_html_doc_request(config, document, Some(&admin_header)) {
-            return Some(html);
-        }
-    }
     if let Some(user_header) = &config.user_auth_header {
         if let Some(html) = fetch_html_doc_request(config, document, Some(user_header)) {
             return Some(html);
