@@ -111,9 +111,20 @@ fn render_preview(
 }
 
 /// Fetches the document HTML the CODEXIS web app renders. Returns `None` when
-/// the document has no accessible `HtmlDoc` content (unknown doc type, no
-/// license) so the caller can fall back to the markdown text.
+/// the document has no `HtmlDoc` content (unknown doc type, no license) so the
+/// caller can fall back to the markdown text. Tries the user's token first and
+/// retries anonymously — the GraphQL endpoint serves public documents without
+/// auth, and a token rejection must not lose the preview.
 fn fetch_html_doc(config: &Config, document: &DocumentPreviewPath) -> Option<String> {
+    fetch_html_doc_request(config, document, true)
+        .or_else(|| fetch_html_doc_request(config, document, false))
+}
+
+fn fetch_html_doc_request(
+    config: &Config,
+    document: &DocumentPreviewPath,
+    with_auth: bool,
+) -> Option<String> {
     let variables = match &document.part_id {
         Some(part) => serde_json::json!({ "id": document.doc_id, "parts": [part] }),
         None => serde_json::json!({ "id": document.doc_id, "parts": Value::Null }),
@@ -122,11 +133,12 @@ fn fetch_html_doc(config: &Config, document: &DocumentPreviewPath) -> Option<Str
         "query": "query preview($id: String!, $parts: [String!]) { lcrDoc(docId: {docId: $id}) { docContent { __typename ... on HtmlDoc { accessible content { html(contentItemIds: $parts) } } } } }",
         "variables": variables,
     });
-    let curl_args = vec![
-        "-sS".to_string(),
-        "--fail-with-body".to_string(),
-        "-H".to_string(),
-        config.auth_header.clone(),
+    let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
+    if with_auth {
+        curl_args.push("-H".to_string());
+        curl_args.push(config.auth_header.clone());
+    }
+    curl_args.extend([
         "-H".to_string(),
         "Content-Type: application/json".to_string(),
         "-X".to_string(),
@@ -134,14 +146,14 @@ fn fetch_html_doc(config: &Config, document: &DocumentPreviewPath) -> Option<Str
         format!("{}/graphql", config.base_url),
         "-d".to_string(),
         body.to_string(),
-    ];
+    ]);
     let output = execute_curl(&curl_args).ok()?;
     if !output.status.success() {
         return None;
     }
     let response: Value = serde_json::from_slice(&output.stdout).ok()?;
     let doc_content = &response["data"]["lcrDoc"]["docContent"];
-    if doc_content["__typename"] != "HtmlDoc" || doc_content["accessible"] != true {
+    if doc_content["__typename"] != "HtmlDoc" {
         return None;
     }
     let html = doc_content["content"]["html"].as_str()?;
