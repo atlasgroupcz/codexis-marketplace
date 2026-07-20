@@ -568,6 +568,30 @@
           "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "contracts": "Zmluvy" }
         }
       }
+    },
+    {
+      "uuid": "a6ab6599-ff88-42c8-9011-5d8f9fb39086",
+      "name": "sid",
+      "description": "SID internal document system — search, read-confirmations and notifications via personal API key",
+      "source": "./plugins/sid",
+      "category": "documents",
+      "i18n": {
+        "cs": {
+          "displayName": "SID — Interní dokumenty",
+          "description": "Vyhledávání a čtení řízených dokumentů v SID, potvrzování přečtení a hlídání novinek.",
+          "tagLabels": { "documents": "Dokumenty", "internal": "Interní systémy", "czech": "Česko" }
+        },
+        "en": {
+          "displayName": "SID — Internal Documents",
+          "description": "Search and read managed documents in SID, confirm required reading and watch for updates.",
+          "tagLabels": { "documents": "Documents", "internal": "Internal systems", "czech": "Czech Republic" }
+        },
+        "sk": {
+          "displayName": "SID — Interné dokumenty",
+          "description": "Vyhľadávanie a čítanie riadených dokumentov v SID, potvrdzovanie prečítania a stráženie noviniek.",
+          "tagLabels": { "documents": "Dokumenty", "internal": "Interné systémy", "czech": "Česko" }
+        }
+      }
     }
   ]
 }

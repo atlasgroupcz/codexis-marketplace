@@ -141,6 +141,26 @@ The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the p
 
 Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to install these binaries into the user-local `${HOME}/.local/bin/` location on install/update and remove them on uninstall. The cdx guest VM has `${HOME}/.local/bin` on `PATH` (both for interactive login shells and for the `cdx-remote-exec` service), so no `sudo` and no system-wide writes are needed.
 
+Executables don't have to be native binaries — the guest VM ships `python3`
+and `nodejs` from apt, so interpreted entrypoints are fine (`katastr-cli`,
+`insolvence-cli` are Python; `sid-cli` is bundled TypeScript).
+
+**TypeScript plugins** (pattern: `plugins/sid`): source lives in
+`plugins/<name>/src/<cli>/` as a bun project; `src/build.sh` bundles it
+inside a digest-pinned `oven/bun` image into ONE self-contained file in
+`bin/`, committed like any other artifact. No `node_modules` at runtime.
+Two constraints learned the hard way:
+
+- **Bundle as CJS** (`bun build --target=node --format=cjs`). Artifacts are
+  installed without an extension (`sid-cli`), and Node loads an
+  extensionless file as CommonJS — an ESM bundle dies with "Cannot use
+  import statement outside a module".
+- **Don't prepend a shebang** in the build script if the entrypoint source
+  already has one; bun preserves it, and a doubled shebang is invalid JS.
+
+Run the container with `--user "$(id -u):$(id -g)"`, otherwise `dist/` and
+`bin/` end up root-owned and the host user can't even delete them.
+
 Example (from codexis plugin):
 ```json
 "postInstall": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\"",
