@@ -224,3 +224,43 @@ describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
     expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual(["sef@firma.cz"])
   })
 })
+
+describe("timeouty na volání daemona", () => {
+  it("e-mail i bell nesou AbortSignal (zaseknutý daemon nesmí zablokovat cron)", async () => {
+    writeSecret("t")
+    const signals: unknown[] = []
+    const f = (async (_u: unknown, init: RequestInit) => {
+      signals.push(init.signal)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(signals.length).toBeGreaterThan(0)
+    for (const s of signals) expect(s).toBeInstanceOf(AbortSignal)
+  })
+
+  it("dotaz na `me` nese AbortSignal taky", async () => {
+    writeSecret("t")
+    writeFileSync(
+      process.env.SID_DEFAULTS_FILE!,
+      JSON.stringify({ notify: { email: true, inApp: false, recipients: ["sef@firma.cz"] } }),
+    )
+    let meSignal: unknown = "nevolano"
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).endsWith("/graphql")) meSignal = init.signal
+      return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(meSignal).toBeInstanceOf(AbortSignal)
+  })
+
+  it("timeout daemona shodí jen notifikaci, ne celý běh", async () => {
+    writeSecret("t")
+    const f = (async () => {
+      const e = new Error("aborted")
+      e.name = "TimeoutError"
+      throw e
+    }) as unknown as typeof fetch
+    // sendDigest je best-effort — musí vrátit false, ne vyhodit výjimku.
+    expect(await sendDigest("s", "b", f)).toBe(false)
+  })
+})

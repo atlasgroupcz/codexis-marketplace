@@ -24,6 +24,14 @@ import type { FetchLike } from "./http"
 const EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 const GRAPHQL_PATH = "/graphql"
 
+/**
+ * Stropy na volání daemona. Bez nich by zaseknuté spojení zablokovalo denní
+ * automatizaci navždy — a je to právě tahle vrstva, na které cron visí.
+ * Hodnoty podle reference (`notify.py`): doručení 30 s, pomocný dotaz 10 s.
+ */
+const DAEMON_TIMEOUT_MS = 30_000
+const ME_QUERY_TIMEOUT_MS = 10_000
+
 /** CODEXIS_PUBLIC_DAEMON_URL je GraphQL URL — REST base vznikne odříznutím. */
 export function restBase(daemonUrl: string): string {
   const base = (daemonUrl || "").replace(/\/+$/, "")
@@ -67,6 +75,7 @@ async function sendEmail(
   try {
     const res = await f(`${restBase(daemonUrl)}${EMAIL_ENDPOINT}`, {
       method: "POST",
+      signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": `multipart/form-data; boundary=${boundary}` },
       body,
     })
@@ -81,6 +90,7 @@ async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Prom
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
+      signal: AbortSignal.timeout(ME_QUERY_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": "application/json" },
       body: JSON.stringify({ query: "query { me { email } }" }),
     })
@@ -122,6 +132,7 @@ async function sendBell(message: string, auth: string, daemonUrl: string, f: Fet
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
+      signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify({ query, variables: { input: { message, type: "sid-update" } } }),
     })

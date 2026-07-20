@@ -393,6 +393,7 @@ async function sendEmail(subject, bodyText, auth, daemonUrl, f, to) {
   try {
     const res = await f(`${restBase(daemonUrl)}${EMAIL_ENDPOINT}`, {
       method: "POST",
+      signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": `multipart/form-data; boundary=${boundary}` },
       body
     });
@@ -405,6 +406,7 @@ async function queryMeEmail(auth, daemonUrl, f) {
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
+      signal: AbortSignal.timeout(ME_QUERY_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": "application/json" },
       body: JSON.stringify({ query: "query { me { email } }" })
     });
@@ -432,6 +434,7 @@ async function sendBell(message, auth, daemonUrl, f) {
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
+      signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify({ query, variables: { input: { message, type: "sid-update" } } })
     });
@@ -455,7 +458,7 @@ async function sendDigest(subject, bodyText, f = fetch) {
   ]);
   return results.some(Boolean);
 }
-var import_node_fs4, import_node_path4, import_node_crypto, EMAIL_ENDPOINT = "/rest/v1/plugin/email/send", GRAPHQL_PATH = "/graphql";
+var import_node_fs4, import_node_path4, import_node_crypto, EMAIL_ENDPOINT = "/rest/v1/plugin/email/send", GRAPHQL_PATH = "/graphql", DAEMON_TIMEOUT_MS = 30000, ME_QUERY_TIMEOUT_MS = 1e4;
 var init_notify = __esm(() => {
   init_config();
   init_notify_settings();
