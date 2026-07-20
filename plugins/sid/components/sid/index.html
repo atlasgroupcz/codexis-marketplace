@@ -39,38 +39,75 @@
       #msg.ok { background: #16a34a22; }
       #msg.err { background: #b91c1c22; }
       code { font-family: ui-monospace, monospace; }
-      a { color: inherit; }
     </style>
   </head>
   <body>
-    <h1>SID — API klíč</h1>
-    <p class="lead">
+    <h1 data-i18n="title">SID — API klíč</h1>
+    <p class="lead" data-i18n="lead">
       Klíč propojí tento doplněk s vaším účtem v SID. Má stejná oprávnění jako
       vy — chraňte ho jako heslo.
     </p>
 
-    <div id="status">Načítám stav…</div>
+    <div id="status" data-i18n="status.loading">Načítám stav…</div>
 
     <fieldset>
-      <legend>Nastavení klíče</legend>
-      <label for="key">API klíč ze SID</label>
-      <input id="key" type="password" autocomplete="off" spellcheck="false"
-             placeholder="sid_…" />
+      <legend data-i18n="settings.legend">Nastavení klíče</legend>
+      <label for="key" data-i18n="settings.label">API klíč ze SID</label>
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sid_…" />
       <div class="row">
-        <button id="save" class="primary" type="button">Uložit a ověřit</button>
-        <button id="del" class="danger" type="button">Smazat klíč</button>
+        <button id="save" class="primary" type="button" data-i18n="settings.save">Uložit a ověřit</button>
+        <button id="del" class="danger" type="button" data-i18n="settings.delete">Smazat klíč</button>
       </div>
       <div id="msg"></div>
     </fieldset>
 
     <p>
-      <strong>Kde klíč získám?</strong> V SID otevřete <em>Profil → API klíče</em>
-      (<code>/profile/api-klice</code>), vytvořte nový klíč a zkopírujte ho —
-      zobrazí se jen jednou.
+      <strong data-i18n="help.heading">Kde klíč získám?</strong>
+      <span id="help-body">
+        V SID otevřete <em>Profil → API klíče</em> (<code>/profile/api-klice</code>),
+        vytvořte nový klíč a zkopírujte ho — zobrazí se jen jednou.
+      </span>
     </p>
 
     <script>
       const $ = (id) => document.getElementById(id)
+      const KEY_PATH = "/profile/api-klice"
+
+      // ── i18n ────────────────────────────────────────────────────────────
+      // Překlady leží v locales/<lang>/translation.json — stejné rozvržení jako
+      // u ostatních komponent (znamky, katastr). Daemon je nečte, servíruje je
+      // jen jako statické soubory, takže si je stránka natáhne sama. České
+      // texty jsou zároveň napsané v HTML jako fallback, aby panel fungoval
+      // i když se fetch nezdaří.
+      let T = {}
+      const t = (path, vars) => {
+        const raw = path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), T)
+        if (typeof raw !== "string") return null
+        return raw.replace(/\{\{(\w+)\}\}/g, (_, name) => (vars && vars[name]) ?? "")
+      }
+
+      async function loadLocale() {
+        const lang = (navigator.language || "cs").slice(0, 2).toLowerCase()
+        const pick = ["cs", "en", "sk"].includes(lang) ? lang : "en"
+        if (pick === "cs") return // čeština už je v HTML
+        try {
+          const res = await fetch(`locales/${pick}/translation.json`)
+          if (!res.ok) return
+          T = await res.json()
+          document.documentElement.lang = pick
+          document.title = t("title") ?? document.title
+          for (const el of document.querySelectorAll("[data-i18n]")) {
+            const val = t(el.dataset.i18n)
+            if (val) el.textContent = val
+          }
+          const help = t("help.body", { path: KEY_PATH })
+          if (help) $("help-body").textContent = help
+        } catch {
+          /* fallback = české texty v HTML */
+        }
+      }
+
+      // ── backend ─────────────────────────────────────────────────────────
       const msg = (text, kind) => {
         const el = $("msg")
         el.textContent = text
@@ -89,34 +126,38 @@
       }
 
       function renderStatus(s) {
-        $("status").textContent = s.configured
-          ? `Klíč je nastavený (${s.start}…), server ${s.baseUrl}.`
-          : `Klíč zatím není nastavený. Server ${s.baseUrl}.`
+        const key = s.configured ? "status.configured" : "status.missing"
+        const translated = t(key, { start: s.start ?? "", baseUrl: s.baseUrl })
+        $("status").textContent =
+          translated ??
+          (s.configured
+            ? `Klíč je nastavený (${s.start}…), server ${s.baseUrl}.`
+            : `Klíč zatím není nastavený. Server ${s.baseUrl}.`)
       }
 
       async function refresh() {
         try {
           renderStatus(await call({ action: "get_status" }))
         } catch {
-          $("status").textContent = "Stav se nepodařilo načíst."
+          $("status").textContent = t("status.failed") ?? "Stav se nepodařilo načíst."
         }
       }
 
       $("save").addEventListener("click", async () => {
         const key = $("key").value.trim()
-        if (!key) return msg("Vložte API klíč.", "err")
+        if (!key) return msg(t("msg.empty") ?? "Vložte API klíč.", "err")
         $("save").disabled = true
-        msg("Ověřuji klíč proti SID…")
+        msg(t("msg.verifying") ?? "Ověřuji klíč proti SID…")
         try {
           const r = await call({ action: "save_config", api_key: key })
           if (r.ok) {
             $("key").value = ""
-            msg("Klíč uložen a ověřen.", "ok")
+            msg(t("msg.saved") ?? "Klíč uložen a ověřen.", "ok")
           } else {
-            msg(r.error || "Uložení se nezdařilo.", "err")
+            msg(r.error || t("msg.saveFailed") || "Uložení se nezdařilo.", "err")
           }
         } catch {
-          msg("Uložení se nezdařilo.", "err")
+          msg(t("msg.saveFailed") ?? "Uložení se nezdařilo.", "err")
         } finally {
           $("save").disabled = false
           refresh()
@@ -127,16 +168,16 @@
         $("del").disabled = true
         try {
           await call({ action: "delete_config" })
-          msg("Klíč smazán.", "ok")
+          msg(t("msg.deleted") ?? "Klíč smazán.", "ok")
         } catch {
-          msg("Smazání se nezdařilo.", "err")
+          msg(t("msg.deleteFailed") ?? "Smazání se nezdařilo.", "err")
         } finally {
           $("del").disabled = false
           refresh()
         }
       })
 
-      refresh()
+      loadLocale().then(refresh)
     </script>
   </body>
 </html>

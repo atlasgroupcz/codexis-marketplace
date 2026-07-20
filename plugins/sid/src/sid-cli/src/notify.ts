@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { randomUUID } from "node:crypto"
 import { userHome } from "./config"
+import { getNotifySettings } from "./notify-settings"
 import type { FetchLike } from "./http"
 
 /**
@@ -81,17 +82,23 @@ async function sendBell(message: string, auth: string, daemonUrl: string, f: Fet
 }
 
 /**
- * Pošle digest oběma kanály. Vrací true, když prošel e-mail — ten je
- * primární doručovací cesta; bell je doplněk a jeho selhání výsledek
- * neovlivní.
+ * Pošle digest kanály povolenými v nastavení (`notify-settings.ts`).
+ *
+ * Vrací true, když se doručilo aspoň jedním kanálem — e-mail je ve
+ * výchozím stavu vypnutý, takže vázat výsledek jen na něj by hlásilo
+ * neúspěch i při funkční bell notifikaci.
  */
 export async function sendDigest(subject: string, bodyText: string, f: FetchLike = fetch): Promise<boolean> {
   const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL
   const auth = daemonAuth()
   if (!daemonUrl || !auth) return false
-  const [emailOk] = await Promise.all([
-    sendEmail(subject, bodyText, auth, daemonUrl, f),
-    sendBell(subject, auth, daemonUrl, f),
+
+  const { email, inApp } = getNotifySettings()
+  if (!email && !inApp) return false
+
+  const results = await Promise.all([
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f) : Promise.resolve(false),
+    inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false),
   ])
-  return emailOk
+  return results.some(Boolean)
 }

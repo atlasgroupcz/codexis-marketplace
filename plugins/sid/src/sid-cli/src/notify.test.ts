@@ -10,6 +10,11 @@ beforeEach(() => {
   process.env.CODEXIS_PUBLIC_USER_HOME = home
   // CODEXIS_PUBLIC_DAEMON_URL je GraphQL URL — REST base se z něj odvozuje.
   process.env.CODEXIS_PUBLIC_DAEMON_URL = "http://daemon.local/graphql"
+  // E-mail je ve výchozím stavu VYPNUTÝ (vzor ostatních pluginů), takže
+  // testy e-mailové cesty si ho musí zapnout přes shipped defaults.
+  const defaults = join(home, "defaults.json")
+  writeFileSync(defaults, JSON.stringify({ notify: { email: true, inApp: true } }))
+  process.env.SID_DEFAULTS_FILE = defaults
 })
 
 function writeSecret(value: string): void {
@@ -87,6 +92,34 @@ describe("sendDigest", () => {
     await sendDigest("Předmět", "Tělo", f)
     expect(gqlBody).toContain("createNotification")
     expect(JSON.parse(gqlBody).variables.input.message).toBe("Předmět")
+  })
+
+  it("respektuje vypnuté kanály — vypnutý e-mail se neposílá", async () => {
+    writeSecret("t")
+    writeFileSync(process.env.SID_DEFAULTS_FILE!, JSON.stringify({ notify: { email: false, inApp: true } }))
+    const hit = { rest: false, gql: false }
+    const f = (async (u: unknown) => {
+      if (String(u).includes("/rest/")) hit.rest = true
+      if (String(u).endsWith("/graphql")) hit.gql = true
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    // true, protože bell prošel — vázat výsledek jen na e-mail by hlásilo
+    // neúspěch i při funkční notifikaci.
+    expect(await sendDigest("s", "b", f)).toBe(true)
+    expect(hit.rest).toBe(false)
+    expect(hit.gql).toBe(true)
+  })
+
+  it("oba kanály vypnuté → nic se nevolá", async () => {
+    writeSecret("t")
+    writeFileSync(process.env.SID_DEFAULTS_FILE!, JSON.stringify({ notify: { email: false, inApp: false } }))
+    let called = false
+    const f = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    expect(await sendDigest("s", "b", f)).toBe(false)
+    expect(called).toBe(false)
   })
 
   it("HTTP chyba e-mailu → false, nikdy nehází", async () => {

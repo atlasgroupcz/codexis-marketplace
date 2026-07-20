@@ -298,6 +298,49 @@ var init_notifications = __esm(() => {
   import_node_util5 = require("node:util");
 });
 
+// src/notify-settings.ts
+function defaultsPath() {
+  return process.env.SID_DEFAULTS_FILE || import_node_path3.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
+}
+function userPath() {
+  return import_node_path3.join(userHome(), ".cdx", "apps", "sid", "settings.json");
+}
+function readJson(path) {
+  try {
+    const parsed = JSON.parse(import_node_fs3.readFileSync(path, "utf8"));
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function notifyBlock(source) {
+  const raw = source?.notify;
+  if (!raw || typeof raw !== "object")
+    return {};
+  const out = {};
+  const { email, inApp } = raw;
+  if (typeof email === "boolean")
+    out.email = email;
+  if (typeof inApp === "boolean")
+    out.inApp = inApp;
+  return out;
+}
+function getNotifySettings() {
+  return {
+    ...BUILTIN,
+    ...notifyBlock(readJson(defaultsPath())),
+    ...notifyBlock(readJson(userPath()))
+  };
+}
+var import_node_fs3, import_node_path3, import_node_os2, BUILTIN;
+var init_notify_settings = __esm(() => {
+  init_config();
+  import_node_fs3 = require("node:fs");
+  import_node_path3 = require("node:path");
+  import_node_os2 = require("node:os");
+  BUILTIN = { email: false, inApp: true };
+});
+
 // src/notify.ts
 function restBase(daemonUrl) {
   const base = (daemonUrl || "").replace(/\/+$/, "");
@@ -309,7 +352,7 @@ function graphqlUrl(daemonUrl) {
 }
 function daemonAuth() {
   try {
-    let t = import_node_fs3.readFileSync(import_node_path3.join(userHome(), ".cdx", "env", "secret"), "utf8").trim();
+    let t = import_node_fs4.readFileSync(import_node_path4.join(userHome(), ".cdx", "env", "secret"), "utf8").trim();
     if (!t)
       return null;
     if (t.toLowerCase().startsWith("authorization:"))
@@ -358,17 +401,21 @@ async function sendDigest(subject, bodyText, f = fetch) {
   const auth = daemonAuth();
   if (!daemonUrl || !auth)
     return false;
-  const [emailOk] = await Promise.all([
-    sendEmail(subject, bodyText, auth, daemonUrl, f),
-    sendBell(subject, auth, daemonUrl, f)
+  const { email, inApp } = getNotifySettings();
+  if (!email && !inApp)
+    return false;
+  const results = await Promise.all([
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f) : Promise.resolve(false),
+    inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false)
   ]);
-  return emailOk;
+  return results.some(Boolean);
 }
-var import_node_fs3, import_node_path3, import_node_crypto, EMAIL_ENDPOINT = "/rest/v1/plugin/email/send", GRAPHQL_PATH = "/graphql";
+var import_node_fs4, import_node_path4, import_node_crypto, EMAIL_ENDPOINT = "/rest/v1/plugin/email/send", GRAPHQL_PATH = "/graphql";
 var init_notify = __esm(() => {
   init_config();
-  import_node_fs3 = require("node:fs");
-  import_node_path3 = require("node:path");
+  init_notify_settings();
+  import_node_fs4 = require("node:fs");
+  import_node_path4 = require("node:path");
   import_node_crypto = require("node:crypto");
 });
 

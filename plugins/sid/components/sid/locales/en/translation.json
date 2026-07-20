@@ -1,0 +1,28 @@
+{
+  "title": "SID — API key",
+  "lead": "The key links this plugin to your SID account. It carries the same permissions you have — treat it like a password.",
+  "settings": {
+    "legend": "Key settings",
+    "label": "API key from SID",
+    "save": "Save and verify",
+    "delete": "Delete key"
+  },
+  "status": {
+    "loading": "Loading status…",
+    "configured": "Key is set ({{start}}…), server {{baseUrl}}.",
+    "missing": "No key set yet. Server {{baseUrl}}.",
+    "failed": "Could not load status."
+  },
+  "msg": {
+    "empty": "Enter an API key.",
+    "verifying": "Verifying the key against SID…",
+    "saved": "Key saved and verified.",
+    "saveFailed": "Saving failed.",
+    "deleted": "Key deleted.",
+    "deleteFailed": "Deleting failed."
+  },
+  "help": {
+    "heading": "Where do I get the key?",
+    "body": "In SID open Profile → API keys ({{path}}), create a new key and copy it — it is shown only once."
+  }
+}

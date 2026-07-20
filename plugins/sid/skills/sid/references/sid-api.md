@@ -99,9 +99,25 @@ Digest pro automatizaci (`automations/check-sid.md`, denně v 7:00):
 }
 ```
 
-S `--notify` navíc pošle e-mail + in-app bell přes daemon — ale jen když je
-co hlásit. `notified: false` znamená, že se neposílalo (nic nového), nebo že
-daemon nebyl dostupný; nikdy to není chyba, která by shodila běh.
+S `--notify` navíc pošle notifikaci přes daemon — ale jen když je co hlásit.
+`notified: false` znamená, že se neposílalo (nic nového), že byly oba kanály
+vypnuté, nebo že daemon nebyl dostupný; nikdy to není chyba, která by
+shodila běh.
+
+Kanály se řídí nastavením (stejná konvence jako u pluginů znamky/katastr):
+
+| Soubor | Role |
+|--------|------|
+| `~/.local/share/sid/settings/defaults.json` | výchozí hodnoty, instaluje hook |
+| `~/.cdx/apps/sid/settings.json` | uživatelský override, jen změněné klíče |
+
+```json
+{ "version": 1, "notify": { "email": false, "inApp": true } }
+```
+
+**E-mail je ve výchozím stavu vypnutý** — denní automatizace nemá bez
+vyžádání chodit do schránky. Zapíná se přepsáním `notify.email` na `true`
+v uživatelském souboru.
 
 ## Limity
 

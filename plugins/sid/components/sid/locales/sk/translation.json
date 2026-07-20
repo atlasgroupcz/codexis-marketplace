@@ -1,0 +1,28 @@
+{
+  "title": "SID — API kľúč",
+  "lead": "Kľúč prepojí tento doplnok s vaším účtom v SID. Má rovnaké oprávnenia ako vy — chráňte ho ako heslo.",
+  "settings": {
+    "legend": "Nastavenie kľúča",
+    "label": "API kľúč zo SID",
+    "save": "Uložiť a overiť",
+    "delete": "Zmazať kľúč"
+  },
+  "status": {
+    "loading": "Načítavam stav…",
+    "configured": "Kľúč je nastavený ({{start}}…), server {{baseUrl}}.",
+    "missing": "Kľúč zatiaľ nie je nastavený. Server {{baseUrl}}.",
+    "failed": "Stav sa nepodarilo načítať."
+  },
+  "msg": {
+    "empty": "Vložte API kľúč.",
+    "verifying": "Overujem kľúč voči SID…",
+    "saved": "Kľúč uložený a overený.",
+    "saveFailed": "Uloženie sa nepodarilo.",
+    "deleted": "Kľúč zmazaný.",
+    "deleteFailed": "Zmazanie sa nepodarilo."
+  },
+  "help": {
+    "heading": "Kde kľúč získam?",
+    "body": "V SID otvorte Profil → API kľúče ({{path}}), vytvorte nový kľúč a skopírujte ho — zobrazí sa iba raz."
+  }
+}
