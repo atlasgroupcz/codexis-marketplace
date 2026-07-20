@@ -66,7 +66,7 @@ describe("apiGet", () => {
   })
 
   it("200 s ne-JSON tělem → srozumitelná chyba, ne syrové 'Failed to parse JSON'", async () => {
-    // Reálný případ: špatná base URL vrátí HTML login/proxy stránku se statusem 200.
+    // Real case: a wrong base URL returns an HTML login/proxy page with status 200.
     const f = (async () => new Response("<html><body>Login</body></html>", { status: 200 })) as unknown as typeof fetch
     const err = (await apiGet("/api/v1/users/me", f).catch((e: unknown) => e)) as CliError
     expect(err).toBeInstanceOf(CliError)
@@ -122,8 +122,8 @@ describe("timeouty", () => {
 
 describe("download timeout", () => {
   it("apiRaw nesmí useknout dlouhý přenos JSON timeoutem", async () => {
-    // AbortSignal.timeout ruší i tělo odpovědi, takže velký dokument po pomalé
-    // lince by po 30 s spadl. Stahování má vlastní, mnohem delší strop.
+    // AbortSignal.timeout also aborts the body, so a large document on a slow
+    // link would die after 30s. Downloads get their own, much larger ceiling.
     const { DOWNLOAD_TIMEOUT_MS, REQUEST_TIMEOUT_MS } = await import("./http")
     expect(DOWNLOAD_TIMEOUT_MS).toBeGreaterThan(REQUEST_TIMEOUT_MS)
   })

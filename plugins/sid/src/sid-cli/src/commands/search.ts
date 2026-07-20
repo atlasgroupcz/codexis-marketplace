@@ -16,7 +16,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
 
   const res = (await apiGet(`/api/search?${sp}`, f)) as { total: number; hits: unknown[]; source: string }
 
-  // POZOR: `total` je po ACL filtru vždy ≤ size — nestránkovat podle něj.
+  // `total` is recomputed after the ACL filter, so it never exceeds `size`.
   if (res.source === "opensearch_unavailable") {
     return {
       ...res,

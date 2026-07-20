@@ -113,12 +113,11 @@
       const KEY_PATH = "/profile/api-klice"
 
       // ── i18n ────────────────────────────────────────────────────────────
-      // Překlady leží v locales/<lang>/translation.json — stejné rozvržení jako
-      // u ostatních komponent (znamky, katastr). Daemon je nečte, servíruje je
-      // jen jako statické soubory, takže si je stránka natáhne sama. České
-      // texty jsou zároveň napsané v HTML jako fallback, aby panel fungoval
-      // i když se fetch nezdaří.
-      let T = {}
+      // Translations live in locales/<lang>/translation.json, the same layout as
+      // the other components. The daemon doesn't read them, it only serves them
+      // statically, so the page fetches them itself. The Czech strings stay in
+      // the HTML as a fallback so the panel still works when the fetch fails.
+            let T = {}
       const t = (path, vars) => {
         const raw = path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), T)
         if (typeof raw !== "string") return null
@@ -128,7 +127,7 @@
       async function loadLocale() {
         const lang = (navigator.language || "cs").slice(0, 2).toLowerCase()
         const pick = ["cs", "en", "sk"].includes(lang) ? lang : "en"
-        if (pick === "cs") return // čeština už je v HTML
+        if (pick === "cs") return // Czech is already in the HTML
         try {
           const res = await fetch(`locales/${pick}/translation.json`)
           if (!res.ok) return
@@ -142,7 +141,7 @@
           const help = t("help.body", { path: KEY_PATH })
           if (help) $("help-body").textContent = help
         } catch {
-          /* fallback = české texty v HTML */
+          /* fall back to the Czech strings in the HTML */
         }
       }
 
@@ -153,8 +152,8 @@
         el.className = kind || ""
       }
 
-      // Daemon servíruje existující soubory staticky; požadavek na cestu,
-      // která souborem není, jde na CGI binárku (sid-cgi).
+      // The daemon serves existing files statically; a path that isn't a file
+      // routes to the CGI binary (sid-cgi).
       async function call(payload) {
         const res = await fetch("api", {
           method: "POST",
@@ -175,9 +174,9 @@
       }
 
       function renderNotify(n) {
-        // Dokud stav nedorazí, zůstává tlačítko zamčené: uložit obsah
-        // formuláře v jeho výchozím stavu by uživateli tiše vyplo
-        // upozornění a smazalo adresáty.
+        // The button stays locked until state arrives: saving the form in its
+        // default state would silently switch the user's notifications off and
+        // wipe the recipient list.
         if (!n) return
         $("n-inapp").checked = n.inApp !== false
         $("n-email").checked = n.email === true

@@ -12,9 +12,8 @@ async function readStdin(): Promise<string> {
 }
 
 /**
- * Ověří kandidátský klíč, aniž by ho uložil. Chyba se přeformuluje podle
- * příčiny — „SID klíč odmítl" smí zaznít jen u skutečného odmítnutí, ne
- * když byl server nedostupný.
+ * Verifies a candidate key without persisting it. "Rejected" must only be
+ * reported for an actual rejection, never for an unreachable server.
  */
 async function verifyKey(key: string, f?: FetchLike): Promise<unknown> {
   try {
@@ -38,16 +37,15 @@ export async function run(
   const [sub] = argv
 
   if (sub === "set-key") {
-    // STDIN, nikdy argv — argv je vidět v `ps` i v kontextu modelu.
+    // STDIN, never argv — argv shows up in `ps` and in the model context.
     const key = (await stdin()).trim()
     if (!key) throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE}`, EXIT.USAGE)
 
-    // Ověřit PŘED zápisem: dřív se nový klíč zapsal a při jakékoli chybě
-    // (i pouhém výpadku sítě) smazal — čímž zmizel i dosud funkční klíč
-    // uživatele. Teď se na .env sáhne až po úspěšném ověření.
+    // Verify before touching .env, so a failed attempt can't destroy a key
+    // that still works.
     const user = await verifyKey(key, f)
     writeApiKey(key)
-    // Vracíme jen prefix — plný klíč zná uživatel, do výstupu nepatří.
+    // Only the prefix goes back out; the user already has the key itself.
     return { verified: true, user, start: key.slice(0, 7) }
   }
 

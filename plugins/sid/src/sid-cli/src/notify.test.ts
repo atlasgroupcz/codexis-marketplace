@@ -8,10 +8,10 @@ let home: string
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "sid-home-"))
   process.env.CODEXIS_PUBLIC_USER_HOME = home
-  // CODEXIS_PUBLIC_DAEMON_URL je GraphQL URL — REST base se z něj odvozuje.
+  // CODEXIS_PUBLIC_DAEMON_URL is the GraphQL URL; the REST base derives from it.
   process.env.CODEXIS_PUBLIC_DAEMON_URL = "http://daemon.local/graphql"
-  // E-mail je ve výchozím stavu VYPNUTÝ (vzor ostatních pluginů), takže
-  // testy e-mailové cesty si ho musí zapnout přes shipped defaults.
+  // E-mail is OFF by default (matching the peers), so tests of the e-mail
+  // path have to enable it through the shipped defaults.
   const defaults = join(home, "defaults.json")
   writeFileSync(defaults, JSON.stringify({ notify: { email: true, inApp: true } }))
   process.env.SID_DEFAULTS_FILE = defaults
@@ -51,7 +51,7 @@ describe("sendDigest", () => {
     const seen: { url?: string; auth?: string; ctype?: string; body?: string } = {}
     const f = (async (u: unknown, init: RequestInit) => {
       const h = new Headers(init.headers)
-      // bell (GraphQL) voláme taky — zajímá nás jen e-mail
+      // the bell (GraphQL) is called too; only the e-mail matters here
       if (String(u).includes("/rest/")) {
         seen.url = String(u)
         seen.auth = h.get("authorization") ?? ""
@@ -65,7 +65,7 @@ describe("sendDigest", () => {
     expect(seen.url).toBe("http://daemon.local/rest/v1/plugin/email/send")
     expect(seen.auth).toBe("Bearer vmtoken")
     expect(seen.ctype).toContain("multipart/form-data; boundary=")
-    // payload část nese JSON se subject + bodyText
+    // the payload part carries JSON with subject + bodyText
     expect(seen.body).toContain('name="payload"')
     expect(seen.body).toContain('"subject":"Předmět"')
     expect(seen.body).toContain('"bodyText":"Tělo"')
@@ -103,8 +103,8 @@ describe("sendDigest", () => {
       if (String(u).endsWith("/graphql")) hit.gql = true
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
-    // true, protože bell prošel — vázat výsledek jen na e-mail by hlásilo
-    // neúspěch i při funkční notifikaci.
+    // True because the bell succeeded; keying the result to e-mail alone
+    // would report failure on a working notification.
     expect(await sendDigest("s", "b", f)).toBe(true)
     expect(hit.rest).toBe(false)
     expect(hit.gql).toBe(true)
@@ -185,8 +185,8 @@ describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
     await sendDigest("s", "b", f)
-    // Bez tohohle by si uživatel přidáním kolegy vypnul vlastní e-maily:
-    // daemon doručuje VÝHRADNĚ na `to`, když je uvedené.
+    // Without this, adding a colleague would switch off the user's own mail:
+    // the daemon delivers EXCLUSIVELY to `to` when it is present.
     expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual([
       "ja@firma.cz",
       "sef@firma.cz",
@@ -260,7 +260,7 @@ describe("timeouty na volání daemona", () => {
       e.name = "TimeoutError"
       throw e
     }) as unknown as typeof fetch
-    // sendDigest je best-effort — musí vrátit false, ne vyhodit výjimku.
+    // sendDigest is best-effort: it must return false, not throw.
     expect(await sendDigest("s", "b", f)).toBe(false)
   })
 })

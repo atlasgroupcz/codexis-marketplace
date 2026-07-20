@@ -16,7 +16,7 @@ const NO_KEY_MSG =
   "/profile/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis."
 
 function statusToError(status: number, bodyText: string): CliError {
-  // Tělo ořežeme a NIKDY nepřikládáme hlavičky — klíč nesmí uniknout do chyb.
+  // Truncate the body and never attach headers — the key must not leak into errors.
   const detail = bodyText.slice(0, 300)
   if (status === 401) {
     return new CliError(
@@ -32,18 +32,13 @@ function statusToError(status: number, bodyText: string): CliError {
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR)
 }
 
-/**
- * Strop na jeden požadavek. Bez něj zaseknuté spojení zablokuje denní
- * automatizaci navždy — referenční pluginy proto mají timeout na každém
- * volání (katastr/znamky: 10–30 s).
- */
+/** Without a ceiling a stalled connection would block the daily automation forever. */
 export const REQUEST_TIMEOUT_MS = 30_000
 
 /**
- * Stahování má vlastní, mnohem delší strop: `AbortSignal.timeout` ruší i
- * čtení těla, ne jen navazování spojení, takže 30 s by useklo každý větší
- * dokument na pomalé lince. Pořád je to strop — zaseknuté spojení se
- * nakonec ukončí.
+ * Downloads need their own ceiling: `AbortSignal.timeout` also aborts body
+ * reads, so the request timeout would cut off any larger document on a slow
+ * link.
  */
 export const DOWNLOAD_TIMEOUT_MS = 15 * 60_000
 
@@ -54,8 +49,7 @@ async function request(
   keyOverride?: string,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
 ): Promise<Response> {
-  // `keyOverride` umožní ověřit kandidátský klíč, aniž by se zapsal do
-  // .env — viz `settings set-key`.
+  // `keyOverride` verifies a candidate key without persisting it (`settings set-key`).
   const key = keyOverride ?? getApiKey()
   if (!key) throw new CliError(NO_KEY_MSG, EXIT.AUTH)
   const res = await f(`${getBaseUrl()}${path}`, {
@@ -77,9 +71,8 @@ async function request(
 }
 
 /**
- * Odpověď 2xx, která není JSON, znamená, že jsme nemluvili se SID API —
- * typicky proxy/captive portal/login stránka na špatné base URL. Bez
- * tohohle obalu by prosákla syrová hláška "Failed to parse JSON".
+ * A 2xx that isn't JSON means this wasn't the SID API at all — typically a
+ * proxy, captive portal or login page behind a wrong base URL.
  */
 async function parseJson(res: Response): Promise<unknown> {
   const text = await res.text()
@@ -108,7 +101,7 @@ export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch
   )
 }
 
-/** Pro download — vrací Response, tělo si vystreamuje volající. */
+/** For downloads — returns the Response so the caller can stream the body. */
 export async function apiRaw(
   path: string,
   f: FetchLike = fetch,

@@ -3,10 +3,10 @@ import { apiGet, type FetchLike } from "../http"
 import { sendDigest } from "../notify"
 
 /**
- * Denní digest pro automatizaci (`automations/check-sid.md`).
+ * Daily digest for `automations/check-sid.md`.
  *
- * Stdout JSON je primární výstup; `--notify` navíc pošle e-mail a bell
- * přes daemon, ale jen když je co hlásit.
+ * The JSON on stdout is the primary output; `--notify` additionally pushes
+ * through the daemon, but only when there is something to report.
  */
 export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   const { values } = parseArgs({ args: argv, options: { notify: { type: "boolean", default: false } } })

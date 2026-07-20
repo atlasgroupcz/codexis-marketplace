@@ -1,16 +1,16 @@
 /**
- * CGI backend komponenty „SID — API klíč".
+ * CGI backend for the "SID — API key" component.
  *
- * Protokol převzat z `plugins/znamky/components/znamky/znamky.py` a
- * `cdx-daemon/.../plugin/service/runtime/CgiProtocol.java`:
- *   vstup  — env REQUEST_METHOD / CONTENT_LENGTH / QUERY_STRING, tělo na stdin
- *   výstup — CGI hlavičky, prázdný řádek (CRLF CRLF), pak tělo
+ * Protocol (see plugins/znamky/components/znamky/znamky.py and the daemon's
+ * CgiProtocol.java): input arrives as REQUEST_METHOD / CONTENT_LENGTH /
+ * QUERY_STRING env vars plus a body on stdin; output is CGI headers, a blank
+ * CRLF line, then the body.
  *
- * Daemon servíruje existující soubory v adresáři komponenty staticky
- * (index.html), takže sem doputuje jen požadavek na cestu, která souborem
- * není — frontend proto POSTuje na `api`.
+ * The daemon serves existing files in the component directory statically, so
+ * only a path that isn't a file reaches this — hence the frontend POSTs to
+ * `api`.
  *
- * Klíč se odsud NIKDY nevrací zpět do UI; jen prefix (`start`).
+ * The key is never returned to the UI, only its prefix.
  */
 import { apiGet, type CliError, type FetchLike } from "./http"
 import { EXIT, getApiKey, getBaseUrl, writeApiKey, deleteApiKey } from "./config"
@@ -54,9 +54,8 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
     case "save_config": {
       const key = (body.api_key ?? "").trim()
       if (!key) return { ok: false, error: "Vložte API klíč." }
-      // Ověřit PŘED zápisem — dřív se klíč zapsal a při jakékoli chybě
-      // (i výpadku sítě) smazal, takže uživatel přišel i o dosud funkční
-      // klíč. `apiGet` bere kandidáta explicitně, .env se nedotýkáme.
+      // Verify before touching .env, so a failed attempt can't destroy a key
+      // that still works.
       try {
         await apiGet("/api/v1/users/me", f, key)
       } catch (e) {
@@ -74,14 +73,13 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
     }
 
     case "save_notify_settings": {
-      // Uloží se jen to, co uživatel skutečně poslal — soubor zůstává
-      // sparse override nad shipped defaults.
+      // Only what was actually sent is stored; the file stays a sparse override.
       const patch: Record<string, unknown> = {}
       if (typeof body.email === "boolean") patch.email = body.email
       if (typeof body.inApp === "boolean") patch.inApp = body.inApp
       if (Array.isArray(body.recipients)) {
-        // Nestringové položky odmítáme, ne tiše zahazujeme — jinak by se
-        // překlep v UI projevil jako "uloženo" s chybějícím adresátem.
+        // Reject rather than silently drop — otherwise a UI typo would read
+        // as "saved" with a recipient missing.
         const invalid = body.recipients.filter(
           (r) => typeof r !== "string" || (r.trim() !== "" && !isEmail(r)),
         )
@@ -106,7 +104,6 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
   }
 }
 
-/** Sestaví CGI odpověď (hlavičky + prázdný řádek + JSON tělo). */
 export function renderCgi(payload: unknown, cgiStatus?: string): string {
   const head =
     (cgiStatus ? `Status: ${cgiStatus}\r\n` : "") +
@@ -124,16 +121,15 @@ async function readStdin(): Promise<string> {
 }
 
 /**
- * Obslouží jeden CGI požadavek a vrátí kompletní odpověď jako řetězec.
+ * Handles one CGI request and returns the complete response as a string.
  *
- * Nezapisuje na stdout ani nečte proces globálně mimo definovaný vstup —
- * spuštění má na starosti `cgi-main.ts`, aby tenhle modul šel importovat
- * v testech bez vedlejších efektů.
+ * Writing to stdout is `cgi-main.ts`'s job, so this module can be imported in
+ * tests without side effects.
  */
 export async function serve(f: FetchLike = fetch): Promise<string> {
   const method = (process.env.REQUEST_METHOD ?? "GET").toUpperCase()
   try {
-    // GET = stav konfigurace pro počáteční vykreslení panelu.
+    // GET returns the configuration state for the panel's initial render.
     if (method !== "POST") return renderCgi(status())
 
     const raw = await readStdin()

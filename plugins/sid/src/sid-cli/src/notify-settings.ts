@@ -4,18 +4,19 @@ import { homedir } from "node:os"
 import { userHome } from "./config"
 
 /**
- * Nastavení notifikačních kanálů — stejná konvence jako u pluginů znamky,
- * katastr, insolvence a codexis:
+ * Notification channel settings — same convention as the znamky, katastr,
+ * insolvence and codexis plugins:
  *
  *   shipped defaults → ~/.local/share/sid/settings/defaults.json
- *                      (kopíruje tam install hook z plugins/sid/settings/sid/)
- *   uživatelský      → $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/settings.json
- *                      (sparse — jen změněné klíče)
+ *                      (placed there by the install hook)
+ *   user override    → $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/settings.json
+ *                      (sparse — only the changed keys)
  *
- * Výsledek se skládá při čtení; do uživatelského souboru se nic nesluje.
+ * The effective config is composed at read time; nothing is merged back into
+ * the user file.
  *
- * E-mail je záměrně vypnutý ve výchozím stavu (shodně s ostatními pluginy) —
- * denní automatizace nemá bez vyžádání chodit uživateli do schránky.
+ * E-mail is off by default, matching the peers — a daily automation should
+ * not reach someone's inbox unasked.
  */
 
 export type NotifySettings = { email: boolean; inApp: boolean; recipients: string[] }
@@ -23,7 +24,7 @@ export type NotifySettings = { email: boolean; inApp: boolean; recipients: strin
 const BUILTIN: NotifySettings = { email: false, inApp: true, recipients: [] }
 
 function defaultsPath(): string {
-  // SID_DEFAULTS_FILE je override pro testy.
+  // SID_DEFAULTS_FILE is a test-only override.
   return process.env.SID_DEFAULTS_FILE || join(homedir(), ".local", "share", "sid", "settings", "defaults.json")
 }
 
@@ -31,15 +32,15 @@ export function userSettingsPath(): string {
   return join(userHome(), ".cdx", "apps", "sid", "settings.json")
 }
 
-/** Zpřísněná, ale ne přehnaná validace — server stejně adresu ověří sám. */
+/** Deliberately loose — the mail server validates properly anyway. */
 export function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim())
 }
 
 /**
- * Zapíše sparse override uživatele. Slučuje se s tím, co už v souboru je,
- * aby uložení jednoho přepínače nesmazalo ostatní; shipped defaults se
- * nikdy nemění.
+ * Writes the sparse user override, merging into whatever the file already
+ * holds so saving one toggle doesn't clear the others. Shipped defaults are
+ * never modified.
  */
 export function writeNotifyOverride(patch: Record<string, unknown>): void {
   const path = userSettingsPath()
@@ -58,13 +59,13 @@ function readJson(path: string): Record<string, unknown> | null {
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"))
     return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null
   } catch {
-    // Chybějící i poškozený soubor = použij, co máme; notifikace nesmí
-    // shodit naplánovaný běh kvůli překlepu v konfiguraci.
+    // Missing or malformed file falls back to what we have — a typo in the
+    // config must not fail the scheduled run.
     return null
   }
 }
 
-/** Adresáti navíc — jen neprázdné řetězce, ořezané. */
+/** Extra recipients — non-empty strings only, trimmed. */
 function cleanRecipients(raw: unknown): string[] | undefined {
   if (!Array.isArray(raw)) return undefined
   return raw.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)

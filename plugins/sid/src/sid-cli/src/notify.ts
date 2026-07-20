@@ -6,33 +6,30 @@ import { getNotifySettings } from "./notify-settings"
 import type { FetchLike } from "./http"
 
 /**
- * Notifikace zpět uživateli přes daemon plugin API.
+ * User-facing notifications through the daemon plugin API.
  *
- * Auth = VM token z ~/.cdx/env/secret — NE SID API klíč a NE
- * CODEXIS_USER_API_TOKEN (ten gateway odmítne 403; viz `_daemon.py`
- * v pluginu codexis).
+ * Auth is the VM token from ~/.cdx/env/secret — NOT the SID API key and NOT
+ * CODEXIS_USER_API_TOKEN, which the gateway rejects with 403.
  *
- * Best-effort: jakékoli selhání → false. Digest na stdout je primárním
- * výstupem automatizace, notifikace jen bonus — výpadek daemona nesmí
- * shodit naplánovaný běh.
+ * Best-effort throughout: any failure returns false. The digest on stdout is
+ * what the automation is for; a daemon outage must not fail the run.
  *
- * Protokol převzat z `plugins/codexis/lib/sledovane_dokumenty_core/notify.py`:
- * e-mail je multipart/form-data s částí `payload` (NE prostý JSON),
- * bell je GraphQL mutace `createNotification`.
+ * Wire format (see plugins/codexis/lib/sledovane_dokumenty_core/notify.py):
+ * e-mail is multipart/form-data with a `payload` part, not plain JSON; the
+ * bell is the GraphQL `createNotification` mutation.
  */
 
 const EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 const GRAPHQL_PATH = "/graphql"
 
 /**
- * Stropy na volání daemona. Bez nich by zaseknuté spojení zablokovalo denní
- * automatizaci navždy — a je to právě tahle vrstva, na které cron visí.
- * Hodnoty podle reference (`notify.py`): doručení 30 s, pomocný dotaz 10 s.
+ * Ceilings for daemon calls — this is the layer the cron job hangs on.
+ * Values follow the reference: 30s for delivery, 10s for the helper query.
  */
 const DAEMON_TIMEOUT_MS = 30_000
 const ME_QUERY_TIMEOUT_MS = 10_000
 
-/** CODEXIS_PUBLIC_DAEMON_URL je GraphQL URL — REST base vznikne odříznutím. */
+/** CODEXIS_PUBLIC_DAEMON_URL is the GraphQL URL; the REST base is it minus /graphql. */
 export function restBase(daemonUrl: string): string {
   const base = (daemonUrl || "").replace(/\/+$/, "")
   return base.endsWith(GRAPHQL_PATH) ? base.slice(0, -GRAPHQL_PATH.length).replace(/\/+$/, "") : base
@@ -62,8 +59,7 @@ async function sendEmail(
   f: FetchLike,
   to: string[] | null,
 ): Promise<boolean> {
-  // Bez `to` doručí daemon přihlášenému uživateli; pole se přikládá jen
-  // když si uživatel nastavil adresáty navíc (vzor katastr/znamky).
+  // Without `to` the daemon delivers to the signed-in user.
   const payload = JSON.stringify(to && to.length > 0 ? { subject, bodyText, to } : { subject, bodyText })
   const boundary = `----sid-${randomUUID().replace(/-/g, "")}`
   const body =
@@ -85,7 +81,7 @@ async function sendEmail(
   }
 }
 
-/** E-mail přihlášeného uživatele z daemona, nebo null. Best-effort. */
+/** Signed-in user's e-mail from the daemon, or null. Best-effort. */
 async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Promise<string | null> {
   try {
     const res = await f(graphqlUrl(daemonUrl), {
@@ -104,14 +100,13 @@ async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Prom
 }
 
 /**
- * Sestaví seznam `to`.
+ * Builds the `to` list.
  *
- * Když daemon dostane `to`, doručí VÝHRADNĚ na něj — takže bez přidání
- * vlastní adresy by si uživatel přidáním kolegy vypnul vlastní e-maily.
- * Reference (`sledovane_dokumenty_core/notify.py resolve_to`) to řeší
- * stejně: bez extras nic (daemon pošle přihlášenému), s extras
- * `[já, ...extras]` bez duplicity. Když se `me` nepodaří zjistit, pošleme
- * aspoň extras — lepší než zahodit reálného adresáta kvůli výpadku dotazu.
+ * When `to` is present the daemon delivers EXCLUSIVELY to it, so the
+ * signed-in user has to be added explicitly — otherwise adding a colleague
+ * would silently stop their own mail. With no extras the field is omitted;
+ * with extras it is `[me, ...extras]`, deduped. If `me` can't be resolved,
+ * send to the extras rather than dropping a real recipient.
  */
 async function resolveTo(
   recipients: string[],
@@ -143,11 +138,10 @@ async function sendBell(message: string, auth: string, daemonUrl: string, f: Fet
 }
 
 /**
- * Pošle digest kanály povolenými v nastavení (`notify-settings.ts`).
+ * Sends the digest through whichever channels the settings enable.
  *
- * Vrací true, když se doručilo aspoň jedním kanálem — e-mail je ve
- * výchozím stavu vypnutý, takže vázat výsledek jen na něj by hlásilo
- * neúspěch i při funkční bell notifikaci.
+ * True means at least one channel delivered — e-mail is off by default, so
+ * keying the result to it alone would report failure on a working bell.
  */
 export async function sendDigest(subject: string, bodyText: string, f: FetchLike = fetch): Promise<boolean> {
   const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL

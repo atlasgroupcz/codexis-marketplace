@@ -22,7 +22,7 @@ describe("settings", () => {
     }
     expect(getApiKey()).toBe("sid_novy_klic")
     expect(out.verified).toBe(true)
-    // výstup nesmí obsahovat celý klíč — jen prefix
+    // the output must carry only the prefix, never the whole key
     expect(JSON.stringify(out)).not.toContain("sid_novy_klic")
     expect(out.start).toBe("sid_nov")
   })
@@ -74,9 +74,9 @@ describe("set-key — neničí funkční klíč", () => {
       throw new Error("ECONNREFUSED")
     }) as unknown as typeof fetch
     const err = (await run(["set-key"], down, async () => "sid_novy").catch((e: unknown) => e)) as CliError
-    // Původní funkční klíč musí přežít výpadek sítě.
+    // A working key must survive a network outage.
     expect(getApiKey()).toBe("sid_puvodni")
-    // Hláška nesmí tvrdit, že klíč byl odmítnut, když SID nebyl dostupný.
+    // The message must not claim rejection when SID was simply unreachable.
     expect(err.message).not.toMatch(/odmítl/i)
   })
 

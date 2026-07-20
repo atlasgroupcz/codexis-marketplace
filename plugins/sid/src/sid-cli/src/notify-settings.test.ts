@@ -77,7 +77,7 @@ describe("writeNotifyOverride", () => {
     writeDefaults({ version: 1, notify: { email: false, inApp: true, recipients: [] } })
     writeNotifyOverride({ email: true })
     expect(getNotifySettings()).toEqual({ email: true, inApp: true, recipients: [] })
-    // defaults zůstaly nedotčené
+    // shipped defaults untouched
     expect(JSON.parse(readFileSync(process.env.SID_DEFAULTS_FILE!, "utf8")).notify.email).toBe(false)
   })
 

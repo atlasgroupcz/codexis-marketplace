@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Entrypoint CGI komponenty. Veškerá logika je v `cgi.ts` — tenhle soubor
- * existuje jen proto, aby `cgi.ts` šel importovat v testech bez toho, aby
- * se při importu spustil požadavek (a zablokoval se na čtení stdin).
+ * Component entrypoint. All logic lives in `cgi.ts`; this file exists so that
+ * importing it in tests doesn't execute a request and block reading stdin.
  */
 import { serve } from "./cgi"
 

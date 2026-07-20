@@ -7,7 +7,7 @@ import { run } from "./check"
 beforeEach(() => {
   const dir = mkdtempSync(join(tmpdir(), "sid-check-"))
   process.env.SID_ENV_FILE = join(dir, ".env")
-  // Žádný ~/.cdx/env/secret → notify je no-op, notified zůstane false.
+  // No ~/.cdx/env/secret → notify is a no-op, notified stays false.
   process.env.CODEXIS_PUBLIC_USER_HOME = dir
   process.env.CODEXIS_PUBLIC_DAEMON_URL = "http://daemon.local/graphql"
   writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=sid_t\nSID_API_URL=http://s\n", { mode: 0o600 })
