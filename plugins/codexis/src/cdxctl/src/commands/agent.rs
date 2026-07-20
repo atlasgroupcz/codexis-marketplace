@@ -145,11 +145,7 @@ pub fn update(
         let current = fetch_agent(client, id, &node_id)?;
         // `resolve_node_id` fabricates an id from a raw name; the daemon only knows the
         // stored one, so the fetched agent's id is what the mutation has to carry.
-        let stored_id = current
-            .get("id")
-            .and_then(Value::as_str)
-            .ok_or_else(|| CdxctlError::Parse(format!("Agent {id} has no id")))?
-            .to_string();
+        let stored_id = agent_id(&current, id)?;
         let mut input = merge_current(&current);
         apply_fields(&mut input, &fields);
         json!({ "id": stored_id, "input": Value::Object(input) })
@@ -161,8 +157,14 @@ pub fn update(
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let node_id = resolve_node_id(id, "Agent");
-    let data = client.execute(graphql::DELETE_AGENT, json!({ "id": node_id }))?;
+    // Same as update: a node id built from a raw name is not the stored one, and the
+    // daemon answers an unknown id with null -- which would read as a silent success.
+    let stored_id = stored_agent_id(client, id, &node_id)?;
+    let data = client.execute(graphql::DELETE_AGENT, json!({ "id": stored_id }))?;
     let result = data.get("deleteNode").cloned().unwrap_or(Value::Null);
+    if result.is_null() {
+        return Err(CdxctlError::Parse(format!("Agent {id} was not deleted")));
+    }
     print_output(&json!({ "deleted": result }), format);
     Ok(())
 }
@@ -204,6 +206,18 @@ fn format_input_error(error: &Value) -> String {
         text.push_str(&format!(" Allowed: {}", allowed.join(", ")));
     }
     text
+}
+
+fn stored_agent_id(client: &GraphQLClient, id: &str, node_id: &str) -> Result<String, CdxctlError> {
+    agent_id(&fetch_agent(client, id, node_id)?, id)
+}
+
+fn agent_id(agent: &Value, id: &str) -> Result<String, CdxctlError> {
+    agent
+        .get("id")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .ok_or_else(|| CdxctlError::Parse(format!("Agent {id} has no id")))
 }
 
 fn fetch_agent(client: &GraphQLClient, id: &str, node_id: &str) -> Result<Value, CdxctlError> {
