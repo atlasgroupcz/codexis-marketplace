@@ -15,22 +15,24 @@ use cdx_common::config::read_env;
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
-const STYLESHEET_HREF: &str = "./preview.css";
 
 pub(crate) fn execute_preview() -> Result<(), CliError> {
     let path_info = env::var("PATH_INFO").unwrap_or_default();
     let query_string = env::var("QUERY_STRING").unwrap_or_default();
-    let response = match render_preview(&path_info, &query_string) {
+    let stylesheet = stylesheet_href(&path_info);
+    let response = match render_preview(&path_info, &query_string, &stylesheet) {
         Ok(page) => CgiResponse::ok(page),
         Err(PreviewError::UnsupportedPath) => CgiResponse::error(
             404,
             "Not Found",
             "Náhled pro tento zdroj není k dispozici.",
+            &stylesheet,
         ),
         Err(PreviewError::Cli(error)) => CgiResponse::error(
             502,
             "Bad Gateway",
             &format!("Náhled dokumentu se nepodařilo načíst: {error}"),
+            &stylesheet,
         ),
     };
     print!("{}", response.render());
@@ -59,11 +61,11 @@ impl CgiResponse {
         Self { status: 200, reason: "OK", body }
     }
 
-    fn error(status: u16, reason: &'static str, message: &str) -> Self {
+    fn error(status: u16, reason: &'static str, message: &str, stylesheet_href: &str) -> Self {
         Self {
             status,
             reason,
-            body: error_page(message),
+            body: error_page(message, stylesheet_href),
         }
     }
 
@@ -75,7 +77,11 @@ impl CgiResponse {
     }
 }
 
-fn render_preview(path_info: &str, query_string: &str) -> Result<String, PreviewError> {
+fn render_preview(
+    path_info: &str,
+    query_string: &str,
+    stylesheet_href: &str,
+) -> Result<String, PreviewError> {
     let doc_id = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
     let config = Config::load()?;
 
@@ -85,7 +91,20 @@ fn render_preview(path_info: &str, query_string: &str) -> Result<String, Preview
         .unwrap_or_else(|| doc_id.clone());
     let canonical_url = canonical_url(&doc_id);
 
-    Ok(document_page(&title, canonical_url.as_deref(), &render_markdown(&markdown)))
+    Ok(document_page(
+        &title,
+        canonical_url.as_deref(),
+        &render_markdown(&markdown),
+        stylesheet_href,
+    ))
+}
+
+/// The stylesheet lives at the previews root, while the page is served under the
+/// resource path (`…/plugin-previews/<id>/doc/<DOC_ID>/text`), so the relative
+/// href must climb back up one level per path segment above the first.
+fn stylesheet_href(path_info: &str) -> String {
+    let segments = path_info.trim_matches('/').split('/').filter(|s| !s.is_empty()).count();
+    format!("{}preview.css", "../".repeat(segments.saturating_sub(1)))
 }
 
 /// Accepts `/doc/<DOC_ID>` and `/doc/<DOC_ID>/text`; anything else has no preview.
@@ -182,21 +201,28 @@ fn render_markdown(markdown: &str) -> String {
     rendered
 }
 
-fn document_page(title: &str, canonical_url: Option<&str>, content_html: &str) -> String {
+fn document_page(
+    title: &str,
+    canonical_url: Option<&str>,
+    content_html: &str,
+    stylesheet_href: &str,
+) -> String {
     let canonical_link = canonical_url
         .map(|href| format!("\n    <link rel=\"canonical\" href=\"{}\">", escape_html(href)))
         .unwrap_or_default();
     format!(
-        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>{}</title>{}\n    <link rel=\"stylesheet\" href=\"{STYLESHEET_HREF}\">\n  </head>\n  <body>\n    <article class=\"document\">\n{}\n    </article>\n  </body>\n</html>\n",
+        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>{}</title>{}\n    <link rel=\"stylesheet\" href=\"{}\">\n  </head>\n  <body>\n    <article class=\"document\">\n{}\n    </article>\n  </body>\n</html>\n",
         escape_html(title),
         canonical_link,
+        escape_html(stylesheet_href),
         content_html
     )
 }
 
-fn error_page(message: &str) -> String {
+fn error_page(message: &str, stylesheet_href: &str) -> String {
     format!(
-        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <title>Náhled není k dispozici</title>\n    <link rel=\"stylesheet\" href=\"{STYLESHEET_HREF}\">\n  </head>\n  <body>\n    <article class=\"document document-error\">\n      <p>{}</p>\n    </article>\n  </body>\n</html>\n",
+        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <title>Náhled není k dispozici</title>\n    <link rel=\"stylesheet\" href=\"{}\">\n  </head>\n  <body>\n    <article class=\"document document-error\">\n      <p>{}</p>\n    </article>\n  </body>\n</html>\n",
+        escape_html(stylesheet_href),
         escape_html(message)
     )
 }
@@ -256,26 +282,35 @@ mod tests {
             "Zákon č. 586/1992 Sb.",
             Some("https://app.codexis.cz/document/CR10/text"),
             "<h1>586/1992 Sb.</h1>",
+            "../../preview.css",
         );
 
         assert!(page.contains("<title>Zákon č. 586/1992 Sb.</title>"));
         assert!(page.contains(
             "<link rel=\"canonical\" href=\"https://app.codexis.cz/document/CR10/text\">"
         ));
-        assert!(page.contains("<link rel=\"stylesheet\" href=\"./preview.css\">"));
+        assert!(page.contains("<link rel=\"stylesheet\" href=\"../../preview.css\">"));
         assert!(page.contains("<h1>586/1992 Sb.</h1>"));
     }
 
     #[test]
     fn omits_the_canonical_link_without_a_web_base_url() {
-        let page = document_page("Doc", None, "<p>x</p>");
+        let page = document_page("Doc", None, "<p>x</p>", "preview.css");
         assert!(!page.contains("rel=\"canonical\""));
     }
 
     #[test]
     fn escapes_html_in_titles() {
-        let page = document_page("A <b>&\"", None, "<p>x</p>");
+        let page = document_page("A <b>&\"", None, "<p>x</p>", "preview.css");
         assert!(page.contains("<title>A &lt;b&gt;&amp;&quot;</title>"));
+    }
+
+    #[test]
+    fn stylesheet_href_climbs_one_level_per_extra_path_segment() {
+        assert_eq!(stylesheet_href("/doc/CR10_2026_04_01/text"), "../../preview.css");
+        assert_eq!(stylesheet_href("/doc/CR10"), "../preview.css");
+        assert_eq!(stylesheet_href("/doc"), "preview.css");
+        assert_eq!(stylesheet_href("/"), "preview.css");
     }
 
     #[test]
@@ -287,7 +322,7 @@ mod tests {
 
     #[test]
     fn cgi_response_renders_status_and_content_type_headers() {
-        let response = CgiResponse::error(404, "Not Found", "chybí");
+        let response = CgiResponse::error(404, "Not Found", "chybí", "preview.css");
         let rendered = response.render();
         assert!(rendered.starts_with("Status: 404 Not Found\nContent-Type: text/html;charset=UTF-8\n\n"));
         assert!(rendered.contains("chybí"));
