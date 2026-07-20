@@ -23,16 +23,16 @@ i18n:
 ## Agents
 
 ```bash
-cdxctl agent defaults                 # the turn budget applied when you skip --max-turns
+cdxctl agent defaults                 # model and jurisdictions of this chat, plus the turn budget
 cdxctl agent list --editable-only
 cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
-  --tool shell --skill debugger --model CLAUDE_OPUS_4_8 --max-turns 7 \
-  --memory "Posuď zákonnost výpovědi. …"
+  --model "$(cdxctl agent defaults | jq -r .model)" \
+  --tool shell --memory "Posuď zákonnost výpovědi. …"
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
-An agent is a reusable persona with its own model, tools and instructions. Creating one needs `--name`, `--description` and `--model`; ask the user rather than guessing, because the server has no chat context to fall back on. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
+An agent is a reusable persona with its own model, tools and instructions. **Run `cdxctl agent defaults` first** — it reports the model and jurisdictions of the chat you are in, and those are what the user is working with. Pass them to `create` unless the user asks for something else; never invent a model or ask which one to use. `update` keeps every field you do not pass, and a wrong skill or model is rejected with the list of accepted values.
 
 ### Writing `--memory`
 

@@ -66,12 +66,33 @@ pub fn list(
 
 pub fn defaults(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::GET_AGENT_DEFAULTS, json!({}))?;
-    let result = data
+    let mut result = data
         .get("agentDefaults")
+        .and_then(Value::as_object)
         .cloned()
-        .unwrap_or(Value::Null);
-    print_output(&result, format);
+        .unwrap_or_default();
+
+    // Running inside a chat, the model and jurisdictions of that chat are what the user
+    // is working with right now; outside one there is nothing to inherit.
+    if let Some(chat) = current_chat(client) {
+        for key in ["model", "jurisdictions"] {
+            if let Some(value) = chat.get(key) {
+                result.insert(key.into(), value.clone());
+            }
+        }
+    }
+
+    print_output(&Value::Object(result), format);
     Ok(())
+}
+
+fn current_chat(client: &GraphQLClient) -> Option<Map<String, Value>> {
+    let session = std::env::var("CODEXIS_PUBLIC_SESSION_ID").ok()?;
+    let node_id = resolve_node_id(&session, "Chat");
+    let data = client
+        .execute(graphql::GET_CHAT_CONTEXT, json!({ "id": node_id }))
+        .ok()?;
+    data.get("node").and_then(Value::as_object).cloned()
 }
 
 pub fn create(

@@ -288,6 +288,20 @@ query GetAgentDefaults {
 }
 "#;
 
+// The chat the shell runs in carries the model and jurisdictions actually in use, which
+// is per chat -- unlike a stored preference, which two concurrent chats would share.
+pub const GET_CHAT_CONTEXT: &str = r#"
+query GetChatContext($id: ID!) {
+    node(id: $id) {
+        ... on Chat {
+            id
+            model
+            jurisdictions
+        }
+    }
+}
+"#;
+
 pub const CREATE_AGENT_MARKDOWN: &str = r#"
 mutation CreateAgent($markdown: Markdown!) {
     createAgent(markdown: $markdown) {
