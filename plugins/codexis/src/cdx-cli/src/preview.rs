@@ -58,26 +58,35 @@ impl From<CliError> for PreviewError {
 struct CgiResponse {
     status: u16,
     reason: &'static str,
+    cache_control: &'static str,
     body: String,
 }
 
 impl CgiResponse {
     fn ok(body: String) -> Self {
-        Self { status: 200, reason: "OK", body }
+        Self {
+            status: 200,
+            reason: "OK",
+            // Rendering re-executes the CLI on every request, so let the browser
+            // reuse a successful render; `private` keeps it out of shared caches.
+            cache_control: "private, max-age=3600",
+            body,
+        }
     }
 
     fn error(status: u16, reason: &'static str, message: &str, stylesheet_href: &str) -> Self {
         Self {
             status,
             reason,
+            cache_control: "no-store",
             body: error_page(message, stylesheet_href),
         }
     }
 
     fn render(&self) -> String {
         format!(
-            "Status: {} {}\nContent-Type: text/html;charset=UTF-8\n\n{}",
-            self.status, self.reason, self.body
+            "Status: {} {}\nContent-Type: text/html;charset=UTF-8\nCache-Control: {}\n\n{}",
+            self.status, self.reason, self.cache_control, self.body
         )
     }
 }
@@ -452,7 +461,15 @@ mod tests {
     fn cgi_response_renders_status_and_content_type_headers() {
         let response = CgiResponse::error(404, "Not Found", "chybí", "preview.css");
         let rendered = response.render();
-        assert!(rendered.starts_with("Status: 404 Not Found\nContent-Type: text/html;charset=UTF-8\n\n"));
+        assert!(rendered.starts_with(
+            "Status: 404 Not Found\nContent-Type: text/html;charset=UTF-8\nCache-Control: no-store\n\n"
+        ));
         assert!(rendered.contains("chybí"));
+    }
+
+    #[test]
+    fn successful_renders_are_browser_cacheable() {
+        let rendered = CgiResponse::ok("<html></html>".to_string()).render();
+        assert!(rendered.contains("\nCache-Control: private, max-age=3600\n"));
     }
 }
