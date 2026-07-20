@@ -16,6 +16,10 @@ use cdx_common::config::read_env;
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
+/// Daemon-injected admin Basic authorization (preview executions only) — the
+/// same credential codexis-next uses to resolve document text, so the preview
+/// does not depend on the user's own license. Never log or embed its value.
+const PREVIEW_AUTHORIZATION_ENV: &str = "CODEXIS_USER_PREVIEW_AUTHORIZATION";
 
 pub(crate) fn execute_preview() -> Result<(), CliError> {
     let path_info = env::var("PATH_INFO").unwrap_or_default();
@@ -111,19 +115,26 @@ fn render_preview(
 }
 
 /// Fetches the document HTML the CODEXIS web app renders. Returns `None` when
-/// the document has no `HtmlDoc` content (unknown doc type, no license) so the
-/// caller can fall back to the markdown text. Tries the user's token first and
-/// retries anonymously — the GraphQL endpoint serves public documents without
-/// auth, and a token rejection must not lose the preview.
+/// the document has no `HtmlDoc` content (unknown doc type) so the caller can
+/// fall back to the markdown text. Prefers the daemon-injected admin
+/// authorization (full document access, like the codexis-next text route),
+/// then the user's token, then anonymous access for public documents.
 fn fetch_html_doc(config: &Config, document: &DocumentPreviewPath) -> Option<String> {
-    fetch_html_doc_request(config, document, true)
-        .or_else(|| fetch_html_doc_request(config, document, false))
+    if let Some(admin_authorization) = read_env(PREVIEW_AUTHORIZATION_ENV) {
+        if let Some(html) =
+            fetch_html_doc_request(config, document, Some(&format!("Authorization: {admin_authorization}")))
+        {
+            return Some(html);
+        }
+    }
+    fetch_html_doc_request(config, document, Some(&config.auth_header))
+        .or_else(|| fetch_html_doc_request(config, document, None))
 }
 
 fn fetch_html_doc_request(
     config: &Config,
     document: &DocumentPreviewPath,
-    with_auth: bool,
+    authorization_header: Option<&str>,
 ) -> Option<String> {
     // A part preview renders just the part itself; the document header belongs
     // only to the full-document preview (mirrors the codexis-next part view).
@@ -140,9 +151,9 @@ fn fetch_html_doc_request(
         "variables": variables,
     });
     let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
-    if with_auth {
+    if let Some(header) = authorization_header {
         curl_args.push("-H".to_string());
-        curl_args.push(config.auth_header.clone());
+        curl_args.push(header.to_string());
     }
     curl_args.extend([
         "-H".to_string(),
