@@ -1,12 +1,39 @@
-use super::{flatten_plugin_marketplace, resolve_node_id};
+use super::{find_node_id, flatten_plugin_marketplace, resolve_node_id};
 use crate::client::GraphQLClient;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use std::fs;
 use std::io::{self, Read};
 use std::path::Path;
+
+#[derive(Default)]
+pub struct AgentFields {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub tools: Option<Vec<String>>,
+    pub disallowed_tools: Option<Vec<String>>,
+    pub skills: Option<Vec<String>>,
+    pub jurisdictions: Option<Vec<String>>,
+    pub model: Option<String>,
+    pub max_turns: Option<u32>,
+    pub memory: Option<String>,
+}
+
+impl AgentFields {
+    fn is_empty(&self) -> bool {
+        self.name.is_none()
+            && self.description.is_none()
+            && self.tools.is_none()
+            && self.disallowed_tools.is_none()
+            && self.skills.is_none()
+            && self.jurisdictions.is_none()
+            && self.model.is_none()
+            && self.max_turns.is_none()
+            && self.memory.is_none()
+    }
+}
 
 pub fn list(
     client: &GraphQLClient,
@@ -37,17 +64,46 @@ pub fn list(
     Ok(())
 }
 
+pub fn defaults(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
+    let data = client.execute(graphql::GET_AGENT_DEFAULTS, json!({}))?;
+    let result = data
+        .get("agentDefaults")
+        .cloned()
+        .unwrap_or(Value::Null);
+    print_output(&result, format);
+    Ok(())
+}
+
 pub fn create(
     client: &GraphQLClient,
     file: Option<&str>,
     stdin: bool,
+    fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let markdown = load_markdown(file, stdin)?;
-    let data = client.execute(graphql::CREATE_AGENT, json!({ "markdown": markdown }))?;
-    let result = data.get("createAgent").cloned().unwrap_or(Value::Null);
-    print_output(&result, format);
-    Ok(())
+    let variables = if fields.is_empty() {
+        json!({ "markdown": load_markdown(file, stdin)? })
+    } else {
+        if file.is_some() || stdin {
+            return Err(CdxctlError::Parse(
+                "Choose one input style: the field flags, or --file/--stdin markdown".into(),
+            ));
+        }
+        let name = fields.name.clone().ok_or_else(|| {
+            CdxctlError::Parse("Creating an agent needs --name".into())
+        })?;
+        let description = fields.description.clone().ok_or_else(|| {
+            CdxctlError::Parse("Creating an agent needs --description".into())
+        })?;
+        let mut input = Map::new();
+        input.insert("name".into(), json!(name));
+        input.insert("description".into(), json!(description));
+        apply_fields(&mut input, &fields);
+        json!({ "input": Value::Object(input) })
+    };
+
+    let data = client.execute(graphql::CREATE_AGENT, variables)?;
+    print_payload(data.get("createAgent"), format)
 }
 
 pub fn update(
@@ -55,17 +111,29 @@ pub fn update(
     id: &str,
     file: Option<&str>,
     stdin: bool,
+    fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let markdown = load_markdown(file, stdin)?;
     let node_id = resolve_node_id(id, "Agent");
-    let data = client.execute(
-        graphql::UPDATE_AGENT,
-        json!({ "id": node_id, "markdown": markdown }),
-    )?;
-    let result = data.get("updateAgent").cloned().unwrap_or(Value::Null);
-    print_output(&result, format);
-    Ok(())
+
+    let variables = if fields.is_empty() {
+        json!({ "id": node_id, "markdown": load_markdown(file, stdin)? })
+    } else {
+        if file.is_some() || stdin {
+            return Err(CdxctlError::Parse(
+                "Choose one input style: the field flags, or --file/--stdin markdown".into(),
+            ));
+        }
+        // AgentInput replaces the whole agent, so anything the flags do not set has to be
+        // carried over from the stored agent or the update would clear it.
+        let current = fetch_agent(client, id, &node_id)?;
+        let mut input = merge_current(&current);
+        apply_fields(&mut input, &fields);
+        json!({ "id": node_id, "input": Value::Object(input) })
+    };
+
+    let data = client.execute(graphql::UPDATE_AGENT, variables)?;
+    print_payload(data.get("updateAgent"), format)
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -76,13 +144,155 @@ pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<
     Ok(())
 }
 
+fn print_payload(payload: Option<&Value>, format: OutputFormat) -> Result<(), CdxctlError> {
+    let payload = payload.cloned().unwrap_or(Value::Null);
+    let errors = payload
+        .get("errors")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if !errors.is_empty() {
+        return Err(CdxctlError::GraphQL(
+            errors.iter().map(format_input_error).collect(),
+        ));
+    }
+    let agent = payload.get("agent").cloned().unwrap_or(Value::Null);
+    print_output(&agent, format);
+    Ok(())
+}
+
+fn format_input_error(error: &Value) -> String {
+    let field = error.get("field").and_then(Value::as_str);
+    let message = error
+        .get("message")
+        .and_then(Value::as_str)
+        .unwrap_or("Invalid input");
+    let allowed: Vec<&str> = error
+        .get("allowedValues")
+        .and_then(Value::as_array)
+        .map(|values| values.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+
+    let mut text = match field {
+        Some(field) => format!("{field}: {message}"),
+        None => message.to_string(),
+    };
+    if !allowed.is_empty() {
+        text.push_str(&format!(" Allowed: {}", allowed.join(", ")));
+    }
+    text
+}
+
+fn fetch_agent(client: &GraphQLClient, id: &str, node_id: &str) -> Result<Value, CdxctlError> {
+    let data = client.execute(graphql::GET_AGENTS, json!({}))?;
+    let agents = data
+        .get("agents")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    agents
+        .iter()
+        .find(|agent| {
+            agent.get("id").and_then(Value::as_str) == Some(node_id)
+                || find_node_id(std::slice::from_ref(agent), id, &["fullName", "name"]).is_some()
+        })
+        .cloned()
+        .ok_or_else(|| CdxctlError::Parse(format!("No such agent: {id}")))
+}
+
+fn merge_current(current: &Value) -> Map<String, Value> {
+    let mut input = Map::new();
+    for key in ["name", "description", "memory"] {
+        if let Some(value) = current.get(key).and_then(Value::as_str) {
+            input.insert(key.into(), json!(value));
+        }
+    }
+    input.insert("tools".into(), json!(tool_names(current, "tools")));
+    input.insert(
+        "disallowedTools".into(),
+        json!(tool_names(current, "disallowedTools")),
+    );
+    for key in ["skills", "jurisdictions"] {
+        if let Some(values) = current.get(key).and_then(Value::as_array) {
+            input.insert(key.into(), json!(values));
+        }
+    }
+    if let Some(model) = current.get("model").and_then(Value::as_str) {
+        input.insert("model".into(), json!(model_enum(model)));
+    }
+    if let Some(max_turns) = current.get("maxTurns").and_then(Value::as_u64) {
+        input.insert("maxTurns".into(), json!(max_turns));
+    }
+    input
+}
+
+fn tool_names(agent: &Value, key: &str) -> Vec<String> {
+    agent
+        .get(key)
+        .and_then(Value::as_array)
+        .map(|tools| {
+            tools
+                .iter()
+                .filter_map(|tool| tool.get("toolName").and_then(Value::as_str))
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// `Agent.model` reads back as the vendor model name (`claude-opus-4-8`) while
+/// `AgentInput.model` is the `ChatModel` enum (`CLAUDE_OPUS_4_8`), so a carried-over
+/// model has to be converted or the enum would reject it.
+fn model_enum(model_name: &str) -> String {
+    model_name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_uppercase()
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
+    if let Some(name) = &fields.name {
+        input.insert("name".into(), json!(name));
+    }
+    if let Some(description) = &fields.description {
+        input.insert("description".into(), json!(description));
+    }
+    if let Some(tools) = &fields.tools {
+        input.insert("tools".into(), json!(tools));
+    }
+    if let Some(disallowed) = &fields.disallowed_tools {
+        input.insert("disallowedTools".into(), json!(disallowed));
+    }
+    if let Some(skills) = &fields.skills {
+        input.insert("skills".into(), json!(skills));
+    }
+    if let Some(jurisdictions) = &fields.jurisdictions {
+        input.insert("jurisdictions".into(), json!(jurisdictions));
+    }
+    if let Some(model) = &fields.model {
+        input.insert("model".into(), json!(model_enum(model)));
+    }
+    if let Some(max_turns) = fields.max_turns {
+        input.insert("maxTurns".into(), json!(max_turns));
+    }
+    if let Some(memory) = &fields.memory {
+        input.insert("memory".into(), json!(memory));
+    }
+}
+
 fn load_markdown(file: Option<&str>, stdin: bool) -> Result<String, CdxctlError> {
     match (file, stdin) {
         (Some(_), true) => Err(CdxctlError::Parse(
             "Choose exactly one input source: --file or --stdin".into(),
         )),
         (None, false) => Err(CdxctlError::Parse(
-            "Provide agent markdown via --file or --stdin".into(),
+            "Provide agent markdown via --file or --stdin, or describe the agent with the field flags".into(),
         )),
         (Some(path), false) => load_markdown_from_file(path),
         (None, true) => load_markdown_from_stdin(),
@@ -117,8 +327,12 @@ fn validate_markdown(content: String) -> Result<String, CdxctlError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{load_markdown, load_markdown_from_file, validate_markdown};
+    use super::{
+        format_input_error, load_markdown, load_markdown_from_file, merge_current, model_enum,
+        validate_markdown, AgentFields,
+    };
     use crate::error::CdxctlError;
+    use serde_json::json;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -152,6 +366,64 @@ mod tests {
     fn validate_markdown_rejects_blank_content() {
         let error = validate_markdown(" \n\t ".to_string()).unwrap_err();
         assert!(matches!(error, CdxctlError::Parse(_)));
+    }
+
+    #[test]
+    fn model_enum_converts_vendor_names_to_the_graphql_enum() {
+        assert_eq!(model_enum("claude-opus-4-8"), "CLAUDE_OPUS_4_8");
+        assert_eq!(model_enum("gpt-5.6-terra"), "GPT_5_6_TERRA");
+        assert_eq!(model_enum("gemini-3.1-pro"), "GEMINI_3_1_PRO");
+        assert_eq!(model_enum("CLAUDE_SONNET_5"), "CLAUDE_SONNET_5");
+    }
+
+    #[test]
+    fn merge_current_carries_every_field_the_flags_do_not_set() {
+        let current = json!({
+            "name": "reviewer",
+            "description": "Reviews merge requests",
+            "memory": "Read the diff first.",
+            "tools": [{ "toolName": "shell" }, { "toolName": "readFile" }],
+            "disallowedTools": [{ "toolName": "writeFile" }],
+            "skills": ["debugger"],
+            "jurisdictions": ["CZ"],
+            "model": "claude-opus-4-8",
+            "maxTurns": 7
+        });
+
+        let merged = merge_current(&current);
+
+        assert_eq!(merged["name"], json!("reviewer"));
+        assert_eq!(merged["memory"], json!("Read the diff first."));
+        assert_eq!(merged["tools"], json!(["shell", "readFile"]));
+        assert_eq!(merged["disallowedTools"], json!(["writeFile"]));
+        assert_eq!(merged["skills"], json!(["debugger"]));
+        assert_eq!(merged["jurisdictions"], json!(["CZ"]));
+        assert_eq!(merged["model"], json!("CLAUDE_OPUS_4_8"));
+        assert_eq!(merged["maxTurns"], json!(7));
+    }
+
+    #[test]
+    fn agent_fields_are_empty_until_one_is_set() {
+        assert!(AgentFields::default().is_empty());
+        assert!(!AgentFields {
+            description: Some("x".into()),
+            ..AgentFields::default()
+        }
+        .is_empty());
+    }
+
+    #[test]
+    fn format_input_error_names_the_field_and_lists_allowed_values() {
+        let error = json!({
+            "field": "skills",
+            "message": "No such skill: typo.",
+            "allowedValues": ["debugger", "planner"]
+        });
+
+        assert_eq!(
+            format_input_error(&error),
+            "skills: No such skill: typo. Allowed: debugger, planner"
+        );
     }
 
     fn unique_temp_path(prefix: &str) -> std::path::PathBuf {
