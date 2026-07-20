@@ -2,7 +2,7 @@
 uuid: 62923a9a-9e6d-4803-a9a8-c005049eeb71
 name: sid
 icon: icon.svg
-description: "This skill should be invoked whenever the user asks about internal company documents managed in SID (Systém interních dokumentů) — searching directives, guidelines or regulations ('směrnice', 'řád', 'předpis', 'interní dokument', 'vnitřní předpis'), reading or downloading them, checking what they are required to confirm having read ('co mám potvrdit', 'nepotvrzené dokumenty'), confirming read receipts, or checking SID notifications and news."
+description: "This skill should be invoked whenever the user asks about internal company documents managed in SID (Systém interních dokumentů) — searching directives, guidelines or regulations, reading or downloading them, checking what they are required to confirm having read, confirming read receipts, or checking SID notifications and news. Triggers on: \"SID\", \"směrnice\", \"vnitřní předpis\", \"interní dokument\", \"spisový řád\", \"co mám potvrdit\", \"nepotvrzené dokumenty\"."
 version: 1.0.0
 i18n:
   cs:
@@ -18,31 +18,60 @@ i18n:
 
 # SID — Interní dokumenty
 
-**IMPORTANT:** Jediný nástroj této skill je `sid-cli`. NIKDY nevolej `curl`,
-`wget` ani jiné nástroje přímo proti SID. Předpokládej, že `sid-cli` je
-v PATH — nedělej preflight (`which sid-cli`, výpis env proměnných); začni
-rovnou prvním skutečným příkazem.
+A single tool — **`sid-cli`** — wraps the SID API: full-text search across
+managed documents, metadata and file downloads, read-confirmations, and
+notifications. SID is the company's internal document system; a personal API
+key ties the plugin to the signed-in user's account.
 
-**API klíč NIKDY neprochází konverzací.** Nastavuje se v panelu pluginu SID
-(aplikace Codexis) nebo `echo KLIC | sid-cli settings set-key`. Nikdy nežádej
-uživatele, aby klíč vložil do chatu, a nikdy ho nevypisuj. Když příkaz skončí
-**exit kódem 3**, řekni uživateli, ať si vygeneruje klíč v SID
-(Profil → API klíče, `/profile/api-klice`) a vloží ho v nastavení pluginu.
+**IMPORTANT:** The only tool in this skill is `sid-cli`. Do NOT call `curl`,
+`wget`, `kn`, or `cdx-cli` against SID. Assume `sid-cli` is installed and on
+`PATH` — do not run preflight checks (`which sid-cli`, printing env vars);
+start with the first real request.
 
-## Příkazy
+**IMPORTANT:** The API key must never travel through the conversation. It is
+entered in the SID plugin panel in the Codexis app, or piped in with
+`echo KEY | sid-cli settings set-key`. Never ask the user to paste the key
+into the chat and never print it back.
+
+**IMPORTANT:** Stop on a genuine error line — report it, don't guess
+workarounds and don't blindly retry; the message on stderr is authoritative.
+Exit code 3 means the key is missing or expired: tell the user to issue a new
+one in SID (Profil → API klíče, `/profile/api-klice`) and paste it into the
+plugin settings. When acting on several documents, run each independently; one
+error doesn't mean skip the rest.
+
+## Output Format
+
+Every command prints **JSON on stdout**; errors go to stderr as plain Czech
+text. Pipe stdout through `jq`, never `grep`/`sed` — the shapes differ per
+subcommand (see `references/sid-api.md`).
+
+Exit codes are a stable contract:
+
+| Code | Meaning | What to do |
+|------|---------|------------|
+| 0 | success | — |
+| 1 | other error | read the stderr message |
+| 2 | bad usage | fix the arguments |
+| 3 | key missing or expired | send the user to `/profile/api-klice` (see above) |
+| 4 | not found | verify the id |
+| 5 | rate limited | slow down, retry shortly |
+
+## Commands
 
 ```bash
-sid-cli search "smlouva o dílo" --size 5          # fulltext napříč obsahem
+sid-cli search "smlouva o dílo" --size 5          # full-text across content
 sid-cli docs list --query "spisový řád" --sort newest
-sid-cli docs get <documentId>                     # metadata + soubory
+sid-cli docs get <documentId>                     # metadata + files
 sid-cli download <fileId> --out ./smernice.pdf
-sid-cli confirmations list --state pending        # co mám potvrdit
+sid-cli confirmations list --state pending        # what the user must confirm
 sid-cli confirmations confirm <confirmationId>
-sid-cli notifications                             # nepřečtené novinky
-sid-cli check                                     # souhrn: novinky + potvrzení
+sid-cli notifications                             # unread updates
+sid-cli check                                     # digest: updates + pending
+sid-cli settings set-key|test|status              # key management (STDIN only)
 ```
 
-Výstup je JSON — kombinuj s `jq`:
+Combine with `jq`:
 
 ```bash
 sid-cli search "bezpečnost práce" --size 5 | jq '.hits[] | {documentId, title, snippet}'
@@ -50,28 +79,45 @@ sid-cli confirmations list --state pending | jq 'length'
 sid-cli docs list --sort newest --page-size 5 | jq '.documents[] | {id, title}'
 ```
 
-## Zrádnosti
+## Decision tree
 
-- **`search` s polem `warning`** = fulltext je dočasně nedostupný. Prázdný
-  výsledek pak NEZNAMENÁ, že dokument neexistuje — použij
-  `sid-cli docs list --query "..."` a uživateli to řekni.
-- **`search.total` NELZE použít na stránkování** — po ACL filtru je vždy
-  ≤ `size`. Na procházení výpisu použij `docs list --page`.
-- **Potvrzení (`confirmations confirm`) proveď jen na výslovný pokyn
-  uživatele** — je to právní úkon „četl jsem a beru na vědomí". Nikdy ho
-  nedělej „pro pořádek" ani hromadně bez potvrzení od uživatele.
-- Klíč má **stejná oprávnění jako uživatel** — když něco nevidí, není to
-  chyba nástroje, ale chybějící přístup ke složce.
+- **"find / search …"** → `search` for wording inside documents;
+  `docs list --query` for titles and filtered listings.
+- **`search` returned a `warning` field** → full-text is temporarily down.
+  An empty result does **not** mean the document is missing — retry with
+  `docs list --query` and tell the user why.
+- **"what do I have to confirm / read"** → `confirmations list --state pending`.
+- **"anything new in SID?"** → `notifications`, or `check` for a combined
+  digest with pending confirmations.
+- **"download / send me the file"** → `docs get` for the `fileId`, then
+  `download`.
 
-## Exit kódy
+## User-facing output rules
 
-| kód | význam | co udělat |
-|-----|--------|-----------|
-| 0 | OK | — |
-| 2 | špatné použití | oprav argumenty |
-| 3 | klíč chybí / vypršel | pošli uživatele na `/profile/api-klice` (viz výše) |
-| 4 | nenalezeno | ověř id |
-| 5 | rate limit | zpomal, zkus za chvíli |
-| 1 | jiná chyba | přečti hlášku na stderr |
+- Never dump raw JSON at the user. Summarise: document title, effective date,
+  what is required of them.
+- Internal identifiers (`documentId`, `fileId`, `confirmationId`) are inputs
+  for the next command, not something to show — unless the user explicitly
+  asks for an id.
+- **`confirmations confirm` is a legal act** ("I have read and acknowledge").
+  Run it only on the user's explicit instruction, never proactively, never in
+  bulk to "tidy up", and never as a side effect of another request.
+- The key carries the same permissions as the user. If something isn't
+  visible, that is a missing folder permission, not a tool failure — say so
+  instead of suggesting workarounds.
 
-Detailní tvary odpovědí, všechny filtry a limity: `references/sid-api.md`.
+## Notifications & the shipped automation
+
+The plugin already ships a daily watchdog (`automations/check-sid.md`, 07:00,
+`sid-cli check --notify`) — **do not create another automation for this**. If
+the user wants a different schedule or channel, point them at the plugin
+settings panel (in-app / e-mail toggles, extra recipients) or at the existing
+automation rather than adding a duplicate.
+
+E-mail is off by default; the in-app bell is on.
+
+## Reference Files
+
+- `references/sid-api.md` — response shapes, every filter, rate limits and the
+  parts of SID that are deliberately out of scope. Load it when a task needs
+  filters beyond the examples above, or when interpreting an unfamiliar field.

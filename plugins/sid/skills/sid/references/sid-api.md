@@ -1,12 +1,13 @@
-# SID API — tvary odpovědí a filtry
+# SID API — response shapes and filters
 
-Referenční detaily pro `sid-cli`. Endpointy volá binárka sama; tahle stránka
-slouží k tomu, aby šlo správně interpretovat výstup a poskládat filtry.
+Reference detail for `sid-cli`. The binary calls the endpoints itself; this
+page exists so the output can be interpreted correctly and filters composed
+without guessing.
 
-## Mapa příkaz → endpoint
+## Command → endpoint
 
-| Příkaz | Endpoint |
-|--------|----------|
+| Command | Endpoint |
+|---------|----------|
 | `search` | `GET /api/search` |
 | `docs list` | `GET /api/v1/documents` |
 | `docs get <id>` | `GET /api/v1/documents/{id}` |
@@ -14,19 +15,19 @@ slouží k tomu, aby šlo správně interpretovat výstup a poskládat filtry.
 | `confirmations list` | `GET /api/v1/confirmations` |
 | `confirmations confirm <id>` | `PATCH /api/v1/confirmations/{id}` |
 | `notifications` | `GET /api/notifications` |
-| `check` | notifikace + confirmations naráz |
+| `check` | notifications + confirmations in one call each |
 | `settings test` | `GET /api/v1/users/me` |
 
-Autentizace vždy hlavičkou `x-api-key`; klíč se čte z
-`~/.cdx/apps/sid/.env` (mode 0600), nikdy z argumentů.
+Authentication is always the `x-api-key` header; the key is read from
+`~/.cdx/apps/sid/.env` (mode 0600) and never passed as an argument.
 
 ## `search`
 
 ```
-sid-cli search "<dotaz>" [--size N] [--from N]
+sid-cli search "<query>" [--size N] [--from N]
 ```
 
-Odpověď:
+Response:
 
 ```json
 {
@@ -38,7 +39,7 @@ Odpověď:
       "pageNumber": 4,
       "title": "Spisový řád",
       "filename": "spisovy-rad.pdf",
-      "snippet": "…zvýrazněný úryvek…",
+      "snippet": "…highlighted excerpt…",
       "score": 8.13
     }
   ],
@@ -46,13 +47,14 @@ Odpověď:
 }
 ```
 
-Dvě pasti:
+Two traps:
 
-- **`total` není celkový počet** — route ho po ACL filtru přepočítá na
-  `hits.length`, takže je vždy ≤ `size`. Stránkovat podle něj nelze.
-- **`source: "opensearch_unavailable"`** znamená výpadek fulltextu, ne
-  „nic nenalezeno" — HTTP je v obou případech 200. `sid-cli` v tom případě
-  přidá pole `warning`; ber ho vážně a zkus `docs list --query`.
+- **`total` is not a total.** The route recomputes it to `hits.length` after
+  the ACL filter, so it never exceeds `size`. It cannot drive pagination —
+  use `docs list --page` for that.
+- **`source: "opensearch_unavailable"` means the index is down**, not "nothing
+  found" — HTTP is 200 either way. `sid-cli` adds a `warning` field in that
+  case; take it seriously and fall back to `docs list --query`.
 
 ## `docs list`
 
@@ -61,21 +63,22 @@ sid-cli docs list [--query T] [--folder ID] [--author ID]
                   [--sort newest|oldest|title|size] [--page N] [--page-size N]
 ```
 
-`--page-size` je na serveru omezená na 100. Odpověď:
+`--page-size` is capped at 100 server-side. Response:
 
 ```json
 { "documents": [ … ], "total": 42, "page": 1, "pageSize": 20, "totalPages": 3 }
 ```
 
-Tady `total` **je** skutečný počet — na rozdíl od `search`.
+Here `total` **is** the real count — unlike `search`.
 
 ## `confirmations`
 
-`--state pending` vrací to, co uživatel ještě nepotvrdil; `confirmed` už
-vyřízené. Stavy potvrzení jsou `UNSEEN` → `SEEN` → `CONFIRMED`.
+`--state pending` returns what the user has not confirmed yet; `confirmed`
+returns the settled ones. Confirmation states are `UNSEEN` → `SEEN` →
+`CONFIRMED`.
 
-`confirmations confirm <id>` pošle `PATCH { "state": "CONFIRMED" }`. Je to
-právní úkon — dělej ho jen na výslovný pokyn uživatele.
+`confirmations confirm <id>` sends `PATCH { "state": "CONFIRMED" }`. It is a
+legal acknowledgement — only ever on the user's explicit instruction.
 
 ## `notifications`
 
@@ -83,11 +86,12 @@ právní úkon — dělej ho jen na výslovný pokyn uživatele.
 sid-cli notifications [--all] [--limit N]
 ```
 
-Bez `--all` vrací jen nepřečtené. `--limit` je na serveru omezený na 500.
+Without `--all` only unread ones are returned. `--limit` is capped at 500
+server-side.
 
 ## `check`
 
-Digest pro automatizaci (`automations/check-sid.md`, denně v 7:00):
+The digest the automation runs (`automations/check-sid.md`, daily at 07:00):
 
 ```json
 {
@@ -99,41 +103,44 @@ Digest pro automatizaci (`automations/check-sid.md`, denně v 7:00):
 }
 ```
 
-S `--notify` navíc pošle notifikaci přes daemon — ale jen když je co hlásit.
-`notified: false` znamená, že se neposílalo (nic nového), že byly oba kanály
-vypnuté, nebo že daemon nebyl dostupný; nikdy to není chyba, která by
-shodila běh.
+With `--notify` it also pushes to the daemon — but only when there is
+something to report. `notified: false` means nothing was sent (no news, both
+channels disabled, or the daemon was unreachable); it is never an error that
+would fail the run.
 
-Kanály se řídí nastavením (stejná konvence jako u pluginů znamky/katastr):
+Channels follow the same settings convention as the znamky/katastr plugins:
 
-| Soubor | Role |
-|--------|------|
-| `~/.local/share/sid/settings/defaults.json` | výchozí hodnoty, instaluje hook |
-| `~/.cdx/apps/sid/settings.json` | uživatelský override, jen změněné klíče |
+| File | Role |
+|------|------|
+| `~/.local/share/sid/settings/defaults.json` | shipped defaults, installed by the hook |
+| `~/.cdx/apps/sid/settings.json` | user override, only the changed keys |
 
 ```json
-{ "version": 1, "notify": { "email": false, "inApp": true } }
+{ "version": 1, "notify": { "email": false, "inApp": true, "recipients": [] } }
 ```
 
-**E-mail je ve výchozím stavu vypnutý** — denní automatizace nemá bez
-vyžádání chodit do schránky. Zapíná se přepsáním `notify.email` na `true`
-v uživatelském souboru.
+**E-mail is off by default** — a daily automation should not reach someone's
+inbox unasked. Both toggles and the extra-recipient list are editable in the
+plugin's settings panel; `recipients` are appended to the e-mail's `to` list,
+and the signed-in user always receives it regardless.
 
-## Limity
+## Limits
 
-- search 60 požadavků/min na IP, download 120/min na IP, upload 20/min
-- 120 požadavků/min na klíč (nezávisle na IP)
-- Klíč má TTL 90 dní; po vypršení vrací API 401 (`sid-cli` → exit 3)
+- search 60 requests/min per IP, download 120/min, upload 20/min
+- 120 requests/min per key (independent of IP)
+- Keys have a 90-day TTL; once expired the API returns 401 (`sid-cli` → exit 3)
+- Every request times out after 30 s
 
-## Co přes CLI nejde
+## Out of scope
 
-Tyto věci nejsou v SID dostupné přes HTTP API (existují jen jako Next.js
-server actions), takže je `sid-cli` neumí a ani umět nebude:
+These are not reachable over SID's HTTP API at all (they exist only as Next.js
+server actions), so `sid-cli` does not expose them and will not grow them
+without a server-side change:
 
-- správa oprávnění složek,
-- zápisy do skupin,
-- legislativa a Hypertexter,
-- introspekce přístupů („co tenhle uživatel vidí").
+- folder permission management,
+- group writes,
+- legislation and Hypertexter,
+- access introspection ("what can this user see").
 
-Upload dokumentů API podporuje, ale `sid-cli` ho zatím nemá — nahrávání
-řeš přes webové rozhraní SID.
+Document upload *is* supported by the API but not wrapped by `sid-cli` — use
+the SID web interface for that.
