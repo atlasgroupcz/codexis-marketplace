@@ -130,7 +130,7 @@ fn fetch_html_doc_request(
         None => serde_json::json!({ "id": document.doc_id, "parts": Value::Null }),
     };
     let body = serde_json::json!({
-        "query": "query preview($id: String!, $parts: [String!]) { lcrDoc(docId: {docId: $id}) { docContent { __typename ... on HtmlDoc { accessible content { html(contentItemIds: $parts) } } } } }",
+        "query": "query preview($id: String!, $parts: [String!]) { globalItem(itemId: $id) { ... on Document { docContent { ... on HtmlDoc { content { html(contentItemIds: $parts, markingType: NONE) } } } } } }",
         "variables": variables,
     });
     let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
@@ -152,11 +152,7 @@ fn fetch_html_doc_request(
         return None;
     }
     let response: Value = serde_json::from_slice(&output.stdout).ok()?;
-    let doc_content = &response["data"]["lcrDoc"]["docContent"];
-    if doc_content["__typename"] != "HtmlDoc" {
-        return None;
-    }
-    let html = doc_content["content"]["html"].as_str()?;
+    let html = response["data"]["globalItem"]["docContent"]["content"]["html"].as_str()?;
     (!html.trim().is_empty()).then(|| html.to_string())
 }
 
