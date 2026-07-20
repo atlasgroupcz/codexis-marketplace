@@ -18,8 +18,9 @@ Usage:
     --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \\
     --git-ref feat/my-branch
 
-Requires: pyyaml, jsonpath-ng
-  pip install pyyaml jsonpath-ng
+Dependencies are declared in pyproject.toml under [dependency-groups].dev
+(pyyaml, jsonpath-ng, pytest). Run this through uv so they resolve:
+  uv sync && uv run python3 tests/test-plugin-e2e.py ...
 """
 
 from __future__ import annotations

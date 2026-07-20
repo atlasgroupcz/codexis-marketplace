@@ -139,3 +139,6 @@ docs/superpowers/
 
 # superpowers brainstorm/sdd scratch (local tooling, never tracked)
 .superpowers/
+
+# uv-managed virtualenv (uv.lock is committed for reproducible CI)
+.venv/

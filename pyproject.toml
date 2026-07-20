@@ -1,4 +1,28 @@
+[project]
+name = "codexis-marketplace"
+version = "0"
+description = "Test tooling for the CODEXIS plugin marketplace."
+requires-python = ">=3.11"
+# The suites need nothing at runtime — everything they exercise is either stdlib,
+# a plugin's own lib/, or shelled out to. Test-only deps live in the dev group.
+dependencies = []
+
+[dependency-groups]
+# Installed by `uv sync` / available to `uv run` without extra flags.
+dev = [
+    "pytest>=8,<10",
+    # tests/promptfoo reads the *.config.yaml scenario files …
+    "pyyaml>=6",
+    # … and addresses into their results with JSONPath expressions.
+    "jsonpath-ng>=1.6",
+]
+
+[tool.uv]
+# This repo is a plugin marketplace, not an installable Python package — there is
+# no module to build. Without this uv tries to build/install it on every sync.
+package = false
+
 [tool.pytest.ini_options]
-testpaths = ["plugins"]
+testpaths = ["plugins", "tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --import-mode=importlib"
