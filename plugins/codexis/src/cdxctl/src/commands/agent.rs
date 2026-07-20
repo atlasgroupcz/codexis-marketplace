@@ -230,7 +230,7 @@ fn merge_current(current: &Value) -> Map<String, Value> {
         }
     }
     if let Some(model) = current.get("model").and_then(Value::as_str) {
-        input.insert("model".into(), json!(model_enum(model)));
+        input.insert("model".into(), json!(model));
     }
     if let Some(max_turns) = current.get("maxTurns").and_then(Value::as_u64) {
         input.insert("maxTurns".into(), json!(max_turns));
@@ -250,22 +250,6 @@ fn tool_names(agent: &Value, key: &str) -> Vec<String> {
                 .collect()
         })
         .unwrap_or_default()
-}
-
-/// `Agent.model` reads back as the vendor model name (`claude-opus-4-8`) while
-/// `AgentInput.model` is the `ChatModel` enum (`CLAUDE_OPUS_4_8`), so a carried-over
-/// model has to be converted or the enum would reject it.
-fn model_enum(model_name: &str) -> String {
-    model_name
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() {
-                c.to_ascii_uppercase()
-            } else {
-                '_'
-            }
-        })
-        .collect()
 }
 
 fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
@@ -288,7 +272,7 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
         input.insert("jurisdictions".into(), json!(jurisdictions));
     }
     if let Some(model) = &fields.model {
-        input.insert("model".into(), json!(model_enum(model)));
+        input.insert("model".into(), json!(model));
     }
     if let Some(max_turns) = fields.max_turns {
         input.insert("maxTurns".into(), json!(max_turns));
@@ -340,7 +324,7 @@ fn validate_markdown(content: String) -> Result<String, CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        format_input_error, load_markdown, load_markdown_from_file, merge_current, model_enum,
+        format_input_error, load_markdown, load_markdown_from_file, merge_current,
         validate_markdown, AgentFields,
     };
     use crate::error::CdxctlError;
@@ -381,14 +365,6 @@ mod tests {
     }
 
     #[test]
-    fn model_enum_converts_vendor_names_to_the_graphql_enum() {
-        assert_eq!(model_enum("claude-opus-4-8"), "CLAUDE_OPUS_4_8");
-        assert_eq!(model_enum("gpt-5.6-terra"), "GPT_5_6_TERRA");
-        assert_eq!(model_enum("gemini-3.1-pro"), "GEMINI_3_1_PRO");
-        assert_eq!(model_enum("CLAUDE_SONNET_5"), "CLAUDE_SONNET_5");
-    }
-
-    #[test]
     fn merge_current_carries_every_field_the_flags_do_not_set() {
         let current = json!({
             "name": "reviewer",
@@ -398,7 +374,7 @@ mod tests {
             "disallowedTools": [{ "toolName": "writeFile" }],
             "skills": ["debugger"],
             "jurisdictions": ["CZ"],
-            "model": "claude-opus-4-8",
+            "model": "CLAUDE_OPUS_4_8",
             "maxTurns": 7
         });
 
