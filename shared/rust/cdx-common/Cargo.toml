@@ -34,6 +34,12 @@ ico = ["dep:anyhow"]
 # The `fs` module (atomic file writes). Needs serde + serde_json for the JSON
 # helper. Off by default so the search CLIs (which don't persist state) stay lean.
 fs = ["dep:serde", "dep:serde_json"]
+# The `env-file` module (KEY=VALUE credential files, atomic 0600 writes). For
+# watcher plugins storing a user-provided API credential.
+env-file = ["fs"]
+# The `settings` module (layered defaults + sparse-override settings store, the
+# generic mechanism behind cdx-notify's NotifySettings).
+settings = ["fs"]
 # The `time` module (UTC timestamp helper). Pulls in chrono. Shared by the
 # watcher plugins' state/change logs; off by default for the search CLIs.
 time = ["dep:chrono"]

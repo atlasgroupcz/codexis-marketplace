@@ -45,6 +45,15 @@ impl CliError {
     }
 }
 
+impl std::error::Error for CliError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io { source, .. } | Self::CurlSpawn(source) => Some(source),
+            _ => None,
+        }
+    }
+}
+
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -72,5 +81,23 @@ impl fmt::Display for CliError {
                 write!(f, "{command} terminated without an exit status")
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error;
+
+    #[test]
+    fn cli_error_is_std_error_with_io_source() {
+        let e = CliError::Io {
+            context: "ctx".to_string(),
+            source: io::Error::other("boom"),
+        };
+        let dyn_err: &dyn Error = &e;
+        assert!(dyn_err.source().is_some(), "Io carries a source");
+        assert!(CliError::MissingConfig("X").source().is_none());
+        assert!(CliError::CurlSpawn(io::Error::other("x")).source().is_some());
     }
 }

@@ -5,13 +5,8 @@
 //! no chat/tool-call context, and the token is returned as a bare
 //! `Bearer <token>` value (the caller adds the `Authorization:` header itself).
 
-use std::env;
-use std::fs;
-use std::path::Path;
-
-const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
-
-/// Reads the VM daemon token from `~/.cdx/env/secret` and returns it as a
+/// Reads the VM daemon token from `~/.cdx/env/secret` (via the shared
+/// [`crate::config::read_daemon_secret`] home-chain lookup) and returns it as a
 /// `Bearer <token>` value (no `Authorization:` prefix). Returns `None` when the
 /// secret file is missing or empty.
 ///
@@ -19,19 +14,8 @@ const SECRET_FILE_RELATIVE: &str = ".cdx/env/secret";
 /// `CODEXIS_USER_API_TOKEN` — the gateway rejects the latter for these
 /// endpoints.
 pub fn daemon_bearer() -> Option<String> {
-    let secret = read_secret_file()?;
+    let secret = crate::config::read_daemon_secret()?;
     Some(ensure_bearer_prefix(&secret))
-}
-
-fn read_secret_file() -> Option<String> {
-    let home = env::var("HOME").ok()?;
-    let contents = fs::read_to_string(Path::new(&home).join(SECRET_FILE_RELATIVE)).ok()?;
-    let trimmed = contents.trim();
-    if trimmed.is_empty() {
-        None
-    } else {
-        Some(trimmed.to_string())
-    }
 }
 
 fn ensure_bearer_prefix(value: &str) -> String {
@@ -49,6 +33,36 @@ fn ensure_bearer_prefix(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn daemon_bearer_reads_secret_from_real_home_even_when_public_home_differs() {
+        let public_home = tempfile::tempdir().unwrap();
+        let real_home = tempfile::tempdir().unwrap();
+        let _g = crate::test_support::home_guard(public_home.path());
+        // The host writes the secret to the real VM home; the daemon-injected
+        // CODEXIS_PUBLIC_USER_HOME points at per-user app state elsewhere.
+        std::env::set_var("HOME", real_home.path());
+        let secret_dir = real_home.path().join(".cdx/env");
+        std::fs::create_dir_all(&secret_dir).unwrap();
+        std::fs::write(secret_dir.join("secret"), "tok.en.x\n").unwrap();
+
+        assert_eq!(daemon_bearer().as_deref(), Some("Bearer tok.en.x"));
+    }
+
+    #[test]
+    fn daemon_bearer_ignores_secret_under_public_user_home() {
+        let public_home = tempfile::tempdir().unwrap();
+        let real_home = tempfile::tempdir().unwrap();
+        let _g = crate::test_support::home_guard(public_home.path());
+        std::env::set_var("HOME", real_home.path());
+        // A secret that exists only under CODEXIS_PUBLIC_USER_HOME is not the
+        // host-provisioned VM token and must not be picked up.
+        let secret_dir = public_home.path().join(".cdx/env");
+        std::fs::create_dir_all(&secret_dir).unwrap();
+        std::fs::write(secret_dir.join("secret"), "wrong.token\n").unwrap();
+
+        assert_eq!(daemon_bearer(), None);
+    }
 
     #[test]
     fn bearer_prefix_added_to_raw_token() {
