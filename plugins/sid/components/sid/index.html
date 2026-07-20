@@ -125,7 +125,12 @@
       }
 
       async function loadLocale() {
-        const lang = (navigator.language || "cs").slice(0, 2).toLowerCase()
+        // The host appends ?lang=cs|en|sk to the iframe src (buildApplicationIframeSrc
+        // in the daemon frontend), so the panel follows the CODEXIS UI language
+        // rather than the browser's. navigator.language is only a fallback for
+        // opening the page directly.
+        const fromHost = new URLSearchParams(location.search).get("lang")
+        const lang = (fromHost || navigator.language || "cs").slice(0, 2).toLowerCase()
         const pick = ["cs", "en", "sk"].includes(lang) ? lang : "en"
         if (pick === "cs") return // Czech is already in the HTML
         try {
