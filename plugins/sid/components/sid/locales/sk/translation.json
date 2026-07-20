@@ -24,5 +24,16 @@
   "help": {
     "heading": "Kde kľúč získam?",
     "body": "V SID otvorte Profil → API kľúče ({{path}}), vytvorte nový kľúč a skopírujte ho — zobrazí sa iba raz."
+  },
+  "notify": {
+    "legend": "Upozornenia",
+    "hint": "Denná kontrola hlási nové dokumenty a čakajúce potvrdenia.",
+    "inAppLabel": "Upozornenie v aplikácii",
+    "emailLabel": "Poslať e-mailom",
+    "copyToLabel": "Kópia na ďalšie adresy",
+    "copyToHint": "Oddeľte čiarkou. Vám samotným chodia upozornenia vždy.",
+    "save": "Uložiť upozornenia",
+    "saved": "Nastavenie upozornení uložené.",
+    "saveFailed": "Uloženie sa nepodarilo."
   }
 }

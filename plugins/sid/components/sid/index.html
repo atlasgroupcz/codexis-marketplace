@@ -38,6 +38,18 @@
       #msg { padding: .7rem .9rem; border-radius: .45rem; margin-top: .9rem; }
       #msg.ok { background: #16a34a22; }
       #msg.err { background: #b91c1c22; }
+      #n-msg:empty { display: none; }
+      #n-msg { padding: .7rem .9rem; border-radius: .45rem; margin-top: .9rem; }
+      #n-msg.ok { background: #16a34a22; }
+      #n-msg.err { background: #b91c1c22; }
+      p.hint { margin: .25rem 0 .9rem; font-size: .9em; opacity: .7; }
+      label.check { display: flex; align-items: center; gap: .5rem; font-weight: 400; margin-bottom: .5rem; }
+      label.check input { margin: 0; }
+      input[type="text"] {
+        width: 100%; padding: .55rem .7rem; font: inherit;
+        border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+        border-radius: .4rem; background: transparent; color: inherit;
+      }
       code { font-family: ui-monospace, monospace; }
     </style>
   </head>
@@ -59,6 +71,33 @@
         <button id="del" class="danger" type="button" data-i18n="settings.delete">Smazat klíč</button>
       </div>
       <div id="msg"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend data-i18n="notify.legend">Upozornění</legend>
+      <p class="hint" data-i18n="notify.hint">
+        Denní kontrola hlásí nové dokumenty a čekající potvrzení.
+      </p>
+      <label class="check">
+        <input id="n-inapp" type="checkbox" />
+        <span data-i18n="notify.inAppLabel">Upozornění v aplikaci</span>
+      </label>
+      <label class="check">
+        <input id="n-email" type="checkbox" />
+        <span data-i18n="notify.emailLabel">Poslat e-mailem</span>
+      </label>
+
+      <label for="n-recipients" data-i18n="notify.copyToLabel">Kopie na další adresy</label>
+      <input id="n-recipients" type="text" autocomplete="off" spellcheck="false"
+             placeholder="sef@firma.cz, kolega@firma.cz" />
+      <p class="hint" data-i18n="notify.copyToHint">
+        Oddělte čárkou. Vám samotným chodí upozornění vždy.
+      </p>
+
+      <div class="row">
+        <button id="n-save" type="button" data-i18n="notify.save">Uložit upozornění</button>
+      </div>
+      <div id="n-msg"></div>
     </fieldset>
 
     <p>
@@ -135,9 +174,44 @@
             : `Klíč zatím není nastavený. Server ${s.baseUrl}.`)
       }
 
+      function renderNotify(n) {
+        if (!n) return
+        $("n-inapp").checked = n.inApp !== false
+        $("n-email").checked = n.email === true
+        $("n-recipients").value = (n.recipients || []).join(", ")
+      }
+
+      $("n-save").addEventListener("click", async () => {
+        const el = $("n-msg")
+        $("n-save").disabled = true
+        try {
+          const r = await call({
+            action: "save_notify_settings",
+            inApp: $("n-inapp").checked,
+            email: $("n-email").checked,
+            recipients: $("n-recipients").value.split(",").map((x) => x.trim()).filter(Boolean),
+          })
+          if (r.ok) {
+            renderNotify(r.notify)
+            el.textContent = t("notify.saved") ?? "Nastavení upozornění uloženo."
+            el.className = "ok"
+          } else {
+            el.textContent = r.error || t("notify.saveFailed") || "Uložení se nezdařilo."
+            el.className = "err"
+          }
+        } catch {
+          el.textContent = t("notify.saveFailed") ?? "Uložení se nezdařilo."
+          el.className = "err"
+        } finally {
+          $("n-save").disabled = false
+        }
+      })
+
       async function refresh() {
         try {
-          renderStatus(await call({ action: "get_status" }))
+          const s = await call({ action: "get_status" })
+          renderStatus(s)
+          renderNotify(s.notify)
         } catch {
           $("status").textContent = t("status.failed") ?? "Stav se nepodařilo načíst."
         }

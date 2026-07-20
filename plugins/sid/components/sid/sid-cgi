@@ -112,10 +112,77 @@ async function apiGet(path, f = fetch, keyOverride) {
   return parseJson(await request(path, {}, f, keyOverride));
 }
 
+// src/notify-settings.ts
+var import_node_fs2 = require("node:fs");
+var import_node_path2 = require("node:path");
+var import_node_os2 = require("node:os");
+var BUILTIN = { email: false, inApp: true, recipients: [] };
+function defaultsPath() {
+  return process.env.SID_DEFAULTS_FILE || import_node_path2.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
+}
+function userSettingsPath() {
+  return import_node_path2.join(userHome(), ".cdx", "apps", "sid", "settings.json");
+}
+function isEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+}
+function writeNotifyOverride(patch) {
+  const path = userSettingsPath();
+  const current = readJson(path) ?? {};
+  const currentNotify = current.notify && typeof current.notify === "object" ? current.notify : {};
+  const next = { ...current, notify: { ...currentNotify, ...patch } };
+  import_node_fs2.mkdirSync(import_node_path2.dirname(path), { recursive: true, mode: 448 });
+  const tmp = `${path}.tmp-${process.pid}`;
+  import_node_fs2.writeFileSync(tmp, JSON.stringify(next, null, 2) + `
+`, { mode: 384 });
+  import_node_fs2.renameSync(tmp, path);
+}
+function readJson(path) {
+  try {
+    const parsed = JSON.parse(import_node_fs2.readFileSync(path, "utf8"));
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function cleanRecipients(raw) {
+  if (!Array.isArray(raw))
+    return;
+  return raw.filter((v) => typeof v === "string").map((v) => v.trim()).filter(Boolean);
+}
+function notifyBlock(source) {
+  const raw = source?.notify;
+  if (!raw || typeof raw !== "object")
+    return {};
+  const out = {};
+  const { email, inApp, recipients } = raw;
+  if (typeof email === "boolean")
+    out.email = email;
+  if (typeof inApp === "boolean")
+    out.inApp = inApp;
+  const cleaned = cleanRecipients(recipients);
+  if (cleaned)
+    out.recipients = cleaned;
+  return out;
+}
+function getNotifySettings() {
+  return {
+    ...BUILTIN,
+    ...notifyBlock(readJson(defaultsPath())),
+    ...notifyBlock(readJson(userSettingsPath()))
+  };
+}
+
 // src/cgi.ts
 function status() {
   const key = getApiKey();
-  return { ok: true, configured: key !== "", baseUrl: getBaseUrl(), ...key ? { start: key.slice(0, 7) } : {} };
+  return {
+    ok: true,
+    configured: key !== "",
+    baseUrl: getBaseUrl(),
+    ...key ? { start: key.slice(0, 7) } : {},
+    notify: getNotifySettings()
+  };
 }
 async function handle(body, f = fetch) {
   switch (body.action) {
@@ -136,6 +203,22 @@ async function handle(body, f = fetch) {
       }
       writeApiKey(key);
       return { ok: true, verified: true, start: key.slice(0, 7) };
+    }
+    case "save_notify_settings": {
+      const patch = {};
+      if (typeof body.email === "boolean")
+        patch.email = body.email;
+      if (typeof body.inApp === "boolean")
+        patch.inApp = body.inApp;
+      if (Array.isArray(body.recipients)) {
+        const invalid = body.recipients.filter((r) => typeof r === "string" && r.trim() && !isEmail(r));
+        if (invalid.length > 0) {
+          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.join(", ")}` };
+        }
+        patch.recipients = body.recipients.filter((r) => typeof r === "string").map((r) => r.trim()).filter(Boolean);
+      }
+      writeNotifyOverride(patch);
+      return { ok: true, notify: getNotifySettings() };
     }
     case "delete_config":
       deleteApiKey();

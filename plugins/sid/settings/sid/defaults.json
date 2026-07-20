@@ -2,6 +2,7 @@
   "version": 1,
   "notify": {
     "email": false,
-    "inApp": true
+    "inApp": true,
+    "recipients": []
   }
 }

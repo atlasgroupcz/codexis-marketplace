@@ -1,12 +1,38 @@
 name: sid-search
-description: Verify the sid skill drives sid-cli for internal document lookups and never reaches for curl against SID.
+description: Verify the sid skill drives sid-cli for internal document lookups and relays real SID data back to the user.
 
-# Scénář nepředpokládá naplněnou databázi ani nastavený klíč: prostředí bez
-# klíče vrací exit 3 s návodem, což je legitimní (a testovatelná) odpověď.
-# Testujeme tedy VOLBU NÁSTROJE a zpracování výsledku, ne konkrétní data.
+# The API key is supplied at runtime via `--var sid_api_key=…` and dropped into
+# the per-app env file the CLI reads (src/config.ts loads SID_API_KEY= from
+# $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/.env). Same pattern as the katastr
+# plugin — without it the run would only ever exercise the "no key" path and
+# would pass whether SID works or not.
+#
+# `sid_api_base` lets CI point at a staging SID; production is the default via
+# the CODEXIS_PLUGIN_SID_API_URL declared in plugin.json.
+
+setup:
+  - upload:
+      destination: /home/codexis/.cdx/apps/sid
+      files:
+        - path: .env
+          content: "SID_API_KEY={{ sid_api_key }}\nSID_API_URL={{ sid_api_base }}\n"
 
 steps:
-  # 1. Vyhledání — musí sáhnout po sid-cli, ne po curl.
+  # 1. The key must actually authenticate — `settings test` returns the signed-in
+  #    user, which proves the whole chain (env file → x-api-key → SID) works.
+  #    A broken key surfaces here instead of hiding behind an empty result set.
+  - prompt: "Ověř, že mám funkční připojení do SID a řekni mi, pod jakým účtem jsem přihlášený."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "sid-cli\\s+settings\\s+test"
+      tool_calls_min: 1
+      tool_calls_max: 5
+      response:
+        # The e-mail of the authenticated account proves a real 200 from SID.
+        matches: "@"
+
+  # 2. Search must reach for sid-cli, never curl.
   - prompt: "Najdi mi v SID interní směrnice o bezpečnosti práce."
     expect:
       tool_call:
@@ -15,10 +41,11 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 8
       response:
-        # Buď našel/nenašel dokumenty, nebo hlásí chybějící klíč — obojí OK.
-        matches: "(?is)(směrnic|dokument|nenalez|nedostupn|API klíč|klíč není)"
+        # Either hits were relayed, or the model correctly reported an empty
+        # result / fulltext outage — but never a raw error or a curl fallback.
+        matches: "(?is)(směrnic|dokument|nenalez|nedostupn)"
 
-  # 2. Osobní dotaz na potvrzení — jiný podpříkaz téhož nástroje.
+  # 3. Personal query — a different subcommand of the same tool.
   - prompt: "Co mám v SID potvrdit?"
     expect:
       tool_call:
@@ -26,4 +53,4 @@ steps:
         input_matches: "sid-cli\\s+confirmations\\s+list"
       tool_calls_max: 5
       response:
-        matches: "(?is)(potvr|nic|žádn|API klíč|klíč není)"
+        matches: "(?is)(potvr|nic|žádn)"

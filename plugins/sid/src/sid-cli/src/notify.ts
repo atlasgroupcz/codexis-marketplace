@@ -46,8 +46,19 @@ function daemonAuth(): string | null {
   }
 }
 
-async function sendEmail(subject: string, bodyText: string, auth: string, daemonUrl: string, f: FetchLike): Promise<boolean> {
-  const payload = JSON.stringify({ subject, bodyText })
+async function sendEmail(
+  subject: string,
+  bodyText: string,
+  auth: string,
+  daemonUrl: string,
+  f: FetchLike,
+  recipients: string[] = [],
+): Promise<boolean> {
+  // Bez `to` doručí daemon přihlášenému uživateli; pole se přikládá jen
+  // když si uživatel nastavil adresáty navíc (vzor katastr/znamky).
+  const payload = JSON.stringify(
+    recipients.length > 0 ? { subject, bodyText, to: recipients } : { subject, bodyText },
+  )
   const boundary = `----sid-${randomUUID().replace(/-/g, "")}`
   const body =
     `--${boundary}\r\n` +
@@ -93,11 +104,11 @@ export async function sendDigest(subject: string, bodyText: string, f: FetchLike
   const auth = daemonAuth()
   if (!daemonUrl || !auth) return false
 
-  const { email, inApp } = getNotifySettings()
+  const { email, inApp, recipients } = getNotifySettings()
   if (!email && !inApp) return false
 
   const results = await Promise.all([
-    email ? sendEmail(subject, bodyText, auth, daemonUrl, f) : Promise.resolve(false),
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, recipients) : Promise.resolve(false),
     inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false),
   ])
   return results.some(Boolean)

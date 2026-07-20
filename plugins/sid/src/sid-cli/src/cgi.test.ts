@@ -6,7 +6,10 @@ import { handle, renderCgi } from "./cgi"
 import { getApiKey } from "./config"
 
 beforeEach(() => {
-  process.env.SID_ENV_FILE = join(mkdtempSync(join(tmpdir(), "sid-cgi-")), ".env")
+  const d = mkdtempSync(join(tmpdir(), "sid-cgi-"))
+  process.env.SID_ENV_FILE = join(d, ".env")
+  process.env.CODEXIS_PUBLIC_USER_HOME = d
+  process.env.SID_DEFAULTS_FILE = join(d, "nic.json")
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
 })
 
@@ -67,5 +70,41 @@ describe("renderCgi", () => {
   it("chybová odpověď nese Status hlavičku", () => {
     const out = renderCgi({ ok: false, error: "x" }, "400 Bad Request")
     expect(out.startsWith("Status: 400 Bad Request\r\n")).toBe(true)
+  })
+})
+
+describe("cgi — notifikace", () => {
+  it("get_status vrací aktuální nastavení kanálů", async () => {
+    const out = (await handle({ action: "get_status" }, okMe)) as { notify: unknown }
+    expect(out.notify).toEqual({ email: false, inApp: true, recipients: [] })
+  })
+
+  it("save_notify_settings uloží přepínače", async () => {
+    const out = (await handle({ action: "save_notify_settings", email: true }, okMe)) as {
+      ok: boolean
+      notify: { email: boolean }
+    }
+    expect(out.ok).toBe(true)
+    expect(out.notify.email).toBe(true)
+  })
+
+  it("save_notify_settings odmítne neplatnou adresu a nic neuloží", async () => {
+    const out = (await handle(
+      { action: "save_notify_settings", recipients: ["tohle-neni-email"] },
+      okMe,
+    )) as { ok: boolean; error?: string }
+    expect(out.ok).toBe(false)
+    expect(out.error).toMatch(/Neplatná/i)
+    const st = (await handle({ action: "get_status" }, okMe)) as { notify: { recipients: string[] } }
+    expect(st.notify.recipients).toEqual([])
+  })
+
+  it("save_notify_settings přijme platné adresáty", async () => {
+    const out = (await handle(
+      { action: "save_notify_settings", recipients: ["sef@firma.cz"] },
+      okMe,
+    )) as { ok: boolean; notify: { recipients: string[] } }
+    expect(out.ok).toBe(true)
+    expect(out.notify.recipients).toEqual(["sef@firma.cz"])
   })
 })

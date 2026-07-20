@@ -24,5 +24,16 @@
   "help": {
     "heading": "Where do I get the key?",
     "body": "In SID open Profile → API keys ({{path}}), create a new key and copy it — it is shown only once."
+  },
+  "notify": {
+    "legend": "Notifications",
+    "hint": "The daily check reports new documents and pending confirmations.",
+    "inAppLabel": "In-app notification",
+    "emailLabel": "Send by e-mail",
+    "copyToLabel": "Copy to additional addresses",
+    "copyToHint": "Separate with commas. You always receive them yourself.",
+    "save": "Save notifications",
+    "saved": "Notification settings saved.",
+    "saveFailed": "Saving failed."
   }
 }

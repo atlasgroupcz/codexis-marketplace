@@ -136,3 +136,31 @@ describe("sendDigest", () => {
     expect(await sendDigest("s", "b", f)).toBe(false)
   })
 })
+
+describe("recipients v e-mailu", () => {
+  it("bez adresátů neposílá pole 'to' (daemon doručí přihlášenému)", async () => {
+    writeSecret("t")
+    let body = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).includes("/rest/")) body = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(body).not.toContain('"to"')
+  })
+
+  it("s adresáty je přiloží do payloadu", async () => {
+    writeSecret("t")
+    writeFileSync(
+      process.env.SID_DEFAULTS_FILE!,
+      JSON.stringify({ notify: { email: true, inApp: true, recipients: ["sef@firma.cz"] } }),
+    )
+    let body = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).includes("/rest/")) body = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(body).toContain('"to":["sef@firma.cz"]')
+  })
+})

@@ -14,12 +14,36 @@
  */
 import { apiGet, type CliError, type FetchLike } from "./http"
 import { EXIT, getApiKey, getBaseUrl, writeApiKey, deleteApiKey } from "./config"
+import {
+  getNotifySettings,
+  isEmail,
+  writeNotifyOverride,
+  type NotifySettings,
+} from "./notify-settings"
 
-type Body = { action?: string; api_key?: string }
+type Body = {
+  action?: string
+  api_key?: string
+  email?: boolean
+  inApp?: boolean
+  recipients?: unknown[]
+}
 
-function status(): { ok: true; configured: boolean; baseUrl: string; start?: string } {
+function status(): {
+  ok: true
+  configured: boolean
+  baseUrl: string
+  start?: string
+  notify: NotifySettings
+} {
   const key = getApiKey()
-  return { ok: true, configured: key !== "", baseUrl: getBaseUrl(), ...(key ? { start: key.slice(0, 7) } : {}) }
+  return {
+    ok: true,
+    configured: key !== "",
+    baseUrl: getBaseUrl(),
+    ...(key ? { start: key.slice(0, 7) } : {}),
+    notify: getNotifySettings(),
+  }
 }
 
 export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown> {
@@ -47,6 +71,26 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
       }
       writeApiKey(key)
       return { ok: true, verified: true, start: key.slice(0, 7) }
+    }
+
+    case "save_notify_settings": {
+      // Uloží se jen to, co uživatel skutečně poslal — soubor zůstává
+      // sparse override nad shipped defaults.
+      const patch: Record<string, unknown> = {}
+      if (typeof body.email === "boolean") patch.email = body.email
+      if (typeof body.inApp === "boolean") patch.inApp = body.inApp
+      if (Array.isArray(body.recipients)) {
+        const invalid = body.recipients.filter((r) => typeof r === "string" && r.trim() && !isEmail(r))
+        if (invalid.length > 0) {
+          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.join(", ")}` }
+        }
+        patch.recipients = body.recipients
+          .filter((r): r is string => typeof r === "string")
+          .map((r) => r.trim())
+          .filter(Boolean)
+      }
+      writeNotifyOverride(patch)
+      return { ok: true, notify: getNotifySettings() }
     }
 
     case "delete_config":

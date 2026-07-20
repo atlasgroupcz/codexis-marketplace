@@ -311,7 +311,7 @@ var init_notifications = __esm(() => {
 function defaultsPath() {
   return process.env.SID_DEFAULTS_FILE || import_node_path3.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
 }
-function userPath() {
+function userSettingsPath() {
   return import_node_path3.join(userHome(), ".cdx", "apps", "sid", "settings.json");
 }
 function readJson(path) {
@@ -322,23 +322,31 @@ function readJson(path) {
     return null;
   }
 }
+function cleanRecipients(raw) {
+  if (!Array.isArray(raw))
+    return;
+  return raw.filter((v) => typeof v === "string").map((v) => v.trim()).filter(Boolean);
+}
 function notifyBlock(source) {
   const raw = source?.notify;
   if (!raw || typeof raw !== "object")
     return {};
   const out = {};
-  const { email, inApp } = raw;
+  const { email, inApp, recipients } = raw;
   if (typeof email === "boolean")
     out.email = email;
   if (typeof inApp === "boolean")
     out.inApp = inApp;
+  const cleaned = cleanRecipients(recipients);
+  if (cleaned)
+    out.recipients = cleaned;
   return out;
 }
 function getNotifySettings() {
   return {
     ...BUILTIN,
     ...notifyBlock(readJson(defaultsPath())),
-    ...notifyBlock(readJson(userPath()))
+    ...notifyBlock(readJson(userSettingsPath()))
   };
 }
 var import_node_fs3, import_node_path3, import_node_os2, BUILTIN;
@@ -347,7 +355,7 @@ var init_notify_settings = __esm(() => {
   import_node_fs3 = require("node:fs");
   import_node_path3 = require("node:path");
   import_node_os2 = require("node:os");
-  BUILTIN = { email: false, inApp: true };
+  BUILTIN = { email: false, inApp: true, recipients: [] };
 });
 
 // src/notify.ts
@@ -371,8 +379,8 @@ function daemonAuth() {
     return null;
   }
 }
-async function sendEmail(subject, bodyText, auth, daemonUrl, f) {
-  const payload = JSON.stringify({ subject, bodyText });
+async function sendEmail(subject, bodyText, auth, daemonUrl, f, recipients = []) {
+  const payload = JSON.stringify(recipients.length > 0 ? { subject, bodyText, to: recipients } : { subject, bodyText });
   const boundary = `----sid-${import_node_crypto.randomUUID().replace(/-/g, "")}`;
   const body = `--${boundary}\r
 ` + `Content-Disposition: form-data; name="payload"\r
@@ -410,11 +418,11 @@ async function sendDigest(subject, bodyText, f = fetch) {
   const auth = daemonAuth();
   if (!daemonUrl || !auth)
     return false;
-  const { email, inApp } = getNotifySettings();
+  const { email, inApp, recipients } = getNotifySettings();
   if (!email && !inApp)
     return false;
   const results = await Promise.all([
-    email ? sendEmail(subject, bodyText, auth, daemonUrl, f) : Promise.resolve(false),
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, recipients) : Promise.resolve(false),
     inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false)
   ]);
   return results.some(Boolean);

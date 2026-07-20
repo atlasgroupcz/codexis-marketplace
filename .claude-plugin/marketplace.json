@@ -574,7 +574,7 @@
       "name": "sid",
       "description": "SID internal document system — search, read-confirmations and notifications via personal API key",
       "source": "./plugins/sid",
-      "category": "documents",
+      "category": "document-processing",
       "i18n": {
         "cs": {
           "displayName": "SID — Interní dokumenty",
