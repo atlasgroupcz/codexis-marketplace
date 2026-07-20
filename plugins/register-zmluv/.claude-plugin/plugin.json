@@ -1,7 +1,7 @@
 {
   "name": "register-zmluv",
   "iconPath": "icon.svg",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Slovak Register of Contracts (Centrálny register zmlúv, crz.gov.sk) — search public-sector contracts by subject, contracting parties, IČO, value, and contract date",
   "author": {
     "name": "ATLAS GROUP",
