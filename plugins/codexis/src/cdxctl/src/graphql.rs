@@ -424,6 +424,28 @@ mutation UpdateSkill($id: ID!, $markdown: Markdown!) {
 }
 "#;
 
+pub const SAVE_SKILL: &str = r#"
+mutation SaveSkill($id: ID, $input: SkillInput!) {
+    saveSkill(id: $id, input: $input) {
+        skill {
+            id
+            name
+            fullName
+            description
+            allowedTools
+            sourceKind
+            editable
+            deletable
+            displayName
+            summary
+            path { absolutePath displayPath }
+            sourcePath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
+    }
+}
+"#;
+
 pub const DELETE_SKILL: &str = r#"
 mutation DeleteSkill($id: ID!) {
     deleteNode(id: $id) {

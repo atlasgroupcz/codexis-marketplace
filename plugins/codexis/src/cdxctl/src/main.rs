@@ -383,23 +383,79 @@ enum SkillCommands {
         #[arg(long, default_value = "false")]
         editable_only: bool,
     },
-    /// Create a skill from SKILL.md content
+    /// Create a skill. Describe it with the field flags (--name, --description, --body-file …),
+    /// or pass a whole SKILL.md via --file/--stdin
     Create {
-        /// Read SKILL.md content from a file
+        /// Skill name: lowercase letters, digits and hyphens
+        #[arg(long)]
+        name: Option<String>,
+        /// What the skill is for; this is the AI trigger text (write it as "Use when …")
+        #[arg(long)]
+        description: Option<String>,
+        /// The skill body (SKILL.md content below the frontmatter), inline
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the skill body from a file instead of inline --instructions
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Short label shown on the Skills page, as lang:text (e.g. cs:"Kontrola výpovědi").
+        /// Repeat once per language
+        #[arg(long = "display-name")]
+        display_name: Vec<String>,
+        /// One user-facing sentence, as lang:text. Repeat once per language
+        #[arg(long = "summary")]
+        summary: Vec<String>,
+        /// Jurisdiction the skill covers, e.g. CZ; repeat for more
+        #[arg(long = "jurisdiction")]
+        jurisdictions: Vec<String>,
+        /// Mark the skill required for its jurisdiction(s)
+        #[arg(long = "jurisdiction-required", default_value = "false")]
+        jurisdiction_required: bool,
+        /// Tool the skill may use; repeat for more. Leave out to allow every tool
+        #[arg(long = "allowed-tool")]
+        allowed_tools: Vec<String>,
+        /// Read a whole SKILL.md (frontmatter + body) from a file
         #[arg(long)]
         file: Option<String>,
-        /// Read SKILL.md content from stdin
+        /// Read a whole SKILL.md from stdin
         #[arg(long, default_value = "false")]
         stdin: bool,
     },
-    /// Update a skill from SKILL.md content
+    /// Update a skill; unset flags keep their stored value
     Update {
         /// Skill ID, node ID, or raw skill name
         id: String,
-        /// Read SKILL.md content from a file
+        /// Skill name: lowercase letters, digits and hyphens
+        #[arg(long)]
+        name: Option<String>,
+        /// What the skill is for; the AI trigger text
+        #[arg(long)]
+        description: Option<String>,
+        /// The skill body, inline
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the skill body from a file instead of inline --instructions
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Replaces the display name for the given languages, as lang:text. Repeat per language
+        #[arg(long = "display-name")]
+        display_name: Vec<String>,
+        /// Replaces the summary for the given languages, as lang:text. Repeat per language
+        #[arg(long = "summary")]
+        summary: Vec<String>,
+        /// Replaces the whole jurisdiction list; repeat for more
+        #[arg(long = "jurisdiction")]
+        jurisdictions: Vec<String>,
+        /// Mark the skill required for its jurisdiction(s)
+        #[arg(long = "jurisdiction-required")]
+        jurisdiction_required: Option<bool>,
+        /// Replaces the whole allowed-tool list; repeat for more
+        #[arg(long = "allowed-tool")]
+        allowed_tools: Vec<String>,
+        /// Read a whole SKILL.md from a file
         #[arg(long)]
         file: Option<String>,
-        /// Read SKILL.md content from stdin
+        /// Read a whole SKILL.md from stdin
         #[arg(long, default_value = "false")]
         stdin: bool,
     },
@@ -784,12 +840,66 @@ fn main() {
             SkillCommands::List { editable_only } => {
                 commands::skill::list(&client, editable_only, format)
             }
-            SkillCommands::Create { file, stdin } => {
-                commands::skill::create(&client, file.as_deref(), stdin, format)
-            }
-            SkillCommands::Update { id, file, stdin } => {
-                commands::skill::update(&client, &id, file.as_deref(), stdin, format)
-            }
+            SkillCommands::Create {
+                name,
+                description,
+                instructions,
+                instructions_file,
+                display_name,
+                summary,
+                jurisdictions,
+                jurisdiction_required,
+                allowed_tools,
+                file,
+                stdin,
+            } => commands::skill::create(
+                &client,
+                file.as_deref(),
+                stdin,
+                instructions_file.as_deref(),
+                commands::skill::SkillFields {
+                    name,
+                    description,
+                    instructions,
+                    display_name,
+                    summary,
+                    jurisdictions: none_if_empty(jurisdictions),
+                    jurisdiction_required: if jurisdiction_required { Some(true) } else { None },
+                    allowed_tools: none_if_empty(allowed_tools),
+                },
+                format,
+            ),
+            SkillCommands::Update {
+                id,
+                name,
+                description,
+                instructions,
+                instructions_file,
+                display_name,
+                summary,
+                jurisdictions,
+                jurisdiction_required,
+                allowed_tools,
+                file,
+                stdin,
+            } => commands::skill::update(
+                &client,
+                &id,
+                file.as_deref(),
+                stdin,
+                instructions_file.as_deref(),
+                commands::skill::SkillFields {
+                    name,
+                    description,
+                    instructions,
+                    display_name,
+                    summary,
+                    jurisdictions: none_if_empty(jurisdictions),
+                    jurisdiction_required,
+                    allowed_tools: none_if_empty(allowed_tools),
+                },
+                format,
+            ),
             SkillCommands::Delete { id } => commands::skill::delete(&client, &id, format),
         },
         Commands::Tabular { command } => match command {
