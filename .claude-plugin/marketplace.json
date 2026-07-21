@@ -1,6 +1,6 @@
 {
-  "uuid": "f0e1d2c3-b4a5-4968-8776-0a1b2c3d4e5f",
-  "name": "codexis-plugins-dev",
+  "uuid": "87975c97-617b-4393-9fb8-921c1ff7b70e",
+  "name": "codexis-plugins",
   "iconPath": "icon.svg",
   "owner": {
     "name": "ATLAS GROUP",
@@ -8,15 +8,15 @@
   },
   "i18n": {
     "cs": {
-      "displayName": "Doplňky ATLAS GROUP (dev)",
+      "displayName": "Doplňky ATLAS GROUP",
       "description": "Oficiální sbírka doplňků ATLAS GROUP — právní databáze, státní registry, zpracování dokumentů a vizualizace dat."
     },
     "en": {
-      "displayName": "ATLAS GROUP Marketplace (dev)",
+      "displayName": "ATLAS GROUP Marketplace",
       "description": "Official ATLAS GROUP plugin marketplace — legal databases, public registries, document processing, and data visualization."
     },
     "sk": {
-      "displayName": "Doplnky ATLAS GROUP (dev)",
+      "displayName": "Doplnky ATLAS GROUP",
       "description": "Oficiálna zbierka doplnkov ATLAS GROUP — právne databázy, štátne registre, spracovanie dokumentov a vizualizácia dát."
     }
   },
