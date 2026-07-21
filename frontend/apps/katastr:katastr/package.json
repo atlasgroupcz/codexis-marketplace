@@ -38,6 +38,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "@workspace/eslint-config": "workspace:*",
+    "@workspace/vitest-config": "workspace:*",
     "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
