@@ -29,6 +29,18 @@ describe('createApiClient', () => {
     await expect(client.postJson('do', z.object({}))).rejects.toThrow('nope')
   })
 
+  it('surfaces the JSON error body on a non-ok HTTP response', async () => {
+    vi.stubGlobal('fetch', vi.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        json: () => Promise.resolve({ ok: false, error: 'už sledované' }),
+      } as Response)))
+    const client = createApiClient(base)
+    await expect(client.postJson('add', z.object({}))).rejects.toThrow('už sledované')
+  })
+
   it('postJson sends {action, ...payload}', async () => {
     const fetchMock = vi.fn<typeof fetch>(() => okJson({ ok: true }))
     vi.stubGlobal('fetch', fetchMock)

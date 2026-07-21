@@ -569,6 +569,30 @@
           "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "contracts": "Zmluvy" }
         }
       }
+    },
+    {
+      "uuid": "99e2d85f-eca8-415a-b410-ef59955777bf",
+      "name": "sbirka-listin",
+      "description": "Czech Collection of Deeds (Sbírka listin) - a subject's filed documents by IČO (financial statements, articles, deeds), document download and new-filing watching",
+      "source": "./plugins/sbirka-listin",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Sbírka listin ČR",
+          "description": "Dokumenty ze Sbírky listin veřejných rejstříků ČR - účetní závěrky, stanovy a další listiny subjektu podle IČO, se stažením dokumentu a hlídáním nových přírůstků.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "documents": "Dokumenty" }
+        },
+        "en": {
+          "displayName": "Czech Collection of Deeds",
+          "description": "Documents from the Czech public registers' Collection of Deeds (Sbírka listin) - financial statements, articles and other filings by IČO, with document download and new-filing watching.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "documents": "Documents" }
+        },
+        "sk": {
+          "displayName": "Zbierka listín ČR",
+          "description": "Dokumenty zo Zbierky listín verejných registrov ČR - účtovné závierky, stanovy a ďalšie listiny subjektu podľa IČO, so stiahnutím dokumentu a strážením nových prírastkov.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "documents": "Dokumenty" }
+        }
+      }
     }
   ]
 }

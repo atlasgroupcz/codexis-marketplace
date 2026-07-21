@@ -14,6 +14,16 @@ function defaultBase(): string {
   return env?.DEV ? '/api/' : './api'
 }
 
+/** The message from a non-ok response: the JSON body's `error` field when the
+ * server sent one, otherwise the bare HTTP status. Watcher CGIs answer errors as
+ * `{ ok: false, error: "<message>" }`, so surfacing `error` shows the real cause
+ * (e.g. "IČO už je sledované") instead of a naked "HTTP 409". */
+function httpError(res: Response, data: unknown): Error {
+  const err =
+    data && typeof data === 'object' && 'error' in data ? (data as { error: unknown }).error : undefined
+  return new Error(typeof err === 'string' && err ? err : `HTTP ${res.status}: ${res.statusText}`)
+}
+
 export function createApiClient(base: () => string = defaultBase): ApiClient {
   function buildUrl(params?: Record<string, string>): string {
     const url = new URL(base(), window.location.href)
@@ -23,8 +33,9 @@ export function createApiClient(base: () => string = defaultBase): ApiClient {
 
   async function getJson<T>(schema: z.ZodType<T>, params?: Record<string, string>): Promise<T> {
     const res = await fetch(buildUrl(params), { headers: { Accept: 'application/json' }, cache: 'no-store' })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-    return schema.parse(await res.json())
+    const data: unknown = await res.json().catch(() => null)
+    if (!res.ok) throw httpError(res, data)
+    return schema.parse(data)
   }
 
   async function postJson<T>(action: string, schema: z.ZodType<T>, payload?: Record<string, unknown>): Promise<T> {
@@ -33,11 +44,13 @@ export function createApiClient(base: () => string = defaultBase): ApiClient {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ action, ...payload }),
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-    const data: unknown = await res.json()
+    const data: unknown = await res.json().catch(() => null)
+    if (!res.ok) throw httpError(res, data)
+    // Actions also signal failure via `{ ok: false }` on an HTTP 200. Reject on it
+    // too, so every caller has one error channel: resolve = success, reject = error.
     if (data && typeof data === 'object' && 'ok' in data && (data as { ok: unknown }).ok === false) {
       const err = (data as { error?: unknown }).error
-      throw new Error(typeof err === 'string' ? err : 'Request failed')
+      throw new Error(typeof err === 'string' && err ? err : 'Request failed')
     }
     return schema.parse(data)
   }

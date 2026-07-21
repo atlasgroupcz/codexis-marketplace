@@ -1,0 +1,33 @@
+name: sbirka-listin-lookup
+description: Verify the sbirka-listin skill calls sbirka-listin-cli against the public Sbírka listin API and relays the subject's filed documents back to the user.
+
+# Deterministic target: Alza.cz a.s. — a large, long-lived Czech joint-stock
+# company, IČO 27082440, spisová značka B 8573 at the Městský soud v Praze. It
+# has a deep Sbírka listin (90+ listiny) that always includes účetní závěrky
+# whose typlistiny text carries the year in [brackets], e.g.
+# "účetní závěrka [2024], výroční zpráva [2024], …". The exact newest count
+# grows over time, so the assertions key on stable structure (the register
+# citation, an "účetní závěrka" mention) rather than a fixed number.
+
+steps:
+  - prompt: "Jaké dokumenty má ve sbírce listin firma s IČO 27082440? Stačí přehled."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "sbirka-listin-cli\\s+listiny\\s+.*27082440"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?i)účetní závěrk|stanov|listin"
+      sources:
+        min: 1
+        matches: "or\\.justice\\.cz"
+
+  - prompt: "A dej mi vědět, kdyby tam něco nového založili."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "sbirka-listin-cli\\s+sledovani\\s+add\\s+.*27082440"
+      tool_calls_max: 5
+      response:
+        matches: "(?i)sledov|hlíd|přidán"

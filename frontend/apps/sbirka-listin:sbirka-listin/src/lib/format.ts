@@ -1,0 +1,39 @@
+import { format, formatDistanceToNow, parseISO } from 'date-fns'
+import { cs, enUS, sk } from 'date-fns/locale'
+import type { Locale } from 'date-fns'
+import i18n from '@/lib/i18n'
+
+const dateFnsLocales: Record<string, Locale> = {
+  en: enUS,
+  cs,
+  sk,
+}
+
+function getDateFnsLocale(language: string): Locale {
+  const baseLanguage = language.toLowerCase().split('-')[0]
+  return dateFnsLocales[baseLanguage] ?? enUS
+}
+
+export function formatDateTime(isoString: string): string {
+  return format(parseISO(isoString), 'Pp', {
+    locale: getDateFnsLocale(i18n.language),
+  })
+}
+
+/** Coerce an unknown thrown value into a human-readable message. */
+export function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
+/** Relative time, e.g. "před 2 hodinami" / "2 hours ago". Empty input → em dash. */
+export function formatRelative(isoString: string | null | undefined): string {
+  if (!isoString) return '—'
+  try {
+    return formatDistanceToNow(parseISO(isoString), {
+      addSuffix: true,
+      locale: getDateFnsLocale(i18n.language),
+    })
+  } catch {
+    return isoString
+  }
+}
