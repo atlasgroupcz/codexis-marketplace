@@ -302,7 +302,7 @@ mod tests {
         }
     }
 
-    // The CZ sibling's filters must not exist here — the SK request DTO has no
+    // The CZ sibling's filters must not exist here - the SK request DTO has no
     // publisher/counterparty split and no validity flag.
     #[test]
     fn cli_rejects_czech_only_filters() {

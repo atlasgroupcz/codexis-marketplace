@@ -2,24 +2,24 @@
 uuid: 858f1a59-06c5-46a4-84dc-62d50cc1b6af
 name: cdx-nl
 icon: icon.svg
-description: Dutch national legislation (BWB), Dutch case law (Rechtspraak.nl), and decentralized regulations (CVDR) — use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., references BWB-ids, or asks about municipal/provincial/water-board (gemeente/provincie/waterschap) regulations.
+description: Dutch national legislation (BWB), Dutch case law (Rechtspraak.nl), and decentralized regulations (CVDR) - use when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with ECLI:NL:..., references BWB-ids, or asks about municipal/provincial/water-board (gemeente/provincie/waterschap) regulations.
 version: 2.2.0
 jurisdictions: [NL]
 i18n:
   cs:
     displayName: "Nizozemské právo (BWB, Rechtspraak.nl a CVDR)"
-    summary: "Nizozemská právní databáze — národní legislativa z Basiswettenbestand (BWB), rozhodnutí nizozemských soudů z Rechtspraak.nl a decentralizované předpisy obcí/provincií/vodních úřadů (CVDR)."
+    summary: "Nizozemská právní databáze - národní legislativa z Basiswettenbestand (BWB), rozhodnutí nizozemských soudů z Rechtspraak.nl a decentralizované předpisy obcí/provincií/vodních úřadů (CVDR)."
   en:
     displayName: "Dutch Legal Database (BWB, Rechtspraak.nl & CVDR)"
-    summary: "Dutch legal database — national legislation from Basiswettenbestand (BWB), Dutch court decisions from Rechtspraak.nl, and decentralized regulations of municipalities/provinces/water boards (CVDR)."
+    summary: "Dutch legal database - national legislation from Basiswettenbestand (BWB), Dutch court decisions from Rechtspraak.nl, and decentralized regulations of municipalities/provinces/water boards (CVDR)."
   nl:
     displayName: "Nederlandse rechtsdatabase (BWB, Rechtspraak.nl & CVDR)"
-    summary: "Nederlandse rechtsdatabase — nationale wetgeving uit Basiswettenbestand (BWB), uitspraken van Nederlandse rechtbanken via Rechtspraak.nl en decentrale regelgeving van gemeenten/provincies/waterschappen (CVDR)."
+    summary: "Nederlandse rechtsdatabase - nationale wetgeving uit Basiswettenbestand (BWB), uitspraken van Nederlandse rechtbanken via Rechtspraak.nl en decentrale regelgeving van gemeenten/provincies/waterschappen (CVDR)."
 ---
 
 # Dutch Legal Database (cdx-nl)
 
-Dutch legal database providing structured access to three sources: national legislation from Basiswettenbestand (NLBWB), Dutch case law from Rechtspraak.nl (NLUIT), and decentralized regulations from CVDR — gemeenten, provincies, waterschappen (NLCVDR). Invoke when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with `ECLI:NL:...`, references BWB-ids, or asks about local/decentralized (gemeente/provincie/waterschap) regulations.
+Dutch legal database providing structured access to three sources: national legislation from Basiswettenbestand (NLBWB), Dutch case law from Rechtspraak.nl (NLUIT), and decentralized regulations from CVDR - gemeenten, provincies, waterschappen (NLCVDR). Invoke when the user asks about Dutch laws, Dutch court decisions, ECLI identifiers starting with `ECLI:NL:...`, references BWB-ids, or asks about local/decentralized (gemeente/provincie/waterschap) regulations.
 
 ## Commands
 
@@ -40,13 +40,13 @@ Use `cdx-nl schema --help` for available endpoints.
 
 ## User-Facing Output Rules
 
-All responses shown to the user **must** follow these formatting rules. The raw identifiers, codes, and enums from the API are for constructing CLI calls only — they must never leak into user-visible text.
+All responses shown to the user **must** follow these formatting rules. The raw identifiers, codes, and enums from the API are for constructing CLI calls only - they must never leak into user-visible text.
 
 ### Link Format
 
-User-facing document links MUST use the `https://` URL that appears in tool output. The binary resolves the PDF attachment of each result to a real `https://…/attachment/…#page=N` link before you see it — that resolved link is the citable **source**; link to it: `[Title](https://…#page=N)`.
+User-facing document links MUST use the `https://` URL that appears in tool output. The binary resolves the PDF attachment of each result to a real `https://…/attachment/…#page=N` link before you see it - that resolved link is the citable **source**; link to it: `[Title](https://…#page=N)`.
 
-A `cdx-nl://` link is NOT a user-facing link — it is an internal address you dereference with `cdx-nl get cdx-nl://…` to fetch more (`/meta`, `/text`, `/toc`). Never show a `cdx-nl://` link to the user; if you need its content, fetch it and continue.
+A `cdx-nl://` link is NOT a user-facing link - it is an internal address you dereference with `cdx-nl get cdx-nl://…` to fetch more (`/meta`, `/text`, `/toc`). Never show a `cdx-nl://` link to the user; if you need its content, fetch it and continue.
 
 Never resolve URLs yourself and never read `$CODEXIS_PLUGIN_NL_API_URL` for link construction. Strip `<mark>` tags from titles.
 
@@ -57,9 +57,9 @@ Never include any of the following in user-facing text:
 - Raw document IDs (e.g., `NLBWB1234`, `NLUIT5678`, `NLCVDR1234`)
 - Raw search prefixes (e.g., `NLBWB`, `NLUIT`, `NLCVDR`)
 - Raw BWB-ids (e.g., `BWBR0001840`) and raw ECLIs (e.g., `ECLI:NL:HR:2024:123`) outside of a wrapping link
-- Bare API URLs you construct yourself (e.g., `https://…/api/NL/wetten/bwb/doc/NLBWB1234`) — cite ONLY the `https://…/attachment/…` PDF link that appears in tool output
+- Bare API URLs you construct yourself (e.g., `https://…/api/NL/wetten/bwb/doc/NLBWB1234`) - cite ONLY the `https://…/attachment/…` PDF link that appears in tool output
 - Environment variable names (e.g., `$CODEXIS_PLUGIN_NL_API_URL`)
-- HTML tags (e.g., `<a href=...>`) — use markdown links only
+- HTML tags (e.g., `<a href=...>`) - use markdown links only
 
 ### Human-Readable Source Names
 
@@ -75,11 +75,11 @@ When referring to data sources in prose, match the user's conversation language:
 
 Use these fields as the link text:
 
-- **NLBWB:** `title` from search results (e.g., "Burgerlijk Wetboek Boek 1") — strip `<mark>` tags. When citing a specific article, prefix with the article reference (e.g., `art. 1:1 BW`).
+- **NLBWB:** `title` from search results (e.g., "Burgerlijk Wetboek Boek 1") - strip `<mark>` tags. When citing a specific article, prefix with the article reference (e.g., `art. 1:1 BW`).
 - **NLUIT (court decisions):** the link text MUST be a compact legal citation, not the generic title: `COURT - ECLI - DD.MM.YYYY` (e.g. `[HR - ECLI:NL:HR:2024:123 - 12.01.2024](https://…/attachment/decision.pdf#page=12)`). Map the court to its abbreviation per the table in `references/search-nluit.md`; the reference is `ecli` (registered case number only if no ECLI), and append ` - DD.MM.YYYY` (`decisionDate`) when available. The decision type (`Uitspraak`) may be secondary text, never the primary label; missing date → drop only the date segment.
-- **NLCVDR (decentralized regulations):** use `title` from search results — strip `<mark>` tags. CVDR regulations are versioned (toestanden); when the user references a point in time, prefer `/at?date=` over the latest version. The issuing body (`organisatie`) makes good secondary text (e.g. "Algemene Plaatselijke Verordening — Amsterdam").
+- **NLCVDR (decentralized regulations):** use `title` from search results - strip `<mark>` tags. CVDR regulations are versioned (toestanden); when the user references a point in time, prefer `/at?date=` over the latest version. The issuing body (`organisatie`) makes good secondary text (e.g. "Algemene Plaatselijke Verordening - Amsterdam").
 
-If title is unavailable, use a descriptive fallback — never the raw document ID.
+If title is unavailable, use a descriptive fallback - never the raw document ID.
 
 ### Examples
 
@@ -92,10 +92,10 @@ If title is unavailable, use a descriptive fallback — never the raw document I
 
 **Incorrect:**
 ```
-NLBWB1234 — wrong, raw document ID
-cdx-nl://doc/NLBWB1234/text — wrong, API endpoint as link
-cdx-nl://doc/NLBWB1234/attachment/content_1.pdf#page=3 — wrong, cdx:// is an internal handle; cite the https:// link from tool output
-https://search.example.com/api/NL/wetten/bwb/doc/NLBWB1234 — wrong, bare API doc URL (cite the /attachment/ PDF link from tool output instead)
+NLBWB1234 - wrong, raw document ID
+cdx-nl://doc/NLBWB1234/text - wrong, API endpoint as link
+cdx-nl://doc/NLBWB1234/attachment/content_1.pdf#page=3 - wrong, cdx:// is an internal handle; cite the https:// link from tool output
+https://search.example.com/api/NL/wetten/bwb/doc/NLBWB1234 - wrong, bare API doc URL (cite the /attachment/ PDF link from tool output instead)
 ```
 
 ## Hard Rules
@@ -104,7 +104,7 @@ https://search.example.com/api/NL/wetten/bwb/doc/NLBWB1234 — wrong, bare API d
 
 Every document reference in user-facing output MUST be a clickable attachment link. Never mention a document as plain text when you have the data to build a link.
 
-The binary resolves `cdx-nl://…/attachment/…` links in tool output to absolute `https://` URLs before you see them. Use those resolved `https://` links directly as link targets — do not reconstruct them yourself.
+The binary resolves `cdx-nl://…/attachment/…` links in tool output to absolute `https://` URLs before you see them. Use those resolved `https://` links directly as link targets - do not reconstruct them yourself.
 
 When a direct `https://…/attachment/…` URL is not yet available (e.g. you only have a BWB-id or ECLI), fetch `/meta` first to get the resolved `assets[].download_url`, which will appear as an `https://` URL in the output. For a page-specific deep-link, also fetch `/parts` and append `#page=<N>`.
 
@@ -131,7 +131,7 @@ The filename always comes from `/meta` assets output, not `/parts`.
 The backend exposes attachment paths only on `/doc/<DOC_ID>/attachment/` and
 `/by-ecli/<ECLI>/attachment/` (NLUIT). There are NO attachment routes on
 `/bwbid/...` or `/afkorting/...`. Always construct user-facing attachment
-links from the resolved `https://` URL in tool output — resolve via
+links from the resolved `https://` URL in tool output - resolve via
 `cdx-nl get cdx-nl://doc/<ID>/meta` if you only have a BWB-id or afkorting in hand.
 
 ### Staatsblad / Staatscourant / Tractatenblad PDFs
@@ -143,7 +143,7 @@ When you need to cite a Staatsblad publication (e.g. `stb-2024-123`):
 3. Fetch `cdx-nl get cdx-nl://doc/<docId>/meta` to get the resolved `https://` attachment URL.
 4. Emit the user-facing link using that `https://` URL.
 
-Never try to `cdx-nl get cdx-nl://publication/<id>` — that URI is intentionally
+Never try to `cdx-nl get cdx-nl://publication/<id>` - that URI is intentionally
 not exposed; the resolver always returns a `/doc/.../attachment/<file>` target.
 
 ### NLBWB /citations requires toestandId
@@ -155,10 +155,10 @@ the latest toestand's `toestandId`.
 
 Prefer these over `/versions` when applicable:
 
-- `/at?date=YYYY-MM-DD` — single toestand in force on a given date, plus its
+- `/at?date=YYYY-MM-DD` - single toestand in force on a given date, plus its
   PDFs and previous/next pointers. Use when the user references "as of date X"
   rather than wanting the whole history.
-- `/cited-by-decisions` — Rechtspraak (NLUIT) decisions whose `lawReferences`
+- `/cited-by-decisions` - Rechtspraak (NLUIT) decisions whose `lawReferences`
   cite this BWB document. Paged via `limit`/`offset`. Each `decisions[].metaUrl`
   is a ready-to-fetch `cdx-nl://doc/NLUIT.../meta` (dereference it with `cdx-nl get`).
 
@@ -179,6 +179,6 @@ surfaces for CVDR. To resolve a known CVDR work-id directly, use
 
 ## Reference Files
 
-- **`references/search-nlbwb.md`** — Dutch national legislation search (Basiswettenbestand): document types, validity filters, BWB-id and afkorting lookup
-- **`references/search-nluit.md`** — Dutch case law search (Rechtspraak.nl): court codes, decision types, ECLI lookup
-- **`references/search-nlcvdr.md`** — Dutch decentralized regulations search (CVDR): organisatie/organisatieType facets, validity filters, versions/at navigation, work-id resolution
+- **`references/search-nlbwb.md`** - Dutch national legislation search (Basiswettenbestand): document types, validity filters, BWB-id and afkorting lookup
+- **`references/search-nluit.md`** - Dutch case law search (Rechtspraak.nl): court codes, decision types, ECLI lookup
+- **`references/search-nlcvdr.md`** - Dutch decentralized regulations search (CVDR): organisatie/organisatieType facets, validity filters, versions/at navigation, work-id resolution

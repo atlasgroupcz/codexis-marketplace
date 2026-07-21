@@ -10,7 +10,7 @@ pub(crate) fn try_publish(entries: &[Value]) {
     cdx_common::sources::try_publish("orsr-cli", entries);
 }
 
-/// Sources for `links` — one orsr.sk aktuálny výpis per resolved subject, capped.
+/// Sources for `links` - one orsr.sk aktuálny výpis per resolved subject, capped.
 pub(crate) fn links_sources(links: &Value, ico8: &str) -> Vec<Value> {
     let Some(subjects) = links.get("subjekty").and_then(Value::as_array) else {
         return Vec::new();
@@ -23,7 +23,7 @@ pub(crate) fn links_sources(links: &Value, ico8: &str) -> Vec<Value> {
         .collect()
 }
 
-/// Source for `detail` — the entity's orsr.sk výpis titled by its current name.
+/// Source for `detail` - the entity's orsr.sk výpis titled by its current name.
 pub(crate) fn detail_source(detail_body: &str, links: &Value, ico8: &str) -> Vec<Value> {
     let Some(url) = links
         .pointer("/subjekty/0/aktualnyVypis")
@@ -36,14 +36,14 @@ pub(crate) fn detail_source(detail_body: &str, links: &Value, ico8: &str) -> Vec
     vec![url_entry(url, &title)]
 }
 
-/// Source for `ruz` — the registeruz.sk accounting-entity page.
+/// Source for `ruz` - the registeruz.sk accounting-entity page.
 pub(crate) fn ruz_source(record_body: &str, ico8: &str, entity_id: i64) -> Vec<Value> {
     let record: Value = serde_json::from_str(record_body).unwrap_or(Value::Null);
     let title = record
         .get("nazovUJ")
         .and_then(Value::as_str)
         .map(str::to_string)
-        .unwrap_or_else(|| format!("Register účtovných závierok — IČO {ico8}"));
+        .unwrap_or_else(|| format!("Register účtovných závierok - IČO {ico8}"));
     vec![url_entry(&format!("{RUZ_ENTITY_WEB_URL}/{entity_id}"), &title)]
 }
 
@@ -65,7 +65,7 @@ fn current_value(history: Option<&Value>) -> Option<String> {
 }
 
 fn vypis_title(ico8: &str) -> String {
-    format!("Výpis z obchodného registra SR — IČO {ico8}")
+    format!("Výpis z obchodného registra SR - IČO {ico8}")
 }
 
 fn url_entry(url: &str, title: &str) -> Value {
@@ -98,7 +98,7 @@ mod tests {
             vec![json!({
                 "__kind": "url",
                 "url": "https://www.orsr.sk/vypis.asp?ID=19667&SID=2&P=0",
-                "title": "Výpis z obchodného registra SR — IČO 31322832"
+                "title": "Výpis z obchodného registra SR - IČO 31322832"
             })]
         );
     }

@@ -2,7 +2,7 @@
 
 Each tracked document can have several "relation types" (e.g. JUDIKATURA,
 PROVADECI_PREDPIS). For each type we snapshot the set of related doc IDs
-returned by CODEXIS and compare on every check — new / removed IDs become
+returned by CODEXIS and compare on every check - new / removed IDs become
 `related_change` entries in the parent state.
 """
 

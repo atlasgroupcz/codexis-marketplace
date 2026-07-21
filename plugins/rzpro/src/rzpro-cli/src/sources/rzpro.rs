@@ -10,13 +10,13 @@ pub(crate) const SEARCH_RZPRO_HELP: &str = r#"Examples:
   rzpro-cli search CZRZP --katalogove-cislo G0068486
   rzpro-cli search CZRZP --expiruje-do 2027-01-01"#;
 
-/// Search filters for RZPRO devices. Mirrors `RzproSearchRequest` — all optional.
+/// Search filters for RZPRO devices. Mirrors `RzproSearchRequest` - all optional.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchRzproArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "evidencni-cislo", help = "Evidenční číslo — exact, 8-digit device id")]
+    #[arg(long = "evidencni-cislo", help = "Evidenční číslo - exact, 8-digit device id")]
     pub(crate) evidencni_cislo: Option<String>,
     #[arg(long, help = "Device kind (Druh ZP) filter")]
     pub(crate) druh: Option<String>,

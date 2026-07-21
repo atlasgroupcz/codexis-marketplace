@@ -8,7 +8,7 @@ license = "PROPRIETARY"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Synchronous HTTP only — no tokio/async — so the per-request CGI process stays
+# Synchronous HTTP only - no tokio/async - so the per-request CGI process stays
 # small and cold-start fast. rustls-tls avoids the OpenSSL build dep.
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
 uuid = { version = "1", features = ["v4"] }

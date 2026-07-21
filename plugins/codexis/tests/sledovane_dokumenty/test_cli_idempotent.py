@@ -60,7 +60,7 @@ def test_group_remove_not_tracked_is_ok(dokumenty_app_dir, monkeypatch, capsys):
 
 def test_related_remove_type_not_in_existing_is_ok(dokumenty_app_dir, capsys):
     # Document is tracked and has related-tracking enabled, but not for the
-    # requested type — the "type not in existing" branch, not the
+    # requested type - the "type not in existing" branch, not the
     # "document not tracked at all" branch.
     state.save_state("ZAK1", {
         "codexisId": "ZAK1",

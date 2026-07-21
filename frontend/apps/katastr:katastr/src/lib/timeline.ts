@@ -21,7 +21,7 @@ interface TimelineInput {
   provedene_operace: Array<Operace>
 }
 
-// Negative/closing outcomes — a proceeding that ended without an entry.
+// Negative/closing outcomes - a proceeding that ended without an entry.
 const NEGATIVE_TERMINAL_STEMS = ['zamít', 'zastav', 'zpětvz', 'zpetvz', 'odmít', 'vzat zpět']
 
 function isNegativeTerminal(stav: string): boolean {
@@ -34,7 +34,7 @@ export function isPlomba(text: string): boolean {
 }
 
 /**
- * A flat, honest list of what actually happened — one node per real ČÚZK
+ * A flat, honest list of what actually happened - one node per real ČÚZK
  * operation, oldest first, named exactly as ČÚZK reports it. No speculative
  * future phases: a proceeding can be rejected or withdrawn, so we never imply
  * steps that may not come.
@@ -75,7 +75,7 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
     nodes[nodes.length - 1].state = 'current'
   }
 
-  // No operations yet — show the current state as the single node.
+  // No operations yet - show the current state as the single node.
   if (nodes.length === 0) {
     nodes.push({
       key: 'stav',

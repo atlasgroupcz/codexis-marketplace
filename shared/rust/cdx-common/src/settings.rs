@@ -1,10 +1,10 @@
 //! Layered per-app settings store: shipped defaults merged with a sparse user
-//! override. The generic mechanism behind `cdx-notify`'s `NotifySettings` —
+//! override. The generic mechanism behind `cdx-notify`'s `NotifySettings` -
 //! usable for any per-app settings block, not just `notify`.
 //!
 //! - defaults → `$HOME/.local/share/<app_id>/settings/defaults.json` (delivered
 //!   by the install hook under the real `$HOME`, NOT the daemon-injected user
-//!   home — the hook runs outside the chat VM context)
+//!   home - the hook runs outside the chat VM context)
 //! - override → `<user_home>/.cdx/apps/<app_id>/settings.json` (only changed keys)
 //!
 //! The effective config is computed at read time; nothing is merged back into

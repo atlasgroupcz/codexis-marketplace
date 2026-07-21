@@ -7,7 +7,7 @@ steps:
 
       ---
       name: ee-skill-{{ run_id }}
-      description: "E2E test skill — initial description"
+      description: "E2E test skill - initial description"
       ---
 
       # Instructions
@@ -24,7 +24,7 @@ steps:
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')]"
         count: 1
         matches_subset:
-          description: "E2E test skill — initial description"
+          description: "E2E test skill - initial description"
           editable: true
           deletable: true
 
@@ -42,7 +42,7 @@ steps:
         jsonpath: "$.skills[?(@.editable == true)].name"
         contains: "ee-skill-{{ run_id }}"
 
-  - prompt: "U dovednosti ee-skill-{{ run_id }} změň popis na 'E2E test skill — updated'."
+  - prompt: "U dovednosti ee-skill-{{ run_id }} změň popis na 'E2E test skill - updated'."
     expect:
       tool_call:
         name: shell
@@ -52,7 +52,7 @@ steps:
       state:
         graphql: "{ skills { name description } }"
         jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
-        equals: "E2E test skill — updated"
+        equals: "E2E test skill - updated"
 
   - prompt: "Smaž dovednost ee-skill-{{ run_id }}."
     expect:

@@ -9,14 +9,14 @@ interface ProceedingTimelineProps {
 }
 
 function dotClass(node: TimelineNode): string {
-  // Red is reserved for a genuinely bad outcome — rejected / stopped / withdrawn.
+  // Red is reserved for a genuinely bad outcome - rejected / stopped / withdrawn.
   if (node.isTerminal && node.isNegative) return 'bg-destructive border-destructive'
   if (node.isTerminal) return 'bg-primary border-primary'
   if (node.isPlomba) return 'bg-amber-400 border-amber-400' // caution, not alarm
   return 'bg-primary border-primary'
 }
 
-/** Vertical log of what actually happened — a grey rail with one node per event. */
+/** Vertical log of what actually happened - a grey rail with one node per event. */
 export function ProceedingTimeline({ proc }: ProceedingTimelineProps) {
   const { t } = useTranslation()
   const nodes = deriveTimeline(proc)

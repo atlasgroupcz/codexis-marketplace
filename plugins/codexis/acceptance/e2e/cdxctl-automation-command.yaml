@@ -2,12 +2,12 @@ name: cdxctl-automation-command
 description: Verify cdxctl creates, triggers, and deletes a COMMAND-type automation (shell command on cron) with correct fields, end-to-end.
 
 # Per-step axes:
-#   tool_call — did the AI invoke the right cdxctl subcommand?
-#   state     — does the daemon's ground truth match? (primary oracle)
-#   response  — only on list/answer steps where the response text IS the product;
+#   tool_call - did the AI invoke the right cdxctl subcommand?
+#   state     - does the daemon's ground truth match? (primary oracle)
+#   response  - only on list/answer steps where the response text IS the product;
 #               omitted for pure mutations (state proves the outcome).
 #
-# Prompts are natural Czech-user language. No mentions of cdxctl or flags —
+# Prompts are natural Czech-user language. No mentions of cdxctl or flags -
 # the AI has to route via the skill description on its own.
 
 steps:

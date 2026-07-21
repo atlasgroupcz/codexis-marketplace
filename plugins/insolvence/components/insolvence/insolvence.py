@@ -86,14 +86,14 @@ def with_subject_uuid(body: dict, fn: Callable[[dict], None]) -> None:
 
 
 def _notify_results(results: list) -> None:
-    """Push e-mail + in-app for freshly detected changes — mirrors the CLI check
+    """Push e-mail + in-app for freshly detected changes - mirrors the CLI check
     so a change is notified regardless of which route (automation, chat, FE)
     first catches it. A change is consumed once, so only the first route to see
     it actually sends. Best-effort: never raises, so a failed send can't break
     the FE response."""
     try:
         cfg = notify_settings.get_notify()
-    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+    except Exception:  # noqa: BLE001 - best-effort, must never fail the request
         return
     if cfg.get("email"):
         try:
@@ -181,7 +181,7 @@ def handle_post(body: dict) -> None:
         with_subject_uuid(body, _set_label)
 
     elif action == "save_notify_settings":
-        # Strip the signed-in user's own address from extras (redundant — they
+        # Strip the signed-in user's own address from extras (redundant - they
         # always receive the e-mail). Keep None as None so a save that omits
         # `recipients` leaves the stored list untouched.
         recipients = body.get("recipients")

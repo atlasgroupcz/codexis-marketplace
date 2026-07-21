@@ -11,7 +11,7 @@ def render_transcript(test_name: str, steps: list[dict]) -> str:
     lines: list[str] = [f"# {test_name}", ""]
     for i, step in enumerate(steps, start=1):
         status = step.get("status", "UNKNOWN")
-        lines.append(f"## Step {i} — {status}")
+        lines.append(f"## Step {i} - {status}")
         lines.append(f"User: {step.get('prompt', '')}")
         result = step.get("result") or {}
         for tc in result.get("tool_calls") or []:

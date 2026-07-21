@@ -236,7 +236,7 @@ class TestListAllSort:
                       "confirmed_on": "2026-04-11T00:00:00Z"}],
         )
         order = [r["cislo_rizeni"] for r in list_all()]
-        # Newest added_on first — confirmation state floats nothing up.
+        # Newest added_on first - confirmation state floats nothing up.
         assert order == ["V-2/2026-701", "V-1/2026-701"]
 
     def test_added_on_breaks_tie_among_idle(self, app_dir):

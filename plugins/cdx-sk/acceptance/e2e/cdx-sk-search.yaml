@@ -4,7 +4,7 @@ description: Verify the cdx-sk skill performs a court-case search and fetches a 
 # Mirrors codexis-search for the Slovak legal database (e-Zbierka + courts).
 # Two steps:
 #   1. Case-law search (forces `cdx-sk search`; unpredictable IDs).
-#   2. Specific paragraph fetch from Občiansky zákonník (40/1964 Zb.) —
+#   2. Specific paragraph fetch from Občiansky zákonník (40/1964 Zb.) -
 #      §3 ("dobrými mravmi") is a stable statutory marker.
 
 steps:

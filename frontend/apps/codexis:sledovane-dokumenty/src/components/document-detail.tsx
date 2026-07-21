@@ -212,7 +212,7 @@ export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailP
               )}
             </section>
 
-            {/* Notes — one continuous note */}
+            {/* Notes - one continuous note */}
             <section className="space-y-2">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-medium">{t('followedDocs.notes')}</h2>
@@ -238,7 +238,7 @@ export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailP
               </div>
             </section>
 
-            {/* Tracked parts — stacked */}
+            {/* Tracked parts - stacked */}
             {document.parts.length > 0 && (
               <section className="space-y-2">
                 <h2 className="text-sm font-medium">{t('followedDocs.trackedParts')}</h2>
@@ -256,7 +256,7 @@ export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailP
               </section>
             )}
 
-            {/* Change timeline — type under the icon, line through icon centres */}
+            {/* Change timeline - type under the icon, line through icon centres */}
             <section className="space-y-3">
               <h2 className="font-display text-lg">
                 {t('followedDocs.changes', { count: document.changes.length })}

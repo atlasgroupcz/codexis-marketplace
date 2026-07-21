@@ -1,4 +1,4 @@
-//! Errors for the watcher domain. Neutral messages — each plugin converts these
+//! Errors for the watcher domain. Neutral messages - each plugin converts these
 //! into its own (localized) error type via a `From` impl.
 
 use thiserror::Error;

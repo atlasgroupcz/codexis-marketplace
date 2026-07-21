@@ -6,20 +6,20 @@ version: 3.3.0
 jurisdictions: [CZ]
 i18n:
   cs:
-    displayName: "CODEXIS — Daně ČR"
-    summary: "Česká daňová legislativa a praxe — DPH, daň z příjmů, daňový řád, vyhlášky a judikatura."
+    displayName: "CODEXIS - Daně ČR"
+    summary: "Česká daňová legislativa a praxe - DPH, daň z příjmů, daňový řád, vyhlášky a judikatura."
   en:
-    displayName: "CODEXIS — Czech Tax Law"
-    summary: "Czech tax legislation and practice — VAT, income tax, tax code, decrees, and case law."
+    displayName: "CODEXIS - Czech Tax Law"
+    summary: "Czech tax legislation and practice - VAT, income tax, tax code, decrees, and case law."
   sk:
-    displayName: "CODEXIS — Dane ČR"
-    summary: "Česká daňová legislatíva a prax — DPH, daň z príjmov, daňový poriadok, vyhlášky a judikatúra."
-description: Use when the user's question relates to Czech tax law, or when the answer may depend on a tax rule even if framed around something else — daň z příjmů (DPFO/DPPO), DPH, spotřební daně, daň silniční, daň z nemovitých věcí, daňový řád, daňové přiznání, srážková/zálohová daň, výdajový paušál, paušální daň, OSVČ, DPP/DPČ, plátce, poplatník, dvojí zdanění, prodej nemovitosti, prodej podílu, dědění, darování, příjmy ze zahraničí, kryptoměny, investiční příjmy, pronájem, honoráře, § ZDP/ZDPH/DŘ, zákon č. 586/1992 / 235/2004 / 280/2009 / 353/2003 / 338/1992 Sb., or any § in a Czech tax statute. Activate also when the user does not name a tax but their situation has tax consequences (income events, transactions, ownership changes, cross-border flows, business obligations). Standalone authoritative skill — bundles general CODEXIS methodology with Czech tax-law reasoning framework; no need to load the general codexis skill.
+    displayName: "CODEXIS - Dane ČR"
+    summary: "Česká daňová legislatíva a prax - DPH, daň z príjmov, daňový poriadok, vyhlášky a judikatúra."
+description: Use when the user's question relates to Czech tax law, or when the answer may depend on a tax rule even if framed around something else - daň z příjmů (DPFO/DPPO), DPH, spotřební daně, daň silniční, daň z nemovitých věcí, daňový řád, daňové přiznání, srážková/zálohová daň, výdajový paušál, paušální daň, OSVČ, DPP/DPČ, plátce, poplatník, dvojí zdanění, prodej nemovitosti, prodej podílu, dědění, darování, příjmy ze zahraničí, kryptoměny, investiční příjmy, pronájem, honoráře, § ZDP/ZDPH/DŘ, zákon č. 586/1992 / 235/2004 / 280/2009 / 353/2003 / 338/1992 Sb., or any § in a Czech tax statute. Activate also when the user does not name a tax but their situation has tax consequences (income events, transactions, ownership changes, cross-border flows, business obligations). Standalone authoritative skill - bundles general CODEXIS methodology with Czech tax-law reasoning framework; no need to load the general codexis skill.
 ---
 
-# CODEXIS — Czech Tax Law
+# CODEXIS - Czech Tax Law
 
-Standalone skill for Czech tax questions. Domain methodology for analyzing any tax question — not a catalogue of answers.
+Standalone skill for Czech tax questions. Domain methodology for analyzing any tax question - not a catalogue of answers.
 
 ## Operating Assumptions
 
@@ -52,7 +52,7 @@ Standalone skill for Czech tax questions. Domain methodology for analyzing any t
 
 ## Klíčové české daňové zákony
 
-Referenční mapa — vždy ověř aktuální verzi přes `/versions` před extrakcí textu.
+Referenční mapa - vždy ověř aktuální verzi přes `/versions` před extrakcí textu.
 
 | Zákon | Číslo | CODEXIS base | Oblast |
 |---|---|---|---|
@@ -87,20 +87,20 @@ cdx-cli search CR --query "..." --current --limit 5
 - Pokud `/versions` neukáže boundary u query_date, odpověz to přímo.
 - Používej base ID pro `/versions`, version ID pro `/text` a `/toc`.
 - Pro konkrétní paragraf: nejdřív `/toc`, pak resolve `elementId` (např. `paragraf19c`), pak `/text?part=<elementId>`.
-- Nehádej `docId` — extrahuj z API response.
+- Nehádej `docId` - extrahuj z API response.
 - Při selhání `/toc` fallback na `/text` celého zákona, neustávej rešerši.
 - Nepoužívej web, když CODEXIS odpovídá.
 
 
 ## Workflow professionálního daňového poradce
 
-1. **Reframe dotazu.** Klientovo lay wording je téměř vždy nepřesné. Přelož ho do právní klasifikace — nejen „je to příjem?", ale „jaký typ příjmu podle zákona, z jakého titulu, mezi kým".
+1. **Reframe dotazu.** Klientovo lay wording je téměř vždy nepřesné. Přelož ho do právní klasifikace - nejen „je to příjem?", ale „jaký typ příjmu podle zákona, z jakého titulu, mezi kým".
 2. **Facts first, law second.** Než otevřeš zákon, shromáždi skutkový rámec: rezidence (osobní × daňová), právní forma stran (FO / PO / OSVČ / partnership / fond), timing (kdy událost nastala, zdaňovací období), substance-over-form (sham × genuine, dependent × independent work).
 3. **Identifikuj VŠECHNY daně v hrě.** Composite otázku rozlož na samostatné worksheet: daň z příjmů × DPH × pojistné (SP, ZP) × majetkové × spotřební × místní. Odpověď jen o DPFO u transakce, která zakládá i DPH nebo pojistnou povinnost, je neúplná.
-4. **Klasifikuj transakci** pod každou relevantní daň: najdi skutkovou podstatu — ustanovení, které definuje zdanitelnou událost.
-5. **Lex specialis check.** Zvláštní režim přebíjí obecný. Flat-rate, paušál, small-business regime, participation exemption, DTT, osvobození pro konkrétní situaci — vždy předřaď speciální úpravu.
+4. **Klasifikuj transakci** pod každou relevantní daň: najdi skutkovou podstatu - ustanovení, které definuje zdanitelnou událost.
+5. **Lex specialis check.** Zvláštní režim přebíjí obecný. Flat-rate, paušál, small-business regime, participation exemption, DTT, osvobození pro konkrétní situaci - vždy předřaď speciální úpravu.
 6. **Cross-border overlay.** Mezinárodní smlouva (DTT) → EU směrnice/nařízení → domácí zákon. **Smlouva může omezit, ne vytvořit daňovou povinnost.**
-7. **Procesní vrstva až nakonec.** Registrace, podání, lhůty, dokumentace, pokuty — po celé hmotněprávní analýze, ne mezi ní.
+7. **Procesní vrstva až nakonec.** Registrace, podání, lhůty, dokumentace, pokuty - po celé hmotněprávní analýze, ne mezi ní.
 8. **Draft-then-stress-test.** Návrh odpovědi ověř proti counter-examples („co když je protistrana zaměstnanec?", „co když byla transakce přeshraniční?", „co se změní, když překročí hranici?") a proti recent amendments.
 
 ## Hierarchie pramenů
@@ -131,26 +131,26 @@ Při rozporu mezi ministerským pokynem a judikaturou dává přednost judikatur
 
 ## Struktura odpovědi klientovi
 
-1. **Krátký závěr up front** — yes/no nebo bottom-line v jedné větě.
+1. **Krátký závěr up front** - yes/no nebo bottom-line v jedné větě.
 2. **Zvolená klasifikace** a důvod (pod který zákonný institut situaci řadíš).
-3. **Pozitivní pravidlo** — obecný režim.
+3. **Pozitivní pravidlo** - obecný režim.
 4. **Speciální režim / osvobození**, pokud se aplikuje.
 5. **Výpočet základu a sazby**.
 6. **Procesní povinnosti a lhůty**.
-7. **Caveats** — otevřené otázky, předpoklady, datum znění zákona použité v odpovědi.
+7. **Caveats** - otevřené otázky, předpoklady, datum znění zákona použité v odpovědi.
 8. **Citace** v pořadí: zákon → pokyny / stanoviska → judikatura → komentář.
 
 ## Struktura daňové analýzy
 
-Každou daňovou otázku procházej těmito aspekty, ne vždy jsou všechny relevantní — ale vědomě rozhodni, které vynechat:
+Každou daňovou otázku procházej těmito aspekty, ne vždy jsou všechny relevantní - ale vědomě rozhodni, které vynechat:
 
-1. **Subjekt daně** — kdo je *plátce* (odvádí za jiného) a kdo *poplatník* (nese ekonomické břemeno). Nezaměňuj.
-2. **Předmět daně** — co se zdaňuje (a co je vyloučeno z předmětu).
-3. **Osvobození** — co je v předmětu, ale zákon z daně vyjímá.
-4. **Základ daně** — z čeho se daň počítá (vs. sazba).
-5. **Sazba** — procento nebo pevná částka; pozor na progresi nebo zvláštní sazby.
-6. **Slevy, odpočty, zvýhodnění** — kdo a za jakých podmínek.
-7. **Procesní povinnost** — kdo podává, kdy, v jaké formě (daňový řád).
+1. **Subjekt daně** - kdo je *plátce* (odvádí za jiného) a kdo *poplatník* (nese ekonomické břemeno). Nezaměňuj.
+2. **Předmět daně** - co se zdaňuje (a co je vyloučeno z předmětu).
+3. **Osvobození** - co je v předmětu, ale zákon z daně vyjímá.
+4. **Základ daně** - z čeho se daň počítá (vs. sazba).
+5. **Sazba** - procento nebo pevná částka; pozor na progresi nebo zvláštní sazby.
+6. **Slevy, odpočty, zvýhodnění** - kdo a za jakých podmínek.
+7. **Procesní povinnost** - kdo podává, kdy, v jaké formě (daňový řád).
 
 Hmotněprávní pravidlo (kdo, kolik, z čeho) odděluj od procesní povinnosti (kdo podává, kdy, jak). Neodvozuj jedno z druhého automaticky.
 
@@ -158,18 +158,18 @@ Hmotněprávní pravidlo (kdo, kolik, z čeho) odděluj od procesní povinnosti 
 
 Kdykoli má odpověď praktický procesní rozměr (ať je hmotněprávní daň jakákoli), projdi krátce tyto úrovně:
 
-1. **Povinnost podat** tvrzení — zda hmotněprávní zákon ukládá podací povinnost a za jakých podmínek.
-2. **Fakultativní podání** — podle § 135 daňového řádu lze řádné daňové tvrzení podat i tehdy, když hmotněprávní povinnost nevznikla. Má smysl zmínit vždy, když má ekonomický efekt (vratka, uplatnění nároků).
-3. **Lhůty pro podání** — § 136 daňového řádu (základní lhůta, prodloužení, elektronická forma).
-4. **Přeplatek a jeho vrácení** — § 154 daňového řádu (co je přeplatek, započtení) a § 155 (žádost o vrácení, lhůty pro vydání).
+1. **Povinnost podat** tvrzení - zda hmotněprávní zákon ukládá podací povinnost a za jakých podmínek.
+2. **Fakultativní podání** - podle § 135 daňového řádu lze řádné daňové tvrzení podat i tehdy, když hmotněprávní povinnost nevznikla. Má smysl zmínit vždy, když má ekonomický efekt (vratka, uplatnění nároků).
+3. **Lhůty pro podání** - § 136 daňového řádu (základní lhůta, prodloužení, elektronická forma).
+4. **Přeplatek a jeho vrácení** - § 154 daňového řádu (co je přeplatek, započtení) a § 155 (žádost o vrácení, lhůty pro vydání).
 
-**Klíčové pravidlo:** Když odpověď končí závěrem „povinnost podat nevzniká", nezastav se tam. Připoj krátký dodatek: „Přiznání lze podat i dobrovolně podle § 135 daňového řádu, pokud by mohlo přinést uplatnění ročních nároků nebo vrácení přeplatku podle § 154–155 daňového řádu." Konkrétní výhodnost plyne z hmotněprávních nároků dané daně (u DPFO typicky § 15 / § 35ba / § 35c ZDP — viz sekce DPFO níže).
+**Klíčové pravidlo:** Když odpověď končí závěrem „povinnost podat nevzniká", nezastav se tam. Připoj krátký dodatek: „Přiznání lze podat i dobrovolně podle § 135 daňového řádu, pokud by mohlo přinést uplatnění ročních nároků nebo vrácení přeplatku podle § 154–155 daňového řádu." Konkrétní výhodnost plyne z hmotněprávních nároků dané daně (u DPFO typicky § 15 / § 35ba / § 35c ZDP - viz sekce DPFO níže).
 
 ### Upřesňující otázky (nekonkrétní dotaz)
 
-- „Chcete vědět jen to, zda máte povinnost podat přiznání, nebo i to, zda má smysl ho podat, i když povinnost nevznikne?" — otevře fakultativní větev.
-- „Máte za rok něco, co se uplatňuje až v přiznání nebo co by mohlo vést k vratce — typicky slevy, nezdanitelné části nebo zaplacené zálohy?" — otevírá přeplatek/nároky.
-- „Které daně se vás konkrétně týkají — příjmy FO, příjmy PO, DPH, nemovitosti, spotřební?" — otevírá volbu dílčího režimu.
+- „Chcete vědět jen to, zda máte povinnost podat přiznání, nebo i to, zda má smysl ho podat, i když povinnost nevznikne?" - otevře fakultativní větev.
+- „Máte za rok něco, co se uplatňuje až v přiznání nebo co by mohlo vést k vratce - typicky slevy, nezdanitelné části nebo zaplacené zálohy?" - otevírá přeplatek/nároky.
+- „Které daně se vás konkrétně týkají - příjmy FO, příjmy PO, DPH, nemovitosti, spotřební?" - otevírá volbu dílčího režimu.
 
 ### cdx-cli recept pro DŘ
 
@@ -179,13 +179,13 @@ cdx-cli get 'cdx://doc/<verze>/text?part=paragraf135'        # řádné tvrzení
 cdx-cli get 'cdx://doc/<verze>/text?part=paragraf154'        # přeplatek
 ```
 
-Při citaci statutární lhůty zachovej operativní kvalifikátory („nejpozději", „do", „po uplynutí") — jejich vypuštění mění právní význam.
+Při citaci statutární lhůty zachovej operativní kvalifikátory („nejpozději", „do", „po uplynutí") - jejich vypuštění mění právní význam.
 
 ### Procesní anti-patterny
 
 - **Odpovědět binárně „povinnost je / není"** a přehlédnout, že procesně lze podat i dobrovolně.
-- **Slučovat roviny** — „kdo je subjekt / kdy se posuzuje / kdo je povinen jednat / do kdy" rozlišuj, neslévej je do jedné věty.
-- **Nepřepínat mezi hmotným a procesním zákonem** — hmotný zákon (ZDP/ZDPH) určuje *co* se zdaňuje; procesní (DŘ) určuje *jak* se tvrdí, v jaké lhůtě a jak vracet přeplatek. Kompletní odpověď propojí obojí.
+- **Slučovat roviny** - „kdo je subjekt / kdy se posuzuje / kdo je povinen jednat / do kdy" rozlišuj, neslévej je do jedné věty.
+- **Nepřepínat mezi hmotným a procesním zákonem** - hmotný zákon (ZDP/ZDPH) určuje *co* se zdaňuje; procesní (DŘ) určuje *jak* se tvrdí, v jaké lhůtě a jak vracet přeplatek. Kompletní odpověď propojí obojí.
 
 ## Pravidla právního uvažování
 
@@ -197,11 +197,11 @@ Pokud ustanovení používá souhrnný legální pojem (např. „plátce", „p
 
 Při parafrázi zákonné definice zachovej všechny právně operativní kvalifikátory („započatých", „alespoň", „nejvýše", „po sobě následujících", „k rozvahovému dni", atd.). Jejich vypuštění je věcná chyba, ne stylistické zjednodušení.
 
-Nekončit u prvního nalezeného ustanovení. Ověřuj celý normativní stack — prováděcí předpisy, procesní předpisy, navazující ustanovení, cross-references. Pokud hmotněprávní pravidlo konkretizuje nebo podmiňuje jiný pramen, uveď to.
+Nekončit u prvního nalezeného ustanovení. Ověřuj celý normativní stack - prováděcí předpisy, procesní předpisy, navazující ustanovení, cross-references. Pokud hmotněprávní pravidlo konkretizuje nebo podmiňuje jiný pramen, uveď to.
 
 U praktických dotazů („jak postupovat", „co všechno řešit") pokrývej všechny relevantní dimenze: klasifikace, podmínky, výjimky, prahy, lhůty, evidenční povinnosti, vykazování, procesní kroky, sankce. Pokud některá vrstva není relevantní, řekni to explicitně místo tichého vynechání.
 
-Pokud právní závěr závisí na prahu, volbě režimu, typu osoby nebo jiné rozhodné podmínce, identifikuj ji. Konkrétní hodnoty (prahy, procenta, limity) **vždy ověřuj v aktuálním znění zákona** — nikdy je neuváděj z paměti.
+Pokud právní závěr závisí na prahu, volbě režimu, typu osoby nebo jiné rozhodné podmínce, identifikuj ji. Konkrétní hodnoty (prahy, procenta, limity) **vždy ověřuj v aktuálním znění zákona** - nikdy je neuváděj z paměti.
 
 Když odpověď vyžaduje kombinaci více předpisů, srovnej je podle funkce: který definuje subjekt, který určuje rozhodný okamžik, který stanoví procesní povinnost, který přenáší práva a povinnosti.
 
@@ -214,9 +214,9 @@ Před odesláním odpovědi ověř: neodpovídám-li z izolovaného ustanovení,
 ## Temporal anchoring
 
 - Vždy resolvuj verzi zákona k **query_date** (datum dotazu v system promptu).
-- Pro otázky „musím…", „lze…", „kolik…" — odpovídej podle znění účinného k query_date.
+- Pro otázky „musím…", „lze…", „kolik…" - odpovídej podle znění účinného k query_date.
 - Pokud uživatel výslovně odkazuje na jiné zdaňovací období, použij zákon v tehdejší verzi.
-- Nesplétni kalendářní rok, zdaňovací období a datum dotazu — jsou to tři různé věci.
+- Nesplétni kalendářní rok, zdaňovací období a datum dotazu - jsou to tři různé věci.
 
 ## Cross-referencing
 
@@ -230,10 +230,10 @@ Pokud jedna vrstva odkazuje na druhou („stanoví zvláštní předpis", „pod
 
 ## User-Facing Output
 
-- Odpovídej přesně na dotázaný pojem — první věta smí obsahovat jen definici nebo přímý závěr pro ten pojem.
-- Pro otázky typu „co všechno", „jaké jsou", „jak postupovat" to neznamená jeden § — projdi celý relevantní stack a nezkracuj.
+- Odpovídej přesně na dotázaný pojem - první věta smí obsahovat jen definici nebo přímý závěr pro ten pojem.
+- Pro otázky typu „co všechno", „jaké jsou", „jak postupovat" to neznamená jeden § - projdi celý relevantní stack a nezkracuj.
 - Je-li zákonné ustanovení formulováno podmíněně („…pokud…", „…s výjimkou…"), zachovej tu podmíněnost v odpovědi.
-- Uživatelské odkazy MUSÍ používat resolvovanou `https://` URL ze source bloku (každý citovaný dokument je k tool outputu připojen jako `【src_xxx】 url: https://…`): `[title](https://…)` nebo `[title](https://…#elementId)`. Schéma `cdx://` je POUZE adresace pro argumenty `cdx-cli get cdx://...` — nikdy ho nedávej do výstupu pro uživatele. Nikdy nevystavuj raw ID, API suffixy jako `/text`, `/meta`, `/toc`.
+- Uživatelské odkazy MUSÍ používat resolvovanou `https://` URL ze source bloku (každý citovaný dokument je k tool outputu připojen jako `【src_xxx】 url: https://…`): `[title](https://…)` nebo `[title](https://…#elementId)`. Schéma `cdx://` je POUZE adresace pro argumenty `cdx-cli get cdx://...` - nikdy ho nedávej do výstupu pro uživatele. Nikdy nevystavuj raw ID, API suffixy jako `/text`, `/meta`, `/toc`.
 - Při citaci paragrafu udělej z paragrafu samotného klikací referenci.
 - U citace soudního rozhodnutí (`JD`) musí být viditelný text odkazu kompaktní právní citace, ne zkrácený obecný titulek: `SOUD - Č. J. / SP. ZN. - DD.MM.RRRR` (např. `NSS - 1 Afs 123/2026 - 13.05.2026`). Sestav z metadat (search result nebo `/meta`): `SOUD` zkrať podle tabulky v `references/judikatura.md` skillu `codexis`, referenci vezmi z `cislaJednaci[0]` (jinak `spZns[0]`) a `- DD.MM.RRRR` z `releaseDate` přidej jen když datum existuje. Obecný titulek (`docType` + dlouhý název soudu) smí být jen sekundární text, nikdy primární odkaz; neznámý soud → jeho oficiální zkrácený název.
 
@@ -252,6 +252,6 @@ Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj
 
 Procesní vrstva (DŘ § 135–155) je inlined výše. Následující reference Read tool callem načti, když řešíš odpovídající doménu:
 
-- **Daň z příjmů fyzických osob (DPFO)** — `references/dane-prijmy-fo.md`. Použij, kdykoli uživatel řeší zdanění fyzické osoby (zaměstnání, OSVČ, nájem, investice, ostatní příjmy, paušální vs skutečné výdaje, slevy na dani a daňové zvýhodnění, daňové přiznání FO). Obsahuje 6-vrstvý workflow (klasifikace → výpočet → evidence → odčitatelné → sazba → slevy), mapu §§ ZDP a DPFO anti-patterny.
+- **Daň z příjmů fyzických osob (DPFO)** - `references/dane-prijmy-fo.md`. Použij, kdykoli uživatel řeší zdanění fyzické osoby (zaměstnání, OSVČ, nájem, investice, ostatní příjmy, paušální vs skutečné výdaje, slevy na dani a daňové zvýhodnění, daňové přiznání FO). Obsahuje 6-vrstvý workflow (klasifikace → výpočet → evidence → odčitatelné → sazba → slevy), mapu §§ ZDP a DPFO anti-patterny.
 - Deep-dive LAW change assessment: `references/czech-law-change-assessment.md` (jen u dotazů na novely a version boundaries).
 - Judikatura research: `references/judikatura.md` (rare primary source pro daně).

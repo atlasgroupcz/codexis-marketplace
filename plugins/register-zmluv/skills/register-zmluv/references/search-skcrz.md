@@ -1,23 +1,23 @@
 # SKCRZ Search Filter Values
 
-Slovak Central Register of Contracts (Centrálny register zmlúv, crz.gov.sk) — public-sector
+Slovak Central Register of Contracts (Centrálny register zmlúv, crz.gov.sk) - public-sector
 contracts published since 2011-01-01. All filters are optional; combine freely.
 Use via `register-zmluv search SKCRZ [OPTIONS]`.
 
 ## --query / -q
 Fulltext over `nazov` + subject (`predmet`) + party names. Typo-tolerant (fuzzy). Optional.
 
-Note `nazov` is the publisher's registration number (e.g. `073/2024`), not a descriptive title —
+Note `nazov` is the publisher's registration number (e.g. `073/2024`), not a descriptive title -
 `predmet` carries the description. Display `predmet`, not `nazov`.
 
 ## --ico
 IČO that matches **either** contract party. Exact match.
 The register stores both parties' IČOs in one flat list, so there is no publisher-only or
-supplier-only variant — this filter cannot tell you which side the organisation was on.
+supplier-only variant - this filter cannot tell you which side the organisation was on.
 
 ## --rezort
 Publishing sector/ministry id. Exact match.
-Opaque numeric id string (e.g. `114573`) — there is no lookup table and no endpoint to list the
+Opaque numeric id string (e.g. `114573`) - there is no lookup table and no endpoint to list the
 values, and despite the name it is not limited to ministries (a municipality has one too).
 Only use when the user supplies a concrete id.
 
@@ -39,11 +39,11 @@ Contracts with no date (source placeholder `0000-00-00` → null) are excluded b
 
 ## --offset / --limit
 Pagination. `limit` default 20, max 100. `offset` default 0.
-`offset + limit` must not exceed **10000** (deep-paging cap) — narrow with filters for more.
+`offset + limit` must not exceed **10000** (deep-paging cap) - narrow with filters for more.
 
 ## Notes
 - IČO is the 8-digit Slovak organisation identifier (e.g. `00151513`).
-- Values are in EUR. `sumaSpolu: 0` is common and does NOT mean the contract was free — report it
+- Values are in EUR. `sumaSpolu: 0` is common and does NOT mean the contract was free - report it
   as the registered value, don't infer gratuity.
 - Metadata-only: the API returns no contract text or PDFs. Each result's `url` is the public
   crz.gov.sk detail page, which links the official document and its attachments.
@@ -89,5 +89,5 @@ DOC_ID="SKCRZ123456"
 register-zmluv get "register-zmluv://doc/${DOC_ID}/meta" | jq '.contract'
 ```
 
-`meta` is the only document resource — this register is metadata-only, so there is no `/text`,
+`meta` is the only document resource - this register is metadata-only, so there is no `/text`,
 `/toc`, `/versions`, or `/parts` endpoint. For the official document, open the contract's `url`.

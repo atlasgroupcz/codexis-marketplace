@@ -79,7 +79,7 @@ function install_script() {
 function warn_on_missing_runtime() {
     for cmd in soffice pdftoppm; do
         command -v "$cmd" &>/dev/null && continue
-        printf "Warning: '%s' is not on PATH — document rendering will not work.\n" "$cmd" >&2
+        printf "Warning: '%s' is not on PATH - document rendering will not work.\n" "$cmd" >&2
         printf "         The guest image must provide LibreOffice and poppler-utils.\n" >&2
     done
 }

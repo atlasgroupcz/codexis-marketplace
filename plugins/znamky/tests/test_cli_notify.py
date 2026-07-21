@@ -51,7 +51,7 @@ def test_recipients_add_invalid_errors(tmp_path):
 # ── self-guard: adding your own address is a no-op (you always receive it) ────
 #
 # Driven in-process (not via _run) because dropping self needs notify._query_me_email
-# mocked, which a subprocess can't reach — same reason test_check_* below load _cli.
+# mocked, which a subprocess can't reach - same reason test_check_* below load _cli.
 
 
 def test_recipients_add_drops_signed_in_user(monkeypatch, tmp_path):
@@ -72,7 +72,7 @@ def test_recipients_set_drops_signed_in_user_keeps_others(monkeypatch, tmp_path)
     assert _recipients(tmp_path) == ["a@x.cz"]
 
 
-# Dropping the caller's address without a word reads as a silent failure — an agent
+# Dropping the caller's address without a word reads as a silent failure - an agent
 # that asked for it goes digging (`notify show`, `--help`) to find out what happened.
 
 
@@ -109,7 +109,7 @@ def test_recipients_add_other_address_stays_quiet(monkeypatch, tmp_path, capsys)
 def _load_cli():
     path = os.path.join(os.path.dirname(__file__), "..", "bin", "znamky-cli")
     # bin/znamky-cli has no .py suffix, so spec_from_file_location can't
-    # auto-detect a loader from the extension — pass one explicitly.
+    # auto-detect a loader from the extension - pass one explicitly.
     loader = importlib.machinery.SourceFileLoader("znamky_cli", path)
     spec = importlib.util.spec_from_file_location("znamky_cli", path, loader=loader)
     module = importlib.util.module_from_spec(spec)
@@ -117,11 +117,11 @@ def _load_cli():
     return module
 
 
-_cli = _load_cli()  # defs-only/stateless — load once, reuse across tests
+_cli = _load_cli()  # defs-only/stateless - load once, reuse across tests
 
 
 def _one_result():
-    """A single ok/no-collision result — just needs to clear the CLI's
+    """A single ok/no-collision result - just needs to clear the CLI's
     `if not results` guard so the notify path is reached."""
     return [{"ok": True, "display_name": "Test Mark", "new_collisions": []}]
 

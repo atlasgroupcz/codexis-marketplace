@@ -63,7 +63,7 @@ export interface NotifySettingsBodyProps {
 
 /**
  * Notification settings content (email toggle, "your address", "copy to" list,
- * in-app bell toggle) with no dialog shell of its own — a controlled component
+ * in-app bell toggle) with no dialog shell of its own - a controlled component
  * that reads/writes `value` via `onChange`. Used directly by `NotifySettings`
  * (as a standalone dialog) and by composite dialogs that combine it with other
  * sections (e.g. `SettingsDialog` + `ConnectionSection`).
@@ -98,7 +98,7 @@ export function NotifySettingsBody({ value, onChange, userEmail, labels }: Notif
       return
     }
     const key = v.toLowerCase()
-    // the user's own address is redundant (they always receive it) and dupes are pointless —
+    // the user's own address is redundant (they always receive it) and dupes are pointless -
     // both keep the field open with an explanation instead of silently dropping the address.
     if (key === userEmail.trim().toLowerCase()) {
       setErr(labels.ownAddress)
@@ -185,7 +185,7 @@ export function NotifySettingsBody({ value, onChange, userEmail, labels }: Notif
                     e.preventDefault()
                     commit()
                   } else if (e.key === 'Escape') {
-                    // keep Escape scoped to the field — save + close it, don't close the dialog
+                    // keep Escape scoped to the field - save + close it, don't close the dialog
                     e.preventDefault()
                     e.stopPropagation()
                     e.nativeEvent.stopImmediatePropagation()

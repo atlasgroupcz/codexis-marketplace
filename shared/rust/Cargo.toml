@@ -4,7 +4,7 @@ members = ["cdx-common", "cdx-notify", "cdx-cgi", "cdx-watch"]
 
 # The four crates share most of their dependency tree (serde, serde_json,
 # thiserror). As separate projects each compiled its own copy into its own
-# target/ — four trees, ~1.5 GB, and every shared dependency built four times.
+# target/ - four trees, ~1.5 GB, and every shared dependency built four times.
 # A workspace gives them one target/ and one Cargo.lock.
 #
 # The plugin CLIs deliberately stay outside: each ships its own binary and

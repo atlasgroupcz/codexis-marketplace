@@ -13,13 +13,13 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 10
       response:
-        # A real smlouvy.gov.cz detail link proves search returned hits —
+        # A real smlouvy.gov.cz detail link proves search returned hits -
         # immune to "nenašel jsem žádné" false-positives.
         matches: "smlouvy\\.gov\\.cz"
 
   - prompt: "A jen ty aktuálně platné, prosím."
     expect:
-      # Natural follow-up — may reuse step-1 chat context or re-search with --only-valid.
+      # Natural follow-up - may reuse step-1 chat context or re-search with --only-valid.
       tool_calls_max: 8
       response:
         matches: "smlouvy\\.gov\\.cz"

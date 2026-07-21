@@ -9,7 +9,7 @@ use crate::orsr::resolve_links;
 use crate::sources;
 
 const ROOT_HELP: &str = "\
-orsr-cli — Slovak commercial register / RPO lookup.
+orsr-cli - Slovak commercial register / RPO lookup.
 
 Output: JSON on stdout (consume with `jq`); on failure, an `ERROR:` line on stderr
 and a non-zero exit code. RPO responses are passed through verbatim, never reformatted.
@@ -261,7 +261,7 @@ fn build_search_params(args: &SearchArgs) -> Result<Vec<(String, String)>> {
     }
     if params.is_empty() {
         return Err(anyhow!(
-            "search needs at least one filter — use --ico, --name, --municipality, --street, --legal-form, --legal-status, --source-register, --main-activity, --active or a date filter"
+            "search needs at least one filter - use --ico, --name, --municipality, --street, --legal-form, --legal-status, --source-register, --main-activity, --active or a date filter"
         ));
     }
     Ok(params)

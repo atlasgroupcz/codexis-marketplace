@@ -2,7 +2,7 @@
 uuid: 2aeefd95-cd11-431e-9b6c-b7dd54f3bbae
 name: pdf
 icon: icon.svg
-description: "PDF — vygeneruj PDF, vyplň formulář, slouč/rozděl/orazítkuj, přečti naskenovanou smlouvu, rozsudek, fakturu (kde záleží na vzhledu). Ne pro čistý text — na ten stačí ocr."
+description: "PDF - vygeneruj PDF, vyplň formulář, slouč/rozděl/orazítkuj, přečti naskenovanou smlouvu, rozsudek, fakturu (kde záleží na vzhledu). Ne pro čistý text - na ten stačí ocr."
 version: 1.0.0
 allowed-tools: shell
 i18n:
@@ -17,14 +17,14 @@ i18n:
     summary: "Čítanie PDF vrátane vizuálnej kontroly, tvorba PDF, vypĺňanie formulárov, zlučovanie."
 ---
 
-# PDF — reading, creation, forms
+# PDF - reading, creation, forms
 
-**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` - report it and don't blindly
 retry. LibreOffice and poppler are part of the guest image, so a missing `soffice` or `pdftoppm`
 means something is broken with the image, not with your command. Report it; never work around it
 with a hand-rolled conversion that skips the visual check.
 
-## Reading a PDF — text and images, not one or the other
+## Reading a PDF - text and images, not one or the other
 
 Text extraction is exact but blind: it cannot tell you that a clause is struck through, that
 a stamp covers the signature, or that a table has merged cells. The page image shows all of
@@ -41,10 +41,10 @@ cdx-render -i /home/codexis/rozsudek.pdf
 
 Then `Read` the page PNGs alongside the extracted markdown and cross-check them. When they
 disagree about a number or a name, **the image wins for layout, the text wins for exact
-strings** — go back to the image and read the value off it.
+strings** - go back to the image and read the value off it.
 
 A scanned PDF has no text layer at all; `ocr` handles the OCR, but always look at the pages
-too — OCR silently mangles diacritics and handwritten annotations.
+too - OCR silently mangles diacritics and handwritten annotations.
 
 Long documents: render selectively rather than burning tokens on 200 pages.
 
@@ -63,8 +63,8 @@ soffice -env:UserInstallation="file:///tmp/lo_profile_$$" --headless \
   --convert-to pdf --outdir /home/codexis /home/codexis/smlouva.docx
 ```
 
-Only reach for `pdf-lib` (Node, preinstalled) when you need to manipulate an *existing* PDF —
-stamping, merging, filling fields — not to lay out a document from scratch.
+Only reach for `pdf-lib` (Node, preinstalled) when you need to manipulate an *existing* PDF -
+stamping, merging, filling fields - not to lay out a document from scratch.
 
 ## Page operations
 
@@ -81,7 +81,7 @@ for (const file of ['a.pdf', 'b.pdf']) {
 }
 fs.writeFileSync('merged.pdf', await out.save());
 
-// Split — keep pages 1-5
+// Split - keep pages 1-5
 const src = await PDFDocument.load(fs.readFileSync('input.pdf'));
 const part = await PDFDocument.create();
 const pages = await part.copyPages(src, [0, 1, 2, 3, 4]);
@@ -109,7 +109,7 @@ const { PDFDocument } = require('pdf-lib');
 const doc = await PDFDocument.load(fs.readFileSync('formular.pdf'));
 const form = doc.getForm();
 
-// List the fields first — never guess their names
+// List the fields first - never guess their names
 form.getFields().forEach((f) => console.log(f.getName(), f.constructor.name));
 
 form.getTextField('jmeno').setText('Jan Novák');
@@ -126,23 +126,23 @@ and a value written into the wrong field looks perfectly fine in the code.
 cdx-render -i formular-vyplneny.pdf
 ```
 
-## Verification — required
+## Verification - required
 
 1. `cdx-render -i output.pdf` and `Read` every page.
 2. Assume there are problems. Look for: clipped or overflowing text, overlapping elements,
    broken tables, missing diacritics, blank pages, wrong page order after a merge, values in
    the wrong form field.
-3. For anything over two pages, hand the images to a subagent with fresh eyes — you will
+3. For anything over two pages, hand the images to a subagent with fresh eyes - you will
    otherwise see what you intended rather than what is on the page.
 4. Fix and re-render before delivering.
 
-Never ship internal citation tokens (`【…†L1-L2】`) into the PDF body, and use ASCII hyphens —
+Never ship internal citation tokens (`【…†L1-L2】`) into the PDF body, and use ASCII hyphens -
 U+2011 renders as a box in several PDF viewers.
 
 ## Dependencies
 
-- `cdx-render` — PDF → page PNGs (poppler)
-- `ocr` — text extraction, including scanned pages
-- `pdf-lib` (Node, preinstalled) — page ops, forms, stamping
-- `qpdf`, `pdftoppm` — shell-side page operations
-- LibreOffice — docx → pdf
+- `cdx-render` - PDF → page PNGs (poppler)
+- `ocr` - text extraction, including scanned pages
+- `pdf-lib` (Node, preinstalled) - page ops, forms, stamping
+- `qpdf`, `pdftoppm` - shell-side page operations
+- LibreOffice - docx → pdf

@@ -1,4 +1,4 @@
-"""sledovane-dokumenty tracking.check() — weekly cron orchestration.
+"""sledovane-dokumenty tracking.check() - weekly cron orchestration.
 
 Covers both phases:
   1. Version detection: new versions → changes with diff/compare_url/amendments
@@ -6,7 +6,7 @@ Covers both phases:
 
 We mock at the level of clients.* high-level helpers (get_versions, get_meta,
 find_version_info, resolve_amendments) and diff.compute_version_diff /
-related.detect_changes — the pure transformations they wrap are covered in
+related.detect_changes - the pure transformations they wrap are covered in
 test_diff_*.py and test_related.py.
 """
 
@@ -147,7 +147,7 @@ class TestCheckDetectsNewVersion:
         _seed("ZAK1", baseline_vid="v1")
         mock_all["versions_by_id"]["ZAK1"] = _versions("v2")
         tracking.check()
-        # Second run with same versions — no additional change recorded
+        # Second run with same versions - no additional change recorded
         tracking.check()
         assert len(state.load_state("ZAK1")["changes"]) == 1
 
@@ -278,7 +278,7 @@ class TestCheckRelatedPhase:
         assert len(state.load_state("ZAK1")["changes"]) == 2
 
 
-# ── changed list (drives notifications) — deduped per document ───────────────
+# ── changed list (drives notifications) - deduped per document ───────────────
 
 
 class TestCheckChangedList:
@@ -301,7 +301,7 @@ class TestCheckChangedList:
         self, dokumenty_app_dir, mock_all
     ):
         # Same document changes in BOTH phase 1 (new version) and phase 1.5
-        # (related type) — it must appear in `changed` exactly once.
+        # (related type) - it must appear in `changed` exactly once.
         self._seed_with_related("ZAK1", ["JUDIKATURA"], baseline_vid="v1")
         mock_all["versions_by_id"]["ZAK1"] = _versions("v2")  # phase-1 change
         mock_all["related_changes"][("ZAK1", "JUDIKATURA")] = {

@@ -29,7 +29,7 @@ function ConversationHint() {
   )
 }
 
-/** Landing screen when no topics are tracked yet — explains what the app does. */
+/** Landing screen when no topics are tracked yet - explains what the app does. */
 export function EmptyTopics() {
   const { t } = useTranslation()
   const features = [

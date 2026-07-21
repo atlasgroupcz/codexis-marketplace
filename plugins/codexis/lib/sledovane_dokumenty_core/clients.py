@@ -187,7 +187,7 @@ def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
 
     The daemon reads the file itself (docx/pdf/txt + OCR) and runs one extraction
     pass. Returns the parsed ``response`` value (a dict/list when a JSON schema is
-    supplied, otherwise a string), or None on any failure — callers degrade
+    supplied, otherwise a string), or None on any failure - callers degrade
     gracefully rather than crash a scheduled run.
     """
     daemon_url = rest_base(os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL))

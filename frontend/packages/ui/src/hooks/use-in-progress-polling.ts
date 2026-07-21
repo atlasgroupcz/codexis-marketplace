@@ -31,7 +31,7 @@ const DEFAULT_BACKOFF: BackoffConfig = {
 
 /**
  * Polls for fresh data while an entity is in-progress, using exponential backoff.
- * Runs in parallel with WebSocket subscriptions as a safety net — subscriptions
+ * Runs in parallel with WebSocket subscriptions as a safety net - subscriptions
  * provide instant updates, polling ensures data freshness even when events are missed.
  */
 export function useInProgressPolling(options: UseInProgressPollingOptions): void {
@@ -142,7 +142,7 @@ export function useInProgressPolling(options: UseInProgressPollingOptions): void
           try {
             await p.refetch()
           } catch {
-            // Swallow refetch errors — next interval will retry
+            // Swallow refetch errors - next interval will retry
           }
         }
         attemptRef.current += 1

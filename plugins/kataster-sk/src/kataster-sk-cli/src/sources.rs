@@ -13,7 +13,7 @@ pub(crate) fn try_publish(entries: &[Value]) {
 }
 
 /// One MAPKA deep link per parcel found by `parcela`, capped and deduped.
-/// Only `kataster/…` routes are citable MAPKA pages — other categories
+/// Only `kataster/…` routes are citable MAPKA pages - other categories
 /// (municipalities, KU geocoding hits) are skipped.
 pub(crate) fn parcela_sources(body: &str, cap: usize) -> Vec<Value> {
     let parsed: Value = serde_json::from_str(body).unwrap_or(Value::Null);

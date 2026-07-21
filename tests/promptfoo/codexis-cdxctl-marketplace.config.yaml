@@ -3,7 +3,7 @@
 # install plugin → uninstall → remove marketplace. Uses anthropic/
 # claude-plugins-official to avoid mutating our own marketplace state.
 
-description: codexis cdxctl — marketplace + plugin lifecycle (claude-plugins-official)
+description: codexis cdxctl - marketplace + plugin lifecycle (claude-plugins-official)
 target_plugin: codexis
 
 prompts:
@@ -15,7 +15,7 @@ providers:
     config: {}
 
 tests:
-  - description: marketplace add (git source) — claude-plugins-official appears
+  - description: marketplace add (git source) - claude-plugins-official appears
     vars:
       prompt: "Přidej mi prosím marketplace z tohohle gitu: https://github.com/anthropics/claude-plugins-official.git (větev main)."
       tool_name: shell
@@ -47,7 +47,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: marketplace list — claude-plugins-official surfaces in the list
+  - description: marketplace list - claude-plugins-official surfaces in the list
     vars:
       prompt: "Jaké mám marketplace? Je tam claude-plugins-official?"
       tool_name: shell
@@ -80,7 +80,7 @@ tests:
       - type: regex
         value: 'claude-plugins-official'
 
-  - description: plugin install — commit-commands from claude-plugins-official
+  - description: plugin install - commit-commands from claude-plugins-official
     vars:
       prompt: "Nainstaluj mi z marketplace claude-plugins-official plugin commit-commands."
       tool_name: shell
@@ -97,7 +97,7 @@ tests:
           - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
       # Legacy did `installedPlugins(marketplace: $captured_id)`; here we
-      # check the global installedPlugins list — commit-commands is unique
+      # check the global installedPlugins list - commit-commands is unique
       # enough (only that marketplace ships it) that name match is fine.
       graphql: "query { marketplaces(filter: { installState: INSTALLED }) { plugins { name } } }"
       jsonpath: "$.marketplaces[*].plugins[*].name"
@@ -116,7 +116,7 @@ tests:
       - type: regex
         value: 'commit-commands'
 
-  - description: plugin uninstall — commit-commands leaves the installed list
+  - description: plugin uninstall - commit-commands leaves the installed list
     vars:
       prompt: "Odinstaluj plugin commit-commands."
       tool_name: shell
@@ -147,7 +147,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: marketplace remove — claude-plugins-official is gone
+  - description: marketplace remove - claude-plugins-official is gone
     vars:
       prompt: "Odeber marketplace claude-plugins-official."
       tool_name: shell

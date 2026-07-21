@@ -13,7 +13,7 @@
       "path": "/api/NL/rechtspraak/uitspraken/doc/{docId}/related",
       "method": "get",
       "summary": "Get related documents (by type, paginated)",
-      "description": "The citation graph for a Rechtspraak decision. Choose one direction via `type`: `citedLaws` (BWB laws this decision cites, grouped with article pinpoints), `citedDecisions` (decisions this one cites — includes foreign ECLIs such as CJEU/ECHR with no cdx-nl link), or `citingDecisions` (decisions that cite this one). Use /meta `relationCounts` first to learn which directions are non-empty and how many results exist.",
+      "description": "The citation graph for a Rechtspraak decision. Choose one direction via `type`: `citedLaws` (BWB laws this decision cites, grouped with article pinpoints), `citedDecisions` (decisions this one cites - includes foreign ECLIs such as CJEU/ECHR with no cdx-nl link), or `citingDecisions` (decisions that cite this one). Use /meta `relationCounts` first to learn which directions are non-empty and how many results exist.",
       "operationId": "getRelated_1",
       "parameters": [
         { "name": "docId", "in": "path", "required": true, "schema": { "type": "string" }, "example": "NLUIT1234" },

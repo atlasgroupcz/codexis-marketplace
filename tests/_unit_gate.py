@@ -5,7 +5,7 @@ unit tests need none of that and finish in seconds, so running them first turns
 a broken commit into a 6-second failure instead of a 2-minute one.
 
 Kept separate from `test-marketplace.py` so the gate stays testable on its own
-(`tests/test_unit_gate.py`) — nothing here talks to the daemon.
+(`tests/test_unit_gate.py`) - nothing here talks to the daemon.
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def pytest_available() -> bool:
 def missing_pytest_message() -> str:
     """Actionable error for an agent that has no pytest.
 
-    Unlike cargo and the JS toolchain, pytest is NOT optional — skipping it
+    Unlike cargo and the JS toolchain, pytest is NOT optional - skipping it
     would leave the gate green while testing nothing. Fail loudly, and say
     exactly how to repair the agent.
     """
@@ -138,8 +138,8 @@ def suites_for_group(
 
     Unlike [`select_suites`], which skips what the machine lacks, an explicit
     group request is a promise from the caller that the environment was
-    provisioned. Skipping here would report a green stage that ran nothing —
-    exactly the false-green this gate exists to prevent — so a missing
+    provisioned. Skipping here would report a green stage that ran nothing -
+    exactly the false-green this gate exists to prevent - so a missing
     toolchain is an error the pipeline must surface.
     """
     names = SUITE_GROUPS.get(group)
@@ -170,7 +170,7 @@ def run_gate(
 ) -> int:
     """Run every suite and return 0 only if all passed.
 
-    Every suite runs even after one fails — a broken pytest run must not hide a
+    Every suite runs even after one fails - a broken pytest run must not hide a
     broken cargo run, otherwise the next push just trades one red for another.
     """
     failed: list[str] = []
@@ -194,10 +194,10 @@ def run_default_gate(repo_root: Path) -> int:
     has_cargo = cargo_available()
     has_frontend = frontend_available(repo_root)
     if not has_cargo:
-        print("unit gate: no cargo on PATH — skipping Rust suites", flush=True)
+        print("unit gate: no cargo on PATH - skipping Rust suites", flush=True)
     if not has_frontend:
         print(
-            "unit gate: no bun/npx or frontend/node_modules — skipping frontend suite",
+            "unit gate: no bun/npx or frontend/node_modules - skipping frontend suite",
             flush=True,
         )
     return run_gate(select_suites(repo_root, cargo=has_cargo, frontend=has_frontend))
@@ -208,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
 
     Bare invocation runs every suite the machine can, which is what you want
     locally. `--suite` runs exactly one group and fails when its toolchain is
-    absent — the pipeline provisions them, so a gap there is a broken agent,
+    absent - the pipeline provisions them, so a gap there is a broken agent,
     not something to skip past.
     """
     parser = argparse.ArgumentParser(description="Run the repo's unit suites.")

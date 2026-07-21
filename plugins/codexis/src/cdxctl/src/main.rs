@@ -10,7 +10,7 @@ use client::GraphQLClient;
 use output::OutputFormat;
 use std::process;
 
-/// cdxctl — kubectl-style CLI for cdx-daemon platform management
+/// cdxctl - kubectl-style CLI for cdx-daemon platform management
 #[derive(Parser)]
 #[command(name = "cdxctl", version, about)]
 struct Cli {
@@ -219,7 +219,7 @@ enum MarketplaceCommands {
         /// Marketplace ID
         id: String,
     },
-    /// Update marketplace(s) — pull latest from git
+    /// Update marketplace(s) - pull latest from git
     Update {
         /// Marketplace ID (omit to update all)
         id: Option<String>,

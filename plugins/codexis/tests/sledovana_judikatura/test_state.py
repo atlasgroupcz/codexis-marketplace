@@ -1,4 +1,4 @@
-"""sledovana-judikatura state.py — I/O, resolve_uuid, report summaries."""
+"""sledovana-judikatura state.py - I/O, resolve_uuid, report summaries."""
 
 import pytest
 

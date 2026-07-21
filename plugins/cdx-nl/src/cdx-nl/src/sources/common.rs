@@ -30,7 +30,7 @@ pub(crate) struct SearchBaseArgs {
 impl SearchBaseArgs {
     pub(crate) fn insert_into(&self, payload: &mut JsonMap) {
         // sort/order are @RequestParam on the backend (see
-        // WettenOverheidNlBwbController.search and RechtspraakNlUitsprakenController.search) —
+        // WettenOverheidNlBwbController.search and RechtspraakNlUitsprakenController.search) -
         // they are appended to the search URL as query params, NOT into the JSON body.
         // `query` belongs to the body via WettenOverheidNlBwbSearchRequest.query /
         // RechtspraakSearchRequest.query.
@@ -78,7 +78,7 @@ pub(crate) struct DateRangeArgs {
     #[arg(long = "date-to", help = "Date to (YYYY-MM-DD)")]
     pub(crate) date_to: Option<String>,
 }
-// no insert_into — sources map to the right field names themselves
+// no insert_into - sources map to the right field names themselves
 
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct IssuedDateArgs {
@@ -88,7 +88,7 @@ pub(crate) struct IssuedDateArgs {
     #[arg(long = "issued-to", help = "Issued to date (YYYY-MM-DD)")]
     pub(crate) issued_to: Option<String>,
 }
-// no insert_into — sources map to the right field names themselves
+// no insert_into - sources map to the right field names themselves
 
 pub(crate) trait SearchPayloadArgs {
     fn base(&self) -> &SearchBaseArgs;
@@ -148,7 +148,7 @@ mod tests {
 
     use super::*;
 
-    // TODO: replace in Task B2/B6 — SK source-specific tests removed.
+    // TODO: replace in Task B2/B6 - SK source-specific tests removed.
     // Two tests that don't depend on any source were retained.
 
     #[test]

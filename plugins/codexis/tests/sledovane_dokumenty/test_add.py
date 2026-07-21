@@ -1,4 +1,4 @@
-"""sledovane-dokumenty tracking.add() — registration orchestration with mocked clients."""
+"""sledovane-dokumenty tracking.add() - registration orchestration with mocked clients."""
 
 import pytest
 
@@ -83,7 +83,7 @@ class TestAddHappyPath:
         assert s["parts"] == ["§1", "§2"]
 
     def test_baseline_equals_latest_version(self, dokumenty_app_dir, mock_clients):
-        # get_latest_version_id returns versions[0].versionId — first in list
+        # get_latest_version_id returns versions[0].versionId - first in list
         mock_clients["meta_by_id"]["ZAK1"] = _meta("Test")
         mock_clients["versions_by_id"]["ZAK1"] = _versions("newest", "older", "oldest")
         s = tracking.add("ZAK1")

@@ -13,13 +13,13 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 10
       response:
-        # Presence of a real doc link proves search actually returned hits —
+        # Presence of a real doc link proves search actually returned hits -
         # immune to "nenašel jsem žádné" false-positives.
         matches: "/doc/CZSB\\d+"
 
-  - prompt: "A nějaké aktuálně platné obecní vyhlášky — stačí pár příkladů."
+  - prompt: "A nějaké aktuálně platné obecní vyhlášky - stačí pár příkladů."
     expect:
-      # Natural follow-up — may be answered from step-1 chat context.
+      # Natural follow-up - may be answered from step-1 chat context.
       tool_calls_max: 8
       response:
         matches: "/doc/CZSB\\d+"

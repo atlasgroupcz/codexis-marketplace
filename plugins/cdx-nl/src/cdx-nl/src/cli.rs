@@ -404,7 +404,7 @@ mod tests {
         // Source-aware endpoints accept either uppercase or lowercase alias.
         assert!(Cli::try_parse_from(["cdx-nl", "schema", "meta", "NLBWB"]).is_ok());
         assert!(Cli::try_parse_from(["cdx-nl", "schema", "meta", "nlbwb"]).is_ok());
-        // Source is optional — generic-source intro mode.
+        // Source is optional - generic-source intro mode.
         assert!(Cli::try_parse_from(["cdx-nl", "schema", "meta"]).is_ok());
         // Shared endpoints take no source.
         assert!(Cli::try_parse_from(["cdx-nl", "schema", "text"]).is_ok());

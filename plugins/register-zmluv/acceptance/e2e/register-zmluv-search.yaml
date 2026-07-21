@@ -13,13 +13,13 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 10
       response:
-        # A real crz.gov.sk detail link proves search returned hits —
+        # A real crz.gov.sk detail link proves search returned hits -
         # immune to "nenašiel som žiadne" false-positives.
         matches: "crz\\.gov\\.sk"
 
   - prompt: "A len tie uzavreté od roku 2024, prosím."
     expect:
-      # Natural follow-up — may reuse step-1 chat context or re-search with --date-from.
+      # Natural follow-up - may reuse step-1 chat context or re-search with --date-from.
       tool_calls_max: 8
       response:
         matches: "crz\\.gov\\.sk"

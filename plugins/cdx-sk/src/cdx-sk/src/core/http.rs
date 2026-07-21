@@ -7,7 +7,7 @@ const CDX_SK_SCHEME: &str = "cdx-sk://";
 /// Display ID prefix -> API path (only Slovak domains).
 ///
 /// Order matters: `lookup_display_id_prefix` matches by `starts_with` in declaration order, and
-/// "SKNS" is a strict prefix of "SKNSS" — so SKNSS MUST appear before SKNS, else `SKNSS123` would
+/// "SKNS" is a strict prefix of "SKNSS" - so SKNSS MUST appear before SKNS, else `SKNSS123` would
 /// mis-route to najvyssi-sud. Longer prefixes are listed first to preserve this invariant.
 const ID_PREFIXES: &[(&str, &str)] = &[
     ("SKNUS", "SK/najvyssi-ustavny-sud"),
@@ -63,7 +63,7 @@ pub(crate) fn execute_get_request(
 
 /// Rewrite ONLY `cdx-sk://…/attachment/…` links in `body` to absolute https URLs,
 /// preserving any `#fragment` / `?query`. Non-attachment cdx:// links are left as-is.
-/// Pure string scan (no JSON parse, no regex) — the matched token ends at the first
+/// Pure string scan (no JSON parse, no regex) - the matched token ends at the first
 /// JSON/markdown delimiter.
 pub(crate) fn resolve_attachment_links(body: &str, base_url: &str) -> String {
     let mut out = String::with_capacity(body.len());
@@ -458,7 +458,7 @@ mod tests {
     fn resolves_attachment_amid_multibyte_slovak_text() {
         let base = "https://example.com/api";
         // Multi-byte chars (…, š, í) IMMEDIATELY adjacent to the token guard the char-boundary
-        // slicing — this resolver runs on Slovak content where a mis-sliced index panics.
+        // slicing - this resolver runs on Slovak content where a mis-sliced index panics.
         let body = "Rozhodnutie…cdx-sk://doc/SKVS100/attachment/content_1.pdf#page=3,viac š";
         let out = resolve_attachment_links(body, base);
         assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf#page=3"));

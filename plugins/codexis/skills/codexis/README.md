@@ -1,4 +1,4 @@
-# CODEXIS — Vyhledávání v právní databázi
+# CODEXIS - Vyhledávání v právní databázi
 
 ## Co to umí?
 
@@ -8,7 +8,7 @@ Tento skill umožňuje vyhledávat a číst dokumenty z právní databáze CODEX
 
 | Zdroj | Popis |
 |-------|-------|
-| **Česká legislativa** | Zákony, vyhlášky, nařízení vlády, obecní vyhlášky — v aktuálním i historickém znění |
+| **Česká legislativa** | Zákony, vyhlášky, nařízení vlády, obecní vyhlášky - v aktuálním i historickém znění |
 | **Slovenská legislativa** | Slovenské právní předpisy |
 | **Česká judikatura** | Rozhodnutí Nejvyššího soudu, Ústavního soudu, krajských soudů a dalších |
 | **Legislativa EU** | Nařízení a směrnice Evropské unie |

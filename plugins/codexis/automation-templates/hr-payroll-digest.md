@@ -23,9 +23,9 @@ i18n:
 ---
 Pomocí dovednosti CODEXIS sestav měsíční přehled novinek pro personalisty a mzdové účetní za uplynulý měsíc:
 
-1. **Pracovní právo** — novelizace zákoníku práce a souvisejících předpisů (BOZP, agenturní zaměstnávání, dohody), s účinností a dopadem do personální praxe.
-2. **Mzdy a odvody** — změny minimální a zaručené mzdy, sazeb pojistného, srážek, cestovních náhrad a parametrů výpočtu mzdy; nadcházející termíny.
-3. **Ochrana údajů a další povinnosti** — relevantní novinky pro zpracování osobních údajů zaměstnanců a další HR povinnosti.
+1. **Pracovní právo** - novelizace zákoníku práce a souvisejících předpisů (BOZP, agenturní zaměstnávání, dohody), s účinností a dopadem do personální praxe.
+2. **Mzdy a odvody** - změny minimální a zaručené mzdy, sazeb pojistného, srážek, cestovních náhrad a parametrů výpočtu mzdy; nadcházející termíny.
+3. **Ochrana údajů a další povinnosti** - relevantní novinky pro zpracování osobních údajů zaměstnanců a další HR povinnosti.
 
 Pravidla:
 - Zaměř se na obecně použitelné novinky, ne na situaci konkrétního zaměstnavatele.

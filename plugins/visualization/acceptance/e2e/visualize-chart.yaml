@@ -2,7 +2,7 @@ name: visualize-chart
 description: Verify the visualize router picks the chart type, reads its sub-skill files, and produces an HTML file at the requested path.
 
 # The visualization plugin is a router with 10 sub-types. Testing one
-# representative type (chart — bar) exercises the full router→sub-skill→
+# representative type (chart - bar) exercises the full router→sub-skill→
 # template→write workflow. State.file is the strong oracle: an HTML file
 # exists at the user-requested path means the whole pipeline ran.
 #
@@ -11,7 +11,7 @@ description: Verify the visualize router picks the chart type, reads its sub-ski
 # external state.
 
 steps:
-  - prompt: "Vykresli mi sloupcový graf populace největších českých měst — Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
+  - prompt: "Vykresli mi sloupcový graf populace největších českých měst - Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
     expect:
       tool_call:
         # AI uses the typed writeFile tool to drop the HTML output (not shell

@@ -44,5 +44,5 @@ Integer page size, 1-100. Default: 20.
 
 ## Identifiers (result fields, not search filters)
 - Display ID: `SKNSS` + number, e.g. `SKNSS12345`.
-- ECLI: `ECLI:SK:NSSSR:{year}:{ics}.{seq}`, e.g. `ECLI:SK:NSSSR:2022:1.Vs.1.2021.1`. Court segment is always `NSSSR` — distinct from the Supreme Court's `NSSR`.
+- ECLI: `ECLI:SK:NSSSR:{year}:{ics}.{seq}`, e.g. `ECLI:SK:NSSSR:2022:1.Vs.1.2021.1`. Court segment is always `NSSSR` - distinct from the Supreme Court's `NSSR`.
 - Reference fields are unstructured free text, so there is no `/related` surface.

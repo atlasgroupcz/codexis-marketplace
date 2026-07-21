@@ -59,7 +59,7 @@ export interface SettingsDialogProps {
  * Composite settings dialog: notifications is the primary content (the dialog
  * footer's Save persists the notify values), with an optional inline
  * connection/credential section beneath it. The connection section
- * self-manages its own credential via its own `onSave`/`onDelete` — it never
+ * self-manages its own credential via its own `onSave`/`onDelete` - it never
  * hides the notify section, it only ever shows a "not connected" banner.
  *
  * Apps that only need notifications should render `NotifySettings` directly
@@ -78,7 +78,7 @@ export function SettingsDialog({ open, onOpenChange, notify, connection }: Setti
   }, [open, notify.values.email, notify.values.inApp, notify.values.recipients])
 
   // Instant save: every change (toggle, recipient) persists immediately, like macOS/iOS
-  // settings. No Save/Cancel footer — the dialog just closes (via the header ✕ / backdrop).
+  // settings. No Save/Cancel footer - the dialog just closes (via the header ✕ / backdrop).
   const handleChange = (next: NotifyValues) => {
     setValue(next)
     notify.onSave(next)

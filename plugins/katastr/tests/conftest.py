@@ -1,7 +1,7 @@
 """Shared fixtures for katastr unit tests.
 
 Adds katastr_core to sys.path and isolates filesystem state per test by
-monkeypatching APP_DIR to a tmp_path — no tests ever touch the real
+monkeypatching APP_DIR to a tmp_path - no tests ever touch the real
 ~/.cdx/apps/katastr/ directory.
 """
 
@@ -45,7 +45,7 @@ def mock_cuzk(monkeypatch):
     "raise_exc" allows simulating API errors.
 
     fetch_by_id resolves by scanning the same "data" dict for a record whose
-    "id" field matches — so once a proceeding is seeded via `add()`, later
+    "id" field matches - so once a proceeding is seeded via `add()`, later
     `check_one()` calls (which fetch by the stored api_id) still find it. When
     more than one proceeding is seeded, give each `_cuzk_record()` a distinct
     `record_id`; otherwise fetch_by_id can't tell them apart.

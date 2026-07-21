@@ -1,7 +1,7 @@
 name: nrpzs-lookup
 description: Verify the nrpzs skill calls nrpzs-cli against the public NRPZS API and relays provider info back to the user.
 
-# Deterministic target: Oblastní nemocnice Příbram, a.s. — IČO 27085031,
+# Deterministic target: Oblastní nemocnice Příbram, a.s. - IČO 27085031,
 # Středočeský kraj. Public provider with a stable record in NRPZS.
 
 steps:

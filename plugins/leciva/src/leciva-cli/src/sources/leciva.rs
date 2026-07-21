@@ -8,21 +8,21 @@ pub(crate) const SEARCH_LECIVA_HELP: &str = r#"Examples:
   leciva-cli search CZSUKL --kod-sukl 0000009"#;
 
 /// Search filters for the Czech Medicines Registry (SÚKL). Mirrors
-/// `LecivaSearchRequest` — every field is optional.
+/// `LecivaSearchRequest` - every field is optional.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchLecivaArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "kod-sukl", help = "Kód SÚKL — exact match")]
+    #[arg(long = "kod-sukl", help = "Kód SÚKL - exact match")]
     pub(crate) kod_sukl: Option<String>,
-    #[arg(long, help = "ATC code — exact match")]
+    #[arg(long, help = "ATC code - exact match")]
     pub(crate) atc: Option<String>,
-    #[arg(long, help = "Pharmaceutical form (Forma) — resolved Czech name; see `get …/doc/values/forma`")]
+    #[arg(long, help = "Pharmaceutical form (Forma) - resolved Czech name; see `get …/doc/values/forma`")]
     pub(crate) forma: Option<String>,
-    #[arg(long, help = "Dispensing category (Způsob výdeje) — resolved name; see `…/doc/values/vydej`")]
+    #[arg(long, help = "Dispensing category (Způsob výdeje) - resolved name; see `…/doc/values/vydej`")]
     pub(crate) vydej: Option<String>,
-    #[arg(long, help = "Registration status (Stav registrace) — resolved name; see `…/doc/values/stav`")]
+    #[arg(long, help = "Registration status (Stav registrace) - resolved name; see `…/doc/values/stav`")]
     pub(crate) stav: Option<String>,
     #[arg(long, help = "Active substance name (fulltext against látky)")]
     pub(crate) latka: Option<String>,

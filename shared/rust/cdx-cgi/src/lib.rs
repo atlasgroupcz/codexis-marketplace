@@ -1,5 +1,5 @@
 //! Minimal CGI runtime shared by the hosted-component handlers: query parsing,
-//! body reading, and JSON/error response emission. No plugin specifics — a pure
+//! body reading, and JSON/error response emission. No plugin specifics - a pure
 //! capability crate, independent of the notify and watcher capabilities.
 
 use std::env;
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn read_body_rejects_content_length_over_cap() {
-        // 64 MiB + 1 — over the cap, but small enough that the pre-fix code
+        // 64 MiB + 1 - over the cap, but small enough that the pre-fix code
         // fails by hitting EOF on stdin rather than by refusing the length.
         std::env::set_var("CONTENT_LENGTH", (64 * 1024 * 1024 + 1).to_string());
         let result = read_body();

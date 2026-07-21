@@ -1,7 +1,7 @@
 """E-mail the user a summary of newly detected insolvency changes.
 
 Uses the daemon's plugin e-mail API (POST /rest/v1/plugin/email/send). Auth is the
-VM/daemon token the host writes to ~/.cdx/env/secret (the same token cdxctl uses) —
+VM/daemon token the host writes to ~/.cdx/env/secret (the same token cdxctl uses) -
 NOT CODEXIS_USER_API_TOKEN, which is a JWT for external Codexis sources and is
 rejected by the gateway. The daemon URL comes from CODEXIS_PUBLIC_DAEMON_URL, whose
 value is the GraphQL URL. The recipient defaults to the authenticated user; pass
@@ -90,7 +90,7 @@ def without_self(recipients: list | None) -> list:
 
     The signed-in user always receives the e-mail, so listing their own address
     as an extra is redundant (and shows as a duplicate pill in the UI). This is
-    the store-time guard for the CLI and daemon write paths — the FE dialog
+    the store-time guard for the CLI and daemon write paths - the FE dialog
     already blocks it on entry. Case-insensitive. When the signed-in user can't
     be resolved, the list is returned unchanged (keep an extra rather than drop a
     real recipient on a transient lookup failure). No `me` lookup for an empty
@@ -119,7 +119,7 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
     auth = _load_auth()
     if not daemon_url or not auth:
         raise InsolvenceError(
-            "E-mail nelze odeslat — chybí CODEXIS_PUBLIC_DAEMON_URL nebo daemon "
+            "E-mail nelze odeslat - chybí CODEXIS_PUBLIC_DAEMON_URL nebo daemon "
             "token (~/.cdx/env/secret). Spouštějte přes automatizaci v CODEXIS."
         )
 
@@ -170,14 +170,14 @@ def build_summary(results: list) -> tuple[str, str, str] | None:
         return None
 
     if len(changed) == 1 and total == 1:
-        subject = f"Insolvence: nová změna — {changed[0]['display_name']}"
+        subject = f"Insolvence: nová změna - {changed[0]['display_name']}"
     else:
         subject = f"Insolvence: {total} nových změn u {len(changed)} sledovaných subjektů"
 
     text_lines = ["Hlídač insolvencí zaznamenal nové změny:", ""]
     html_rows = []
     for r in changed:
-        text_lines.append(f"{r['display_name']} — {len(r['changes'])} nových změn:")
+        text_lines.append(f"{r['display_name']} - {len(r['changes'])} nových změn:")
         for c in r["changes"]:
             text_lines.append(f"  • {c.get('popis') or c.get('typ') or ''}")
         text_lines.append("")

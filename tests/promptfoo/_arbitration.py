@@ -2,14 +2,14 @@
 
 The deterministic promptfoo assertions (tool-call shape, regex, GraphQL/file state,
 the `assert_no_tool_call` anti-scrape check) over-fire on legitimate-but-flagged AI
-behavior — e.g. a single `curl`/HEAD to confirm a URL the plugin returned actually
+behavior - e.g. a single `curl`/HEAD to confirm a URL the plugin returned actually
 resolves. LLM nondeterminism makes those failures intermittent.
 
 When `run.py --arbitrate` is set, every row whose deterministic assertions FAILED is
 re-graded by an independent LLM judge against author-defined "correctness criteria"
 (`vars.arbitration.{correct,incorrect}`). The judge decides CORRECT (the deterministic
 check was a false positive → flip the row to PASS) or INCORRECT (a real failure → stay
-FAIL). Passing rows never call the judge — no cost.
+FAIL). Passing rows never call the judge - no cost.
 
 Judge transport is provider-agnostic: any OpenAI-compatible `/chat/completions` endpoint
 (the org LiteLLM proxy, OpenAI, a gateway). Mirrors cdx-daemon `codexis-eval-ops`'s
@@ -268,7 +268,7 @@ def arbitrate(case: FailedCase, *,
 
 # --------------------------------------------------------------------------- #
 # Judge transport (OpenAI-compatible) + endpoint resolution + file cache.
-# Not unit-tested (network) — kept thin so `arbitrate`'s `call` can be stubbed.
+# Not unit-tested (network) - kept thin so `arbitrate`'s `call` can be stubbed.
 # --------------------------------------------------------------------------- #
 
 def resolve_endpoint(env: Optional[Mapping[str, str]] = None) -> tuple[str, str, str]:

@@ -65,7 +65,7 @@
       "zastaveni": "Stopped",
       "zpetvzeti": "Withdrawn",
       "now": "now",
-      "expected": "—"
+      "expected": "-"
     },
     "type": {
       "vklad": "Entry",
@@ -101,7 +101,7 @@
     "inAppLabel": "In the notification center",
     "inAppDescription": "",
     "section": "Notifications",
-    "ownAddress": "That's your address — you always get the e-mail.",
+    "ownAddress": "That's your address - you always get the e-mail.",
     "duplicate": "That address is already in the list."
   },
   "connection": {

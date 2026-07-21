@@ -45,5 +45,5 @@ Integer page size, 1-100. Default: 20.
 
 ## Identifiers (result fields, not search filters)
 - Display ID: `SKNS` + number, e.g. `SKNS12345`.
-- ECLI: `ECLI:SK:NSSR:{year}:…` — court segment `NSSR` (distinct from the Admin. Supreme Court's `NSSSR`); may be empty on older records.
-- `meritoVeci` (subject matter) is unstructured free text — the only reference field; there is no `/related` surface.
+- ECLI: `ECLI:SK:NSSR:{year}:…` - court segment `NSSR` (distinct from the Admin. Supreme Court's `NSSSR`); may be empty on older records.
+- `meritoVeci` (subject matter) is unstructured free text - the only reference field; there is no `/related` surface.

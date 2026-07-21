@@ -85,7 +85,7 @@ describe('SettingsDialog', () => {
     expect(onSaveConnection).toHaveBeenCalledWith({ apiKey: 'XYZ' })
     expect(onSaveNotify).not.toHaveBeenCalled()
 
-    // notify persists instantly (no footer) — toggling the bell saves immediately
+    // notify persists instantly (no footer) - toggling the bell saves immediately
     fireEvent.click(screen.getByLabelText('Zvoneček v aplikaci'))
     expect(onSaveNotify).toHaveBeenLastCalledWith({ email: true, inApp: false, recipients: [] })
   })

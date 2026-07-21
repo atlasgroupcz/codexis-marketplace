@@ -1,7 +1,7 @@
 """Shared fixtures for insolvence unit tests.
 
 Adds insolvence_core to sys.path and isolates filesystem state per test by
-monkeypatching APP_DIR to a tmp_path — no test ever touches the real
+monkeypatching APP_DIR to a tmp_path - no test ever touches the real
 ~/.cdx/apps/insolvence/ directory.
 """
 

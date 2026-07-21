@@ -232,7 +232,7 @@ def run_yaml(client: DaemonClient, plugin_name: str, yaml_path: Path,
         expect = step.get("expect") or {}
         try:
             run_step_checks(expect, result, captured, client)
-            # Step passed — run captures (if any) to make values available
+            # Step passed - run captures (if any) to make values available
             # to subsequent steps as {{ name }}.
             captured.update(do_graphql_captures(step.get("capture"), client, captured))
             recorded.append({"prompt": prompt, "result": result, "status": "PASS"})
@@ -264,7 +264,7 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
     r.log("Installing…")
     # Uninstall first (ignore errors) to guarantee postInstall fires fresh.
     # Without this, a plugin left installed from a prior crashed run causes
-    # the next install_plugin to no-op — leaving PATH / binaries in a stale
+    # the next install_plugin to no-op - leaving PATH / binaries in a stale
     # state and making every AI call pay for binary discovery overhead.
     try:
         client.uninstall_plugin(plugin_id)
@@ -349,7 +349,7 @@ def main() -> int:
     plugin_names = pick_plugins(args, r)
 
     if not plugin_names:
-        r.log("No plugins to test — done.")
+        r.log("No plugins to test - done.")
         return r.summary()
 
     our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)

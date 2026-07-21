@@ -11,7 +11,7 @@ pub(crate) const SEARCH_SKNSS_HELP: &str = r#"Example:
   cdx-sk search SKNSS --case-number "1Vs/1/2021"
   cdx-sk search SKNSS --court-first-instance "Krajský súd v Košiciach" --date-from 2024-01-01"#;
 
-/// Search arguments for nssud_sk — Najvyšší správny súd SR (Supreme Administrative Court).
+/// Search arguments for nssud_sk - Najvyšší správny súd SR (Supreme Administrative Court).
 /// The `/search` body pages with `from`/`size` and every JSON key is the camelCase field name.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchSknssArgs {

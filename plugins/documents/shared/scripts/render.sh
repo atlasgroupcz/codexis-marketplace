@@ -25,7 +25,7 @@ usage: ${SCRIPT_NAME} -i <file> [-o <dir>] [-r <dpi>] [-f <n>] [-l <n>]
 options:
     -i|--input     <file>    Document to render (required)
     -o|--output    <dir>     Output directory (default: <input-dir>/.tmp/<basename>-pages)
-    -r|--dpi       <n>       Resolution (default: 150 — readable, cheap on tokens)
+    -r|--dpi       <n>       Resolution (default: 150 - readable, cheap on tokens)
     -f|--first     <n>       First page to render
     -l|--last      <n>       Last page to render
     -h|--help                Show this help

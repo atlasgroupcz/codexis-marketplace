@@ -1,8 +1,8 @@
-/* Branded spot illustrations for empty states — CODEXIS green, editorial line+fill. */
+/* Branded spot illustrations for empty states - CODEXIS green, editorial line+fill. */
 
 type ArtProps = { className?: string }
 
-/** "We watch the ISIR register for you" — a radar sweeping over the register. */
+/** "We watch the ISIR register for you" - a radar sweeping over the register. */
 export function WatchRegisterArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
@@ -28,7 +28,7 @@ export function WatchRegisterArt({ className }: ArtProps) {
   )
 }
 
-/** "No insolvency proceedings" — a reassuring shield with a check. */
+/** "No insolvency proceedings" - a reassuring shield with a check. */
 export function NoProceedingsArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
@@ -62,7 +62,7 @@ export function NoProceedingsArt({ className }: ArtProps) {
   )
 }
 
-/** "Pick a subject from the list" — a ledger with a highlighted row. */
+/** "Pick a subject from the list" - a ledger with a highlighted row. */
 export function PickSubjectArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
@@ -88,7 +88,7 @@ export function PickSubjectArt({ className }: ArtProps) {
   )
 }
 
-/** "No changes yet, you're being watched" — a bell at rest with a green check. */
+/** "No changes yet, you're being watched" - a bell at rest with a green check. */
 export function NoChangesArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">

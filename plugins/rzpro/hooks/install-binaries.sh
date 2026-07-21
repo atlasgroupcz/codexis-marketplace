@@ -53,7 +53,7 @@ install_binary "$(select_binary_source "rzpro-cli")" "rzpro-cli"
 
 # Migrate off the pre-1.1 local index. Old versions downloaded ~57 MB of KSRZIS
 # CSV datasets to ~/.cdx/apps/rzpro; the API client needs none of it. Best-effort
-# — MUST NOT fail install/update, hence || true (no sudo: the dir is user-owned).
+# - MUST NOT fail install/update, hence || true (no sudo: the dir is user-owned).
 USER_HOME="${CODEXIS_PUBLIC_USER_HOME:-$HOME}"
 if [[ -e "${USER_HOME}/.cdx/apps/rzpro" ]]; then
   rm -rf "${USER_HOME}/.cdx/apps/rzpro" 2>/dev/null || true

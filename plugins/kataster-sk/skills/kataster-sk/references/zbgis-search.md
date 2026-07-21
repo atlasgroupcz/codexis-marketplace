@@ -9,7 +9,7 @@ Accessed exclusively through `kataster-sk-cli`, which sends the browser-like
 
 ## Endpoints
 
-### Geocode — cadastral units, municipalities, places (`kataster-sk-cli ku`)
+### Geocode - cadastral units, municipalities, places (`kataster-sk-cli ku`)
 
 ```
 GET /kataster?q={text}
@@ -62,15 +62,15 @@ Prefix-matches parcel numbers in the given KU. Response items:
 
 - `category`: `parcela-c` (register C) or `parcela-e` (register E)
 - `id`: object id for the ArcGIS `query?objectIds=` call (see `arcgis-api.md`)
-- `route`: path suffix for the MAPKA deep link —
+- `route`: path suffix for the MAPKA deep link -
   `https://zbgis.skgeodesy.sk/mapka/sk/{route}` (parcel number has `/` → `_`)
 
-Empty result is `{"items": [], "total": {"count": -1}}` — the parcel number does
+Empty result is `{"items": [], "total": {"count": -1}}` - the parcel number does
 not exist in that KU (or the query type is not supported anonymously; owner-name
 search returns empty for anonymous sessions).
 
 ## Limitations
 
 - No pagination metadata; long result lists are truncated by the server.
-- Owner-name search is not available anonymously — do not present it as an option.
+- Owner-name search is not available anonymously - do not present it as an option.
 - Services may be temporarily unavailable (post-2025 cyberattack recovery).

@@ -20,7 +20,7 @@ interface FeedItemProps {
   onClick: () => void
 }
 
-/** One readable row on the monitoring feed — shadcn Item, type shown by icon. */
+/** One readable row on the monitoring feed - shadcn Item, type shown by icon. */
 export function FeedItem({
   icon,
   unread,

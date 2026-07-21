@@ -19,17 +19,17 @@
   "i18n": {
     "cs": {
       "displayName": "Hlídač insolvencí ČR",
-      "description": "Sledování insolvenčního rejstříku (ISIR) — hlídejte firmy (IČO) i osoby a nechte se upozornit na nová a změněná insolvenční řízení.",
+      "description": "Sledování insolvenčního rejstříku (ISIR) - hlídejte firmy (IČO) i osoby a nechte se upozornit na nová a změněná insolvenční řízení.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "insolvency": "Insolvence", "registry": "Registr" }
     },
     "en": {
       "displayName": "Czech Insolvency Watchdog",
-      "description": "Monitor the Czech Insolvency Register (ISIR) — watch companies (IČO) and people and get alerted to new and changed insolvency proceedings.",
+      "description": "Monitor the Czech Insolvency Register (ISIR) - watch companies (IČO) and people and get alerted to new and changed insolvency proceedings.",
       "tagLabels": { "legal": "Law", "czech": "Czech Republic", "insolvency": "Insolvency", "registry": "Registry" }
     },
     "sk": {
       "displayName": "Hliadač insolvencií ČR",
-      "description": "Sledovanie insolvenčného registra (ISIR) — sledujte firmy (IČO) aj osoby a nechajte sa upozorniť na nové a zmenené insolvenčné konania.",
+      "description": "Sledovanie insolvenčného registra (ISIR) - sledujte firmy (IČO) aj osoby a nechajte sa upozorniť na nové a zmenené insolvenčné konania.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "insolvency": "Insolvencia", "registry": "Register" }
     }
   },

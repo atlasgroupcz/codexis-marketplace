@@ -1,4 +1,4 @@
-"""Insolvency subject tracking — state management on top of the ISIR lookup.
+"""Insolvency subject tracking - state management on top of the ISIR lookup.
 
 A tracked *subject* is either a company (by IČO) or a natural person (name +
 date of birth). Each subject may have zero or more insolvency proceedings
@@ -228,7 +228,7 @@ def _proceeding_changes(old_r: dict, new_r: dict) -> list:
                 "detected_on": now_utc(),
                 "typ": "zmena_stavu",
                 "spisova_znacka": sp,
-                "popis": f"Změna stavu řízení {sp}: {old_stav or '—'} → {new_stav}",
+                "popis": f"Změna stavu řízení {sp}: {old_stav or '-'} → {new_stav}",
                 "old_stav": old_stav,
                 "new_stav": new_stav,
                 "confirmed_on": None,

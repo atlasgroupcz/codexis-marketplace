@@ -1,4 +1,4 @@
-"""notify: summary building + send gating (no network — _send_email is stubbed)."""
+"""notify: summary building + send gating (no network - _send_email is stubbed)."""
 
 import json
 from unittest.mock import patch
@@ -122,7 +122,7 @@ class TestRecipients:
         assert captured.get("to") == ["x@y.cz"]
 
     def test_auth_uses_secret_file_not_env(self, monkeypatch, tmp_path):
-        # CODEXIS_USER_API_TOKEN is a Codexis-DB JWT — must NOT authenticate the daemon API.
+        # CODEXIS_USER_API_TOKEN is a Codexis-DB JWT - must NOT authenticate the daemon API.
         monkeypatch.setenv("CODEXIS_USER_API_TOKEN", "codexis-token-must-not-be-used")
         cap = _stub_daemon(monkeypatch, tmp_path, secret="vm-token")
         notify._send_email("subj", "body")
@@ -181,7 +181,7 @@ class TestInappChangeSummary:
         assert captured["link"] == "/katastr"
 
     def test_no_change_does_not_send(self, monkeypatch):
-        # No change: the bell stays silent — no _send_inapp call at all.
+        # No change: the bell stays silent - no _send_inapp call at all.
         calls = []
         monkeypatch.setattr(
             notify, "_send_inapp", lambda *a, **k: calls.append((a, k)) or True
@@ -290,7 +290,7 @@ class TestQueryMeEmail:
     def test_none_on_non_dict_json_response(self, monkeypatch, tmp_path, raw):
         # A gateway/proxy in maintenance mode can return syntactically valid JSON
         # whose top level isn't an object (e.g. bare `null`, an array, or a string).
-        # json.load succeeds, so this must not crash on the subsequent .get() — it
+        # json.load succeeds, so this must not crash on the subsequent .get() - it
         # must return None.
         _stub_daemon(monkeypatch, tmp_path)
 

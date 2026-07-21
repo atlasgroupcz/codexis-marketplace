@@ -4,7 +4,7 @@ import type { Rizeni } from '@/lib/schemas'
  *
  *  ISIR's SOAP service already returns a working per-proceeding detail URL
  *  (`urlDetailRizeni`, e.g. `…/evidence_upadcu_detail.do?id=<GUID>`) that
- *  resolves to the exact řízení on isir.justice.cz — so use it verbatim.
+ *  resolves to the exact řízení on isir.justice.cz - so use it verbatim.
  *
  *  We do NOT rebuild an eISIR (`eisir.justice.cz/…/r/{id}`) URL: the id ISIR
  *  carries is a legacy hex GUID, not the record id the new eISIR SPA expects,
