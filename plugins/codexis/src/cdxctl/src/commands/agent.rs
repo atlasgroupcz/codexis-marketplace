@@ -19,9 +19,10 @@ pub struct AgentFields {
     pub model: Option<String>,
     pub max_turns: Option<u32>,
     pub instructions: Option<String>,
-    pub display_name: Option<String>,
-    pub summary: Option<String>,
-    pub language: Option<String>,
+    /// Localized display names as raw `lang:text` entries, one per language.
+    pub display_name: Vec<String>,
+    /// Localized summaries as raw `lang:text` entries, one per language.
+    pub summary: Vec<String>,
 }
 
 impl AgentFields {
@@ -35,10 +36,26 @@ impl AgentFields {
             && self.model.is_none()
             && self.max_turns.is_none()
             && self.instructions.is_none()
-            && self.display_name.is_none()
-            && self.summary.is_none()
-            && self.language.is_none()
+            && self.display_name.is_empty()
+            && self.summary.is_empty()
     }
+}
+
+/// Parses `lang:text` entries (e.g. `cs:Personalista pro smlouvy`). The language is what precedes
+/// the first colon; the text is the rest, so the text itself may contain colons.
+fn parse_localized(entries: &[String], field: &str) -> Result<Vec<Value>, CdxctlError> {
+    entries
+        .iter()
+        .map(|entry| {
+            let (language, text) = entry.split_once(':').map(|(l, t)| (l.trim(), t.trim())).unwrap_or(("", ""));
+            if language.is_empty() || text.is_empty() {
+                return Err(CdxctlError::Parse(format!(
+                    "--{field} expects lang:text (e.g. cs:\"…\"), got '{entry}'"
+                )));
+            }
+            Ok(json!({ "language": language, "text": text }))
+        })
+        .collect()
 }
 
 pub fn list(
@@ -138,7 +155,7 @@ pub fn create(
         let mut input = Map::new();
         input.insert("name".into(), json!(name));
         input.insert("description".into(), json!(description));
-        apply_fields(&mut input, &fields);
+        apply_fields(&mut input, &fields)?;
         // What the flags did not state comes from the chat this shell runs in, so an agent
         // starts out working the way the conversation that asked for it does.
         apply_chat_context(client, &mut input)?;
@@ -181,7 +198,7 @@ pub fn update(
         // stored one, so the fetched agent's id is what the mutation has to carry.
         let stored_id = agent_id(&current, id)?;
         let mut input = merge_current(&current);
-        apply_fields(&mut input, &fields);
+        apply_fields(&mut input, &fields)?;
         json!({ "id": stored_id, "input": Value::Object(input) })
     };
 
@@ -349,7 +366,7 @@ fn tool_names(agent: &Value, key: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
+fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) -> Result<(), CdxctlError> {
     if let Some(name) = &fields.name {
         input.insert("name".into(), json!(name));
     }
@@ -377,15 +394,13 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
     if let Some(instructions) = &fields.instructions {
         input.insert("instructions".into(), json!(instructions));
     }
-    if let Some(display_name) = &fields.display_name {
-        input.insert("displayName".into(), json!(display_name));
+    if !fields.display_name.is_empty() {
+        input.insert("displayName".into(), json!(parse_localized(&fields.display_name, "display-name")?));
     }
-    if let Some(summary) = &fields.summary {
-        input.insert("summary".into(), json!(summary));
+    if !fields.summary.is_empty() {
+        input.insert("summary".into(), json!(parse_localized(&fields.summary, "summary")?));
     }
-    if let Some(language) = &fields.language {
-        input.insert("language".into(), json!(language));
-    }
+    Ok(())
 }
 
 /// Folds `--instructions-file` into the structured fields: the file's contents become the system
@@ -456,8 +471,8 @@ fn validate_markdown(content: String) -> Result<String, CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        format_input_error, is_unsupported_save_agent, load_markdown, load_markdown_from_file,
-        merge_current, validate_markdown, AgentFields,
+        apply_fields, format_input_error, is_unsupported_save_agent, load_markdown,
+        load_markdown_from_file, merge_current, validate_markdown, AgentFields,
     };
     use crate::commands::resolve_node_id;
     use crate::error::CdxctlError;
@@ -561,6 +576,55 @@ mod tests {
             ..AgentFields::default()
         }
         .is_empty());
+    }
+
+    #[test]
+    fn apply_fields_builds_localized_display_name_and_summary() {
+        let fields = AgentFields {
+            display_name: vec!["cs:Personalista pro smlouvy".into(), "en:Contract HR agent".into()],
+            summary: vec!["cs:Připraví smlouvu.".into()],
+            ..AgentFields::default()
+        };
+        let mut input = Map::new();
+
+        apply_fields(&mut input, &fields).unwrap();
+
+        assert_eq!(
+            input["displayName"],
+            json!([
+                { "language": "cs", "text": "Personalista pro smlouvy" },
+                { "language": "en", "text": "Contract HR agent" }
+            ])
+        );
+        assert_eq!(input["summary"], json!([{ "language": "cs", "text": "Připraví smlouvu." }]));
+    }
+
+    #[test]
+    fn apply_fields_keeps_a_colon_in_the_localized_text() {
+        let fields = AgentFields {
+            display_name: vec!["cs:Poradce: pracovní právo".into()],
+            ..AgentFields::default()
+        };
+        let mut input = Map::new();
+
+        apply_fields(&mut input, &fields).unwrap();
+
+        assert_eq!(
+            input["displayName"],
+            json!([{ "language": "cs", "text": "Poradce: pracovní právo" }])
+        );
+    }
+
+    #[test]
+    fn apply_fields_rejects_a_localized_value_without_a_language() {
+        let fields = AgentFields {
+            summary: vec!["Připraví smlouvu.".into()],
+            ..AgentFields::default()
+        };
+        let mut input = Map::new();
+
+        let error = apply_fields(&mut input, &fields).unwrap_err();
+        assert!(matches!(error, CdxctlError::Parse(_)));
     }
 
     #[test]

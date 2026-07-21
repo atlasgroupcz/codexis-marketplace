@@ -303,15 +303,14 @@ enum AgentCommands {
         /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
         #[arg(long = "instructions-file")]
         instructions_file: Option<String>,
-        /// Short label shown on the Agents page, in the prompt's language
+        /// Short label shown on the Agents page, as lang:text (e.g. cs:"Personalista pro smlouvy").
+        /// Repeat once per language
         #[arg(long = "display-name")]
-        display_name: Option<String>,
-        /// One user-facing sentence, in the prompt's language
-        #[arg(long)]
-        summary: Option<String>,
-        /// Language of --display-name and --summary, e.g. cs (defaults to cs)
-        #[arg(long)]
-        language: Option<String>,
+        display_name: Vec<String>,
+        /// One user-facing sentence, as lang:text (e.g. cs:"Připraví a zkontroluje smlouvu.").
+        /// Repeat once per language
+        #[arg(long = "summary")]
+        summary: Vec<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -354,15 +353,14 @@ enum AgentCommands {
         /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
         #[arg(long = "instructions-file")]
         instructions_file: Option<String>,
-        /// Short label shown on the Agents page, in the prompt's language
+        /// Replaces the display name for the given languages, as lang:text. Repeat once per
+        /// language. Languages you do not pass keep their stored value
         #[arg(long = "display-name")]
-        display_name: Option<String>,
-        /// One user-facing sentence, in the prompt's language
-        #[arg(long)]
-        summary: Option<String>,
-        /// Language of --display-name and --summary, e.g. cs (defaults to cs)
-        #[arg(long)]
-        language: Option<String>,
+        display_name: Vec<String>,
+        /// Replaces the summary for the given languages, as lang:text. Repeat once per language.
+        /// Languages you do not pass keep their stored value
+        #[arg(long = "summary")]
+        summary: Vec<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -721,7 +719,6 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
-                language,
                 file,
                 stdin,
             } => commands::agent::create(
@@ -741,7 +738,6 @@ fn main() {
                     instructions,
                     display_name,
                     summary,
-                    language,
                 },
                 format,
             ),
@@ -759,7 +755,6 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
-                language,
                 file,
                 stdin,
             } => commands::agent::update(
@@ -780,7 +775,6 @@ fn main() {
                     instructions,
                     display_name,
                     summary,
-                    language,
                 },
                 format,
             ),
