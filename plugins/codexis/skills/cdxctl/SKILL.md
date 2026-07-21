@@ -36,7 +36,7 @@ Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 EOF
 cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
   --display-name "Kontrola výpovědi" --summary "Posoudí zákonnost výpovědi." \
-  --tool shell --instructions-file ./.tmp/hr-vypoved.md
+  --instructions-file ./.tmp/hr-vypoved.md
 
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
@@ -53,6 +53,8 @@ Every new agent needs `--display-name` and `--summary`, written in the prompt's 
 `update` keeps every field you do not pass. Pass only the fields you change.
 
 Run `cdxctl skill list` first. Pick the skills the task needs and pass each with `--skill`. `cdxctl` shows the accepted values for `--skill` and `--model`.
+
+Leave `--tool` and `--disallowed-tool` out so the agent keeps every tool. Set them only to restrict the agent on purpose.
 
 ### Writing the instructions file
 
