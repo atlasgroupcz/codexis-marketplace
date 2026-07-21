@@ -87,13 +87,19 @@ pub fn list(
     Ok(())
 }
 
+/// The context keys the chat may fill: only the ones the flags did not already set. An explicit
+/// `--model` / `--jurisdiction` is left alone, so it wins over the chat.
+fn context_keys_to_fill(input: &Map<String, Value>) -> Vec<&'static str> {
+    ["model", "jurisdictions"]
+        .into_iter()
+        .filter(|key| !input.contains_key(*key))
+        .collect()
+}
+
 /// `model` is required by the schema and `jurisdictions` shape what the agent may cite, so
 /// both fall back to the chat in use. Outside a chat there is nothing to fall back to.
 fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) -> Result<(), CdxctlError> {
-    let missing: Vec<&str> = ["model", "jurisdictions"]
-        .into_iter()
-        .filter(|key| !input.contains_key(*key))
-        .collect();
+    let missing = context_keys_to_fill(input);
     if missing.is_empty() {
         return Ok(());
     }
@@ -471,8 +477,8 @@ fn validate_markdown(content: String) -> Result<String, CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_fields, format_input_error, is_unsupported_save_agent, load_markdown,
-        load_markdown_from_file, merge_current, validate_markdown, AgentFields,
+        apply_fields, context_keys_to_fill, format_input_error, is_unsupported_save_agent,
+        load_markdown, load_markdown_from_file, merge_current, validate_markdown, AgentFields,
     };
     use crate::commands::resolve_node_id;
     use crate::error::CdxctlError;
@@ -552,20 +558,51 @@ mod tests {
     }
 
     #[test]
-    fn apply_chat_context_leaves_stated_values_alone() {
+    fn explicit_model_and_jurisdictions_leave_nothing_for_the_chat_to_fill() {
         let mut stated = Map::new();
         stated.insert("model".into(), json!("CLAUDE_OPUS_4_8"));
         stated.insert("jurisdictions".into(), json!(["SK"]));
-        let before = stated.clone();
 
-        // Both keys are present, so there is nothing to look up and nothing to overwrite.
-        let missing: Vec<&str> = ["model", "jurisdictions"]
-            .into_iter()
-            .filter(|key| !stated.contains_key(*key))
-            .collect();
+        // Both keys are already set by the flags, so the chat is not consulted for either.
+        assert!(context_keys_to_fill(&stated).is_empty());
+    }
 
-        assert!(missing.is_empty());
-        assert_eq!(stated, before);
+    #[test]
+    fn the_chat_fills_only_the_context_keys_the_flags_left_out() {
+        let mut only_model = Map::new();
+        only_model.insert("model".into(), json!("GPT_5_6_TERRA"));
+        // --model is set, --jurisdiction is not: only jurisdictions is taken from the chat.
+        assert_eq!(context_keys_to_fill(&only_model), vec!["jurisdictions"]);
+
+        // Neither flag is set: both come from the chat.
+        assert_eq!(context_keys_to_fill(&Map::new()), vec!["model", "jurisdictions"]);
+    }
+
+    #[test]
+    fn apply_fields_sets_model_jurisdictions_and_the_lists() {
+        let fields = AgentFields {
+            model: Some("GPT_5_6_TERRA".into()),
+            jurisdictions: Some(vec!["CZ".into(), "SK".into()]),
+            skills: Some(vec!["codexis".into()]),
+            max_turns: Some(9),
+            ..AgentFields::default()
+        };
+        let mut input = Map::new();
+
+        apply_fields(&mut input, &fields).unwrap();
+
+        assert_eq!(input["model"], json!("GPT_5_6_TERRA"));
+        assert_eq!(input["jurisdictions"], json!(["CZ", "SK"]));
+        assert_eq!(input["skills"], json!(["codexis"]));
+        assert_eq!(input["maxTurns"], json!(9));
+    }
+
+    #[test]
+    fn apply_fields_omits_model_and_jurisdictions_when_the_flags_are_absent() {
+        let mut input = Map::new();
+        apply_fields(&mut input, &AgentFields::default()).unwrap();
+        assert!(!input.contains_key("model"));
+        assert!(!input.contains_key("jurisdictions"));
     }
 
     #[test]

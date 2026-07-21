@@ -103,6 +103,7 @@ BATCHES: list[list[str]] = [
         "codexis-cdxctl-skill-from-file.config.yaml",
         "codexis-cdxctl-agent-crud.config.yaml",
         "codexis-cdxctl-agent-from-file.config.yaml",
+        "codexis-cdxctl-agent-skills.config.yaml",
         "codexis-cdxctl-automation-ai.config.yaml",
         "codexis-cdxctl-automation-cmd.config.yaml",
         "codexis-cdxctl-automation-update.config.yaml",
