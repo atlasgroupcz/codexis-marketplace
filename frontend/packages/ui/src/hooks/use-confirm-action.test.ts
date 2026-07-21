@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import { useConfirmAction } from './use-confirm-action'
 
 describe('useConfirmAction', () => {
@@ -34,6 +34,8 @@ describe('useConfirmAction', () => {
 
     await act(async () => {
       resolve()
+      // Let the action's .finally microtask (setPending(false)) settle inside act.
+      await Promise.resolve()
     })
     expect(result.current.pending).toBe(false)
   })
