@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manage Codexis platform objects with the cdxctl CLI - create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 2.3.0
+version: 2.4.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -182,52 +182,51 @@ Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 
 ## Skills
 
-Use these commands for custom skill CRUD. `cdxctl` returns the skill `id`, `sourcePath`, and `pathInfo`, so the agent can locate `SKILL.md`, edit it in the shell, and then push the updated markdown back through the API.
+A skill is reusable know-how the AI loads on demand: the method for a task - the steps, which sources to use, how to check them, which tools help. That is different from an agent, which is a persona. If the user did not clearly ask for a skill, ask first.
 
 ```bash
-# List all skills
-cdxctl skill list
-
-# List only editable custom skills
 cdxctl skill list --editable-only
 
-# Create a custom skill from an existing SKILL.md file
-cdxctl skill create --file /path/to/SKILL.md
-
-# Create a custom skill from stdin
-cat <<'EOF' | cdxctl skill create --stdin
----
-name: custom-skill
-description: Use when the user needs a custom workflow.
----
-
-# Instructions
-
-Describe what the agent should do.
+# Write the skill body to a temp file, then create the skill from flags.
+mkdir -p ./.tmp
+cat > ./.tmp/vypoved-kontrola.md <<'EOF'
+Posuď zákonnost výpovědi ze strany zaměstnavatele.
+Na vstupu dostaneš text výpovědi a pracovní smlouvu.
+Vycházej ze zákoníku práce (§ 48-62) a judikatury NS.
+Výstupem je tabulka: zjištění, ustanovení, riziko, náprava.
 EOF
+cdxctl skill create --name vypoved-kontrola \
+  --description "Use when the user needs a Czech employment dismissal reviewed for lawfulness." \
+  --display-name cs:"Kontrola výpovědi" --display-name en:"Dismissal review" \
+  --summary cs:"Posoudí zákonnost výpovědi a navrhne nápravu." --summary en:"Judges a dismissal and proposes a fix." \
+  --jurisdiction CZ \
+  --instructions-file ./.tmp/vypoved-kontrola.md
 
-# Update an existing skill from a file
-cdxctl skill update <id> --file /path/to/SKILL.md
-
-# Update an existing skill from stdin
-cat /path/to/SKILL.md | cdxctl skill update <id> --stdin
-
-# Delete an editable custom skill
+cdxctl skill update <id> --description "New trigger text"
 cdxctl skill delete <id>
 ```
 
-**IDs:** `cdxctl skill update` and `cdxctl skill delete` accept the GraphQL `id` from `cdxctl skill list`, a base64 Node ID, or a raw skill name like `my-skill`.
+Describe the skill with flags; the whole SKILL.md is built for you. `--file` / `--stdin` still take a hand-written SKILL.md when you need it.
 
-**Current SKILL.md format:** For existing skills, preserve the `uuid` when editing. For new skills, you don't need to include it, it gets generated automatically.
+Write the skill body to a temp file under `./.tmp/` and pass its path with `--instructions-file`.
 
-**Recommended agent workflow:**
-1. Run `cdxctl skill list --editable-only` to find the target skill.
-2. Read the current `SKILL.md` only for reference.
-3. Prepare updated content in a temporary file or via stdin.
-4. Do not edit the real skill file directly.
-5. Do not manually change `uuid`; preserve it only if already present.
-6. Run `cdxctl skill update <id-or-name> --file <temp-path>` or use `--stdin`.
-7. Use `cdxctl skill create` for new skills and `cdxctl skill delete` for removal.
+`--description` is the AI trigger text - write it as "Use when …" with the keywords that route to this skill, and say what it is NOT for when a sibling skill is close. Keep it under 1024 characters.
+
+Every new skill needs `--display-name` and `--summary`. Pass each as `lang:text` and repeat once per language - the prompt's language and English. `--display-name` is what the user sees on the Skills page; `--name` is the technical slug (lowercase, hyphens).
+
+Give the skill `--jurisdiction` when it covers one country's law (e.g. `CZ`), and `--jurisdiction-required` when the AI should reach for it only in that jurisdiction. Leave `--allowed-tool` out so the skill keeps every tool; set it only to restrict on purpose.
+
+`update` keeps every field you do not pass.
+
+When you confirm the new skill to the user, keep it plain: the display name, what it does, its jurisdiction. Leave out the slug, the command, and other internals.
+
+See `references/skill-examples.md` for worked examples.
+
+### What makes a good skill
+
+A precise trigger `--description` with the keywords and what it is not for; a concrete method (steps, named sources like `§ 52`, the output shape); decision guidance for when to use it over a close sibling; and, for depth, extra files next to the SKILL.md that the body points at. Short sentences, two or three per paragraph.
+
+**IDs:** `cdxctl skill update` and `cdxctl skill delete` accept the GraphQL `id` from `cdxctl skill list`, a base64 Node ID, or a raw skill name.
 
 ## Tabular Extraction
 
