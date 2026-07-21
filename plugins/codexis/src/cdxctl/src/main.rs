@@ -108,7 +108,7 @@ enum AutomationCommands {
         /// Model the run uses (enum name, e.g. CLAUDE_SONNET_5). Defaults to the active chat's model
         #[arg(long)]
         model: Option<String>,
-        /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable. Defaults to the active chat's
+        /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable. Defaults to the active chat's jurisdictions
         #[arg(long = "jurisdiction")]
         jurisdiction: Vec<String>,
         /// Working directory path
