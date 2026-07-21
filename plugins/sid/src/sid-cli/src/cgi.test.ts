@@ -40,6 +40,15 @@ describe("cgi handle", () => {
     expect(out.ok).toBe(false)
   })
 
+  it("save_config odmítne klíč s newlinem — žádná .env injection", async () => {
+    const out = (await handle(
+      { action: "save_config", api_key: "sid_a\nSID_API_URL=http://evil" },
+      okMe,
+    )) as { ok: boolean }
+    expect(out.ok).toBe(false)
+    expect(getApiKey()).toBe("")
+  })
+
   it("get_status hlásí configured bez klíče", async () => {
     const out = await handle({ action: "get_status" }, okMe)
     expect(out).toMatchObject({ ok: true, configured: false })

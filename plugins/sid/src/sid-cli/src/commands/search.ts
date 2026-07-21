@@ -17,11 +17,13 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
 
   const res = (await apiGet(`/api/search?${sp}`, f)) as {
     total: number
-    hits: { documentId?: string }[]
+    hits?: { documentId?: string }[]
     source: string
   }
   const role = await resolveRole(f)
-  const hits = res.hits.map((h) => (h.documentId ? { ...h, url: documentUrl(h.documentId, role) } : h))
+  // Guard the array: on a contract drift where `hits` is missing, `.map` would
+  // throw a generic error and swallow the opensearch_unavailable warning below.
+  const hits = (res.hits ?? []).map((h) => (h.documentId ? { ...h, url: documentUrl(h.documentId, role) } : h))
 
   // `total` is recomputed after the ACL filter, so it never exceeds `size`.
   if (res.source === "opensearch_unavailable") {

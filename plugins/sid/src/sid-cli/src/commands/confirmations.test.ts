@@ -50,4 +50,15 @@ describe("confirmations", () => {
     expect(err.exitCode).toBe(2)
     expect(err.message).toMatch(/SID/)
   })
+
+  it("neplatný --state → USAGE, server se nevolá", async () => {
+    let called = false
+    const f = (async () => {
+      called = true
+      return new Response("[]")
+    }) as unknown as typeof fetch
+    const err = (await run(["list", "--state", "bogus"], f).catch((e: unknown) => e)) as CliError
+    expect(err.exitCode).toBe(2)
+    expect(called).toBe(false)
+  })
 })

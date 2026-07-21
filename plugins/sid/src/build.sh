@@ -24,7 +24,7 @@ docker run --rm \
   sh -c "bun install --frozen-lockfile \
     && bun test \
     && bun build src/main.ts --target=node --format=cjs --outdir=dist --entry-naming=sid-cli.cjs \
-    && { [ -f src/cgi-main.ts ] && bun build src/cgi-main.ts --target=node --format=cjs --outdir=dist --entry-naming=sid-cgi.cjs || true; }"
+    && if [ -f src/cgi-main.ts ]; then bun build src/cgi-main.ts --target=node --format=cjs --outdir=dist --entry-naming=sid-cgi.cjs; fi"
 
 # Bundle → spustitelný artefakt.
 #

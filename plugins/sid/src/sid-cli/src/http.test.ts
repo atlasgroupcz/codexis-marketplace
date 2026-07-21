@@ -132,3 +132,41 @@ describe("download timeout", () => {
     expect(err.message).toMatch(/vypršel/i)
   })
 })
+
+describe("apiRaw — redirect na storage nesmí vynést klíč", () => {
+  it("následuje 302 na jiný host BEZ x-api-key", async () => {
+    const { apiRaw } = await import("./http")
+    const calls: Array<{ url: string; key: string | null; redirect?: RequestRedirect }> = []
+    const f = (async (url: unknown, init: RequestInit) => {
+      calls.push({
+        url: String(url),
+        key: new Headers(init.headers).get("x-api-key"),
+        redirect: init.redirect,
+      })
+      if (calls.length === 1) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://seaweedfs.internal/obj?sig=abc" },
+        })
+      }
+      return new Response("PDFBYTES", { status: 200 })
+    }) as unknown as typeof fetch
+
+    const res = await apiRaw("/api/files/download/file-1", f)
+    expect(await res.text()).toBe("PDFBYTES")
+    // First hop to SID carries the key and asks for a manual redirect...
+    expect(calls[0]!.key).toBe("sid_test")
+    expect(calls[0]!.redirect).toBe("manual")
+    // ...the presigned storage host is followed WITHOUT the key.
+    expect(calls[1]!.url).toBe("https://seaweedfs.internal/obj?sig=abc")
+    expect(calls[1]!.key).toBeNull()
+  })
+
+  it("302 bez Location → srozumitelná chyba, ne pád", async () => {
+    const { apiRaw } = await import("./http")
+    const f = (async () => new Response(null, { status: 302 })) as unknown as typeof fetch
+    const err = (await apiRaw("/api/files/download/x", f).catch((e: unknown) => e)) as CliError
+    expect(err).toBeInstanceOf(CliError)
+    expect(err.message).toMatch(/přesměrování/i)
+  })
+})

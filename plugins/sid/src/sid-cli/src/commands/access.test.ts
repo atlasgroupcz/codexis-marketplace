@@ -86,6 +86,11 @@ describe("access user", () => {
     expect(out.folders[0]!.url).toBe("http://s/admin/files?folderId=f1")
   })
 
+  it("víceslovné jméno bez uvozovek se spojí, ne zkrátí na první token", async () => {
+    const out = (await run(["user", "Anna", "Nová"], router())) as { user: { id: string } }
+    expect(out.user.id).toBe("u-anna")
+  })
+
   it("a bare id skips the lookup and queries access directly", async () => {
     const cap = { urls: [] as string[] }
     await run(["user", "550e8400-e29b-41d4-a716-446655440000"], router(cap))

@@ -45,6 +45,10 @@ function daemonAuth(): string | null {
     let t = readFileSync(join(userHome(), ".cdx", "env", "secret"), "utf8").trim()
     if (!t) return null
     if (t.toLowerCase().startsWith("authorization:")) t = t.slice("authorization:".length).trim()
+    // Strip CR/LF: an interior newline in the secret file would otherwise ride
+    // along as header injection into every daemon request.
+    t = t.replace(/[\r\n]/g, "")
+    if (!t) return null
     return t.toLowerCase().startsWith("bearer ") ? t : `Bearer ${t}`
   } catch {
     return null
@@ -114,12 +118,23 @@ async function resolveTo(
   daemonUrl: string,
   f: FetchLike,
 ): Promise<string[] | null> {
-  const extras = recipients.filter((r) => r.trim())
+  // Dedup the extras among themselves (case-insensitively) so a repeated
+  // address doesn't send the same digest twice.
+  const seen = new Set<string>()
+  const extras: string[] = []
+  for (const r of recipients) {
+    const t = r.trim()
+    if (!t) continue
+    const k = t.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    extras.push(t)
+  }
   if (extras.length === 0) return null
   const me = await queryMeEmail(auth, daemonUrl, f)
   if (!me) return extras
   const meKey = me.trim().toLowerCase()
-  return [me, ...extras.filter((e) => e.trim().toLowerCase() !== meKey)]
+  return [me, ...extras.filter((e) => e.toLowerCase() !== meKey)]
 }
 
 async function sendBell(message: string, auth: string, daemonUrl: string, f: FetchLike): Promise<boolean> {

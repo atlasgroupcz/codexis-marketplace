@@ -69,6 +69,11 @@ describe("recipients", () => {
     writeUser({ notify: { recipients: "sef@firma.cz" } })
     expect(getNotifySettings().recipients).toEqual([])
   })
+
+  it("zdvojené adresy deduplikuje case-insensitive, zachová první zápis", () => {
+    writeUser({ notify: { recipients: ["Sef@firma.cz", "sef@firma.cz", "  SEF@FIRMA.CZ "] } })
+    expect(getNotifySettings().recipients).toEqual(["Sef@firma.cz"])
+  })
 })
 
 describe("writeNotifyOverride", () => {

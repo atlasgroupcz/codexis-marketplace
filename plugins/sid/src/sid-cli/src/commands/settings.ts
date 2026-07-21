@@ -1,5 +1,5 @@
 import { apiGet, CliError, type FetchLike } from "../http"
-import { EXIT, getApiKey, getBaseUrl, readEnvFile, writeApiKey, writeEnvValue, deleteApiKey } from "../config"
+import { EXIT, getApiKey, getBaseUrl, isPlausibleApiKey, readEnvFile, writeApiKey, writeEnvValue, deleteApiKey } from "../config"
 
 const USAGE =
   "Použití: sid-cli settings set-key|test|status|whoami|delete-key  " +
@@ -45,6 +45,10 @@ export async function run(
     // STDIN, never argv — argv shows up in `ps` and in the model context.
     const key = (await stdin()).trim()
     if (!key) throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE}`, EXIT.USAGE)
+    // A value with an embedded newline would inject extra .env lines.
+    if (!isPlausibleApiKey(key)) {
+      throw new CliError("Klíč obsahuje nepovolené znaky (mezera/konec řádku) — vložte jen samotný klíč.", EXIT.USAGE)
+    }
 
     // Verify before touching .env, so a failed attempt can't destroy a key
     // that still works.

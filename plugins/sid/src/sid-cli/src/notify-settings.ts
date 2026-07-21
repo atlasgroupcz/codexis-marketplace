@@ -65,10 +65,21 @@ function readJson(path: string): Record<string, unknown> | null {
   }
 }
 
-/** Extra recipients — non-empty strings only, trimmed. */
+/** Extra recipients — non-empty strings only, trimmed and de-duplicated (case-insensitive). */
 function cleanRecipients(raw: unknown): string[] | undefined {
   if (!Array.isArray(raw)) return undefined
-  return raw.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const v of raw) {
+    if (typeof v !== "string") continue
+    const t = v.trim()
+    if (!t) continue
+    const k = t.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(t)
+  }
+  return out
 }
 
 function notifyBlock(source: Record<string, unknown> | null): Partial<NotifySettings> {

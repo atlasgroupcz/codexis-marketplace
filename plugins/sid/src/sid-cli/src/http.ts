@@ -42,6 +42,15 @@ export const REQUEST_TIMEOUT_MS = 30_000
  */
 export const DOWNLOAD_TIMEOUT_MS = 15 * 60_000
 
+/** Maps a fetch rejection (network down / abort) to a typed CliError. */
+function networkError(e: unknown, timeoutMs: number): never {
+  const name = e instanceof Error ? e.name : ""
+  if (name === "TimeoutError" || name === "AbortError") {
+    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR)
+  }
+  throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR)
+}
+
 async function request(
   path: string,
   init: RequestInit,
@@ -56,16 +65,7 @@ async function request(
     ...init,
     signal: AbortSignal.timeout(timeoutMs),
     headers: { ...(init.headers ?? {}), "x-api-key": key },
-  }).catch((e: unknown) => {
-    const name = e instanceof Error ? e.name : ""
-    if (name === "TimeoutError" || name === "AbortError") {
-      throw new CliError(
-        `Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`,
-        EXIT.ERROR,
-      )
-    }
-    throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR)
-  })
+  }).catch((e: unknown) => networkError(e, timeoutMs))
   if (!res.ok) throw statusToError(res.status, await res.text().catch(() => ""))
   return res
 }
@@ -101,11 +101,40 @@ export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch
   )
 }
 
-/** For downloads — returns the Response so the caller can stream the body. */
+/**
+ * For downloads — returns the Response so the caller can stream the body.
+ *
+ * SID's download route 302s to a short-lived presigned URL on the storage
+ * host (SeaweedFS/S3), a DIFFERENT origin. `fetch` does not strip a custom
+ * `x-api-key` header across origins, so following the redirect automatically
+ * would hand the SID key to the storage layer. We follow the redirect
+ * ourselves, without the key — the presigned query params are the auth.
+ */
 export async function apiRaw(
   path: string,
   f: FetchLike = fetch,
   timeoutMs: number = DOWNLOAD_TIMEOUT_MS,
 ): Promise<Response> {
-  return request(path, {}, f, undefined, timeoutMs)
+  const key = getApiKey()
+  if (!key) throw new CliError(NO_KEY_MSG, EXIT.AUTH)
+  const url = `${getBaseUrl()}${path}`
+  const res = await f(url, {
+    signal: AbortSignal.timeout(timeoutMs),
+    redirect: "manual",
+    headers: { "x-api-key": key },
+  }).catch((e: unknown) => networkError(e, timeoutMs))
+
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get("location")
+    if (!location) throw new CliError(`SID vrátil přesměrování bez cíle (HTTP ${res.status}).`, EXIT.ERROR)
+    const target = new URL(location, url).toString()
+    const followed = await f(target, {
+      signal: AbortSignal.timeout(timeoutMs),
+      redirect: "follow",
+    }).catch((e: unknown) => networkError(e, timeoutMs))
+    if (!followed.ok) throw statusToError(followed.status, await followed.text().catch(() => ""))
+    return followed
+  }
+  if (!res.ok) throw statusToError(res.status, await res.text().catch(() => ""))
+  return res
 }

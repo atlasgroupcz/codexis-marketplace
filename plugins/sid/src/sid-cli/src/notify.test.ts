@@ -224,6 +224,36 @@ describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
     await sendDigest("s", "b", f)
     expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual(["sef@firma.cz"])
   })
+
+  it("zdvojené adresáty mezi sebou deduplikuje (case-insensitive)", async () => {
+    writeSecret("t")
+    withRecipients(["sef@firma.cz", "SEF@firma.cz"])
+    let body = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).endsWith("/graphql")) {
+        return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
+      }
+      body = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual(["ja@firma.cz", "sef@firma.cz"])
+  })
+})
+
+describe("daemon token — žádná header injection", () => {
+  it("token s vnitřním newlinem se očistí, do Authorization se nedostane konec řádku", async () => {
+    writeSecret("Bearer abc\nX-Injected: 1")
+    let auth = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).includes("/rest/")) auth = new Headers(init.headers).get("authorization") ?? ""
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", "b", f)
+    expect(auth).not.toContain("\n")
+    expect(auth).not.toContain("\r")
+    expect(auth.startsWith("Bearer ")).toBe(true)
+  })
 })
 
 describe("timeouty na volání daemona", () => {

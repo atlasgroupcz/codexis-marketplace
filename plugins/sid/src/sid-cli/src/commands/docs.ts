@@ -47,18 +47,31 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
     })
 
     const patch: Record<string, string | null> = {}
-    for (const [flag, field] of [["from", "effectiveFrom"], ["to", "effectiveTo"]] as const) {
+    for (const [flag, field, clearFlag] of [
+      ["from", "effectiveFrom", "clear-from"],
+      ["to", "effectiveTo", "clear-to"],
+    ] as const) {
       const raw = values[flag]
-      if (raw === undefined) continue
-      // Validate before the call so a Czech-style date fails as misuse
-      // rather than as a server error.
-      if (!ISO_DATE.test(raw)) {
-        throw new CliError(`Datum musí být ve formátu YYYY-MM-DD, dostal jsem '${raw}'.`, EXIT.USAGE)
+      const clear = values[clearFlag]
+      // Setting and clearing the same date is contradictory — refuse rather
+      // than silently letting one win and wiping the date the user supplied.
+      if (raw !== undefined && clear) {
+        throw new CliError(
+          `--${flag} a --${clearFlag} nelze zadat naráz: buď datum nastavte, nebo ho smažte.`,
+          EXIT.USAGE,
+        )
       }
-      patch[field] = raw
+      if (raw !== undefined) {
+        // Validate before the call so a Czech-style date fails as misuse
+        // rather than as a server error.
+        if (!ISO_DATE.test(raw)) {
+          throw new CliError(`Datum musí být ve formátu YYYY-MM-DD, dostal jsem '${raw}'.`, EXIT.USAGE)
+        }
+        patch[field] = raw
+      } else if (clear) {
+        patch[field] = null
+      }
     }
-    if (values["clear-from"]) patch.effectiveFrom = null
-    if (values["clear-to"]) patch.effectiveTo = null
 
     if (Object.keys(patch).length === 0) {
       throw new CliError(
@@ -87,6 +100,14 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
         personal: { type: "boolean", default: false },
       },
     })
+    // Same date guard as set-validity — forwarding a Czech-style date raw
+    // just yields a misleading empty list instead of a clear misuse error.
+    for (const flag of ["from", "to"] as const) {
+      const v = values[flag]
+      if (v !== undefined && !ISO_DATE.test(v)) {
+        throw new CliError(`--${flag} musí být ve formátu YYYY-MM-DD, dostal jsem '${v}'.`, EXIT.USAGE)
+      }
+    }
     const sp = new URLSearchParams()
     if (values.query) sp.set("query", values.query)
     if (values.folder) sp.set("folderId", values.folder)

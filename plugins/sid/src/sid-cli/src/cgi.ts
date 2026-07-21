@@ -13,7 +13,7 @@
  * The key is never returned to the UI, only its prefix.
  */
 import { apiGet, type CliError, type FetchLike } from "./http"
-import { EXIT, getApiKey, getBaseUrl, writeApiKey, writeEnvValue, deleteApiKey } from "./config"
+import { EXIT, getApiKey, getBaseUrl, isPlausibleApiKey, writeApiKey, writeEnvValue, deleteApiKey } from "./config"
 import { currentUserEmail } from "./notify"
 import {
   getNotifySettings,
@@ -57,6 +57,9 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
     case "save_config": {
       const key = (body.api_key ?? "").trim()
       if (!key) return { ok: false, error: "Vložte API klíč." }
+      if (!isPlausibleApiKey(key)) {
+        return { ok: false, error: "Klíč obsahuje nepovolené znaky (mezera/konec řádku)." }
+      }
       // Verify before touching .env, so a failed attempt can't destroy a key
       // that still works.
       let me: { role?: unknown }

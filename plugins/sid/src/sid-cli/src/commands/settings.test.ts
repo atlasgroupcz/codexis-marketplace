@@ -32,6 +32,33 @@ describe("settings", () => {
     expect(err.exitCode).toBe(2)
   })
 
+  it("set-key odmítne klíč s newlinem (žádná .env injection), klíč se neuloží", async () => {
+    let called = false
+    const f = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    const err = (await run(["set-key"], f, async () => "sid_a\nSID_API_URL=http://evil").catch(
+      (e: unknown) => e,
+    )) as CliError
+    expect(err.exitCode).toBe(2)
+    expect(getApiKey()).toBe("")
+    expect(called).toBe(false) // rejected before even verifying against SID
+  })
+
+  it("po delete-key status nehlásí starou roli/isAdmin", async () => {
+    const adminMe = (async () =>
+      new Response(JSON.stringify({ id: "u1", email: "a@b.cz", role: "ADMIN" }), {
+        status: 200,
+      })) as unknown as typeof fetch
+    await run(["set-key"], adminMe, async () => "sid_admin_key")
+    await run(["delete-key"])
+    const out = (await run(["status"])) as Record<string, unknown>
+    expect(out.configured).toBe(false)
+    expect(out.role).toBeUndefined()
+    expect(out.isAdmin).toBeUndefined()
+  })
+
   it("set-key s neplatným klíčem klíč NEuloží (rollback)", async () => {
     const reject = (async () => new Response("nope", { status: 401 })) as unknown as typeof fetch
     const err = (await run(["set-key"], reject, async () => "sid_spatny").catch((e: unknown) => e)) as CliError

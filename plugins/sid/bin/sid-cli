@@ -35,11 +35,19 @@ function readEnvFile() {
 function getApiKey() {
   return readEnvFile().SID_API_KEY ?? "";
 }
+function isPlausibleApiKey(key) {
+  return key.length > 0 && !/\s/.test(key);
+}
 function getBaseUrl() {
   const raw = process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL;
   return raw.trim().replace(/\/+$/, "");
 }
 function writeEnvFile(entries) {
+  for (const [k, v] of Object.entries(entries)) {
+    if (/[\r\n]/.test(k) || /[\r\n]/.test(v)) {
+      throw new Error(`Odmítnut zápis do .env: hodnota '${k}' obsahuje konec řádku.`);
+    }
+  }
   const path = envFilePath();
   import_node_fs.mkdirSync(import_node_path.dirname(path), { recursive: true, mode: 448 });
   const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join(`
@@ -58,6 +66,8 @@ function writeApiKey(key) {
 function deleteApiKey() {
   const rest = readEnvFile();
   delete rest.SID_API_KEY;
+  delete rest.SID_USER_ROLE;
+  delete rest.SID_USER_EMAIL;
   if (Object.keys(rest).length === 0) {
     if (import_node_fs.existsSync(envFilePath()))
       import_node_fs.rmSync(envFilePath());
@@ -88,6 +98,13 @@ function statusToError(status, bodyText) {
   }
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR);
 }
+function networkError(e, timeoutMs) {
+  const name = e instanceof Error ? e.name : "";
+  if (name === "TimeoutError" || name === "AbortError") {
+    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR);
+  }
+  throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
+}
 async function request(path, init, f, keyOverride, timeoutMs = REQUEST_TIMEOUT_MS) {
   const key = keyOverride ?? getApiKey();
   if (!key)
@@ -96,13 +113,7 @@ async function request(path, init, f, keyOverride, timeoutMs = REQUEST_TIMEOUT_M
     ...init,
     signal: AbortSignal.timeout(timeoutMs),
     headers: { ...init.headers ?? {}, "x-api-key": key }
-  }).catch((e) => {
-    const name = e instanceof Error ? e.name : "";
-    if (name === "TimeoutError" || name === "AbortError") {
-      throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR);
-    }
-    throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
-  });
+  }).catch((e) => networkError(e, timeoutMs));
   if (!res.ok)
     throw statusToError(res.status, await res.text().catch(() => ""));
   return res;
@@ -122,7 +133,31 @@ async function apiPatch(path, body, f = fetch) {
   return parseJson(await request(path, { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } }, f));
 }
 async function apiRaw(path, f = fetch, timeoutMs = DOWNLOAD_TIMEOUT_MS) {
-  return request(path, {}, f, undefined, timeoutMs);
+  const key = getApiKey();
+  if (!key)
+    throw new CliError(NO_KEY_MSG, EXIT.AUTH);
+  const url = `${getBaseUrl()}${path}`;
+  const res = await f(url, {
+    signal: AbortSignal.timeout(timeoutMs),
+    redirect: "manual",
+    headers: { "x-api-key": key }
+  }).catch((e) => networkError(e, timeoutMs));
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get("location");
+    if (!location)
+      throw new CliError(`SID vrátil přesměrování bez cíle (HTTP ${res.status}).`, EXIT.ERROR);
+    const target = new URL(location, url).toString();
+    const followed = await f(target, {
+      signal: AbortSignal.timeout(timeoutMs),
+      redirect: "follow"
+    }).catch((e) => networkError(e, timeoutMs));
+    if (!followed.ok)
+      throw statusToError(followed.status, await followed.text().catch(() => ""));
+    return followed;
+  }
+  if (!res.ok)
+    throw statusToError(res.status, await res.text().catch(() => ""));
+  return res;
 }
 var CliError, NO_KEY_MSG, REQUEST_TIMEOUT_MS = 30000, DOWNLOAD_TIMEOUT_MS;
 var init_http = __esm(() => {
@@ -187,7 +222,7 @@ async function run(argv, f) {
     sp.set("from", String(values.from));
   const res = await apiGet(`/api/search?${sp}`, f);
   const role = await resolveRole(f);
-  const hits = res.hits.map((h) => h.documentId ? { ...h, url: documentUrl(h.documentId, role) } : h);
+  const hits = (res.hits ?? []).map((h) => h.documentId ? { ...h, url: documentUrl(h.documentId, role) } : h);
   if (res.source === "opensearch_unavailable") {
     return {
       ...res,
@@ -240,19 +275,24 @@ async function run2(argv, f) {
       }
     });
     const patch = {};
-    for (const [flag, field] of [["from", "effectiveFrom"], ["to", "effectiveTo"]]) {
+    for (const [flag, field, clearFlag] of [
+      ["from", "effectiveFrom", "clear-from"],
+      ["to", "effectiveTo", "clear-to"]
+    ]) {
       const raw = values[flag];
-      if (raw === undefined)
-        continue;
-      if (!ISO_DATE.test(raw)) {
-        throw new CliError(`Datum musí být ve formátu YYYY-MM-DD, dostal jsem '${raw}'.`, EXIT.USAGE);
+      const clear = values[clearFlag];
+      if (raw !== undefined && clear) {
+        throw new CliError(`--${flag} a --${clearFlag} nelze zadat naráz: buď datum nastavte, nebo ho smažte.`, EXIT.USAGE);
       }
-      patch[field] = raw;
+      if (raw !== undefined) {
+        if (!ISO_DATE.test(raw)) {
+          throw new CliError(`Datum musí být ve formátu YYYY-MM-DD, dostal jsem '${raw}'.`, EXIT.USAGE);
+        }
+        patch[field] = raw;
+      } else if (clear) {
+        patch[field] = null;
+      }
     }
-    if (values["clear-from"])
-      patch.effectiveFrom = null;
-    if (values["clear-to"])
-      patch.effectiveTo = null;
     if (Object.keys(patch).length === 0) {
       throw new CliError("Nebylo co nastavit — uveďte --from, --to, --clear-from nebo --clear-to.", EXIT.USAGE);
     }
@@ -275,6 +315,12 @@ async function run2(argv, f) {
         personal: { type: "boolean", default: false }
       }
     });
+    for (const flag of ["from", "to"]) {
+      const v = values[flag];
+      if (v !== undefined && !ISO_DATE.test(v)) {
+        throw new CliError(`--${flag} musí být ve formátu YYYY-MM-DD, dostal jsem '${v}'.`, EXIT.USAGE);
+      }
+    }
     const sp = new URLSearchParams;
     if (values.query)
       sp.set("query", values.query);
@@ -394,7 +440,8 @@ function folderLabel(x) {
   return x.folderPath.map((p) => p.name).join(" / ") || x.folderName;
 }
 async function run4(argv, f) {
-  const [sub, needle] = argv;
+  const [sub] = argv;
+  const needle = argv.slice(1).join(" ").trim();
   if (sub !== "user" && sub !== "group" || !needle)
     throw new CliError(USAGE3, EXIT.USAGE);
   const role = await resolveRole(f);
@@ -518,6 +565,9 @@ async function run7(argv, f) {
   }
   if (sub === "list") {
     const { values } = import_node_util5.parseArgs({ args: rest, options: { state: { type: "string" } } });
+    if (values.state !== undefined && values.state !== "pending" && values.state !== "confirmed") {
+      throw new CliError(`--state musí být 'pending' nebo 'confirmed', dostal jsem '${values.state}'.`, EXIT.USAGE);
+    }
     const qs = values.state ? `?state=${encodeURIComponent(values.state)}` : "";
     const items = await apiGet(`/api/v1/confirmations${qs}`, f);
     const role = await resolveRole(f);
@@ -550,11 +600,14 @@ async function run8(argv, f) {
   if (!values.all)
     sp.set("unreadOnly", "true");
   sp.set("limit", String(values.limit));
-  return apiGet(`/api/notifications?${sp}`, f);
+  const items = await apiGet(`/api/notifications?${sp}`, f);
+  const role = await resolveRole(f);
+  return items.map((n) => n.documentId ? { ...n, url: documentUrl(n.documentId, role) } : n);
 }
 var import_node_util6;
 var init_notifications = __esm(() => {
   init_http();
+  init_links();
   import_node_util6 = require("node:util");
 });
 
@@ -576,7 +629,21 @@ function readJson(path) {
 function cleanRecipients(raw) {
   if (!Array.isArray(raw))
     return;
-  return raw.filter((v) => typeof v === "string").map((v) => v.trim()).filter(Boolean);
+  const seen = new Set;
+  const out = [];
+  for (const v of raw) {
+    if (typeof v !== "string")
+      continue;
+    const t = v.trim();
+    if (!t)
+      continue;
+    const k = t.toLowerCase();
+    if (seen.has(k))
+      continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
 }
 function notifyBlock(source) {
   const raw = source?.notify;
@@ -625,6 +692,9 @@ function daemonAuth() {
       return null;
     if (t.toLowerCase().startsWith("authorization:"))
       t = t.slice("authorization:".length).trim();
+    t = t.replace(/[\r\n]/g, "");
+    if (!t)
+      return null;
     return t.toLowerCase().startsWith("bearer ") ? t : `Bearer ${t}`;
   } catch {
     return null;
@@ -670,14 +740,25 @@ async function queryMeEmail(auth, daemonUrl, f) {
   }
 }
 async function resolveTo(recipients, auth, daemonUrl, f) {
-  const extras = recipients.filter((r) => r.trim());
+  const seen = new Set;
+  const extras = [];
+  for (const r of recipients) {
+    const t = r.trim();
+    if (!t)
+      continue;
+    const k = t.toLowerCase();
+    if (seen.has(k))
+      continue;
+    seen.add(k);
+    extras.push(t);
+  }
   if (extras.length === 0)
     return null;
   const me = await queryMeEmail(auth, daemonUrl, f);
   if (!me)
     return extras;
   const meKey = me.trim().toLowerCase();
-  return [me, ...extras.filter((e) => e.trim().toLowerCase() !== meKey)];
+  return [me, ...extras.filter((e) => e.toLowerCase() !== meKey)];
 }
 async function sendBell(message, auth, daemonUrl, f) {
   const query = "mutation Create($input: CreateNotificationInput!) { createNotification(input: $input) { id } }";
@@ -789,6 +870,9 @@ async function run10(argv, f, stdin = readStdin) {
     const key = (await stdin()).trim();
     if (!key)
       throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE6}`, EXIT.USAGE);
+    if (!isPlausibleApiKey(key)) {
+      throw new CliError("Klíč obsahuje nepovolené znaky (mezera/konec řádku) — vložte jen samotný klíč.", EXIT.USAGE);
+    }
     const user = await verifyKey(key, f);
     writeApiKey(key);
     writeEnvValue("SID_USER_ROLE", user?.role === "ADMIN" ? "ADMIN" : "USER");

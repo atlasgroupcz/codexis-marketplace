@@ -72,6 +72,17 @@ describe("docs list — the rest of the documented filters", () => {
       "http://s/api/v1/documents?query=%C5%99%C3%A1d&mimeType=pdf&personalOnly=true&attributeIds=a1",
     )
   })
+
+  it("odmítne --from mimo formát YYYY-MM-DD — stejně jako set-validity, ne prázdný list", async () => {
+    let called = false
+    const f2 = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    const err = (await run(["list", "--from", "1.1.2026"], f2).catch((e: unknown) => e)) as CliError
+    expect(err.exitCode).toBe(2)
+    expect(called).toBe(false)
+  })
 })
 
 describe("docs legislation", () => {
@@ -138,6 +149,19 @@ describe("docs set-validity", () => {
   it("refuses to do nothing — no dates at all is a mistake", async () => {
     const err = (await run(["set-validity", "doc-1"]).catch((e: unknown) => e)) as CliError
     expect(err.exitCode).toBe(2)
+  })
+
+  it("--from spolu s --clear-from je kontradikce → USAGE, datum se nesmaže", async () => {
+    let called = false
+    const f2 = (async () => {
+      called = true
+      return new Response("{}")
+    }) as unknown as typeof fetch
+    const err = (await run(["set-validity", "doc-1", "--from", "2026-01-01", "--clear-from"], f2).catch(
+      (e: unknown) => e,
+    )) as CliError
+    expect(err.exitCode).toBe(2)
+    expect(called).toBe(false)
   })
 
   it("without an id → USAGE", async () => {

@@ -45,4 +45,13 @@ describe("search", () => {
     const err = (await run([]).catch((e: unknown) => e)) as CliError
     expect(err.exitCode).toBe(2)
   })
+
+  it("200 bez pole hits nespadne — guard zachová fallback varování", async () => {
+    const out = (await run(["x"], fetchReturning({ total: 0, source: "opensearch_unavailable" }))) as {
+      hits: unknown[]
+      warning?: string
+    }
+    expect(out.hits).toEqual([])
+    expect(out.warning).toMatch(/nedostupn/i)
+  })
 })

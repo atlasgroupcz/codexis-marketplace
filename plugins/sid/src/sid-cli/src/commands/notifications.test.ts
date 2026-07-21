@@ -30,4 +30,11 @@ describe("notifications", () => {
     await run(["--all", "--limit", "10"], capturingFetch(cap))
     expect(cap.url).toBe("http://s/api/notifications?limit=10")
   })
+
+  it("k notifikaci s documentId přidá odkaz do SID (funnel)", async () => {
+    const f = (async () =>
+      new Response(JSON.stringify([{ id: "n1", documentId: "d9" }]), { status: 200 })) as unknown as typeof fetch
+    const out = (await run([], f)) as Array<{ url?: string }>
+    expect(out[0]!.url).toBe("http://s/files/d9")
+  })
 })

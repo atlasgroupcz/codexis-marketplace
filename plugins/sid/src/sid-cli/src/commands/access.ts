@@ -58,7 +58,10 @@ const EMPTY_NOTE =
   "Žádné složky: principal nikde nemá přístup, nebo na dané složky nemáte admin právo. Práva se upravují v SID."
 
 export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
-  const [sub, needle] = argv
+  const [sub] = argv
+  // Rejoin the rest: a name has spaces ("Anna Nová"), and taking only argv[1]
+  // would silently truncate it to the first token and report a false NOT_FOUND.
+  const needle = argv.slice(1).join(" ").trim()
   if ((sub !== "user" && sub !== "group") || !needle) throw new CliError(USAGE, EXIT.USAGE)
 
   const role: Role | null = await resolveRole(f)

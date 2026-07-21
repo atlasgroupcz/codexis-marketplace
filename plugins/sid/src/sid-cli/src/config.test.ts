@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test"
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { envFilePath, readEnvFile, getApiKey, getBaseUrl, writeApiKey, deleteApiKey, EXIT } from "./config"
+import { envFilePath, readEnvFile, getApiKey, getBaseUrl, writeApiKey, deleteApiKey, isPlausibleApiKey, EXIT } from "./config"
 
 let dir: string
 beforeEach(() => {
@@ -43,6 +43,33 @@ describe("config", () => {
     writeFileSync(envFilePath(), "SID_API_URL=http://z-env-souboru\n")
     process.env.CODEXIS_PLUGIN_SID_API_URL = "https://z-daemona"
     expect(getBaseUrl()).toBe("https://z-daemona")
+  })
+
+  it("isPlausibleApiKey: povolí base64url znaky, zakáže prázdný a bílé znaky", () => {
+    expect(isPlausibleApiKey("sid_aB3-DE_f.1")).toBe(true)
+    expect(isPlausibleApiKey("")).toBe(false)
+    expect(isPlausibleApiKey("sid a")).toBe(false)
+    // The injection vector: a newline would forge a second .env line.
+    expect(isPlausibleApiKey("sid_a\nSID_API_URL=http://evil")).toBe(false)
+  })
+
+  it("writeApiKey odmítne klíč s newlinem — žádná .env injection", () => {
+    expect(() => writeApiKey("sid_a\nSID_API_URL=http://evil")).toThrow()
+    // Nothing was written.
+    expect(getApiKey()).toBe("")
+  })
+
+  it("deleteApiKey smaže i nacacheovanou roli a e-mail, ostatní nechá", () => {
+    writeFileSync(
+      envFilePath(),
+      "SID_API_KEY=sid_a\nSID_USER_ROLE=ADMIN\nSID_USER_EMAIL=a@b.cz\nSID_API_URL=http://s\n",
+    )
+    deleteApiKey()
+    const env = readEnvFile()
+    expect(env.SID_API_KEY).toBeUndefined()
+    expect(env.SID_USER_ROLE).toBeUndefined()
+    expect(env.SID_USER_EMAIL).toBeUndefined()
+    expect(env.SID_API_URL).toBe("http://s")
   })
 })
 

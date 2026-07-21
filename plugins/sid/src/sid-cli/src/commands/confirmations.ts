@@ -23,6 +23,12 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
 
   if (sub === "list") {
     const { values } = parseArgs({ args: rest, options: { state: { type: "string" } } })
+    if (values.state !== undefined && values.state !== "pending" && values.state !== "confirmed") {
+      throw new CliError(
+        `--state musí být 'pending' nebo 'confirmed', dostal jsem '${values.state}'.`,
+        EXIT.USAGE,
+      )
+    }
     const qs = values.state ? `?state=${encodeURIComponent(values.state)}` : ""
     const items = (await apiGet(`/api/v1/confirmations${qs}`, f)) as { documentId?: string }[]
     const role = await resolveRole(f)

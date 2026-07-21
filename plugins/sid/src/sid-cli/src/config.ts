@@ -38,6 +38,17 @@ export function getApiKey(): string {
 }
 
 /**
+ * A plausible API key: non-empty and free of whitespace. The point is to
+ * reject a pasted value carrying a newline, which would otherwise be written
+ * as an extra `.env` line (e.g. injecting SID_API_URL and repointing every
+ * request). Deliberately loose about the exact charset — SID validates the
+ * key itself, and an unusual-but-valid charset (base64url `-`/`_`) must pass.
+ */
+export function isPlausibleApiKey(key: string): boolean {
+  return key.length > 0 && !/\s/.test(key)
+}
+
+/**
  * Paths are appended as `${base}/api/…`, so a trailing slash would produce
  * `//api/…` — and a trailing slash is exactly what someone types by hand.
  */
@@ -48,6 +59,13 @@ export function getBaseUrl(): string {
 
 /** Atomic write, mode 0600. Keys already in the file are preserved. */
 function writeEnvFile(entries: Record<string, string>): void {
+  // A newline in any value would forge extra `.env` lines on the next read.
+  // Callers validate their inputs; this is the last-line backstop.
+  for (const [k, v] of Object.entries(entries)) {
+    if (/[\r\n]/.test(k) || /[\r\n]/.test(v)) {
+      throw new Error(`Odmítnut zápis do .env: hodnota '${k}' obsahuje konec řádku.`)
+    }
+  }
   const path = envFilePath()
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
   const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join("\n") + "\n"
@@ -68,6 +86,10 @@ export function writeApiKey(key: string): void {
 export function deleteApiKey(): void {
   const rest = readEnvFile()
   delete rest.SID_API_KEY
+  // The cached role/e-mail belong to the removed key — leaving them would let
+  // `settings status` report a stale role/isAdmin for a config that is gone.
+  delete rest.SID_USER_ROLE
+  delete rest.SID_USER_EMAIL
   if (Object.keys(rest).length === 0) {
     if (existsSync(envFilePath())) rmSync(envFilePath())
     return
