@@ -114,10 +114,10 @@ impl DaemonConfig {
 }
 
 /// Reads the VM daemon token from `$HOME/.cdx/env/secret`. The host writes the
-/// secret to the real VM home — the same file `cdxctl` and the Python cores
+/// secret to the real VM home - the same file `cdxctl` and the Python cores
 /// read. The daemon-injected `CODEXIS_PUBLIC_USER_HOME` is deliberately NOT
 /// consulted: it points at per-user app state, not at the VM home. Single
-/// source of truth for the secret lookup — [`DaemonConfig::load`] and
+/// source of truth for the secret lookup - [`DaemonConfig::load`] and
 /// `daemon_rest::daemon_bearer` both use it.
 pub fn read_daemon_secret() -> Option<String> {
     let home = read_env("HOME")?;

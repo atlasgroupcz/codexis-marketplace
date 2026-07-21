@@ -90,7 +90,7 @@
     "text": "Add a company or a person and the watchdog will check daily for new and changed insolvency proceedings.",
     "add": "Add subject",
     "noSelection": "Select a subject from the list on the left.",
-    "chatLead": "Or set it up in a conversation — just write, for example:",
+    "chatLead": "Or set it up in a conversation - just write, for example:",
     "chatPrompt": "Watch insolvency for company ID 04863313 and email me a weekly summary of new and changed proceedings."
   },
   "notify": {
@@ -108,7 +108,7 @@
     "inAppLabel": "In the notification center",
     "inAppDescription": "",
     "saved": "Notification settings saved.",
-    "ownAddress": "That's your address — you always get the e-mail.",
+    "ownAddress": "That's your address - you always get the e-mail.",
     "duplicate": "That address is already in the list."
   }
 }

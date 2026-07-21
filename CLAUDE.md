@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Text conventions
+
+Never write em-dashes (`—`) or en-dashes (`–`). Use a plain hyphen (`-`) instead.
+This applies everywhere: plugin display names, descriptions, i18n labels,
+component UI text, SKILL docs, code comments, and commit messages. Em-dashes had
+crept into user-facing names and looked unprofessional, so the repo was
+normalized to hyphens - keep it that way.
+
 ## Project Overview
 
 This is a **Claude Code Plugin Marketplace** maintained by ATLAS GROUP. It contains plugins that extend Claude Code with legal database access and data visualization capabilities.
@@ -123,17 +131,17 @@ for `icon.svg`/`icon.png`/etc. Without a declaration the UI renders initials.
 Declare plugin-owned env vars in `plugin.json` under `env`. The host merges these into every shell process the plugin runs. Do not write env files; do not set them in install hooks.
 
 Naming convention:
-- `CODEXIS_PLUGIN_*` — plugin-owned configuration (URLs, IDs). Each key belongs to exactly one plugin; do not redeclare another plugin's key.
-- `CODEXIS_USER_*` — per-user secrets injected by the host (Codexis API tokens, LiteLLM keys). Plugins are read-only consumers; never log, never embed in builds.
-- `CODEXIS_PUBLIC_*` — host-injected runtime context (daemon URL, user home, session id). Plugins are read-only consumers.
+- `CODEXIS_PLUGIN_*` - plugin-owned configuration (URLs, IDs). Each key belongs to exactly one plugin; do not redeclare another plugin's key.
+- `CODEXIS_USER_*` - per-user secrets injected by the host (Codexis API tokens, LiteLLM keys). Plugins are read-only consumers; never log, never embed in builds.
+- `CODEXIS_PUBLIC_*` - host-injected runtime context (daemon URL, user home, session id). Plugins are read-only consumers.
 
 ### Lifecycle Hooks
 
 Plugins support three lifecycle hooks executed as shell commands by the harness:
 
-- **`postInstall`** — runs after the plugin is installed
-- **`postUninstall`** — runs after the plugin is uninstalled
-- **`onUpdate`** — runs after the plugin is updated
+- **`postInstall`** - runs after the plugin is installed
+- **`postUninstall`** - runs after the plugin is uninstalled
+- **`onUpdate`** - runs after the plugin is updated
 
 The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the plugin's installation directory.
 
@@ -165,7 +173,7 @@ The binary path is resolved relative to `previews/` and may point into the plugi
 Every `marketplace.json` / `plugin.json` / `component.json` and every top-level
 `SKILL.md` frontmatter carries an `i18n` block with localized display strings
 for the CDX daemon UI. Technical identifiers (`name`, `id`) stay
-kebab-case and are **never** translated — only user-facing strings are.
+kebab-case and are **never** translated - only user-facing strings are.
 
 ### JSON manifests
 
@@ -176,7 +184,7 @@ kebab-case and are **never** translated — only user-facing strings are.
   "tags": ["legal", "czech"],
   "i18n": {
     "cs": {
-      "displayName": "CODEXIS — Česká legislativa",
+      "displayName": "CODEXIS - Česká legislativa",
       "description": "Přístup k databázi CODEXIS...",
       "tagLabels": { "legal": "Právo", "czech": "Česko" }
     },
@@ -190,7 +198,7 @@ For `component.json` the same pattern applies with `displayName` + `description`
 
 ### Markdown frontmatter (`SKILL.md`, agents)
 
-The top-level `description` stays as the **LLM trigger text** — never translate it.
+The top-level `description` stays as the **LLM trigger text** - never translate it.
 User-facing short text lives under `i18n.<lang>.summary`.
 
 ```yaml
@@ -200,13 +208,13 @@ description: "This skill should be invoked whenever user needs Czech legal resea
 version: 2.1.0
 i18n:
   cs:
-    displayName: "CODEXIS — Legislativa ČR"
+    displayName: "CODEXIS - Legislativa ČR"
     summary: "Vyhledávání v české a evropské legislativě."
   en:
-    displayName: "CODEXIS — Czech Legislation"
+    displayName: "CODEXIS - Czech Legislation"
     summary: "Search Czech and EU legislation."
   sk:
-    displayName: "CODEXIS — Česká legislatíva"
+    displayName: "CODEXIS - Česká legislatíva"
     summary: "Vyhľadávanie v českej a európskej legislatíve."
 ---
 ```

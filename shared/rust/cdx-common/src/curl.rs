@@ -1,6 +1,6 @@
 //! Curl-based HTTP plumbing shared by the CODEXIS search plugins.
 //!
-//! These are the self-contained utilities — running curl, handling its exit
+//! These are the self-contained utilities - running curl, handling its exit
 //! code, splitting the response envelope, encoding query values, redacting
 //! secrets for dry-run output and shell-escaping. They were byte-identical
 //! across the search plugins. The per-plugin parts (URL schemes, `cdx://`

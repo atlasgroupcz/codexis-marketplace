@@ -3,8 +3,8 @@ description: Verify the cdx-at skill performs case-law search and fetches Austri
 
 # Austrian legal DB (RIS). Two steps:
 #   1. Case-law search on ATJD (Judikatur) for "Schadenersatz" (damages).
-#   2. Legislation lookup — ABGB (Allgemeines bürgerliches Gesetzbuch) is
-#      the Austrian civil code — must be returned as a hit.
+#   2. Legislation lookup - ABGB (Allgemeines bürgerliches Gesetzbuch) is
+#      the Austrian civil code - must be returned as a hit.
 
 steps:
   - prompt: "Najdi mi 3 rozhodnutí rakouského Nejvyššího soudu (OGH) o náhradě škody (Schadenersatz). Stačí krátký seznam, žádné detailní výpisy."
@@ -19,7 +19,7 @@ steps:
       tool_calls_min: 1
       tool_calls_max: 18
       response:
-        # Real ATJD doc links — proves the search returned real hits,
+        # Real ATJD doc links - proves the search returned real hits,
         # not just a confirmation that AI understood the topic.
         matches: "/doc/ATJD\\d+"
 

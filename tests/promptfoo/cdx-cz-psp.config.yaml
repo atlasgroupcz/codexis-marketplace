@@ -1,7 +1,7 @@
 # Port of plugins/cdx-cz-psp/acceptance/e2e/cdx-cz-psp-search.yaml
-# Czech parliamentary docs (psp.cz) — interpellations + bill proposals.
+# Czech parliamentary docs (psp.cz) - interpellations + bill proposals.
 
-description: cdx-cz-psp — Czech parliament document search
+description: cdx-cz-psp - Czech parliament document search
 
 prompts:
   - "{{ prompt }}"
@@ -14,7 +14,7 @@ providers:
 tests:
   - description: Tax-interpellation search returns CZPSPDOK doc URLs
     vars:
-      # "3 dokumenty, krátký seznam stačí" mirrors cdx-at's first prompt —
+      # "3 dokumenty, krátký seznam stačí" mirrors cdx-at's first prompt -
       # it tells the AI to stop searching after a small focused result set
       # instead of iteratively narrowing across the whole CZPSPDOK index.
       # With this framing the healthy run is ~2 work calls; cap of 8 gives

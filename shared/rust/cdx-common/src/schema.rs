@@ -1,7 +1,7 @@
 //! Generic JSON-schema machinery shared by the CODEXIS search plugins.
 //!
 //! These functions manipulate OpenAPI-style schemas as plain `serde_json`
-//! values — rewriting `#/components/schemas/…` refs to `#/$defs/…`, computing
+//! values - rewriting `#/components/schemas/…` refs to `#/$defs/…`, computing
 //! the referenced-component closure and assembling a standalone JSON Schema.
 //! They carry no plugin-specific knowledge; the schema *data* (bundles) and the
 //! per-plugin `ResourceSchemaKind`-typed rendering stay in each plugin.

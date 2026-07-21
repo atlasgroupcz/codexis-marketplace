@@ -1,4 +1,4 @@
-//! Daemon notification transport shared by every watcher/component plugin —
+//! Daemon notification transport shared by every watcher/component plugin -
 //! e-mail via the plugin e-mail API and in-app via the notification bell.
 //!
 //! Auth is the VM/daemon token (`~/.cdx/env/secret`), read via
@@ -145,7 +145,7 @@ pub fn send_email(
 ) -> Result<()> {
     let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
         return Err(NotifyError::Notify(
-            "E-mail nelze odeslat — chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací \
+            "E-mail nelze odeslat - chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací \
              token (~/.cdx/env/secret). Spouštějte přes automatizaci v CODEXIS."
                 .into(),
         ));

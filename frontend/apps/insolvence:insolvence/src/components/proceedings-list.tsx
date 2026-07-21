@@ -42,7 +42,7 @@ export function ProceedingsList({
             </div>
             {r.soud && <p className="text-muted-foreground mt-1 text-sm">{r.soud}</p>}
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
-              <Field label={t('detail.stav')} value={r.stav || '—'} />
+              <Field label={t('detail.stav')} value={r.stav || '-'} />
               <Field label={t('detail.datumZahajeni')} value={formatDate(r.datum_zahajeni)} />
               {r.datum_ukonceni && (
                 <Field label={t('detail.datumUkonceni')} value={formatDate(r.datum_ukonceni)} />

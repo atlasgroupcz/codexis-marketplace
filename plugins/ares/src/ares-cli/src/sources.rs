@@ -12,7 +12,7 @@ pub(crate) fn try_publish(entries: &[Value]) {
     cdx_common::sources::try_publish("ares-cli", entries);
 }
 
-/// One source for `detail <ICO>` — the official ARES web page of the subject.
+/// One source for `detail <ICO>` - the official ARES web page of the subject.
 pub(crate) fn detail_source(ico8: &str, body: &str) -> Vec<Value> {
     let parsed: Value = serde_json::from_str(body).unwrap_or(Value::Null);
     vec![subject_entry(
@@ -74,7 +74,7 @@ fn subject_entry(ico: &str, name: Option<&Value>, address: Option<&Value>) -> Va
     let title = name
         .and_then(Value::as_str)
         .map(str::to_string)
-        .unwrap_or_else(|| format!("IČO {ico} — ARES"));
+        .unwrap_or_else(|| format!("IČO {ico} - ARES"));
     let mut entry = serde_json::Map::new();
     entry.insert("__kind".into(), json!("url"));
     entry.insert("url".into(), json!(format!("{ARES_WEB_BASE_URL}?ico={ico}")));
@@ -113,7 +113,7 @@ mod tests {
     fn detail_source_falls_back_to_ico_title_for_vr_shape() {
         let body = r#"{"icoId":"45274649","zaznamy":[{"obchodniJmeno":[{"hodnota":"ČEZ, a. s."}]}]}"#;
         let entries = detail_source("45274649", body);
-        assert_eq!(entries[0]["title"], json!("IČO 45274649 — ARES"));
+        assert_eq!(entries[0]["title"], json!("IČO 45274649 - ARES"));
         assert!(entries[0].get("snippet").is_none());
     }
 

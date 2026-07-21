@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""insolvence-cli — track Czech insolvency-register (ISIR) subjects and run ad-hoc lookups.
+"""insolvence-cli - track Czech insolvency-register (ISIR) subjects and run ad-hoc lookups.
 
 Usage:
     insolvence-cli sledovani add-firma <ICO> [--label "..."]
@@ -79,7 +79,7 @@ def _fmt_subject_short(state: dict) -> str:
     ident = entry["ico"] or entry.get("datum_narozeni") or ""
     ident_str = f" [{ident}]" if ident else ""
     if entry["ma_aktivni_insolvenci"]:
-        stav = f"{entry['primary_druh_label']}: {entry['primary_stav'] or '—'}"
+        stav = f"{entry['primary_druh_label']}: {entry['primary_stav'] or '-'}"
     else:
         stav = "Bez insolvenčního řízení"
     unconfirmed = entry["unconfirmed_count"]
@@ -150,7 +150,7 @@ def cmd_check(args):
     for r in results:
         name = r["display_name"]
         if not r["ok"]:
-            out(f"  {name}: CHYBA — {r['error']}")
+            out(f"  {name}: CHYBA - {r['error']}")
             continue
         changes = r["changes"]
         if not changes:
@@ -168,7 +168,7 @@ def cmd_check(args):
             to = notify.resolve_to(notify_cfg.get("recipients"))
             sent = notify.email_change_summary(results, to=to)
             info(f"E-mailem odeslán souhrn {sent} nových změn." if sent
-                 else "Žádné nové změny — e-mail neodeslán.")
+                 else "Žádné nové změny - e-mail neodeslán.")
         except InsolvenceError as e:
             info(f"E-mail se nepodařilo odeslat: {e}")
     if notify_cfg.get("inApp"):
@@ -234,7 +234,7 @@ def cmd_notify_show(args):
 
 def cmd_notify_set(args):
     eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
-    info(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+    info(f"OK: Notifikace - e-mail: {eff['email']}, in-app: {eff['inApp']}.")
 
 
 def cmd_notify_recipients(args):
@@ -247,7 +247,7 @@ def cmd_notify_recipients(args):
         current = list(args.emails)
     elif args.rcmd == "clear":
         current = []
-    # The signed-in user always receives the e-mail, so drop their own address —
+    # The signed-in user always receives the e-mail, so drop their own address -
     # listing yourself as an extra is redundant (the FE dialog blocks it too).
     # Say so: dropping the caller's input without a word reads as a silent failure.
     requested = list(current)
@@ -260,11 +260,11 @@ def cmd_notify_recipients(args):
         sys.exit(1)
     if dropped:
         info(
-            f"OK: {dropped[0]} vynechán — je to adresa přihlášeného uživatele, "
+            f"OK: {dropped[0]} vynechán - je to adresa přihlášeného uživatele, "
             f"ten e-mail dostává vždy."
         )
     joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
-    info(f"OK: Příjemci — {joined}.")
+    info(f"OK: Příjemci - {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────

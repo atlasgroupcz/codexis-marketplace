@@ -30,7 +30,7 @@ vi.mock('@/lib/api', () => ({
   setLabel: vi.fn(), removeProceeding: vi.fn(),
 }))
 
-describe('ProceedingDetail — confirm refreshes overview', () => {
+describe('ProceedingDetail - confirm refreshes overview', () => {
   beforeEach(() => refetch.mockClear())
 
   it('calls onChanged after confirming so the sidebar unread dot clears', async () => {

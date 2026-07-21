@@ -11,7 +11,7 @@ pub(crate) const SEARCH_SKUS_HELP: &str = r#"Example:
   cdx-sk search SKUS --case-number "III. ÚS 307/2026"
   cdx-sk search SKUS --judge-reporter "Robert Šorl" --date-from 2024-01-01"#;
 
-/// Search arguments for ustavnysud_sk — Ústavný súd SR (Constitutional Court).
+/// Search arguments for ustavnysud_sk - Ústavný súd SR (Constitutional Court).
 /// The `/search` body pages with `from`/`size` and every JSON key is the camelCase field name.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchSkusArgs {

@@ -16,7 +16,7 @@ setup:
           content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
 
 steps:
-  - prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' — celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
+  - prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' - celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
     expect:
       tool_call:
         name: shell
@@ -44,7 +44,7 @@ steps:
         jsonpath: "$.tabularExtraction.status"
         equals: "DONE"
 
-  - prompt: "Ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} — jaká hodnota vyšla ve sloupci customer?"
+  - prompt: "Ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} - jaká hodnota vyšla ve sloupci customer?"
     expect:
       tool_call:
         name: shell

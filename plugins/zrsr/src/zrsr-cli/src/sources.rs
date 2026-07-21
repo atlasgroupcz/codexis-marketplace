@@ -12,7 +12,7 @@ pub(crate) fn try_publish(entries: &[Value]) {
     cdx_common::sources::try_publish("zrsr-cli", entries);
 }
 
-/// One source for `detail` — the public RPO record of the subject.
+/// One source for `detail` - the public RPO record of the subject.
 pub(crate) fn detail_source(body: &str) -> Vec<Value> {
     let parsed: Value = serde_json::from_str(body).unwrap_or(Value::Null);
     entity_entry(&parsed).into_iter().collect()
@@ -83,12 +83,12 @@ fn fallback_title(entity: &Value, id: u64) -> String {
         .and_then(|identifier| identifier.get("value"))
         .and_then(Value::as_str)
     {
-        Some(ico) => format!("IČO {ico} — RPO"),
+        Some(ico) => format!("IČO {ico} - RPO"),
         None => format!("RPO {id}"),
     }
 }
 
-/// Picks the current entry of an RPO validFrom/validTo history array —
+/// Picks the current entry of an RPO validFrom/validTo history array -
 /// the one without `validTo`, falling back to the last entry.
 fn current_value(history: Option<&Value>) -> Option<&Value> {
     let items = history?.as_array()?;
@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn detail_source_falls_back_to_ico_title_and_skips_without_id() {
         let entries = detail_source(r#"{"id":7,"identifiers":[{"value":"12345678"}]}"#);
-        assert_eq!(entries[0]["title"], serde_json::json!("IČO 12345678 — RPO"));
+        assert_eq!(entries[0]["title"], serde_json::json!("IČO 12345678 - RPO"));
         assert!(entries[0].get("snippet").is_none());
         assert!(detail_source(r#"{"message":"No record found"}"#).is_empty());
     }

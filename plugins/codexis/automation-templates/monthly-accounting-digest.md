@@ -23,9 +23,9 @@ i18n:
 ---
 Pomocí dovednosti pro české účetnictví sestav měsíční účetní přehled za uplynulý měsíc:
 
-1. **Změny v legislativě** — novelizace zákona o účetnictví, prováděcích vyhlášek a Českých účetních standardů (ČÚS), s účinností a stručným dopadem na vedení účetnictví a účetní závěrku.
-2. **Výkladová stanoviska a metodika** — nové interpretace Národní účetní rady, stanoviska MF ČR nebo GFŘ s praktickým dopadem.
-3. **Nadcházející termíny** — účetní a související povinnosti splatné v následujícím měsíci (závěrka, zveřejnění ve sbírce listin, statistická hlášení) s konkrétními daty.
+1. **Změny v legislativě** - novelizace zákona o účetnictví, prováděcích vyhlášek a Českých účetních standardů (ČÚS), s účinností a stručným dopadem na vedení účetnictví a účetní závěrku.
+2. **Výkladová stanoviska a metodika** - nové interpretace Národní účetní rady, stanoviska MF ČR nebo GFŘ s praktickým dopadem.
+3. **Nadcházející termíny** - účetní a související povinnosti splatné v následujícím měsíci (závěrka, zveřejnění ve sbírce listin, statistická hlášení) s konkrétními daty.
 
 Pravidla:
 - Zaměř se na obecně použitelné novinky; nepředpokládej konkrétní situaci jedné účetní jednotky.

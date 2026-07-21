@@ -111,7 +111,7 @@ def test_save_notify_settings_drops_signed_in_user(_isolated_home, monkeypatch):
 
 def test_save_notify_settings_absent_recipients_left_untouched(_isolated_home, monkeypatch):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
-    # not clear the stored list — self-stripping must not turn None into [].
+    # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: "me@firma.cz")
     _http.settings.set_notify(email=True, inApp=True, recipients=["a@x.cz"])
     captured = _capture(monkeypatch)

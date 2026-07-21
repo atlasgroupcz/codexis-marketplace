@@ -3,7 +3,7 @@
 //! Every watcher plugin persists its tracked items the same way: one directory
 //! per item under `$HOME/.cdx/apps/<app>/<collection>/<slug>/`, holding a single
 //! pretty-printed JSON file (`state.json` by default). This is the port of the
-//! Python watchers' `state.py`/`fs.py` layer — the mechanism is identical across
+//! Python watchers' `state.py`/`fs.py` layer - the mechanism is identical across
 //! apps; only the stored value type differs, so it is generic over `T`.
 //!
 //! `slug` must be a single path component (the caller slugifies its id, e.g.
@@ -73,7 +73,7 @@ impl ItemStore {
 
     /// Load every readable item in the collection, skipping corrupt files and
     /// `.deleted-*` trash left by an interrupted [`ItemStore::remove`]. Order is
-    /// unspecified — callers sort.
+    /// unspecified - callers sort.
     pub fn load_all<T: DeserializeOwned>(&self) -> Vec<T> {
         let Ok(entries) = fs::read_dir(self.dir()) else {
             return Vec::new();
@@ -109,7 +109,7 @@ impl ItemStore {
     pub fn remove(&self, slug: &str) -> std::io::Result<()> {
         let target = self.item_dir(slug);
         // Unique sibling name via the shared fs token (pid + counter), probing
-        // for a free name — same scheme atomic_replace uses, no rand dependency.
+        // for a free name - same scheme atomic_replace uses, no rand dependency.
         let trash = loop {
             let candidate =
                 target.with_file_name(format!("{slug}{TRASH_MARKER}{}", crate::fs::unique_token()));

@@ -18,20 +18,20 @@ i18n:
 
 # Hlídač insolvencí ČR (ISIR)
 
-A single tool — **`insolvence-cli`** — wraps the public ISIR web service (no API key) plus a
+A single tool - **`insolvence-cli`** - wraps the public ISIR web service (no API key) plus a
 stateful watchdog for insolvency subjects. Source: the public ISIR SOAP service at justice.cz.
 
-**IMPORTANT:** For insolvency data use only `insolvence-cli` — do NOT call `curl` or any other data tool directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch insolvency data. Assume both are installed and available in `PATH`.
+**IMPORTANT:** For insolvency data use only `insolvence-cli` - do NOT call `curl` or any other data tool directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch insolvency data. Assume both are installed and available in `PATH`.
 
-**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked subject or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several subjects, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) - report it, don't guess workarounds and don't blindly retry. Adding an already-tracked subject or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several subjects, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output format
 
-- **`sledovani list`, `sledovani check`** — human-readable plain text. Read it directly, summarize
+- **`sledovani list`, `sledovani check`** - human-readable plain text. Read it directly, summarize
   for the user. **Do not parse with `sed`/`grep`.**
-- **`sledovani add-firma`, `add-osoba`, `confirm`, `remove`, `set-label`** — a single `OK: ...` or
+- **`sledovani add-firma`, `add-osoba`, `confirm`, `remove`, `set-label`** - a single `OK: ...` or
   `ERROR: ...` line. The whole output is the status; no parsing needed.
-- **`sledovani show`, `lustrace firma`, `lustrace osoba`** — structured JSON. Read directly or
+- **`sledovani show`, `lustrace firma`, `lustrace osoba`** - structured JSON. Read directly or
   filter with `jq`. Never with `sed`/`grep`.
 
 ```bash
@@ -48,7 +48,7 @@ insolvence-cli sledovani <verb> ...         # stateful tracking of subjects
 
 ---
 
-## Decision tree — when to use what
+## Decision tree - when to use what
 
 **The user asks "je firma X v insolvenci?" / "má osoba Y úpadek?" (one-off, no monitoring):**
 → `insolvence-cli lustrace firma <IČO>` or `insolvence-cli lustrace osoba <PŘÍJMENÍ> <JMÉNO> <RRRR-MM-DD>`
@@ -67,7 +67,7 @@ insolvence-cli sledovani <verb> ...         # stateful tracking of subjects
 2. **If tracked** → `insolvence-cli sledovani show <ID>` (rich state + change history). Optionally
    `insolvence-cli sledovani check <ID>` first to refresh from ISIR.
 3. **If NOT tracked** → `insolvence-cli lustrace ...`, present the result, AND offer:
-   *"Pokud chceš, můžu subjekt přidat ke sledování — budu denně hlídat nová a změněná řízení."*
+   *"Pokud chceš, můžu subjekt přidat ke sledování - budu denně hlídat nová a změněná řízení."*
 
 **Never add a subject to tracking without explicit user intent.**
 
@@ -79,7 +79,7 @@ insolvence-cli sledovani <verb> ...         # stateful tracking of subjects
 → `insolvence-cli sledovani set-label <ID> "..."`  (`""` clears)
 → `insolvence-cli sledovani remove <ID>`
 
-`<ID>` is the subject UUID from `sledovani list`, or — for companies — the IČO.
+`<ID>` is the subject UUID from `sledovani list`, or - for companies - the IČO.
 
 ---
 
@@ -113,7 +113,7 @@ insolvence-cli sledovani confirm <ID> --all
 
 ---
 
-## `insolvence-cli sledovani` — subject monitoring
+## `insolvence-cli sledovani` - subject monitoring
 
 Stateful watchdog. State is stored in `~/.cdx/apps/insolvence/subjekty/`. A single central cron
 automation (`0 7 * * *`) runs `insolvence-cli sledovani check` daily to refresh all tracked
@@ -121,7 +121,7 @@ subjects and record changes.
 
 ### E-mail alerts
 
-E-mail alerts are a **persistent setting** for the app — turn them on or off with `notify set`:
+E-mail alerts are a **persistent setting** for the app - turn them on or off with `notify set`:
 
 ```bash
 insolvence-cli notify set --email      # turn on
@@ -131,16 +131,16 @@ insolvence-cli notify show             # show current status
 
 When the setting is on, `insolvence-cli sledovani check` e-mails the user a summary itself after the
 check, **only if new changes were found** (nothing is sent when there's no change). The e-mail goes
-automatically to the signed-in user's address — never handle or pass an address, token or secret; the
+automatically to the signed-in user's address - never handle or pass an address, token or secret; the
 daemon fills them in.
 
 | User wants | Do |
 |---|---|
-| alerted when a subject changes | `notify set --email` — `check` then e-mails on a real change |
+| alerted when a subject changes | `notify set --email` - `check` then e-mails on a real change |
 | a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 The signed-in user always gets the e-mail; `notify recipients add/remove/set/clear` manage **extra**
-recipients on top. You don't need to add the signed-in user's own address — it's redundant (they're
+recipients on top. You don't need to add the signed-in user's own address - it's redundant (they're
 always a recipient) and gets dropped automatically.
 
 When the user says e.g. *„hlídej IČO 04863313 a každý týden mi pošli e-mail s novými řízeními"*:
@@ -148,22 +148,22 @@ When the user says e.g. *„hlídej IČO 04863313 a každý týden mi pošli e-m
 1. Add the subject(s) to monitoring (`sledovani add-firma` / `add-osoba`).
 2. Turn on e-mail alerts: `insolvence-cli notify set --email`.
 3. Confirm what that gives them: the shipped `automations/check-insolvence.md` checks every tracked
-   subject daily at 7:00 and e-mails as soon as something changes — sooner than the weekly they asked
+   subject daily at 7:00 and e-mails as soon as something changes - sooner than the weekly they asked
    for.
 
-That is the whole setup — **don't create an automation for this.** The shipped one already runs the
+That is the whole setup - **don't create an automation for this.** The shipped one already runs the
 same `sledovani check`, and `check` advances the stored snapshot, so a second automation would compare
 fresh data against fresh data, find nothing, and never e-mail.
 
 Only if the user wants a cadence other than daily: disable the shipped automation first
-(`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement —
+(`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement -
 otherwise the daily run keeps consuming changes before yours sees them.
 
 ### What changes are detected
 
-- **nové řízení** — a new insolvency proceeding (spisová značka) appears for the subject
-- **změna stavu** — a tracked proceeding's status changes (e.g. úpadek → konkurs → ukončeno)
-- **nová událost** — reserved for event-level updates
+- **nové řízení** - a new insolvency proceeding (spisová značka) appears for the subject
+- **změna stavu** - a tracked proceeding's status changes (e.g. úpadek → konkurs → ukončeno)
+- **nová událost** - reserved for event-level updates
 
 Each detected change is stored with `confirmed_on: null` until marked read.
 
@@ -172,12 +172,12 @@ Each detected change is stored with `confirmed_on: null` until marked read.
 Natural-person lookup matches by surname + given name + date of birth. The ISIR service only
 returns a trustworthy person match when the **date of birth matches** (it otherwise falls back to
 surname-only results, which this tool discards to avoid false positives). For an unambiguous match
-the birth number (rodné číslo) would be required, which this tool does not collect — so a
+the birth number (rodné číslo) would be required, which this tool does not collect - so a
 "no insolvency" result for a person means "no proceeding found for that exact name + DOB".
 
 ---
 
-## `insolvence-cli lustrace` — one-shot ISIR lookup
+## `insolvence-cli lustrace` - one-shot ISIR lookup
 
 ```bash
 insolvence-cli lustrace firma <IČO>
@@ -187,7 +187,7 @@ insolvence-cli lustrace osoba <PŘÍJMENÍ> <JMÉNO> <RRRR-MM-DD>
 Returns JSON: `{ "nazev"?, "rizeni": [ { spisova_znacka, soud, druh, stav, datum_zahajeni,
 datum_ukonceni, aktivni, url_detail } ], "relevance" }`. The `relevance` field (1–7) reports the
 ISIR match quality (1 = by rodné číslo, 2 = by IČO, 4/5 = surname + DOB matched, 6/7 = weak
-surname-only — discarded for persons). `url_detail` is the official ISIR detail page for the
+surname-only - discarded for persons). `url_detail` is the official ISIR detail page for the
 proceeding.
 
 ---
@@ -197,4 +197,4 @@ proceeding.
 The user-facing UI is at route `/insolvence` (Doplňky → Hlídač insolvencí). It shows the tracked
 subjects (split list + detail), lets the user add a company or a person, refresh, and review the
 change timeline. When you (AI) make tracking changes through `insolvence-cli sledovani ...`, they
-appear in the UI on the next refresh — no extra step needed.
+appear in the UI on the next refresh - no extra step needed.

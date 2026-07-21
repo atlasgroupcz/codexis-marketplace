@@ -1,4 +1,4 @@
-"""sledovana-judikatura tracking.py — topic lifecycle, notes, areas, reports."""
+"""sledovana-judikatura tracking.py - topic lifecycle, notes, areas, reports."""
 
 import io
 import json
@@ -137,7 +137,7 @@ class TestListAll:
         assert tracking.list_all() == []
 
     def test_unconfirmed_beats_confirmed_beats_idle(self, judikatura_app_dir):
-        # idle topic — no reports
+        # idle topic - no reports
         state.save_topic("idle", {
             "name": "Idle", "uuid": "idle",
             "created_at": "2026-03-01T00:00:00Z",

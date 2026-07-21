@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { MessageSquareText } from 'lucide-react'
 import { AddProceedingForm } from './add-proceeding-form'
 
-/** Cadastral parcel-map motif — parcels, a boundary line and a located plot. */
+/** Cadastral parcel-map motif - parcels, a boundary line and a located plot. */
 function PickProceedingArt({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">

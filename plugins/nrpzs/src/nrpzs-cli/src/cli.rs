@@ -19,7 +19,7 @@ const VALID_CISELNIKY: &[&str] = &[
 ];
 
 const ROOT_HELP: &str = "\
-nrpzs-cli — Národní registr poskytovatelů zdravotních služeb (ÚZIS) lookup.
+nrpzs-cli - Národní registr poskytovatelů zdravotních služeb (ÚZIS) lookup.
 
 Output: JSON on stdout (consume with `jq`); on failure an `ERROR:` line on stderr
 and a non-zero exit code. Read-only, no API key needed.
@@ -68,13 +68,13 @@ pub struct SearchArgs {
     /// Name or part of name (min. 3 characters).
     #[arg(long)]
     pub nazev: Option<String>,
-    /// Obor péče — code (e.g. L42) or name (e.g. urologie). Only with --level mista.
+    /// Obor péče - code (e.g. L42) or name (e.g. urologie). Only with --level mista.
     #[arg(long)]
     pub obor: Option<String>,
-    /// Kraj — code (e.g. CZ020) or name. Narrows --obor/--nazev locally; --level mista only.
+    /// Kraj - code (e.g. CZ020) or name. Narrows --obor/--nazev locally; --level mista only.
     #[arg(long)]
     pub kraj: Option<String>,
-    /// Okres — code (e.g. CZ020B) or name. Narrows --obor/--nazev locally; --level mista only.
+    /// Okres - code (e.g. CZ020B) or name. Narrows --obor/--nazev locally; --level mista only.
     #[arg(long)]
     pub okres: Option<String>,
     /// Granularity of the result.
@@ -121,7 +121,7 @@ pub fn run() -> Result<()> {
         Command::Ciselnik { name } => {
             if !VALID_CISELNIKY.contains(&name.as_str()) {
                 return Err(anyhow::anyhow!(
-                    "unknown číselník {name:?} — valid names: {}",
+                    "unknown číselník {name:?} - valid names: {}",
                     VALID_CISELNIKY.join(", ")
                 ));
             }
@@ -222,7 +222,7 @@ fn resolve_obor(client: &NrpzsClient, input: &str) -> Result<String> {
     let codelist = client.get_array("/obory-pece", &[])?;
     transform::obor_code(&codelist, input).ok_or_else(|| {
         anyhow::anyhow!(
-            "unknown obor péče {input:?} — run `nrpzs-cli ciselnik obory-pece` to list codes/names"
+            "unknown obor péče {input:?} - run `nrpzs-cli ciselnik obory-pece` to list codes/names"
         )
     })
 }

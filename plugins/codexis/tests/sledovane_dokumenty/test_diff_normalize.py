@@ -1,4 +1,4 @@
-"""Text normalization for diff.py — pure regex functions."""
+"""Text normalization for diff.py - pure regex functions."""
 
 from sledovane_dokumenty_core.diff import (
     normalize_cdx_links,

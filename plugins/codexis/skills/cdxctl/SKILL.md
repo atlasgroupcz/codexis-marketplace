@@ -2,7 +2,7 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
+description: Manage Codexis platform objects with the cdxctl CLI - create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
 version: 1.7.0
 i18n:
   cs:
@@ -16,11 +16,11 @@ i18n:
     summary: "Vytváranie a správa vlastných agentov, zručností, automatizácií a doplnkov priamo z konverzácie."
 ---
 
-# cdxctl — Platform Management CLI
+# cdxctl - Platform Management CLI
 
 `cdxctl` manages automations, marketplaces, and plugins via the shell. Output is JSON by default (use `--table` for human-readable).
 
-Always go through `cdxctl` for these platform objects — never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
+Always go through `cdxctl` for these platform objects - never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
 
 ## Automations
 
@@ -47,12 +47,12 @@ cdxctl automation create-command \
     --command "cdx-sledovane-dokumenty check" \
     --description "Weekly tracked-document change check"
 
-# Update (partial — only specified fields change; never touches enabled)
+# Update (partial - only specified fields change; never touches enabled)
 cdxctl automation update <id> --title "New Title"
 cdxctl automation update <id> --repeat WEEKLY --day-part EVENING --days-of-week 1 --days-of-week 4
 cdxctl automation update <id> --prompt "Updated prompt" --max-turns 30
 
-# Enable / disable (separate from update — see note below)
+# Enable / disable (separate from update - see note below)
 cdxctl automation enable <id>
 cdxctl automation disable <id>
 
@@ -70,7 +70,7 @@ shipped by a plugin. `update` only edits USER automations (the daemon rejects ed
 to shipped/plugin automations) and never changes the enabled state.
 
 **Disabling a shipped (plugin) automation:** you cannot edit or delete a plugin-shipped
-automation, but you can disable one — e.g. to replace it with your own on a different
+automation, but you can disable one - e.g. to replace it with your own on a different
 schedule. Find it with `cdxctl automation list`, then `cdxctl automation disable <id>`.
 The disable is remembered per user and survives plugin updates and daemon restarts.
 
@@ -78,7 +78,7 @@ The disable is remembered per user and survives plugin updates and daemon restar
 
 **Required fields for create-command:** `--title`, `--repeat` (+ `--day-part`), `--command`
 
-**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative — e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--repeat`/`--day-part`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt — this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
+**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative - e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--repeat`/`--day-part`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt - this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
 
 **IDs:** Use the `id` or `uuid` from `automation list` output. Both Node IDs (base64) and raw UUIDs work.
 
@@ -123,7 +123,7 @@ cdxctl plugin uninstall <id>
 
 ## Agents
 
-Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API. Agents live one markdown file per agent at `~/.cdx/agents/<name>.md` on the daemon side — always go through `cdxctl agent create`/`update`, never write that file directly.
+Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API. Agents live one markdown file per agent at `~/.cdx/agents/<name>.md` on the daemon side - always go through `cdxctl agent create`/`update`, never write that file directly.
 
 ```bash
 # List all agents
@@ -170,18 +170,18 @@ cdxctl agent delete <id>
 **IDs:** `cdxctl agent update` and `cdxctl agent delete` accept the GraphQL `id` from `cdxctl agent list`, a base64 Node ID, or a raw local agent name like `my-agent`.
 
 **Agent frontmatter contract:**
-- `name` — required, `^[a-z][a-z0-9-]*$`, max 64 chars, no consecutive hyphens (e.g. `contract-reviewer`). If omitted from a `--file` payload, it falls back to the filename.
-- `description` — required, max 1024 chars, one sentence. This is tool-facing context, not the user-facing summary.
-- `uuid` — optional; the daemon generates one automatically when omitted. Only include it when updating an existing agent (preserve the original) — never invent one for a new agent.
-- `model`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `jurisdictions` — all optional; set only what the user actually asked for.
-- `i18n.<lang>.displayName` and `i18n.<lang>.summary` — **mandatory** for `cs`, `sk`, and `en`. This is what the Agents page renders instead of the raw `name` slug, so a missing translation shows a blank or fallback title. `displayName` must be human-formatted (e.g. "Contract Reviewer", not `contract-reviewer`); `summary` is a one-sentence, user-facing description in that language — distinct from the frontmatter-level `description`, which stays a single technical sentence for tool-facing context.
+- `name` - required, `^[a-z][a-z0-9-]*$`, max 64 chars, no consecutive hyphens (e.g. `contract-reviewer`). If omitted from a `--file` payload, it falls back to the filename.
+- `description` - required, max 1024 chars, one sentence. This is tool-facing context, not the user-facing summary.
+- `uuid` - optional; the daemon generates one automatically when omitted. Only include it when updating an existing agent (preserve the original) - never invent one for a new agent.
+- `model`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `jurisdictions` - all optional; set only what the user actually asked for.
+- `i18n.<lang>.displayName` and `i18n.<lang>.summary` - **mandatory** for `cs`, `sk`, and `en`. This is what the Agents page renders instead of the raw `name` slug, so a missing translation shows a blank or fallback title. `displayName` must be human-formatted (e.g. "Contract Reviewer", not `contract-reviewer`); `summary` is a one-sentence, user-facing description in that language - distinct from the frontmatter-level `description`, which stays a single technical sentence for tool-facing context.
 - The persona body (everything after the closing `---`) is the system prompt: who the agent is, what it is expert at, how it answers, what it refuses. Write it in the user's language.
 
 **Creating an agent from a persona description:** when the user describes an agent they want (rather than handing you a ready markdown file), design it yourself before calling `cdxctl agent create`:
 1. If the purpose, name, or personality is unclear, ask one short clarifying question before writing anything.
 2. Pick a concise `name` slug, a one-sentence `description`, and write the persona instructions that define the agent's expertise, tone, and boundaries.
 3. Fill in `i18n.cs`, `i18n.sk`, and `i18n.en` with a human-formatted `displayName` and a one-sentence `summary` for each.
-4. Run `cdxctl agent create --stdin` with the composed markdown. `cdxctl` rejects a `name` that collides with an existing agent — on that error, pick a different name and retry instead of overwriting the existing one.
+4. Run `cdxctl agent create --stdin` with the composed markdown. `cdxctl` rejects a `name` that collides with an existing agent - on that error, pick a different name and retry instead of overwriting the existing one.
 5. Confirm to the user what was created and that the agent is now available on the Agents page.
 
 **Recommended agent edit workflow:**
@@ -241,7 +241,7 @@ cdxctl skill delete <id>
 
 ## Tabular Extraction
 
-Extract structured data from files in a folder. Define columns (what to extract), then start extraction — the backend processes each file with AI.
+Extract structured data from files in a folder. Define columns (what to extract), then start extraction - the backend processes each file with AI.
 
 ```bash
 # Check current extraction state for a folder
@@ -261,7 +261,7 @@ cdxctl tabular add-column ~/invoices --name "Priority" --col-type tag \
 cdxctl tabular remove-column ~/invoices --column-id <id>
 
 # Start the extraction (processes all files in folder).
-# Use --wait to block until the extraction reaches DONE (or FAILED) — it polls
+# Use --wait to block until the extraction reaches DONE (or FAILED) - it polls
 # for you. Never hand-roll a status-polling shell loop; the terminal field is
 # `status` ("DONE"/"FAILED"), not `state`.
 cdxctl tabular start ~/invoices --wait
@@ -286,7 +286,7 @@ cdxctl notification create --message "Export completed: report.xlsx"
 
 # Create with a link (clicking navigates to the URL and marks as confirmed)
 cdxctl notification create \
-    --message "Chat completed — click to view" \
+    --message "Chat completed - click to view" \
     --link "/chat/Q2hhdDoxMjYtMzZhOTFk..."
 
 # Create with a shell action (executed on daemon refresh)
@@ -338,7 +338,7 @@ cdxctl notification email send \
 
 The mail is sent from the agent's address and is threaded into the current chat, so when the
 recipient hits **Reply** their answer continues this same conversation. Pass `--no-thread` for mail
-that should not come back — a reply to it starts a new chat instead.
+that should not come back - a reply to it starts a new chat instead.
 
 ```bash
 cdxctl notification email send --subject "Newsletter" --body "..." --no-thread
@@ -373,12 +373,12 @@ the same for a given automation and day, which spreads load across users.
 | `--repeat MONTHLY --day-part NIGHT --day-of-month 15` | 15th of each month, between 00:00 and 06:00 |
 
 **Exact times and sub-daily schedules are not supported.** There is no "every 15
-minutes" or "at 9:00 sharp" — pick the window the work belongs in.
+minutes" or "at 9:00 sharp" - pick the window the work belongs in.
 
 ### Deprecated: `--cron`
 
 `--cron` still accepts a 5-field expression and translates it to the nearest
-day-part window (`0 9 * * *` becomes `DAILY MORNING`). It is a client-side shim —
-the daemon has no cron field any more — and it rejects anything that cannot be
+day-part window (`0 9 * * *` becomes `DAILY MORNING`). It is a client-side shim -
+the daemon has no cron field any more - and it rejects anything that cannot be
 expressed as a window, such as `*/15 * * * *` or `0 9 * * 1-5`. Use
 `--repeat`/`--day-part` in new work.

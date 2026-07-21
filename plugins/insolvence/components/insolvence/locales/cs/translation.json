@@ -90,7 +90,7 @@
     "text": "Přidejte firmu nebo osobu a hlídač bude denně kontrolovat nová a změněná insolvenční řízení.",
     "add": "Přidat subjekt",
     "noSelection": "Vyberte subjekt v seznamu vlevo.",
-    "chatLead": "Nebo si hlídání nastavte v konverzaci — napište třeba:",
+    "chatLead": "Nebo si hlídání nastavte v konverzaci - napište třeba:",
     "chatPrompt": "Hlídej insolvenci firmy s IČO 04863313 a každý týden mi pošli e-mailem souhrn nových a změněných řízení."
   },
   "notify": {
@@ -108,7 +108,7 @@
     "inAppLabel": "Oznámení v centru notifikací",
     "inAppDescription": "",
     "saved": "Nastavení oznámení uloženo.",
-    "ownAddress": "Tato adresa je vaše — e-mail vám chodí vždy.",
+    "ownAddress": "Tato adresa je vaše - e-mail vám chodí vždy.",
     "duplicate": "Tato adresa už je v seznamu."
   }
 }

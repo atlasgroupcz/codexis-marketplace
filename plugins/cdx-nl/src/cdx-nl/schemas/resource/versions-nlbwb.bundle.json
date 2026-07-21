@@ -101,7 +101,7 @@
           "pdf": { "$ref": "#/components/schemas/WettenOverheidNlBwbAttachmentRef", "description": "Consolidated PDF for this toestand; null when not rendered yet" },
           "amendmentPdfs": {
             "type": "array",
-            "description": "Amendment PDFs (Stb/Stcrt/Trb publications) — empty list if none",
+            "description": "Amendment PDFs (Stb/Stcrt/Trb publications) - empty list if none",
             "items": { "$ref": "#/components/schemas/WettenOverheidNlBwbAttachmentRef" }
           }
         }

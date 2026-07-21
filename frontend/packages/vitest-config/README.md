@@ -6,16 +6,16 @@ Shared Vitest settings for the plugin component UIs.
 
 Vitest externalizes dependencies for its SSR transform by default. `zod`'s ESM
 entry then resolves to an empty module, so `z.object` is `undefined` at import
-time and every schema-touching test fails to *collect* — not fail, collect. It
+time and every schema-touching test fails to *collect* - not fail, collect. It
 depends on the installed `node_modules` layout, so it passes on one machine and
 fails on another.
 
-The fix is one line — `server.deps.inline: ['zod']` — but it used to be copied
+The fix is one line - `server.deps.inline: ['zod']` - but it used to be copied
 into four configs and missing from three others. This package holds it once.
 
 ## Usage
 
-Dedicated Vitest configs (`vitest.config.ts`) — take the whole base and layer
+Dedicated Vitest configs (`vitest.config.ts`) - take the whole base and layer
 your setup file / coverage on top:
 
 ```ts
@@ -28,7 +28,7 @@ export default mergeConfig(
 )
 ```
 
-Vite app configs (`vite.config.ts`) that carry a small `test:` block — take just
+Vite app configs (`vite.config.ts`) that carry a small `test:` block - take just
 the inline list:
 
 ```ts

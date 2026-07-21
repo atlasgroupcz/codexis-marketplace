@@ -17,7 +17,7 @@ def atomic_replace(path, write_fn, mode=None):
     """Atomically replace `path`: tmp file + rename.
 
     `write_fn` receives an open text-mode file handle and writes the body.
-    `mode` — if given, the tmp file is chmod'ed before the rename (use 0o600
+    `mode` - if given, the tmp file is chmod'ed before the rename (use 0o600
     for files containing secrets).
     """
     d = os.path.dirname(path) or "."

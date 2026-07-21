@@ -7,7 +7,7 @@ steps:
 
       ---
       name: ee-agent-{{ run_id }}
-      description: "E2E test agent — initial description"
+      description: "E2E test agent - initial description"
       tools: Read, Bash
       maxTurns: 8
       ---
@@ -24,7 +24,7 @@ steps:
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
         count: 1
         matches_subset:
-          description: "E2E test agent — initial description"
+          description: "E2E test agent - initial description"
           editable: true
           deletable: true
 
@@ -42,7 +42,7 @@ steps:
         jsonpath: "$.agents[?(@.editable == true)].name"
         contains: "ee-agent-{{ run_id }}"
 
-  - prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent — updated'."
+  - prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent - updated'."
     expect:
       tool_call:
         name: shell
@@ -52,7 +52,7 @@ steps:
       state:
         graphql: "{ agents { name description } }"
         jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
-        equals: "E2E test agent — updated"
+        equals: "E2E test agent - updated"
 
   - prompt: "Smaž agenta ee-agent-{{ run_id }}."
     expect:

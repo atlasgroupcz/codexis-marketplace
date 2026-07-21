@@ -2,9 +2,9 @@ name: cdx-cz-psp-search
 description: Verify the cdx-cz-psp skill can search Czech parliamentary documents and legislative proposals.
 
 # Czech Parliament (psp.cz). Two sources:
-#   CZPSPDOK — reports, interpellations, EU docs
-#   CZPSPPRE — legislative proposals (bills)
-# Interpellations about taxes ("daně") are a perennial topic — always
+#   CZPSPDOK - reports, interpellations, EU docs
+#   CZPSPPRE - legislative proposals (bills)
+# Interpellations about taxes ("daně") are a perennial topic - always
 # hits plenty of results.
 
 steps:

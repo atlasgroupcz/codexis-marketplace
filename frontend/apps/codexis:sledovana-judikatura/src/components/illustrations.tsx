@@ -1,8 +1,8 @@
-/* Branded spot illustrations for empty states — CODEXIS green, editorial line+fill. */
+/* Branded spot illustrations for empty states - CODEXIS green, editorial line+fill. */
 
 type ArtProps = { className?: string }
 
-/** "We watch case law for your topics" — scales of justice under a radar sweep. */
+/** "We watch case law for your topics" - scales of justice under a radar sweep. */
 export function WatchCaseLawArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
@@ -32,7 +32,7 @@ export function WatchCaseLawArt({ className }: ArtProps) {
   )
 }
 
-/** "No new reports yet" — a report sheet at rest with a green check. */
+/** "No new reports yet" - a report sheet at rest with a green check. */
 export function NoReportsArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">

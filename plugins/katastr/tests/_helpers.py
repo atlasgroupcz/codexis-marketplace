@@ -19,11 +19,11 @@ def _load_cli():
     """Load bin/katastr-cli as an in-process module (defs only; main() is
     guarded by __main__), so its cmd_* functions can be called and its
     module-level imports (tracking, notify, notify_settings, ...) monkeypatched
-    directly. Used by CLI-wiring tests that need to observe/mock internals —
+    directly. Used by CLI-wiring tests that need to observe/mock internals -
     something a subprocess-based invocation can't do."""
     path = os.path.join(os.path.dirname(__file__), "..", "bin", "katastr-cli")
     # bin/katastr-cli has no .py suffix, so spec_from_file_location can't
-    # auto-detect a loader from the extension — pass one explicitly.
+    # auto-detect a loader from the extension - pass one explicitly.
     loader = importlib.machinery.SourceFileLoader("katastr_cli", path)
     spec = importlib.util.spec_from_file_location("katastr_cli", path, loader=loader)
     module = importlib.util.module_from_spec(spec)
@@ -35,7 +35,7 @@ def _load_component_binary():
     """Load components/katastr/katastr.py (the CGI binary) as an in-process
     module (defs only; main() is guarded by __main__), so handle_get/handle_post
     can be called directly and its module-level imports (tracking, notify,
-    notify_settings, ...) monkeypatched — mirrors _load_cli() above."""
+    notify_settings, ...) monkeypatched - mirrors _load_cli() above."""
     path = os.path.join(
         os.path.dirname(__file__), "..", "components", "katastr", "katastr.py"
     )

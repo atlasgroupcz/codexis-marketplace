@@ -4,7 +4,7 @@ Sends only when new case law was actually found; a quiet run sends nothing.
 
 E-mail uses the daemon's plugin e-mail API (POST /rest/v1/plugin/email/send).
 Auth is the VM/daemon token the host writes to ~/.cdx/env/secret (the same token
-cdxctl uses) — NOT CODEXIS_USER_API_TOKEN, which is a JWT for external Codexis
+cdxctl uses) - NOT CODEXIS_USER_API_TOKEN, which is a JWT for external Codexis
 sources and is rejected by the gateway. The daemon URL comes from
 CODEXIS_PUBLIC_DAEMON_URL. The recipient defaults to the authenticated user;
 pass `to` to send elsewhere. Meant to run from a recurring automation.
@@ -28,7 +28,7 @@ from .exceptions import TopicError
 
 _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 # Auth for the daemon/gateway API lives in this file (written by the host), NOT in
-# CODEXIS_USER_API_TOKEN — that is a JWT for external Codexis sources and the gateway
+# CODEXIS_USER_API_TOKEN - that is a JWT for external Codexis sources and the gateway
 # rejects it (403). This is the same token cdxctl reads.
 _SECRET_FILE = os.path.join(".cdx", "env", "secret")
 
@@ -102,7 +102,7 @@ def without_self(recipients: list | None) -> list:
 
     The signed-in user always receives the e-mail, so listing their own address
     as an extra is redundant (and shows as a duplicate pill in the UI). This is
-    the store-time guard for the CLI and daemon write paths — the FE dialog
+    the store-time guard for the CLI and daemon write paths - the FE dialog
     already blocks it on entry. Case-insensitive. When the signed-in user can't
     be resolved, the list is returned unchanged (keep an extra rather than drop a
     real recipient on a transient lookup failure). No `me` lookup for an empty
@@ -131,7 +131,7 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
     auth = _load_auth()
     if not daemon_url or not auth:
         raise TopicError(
-            "E-mail nelze odeslat — chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací "
+            "E-mail nelze odeslat - chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací "
             "token (~/.cdx/env/secret). Spouštějte přes automatizaci v CODEXIS."
         )
 

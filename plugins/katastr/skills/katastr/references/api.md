@@ -1,7 +1,7 @@
-# ČÚZK REST API KN — raw lookup reference
+# ČÚZK REST API KN - raw lookup reference
 
 Raw GET access via `katastr-cli api get "<PATH>"`. The command handles auth,
-errors and JSON output. Base host is `https://api-kn.cuzk.gov.cz` — pass only the
+errors and JSON output. Base host is `https://api-kn.cuzk.gov.cz` - pass only the
 path (e.g. `/api/v1/Parcely/12345`). The API is GET-only and returns JSON.
 
 Official Swagger UI: `https://api-kn.cuzk.gov.cz/swagger/`
@@ -41,7 +41,7 @@ LV extracts, the official channel is DP/WSDP. The API is useful for identificati
 linking (address ↔ building ↔ parcels ↔ LV number), basic attributes, and basic
 signals (plomby/řízení lists if present).
 
-## "Is it clean?" — quick check for a parcel
+## "Is it clean?" - quick check for a parcel
 
 "Čisté" usually means one of two things, so clarify with the user:
 - `no_plomby`: no pending proceedings (plomby/řízení) on parcel/building/unit in this API
@@ -62,7 +62,7 @@ Inputs:
 - `KodKatastralnihoUzemi` (e.g. 638790)
 - `KmenoveCisloParcely` (e.g. 545)
 - `PoddeleniCislaParcely` (optional; for `2642/9` use `KmenoveCisloParcely=2642` + `PoddeleniCislaParcely=9`)
-- `DruhCislovaniParcely` (1/2 — try both if unsure)
+- `DruhCislovaniParcely` (1/2 - try both if unsure)
 - `TypParcely` usually `PKN`
 
 ```bash
@@ -108,7 +108,7 @@ Trick: read `definicniBod` from `Parcely/{id}` or `Stavby/{id}` and build a squa
 
 REST API KN does not accept free-text addresses. Use the RUIAN address point code:
 
-1. Resolve address via VDP RUIAN fulltext (separate service, NOT via `katastr-cli` — use `curl` here as an exception):
+1. Resolve address via VDP RUIAN fulltext (separate service, NOT via `katastr-cli` - use `curl` here as an exception):
    ```bash
    curl -fsS \
      -H "X-Requested-With: XMLHttpRequest" \
@@ -146,7 +146,7 @@ katastr-cli api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=<CISLO>&Rok=<ROK
 ```
 
 Newest proceedings at a workplace ("co se dnes podalo"): use `Rizeni/PrijateDne`,
-but call it **once per TypRizeni** — the endpoint accepts only `V`, `Z`, `PGP`
+but call it **once per TypRizeni** - the endpoint accepts only `V`, `Z`, `PGP`
 (it rejects `PD`/`ZPV`). Merge the lists, sort by `datumPrijeti` desc, take N.
 ```bash
 for t in V Z PGP; do

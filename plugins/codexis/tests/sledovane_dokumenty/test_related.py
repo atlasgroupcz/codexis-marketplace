@@ -1,4 +1,4 @@
-"""related.py — related-document tracking: baseline, enable/disable, detect_changes."""
+"""related.py - related-document tracking: baseline, enable/disable, detect_changes."""
 
 import pytest
 
@@ -13,7 +13,7 @@ def mock_clients(monkeypatch):
     Returns a dict used to set per-test response; keys:
       - related_ids_by_type: {relation_type: [doc_ids]}
       - titles: {doc_id: title}
-      - raise_on_fetch: bool (default False) — make fetch_all_related_ids raise
+      - raise_on_fetch: bool (default False) - make fetch_all_related_ids raise
     """
     config = {
         "related_ids_by_type": {},

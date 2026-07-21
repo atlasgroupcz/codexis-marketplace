@@ -10,7 +10,7 @@ const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
 const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
 const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
 const VERTEX_LOCATION: &str = "global";
-// Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see upload_endpoint().
+// Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL - see upload_endpoint().
 
 const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
     Use this exact format:\n\n\
@@ -23,7 +23,7 @@ const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
     - Identify speakers if distinguishable (e.g. [00:05] Moderator: ...)\n\
     - Mark visual descriptions with (scene) prefix: on-screen text, slides, graphics, camera changes\n\
     - Note significant audio cues with (audio) prefix: music, sound effects, silence\n\
-    - No extra commentary, headers, or formatting — just timestamped lines\n\
+    - No extra commentary, headers, or formatting - just timestamped lines\n\
     - Do not use markdown, code fences, or any wrapper";
 
 fn main() {

@@ -65,7 +65,7 @@
       "zastaveni": "Zastaveno",
       "zpetvzeti": "Vzato zpět",
       "now": "teď",
-      "expected": "—"
+      "expected": "-"
     },
     "type": {
       "vklad": "Vklad",
@@ -101,7 +101,7 @@
     "inAppLabel": "Oznámení v centru notifikací",
     "inAppDescription": "",
     "section": "Oznámení",
-    "ownAddress": "Tato adresa je vaše — e-mail vám chodí vždy.",
+    "ownAddress": "Tato adresa je vaše - e-mail vám chodí vždy.",
     "duplicate": "Tato adresa už je v seznamu."
   },
   "connection": {

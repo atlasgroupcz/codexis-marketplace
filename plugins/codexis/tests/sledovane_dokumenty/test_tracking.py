@@ -1,4 +1,4 @@
-"""sledovane-dokumenty tracking.py — pure/stateful ops: notes, groups, list_all, confirm, remove."""
+"""sledovane-dokumenty tracking.py - pure/stateful ops: notes, groups, list_all, confirm, remove."""
 
 import pytest
 

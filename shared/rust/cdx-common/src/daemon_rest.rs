@@ -11,7 +11,7 @@
 /// secret file is missing or empty.
 ///
 /// This is the VM token (the same one `cdxctl` reads), NOT
-/// `CODEXIS_USER_API_TOKEN` — the gateway rejects the latter for these
+/// `CODEXIS_USER_API_TOKEN` - the gateway rejects the latter for these
 /// endpoints.
 pub fn daemon_bearer() -> Option<String> {
     let secret = crate::config::read_daemon_secret()?;

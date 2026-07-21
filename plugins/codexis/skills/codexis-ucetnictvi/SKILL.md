@@ -6,20 +6,20 @@ version: 2.2.0
 jurisdictions: [CZ]
 i18n:
   cs:
-    displayName: "CODEXIS — Účetnictví ČR"
-    summary: "České účetní předpisy a praxe — závěrky, rozvaha, výsledovka, oceňování, odpisy, ČÚS i IFRS."
+    displayName: "CODEXIS - Účetnictví ČR"
+    summary: "České účetní předpisy a praxe - závěrky, rozvaha, výsledovka, oceňování, odpisy, ČÚS i IFRS."
   en:
-    displayName: "CODEXIS — Czech Accounting"
-    summary: "Czech accounting regulations and practice — financial statements, balance sheet, income statement, valuation, ČÚS and IFRS."
+    displayName: "CODEXIS - Czech Accounting"
+    summary: "Czech accounting regulations and practice - financial statements, balance sheet, income statement, valuation, ČÚS and IFRS."
   sk:
-    displayName: "CODEXIS — Účtovníctvo ČR"
-    summary: "České účtovné predpisy a prax — závierky, súvaha, výsledovka, oceňovanie, odpisy, ČÚS i IFRS."
-description: Use when the user's question relates to Czech accounting, or when the answer may depend on an accounting rule even if framed around something else — účetnictví, účetní jednotka, závěrka, rozvaha, výsledovka, příloha závěrky, vybraná účetní jednotka, účetní období, kategorie účetních jednotek (mikro/malá/střední/velká), oceňování, odpisy, rezervy, opravné položky, inventarizace, daňová evidence, archivace, účetní doklad, kniha, zákon č. 563/1991 Sb., vyhláška 500/2002 / 501/2002 / 502/2002 / 504/2002 / 410/2009 Sb., ČÚS, IFRS, or any Czech accounting standard. Activate also when the user does not name účetnictví explicitly but their situation requires accounting treatment (reporting, valuation, period-end, capitalization vs. expense, recognition, record-keeping). Standalone authoritative skill — bundles general CODEXIS methodology with Czech accounting reasoning; no need to load general codexis.
+    displayName: "CODEXIS - Účtovníctvo ČR"
+    summary: "České účtovné predpisy a prax - závierky, súvaha, výsledovka, oceňovanie, odpisy, ČÚS i IFRS."
+description: Use when the user's question relates to Czech accounting, or when the answer may depend on an accounting rule even if framed around something else - účetnictví, účetní jednotka, závěrka, rozvaha, výsledovka, příloha závěrky, vybraná účetní jednotka, účetní období, kategorie účetních jednotek (mikro/malá/střední/velká), oceňování, odpisy, rezervy, opravné položky, inventarizace, daňová evidence, archivace, účetní doklad, kniha, zákon č. 563/1991 Sb., vyhláška 500/2002 / 501/2002 / 502/2002 / 504/2002 / 410/2009 Sb., ČÚS, IFRS, or any Czech accounting standard. Activate also when the user does not name účetnictví explicitly but their situation requires accounting treatment (reporting, valuation, period-end, capitalization vs. expense, recognition, record-keeping). Standalone authoritative skill - bundles general CODEXIS methodology with Czech accounting reasoning; no need to load general codexis.
 ---
 
-# CODEXIS — Czech Accounting
+# CODEXIS - Czech Accounting
 
-Standalone skill for Czech accounting questions. Domain methodology for analyzing any accounting question — not a catalogue of answers.
+Standalone skill for Czech accounting questions. Domain methodology for analyzing any accounting question - not a catalogue of answers.
 
 ## Operating Assumptions
 
@@ -52,7 +52,7 @@ Standalone skill for Czech accounting questions. Domain methodology for analyzin
 
 ## Klíčové české účetní předpisy
 
-Referenční mapa — vždy ověř aktuální verzi přes `/versions` před extrakcí textu.
+Referenční mapa - vždy ověř aktuální verzi přes `/versions` před extrakcí textu.
 
 | Předpis | Číslo | CODEXIS base | Oblast |
 |---|---|---|---|
@@ -65,7 +65,7 @@ Referenční mapa — vždy ověř aktuální verzi přes `/versions` před extr
 | Vyhláška pro VÚJ | 410/2009 Sb. | `cz_law/410/2009` | vybrané účetní jednotky (veřejný sektor) |
 | ZDP (tax-accounting vazba) | 586/1992 Sb. | `cz_law/586/1992` | daňová uznatelnost, daňové odpisy |
 
-České účetní standardy (ČÚS): vydává MF, číslované podle vyhlášky — ČÚS 001–024 pro podnikatele, samostatné řady pro banky, pojišťovny, VÚJ.
+České účetní standardy (ČÚS): vydává MF, číslované podle vyhlášky - ČÚS 001–024 pro podnikatele, samostatné řady pro banky, pojišťovny, VÚJ.
 
 ## Jak hledat přes cdx-cli
 
@@ -90,15 +90,15 @@ cdx-cli search CR --query "účetní jednotka" --current --limit 5
 - Pokud `/versions` neukáže boundary u query_date, odpověz to přímo.
 - Používej base ID pro `/versions`, version ID pro `/text` a `/toc`.
 - Pro konkrétní paragraf: nejdřív `/toc`, pak resolve `elementId`, pak `/text?part=<elementId>`.
-- Nehádej `docId` — extrahuj z API response.
+- Nehádej `docId` - extrahuj z API response.
 - Při selhání `/toc` fallback na `/text` celého předpisu.
 - Neříkej, že něco „není v zákoně", bez fetch celé relevantní části.
 
 ## Workflow profesionálního účetního / auditora
 
 1. **Reframe dotazu.** Klientovo lay wording je téměř vždy nepřesné. „Mám to dát do nákladů?" přelož do právní klasifikace: co je zdanitelné plnění, co je účetní náklad, co je výdaj, co je daňově uznatelný náklad.
-2. **Urči účetní režim stran.** Podnikatel v plném / zjednodušeném rozsahu, vybraná účetní jednotka, nonprofit, OSVČ na daňové evidenci, subjekt pod IFRS. Neřeš otázku, dokud neznáš režim — metody a výkazy se liší.
-3. **Určení kategorie účetní jednotky** (mikro / malá / střední / velká) — z ní plyne rozsah závěrky, audit, přílohy, konsolidace.
+2. **Urči účetní režim stran.** Podnikatel v plném / zjednodušeném rozsahu, vybraná účetní jednotka, nonprofit, OSVČ na daňové evidenci, subjekt pod IFRS. Neřeš otázku, dokud neznáš režim - metody a výkazy se liší.
+3. **Určení kategorie účetní jednotky** (mikro / malá / střední / velká) - z ní plyne rozsah závěrky, audit, přílohy, konsolidace.
 4. **Identifikuj VŠECHNY relevantní vrstvy úpravy.** Zákon o účetnictví × prováděcí vyhláška × ČÚS × vnitřní směrnice účetní jednotky. Složitější otázky vyžadují všechny čtyři.
 5. **Substance over form.** Nájem × leasing (finanční × operativní) × kupní smlouva s odkladem; sham × genuine; dependent × independent. Účetní zachycení sleduje ekonomickou podstatu, ne právní formu, pokud zákon nestanoví jinak.
 6. **Tax-accounting coupling.** Každou účetní otázku ověř z druhé strany: jaký dopad na daň z příjmů (daňová uznatelnost, odpisy, opravné položky), DPH, pojistné.
@@ -122,15 +122,15 @@ Při rozporu mezi metodickým pokynem a judikaturou má přednost judikatura. In
 
 ## Časové působnost
 
-Identifikuj *účetní období*, ve kterém transakce nastala, a aplikuj předpis v tehdejším znění — včetně přechodných ustanovení. Pro pokračující povinnosti (inventarizace, závěrka, audit) použij verzi platnou k rozvahovému dni, resp. ke dni podání. Zkontroluj, zda dostupný komentář postdatuje novelu (jinak může být obsoletní).
+Identifikuj *účetní období*, ve kterém transakce nastala, a aplikuj předpis v tehdejším znění - včetně přechodných ustanovení. Pro pokračující povinnosti (inventarizace, závěrka, audit) použij verzi platnou k rozvahovému dni, resp. ke dni podání. Zkontroluj, zda dostupný komentář postdatuje novelu (jinak může být obsoletní).
 
 ## Před odpovědí: retrieval checklist
 
 Než odpovíš, projdi tento checklist. Pokud některý bod nesplňuješ, **neposílej odpověď** a dohledej chybějící předpis.
 
 - **Procesní / organizační dotaz** („kdo zřizuje / jmenuje / stanoví / podává / rozhoduje / projednává"): neodpovídej z metodického pokynu, interní směrnice ani obecné úvahy, dokud jsi neověřil konkrétní paragraf závazného předpisu (zákon nebo prováděcí vyhláška). Metodika a vzor bez ověřeného § = drop.
-- **Vybrané účetní jednotky (VÚJ — stát, obce, kraje, příspěvkové organizace, státní fondy)**: před odpovědí vždy ověř, zda existuje zvláštní veřejnosektorová úprava (zejména vyhláška 410/2009 Sb., vyhláška 270/2010 Sb. pro inventarizaci, České účetní standardy řady 700+). Neodpovídej z obecné úpravy pro podnikatele (vyhláška 500/2002 Sb.), pokud dotaz směřuje na VÚJ.
-- **Obsah výkazové položky** (rozvaha, výsledovka, příloha): otevři příslušný paragraf prováděcí vyhlášky (500/2002 pro podnikatele, 410/2009 pro VÚJ, 501/2002 banky, 502/2002 pojišťovny) a odpovídej z **obsahového vymezení** položky v této vyhlášce. Název položky v běžném jazyce je zavádějící — obsah je definován legislativou.
+- **Vybrané účetní jednotky (VÚJ - stát, obce, kraje, příspěvkové organizace, státní fondy)**: před odpovědí vždy ověř, zda existuje zvláštní veřejnosektorová úprava (zejména vyhláška 410/2009 Sb., vyhláška 270/2010 Sb. pro inventarizaci, České účetní standardy řady 700+). Neodpovídej z obecné úpravy pro podnikatele (vyhláška 500/2002 Sb.), pokud dotaz směřuje na VÚJ.
+- **Obsah výkazové položky** (rozvaha, výsledovka, příloha): otevři příslušný paragraf prováděcí vyhlášky (500/2002 pro podnikatele, 410/2009 pro VÚJ, 501/2002 banky, 502/2002 pojišťovny) a odpovídej z **obsahového vymezení** položky v této vyhlášce. Název položky v běžném jazyce je zavádějící - obsah je definován legislativou.
 - **Definiční pojem se zákonnou definicí** („účetní jednotka", „účetní období", „roční úhrn čistého obratu", „kategorie účetní jednotky"): otevři přesný § ZoÚ nebo prováděcí vyhlášky a **reprodukuj přesnou definici včetně všech kvalifikátorů** (obsahuje-li vzorec/výpočet, uveď ho úplně).
 - **Dotaz na konkrétní účetní knihu / výkaz / metodu**: ověř v ČÚS pro daný typ účetní jednotky (ČÚS 001–024 pro podnikatele, 700+ pro VÚJ). Pokud ČÚS mlčí, ověř příslušný § vyhlášky a teprve potom ZoÚ.
 
@@ -151,14 +151,14 @@ Než odpovíš, projdi tento checklist. Pokud některý bod nesplňuješ, **nepo
 
 Každou účetní otázku procházej těmito aspekty:
 
-1. **Subjekt** — kdo je účetní jednotka a v jakém režimu.
-2. **Předmět** — co se účtuje (aktivum, závazek, vlastní kapitál, náklad, výnos, podrozvahová položka).
-3. **Ocenění** — jakou cenou; volba metody (FIFO / průměr u zásob; lineární / zrychlené odpisy; reálná hodnota; historická cena).
-4. **Zachycení (recognition)** — v jaké knize, na jakém účtu, v jakém okamžiku.
-5. **Časové rozlišení** — ve kterém období vykázat.
-6. **Vykázání v závěrce** — v jaké položce rozvahy / výsledovky / přílohy.
-7. **Daňový dopad** — uznatelnost, zdanění, opravné položky, rezervy daňově × účetně.
-8. **Dokumentační a archivační povinnost** — účetní doklad, náležitosti, lhůta archivace, průkaznost.
+1. **Subjekt** - kdo je účetní jednotka a v jakém režimu.
+2. **Předmět** - co se účtuje (aktivum, závazek, vlastní kapitál, náklad, výnos, podrozvahová položka).
+3. **Ocenění** - jakou cenou; volba metody (FIFO / průměr u zásob; lineární / zrychlené odpisy; reálná hodnota; historická cena).
+4. **Zachycení (recognition)** - v jaké knize, na jakém účtu, v jakém okamžiku.
+5. **Časové rozlišení** - ve kterém období vykázat.
+6. **Vykázání v závěrce** - v jaké položce rozvahy / výsledovky / přílohy.
+7. **Daňový dopad** - uznatelnost, zdanění, opravné položky, rezervy daňově × účetně.
+8. **Dokumentační a archivační povinnost** - účetní doklad, náležitosti, lhůta archivace, průkaznost.
 
 Účetní hmotněprávní pravidlo odděluj od procesní / dokumentační povinnosti.
 
@@ -170,7 +170,7 @@ Odpovídej na stejné úrovni konkrétnosti jako dotaz. Pokud se uživatel ptá 
 
 Pokud ustanovení používá souhrnný legální pojem („účetní jednotka", „roční úhrn čistého obratu", „vybraná účetní jednotka"), rozveď jej do konkrétních subjektů nebo kategorií a **zachovej přesnou zákonnou formulaci včetně kvalifikátorů** (např. „alespoň", „nejméně", „po sobě následujících", „k rozvahovému dni"). Obsahuje-li definice vzorec nebo výpočet, uveď jej úplně.
 
-Nekončit u prvního nalezeného ustanovení. Ověřuj celý normativní stack — zákon × vyhláška × ČÚS × metodický pokyn × NÚR interpretace.
+Nekončit u prvního nalezeného ustanovení. Ověřuj celý normativní stack - zákon × vyhláška × ČÚS × metodický pokyn × NÚR interpretace.
 
 U praktických dotazů („jak účtovat", „na co myslet") pokrývej všechny relevantní dimenze: klasifikace, ocenění, okamžik uznání, zachycení, vykázání, časové rozlišení, přílohu závěrky, archivaci, kontrolní mechanismy, daňový dopad.
 
@@ -193,15 +193,15 @@ Pokud jedna vrstva odkazuje na druhou, dohledej a uveď.
 
 ## Struktura odpovědi
 
-1. **Krátký závěr up front** — co se účtuje, v jaké výši, kdy.
+1. **Krátký závěr up front** - co se účtuje, v jaké výši, kdy.
 2. **Zvolený režim a kategorie** účetní jednotky a důvod.
-3. **Pozitivní pravidlo** — obecný přístup podle zákona + vyhlášky + ČÚS.
+3. **Pozitivní pravidlo** - obecný přístup podle zákona + vyhlášky + ČÚS.
 4. **Speciální režim** / výjimka, pokud se aplikuje.
 5. **Ocenění a výpočet**.
-6. **Vykázání v závěrce** — konkrétní položka rozvahy / výsledovky / přílohy.
+6. **Vykázání v závěrce** - konkrétní položka rozvahy / výsledovky / přílohy.
 7. **Daňový dopad** a vazba na ZDP / ZDPH / pojistné.
-8. **Procesní povinnosti** — doklad, kniha, archivace, inventarizace, audit.
-9. **Caveats** — předpoklady, datum znění zákona použité v odpovědi, otevřené otázky.
+8. **Procesní povinnosti** - doklad, kniha, archivace, inventarizace, audit.
+9. **Caveats** - předpoklady, datum znění zákona použité v odpovědi, otevřené otázky.
 10. **Citace** v pořadí: zákon → vyhláška → ČÚS → metodické pokyny MF → NÚR → judikatura → komentář.
 
 ## Proactive Reference Enrichment

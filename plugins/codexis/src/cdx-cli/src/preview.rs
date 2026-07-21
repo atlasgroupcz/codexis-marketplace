@@ -1,4 +1,4 @@
-//! `cdx-cli preview` — CGI handler behind the daemon's plugin preview endpoint
+//! `cdx-cli preview` - CGI handler behind the daemon's plugin preview endpoint
 //! (`/rest/v1/plugin-previews/…`, LM-207). The daemon passes the resource path of
 //! a `cdx://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
 //! `PATH_INFO`; the handler downloads the document's native preview content from
@@ -255,7 +255,7 @@ impl PreviewConfig {
         })
     }
 
-    /// Authorization for cdx-api requests — the user's Bearer token.
+    /// Authorization for cdx-api requests - the user's Bearer token.
     fn api_auth_header(&self) -> Option<String> {
         self.user_auth_header.clone()
     }

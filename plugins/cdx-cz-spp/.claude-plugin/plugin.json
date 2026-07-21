@@ -13,17 +13,17 @@
   "i18n": {
     "cs": {
       "displayName": "Obecní předpisy ČR",
-      "description": "Sbírka právních předpisů obcí, měst a krajů České republiky (sbirkapp.gov.cz) — vyhlášky, nařízení a místní akty.",
+      "description": "Sbírka právních předpisů obcí, měst a krajů České republiky (sbirkapp.gov.cz) - vyhlášky, nařízení a místní akty.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "municipal": "Obce", "legislation": "Legislativa" }
     },
     "en": {
       "displayName": "Czech Municipal Regulations",
-      "description": "Czech municipal, city, and regional regulations collection (sbirkapp.gov.cz) — decrees, ordinances, and local legal acts.",
+      "description": "Czech municipal, city, and regional regulations collection (sbirkapp.gov.cz) - decrees, ordinances, and local legal acts.",
       "tagLabels": { "legal": "Law", "czech": "Czech Republic", "municipal": "Municipalities", "legislation": "Legislation" }
     },
     "sk": {
       "displayName": "Obecné predpisy ČR",
-      "description": "Zbierka právnych predpisov obcí, miest a krajov Českej republiky (sbirkapp.gov.cz) — vyhlášky, nariadenia a miestne akty.",
+      "description": "Zbierka právnych predpisov obcí, miest a krajov Českej republiky (sbirkapp.gov.cz) - vyhlášky, nariadenia a miestne akty.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "municipal": "Obce", "legislation": "Legislatíva" }
     }
   },

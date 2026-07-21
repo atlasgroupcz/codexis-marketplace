@@ -1,5 +1,5 @@
 name: cdxctl-marketplace-git
-description: Full cdxctl marketplace + plugin lifecycle — add a git marketplace (anthropic/claude-plugins-official), install a plugin (superpowers) from it, uninstall, remove marketplace.
+description: Full cdxctl marketplace + plugin lifecycle - add a git marketplace (anthropic/claude-plugins-official), install a plugin (superpowers) from it, uninstall, remove marketplace.
 
 # One cohesive lifecycle. Uses the public claude-plugins-official marketplace
 # so nothing from our own marketplace gets polluted with install state.

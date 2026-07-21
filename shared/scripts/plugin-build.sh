@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Shared build logic for the marketplace Rust plugins. Sourced by each plugin's
-# `src/build.sh`. Build-time only — never shipped (`shared/` is dist-excluded).
+# `src/build.sh`. Build-time only - never shipped (`shared/` is dist-excluded).
 #
 # Usage from a plugin's src/build.sh:
 #   set -euo pipefail

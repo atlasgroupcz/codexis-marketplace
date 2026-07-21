@@ -1,4 +1,4 @@
-"""Cadastral proceeding tracking — state management on top of ČÚZK API."""
+"""Cadastral proceeding tracking - state management on top of ČÚZK API."""
 
 import datetime
 import json
@@ -140,7 +140,7 @@ def fetch_by_id(api_id) -> Optional[dict]:
     """Fetch a proceeding directly by its ČÚZK id. Returns the data dict or None.
 
     Unlike `Rizeni/Vyhledani` (whose `data` is a list), `Rizeni/{id}` wraps a
-    single object under `data` — verified live against api-kn.cuzk.gov.cz
+    single object under `data` - verified live against api-kn.cuzk.gov.cz
     2026-07: same envelope key, same field names (`stav`, `stavUhrady`,
     `provedeneOperace`, `datumPrijeti`, `id`), no `[0]` unwrap needed.
     """
@@ -293,8 +293,8 @@ def list_all() -> list:
         state = _load_state_file(name)
         if state is not None:
             results.append(state)
-    # Newest first, purely by date added. Confirming a change — or a newly
-    # detected one — never reorders; order is stable once a proceeding is
+    # Newest first, purely by date added. Confirming a change - or a newly
+    # detected one - never reorders; order is stable once a proceeding is
     # added. uuid is a deterministic tiebreaker when two share an added_on
     # second.
     results.sort(
@@ -437,7 +437,7 @@ def uhrada_label(stav_uhrady: Optional[str]) -> Optional[str]:
 
 
 def _uhrada_display(stav_uhrady: Optional[str]) -> str:
-    return uhrada_label(stav_uhrady) or stav_uhrady or "—"
+    return uhrada_label(stav_uhrady) or stav_uhrady or "-"
 
 
 def describe_change(change: dict) -> list:
@@ -464,10 +464,10 @@ def describe_change(change: dict) -> list:
 
 def _ordered_operace(state: dict) -> list:
     """Operations oldest → newest. ČÚZK's `provedeneOperace` is already in
-    chronological (oldest→newest) order — verified live 2026-07-01 across 9
+    chronological (oldest→newest) order - verified live 2026-07-01 across 9
     proceedings, strictly ascending by datumProvedeni. So pass it through as-is,
     do NOT reverse. Operations sharing an identical timestamp (e.g. Založení /
-    Zaplombování at intake) keep ČÚZK's own sub-order — we have no signal to
+    Zaplombování at intake) keep ČÚZK's own sub-order - we have no signal to
     reorder them and ČÚZK itself is inconsistent there."""
     return list(state.get("provedene_operace", []))
 

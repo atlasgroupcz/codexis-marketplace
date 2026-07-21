@@ -17,17 +17,17 @@ i18n:
     summary: "Pravidelné sledovanie novej judikatúry podľa témy s AI reportmi o trendoch a dopadoch."
 ---
 
-# Sledovaná judikatura — Case Law Monitoring
+# Sledovaná judikatura - Case Law Monitoring
 
 Monitor Czech (and European) case law by topic. AI searches for new judicial decisions, analyzes trends, and generates periodic reports.
 
 **IMPORTANT:** This skill uses TWO tools:
-- `cdx-sledovana-judikatura` — state management (topics, areas, reports)
-- `cdx-cli search JD` — searching CODEXIS case law database (use the `codexis` skill for search syntax)
+- `cdx-sledovana-judikatura` - state management (topics, areas, reports)
+- `cdx-cli search JD` - searching CODEXIS case law database (use the `codexis` skill for search syntax)
 
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovana-judikatura` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
-**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-existing topic/area or removing one that isn't there is a safe no-op (prints `OK:`), so re-running is fine. When acting on several items, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) - report it, don't guess workarounds and don't blindly retry. Adding an already-existing topic/area or removing one that isn't there is a safe no-op (prints `OK:`), so re-running is fine. When acting on several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
@@ -37,7 +37,7 @@ Monitor Czech (and European) case law by topic. AI searches for new judicial dec
   ```bash
   UUID=$(cdx-sledovana-judikatura init "Náhrada škody")
   ```
-  Do **not** parse the output with `sed`/`grep`/`jq` — there is nothing to parse, the UUID is the entire stdout.
+  Do **not** parse the output with `sed`/`grep`/`jq` - there is nothing to parse, the UUID is the entire stdout.
 
 - **`list`**, **`show`**, **`list-reports`**, **`area list`**, **`note list`** print human-readable plain text. Read them visually; do not pipe them to parsers.
 
@@ -99,7 +99,7 @@ cdx-sledovana-judikatura set-automation <uuid> <automation_id>
 # Update last_check_at without creating a report (use when no new decisions found)
 cdx-sledovana-judikatura touch <uuid>
 
-# Notification settings — a persistent app-wide setting
+# Notification settings - a persistent app-wide setting
 cdx-sledovana-judikatura notify show
 cdx-sledovana-judikatura notify set --email      # or --no-email / --inapp / --no-inapp
 
@@ -109,12 +109,12 @@ cdx-sledovana-judikatura notify recipients add|remove|set|clear <email...>
 
 ## Notes vs Automation
 
-Notes store **user interests and report format preferences** — things that help AI tailor its analysis:
+Notes store **user interests and report format preferences** - things that help AI tailor its analysis:
 - "zajímá mě zejména změna ustálených výkladů"
 - "formát: tabulka + shrnutí pro advokáta, HR, EN management"
 - "jsem samostatný advokát, pracovní právo"
 
-Do NOT store check frequency in notes — that belongs in the automation cron schedule.
+Do NOT store check frequency in notes - that belongs in the automation cron schedule.
 
 ## How It Works
 
@@ -141,9 +141,9 @@ cdx-sledovana-judikatura note add "$UUID" "formát: tabulka + shrnutí pro advok
 Decisions you make in this step:
 
 1. Whether the topic is broad enough to split into sub-areas:
-   - If yes — identify 3–7 key sub-areas and `area add` each
-   - If no — work with the topic as a whole (no areas needed)
-   - If unclear — ask the user whether to split or how to divide it
+   - If yes - identify 3–7 key sub-areas and `area add` each
+   - If no - work with the topic as a whole (no areas needed)
+   - If unclear - ask the user whether to split or how to divide it
 2. What user-specific notes to save (profession, perspective, format preferences) via `--notes` on `init` and/or `note add`
 
 ### Step 3: Build baseline (initial analysis)
@@ -196,9 +196,9 @@ Create a report JSON and save it. The report should contain:
 }
 ```
 
-The `title` field is the compact legal citation shown to the lawyer: `SOUD - Č. J. / SP. ZN. - DD.MM.RRRR` (e.g. `NS - 25 Cdo 1234/2025 - 10.03.2026`, `ÚS - Pl. ÚS 1/26 - 20.05.2026`). Compose it from `court` (abbreviated per the table in the `codexis` skill's `references/judikatura.md`), číslo jednací (else `spZn`) and `issued_on` as `DD.MM.RRRR`, dropping the ` - DD.MM.RRRR` segment when the date is missing. Keep `doc_type` as the separate secondary field — never use a truncated generic title as `title`.
+The `title` field is the compact legal citation shown to the lawyer: `SOUD - Č. J. / SP. ZN. - DD.MM.RRRR` (e.g. `NS - 25 Cdo 1234/2025 - 10.03.2026`, `ÚS - Pl. ÚS 1/26 - 20.05.2026`). Compose it from `court` (abbreviated per the table in the `codexis` skill's `references/judikatura.md`), číslo jednací (else `spZn`) and `issued_on` as `DD.MM.RRRR`, dropping the ` - DD.MM.RRRR` segment when the date is missing. Keep `doc_type` as the separate secondary field - never use a truncated generic title as `title`.
 
-**Attribution in `summary` / `legal_sentence` / `practical_conclusion`:** state what the **court held**, not what a party argued. The holding is the `výrok` plus the parts of the `odůvodnění` where the deciding court itself adopts a conclusion ("soud dospěl k závěru…/uzavírá…"). Recapitulated party submissions ("žalobce/stěžovatel/dovolatel namítá/tvrdí…"), a lower-court conclusion the court did not adopt, and dissents are a foreign voice — never present them as the holding. When in doubt, attribute explicitly ("soud dovodil…" vs. "žalobce namítal…"). See the attribution section in the `codexis` skill's `references/judikatura.md` for signal phrases and examples.
+**Attribution in `summary` / `legal_sentence` / `practical_conclusion`:** state what the **court held**, not what a party argued. The holding is the `výrok` plus the parts of the `odůvodnění` where the deciding court itself adopts a conclusion ("soud dospěl k závěru…/uzavírá…"). Recapitulated party submissions ("žalobce/stěžovatel/dovolatel namítá/tvrdí…"), a lower-court conclusion the court did not adopt, and dissents are a foreign voice - never present them as the holding. When in doubt, attribute explicitly ("soud dovodil…" vs. "žalobce namítal…"). See the attribution section in the `codexis` skill's `references/judikatura.md` for signal phrases and examples.
 
 Write the report JSON to a temp file and save:
 ```bash
@@ -210,7 +210,7 @@ cdx-sledovana-judikatura save-report <uuid> --file /tmp/judikatura_report.json
 
 ### Step 5: Set up automation
 
-Create a monthly automation that runs an AI agent to check for new case law. `cdxctl automation create` prints the created automation as JSON, so extract the ID with `jq -r .id` and store it on the topic — that way deleting the topic also removes the automation.
+Create a monthly automation that runs an AI agent to check for new case law. `cdxctl automation create` prints the created automation as JSON, so extract the ID with `jq -r .id` and store it on the topic - that way deleting the topic also removes the automation.
 
 ```bash
 AUTO_ID=$(cdxctl automation create \
@@ -224,24 +224,24 @@ AUTO_ID=$(cdxctl automation create \
 cdx-sledovana-judikatura set-automation "$UUID" "$AUTO_ID"
 ```
 
-E-mail and the in-app bell are a **persistent app setting** — turn them on or off with `notify set` (see the command list above). When e-mail is on, `save-report` sends a summary **only if the report found new case law**; a report with nothing new sends nothing.
+E-mail and the in-app bell are a **persistent app setting** - turn them on or off with `notify set` (see the command list above). When e-mail is on, `save-report` sends a summary **only if the report found new case law**; a report with nothing new sends nothing.
 
-The signed-in user always gets the e-mail; `notify recipients add|remove|set|clear <email...>` manage **extra** recipients on top. You don't need to add the signed-in user's own address — it's redundant (they're always a recipient) and gets dropped automatically.
+The signed-in user always gets the e-mail; `notify recipients add|remove|set|clear <email...>` manage **extra** recipients on top. You don't need to add the signed-in user's own address - it's redundant (they're always a recipient) and gets dropped automatically.
 
 | User wants | Do |
 |---|---|
-| an alert when new case law appears | `notify set --email` — the scheduled automation then e-mails on a real find |
+| an alert when new case law appears | `notify set --email` - the scheduled automation then e-mails on a real find |
 | a status e-mail right now, new case law or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 ## Tailoring Reports to User
 
 Pay attention to what the user asks for. Different users want different report formats:
 
-- **"Udělej to i v tabulce"** — include a structured table of decisions (consider generating a grid visualization via the visualization skill)
-- **"Shrnutí pro advokáta / HR / management"** — add role-specific summaries at the end
-- **"Anglický souhrn"** — add English executive summary
-- **"Porovnej mezi sebou"** — compare decisions, highlight conflicts or evolution
-- **"Jestli byl judikát překonán"** — check if newer decisions override earlier ones
+- **"Udělej to i v tabulce"** - include a structured table of decisions (consider generating a grid visualization via the visualization skill)
+- **"Shrnutí pro advokáta / HR / management"** - add role-specific summaries at the end
+- **"Anglický souhrn"** - add English executive summary
+- **"Porovnej mezi sebou"** - compare decisions, highlight conflicts or evolution
+- **"Jestli byl judikát překonán"** - check if newer decisions override earlier ones
 
 Save these preferences as notes so automation agents replicate them:
 ```bash
@@ -253,14 +253,14 @@ cdx-sledovana-judikatura note add <uuid> "formát: tabulka + shrnutí pro advok�
 When running a periodic check:
 
 1. Load topic: `cdx-sledovana-judikatura show <uuid>`
-2. Note `last_check_at` — search only for decisions since that date
+2. Note `last_check_at` - search only for decisions since that date
 3. For each area, search CODEXIS: `cdx-cli search JD --query "..." --from <last_check_at_date>`
 4. If new relevant decisions found:
-   - Compare against baseline summaries — does anything change the established view?
+   - Compare against baseline summaries - does anything change the established view?
    - Generate report with `period_from` = last check, `period_to` = now
    - Save: `cdx-sledovana-judikatura save-report <uuid> --file report.json`
    - Update baseline if the judicial view has shifted: `cdx-sledovana-judikatura area set-baseline <uuid> <index> "<updated summary>"`
-5. If nothing new — do not create a report, but update the last check timestamp: `cdx-sledovana-judikatura touch <uuid>`
+5. If nothing new - do not create a report, but update the last check timestamp: `cdx-sledovana-judikatura touch <uuid>`
 
 ## Storage
 

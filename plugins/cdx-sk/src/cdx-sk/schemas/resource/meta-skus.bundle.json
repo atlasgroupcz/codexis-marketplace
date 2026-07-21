@@ -45,7 +45,7 @@
           "docId": { "type": "string", "description": "Public display ID", "example": "SKUS12345" },
           "url": { "type": "string", "description": "Source identity URL" },
           "ecli": { "type": "string", "description": "ECLI identifier (null on pre-ECLI records)", "example": "ECLI:SK:USSR:2026:1.US.307.2026.1" },
-          "caseNumber": { "type": "string", "description": "Case number (spisová značka); NOT unique — one case may have several decisions", "example": "III. ÚS 307/2026" },
+          "caseNumber": { "type": "string", "description": "Case number (spisová značka); NOT unique - one case may have several decisions", "example": "III. ÚS 307/2026" },
           "registryNumber": { "type": "string", "description": "Registry number (distinct scheme from caseNumber)" },
           "formOfDecision": { "type": "string", "description": "Decision form (empty on dissent records)", "example": "Nález" },
           "typeOfDecision": {

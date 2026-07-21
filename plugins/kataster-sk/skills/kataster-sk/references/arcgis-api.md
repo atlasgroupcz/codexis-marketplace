@@ -1,4 +1,4 @@
-# ESKN ArcGIS REST — parcel layers
+# ESKN ArcGIS REST - parcel layers
 
 Base: `https://kataster.skgeodesy.sk/eskn/rest/services/VRM`
 
@@ -13,7 +13,7 @@ browser-like `User-Agent` header the WAF requires.
 | Parcely C | `/parcels_c_view/MapServer/0` | Register C parcels (current land map) |
 | Parcely E | `/parcels_e_view/MapServer/0` | Register E parcels (legal/original state) |
 
-Layer metadata: `GET {layer}?f=json` — lists all fields with Slovak aliases.
+Layer metadata: `GET {layer}?f=json` - lists all fields with Slovak aliases.
 
 ## Query (`kataster-sk-cli detail`)
 
@@ -21,14 +21,14 @@ Layer metadata: `GET {layer}?f=json` — lists all fields with Slovak aliases.
 GET {layer}/query?objectIds={id}&outFields=*&returnGeometry=false&f=json
 ```
 
-- `objectIds` — id obtained from the ZBGIS parcel search (`data.id`); the only
+- `objectIds` - id obtained from the ZBGIS parcel search (`data.id`); the only
   reliable filter.
-- `returnGeometry=true&outSR=4326` (the CLI's `--geometry` flag) — adds the
+- `returnGeometry=true&outSR=4326` (the CLI's `--geometry` flag) - adds the
   parcel polygon in WGS84 (source SRS is S-JTSK, wkid 5514).
 
 ### Restrictions (WAF)
 
-- `where=` clauses (even `where=1=1`) are blocked — the server returns an
+- `where=` clauses (even `where=1=1`) are blocked - the server returns an
   **HTML error page** instead of JSON. Detect by attempting JSON parse.
 - The services catalog (`/eskn/rest/services?f=json`) returns 403.
 - Max 1000 records per query (`maxRecordCount`).
@@ -73,7 +73,7 @@ ESKN portal parcel search (2026-06). Official label list:
 https://kataster.skgeodesy.sk/eskn-portal/ciselniky
 
 The remaining numeric `*_ID` fields (`PLOT_UTILISATION_ID`, `OWNERSHIP_TYPE_ID`,
-…) have **no verified public mapping** — report the raw identifier and direct
+…) have **no verified public mapping** - report the raw identifier and direct
 the user to the parcel's MAPKA page, which renders the human-readable labels.
 
 ## Map images

@@ -58,7 +58,7 @@
         "type": "object",
         "description": "CVDR work-level regulation metadata (flat scalars projected from the typed metadata's main block)",
         "properties": {
-          "url": { "type": "string", "description": "Canonical lokaleregelgeving.overheid.nl portal URL for the work (display only — never fetched)" },
+          "url": { "type": "string", "description": "Canonical lokaleregelgeving.overheid.nl portal URL for the work (display only - never fetched)" },
           "workId": { "type": "string", "description": "CVDR work identifier (dedup/identity key)", "example": "CVDR101405" },
           "title": { "type": "string", "description": "Regulation title (citeertitel)" },
           "type": { "type": "string", "description": "dcterms:type of the regulation", "example": "regeling" },
@@ -74,7 +74,7 @@
           "datumLaatsteWijziging": { "type": "string", "description": "Date of the last amendment" },
           "grondslagRefs": {
             "type": "array",
-            "description": "Legal-basis deeplinks (owmsmantel/dcterms:source @resourceIdentifier — JCI/BWB references, partial). Surfaced as relations via /related.",
+            "description": "Legal-basis deeplinks (owmsmantel/dcterms:source @resourceIdentifier - JCI/BWB references, partial). Surfaced as relations via /related.",
             "items": { "type": "string" }
           }
         }

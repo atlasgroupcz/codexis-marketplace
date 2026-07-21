@@ -24,7 +24,7 @@ impl cdx_common::search_engine::SearchApi for RegisterZmluvApi {
         resolve_cdx_url(base_url, cdx_path)
     }
     // Register zmlúv is metadata-only: attachments live on crz.gov.sk, so the
-    // response carries absolute source URLs already — nothing to rewrite.
+    // response carries absolute source URLs already - nothing to rewrite.
     fn resolve_attachment_links(&self, body: &str, _base_url: &str) -> String {
         body.to_string()
     }
@@ -107,7 +107,7 @@ mod tests {
         assert!(resolve_cdx_url(BASE, "doc/UNKNOWN123/meta").is_err());
     }
 
-    // The Czech sibling's prefix must not resolve here — each plugin owns its
+    // The Czech sibling's prefix must not resolve here - each plugin owns its
     // own domain, and a CZRS id reaching this binary is a caller error.
     #[test]
     fn doc_czech_prefix_is_rejected() {

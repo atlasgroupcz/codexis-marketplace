@@ -5,7 +5,7 @@ import type { ViteUserConfig } from 'vitest/config'
 // The single source of truth for which dependencies Vitest must inline.
 //
 // Vitest externalizes deps for its SSR transform by default, which leaves zod's
-// ESM entry resolving to an empty module — `z.object` is undefined at import
+// ESM entry resolving to an empty module - `z.object` is undefined at import
 // time and every schema-touching test fails to collect. Whether it bites
 // depends on the installed node_modules layout, so it passes on one machine and
 // fails on another; inlining makes it deterministic. Kept here, once, so the

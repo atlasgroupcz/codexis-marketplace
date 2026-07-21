@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react'
 import { ProceedingRow } from './proceeding-row'
 import type { ProceedingSummary } from '@/lib/schemas'
 
-// react-i18next returns the key by default in tests (no provider) — assert on keys/values we control.
+// react-i18next returns the key by default in tests (no provider) - assert on keys/values we control.
 const proc: ProceedingSummary = {
   uuid: 'u1',
   cislo_rizeni: 'V-1234/2026-701',

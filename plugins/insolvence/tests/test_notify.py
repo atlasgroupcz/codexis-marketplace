@@ -1,4 +1,4 @@
-"""notify: daemon e-mail auth + transport (no network — urlopen is stubbed)."""
+"""notify: daemon e-mail auth + transport (no network - urlopen is stubbed)."""
 
 import json
 from unittest.mock import patch
@@ -37,7 +37,7 @@ def _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-t
 
 
 def test_auth_uses_secret_file_not_env(monkeypatch, tmp_path):
-    # CODEXIS_USER_API_TOKEN is a Codexis-DB JWT — must NOT authenticate the daemon API.
+    # CODEXIS_USER_API_TOKEN is a Codexis-DB JWT - must NOT authenticate the daemon API.
     monkeypatch.setenv("CODEXIS_USER_API_TOKEN", "codexis-token-must-not-be-used")
     cap = _stub_daemon(monkeypatch, tmp_path, secret="vm-token")
     notify._send_email("subj", "body")
@@ -235,7 +235,7 @@ def test_query_me_email_none_on_transport_error(monkeypatch, tmp_path):
 def test_query_me_email_none_on_non_dict_json_response(monkeypatch, tmp_path, raw):
     # A gateway/proxy in maintenance mode can return syntactically valid JSON
     # whose top level isn't an object (e.g. bare `null`, an array, or a string).
-    # json.load succeeds, so this must not crash on the subsequent .get() — it
+    # json.load succeeds, so this must not crash on the subsequent .get() - it
     # must return None.
     _stub_daemon(monkeypatch, tmp_path)
 

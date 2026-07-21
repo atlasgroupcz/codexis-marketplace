@@ -1,4 +1,4 @@
-"""ISIR SOAP response parsing — deterministic, no network (canned XML)."""
+"""ISIR SOAP response parsing - deterministic, no network (canned XML)."""
 
 import pytest
 

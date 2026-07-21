@@ -49,7 +49,7 @@ def main() -> int:
     cfg = yaml.safe_load(cfg_path.read_text())
     setup = cfg.get("setup") or []
     if not setup:
-        print(f"[setup.py] no `setup:` block in {cfg_path.name} — nothing to do.")
+        print(f"[setup.py] no `setup:` block in {cfg_path.name} - nothing to do.")
         return 0
 
     token = os.environ.get("CDX_EVAL_AUTH_TOKEN")
@@ -63,7 +63,7 @@ def main() -> int:
             else graphql_url.rstrip("/"))
     client = DaemonClient(base, token)
 
-    # Stable run_id per invocation — same convention as the legacy runner,
+    # Stable run_id per invocation - same convention as the legacy runner,
     # so fixtures don't collide across reruns.
     run_id = secrets.token_hex(2)
     vars_ = {"run_id": run_id}

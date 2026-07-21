@@ -3,7 +3,7 @@
 - GET ?view=notify -> {"mode": "notify", "settings": ..., "userEmail": ...}
 - POST action=save_notify_settings -> persists via notify_settings.set_notify
 
-Loads components/znamky/znamky.py directly (it isn't an importable package —
+Loads components/znamky/znamky.py directly (it isn't an importable package -
 it's the CGI entrypoint) and calls handle_get/handle_post, capturing the
 emit_json output written to stdout. Isolates settings I/O to a tmp HOME, same
 as test_notify_settings.py's `home` fixture.
@@ -88,7 +88,7 @@ def test_post_save_notify_settings_drops_signed_in_user(component, capsys, monke
 
 def test_post_save_notify_settings_absent_recipients_left_untouched(component, capsys, monkeypatch):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
-    # not clear the stored list — self-stripping must not turn None into [].
+    # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(component.notify, "_query_me_email", lambda: "me@firma.cz")
     component.handle_post({"action": "save_notify_settings", "recipients": ["a@b.cz"]})
     capsys.readouterr()

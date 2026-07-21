@@ -10,7 +10,7 @@ pub(crate) const SEARCH_NLUIT_HELP: &str = r#"Examples:
   cdx-nl search NLUIT --decision-type Uitspraak --decision-date-from 2024-01-01
   cdx-nl search NLUIT --legal-area "Civiel recht" --legal-area "Huurrecht"
   cdx-nl search NLUIT --procedure Cassatie
-NB: ECLI lookup is a separate route — use cdx-nl get cdx-nl://ecli/<ECLI>.
+NB: ECLI lookup is a separate route - use cdx-nl get cdx-nl://ecli/<ECLI>.
 See references/search-nluit.md for the full filter cheat-sheet."#;
 
 #[derive(Args, Debug, Clone, Default)]
@@ -52,7 +52,7 @@ impl SearchPayloadArgs for SearchNluitArgs {
         insert_string(payload, "decisionType",     &self.decision_type);
         insert_string(payload, "decisionDateFrom", &self.decision_date_from);
         insert_string(payload, "decisionDateTo",   &self.decision_date_to);
-        // NB: backend DTO field is `legalAreas` (plural) — see RechtspraakSearchRequest.java
+        // NB: backend DTO field is `legalAreas` (plural) - see RechtspraakSearchRequest.java
         insert_string_list(payload, "legalAreas", &self.legal_area);
         insert_string(payload, "procedure",        &self.procedure);
         insert_string(payload, "caseNumber",       &self.case_number);
@@ -93,7 +93,7 @@ mod tests {
         assert!(json.contains("\"decisionDateFrom\":\"2024-01-01\""));
         assert!(json.contains("\"from\":0"));
         assert!(json.contains("\"size\":20"));
-        // backend field is plural — must be legalAreas, not legalArea
+        // backend field is plural - must be legalAreas, not legalArea
         assert!(json.contains("\"legalAreas\""));
         assert!(!json.contains("\"legalArea\":"));   // singular form forbidden
         // must NOT contain offset/limit
