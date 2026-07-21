@@ -35,6 +35,7 @@ Ověř výpovědní důvod, výpovědní dobu, doručení a ochrannou dobu.
 Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 EOF
 cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
+  --display-name "Kontrola výpovědi" --summary "Posoudí zákonnost výpovědi." \
   --tool shell --instructions-file ./.tmp/hr-vypoved.md
 
 cdxctl agent update <id> --description "New description"
@@ -46,6 +47,8 @@ An agent is a reusable persona. It has its own model, tools, and instructions.
 Write the system prompt to a temp file under `./.tmp/`. Pass its path with `--instructions-file`.
 
 The model and jurisdictions come from the active chat.
+
+Every new agent needs `--display-name` and `--summary`, written in the prompt's language. The Agents page shows them.
 
 `update` keeps every field you do not pass. Pass only the fields you change.
 

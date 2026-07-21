@@ -303,6 +303,15 @@ enum AgentCommands {
         /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
         #[arg(long = "instructions-file")]
         instructions_file: Option<String>,
+        /// Short label shown on the Agents page, in the prompt's language
+        #[arg(long = "display-name")]
+        display_name: Option<String>,
+        /// One user-facing sentence, in the prompt's language
+        #[arg(long)]
+        summary: Option<String>,
+        /// Language of --display-name and --summary, e.g. cs (defaults to cs)
+        #[arg(long)]
+        language: Option<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -345,6 +354,15 @@ enum AgentCommands {
         /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
         #[arg(long = "instructions-file")]
         instructions_file: Option<String>,
+        /// Short label shown on the Agents page, in the prompt's language
+        #[arg(long = "display-name")]
+        display_name: Option<String>,
+        /// One user-facing sentence, in the prompt's language
+        #[arg(long)]
+        summary: Option<String>,
+        /// Language of --display-name and --summary, e.g. cs (defaults to cs)
+        #[arg(long)]
+        language: Option<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -701,6 +719,9 @@ fn main() {
                 max_turns,
                 instructions,
                 instructions_file,
+                display_name,
+                summary,
+                language,
                 file,
                 stdin,
             } => commands::agent::create(
@@ -718,6 +739,9 @@ fn main() {
                     model,
                     max_turns,
                     instructions,
+                    display_name,
+                    summary,
+                    language,
                 },
                 format,
             ),
@@ -733,6 +757,9 @@ fn main() {
                 max_turns,
                 instructions,
                 instructions_file,
+                display_name,
+                summary,
+                language,
                 file,
                 stdin,
             } => commands::agent::update(
@@ -751,6 +778,9 @@ fn main() {
                     model,
                     max_turns,
                     instructions,
+                    display_name,
+                    summary,
+                    language,
                 },
                 format,
             ),

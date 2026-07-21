@@ -19,6 +19,9 @@ pub struct AgentFields {
     pub model: Option<String>,
     pub max_turns: Option<u32>,
     pub instructions: Option<String>,
+    pub display_name: Option<String>,
+    pub summary: Option<String>,
+    pub language: Option<String>,
 }
 
 impl AgentFields {
@@ -32,6 +35,9 @@ impl AgentFields {
             && self.model.is_none()
             && self.max_turns.is_none()
             && self.instructions.is_none()
+            && self.display_name.is_none()
+            && self.summary.is_none()
+            && self.language.is_none()
     }
 }
 
@@ -370,6 +376,15 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
     }
     if let Some(instructions) = &fields.instructions {
         input.insert("instructions".into(), json!(instructions));
+    }
+    if let Some(display_name) = &fields.display_name {
+        input.insert("displayName".into(), json!(display_name));
+    }
+    if let Some(summary) = &fields.summary {
+        input.insert("summary".into(), json!(summary));
+    }
+    if let Some(language) = &fields.language {
+        input.insert("language".into(), json!(language));
     }
 }
 
