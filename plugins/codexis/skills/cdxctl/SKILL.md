@@ -52,9 +52,11 @@ Every new agent needs `--display-name` and `--summary`, written in the prompt's 
 
 `update` keeps every field you do not pass. Pass only the fields you change.
 
-Run `cdxctl skill list` first. Pick the skills the task needs and pass each with `--skill`. `cdxctl` shows the accepted values for `--skill` and `--model`.
+Run `cdxctl skill list` first. Read the agent's job and give it every skill that fits — pass each with `--skill`, in the same run as the create. A legal agent gets the legal-research skill; a document agent gets the document skills. Choose the fitting skills yourself from the agent's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
 
 Leave `--tool` and `--disallowed-tool` out so the agent keeps every tool. Set them only to restrict the agent on purpose.
+
+When you confirm the new agent to the user, keep it plain and non-technical: the display name, what the agent does, and its skills. Say it in the user's words. Leave out the slug, the command, and other internals.
 
 ### Writing the instructions file
 
