@@ -43,7 +43,7 @@ impl AgentFields {
 
 /// Parses `lang:text` entries (e.g. `cs:Personalista pro smlouvy`). The language is what precedes
 /// the first colon; the text is the rest, so the text itself may contain colons.
-fn parse_localized(entries: &[String], field: &str) -> Result<Vec<Value>, CdxctlError> {
+pub(crate) fn parse_localized(entries: &[String], field: &str) -> Result<Vec<Value>, CdxctlError> {
     entries
         .iter()
         .map(|entry| {
@@ -281,7 +281,7 @@ fn print_payload(payload: Option<&Value>, format: OutputFormat) -> Result<(), Cd
     Ok(())
 }
 
-fn format_input_error(error: &Value) -> String {
+pub(crate) fn format_input_error(error: &Value) -> String {
     let field = error.get("field").and_then(Value::as_str);
     let message = error
         .get("message")
