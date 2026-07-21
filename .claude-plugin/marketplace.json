@@ -22,7 +22,7 @@
   },
   "plugins": [
     {
-      "uuid": "c5d7d6ce-6107-4688-b69a-7a04babc480f",
+      "uuid": "a7b6c5d4-e3f2-4109-8877-6a5b4c3d2e1f",
       "name": "codexis",
       "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
       "source": "./plugins/codexis",
