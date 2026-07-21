@@ -164,7 +164,7 @@ pub fn update(
         "type": auto_type,
         "title": title.map(String::from).or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
         "schedule": schedule.to_input()?.or_else(|| current.get("schedule").cloned()).unwrap_or(Value::Null),
-        // `update` never changes the enabled flag — preserve the current value.
+        // `update` never changes the enabled flag - preserve the current value.
         // Toggling enabled goes through `enable`/`disable` (setAutomationEnabled),
         // which also works for read-only carried automations.
         "enabled": json!(current.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)),
@@ -255,7 +255,7 @@ pub fn trigger(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result
 
 /// Enable or disable an automation via the daemon's dedicated `setAutomationEnabled`
 /// mutation. Works for USER automations and for read-only carried (plugin/marketplace)
-/// automations alike — the latter persist a per-user enabled override. This is the
+/// automations alike - the latter persist a per-user enabled override. This is the
 /// only way to disable a shipped plugin automation; `update` cannot (USER-only guard).
 pub fn set_enabled(
     client: &GraphQLClient,

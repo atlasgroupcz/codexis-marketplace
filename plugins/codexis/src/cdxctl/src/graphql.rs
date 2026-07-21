@@ -67,7 +67,7 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
 
 // Toggle only the `enabled` flag. Unlike `updateAutomation` (USER-only, rejects
 // read-only carried/plugin automations), the daemon's `setAutomationEnabled`
-// works for both USER and carried automations — for carried ones it persists a
+// works for both USER and carried automations - for carried ones it persists a
 // per-user enabled override. This is how a shipped plugin automation is disabled.
 pub const SET_AUTOMATION_ENABLED: &str = r#"
 mutation SetAutomationEnabled($id: ID!, $enabled: Boolean!) {
@@ -481,7 +481,7 @@ mutation UpdateNotificationState($input: UpdateNotificationStateInput!) {
 // ==================== Tabular Extraction ====================
 //
 // All tabular ops take a `TabularExtraction` Node id (encoded from the folder
-// path) — see commands::tabular::folder_to_node_id.
+// path) - see commands::tabular::folder_to_node_id.
 
 pub const GET_TABULAR_EXTRACTION: &str = r#"
 query GetTabularExtraction($id: ID!) {
@@ -691,7 +691,7 @@ mod tests {
     #[test]
     fn agent_and_skill_lists_surface_plugin_and_marketplace() {
         // Marketplace is reachable only through the owning plugin in the daemon
-        // schema — Agent/Skill have no direct `marketplace` field.
+        // schema - Agent/Skill have no direct `marketplace` field.
         for query in [GET_AGENTS, GET_SKILLS] {
             assert!(query.contains("plugin { id name marketplace { id name } }"));
         }

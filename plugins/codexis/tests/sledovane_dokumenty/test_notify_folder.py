@@ -77,7 +77,7 @@ def _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-t
 
 
 def test_email_auth_uses_secret_not_env(monkeypatch, tmp_path):
-    # CODEXIS_USER_API_TOKEN is a Codexis-DB JWT — must NOT authenticate the daemon API.
+    # CODEXIS_USER_API_TOKEN is a Codexis-DB JWT - must NOT authenticate the daemon API.
     monkeypatch.setenv("CODEXIS_USER_API_TOKEN", "codexis-token-must-not-be-used")
     cap = _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon:8090/graphql")
     assert notify._send_email("subj", "body", None) is True

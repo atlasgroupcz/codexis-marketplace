@@ -5,7 +5,7 @@ import argparse
 from katastr_core import tracking
 from _helpers import _cuzk_record, _load_cli
 
-_cli = _load_cli()  # defs-only/stateless — load once, reuse across tests
+_cli = _load_cli()  # defs-only/stateless - load once, reuse across tests
 
 
 def test_add_already_tracked_is_ok(app_dir, mock_cuzk, capsys):
@@ -30,7 +30,7 @@ def test_remove_not_tracked_is_ok(app_dir, capsys):
 
 
 def _one_result():
-    """A single non-empty check result — the loop output is stubbed, so only the
+    """A single non-empty check result - the loop output is stubbed, so only the
     non-empty shape matters (it must clear the `if not results` guard)."""
     return [{"cislo_rizeni": "V-1/2026-701", "ok": True, "change": None, "error": None}]
 
@@ -50,7 +50,7 @@ def test_check_email_setting_reports_no_change_no_email(monkeypatch, capsys):
     _cli.cmd_tracking_check(argparse.Namespace(cislo=None))
     err = capsys.readouterr().err
     assert captured["called"] is True
-    assert "Žádné nové změny — e-mail neodeslán." in err
+    assert "Žádné nové změny - e-mail neodeslán." in err
 
 
 def test_check_email_reports_change_count(monkeypatch, capsys):

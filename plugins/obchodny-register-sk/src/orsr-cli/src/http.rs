@@ -71,7 +71,7 @@ impl RegistryClient {
                 return Err(anyhow!("HTTP {} on GET {url}", format_status(status)));
             }
             let mut body = Vec::new();
-            // TODO: drop once orsr.sk sends TLS close_notify — its legacy server
+            // TODO: drop once orsr.sk sends TLS close_notify - its legacy server
             // closes EOF-delimited responses abruptly, which strict rustls reads
             // report as an error even though the body already arrived.
             if let Err(e) = resp.read_to_end(&mut body) {
@@ -120,7 +120,7 @@ impl RegistryClient {
             }
             if body.trim_start().starts_with('<') {
                 return Err(anyhow!(
-                    "GET {final_url} returned HTML instead of JSON — the service is unavailable or the request was blocked"
+                    "GET {final_url} returned HTML instead of JSON - the service is unavailable or the request was blocked"
                 ));
             }
             self.write_cache(url, &body);

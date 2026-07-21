@@ -21,13 +21,13 @@ i18n:
     title: "Týždenná slovenská právna rešerš k téme"
     description: "Každý týždeň zhrnie novú slovenskú legislatívu a judikatúru k téme podľa vášho výberu."
 ---
-Sledujem pre vás tému: «UPRAVTE — napr. verejné obstarávanie, GDPR, pracovné právo».
+Sledujem pre vás tému: «UPRAVTE - napr. verejné obstarávanie, GDPR, pracovné právo».
 
 Pomocou zručnosti pre slovenské právo pozri, čo nové sa za posledný týždeň stalo k tejto téme, a urob krátky prehľad:
 
-1. **Legislatíva** — nové alebo zmenené predpisy (e-Zbierka), odkedy platia a čo menia.
-2. **Judikatúra** — nové dôležité rozhodnutia súdov (spisová značka, súd, dátum, hlavná myšlienka v jednej vete).
-3. **Komentáre** — nové výklady alebo stanoviská, ak sú dôležité.
+1. **Legislatíva** - nové alebo zmenené predpisy (e-Zbierka), odkedy platia a čo menia.
+2. **Judikatúra** - nové dôležité rozhodnutia súdov (spisová značka, súd, dátum, hlavná myšlienka v jednej vete).
+3. **Komentáre** - nové výklady alebo stanoviská, ak sú dôležité.
 
 Pravidlá:
 - Pri každom bode uveď zdroj (číslo predpisu / spisovú značku), aby sa dal nájsť.

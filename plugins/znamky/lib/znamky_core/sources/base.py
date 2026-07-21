@@ -120,7 +120,7 @@ def _request(req: urllib.request.Request, source_name: str) -> bytes:
             body = exc.read().decode("utf-8", "replace")[:300]
             raise ApiHttpError(exc.code, f"{source_name} vrátilo HTTP {exc.code}: {body}")
         except (urllib.error.URLError, http.client.HTTPException, OSError) as exc:
-            # URLError, connection resets ([Errno 104]), broken TLS, DNS, timeouts —
+            # URLError, connection resets ([Errno 104]), broken TLS, DNS, timeouts -
             # all "source unreachable". Retry, then degrade to ApiNetworkError so the
             # caller (search_all) captures it instead of crashing the whole request.
             if attempt < RETRIES:

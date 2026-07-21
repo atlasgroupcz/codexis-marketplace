@@ -34,7 +34,7 @@ class MarkNotTrackedError(ZnamkyError):
 
 
 class CredentialsMissingError(ZnamkyError):
-    """No source credentials configured — the user must set them up first."""
+    """No source credentials configured - the user must set them up first."""
 
 
 class CredentialsInvalidError(ZnamkyError):

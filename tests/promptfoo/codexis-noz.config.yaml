@@ -1,7 +1,7 @@
-# Sibling split of `codexis-search.yaml` — §10 NOZ statute lookup.
+# Sibling split of `codexis-search.yaml` - §10 NOZ statute lookup.
 # See codexis-search.config.yaml for the rationale on per-test splits.
 
-description: codexis — §10 NOZ returns the "výslovného ustanovení" paragraph
+description: codexis - §10 NOZ returns the "výslovného ustanovení" paragraph
 target_plugin: codexis
 
 prompts:
@@ -13,7 +13,7 @@ providers:
     config: {}
 
 tests:
-  - description: §10 NOZ — fetches the "výslovného ustanovení" paragraph
+  - description: §10 NOZ - fetches the "výslovného ustanovení" paragraph
     vars:
       prompt: "Jak zní §10 NOZ?"
       tool_name: shell

@@ -32,7 +32,7 @@ class TestSuiteGroups:
 
 
 class TestSuitesForGroup:
-    """Selection only — toolchain presence is stubbed so these stay hermetic."""
+    """Selection only - toolchain presence is stubbed so these stay hermetic."""
 
     ALL_PRESENT = staticmethod(lambda _name: True)
 
@@ -55,7 +55,7 @@ class TestSuitesForGroup:
 
     def test_missing_toolchain_raises_instead_of_silently_skipping(self):
         """An explicitly requested group must never report success on a
-        toolchain the environment lacks — that is the false-green the gate
+        toolchain the environment lacks - that is the false-green the gate
         exists to prevent. Auto-detection may skip; an explicit request may not.
         """
         with pytest.raises(UnavailableToolchain, match="cargo"):

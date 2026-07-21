@@ -1,14 +1,15 @@
-//! `cdx-cli preview` — CGI handler behind the daemon's plugin preview endpoint
-//! (`/rest/plugin-previews/…`, LM-207). The daemon passes the resource path of a
-//! `cdx://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
-//! `PATH_INFO` / `QUERY_STRING`; the handler fetches the document markdown +
-//! metadata from the CODEXIS API and emits a standalone HTML page (CGI response
-//! on stdout).
+//! `cdx-cli preview` - CGI handler behind the daemon's plugin preview endpoint
+//! (`/rest/v1/plugin-previews/…`, LM-207). The daemon passes the resource path of
+//! a `cdx://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
+//! `PATH_INFO`; the handler downloads the document's native preview content from
+//! the CODEXIS API into `~/.cdx/tmp/previews/` and emits a JSON manifest the
+//! frontend feeds to its file preview renderer.
 
 use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
 
-use pulldown_cmark::{html, Options, Parser};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::core::config::{CODEXIS_PLUGIN_API_URL_ENV, CODEXIS_USER_API_TOKEN_ENV};
 use crate::core::error::CliError;
@@ -16,24 +17,21 @@ use cdx_common::config::{read_env, to_authorization_header};
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
+const PLUGIN_DIR_ENV: &str = "PLUGIN_DIR";
+const PREVIEWS_TMP_DIR: &str = ".cdx/tmp/previews";
+const FILE_DOWNLOAD_URL_PREFIX: &str = "/rest/files/download?path=";
 
 pub(crate) fn execute_preview() -> Result<(), CliError> {
     let path_info = env::var("PATH_INFO").unwrap_or_default();
-    let query_string = env::var("QUERY_STRING").unwrap_or_default();
-    let stylesheet = stylesheet_href(&path_info);
-    let response = match render_preview(&path_info, &query_string, &stylesheet) {
-        Ok(page) => CgiResponse::ok(page),
-        Err(PreviewError::UnsupportedPath) => CgiResponse::error(
-            404,
-            "Not Found",
-            "Náhled pro tento zdroj není k dispozici.",
-            &stylesheet,
-        ),
+    let response = match render_preview(&path_info) {
+        Ok(manifest) => CgiResponse::ok(manifest.to_string()),
+        Err(PreviewError::UnsupportedPath) => {
+            CgiResponse::error(404, "Not Found", "Náhled pro tento zdroj není k dispozici.")
+        }
         Err(PreviewError::Cli(error)) => CgiResponse::error(
             502,
             "Bad Gateway",
             &format!("Náhled dokumentu se nepodařilo načíst: {error}"),
-            &stylesheet,
         ),
     };
     print!("{}", response.render());
@@ -54,6 +52,7 @@ impl From<CliError> for PreviewError {
 struct CgiResponse {
     status: u16,
     reason: &'static str,
+    content_type: &'static str,
     cache_control: &'static str,
     body: String,
 }
@@ -63,60 +62,179 @@ impl CgiResponse {
         Self {
             status: 200,
             reason: "OK",
+            content_type: "application/json;charset=UTF-8",
             // Rendering re-executes the CLI on every request, so let the browser
-            // reuse a successful render; `private` keeps it out of shared caches.
+            // reuse a successful manifest; `private` keeps it out of shared caches.
             cache_control: "private, max-age=3600",
             body,
         }
     }
 
-    fn error(status: u16, reason: &'static str, message: &str, stylesheet_href: &str) -> Self {
+    fn error(status: u16, reason: &'static str, message: &str) -> Self {
         Self {
             status,
             reason,
+            content_type: "text/plain;charset=UTF-8",
             cache_control: "no-store",
-            body: error_page(message, stylesheet_href),
+            body: message.to_string(),
         }
     }
 
     fn render(&self) -> String {
         format!(
-            "Status: {} {}\nContent-Type: text/html;charset=UTF-8\nCache-Control: {}\n\n{}",
-            self.status, self.reason, self.cache_control, self.body
+            "Status: {} {}\nContent-Type: {}\nCache-Control: {}\n\n{}",
+            self.status, self.reason, self.content_type, self.cache_control, self.body
         )
     }
 }
 
-fn render_preview(
-    path_info: &str,
-    query_string: &str,
-    stylesheet_href: &str,
-) -> Result<String, PreviewError> {
+fn render_preview(path_info: &str) -> Result<Value, PreviewError> {
     let document = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
     let config = PreviewConfig::load()?;
+    let previews_dir = previews_dir()?;
+    fs::create_dir_all(&previews_dir)
+        .map_err(|source| PreviewError::Cli(CliError::Io { context: "create previews dir".to_string(), source }))?;
 
-    // The preview endpoint returns the exact markup the CODEXIS web app renders
-    // (`.sN`/`.csn-*` classes styled by preview.css), so the preview is 1:1 with
-    // the web. Backends without the preview endpoint fall back to the markdown
-    // text render.
-    let content_html = match fetch_preview_html(&config, &document) {
-        Some(html) => html,
-        None => render_markdown(&fetch_content(
-            &config,
-            &format!("doc/{}/text", document.doc_id),
-            &text_query(&document, query_string),
-        )?),
+    let title = fetch_title(&config, &document.doc_id).unwrap_or_else(|| document.doc_id.clone());
+    let file = write_preview_file(&config, &document, &previews_dir, &title)?;
+    let size = fs::metadata(&file.path).map(|m| m.len()).unwrap_or(0);
+
+    Ok(json!({
+        "path": file.path.to_string_lossy(),
+        "mimeType": file.mime_type,
+        "name": file.path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
+        "size": size,
+        "title": title,
+        "externalUrl": canonical_url(&document),
+    }))
+}
+
+struct PreviewFile {
+    path: PathBuf,
+    mime_type: &'static str,
+}
+
+/// Downloads the document's native preview content and stores it as a file the
+/// frontend renderer understands: HTML documents become a standalone `.html`
+/// page (stylesheet linked from the previews tmp dir), binary documents keep
+/// their native format (`.pdf`), and backends without a preview fall back to
+/// the markdown text render stored as `.md`.
+fn write_preview_file(
+    config: &PreviewConfig,
+    document: &DocumentPreviewPath,
+    previews_dir: &Path,
+    title: &str,
+) -> Result<PreviewFile, PreviewError> {
+    let base_name = file_base_name(document);
+    let download_path = previews_dir.join(format!("{base_name}.download"));
+    let downloaded = download_preview(config, document, &download_path);
+
+    match downloaded.as_deref() {
+        Some(content_type) if content_type.starts_with("text/html") => {
+            let content = fs::read_to_string(&download_path)
+                .map_err(|source| PreviewError::Cli(CliError::Io { context: "read downloaded preview".to_string(), source }))?;
+            let _ = fs::remove_file(&download_path);
+            let page = document_page(title, &content, &stylesheet_href(previews_dir));
+            let path = previews_dir.join(format!("{base_name}.html"));
+            fs::write(&path, page)
+                .map_err(|source| PreviewError::Cli(CliError::Io { context: "write html preview".to_string(), source }))?;
+            Ok(PreviewFile { path, mime_type: "text/html" })
+        }
+        Some(content_type) if content_type.starts_with("application/pdf") => {
+            let path = previews_dir.join(format!("{base_name}.pdf"));
+            fs::rename(&download_path, &path)
+                .map_err(|source| PreviewError::Cli(CliError::Io { context: "store pdf preview".to_string(), source }))?;
+            Ok(PreviewFile { path, mime_type: "application/pdf" })
+        }
+        _ => {
+            let _ = fs::remove_file(&download_path);
+            let markdown = fetch_content(
+                config,
+                &format!("doc/{}/text", document.doc_id),
+                &text_query(document),
+            )?;
+            let path = previews_dir.join(format!("{base_name}.md"));
+            fs::write(&path, markdown)
+                .map_err(|source| PreviewError::Cli(CliError::Io { context: "write markdown preview".to_string(), source }))?;
+            Ok(PreviewFile { path, mime_type: "text/markdown" })
+        }
+    }
+}
+
+/// Downloads the preview endpoint straight to disk and reports the response
+/// content type; `None` when the endpoint is unavailable or errors (fallback).
+fn download_preview(
+    config: &PreviewConfig,
+    document: &DocumentPreviewPath,
+    target: &Path,
+) -> Option<String> {
+    let resource_path = match &document.part_id {
+        Some(part) => format!("doc/{}/preview/{part}", document.doc_id),
+        None => format!("doc/{}/preview", document.doc_id),
     };
-    let title = fetch_title(&config, &document.doc_id)
-        .unwrap_or_else(|| document.doc_id.clone());
-    let canonical_url = canonical_url(&document);
+    let url = format!("{}{}/{resource_path}", config.base_url, crate::core::http::API_PREFIX);
+    let mut curl_args = vec![
+        "-sS".to_string(),
+        "-o".to_string(),
+        target.to_string_lossy().into_owned(),
+        "-w".to_string(),
+        "%{content_type}|%{http_code}".to_string(),
+    ];
+    if let Some(header) = config.api_auth_header() {
+        curl_args.push("-H".to_string());
+        curl_args.push(header);
+    }
+    curl_args.push(url);
+    let output = execute_curl(&curl_args).ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let written = String::from_utf8_lossy(&output.stdout);
+    let (content_type, http_code) = written.trim().rsplit_once('|')?;
+    if http_code != "200" {
+        return None;
+    }
+    Some(content_type.to_string())
+}
 
-    Ok(document_page(
-        &title,
-        canonical_url.as_deref(),
-        &content_html,
-        stylesheet_href,
-    ))
+fn previews_dir() -> Result<PathBuf, PreviewError> {
+    let home = read_env("HOME").ok_or(PreviewError::Cli(CliError::MissingConfig("HOME")))?;
+    Ok(PathBuf::from(home).join(PREVIEWS_TMP_DIR))
+}
+
+/// The generated HTML links the stylesheet through the daemon's file download
+/// endpoint (same origin as the app); the stylesheet is copied from the plugin's
+/// `previews/` directory into the previews tmp dir on each render.
+fn stylesheet_href(previews_dir: &Path) -> String {
+    let css_path = previews_dir.join("preview.css");
+    if let Some(plugin_dir) = read_env(PLUGIN_DIR_ENV) {
+        let source = PathBuf::from(plugin_dir).join("previews/preview.css");
+        let _ = fs::copy(source, &css_path);
+    }
+    format!("{FILE_DOWNLOAD_URL_PREFIX}{}", url_encode(&css_path.to_string_lossy()))
+}
+
+fn url_encode(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len() * 3);
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                encoded.push(byte as char);
+            }
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    encoded
+}
+
+fn file_base_name(document: &DocumentPreviewPath) -> String {
+    let raw = match &document.part_id {
+        Some(part) => format!("{}-{part}", document.doc_id),
+        None => document.doc_id.clone(),
+    };
+    raw.chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .collect()
 }
 
 /// Preview needs the API base; the user token is optional so a missing token
@@ -137,42 +255,10 @@ impl PreviewConfig {
         })
     }
 
-    /// Authorization for cdx-api requests — the user's Bearer token.
+    /// Authorization for cdx-api requests - the user's Bearer token.
     fn api_auth_header(&self) -> Option<String> {
         self.user_auth_header.clone()
     }
-}
-
-/// Fetches the rendered document HTML from the cdx-api preview endpoint —
-/// the exact markup the CODEXIS web app displays, streamed as raw text/html
-/// (no JSON envelope). Returns `None` (markdown fallback) when the backend
-/// does not expose the endpoint yet or the document cannot be rendered.
-fn fetch_preview_html(config: &PreviewConfig, document: &DocumentPreviewPath) -> Option<String> {
-    let resource_path = match &document.part_id {
-        Some(part) => format!("doc/{}/preview/{part}", document.doc_id),
-        None => format!("doc/{}/preview", document.doc_id),
-    };
-    let url = format!("{}{}/{resource_path}", config.base_url, crate::core::http::API_PREFIX);
-    let mut curl_args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
-    if let Some(header) = config.api_auth_header() {
-        curl_args.push("-H".to_string());
-        curl_args.push(header);
-    }
-    curl_args.push(url);
-    let output = execute_curl(&curl_args).ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let html = String::from_utf8_lossy(&output.stdout).into_owned();
-    (!html.trim().is_empty()).then_some(html)
-}
-
-/// The stylesheet lives at the previews root, while the page is served under the
-/// resource path (`…/plugin-previews/<id>/doc/<DOC_ID>/text`), so the relative
-/// href must climb back up one level per path segment above the first.
-fn stylesheet_href(path_info: &str) -> String {
-    let segments = path_info.trim_matches('/').split('/').filter(|s| !s.is_empty()).count();
-    format!("{}preview.css", "../".repeat(segments.saturating_sub(1)))
 }
 
 struct DocumentPreviewPath {
@@ -198,11 +284,10 @@ fn parse_document_path(path_info: &str) -> Option<DocumentPreviewPath> {
     })
 }
 
-fn text_query(document: &DocumentPreviewPath, query_string: &str) -> String {
-    match (&document.part_id, query_string.is_empty()) {
-        (Some(part), true) => format!("part={part}"),
-        (Some(part), false) => format!("part={part}&{query_string}"),
-        (None, _) => query_string.to_string(),
+fn text_query(document: &DocumentPreviewPath) -> String {
+    match &document.part_id {
+        Some(part) => format!("part={part}"),
+        None => String::new(),
     }
 }
 
@@ -272,37 +357,12 @@ fn canonical_url(document: &DocumentPreviewPath) -> Option<String> {
     ))
 }
 
-fn render_markdown(markdown: &str) -> String {
-    let options = Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH;
-    let parser = Parser::new_ext(markdown, options);
-    let mut rendered = String::with_capacity(markdown.len() * 2);
-    html::push_html(&mut rendered, parser);
-    rendered
-}
-
-fn document_page(
-    title: &str,
-    canonical_url: Option<&str>,
-    content_html: &str,
-    stylesheet_href: &str,
-) -> String {
-    let canonical_link = canonical_url
-        .map(|href| format!("\n    <link rel=\"canonical\" href=\"{}\">", escape_html(href)))
-        .unwrap_or_default();
+fn document_page(title: &str, content_html: &str, stylesheet_href: &str) -> String {
     format!(
-        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>{}</title>{}\n    <link rel=\"stylesheet\" href=\"{}\">\n  </head>\n  <body>\n    <article class=\"document\">\n{}\n    </article>\n  </body>\n</html>\n",
+        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>{}</title>\n    <link rel=\"stylesheet\" href=\"{}\">\n  </head>\n  <body>\n    <article class=\"document\">\n{}\n    </article>\n  </body>\n</html>\n",
         escape_html(title),
-        canonical_link,
         escape_html(stylesheet_href),
         content_html
-    )
-}
-
-fn error_page(message: &str, stylesheet_href: &str) -> String {
-    format!(
-        "<!doctype html>\n<html lang=\"cs\">\n  <head>\n    <meta charset=\"utf-8\">\n    <title>Náhled není k dispozici</title>\n    <link rel=\"stylesheet\" href=\"{}\">\n  </head>\n  <body>\n    <article class=\"document document-error\">\n      <p>{}</p>\n    </article>\n  </body>\n</html>\n",
-        escape_html(stylesheet_href),
-        escape_html(message)
     )
 }
 
@@ -340,17 +400,15 @@ mod tests {
     }
 
     #[test]
-    fn builds_the_text_query_from_the_part_and_query_string() {
+    fn builds_the_text_query_from_the_part() {
         let with_part = DocumentPreviewPath {
             doc_id: "CR10".to_string(),
             part_id: Some("paragraf10".to_string()),
         };
         let without_part = DocumentPreviewPath { doc_id: "CR10".to_string(), part_id: None };
 
-        assert_eq!(text_query(&with_part, ""), "part=paragraf10");
-        assert_eq!(text_query(&with_part, "foo=1"), "part=paragraf10&foo=1");
-        assert_eq!(text_query(&without_part, "foo=1"), "foo=1");
-        assert_eq!(text_query(&without_part, ""), "");
+        assert_eq!(text_query(&with_part), "part=paragraf10");
+        assert_eq!(text_query(&without_part), "");
     }
 
     #[test]
@@ -363,65 +421,60 @@ mod tests {
     }
 
     #[test]
-    fn renders_a_full_document_page_with_title_canonical_and_stylesheet() {
+    fn derives_safe_file_names_from_document_paths() {
+        let with_part = DocumentPreviewPath {
+            doc_id: "CR10_2026_04_01".to_string(),
+            part_id: Some("paragraf10".to_string()),
+        };
+        let odd = DocumentPreviewPath { doc_id: "CR10/../x".to_string(), part_id: None };
+
+        assert_eq!(file_base_name(&with_part), "CR10_2026_04_01-paragraf10");
+        assert_eq!(file_base_name(&odd), "CR10____x");
+    }
+
+    #[test]
+    fn url_encodes_paths_for_the_file_download_link() {
+        assert_eq!(
+            url_encode("/home/codexis/.cdx/tmp/previews/preview.css"),
+            "%2Fhome%2Fcodexis%2F.cdx%2Ftmp%2Fpreviews%2Fpreview.css"
+        );
+    }
+
+    #[test]
+    fn renders_a_full_document_page_with_title_and_stylesheet() {
         let page = document_page(
             "Zákon č. 586/1992 Sb.",
-            Some("https://app.codexis.cz/document/CR10/text"),
             "<h1>586/1992 Sb.</h1>",
-            "../../preview.css",
+            "/rest/files/download?path=%2Fhome%2Fx%2Fpreview.css",
         );
 
         assert!(page.contains("<title>Zákon č. 586/1992 Sb.</title>"));
         assert!(page.contains(
-            "<link rel=\"canonical\" href=\"https://app.codexis.cz/document/CR10/text\">"
+            "<link rel=\"stylesheet\" href=\"/rest/files/download?path=%2Fhome%2Fx%2Fpreview.css\">"
         ));
-        assert!(page.contains("<link rel=\"stylesheet\" href=\"../../preview.css\">"));
         assert!(page.contains("<h1>586/1992 Sb.</h1>"));
     }
 
     #[test]
-    fn omits_the_canonical_link_without_a_web_base_url() {
-        let page = document_page("Doc", None, "<p>x</p>", "preview.css");
-        assert!(!page.contains("rel=\"canonical\""));
-    }
-
-    #[test]
     fn escapes_html_in_titles() {
-        let page = document_page("A <b>&\"", None, "<p>x</p>", "preview.css");
+        let page = document_page("A <b>&\"", "<p>x</p>", "preview.css");
         assert!(page.contains("<title>A &lt;b&gt;&amp;&quot;</title>"));
     }
 
     #[test]
-    fn stylesheet_href_climbs_one_level_per_extra_path_segment() {
-        assert_eq!(
-            stylesheet_href("/preview/doc/CR10_2026_04_01/paragraf10"),
-            "../../../preview.css"
-        );
-        assert_eq!(stylesheet_href("/preview/doc/CR10"), "../../preview.css");
-        assert_eq!(stylesheet_href("/preview"), "preview.css");
-        assert_eq!(stylesheet_href("/"), "preview.css");
-    }
-
-    #[test]
-    fn renders_markdown_tables_and_strikethrough() {
-        let rendered = render_markdown("| a | b |\n|---|---|\n| 1 | 2 |\n\n~~gone~~");
-        assert!(rendered.contains("<table>"));
-        assert!(rendered.contains("<del>gone</del>"));
-    }
-
-    #[test]
     fn cgi_response_renders_status_and_content_type_headers() {
-        let response = CgiResponse::error(404, "Not Found", "chybí", "preview.css");
+        let response = CgiResponse::error(404, "Not Found", "chybí");
         let rendered = response.render();
         assert!(rendered.starts_with(
-            "Status: 404 Not Found\nContent-Type: text/html;charset=UTF-8\nCache-Control: no-store\n\n"
+            "Status: 404 Not Found\nContent-Type: text/plain;charset=UTF-8\nCache-Control: no-store\n\n"
         ));
         assert!(rendered.contains("chybí"));
     }
 
     #[test]
-    fn successful_renders_are_browser_cacheable() {
-        let rendered = CgiResponse::ok("<html></html>".to_string()).render();
+    fn successful_manifests_are_browser_cacheable_json() {
+        let rendered = CgiResponse::ok("{}".to_string()).render();
+        assert!(rendered.contains("\nContent-Type: application/json;charset=UTF-8\n"));
         assert!(rendered.contains("\nCache-Control: private, max-age=3600\n"));
     }
 }

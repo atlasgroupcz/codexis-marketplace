@@ -3,7 +3,7 @@
 # read results. Uses ONE small fixture file + ONE column so the backend AI
 # extraction finishes quickly. Setup uploads the fixture before the chat.
 
-description: codexis cdxctl — tabular extraction (add → start → results)
+description: codexis cdxctl - tabular extraction (add → start → results)
 target_plugin: codexis
 
 setup:
@@ -24,7 +24,7 @@ providers:
 tests:
   - description: tabular add-column registers `customer` in DRAFT state
     vars:
-      prompt: "Pomocí cdxctl: v /home/codexis/ee-tab-{{ run_id }} mám faktury. Přes `cdxctl tabular add-column` přidej sloupec 'customer' — celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
+      prompt: "Pomocí cdxctl: v /home/codexis/ee-tab-{{ run_id }} mám faktury. Přes `cdxctl tabular add-column` přidej sloupec 'customer' - celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
       tool_name: shell
       input_regex: 'tabular\s+add-column'
       tool_calls_min: 1
@@ -90,9 +90,9 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: tabular results — AI relays the extracted customer name
+  - description: tabular results - AI relays the extracted customer name
     vars:
-      prompt: "Pomocí `cdxctl tabular results` ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} — jaká hodnota vyšla ve sloupci customer?"
+      prompt: "Pomocí `cdxctl tabular results` ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} - jaká hodnota vyšla ve sloupci customer?"
       tool_name: shell
       input_regex: 'tabular\s+results'
       tool_calls_min: 1
@@ -123,6 +123,6 @@ tests:
         value: file://./assertions.py:assert_no_tool_call
       - type: python
         value: file://./assertions.py:assert_state_graphql
-      # Surface — AI must mention the extracted customer name.
+      # Surface - AI must mention the extracted customer name.
       - type: regex
         value: '[Jj]ohn'

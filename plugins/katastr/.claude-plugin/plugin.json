@@ -17,17 +17,17 @@
   "i18n": {
     "cs": {
       "displayName": "Katastr nemovitostí ČR",
-      "description": "Vyhledávání a čtení dat z Katastru nemovitostí České republiky — parcely, listy vlastnictví, mapové podklady.",
+      "description": "Vyhledávání a čtení dat z Katastru nemovitostí České republiky - parcely, listy vlastnictví, mapové podklady.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "cadastre": "Katastr", "property": "Nemovitosti" }
     },
     "en": {
       "displayName": "Czech Property Registry",
-      "description": "Search and read the Czech Property Registry (Katastr nemovitostí) — parcels, title deeds, cadastral maps.",
+      "description": "Search and read the Czech Property Registry (Katastr nemovitostí) - parcels, title deeds, cadastral maps.",
       "tagLabels": { "legal": "Law", "czech": "Czech Republic", "cadastre": "Cadastre", "property": "Property" }
     },
     "sk": {
       "displayName": "Kataster nehnuteľností ČR",
-      "description": "Vyhľadávanie a čítanie dát z Katastru nehnuteľností Českej republiky — parcely, listy vlastníctva, mapové podklady.",
+      "description": "Vyhľadávanie a čítanie dát z Katastru nehnuteľností Českej republiky - parcely, listy vlastníctva, mapové podklady.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "cadastre": "Kataster", "property": "Nehnuteľnosti" }
     }
   },

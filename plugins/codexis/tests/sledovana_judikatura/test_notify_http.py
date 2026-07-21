@@ -30,7 +30,7 @@ def _load_component():
     return module
 
 
-_http = _load_component()  # defs-only/stateless — load once, reuse across tests
+_http = _load_component()  # defs-only/stateless - load once, reuse across tests
 
 
 @pytest.fixture
@@ -122,7 +122,7 @@ def test_post_save_notify_settings_absent_recipients_left_untouched(
     defaults, monkeypatch, capsys
 ):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
-    # not clear the stored list — self-stripping must not turn None into [].
+    # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: "me@firma.cz")
     notify_settings.set_notify(email=True, inApp=True, recipients=["a@x.cz"])
     _http.handle_post({"action": "save_notify_settings", "email": False})

@@ -36,7 +36,7 @@ export const TEST_ID = {
   PLUGIN_SKILLS_CONTENT: (name: string) => `plugin-skills-content-${name}`,
   PLUGIN_SKILL_ITEM: (pluginName: string, skillName: string) => `plugin-skill-${pluginName}-${skillName}`,
 
-  // Sidebar — plugin apps
+  // Sidebar - plugin apps
   SIDEBAR_APP_ITEM: (pluginId: string, componentId: string) =>
     `sidebar-app-${pluginId}-${componentId}`,
 

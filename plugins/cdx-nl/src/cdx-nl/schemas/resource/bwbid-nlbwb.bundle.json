@@ -68,7 +68,7 @@
     "schemas": {
       "WettenOverheidNlBwbBwbIdResponse": {
         "type": "object",
-        "description": "BWB-id resolution result — maps a source BWB-id (BWBR.../BWBV.../BWBW...) to its display ID",
+        "description": "BWB-id resolution result - maps a source BWB-id (BWBR.../BWBV.../BWBW...) to its display ID",
         "properties": {
           "bwbId": { "type": "string", "description": "BWB identifier (input)", "example": "BWBR0001827" },
           "docId": { "type": "string", "description": "Display ID (use for /doc/{docId}/* endpoints)", "example": "NLBWB1234" },

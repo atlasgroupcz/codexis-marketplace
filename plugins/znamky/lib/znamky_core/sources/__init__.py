@@ -1,4 +1,4 @@
-"""Trademark source registry — fan out a search across enabled public sources.
+"""Trademark source registry - fan out a search across enabled public sources.
 
 Primary source is TMview (covers ÚPV "CZ" + EUIPO "EM" + WIPO "WO"); ÚPV direct
 is an optional enrichment. Results are merged and de-duplicated into one
@@ -28,7 +28,7 @@ def search_all(query_text: str, nice_classes=None, territories=None, limit: int 
     """Query all enabled sources. Returns {'candidates': [...], 'errors': [...]}.
 
     A source failure is captured (not raised) so one register being down still
-    yields results from the others — mirrors the resilience the watchdog needs.
+    yields results from the others - mirrors the resilience the watchdog needs.
     """
     offices = territory_offices(territories)
     candidates = []

@@ -19,6 +19,6 @@ steps:
     expect:
       tool_calls_max: 4
       response:
-        # Owner names / LV contents need a verified ESKN login — the skill must
+        # Owner names / LV contents need a verified ESKN login - the skill must
         # hand over official portal links instead of scraping.
         matches: "(?i)(CICA|ESKN|slovensko\\.sk|oficiáln|manuáln|ručne|portál|portal)"

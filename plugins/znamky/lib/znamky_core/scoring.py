@@ -3,7 +3,7 @@
 The weighting follows the legal "global appreciation" intuition: for a word
 mark the verbal (aural/visual) similarity dominates; for a figurative mark the
 image + Vienna-code similarity dominates; a combined mark blends both. The
-overlap of goods/services classes (Nice) modulates the result — identical signs
+overlap of goods/services classes (Nice) modulates the result - identical signs
 in unrelated classes are a much weaker conflict than in the same class.
 
 The deterministic score here is a *triage* signal that decides what surfaces to
@@ -62,7 +62,7 @@ def _image_component(watched, candidate) -> tuple:
             pixel_score = 0.8 * pixel_score + 0.2 * color_sim
         image_score = max(pixel_score, vienna * 0.9)
     elif vienna > 0:
-        # No usable pixels (deps missing / no logo) — lean on Vienna codes.
+        # No usable pixels (deps missing / no logo) - lean on Vienna codes.
         image_score = vienna * 0.8
     else:
         image_score = None
@@ -96,7 +96,7 @@ def score_candidate(watched: dict, candidate: dict) -> dict:
         sign_similarity = sum(w * v for w, v in parts) / total_w
 
     # Modulate by goods/services proximity: full weight when classes overlap,
-    # damped (never zeroed) when they don't — confusion risk is lower but the
+    # damped (never zeroed) when they don't - confusion risk is lower but the
     # mark is still worth surfacing.
     class_factor = 0.55 + 0.45 * classes
     overall = round(min(1.0, sign_similarity * class_factor), 4)

@@ -10,13 +10,13 @@ function rizeni(urlDetail: string): Rizeni {
 }
 
 describe('isirProceedingUrl', () => {
-  it('uses the ISIR-provided detail url verbatim — hex-GUID ids (the real ones)', () => {
+  it('uses the ISIR-provided detail url verbatim - hex-GUID ids (the real ones)', () => {
     const url =
       'https://isir.justice.cz/isir/ueu/evidence_upadcu_detail.do?id=D18B3F0893D33690E05333F21FACE915'
     expect(isirProceedingUrl(rizeni(url), FALLBACK)).toBe(url)
   })
 
-  it('uses the ISIR-provided detail url verbatim — numeric ids too', () => {
+  it('uses the ISIR-provided detail url verbatim - numeric ids too', () => {
     const url = 'https://isir.justice.cz/isir/ueu/evidence_upadcu_detail.do?id=10009596'
     expect(isirProceedingUrl(rizeni(url), FALLBACK)).toBe(url)
   })

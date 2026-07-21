@@ -23,9 +23,9 @@ i18n:
 ---
 Pomocí dovednosti pro české daně sestav měsíční daňový přehled za uplynulý měsíc:
 
-1. **Změny v legislativě** — novelizace daňových zákonů a vyhlášek (DPH, daň z příjmů, daňový řád, spotřební daně, daň z nemovitých věcí), s účinností a stručným dopadem pro plátce/poplatníka.
-2. **Judikatura a výkladová stanoviska** — nová významná rozhodnutí nebo stanoviska finanční správy s praktickým dopadem.
-3. **Nadcházející termíny** — daňové povinnosti splatné v následujícím měsíci (přiznání, zálohy, kontrolní hlášení) s konkrétními daty.
+1. **Změny v legislativě** - novelizace daňových zákonů a vyhlášek (DPH, daň z příjmů, daňový řád, spotřební daně, daň z nemovitých věcí), s účinností a stručným dopadem pro plátce/poplatníka.
+2. **Judikatura a výkladová stanoviska** - nová významná rozhodnutí nebo stanoviska finanční správy s praktickým dopadem.
+3. **Nadcházející termíny** - daňové povinnosti splatné v následujícím měsíci (přiznání, zálohy, kontrolní hlášení) s konkrétními daty.
 
 Pravidla:
 - Zaměř se na obecně použitelné novinky; nepředpokládej konkrétní situaci jednoho poplatníka.

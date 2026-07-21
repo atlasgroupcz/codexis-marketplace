@@ -3,7 +3,7 @@
 # verify-gone. Each step is a fresh chat; state passes via the daemon-side
 # automation named e2e-{{ run_id }}.
 
-description: codexis cdxctl — COMMAND-type automation lifecycle
+description: codexis cdxctl - COMMAND-type automation lifecycle
 target_plugin: codexis
 
 prompts:
@@ -151,7 +151,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: automation list — e2e-{{run_id}} is gone
+  - description: automation list - e2e-{{run_id}} is gone
     vars:
       prompt: "Je automatizace e2e-{{ run_id }} ještě naplánovaná?"
       tool_name: shell

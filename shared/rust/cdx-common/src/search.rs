@@ -37,7 +37,7 @@ pub fn insert_bool(payload: &mut Map<String, Value>, key: &str, value: bool) {
     }
 }
 
-/// Loads an optional JSON payload override — a literal string, or `-` to read
+/// Loads an optional JSON payload override - a literal string, or `-` to read
 /// it from stdin. Must be a JSON object.
 pub fn load_search_payload(raw_payload: Option<&str>) -> Result<Option<Map<String, Value>>, CliError> {
     let Some(raw_payload) = raw_payload else {

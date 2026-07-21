@@ -36,7 +36,7 @@ export function NotifySettings({
     setValue({ email: values.email, inApp: values.inApp, recipients: values.recipients })
   }, [open, values.email, values.inApp, values.recipients])
 
-  // Instant save: every change persists immediately (like macOS/iOS settings). No footer —
+  // Instant save: every change persists immediately (like macOS/iOS settings). No footer -
   // the dialog closes via the header ✕ / backdrop.
   const handleChange = (next: NotifyValues) => {
     setValue(next)

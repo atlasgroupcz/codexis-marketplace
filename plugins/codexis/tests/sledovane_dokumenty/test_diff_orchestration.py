@@ -1,4 +1,4 @@
-"""diff.compute_version_diff and diff.build_change_text — orchestration layer.
+"""diff.compute_version_diff and diff.build_change_text - orchestration layer.
 
 These call clients.cdx_get_text to fetch actual document texts from CODEXIS, then
 invoke the pure transformations tested in test_diff_normalize/sections/algo.

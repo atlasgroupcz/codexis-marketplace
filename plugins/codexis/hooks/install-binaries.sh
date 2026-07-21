@@ -27,7 +27,7 @@ install_binary() {
   fi
   # Atomic install: write to a temp file in the destination dir, flush it to
   # disk, then rename into place. A crash leaves either the old binary or the
-  # complete new one — never a truncated/empty file at the real name.
+  # complete new one - never a truncated/empty file at the real name.
   local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"
   if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
     install -m 0755 "${source_path}" "${tmp_path}"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""znamky-cli — watch trademarks for similar marks in ÚPV + EUIPO (via TMview).
+"""znamky-cli - watch trademarks for similar marks in ÚPV + EUIPO (via TMview).
 
 Usage:
     znamky-cli sledovani add-text <TEXT> [--nice 9,42] [--territory CZ,EU] [--owner "..."] [--label "..."]
@@ -74,8 +74,8 @@ def _resolve(identifier: str) -> dict:
 
 def _fmt_mark_short(state: dict) -> str:
     e = tracking.state_to_overview_entry(state)
-    classes = ", ".join(str(c) for c in e["nice_classes"]) or "—"
-    territories = "/".join(e["territories"]) or "—"
+    classes = ", ".join(str(c) for c in e["nice_classes"]) or "-"
+    territories = "/".join(e["territories"]) or "-"
     badge = f" • {e['unconfirmed_count']} k posouzení" if e["unconfirmed_count"] else ""
     tier = f" [{e['worst_tier']}]" if e["worst_tier"] else ""
     return (
@@ -144,7 +144,7 @@ def cmd_check(args):
     for r in results:
         name = r["display_name"]
         if not r["ok"]:
-            out(f"  {name}: CHYBA — {r['error']}")
+            out(f"  {name}: CHYBA - {r['error']}")
             continue
         new = r["new_collisions"]
         if not new:
@@ -154,7 +154,7 @@ def cmd_check(args):
         out(f"  {name}: {len(new)} nových podobných známek")
         for c in new:
             label = c.get("mark_text") or "(obrazová známka)"
-            out(f"    • {label} [{c['tier']}, skóre {c['scores']['overall']}] — {c.get('applicant', '')}")
+            out(f"    • {label} [{c['tier']}, skóre {c['scores']['overall']}] - {c.get('applicant', '')}")
     out(f"\nKontrola dokončena. Celkem {total} nových u {len(results)} známek.")
 
     notify_cfg = notify_settings.get_notify()
@@ -162,7 +162,7 @@ def cmd_check(args):
         try:
             to = notify.resolve_to(notify_cfg.get("recipients"))
             sent = notify.email_change_summary(results, to=to)
-            info(f"E-mailem odeslán souhrn {sent} nových." if sent else "Žádné nové — e-mail neodeslán.")
+            info(f"E-mailem odeslán souhrn {sent} nových." if sent else "Žádné nové - e-mail neodeslán.")
         except ZnamkyError as e:
             info(f"E-mail se nepodařilo odeslat: {e}")
     if notify_cfg.get("inApp"):
@@ -241,7 +241,7 @@ def cmd_notify_show(args):
 
 def cmd_notify_set(args):
     eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
-    info(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+    info(f"OK: Notifikace - e-mail: {eff['email']}, in-app: {eff['inApp']}.")
 
 
 def cmd_notify_recipients(args):
@@ -254,7 +254,7 @@ def cmd_notify_recipients(args):
         current = list(args.emails)
     elif args.rcmd == "clear":
         current = []
-    # The signed-in user always receives the e-mail, so drop their own address —
+    # The signed-in user always receives the e-mail, so drop their own address -
     # listing yourself as an extra is redundant (the FE dialog blocks it too).
     # Say so: dropping the caller's input without a word reads as a silent failure.
     requested = list(current)
@@ -267,11 +267,11 @@ def cmd_notify_recipients(args):
         sys.exit(1)
     if dropped:
         info(
-            f"OK: {dropped[0]} vynechán — je to adresa přihlášeného uživatele, "
+            f"OK: {dropped[0]} vynechán - je to adresa přihlášeného uživatele, "
             f"ten e-mail dostává vždy."
         )
     joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
-    info(f"OK: Příjemci — {joined}.")
+    info(f"OK: Příjemci - {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────

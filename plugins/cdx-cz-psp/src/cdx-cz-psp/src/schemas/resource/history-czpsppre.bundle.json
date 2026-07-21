@@ -12,7 +12,7 @@
       "path": "/api/CZ/psp/preleg/doc/{docId}/history",
       "method": "get",
       "summary": "Get legislative process history",
-      "description": "Retrieve the legislative process history for a proposal — stages, votes, committee readings, and outcomes.",
+      "description": "Retrieve the legislative process history for a proposal - stages, votes, committee readings, and outcomes.",
       "operationId": "getPrelegHistory",
       "parameters": [
         {

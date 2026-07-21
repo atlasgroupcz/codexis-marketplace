@@ -75,6 +75,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -111,6 +112,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -147,6 +149,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -306,6 +309,7 @@
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
         "@workspace/typescript-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "tailwindcss": "^4.2.1",
         "typescript": "^5.9.3",
@@ -327,6 +331,23 @@
       "devDependencies": {
         "@tanstack/eslint-config": "^0.4.0",
         "@workspace/eslint-config": "workspace:*",
+      },
+    },
+    "packages/vitest-config": {
+      "name": "@workspace/vitest-config",
+      "version": "0.0.0",
+      "dependencies": {
+        "@vitejs/plugin-react": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
+      },
+      "devDependencies": {
+        "@workspace/eslint-config": "workspace:*",
+        "@workspace/typescript-config": "workspace:*",
+        "vitest": "^4.0.18",
+      },
+      "peerDependencies": {
+        "vite": "^7.0.0",
+        "vitest": "^4.0.0",
       },
     },
   },
@@ -1014,6 +1035,8 @@
     "@workspace/ui": ["@workspace/ui@workspace:packages/ui"],
 
     "@workspace/utils": ["@workspace/utils@workspace:packages/utils"],
+
+    "@workspace/vitest-config": ["@workspace/vitest-config@workspace:packages/vitest-config"],
 
     "@xyflow/react": ["@xyflow/react@12.10.1", "", { "dependencies": { "@xyflow/system": "0.0.75", "classcat": "^5.0.3", "zustand": "^4.4.0" }, "peerDependencies": { "react": ">=17", "react-dom": ">=17" } }, "sha512-5eSWtIK/+rkldOuFbOOz44CRgQRjtS9v5nufk77DV+XBnfCGL9HAQ8PG00o2ZYKqkEU/Ak6wrKC95Tu+2zuK3Q=="],
 

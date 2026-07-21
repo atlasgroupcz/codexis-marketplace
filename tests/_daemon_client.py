@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from typing import Any
+from typing import Any, Callable
 
 
 def make_oauth2_proxy_refresher(cookie: str,
@@ -40,13 +40,13 @@ def _normalize_git_url(git_url: str) -> str:
 
 
 def _git_url_basename(git_url: str) -> str:
-    """Last path segment of a git URL, `.git` stripped, lowercased — the name
+    """Last path segment of a git URL, `.git` stripped, lowercased - the name
     the daemon falls back to (`deriveSourceKey`) when it can't read a manifest."""
     return _normalize_git_url(git_url).rsplit("/", 1)[-1]
 
 
 # ---------------------------------------------------------------------------
-# GraphQL query strings (private — use DaemonClient methods instead).
+# GraphQL query strings (private - use DaemonClient methods instead).
 # ---------------------------------------------------------------------------
 
 _Q_ADD_MARKETPLACE = """
@@ -90,7 +90,7 @@ mutation UninstallPlugin($input: PluginInstallInput!) {
 """
 
 _Q_SKILLS = """
-{ skills { fullName plugin { name } sourceKind } }
+{ skills { fullName plugin { id name } sourceKind } }
 """
 
 _Q_GET_ENTRY = """
@@ -184,12 +184,19 @@ query GetToolChain($id: ID!) {
 """ % _PART_FIELDS
 
 
+# HTTP statuses worth retrying. The shared dev daemon redeploys under long runs,
+# so a single request can momentarily hit a gateway 405/5xx while the backend
+# reloads - transient, not a test failure.
+_TRANSIENT_STATUS = frozenset({405, 408, 429, 500, 502, 503, 504})
+_MAX_ATTEMPTS = 5
+
+
 class DaemonClient:
     def __init__(self, base_url: str, token: str,
-                 token_refresher: "callable | None" = None) -> None:
+                 token_refresher: "Callable[[], str | None] | None" = None) -> None:
         """`token_refresher` is an optional zero-arg callable that returns a
         fresh bearer token. When set, the client transparently refreshes on
-        HTTP 401 once per failed request — keeps long suites alive past the
+        HTTP 401 once per failed request - keeps long suites alive past the
         keycloak access-token TTL (~30 min).
         """
         self.base_url = base_url.rstrip("/")
@@ -207,6 +214,22 @@ class DaemonClient:
         except Exception:
             return False
 
+    def wait_healthy(self, timeout_s: float = 90, interval_s: float = 3,
+                     sleep: "Callable[[float], None]" = time.sleep,
+                     now: "Callable[[], float]" = time.monotonic) -> bool:
+        """Poll the health endpoint until the daemon reports UP or the deadline
+        passes. The shared dev daemon redeploys under long runs and can be
+        briefly down exactly when the suite starts, so wait it out instead of
+        aborting preflight on the first probe. sleep/now are injectable for tests.
+        """
+        deadline = now() + timeout_s
+        while True:
+            if self.health_check():
+                return True
+            if now() >= deadline:
+                return False
+            sleep(interval_s)
+
     def _refresh_token(self) -> bool:
         if self._token_refresher is None:
             return False
@@ -220,14 +243,32 @@ class DaemonClient:
         return True
 
     def _open(self, req: urllib.request.Request, timeout: float = 120):
-        """urlopen with a single 401-driven token refresh + retry."""
-        try:
-            return urllib.request.urlopen(req, timeout=timeout)
-        except urllib.error.HTTPError as e:
-            if e.code != 401 or not self._refresh_token():
-                raise
-            req.headers["Authorization"] = self.auth_header
-            return urllib.request.urlopen(req, timeout=timeout)
+        """urlopen with a 401-driven token refresh and bounded retries.
+
+        The shared dev daemon redeploys under long runs, so a single request can
+        momentarily hit a gateway 405/5xx (see _TRANSIENT_STATUS) or a dropped
+        connection while the backend reloads. Those are infrastructure blips, not
+        test failures, so retry with a short backoff before giving up. A 401 is
+        handled separately: refresh the token once and retry immediately.
+        """
+        last_exc: urllib.error.URLError | None = None
+        refreshed = False
+        for attempt in range(_MAX_ATTEMPTS):
+            try:
+                return urllib.request.urlopen(req, timeout=timeout)
+            except urllib.error.HTTPError as exc:
+                if exc.code == 401 and not refreshed and self._refresh_token():
+                    refreshed = True
+                    req.headers["Authorization"] = self.auth_header
+                    continue  # immediate retry with the fresh token
+                if exc.code not in _TRANSIENT_STATUS:
+                    raise
+                last_exc = exc
+            except urllib.error.URLError as exc:
+                last_exc = exc  # connection reset/refused while the daemon reloads
+            if attempt < _MAX_ATTEMPTS - 1:
+                time.sleep(min(2 ** attempt, 8))
+        raise last_exc if last_exc is not None else RuntimeError("no request attempted")
 
     def gql(self, query: str, variables: dict | None = None) -> dict[str, Any]:
         payload = json.dumps({"query": query, "variables": variables or {}}).encode()
@@ -275,7 +316,7 @@ class DaemonClient:
     def add_marketplace(self, git_url: str, git_ref: str) -> dict:
         """Add a GIT-sourced marketplace. Returns the single Marketplace object.
 
-        Raises RuntimeError if the daemon already has this marketplace —
+        Raises RuntimeError if the daemon already has this marketplace -
         use `add_marketplace_idempotent` if you want auto-retry.
         """
         data = self.gql_data(
@@ -300,7 +341,7 @@ class DaemonClient:
         name-based sweep below.
 
         Uses the daemon-issued node id from `list_marketplaces` rather than
-        computing it locally — the daemon's NodeId wire format (protobuf
+        computing it locally - the daemon's NodeId wire format (protobuf
         varint + URL-safe base64) isn't worth re-implementing here.
         """
         target = _normalize_git_url(git_url)
@@ -308,7 +349,7 @@ class DaemonClient:
             # Skip records the daemon marks as protected (e.g. the builtin
             # marketplace). It reports `deletable=false` and rejects the delete
             # with a 400, which would otherwise abort the whole sweep. Ask the
-            # daemon rather than guessing from the URL — the builtin shares this
+            # daemon rather than guessing from the URL - the builtin shares this
             # repo's git URL when its checkout is stale, so URL matching alone
             # cannot tell them apart.
             if not m.get("deletable"):
@@ -379,10 +420,10 @@ class DaemonClient:
     # -------------------------------------------------- file upload
     def upload_folder(self, destination: str,
                       files: list[tuple[str, bytes | str]]) -> dict:
-        """POST /rest/files/upload-folder — places files preserving folder structure.
+        """POST /rest/files/upload-folder - places files preserving folder structure.
 
         `destination` is a path inside the VM (e.g. '/home/codexis/ee-mkt-xyz').
-        `files` is a list of (relative_path, content) — content can be bytes
+        `files` is a list of (relative_path, content) - content can be bytes
         or str. Uses a hand-rolled multipart/form-data body so the test suite
         doesn't pick up `requests` as a dependency.
         """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""katastr-cli — unified CLI for ČÚZK lookups, tracking and settings.
+"""katastr-cli - unified CLI for ČÚZK lookups, tracking and settings.
 
 Usage:
     katastr-cli tracking add <CISLO> [--label "..."]
@@ -126,7 +126,7 @@ def cmd_tracking_check(args):
     for r in results:
         cislo = r["cislo_rizeni"]
         if not r["ok"]:
-            out(f"  {cislo}: CHYBA — {r['error']}")
+            out(f"  {cislo}: CHYBA - {r['error']}")
             continue
         change = r["change"]
         if not change:
@@ -147,7 +147,7 @@ def cmd_tracking_check(args):
             to = notify.resolve_to(notify_cfg.get("recipients"))
             sent = notify.email_change_summary(results, to=to)
             info(f"E-mailem odeslán souhrn ({sent} řízení se změnou)." if sent
-                 else "Žádné nové změny — e-mail neodeslán.")
+                 else "Žádné nové změny - e-mail neodeslán.")
         except KatastrError as e:
             info(str(e))
     if notify_cfg.get("inApp"):
@@ -228,7 +228,7 @@ def cmd_notify_show(args):
 
 def cmd_notify_set(args):
     eff = notify_settings.set_notify(email=args.email, inApp=args.inapp)
-    info(f"OK: Notifikace — e-mail: {eff['email']}, in-app: {eff['inApp']}.")
+    info(f"OK: Notifikace - e-mail: {eff['email']}, in-app: {eff['inApp']}.")
 
 
 def cmd_notify_recipients(args):
@@ -241,7 +241,7 @@ def cmd_notify_recipients(args):
         current = list(args.emails)
     elif args.rcmd == "clear":
         current = []
-    # The signed-in user always receives the e-mail, so drop their own address —
+    # The signed-in user always receives the e-mail, so drop their own address -
     # listing yourself as an extra is redundant (the FE dialog blocks it too).
     # Say so: dropping the caller's input without a word reads as a silent failure.
     requested = list(current)
@@ -254,11 +254,11 @@ def cmd_notify_recipients(args):
         sys.exit(1)
     if dropped:
         info(
-            f"OK: {dropped[0]} vynechán — je to adresa přihlášeného uživatele, "
+            f"OK: {dropped[0]} vynechán - je to adresa přihlášeného uživatele, "
             f"ten e-mail dostává vždy."
         )
     joined = ", ".join(eff["recipients"]) or "(žádní; e-mail chodí přihlášenému uživateli)"
-    info(f"OK: Příjemci — {joined}.")
+    info(f"OK: Příjemci - {joined}.")
 
 
 # ── argparse plumbing ────────────────────────────────────────────────────────

@@ -2,29 +2,29 @@
 uuid: e99d4d14-570c-433b-870d-4a146fb02019
 name: xlsx
 icon: icon.svg
-description: "Excel (.xlsx, .csv) — tabulka, sešit, vzorce, výpočet, rozpočet, cash flow, finanční model, úklid rozbitých dat. Vytvoř či uprav sešit a ověř vzorce. Ne pro Word ani grafy."
+description: "Excel (.xlsx, .csv) - tabulka, sešit, vzorce, výpočet, rozpočet, cash flow, finanční model, úklid rozbitých dat. Vytvoř či uprav sešit a ověř vzorce. Ne pro Word ani grafy."
 version: 1.0.0
 allowed-tools: shell
 i18n:
   cs:
     displayName: "Excel tabulky"
-    summary: "Tvorba a úprava .xlsx — vzorce, formátování, finanční modely, kontrola chyb a vizuální náhled."
+    summary: "Tvorba a úprava .xlsx - vzorce, formátování, finanční modely, kontrola chyb a vizuální náhled."
   en:
     displayName: "Excel Spreadsheets"
-    summary: "Create and edit .xlsx — formulas, formatting, financial models, error checking, visual review."
+    summary: "Create and edit .xlsx - formulas, formatting, financial models, error checking, visual review."
   sk:
     displayName: "Excel tabuľky"
-    summary: "Tvorba a úprava .xlsx — vzorce, formátovanie, finančné modely, kontrola chýb a náhľad."
+    summary: "Tvorba a úprava .xlsx - vzorce, formátovanie, finančné modely, kontrola chýb a náhľad."
 ---
 
-# XLSX — creation, editing, verification
+# XLSX - creation, editing, verification
 
-**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` or `cdx-recalc` — report it and
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` or `cdx-recalc` - report it and
 don't blindly retry. LibreOffice is part of the guest image, so a missing `soffice` means the
 image is broken, not your command. Report it; never work around it by computing the values
 yourself in JavaScript and writing them in as constants.
 
-`cdx-recalc` exiting with code **2 is not a tool failure** — it is the finding you asked for:
+`cdx-recalc` exiting with code **2 is not a tool failure** - it is the finding you asked for:
 the workbook has error cells. Read the reported types, fix the formulas, run it again. That is
 the loop working, not a reason to give up or to hardcode the values.
 
@@ -34,15 +34,15 @@ If you compute a total in JavaScript and write the number into the cell, you hav
 screenshot, not a spreadsheet. The user changes one input and everything silently stays wrong.
 
 ```javascript
-// WRONG — the total is frozen
+// WRONG - the total is frozen
 sheet.getCell('B10').value = data.reduce((a, b) => a + b, 0);
 
-// RIGHT — the spreadsheet recalculates
+// RIGHT - the spreadsheet recalculates
 sheet.getCell('B10').value = { formula: 'SUM(B2:B9)' };
 ```
 
 The same goes for growth rates, margins, ratios and differences. And never bake a magic number
-into a formula — put it in an input cell and reference it: `=H6*(1+$B$3)`, not `=H6*1.04`.
+into a formula - put it in an input cell and reference it: `=H6*(1+$B$3)`, not `=H6*1.04`.
 
 ## Creating a workbook
 
@@ -70,13 +70,13 @@ await wb.xlsx.writeFile('/home/codexis/model.xlsx');
 ```
 
 Editing an existing workbook: `await wb.xlsx.readFile(path)`, change the cells, write it back.
-ExcelJS preserves formulas and formatting it understands — but **match the existing style
+ExcelJS preserves formulas and formatting it understands - but **match the existing style
 exactly**. A workbook that already has a house format always overrides the conventions below;
 never impose your formatting on someone else's template.
 
-## Verification — two gates, cheap one first
+## Verification - two gates, cheap one first
 
-**Gate 1 — recalculate. This is not optional.** ExcelJS writes formulas as strings with no
+**Gate 1 - recalculate. This is not optional.** ExcelJS writes formulas as strings with no
 cached result. Until LibreOffice has recalculated the file, you have no idea whether it is full
 of `#REF!`.
 
@@ -91,20 +91,20 @@ Common causes: `#REF!` a range that points off the sheet, `#DIV/0!` a divisor ce
 still empty, `#NAME?` a function LibreOffice does not know, or text starting with `=` (prefix
 it with an apostrophe: `'=vysoká-nízká`).
 
-**Gate 2 — render and look.**
+**Gate 2 - render and look.**
 
 ```bash
 cdx-render -i /home/codexis/model.xlsx
 ```
 
 `Read` the images. Numbers formatted as raw floats, `###` columns too narrow to show their
-value, headers indistinguishable from data, text spilling into the neighbouring cell — none of
+value, headers indistinguishable from data, text spilling into the neighbouring cell - none of
 that shows up in the XML, all of it is obvious in the picture. Recalculate *before* rendering,
 otherwise the cells render empty.
 
 ## Formula constraints
 
-- **Do not use dynamic array functions** — `FILTER`, `XLOOKUP`, `SORT`, `SEQUENCE`. ExcelJS and
+- **Do not use dynamic array functions** - `FILTER`, `XLOOKUP`, `SORT`, `SEQUENCE`. ExcelJS and
   LibreOffice do not round-trip them in a way Excel accepts, and the user ends up with a broken
   workbook. Use `INDEX`/`MATCH` and `VLOOKUP` instead.
 - Avoid volatile functions (`INDIRECT`, `OFFSET`) unless there is no alternative.
@@ -114,11 +114,11 @@ otherwise the cells render empty.
 ## Formatting
 
 - Dates and years are not numbers: `2028`, never `2 028`.
-- Currency always carries its unit in the header — `Tržby (tis. Kč)` — and uses `#,##0`.
+- Currency always carries its unit in the header - `Tržby (tis. Kč)` - and uses `#,##0`.
 - Percentages default to one decimal (`0.0%`), multiples to `0.0x`.
 - Headers look different from data. Use fills, borders and merged cells sparingly; do not box
   every single cell.
-- Column widths fit the content — no `###`, no text bleeding into the next column.
+- Column widths fit the content - no `###`, no text bleeding into the next column.
 
 ### Financial models
 
@@ -126,7 +126,7 @@ The industry colour convention, which Czech and Slovak finance teams read fluent
 
 | Colour | Meaning |
 |---|---|
-| **Blue text** (RGB 0,0,255) | Hardcoded inputs — the numbers the user will change |
+| **Blue text** (RGB 0,0,255) | Hardcoded inputs - the numbers the user will change |
 | **Black text** (RGB 0,0,0) | All formulas and calculations |
 | **Green text** (RGB 0,128,0) | Links from another sheet in the same workbook |
 | **Red text** (RGB 255,0,0) | Links to another file |
@@ -139,7 +139,7 @@ border above the total row; every hardcoded input cites its source in a cell com
 
 ## Dependencies
 
-- `ExcelJS` (Node, preinstalled) — creating and editing workbooks
-- `cdx-recalc` — formula recalculation and error report (LibreOffice)
-- `cdx-render` — workbook → page PNGs
-- `ocr` — reading an existing workbook as markdown
+- `ExcelJS` (Node, preinstalled) - creating and editing workbooks
+- `cdx-recalc` - formula recalculation and error report (LibreOffice)
+- `cdx-render` - workbook → page PNGs
+- `ocr` - reading an existing workbook as markdown

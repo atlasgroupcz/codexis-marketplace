@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
+import { inlineDeps } from '@workspace/vitest-config/base'
 
 function stripCrossorigin(): Plugin {
   return {
@@ -22,11 +23,8 @@ export default defineConfig(({ mode }) => {
     base: './',
     test: {
       globals: true,
-      // Vitest externalizes deps for its SSR transform by default, which leaves
-      // zod's ESM entry resolving to an empty module (`z.object` is undefined at
-      // import time). Inlining makes Vitest bundle zod the way the app build
-      // does. Same setting katastr already uses.
-      server: { deps: { inline: ['zod'] } },
+      // Which deps must be inlined (and why) lives in @workspace/vitest-config.
+      server: { deps: { inline: inlineDeps } },
     },
     plugins: [
       viteReact({

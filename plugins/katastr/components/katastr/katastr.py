@@ -57,19 +57,19 @@ def signed_in_email() -> str:
     """Signed-in user's e-mail, or "" if unavailable. Best-effort: never raises."""
     try:
         return notify._query_me_email() or ""
-    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+    except Exception:  # noqa: BLE001 - best-effort, must never fail the request
         return ""
 
 
 def _notify_results(results: list) -> None:
-    """Push e-mail + in-app for freshly detected changes — mirrors the CLI check
+    """Push e-mail + in-app for freshly detected changes - mirrors the CLI check
     so a change is notified regardless of which route (automation, chat, FE)
     first catches it. A change is consumed once, so only the first route to see
     it actually sends; the others find nothing new. Best-effort: never raises, so
     a failed send can't break the FE response."""
     try:
         cfg = notify_settings.get_notify()
-    except Exception:  # noqa: BLE001 — best-effort, must never fail the request
+    except Exception:  # noqa: BLE001 - best-effort, must never fail the request
         return
     if cfg.get("email"):
         try:

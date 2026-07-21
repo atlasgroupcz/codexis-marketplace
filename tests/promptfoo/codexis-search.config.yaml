@@ -1,11 +1,11 @@
-# Half of the legacy `codexis-search.yaml` — case-law search returns JD docs.
+# Half of the legacy `codexis-search.yaml` - case-law search returns JD docs.
 # Split per-test so the orchestrator parallelizes search and §10 NOZ lookup.
 # See ares-ico.config.yaml for the rationale.
 #
-# (cdxctl-* tests are NOT ported — they need conversation chaining and
+# (cdxctl-* tests are NOT ported - they need conversation chaining and
 # state.graphql against an auth-broken cdxctl. Park until cdxctl auth fix.)
 
-description: codexis — NS damages search returns real JD doc URLs
+description: codexis - NS damages search returns real JD doc URLs
 target_plugin: codexis
 
 prompts:

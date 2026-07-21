@@ -23,9 +23,9 @@ i18n:
 ---
 Pomocí dovednosti CODEXIS sestav měsíční přehled vývoje v oblasti veřejných zakázek za uplynulý měsíc:
 
-1. **Legislativa** — novelizace zákona č. 134/2016 Sb., o zadávání veřejných zakázek (ZZVZ), a prováděcích předpisů, s účinností a praktickým dopadem pro zadavatele i dodavatele.
-2. **Rozhodovací praxe ÚOHS** — nová významná rozhodnutí a stanoviska Úřadu pro ochranu hospodářské soutěže (spisová značka, datum, podstata v jedné větě).
-3. **Metodika MMR** — nové nebo aktualizované metodiky a výkladová stanoviska Ministerstva pro místní rozvoj.
+1. **Legislativa** - novelizace zákona č. 134/2016 Sb., o zadávání veřejných zakázek (ZZVZ), a prováděcích předpisů, s účinností a praktickým dopadem pro zadavatele i dodavatele.
+2. **Rozhodovací praxe ÚOHS** - nová významná rozhodnutí a stanoviska Úřadu pro ochranu hospodářské soutěže (spisová značka, datum, podstata v jedné větě).
+3. **Metodika MMR** - nové nebo aktualizované metodiky a výkladová stanoviska Ministerstva pro místní rozvoj.
 
 Pravidla:
 - Zaměř se na obecně použitelné novinky; nepředpokládej konkrétní zadávací řízení.

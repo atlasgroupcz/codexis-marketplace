@@ -5,10 +5,10 @@
 
 /// Wrap `inner_html` in the standard CODEXIS notification e-mail shell.
 ///
-/// - `eyebrow` — small uppercase brand label (e.g. "Hlídač katastrálních řízení")
-/// - `heading` — the H2 title
-/// - `inner_html` — the per-app body (already HTML-escaped by the caller)
-/// - `footer` — the closing sentence
+/// - `eyebrow` - small uppercase brand label (e.g. "Hlídač katastrálních řízení")
+/// - `heading` - the H2 title
+/// - `inner_html` - the per-app body (already HTML-escaped by the caller)
+/// - `footer` - the closing sentence
 pub fn email_shell(eyebrow: &str, heading: &str, inner_html: &str, footer: &str) -> String {
     format!(
         "<div style=\"max-width:560px;font:14px sans-serif;color:#0a0a0a\">\

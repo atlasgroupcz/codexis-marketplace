@@ -6,7 +6,7 @@ schema knowledge (tool-part interface, FileEntry adapter, etc.).
 
 Auth model matches the cdx-daemon `codexis-eval-ops` provider: caller
 provides a Keycloak-issued bearer token directly (no oauth2-proxy
-cookie magic in the eval path — eval runs are short enough to fit
+cookie magic in the eval path - eval runs are short enough to fit
 inside a single token TTL, and CI uses long-lived service tokens).
 
 Promptfoo invokes `call_api(prompt, options, context)` per test row.

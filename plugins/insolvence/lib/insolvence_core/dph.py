@@ -4,7 +4,7 @@ SOAP service "Registr plátců DPH – rozhraní pro veřejnost":
 
     https://adisrws.mfcr.cz/adistc/axis2/services/rozhraniCRPDPH.rozhraniCRPDPHSOAP
 
-operation ``getStatusNespolehlivyPlatce`` — looks up a subject by DIČ (the bare
+operation ``getStatusNespolehlivyPlatce`` - looks up a subject by DIČ (the bare
 IČO works) and returns the unreliable-payer flag (+ since when), the competent
 tax office and the published bank accounts. Plain stdlib HTTP + XML, no deps.
 """

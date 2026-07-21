@@ -1,4 +1,4 @@
-"""sledovane-dokumenty state.py — slugify, find_group, atomic I/O, related baselines."""
+"""sledovane-dokumenty state.py - slugify, find_group, atomic I/O, related baselines."""
 
 import os
 
@@ -93,7 +93,7 @@ class TestStateIO:
 
 class TestAllTrackedIds:
     def test_empty_when_dir_missing(self, dokumenty_app_dir):
-        # Fixture creates dir — remove it to simulate pristine state
+        # Fixture creates dir - remove it to simulate pristine state
         os.rmdir(str(dokumenty_app_dir))
         assert state.all_tracked_ids() == []
 

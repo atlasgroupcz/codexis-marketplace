@@ -12,7 +12,7 @@ import pytest
 
 from _helpers import _load_component_binary
 
-_component = _load_component_binary()  # defs-only/stateless — load once, reuse across tests
+_component = _load_component_binary()  # defs-only/stateless - load once, reuse across tests
 
 
 @pytest.fixture
@@ -103,7 +103,7 @@ def test_post_save_notify_settings_drops_signed_in_user(home, monkeypatch, capsy
 
 def test_post_save_notify_settings_absent_recipients_left_untouched(home, monkeypatch, capsys):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
-    # not clear the stored list — self-stripping must not turn None into [].
+    # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(_component.notify, "_query_me_email", lambda: "me@firma.cz")
     _component.handle_post({"action": "save_notify_settings", "recipients": ["a@x.cz"]})
     capsys.readouterr()
@@ -124,7 +124,7 @@ def test_post_save_notify_settings_invalid_recipient_returns_400(home, capsys):
 
 
 def test_check_all_pushes_notifications_for_changes(home, monkeypatch, capsys):
-    """FE check_all sends e-mail + in-app for detected changes, same as the CLI —
+    """FE check_all sends e-mail + in-app for detected changes, same as the CLI -
     so a change is notified regardless of which route first catches it."""
     results = [{"cislo_rizeni": "V-1/2026-101", "ok": True,
                 "change": {"new_stav": "x"}, "error": None}]
@@ -167,7 +167,7 @@ def test_check_all_send_failure_never_breaks_response(home, monkeypatch, capsys)
 
     assert status is None
     assert payload == {"ok": True, "checked": 1, "new_changes": 1, "errors": []}
-    # No partial write on validation failure — set_notify() raises before
+    # No partial write on validation failure - set_notify() raises before
     # atomic_write_json(), so the user settings file was never created.
     settings_path = home / ".cdx" / "apps" / _component.notify_settings.APP_ID / "settings.json"
     assert not settings_path.exists()

@@ -72,7 +72,7 @@ def _load_cli():
     return module
 
 
-_cli = _load_cli()  # defs-only/stateless — load once, reuse across tests
+_cli = _load_cli()  # defs-only/stateless - load once, reuse across tests
 
 
 def _recipients_dir(app_dir):
@@ -94,7 +94,7 @@ def test_recipients_add_drops_signed_in_user(_cli_home):
     assert _recipients_dir(_cli_home) == []
 
 
-# Dropping the caller's address without a word reads as a silent failure — an agent
+# Dropping the caller's address without a word reads as a silent failure - an agent
 # that asked for it goes digging (`notify show`, `--help`) to find out what happened.
 
 

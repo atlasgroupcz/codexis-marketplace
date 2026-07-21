@@ -20,13 +20,13 @@ i18n:
     title: "Týždenný prehľad noviniek k téme"
     description: "Každý týždeň zhrnie najnovšie správy a vývoj k téme podľa vášho výberu."
 ---
-Sleduji za vás vývoj k tématu: «UPRAVTE — např. konkrétní obor, trh, konkurent, technologie nebo region».
+Sleduji za vás vývoj k tématu: «UPRAVTE - např. konkrétní obor, trh, konkurent, technologie nebo region».
 
 Projdi za uplynulý týden nový vývoj k tomuto tématu z důvěryhodných veřejných zdrojů a sestav stručný přehled:
 
-1. **Hlavní novinky** — 3–5 nejdůležitějších událostí nebo zpráv, každá v jedné až dvou větách.
-2. **Souvislosti** — proč jsou podstatné a koho se týkají.
-3. **Co sledovat dál** — nadcházející události nebo očekávaný vývoj, pokud jsou relevantní.
+1. **Hlavní novinky** - 3–5 nejdůležitějších událostí nebo zpráv, každá v jedné až dvou větách.
+2. **Souvislosti** - proč jsou podstatné a koho se týkají.
+3. **Co sledovat dál** - nadcházející události nebo očekávaný vývoj, pokud jsou relevantní.
 
 Pravidla:
 - U každé novinky uveď zdroj (název a odkaz), aby šla ověřit.

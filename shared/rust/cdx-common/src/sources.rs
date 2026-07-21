@@ -41,7 +41,7 @@ pub fn publish_entries(
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
 }
 
-/// Entries are forwarded to the daemon verbatim — every upstream field, including
+/// Entries are forwarded to the daemon verbatim - every upstream field, including
 /// ones this crate does not know about (e.g. `previewUrl`), must survive publish.
 fn build_publish_body(entries: &[serde_json::Value]) -> Result<String, SourcesError> {
     serde_json::to_string(&serde_json::json!({ "sources": entries }))

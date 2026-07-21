@@ -21,13 +21,13 @@ i18n:
     title: "Compliance – sledovanie témy"
     description: "Každý mesiac zhrnie zmeny regulácie vo zvolenej oblasti compliance (GDPR, ESG, whistleblowing…)."
 ---
-Sleduji za vás regulatorní vývoj v oblasti compliance: «UPRAVTE — např. GDPR / ochrana osobních údajů, ESG a CSRD, whistleblowing, kybernetická bezpečnost (NIS2), DORA».
+Sleduji za vás regulatorní vývoj v oblasti compliance: «UPRAVTE - např. GDPR / ochrana osobních údajů, ESG a CSRD, whistleblowing, kybernetická bezpečnost (NIS2), DORA».
 
 Pomocí dovednosti CODEXIS projdi za uplynulý měsíc nový vývoj k tomuto tématu a sestav stručný přehled:
 
-1. **Právní normy** — nové nebo novelizované předpisy (české i unijní), účinnost změn a klíčové povinnosti, které z nich plynou.
-2. **Výkladová stanoviska a metodika** — nová stanoviska dozorových orgánů (např. ÚOOÚ, NÚKIB) nebo evropských orgánů relevantní pro praxi.
-3. **Judikatura** — nová relevantní rozhodnutí (spisová značka, soud/orgán, datum, právní věta v jedné větě).
+1. **Právní normy** - nové nebo novelizované předpisy (české i unijní), účinnost změn a klíčové povinnosti, které z nich plynou.
+2. **Výkladová stanoviska a metodika** - nová stanoviska dozorových orgánů (např. ÚOOÚ, NÚKIB) nebo evropských orgánů relevantní pro praxi.
+3. **Judikatura** - nová relevantní rozhodnutí (spisová značka, soud/orgán, datum, právní věta v jedné větě).
 
 Pravidla:
 - U každého bodu uveď konkrétní zdroj (číslo předpisu / § / spisovou značku) dohledatelný v CODEXIS.

@@ -251,7 +251,7 @@ def main():
             handle_get(query_string)
     except TopicError as e:
         emit_json({"error": str(e)}, status="500 Internal Server Error")
-    except Exception as e:  # noqa: BLE001 — last-resort guard
+    except Exception as e:  # noqa: BLE001 - last-resort guard
         emit_json(
             {"error": f"Internal error: {e}"},
             status="500 Internal Server Error",

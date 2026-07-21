@@ -1,4 +1,4 @@
-# Search: NLUIT (Dutch Case Law — Rechtspraak.nl)
+# Search: NLUIT (Dutch Case Law - Rechtspraak.nl)
 
 Endpoint: `cdx-nl search NLUIT [filters]`
 
@@ -8,12 +8,12 @@ Fulltext query across decision text.
 
 ## --court  (repeatable)
 Court code. Common values:
-  HR        — Hoge Raad
-  RBAMS     — Rechtbank Amsterdam
-  GHAMS     — Gerechtshof Amsterdam
-  GHARL     — Gerechtshof Arnhem-Leeuwarden
-  CRVB      — Centrale Raad van Beroep
-  RVS       — Raad van State
+  HR        - Hoge Raad
+  RBAMS     - Rechtbank Amsterdam
+  GHAMS     - Gerechtshof Amsterdam
+  GHARL     - Gerechtshof Arnhem-Leeuwarden
+  CRVB      - Centrale Raad van Beroep
+  RVS       - Raad van State
 
   cdx-nl search NLUIT --court HR --court GHAMS
 
@@ -39,7 +39,7 @@ Decision date range (YYYY-MM-DD).
   cdx-nl search NLUIT --decision-date-from 2024-01-01 --decision-date-to 2024-12-31
 
 ## --legal-area  (repeatable)
-Legal area filter — backend field is `legalAreas` (plural). Common values:
+Legal area filter - backend field is `legalAreas` (plural). Common values:
   "Civiel recht", "Strafrecht", "Bestuursrecht", "Belastingrecht".
 
 ## --procedure
@@ -66,7 +66,7 @@ These are URL query params on /search (backend @RequestParam), not body fields.
 # Worked example: resolving an ECLI to a citable PDF in one step
 
 When the user pastes an ECLI (or you derive one from another endpoint, e.g.
-NLBWB `/cited-by-decisions`), skip `search` entirely — the ECLI route resolves
+NLBWB `/cited-by-decisions`), skip `search` entirely - the ECLI route resolves
 directly to the document:
 
 ```
@@ -79,16 +79,16 @@ cdx-nl get cdx-nl://ecli/ECLI:NL:HR:2024:1234/meta
 cdx-nl get "cdx-nl://ecli/ECLI:NL:HR:2024:1234/parts"
 ```
 
-The ECLI route also accepts `/text`, `/toc`, `/parts`, `/related`, and `/attachment/<filename>` suffixes — same shape as the `/doc/<id>/` route.
+The ECLI route also accepts `/text`, `/toc`, `/parts`, `/related`, and `/attachment/<filename>` suffixes - same shape as the `/doc/<id>/` route.
 
 ### Following citations (NLUIT)
 
 A decision's citation graph is **not** in `/meta`. `/meta` carries only a small
 `relationCounts` triage object:
 
-- `relationCounts.citedLaws` — distinct BWB laws this decision cites
-- `relationCounts.citedDecisions` — decisions it cites (incl. foreign CJEU/ECHR)
-- `relationCounts.citingDecisions` — decisions that cite it
+- `relationCounts.citedLaws` - distinct BWB laws this decision cites
+- `relationCounts.citedDecisions` - decisions it cites (incl. foreign CJEU/ECHR)
+- `relationCounts.citingDecisions` - decisions that cite it
 
 Read those first. Then fetch only the direction(s) worth chasing:
 
@@ -98,11 +98,11 @@ Each page is `{ type, totalResults, offset, limit, results[] }`.
 
 - **Law items** carry `bwbId`, `title`, `articles` (article-level pinpoints), and a `url`.
 - **Decision items** carry `ecli`, `types` (the LiDO citation role(s), e.g.
-  `rvr-cassatie-eerdereaanleg` = the ruling under appeal — usually one, sometimes several),
+  `rvr-cassatie-eerdereaanleg` = the ruling under appeal - usually one, sometimes several),
   `court`, `decisionDate`, and a `url`.
 - A **`url` is present only when we can resolve the reference to one of our documents.**
   Foreign citations (CJEU `ECLI:EU:...`, ECHR `ECLI:CE:...`) appear with their `ecli` and
-  `types` but **no `url`** — report them as authorities the decision relies on; do not try to
+  `types` but **no `url`** - report them as authorities the decision relies on; do not try to
   fetch them via cdx-nl (the ECLI may be resolvable by another plugin or externally).
 - Use `url` **verbatim**; never construct backend or cdx-nl URLs yourself.
 - `/related/counts` returns the same counts as `/meta.relationCounts` for a lightweight,

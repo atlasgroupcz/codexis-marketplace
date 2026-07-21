@@ -29,7 +29,7 @@ def _load_cli():
     return module
 
 
-_cli = _load_cli()  # defs-only/stateless — load once, reuse across tests
+_cli = _load_cli()  # defs-only/stateless - load once, reuse across tests
 
 
 # ── notify show/set ─────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ def test_recipients_set_drops_signed_in_user_keeps_others(judikatura_app_dir):
     assert _recipients(judikatura_app_dir) == ["a@x.cz"]
 
 
-# Dropping the caller's address without a word reads as a silent failure — an agent
+# Dropping the caller's address without a word reads as a silent failure - an agent
 # that asked for it goes digging (`notify show`, `--help`) to find out what happened.
 
 
@@ -197,7 +197,7 @@ def test_save_report_inapp_fires_bell(judikatura_app_dir, tmp_path, monkeypatch,
 
 
 def test_save_report_id_stays_clean_on_stdout(judikatura_app_dir, tmp_path, monkeypatch, capsys):
-    # Notification wiring must never leak onto stdout — only report_id belongs there.
+    # Notification wiring must never leak onto stdout - only report_id belongs there.
     u, _ = tracking.init("Téma")
     report_path = tmp_path / "report.json"
     report_path.write_text(json.dumps(_report(report_id="2026-04-20")))

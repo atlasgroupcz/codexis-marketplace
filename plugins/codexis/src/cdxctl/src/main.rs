@@ -10,7 +10,7 @@ use client::GraphQLClient;
 use output::OutputFormat;
 use std::process;
 
-/// cdxctl — kubectl-style CLI for cdx-daemon platform management
+/// cdxctl - kubectl-style CLI for cdx-daemon platform management
 #[derive(Parser)]
 #[command(name = "cdxctl", version, about)]
 struct Cli {
@@ -219,7 +219,7 @@ enum MarketplaceCommands {
         /// Marketplace ID
         id: String,
     },
-    /// Update marketplace(s) — pull latest from git
+    /// Update marketplace(s) - pull latest from git
     Update {
         /// Marketplace ID (omit to update all)
         id: Option<String>,
@@ -299,7 +299,7 @@ enum AgentCommands {
         /// The agent's system prompt, as markdown
         #[arg(long)]
         instructions: Option<String>,
-        /// Read the system prompt from a markdown file instead of inline --instructions —
+        /// Read the system prompt from a markdown file instead of inline --instructions -
         /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
         #[arg(long = "instructions-file")]
         instructions_file: Option<String>,
@@ -349,7 +349,7 @@ enum AgentCommands {
         /// The agent's system prompt, as markdown
         #[arg(long)]
         instructions: Option<String>,
-        /// Read the system prompt from a markdown file instead of inline --instructions —
+        /// Read the system prompt from a markdown file instead of inline --instructions -
         /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
         #[arg(long = "instructions-file")]
         instructions_file: Option<String>,

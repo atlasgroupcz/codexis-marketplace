@@ -2,7 +2,7 @@
 //!
 //! Each plugin that needs a user-provided API credential stores it in
 //! `<user_home>/.cdx/apps/<app>/.env` (mode 0600). This module ports the
-//! byte-identical mechanics of the Python cores' `settings.py` — reading the
+//! byte-identical mechanics of the Python cores' `settings.py` - reading the
 //! pairs and writing the file atomically. What the keys mean, how they are
 //! validated and masked stays in each plugin.
 
@@ -39,7 +39,7 @@ pub fn read_env_var(path: &Path, key: &str) -> Option<String> {
         .filter(|v| !v.is_empty())
 }
 
-/// Atomically writes the whole env file (mode 0600 — these are credentials).
+/// Atomically writes the whole env file (mode 0600 - these are credentials).
 pub fn write_env_file(path: &Path, pairs: &[(&str, &str)]) -> std::io::Result<()> {
     crate::fs::atomic_replace(path, Some(0o600), |file| {
         for (key, value) in pairs {

@@ -42,7 +42,7 @@ export function MarkListItem({
       <div className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{mark.display_name}</span>
         <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
-          <span>{mark.territories.join('/') || '—'}</span>
+          <span>{mark.territories.join('/') || '-'}</span>
           {mark.nice_classes.length > 0 && (
             <span className="truncate">· {t('list.classes')} {mark.nice_classes.join(', ')}</span>
           )}

@@ -204,12 +204,12 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
                                     rel="noopener noreferrer"
                                     className="text-primary hover:underline"
                                   >
-                                    {doc.spZn} — {doc.court}
+                                    {doc.spZn} - {doc.court}
                                     <ExternalLink className="ml-1 inline size-3" />
                                   </a>
                                 ) : (
                                   <>
-                                    {doc.spZn} — {doc.court}
+                                    {doc.spZn} - {doc.court}
                                   </>
                                 )}
                               </div>

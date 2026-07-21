@@ -221,7 +221,7 @@ pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<
 
 /// Runs the structured `saveAgent` mutation. Daemons that predate it answer with a schema
 /// validation error; rather than fail opaquely, hand the agent the compatible Markdown path so
-/// it can retry on its own — the tool teaches the fallback instead of silently taking it.
+/// it can retry on its own - the tool teaches the fallback instead of silently taking it.
 fn save_agent(
     client: &GraphQLClient,
     variables: Value,
@@ -234,7 +234,7 @@ fn save_agent(
     }
 }
 
-/// True when the daemon rejected `saveAgent`/`AgentInput` as unknown — i.e. it is too old for the
+/// True when the daemon rejected `saveAgent`/`AgentInput` as unknown - i.e. it is too old for the
 /// structured input, not that the input itself was wrong.
 fn is_unsupported_save_agent(error: &CdxctlError) -> bool {
     matches!(error, CdxctlError::GraphQL(messages) if messages.iter().any(|message| {

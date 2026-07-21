@@ -112,7 +112,7 @@ def test_post_save_notify_settings_drops_signed_in_user(cgi, monkeypatch):
 
 def test_post_save_notify_settings_absent_recipients_left_untouched(cgi, monkeypatch):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
-    # not clear the stored list — self-stripping must not turn None into [].
+    # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(cgi.notify, "_query_me_email", lambda: "me@firma.cz")
     _capture(cgi.handle_post, {"action": "save_notify_settings", "recipients": ["a@x.cz"]})
     _, body = _capture(cgi.handle_post, {"action": "save_notify_settings", "email": True})

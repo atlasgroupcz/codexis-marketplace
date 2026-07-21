@@ -3,7 +3,7 @@
 //! The flow (build the request URL, shell out to curl, unwrap the envelope,
 //! print content and publish sources) is identical across plugins. What varies
 //! is captured by the [`SearchApi`] trait: the source-code table (data), the
-//! `cdx://` scheme, the plugin name, and two behaviours — resolving a `cdx://`
+//! `cdx://` scheme, the plugin name, and two behaviours - resolving a `cdx://`
 //! resource URL and rewriting attachment links. A plugin implements the trait
 //! and calls [`execute_search_request`] / [`execute_get_request`].
 

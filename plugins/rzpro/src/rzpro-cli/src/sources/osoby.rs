@@ -7,7 +7,7 @@ pub(crate) const SEARCH_OSOBY_HELP: &str = r#"Examples:
   rzpro-cli search CZRZP-OS --ico 12345678"#;
 
 /// Search filters for RZPRO registered persons/companies. Mirrors
-/// `RzproPersonSearchRequest` — all optional. The fulltext key is `nazev`.
+/// `RzproPersonSearchRequest` - all optional. The fulltext key is `nazev`.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchOsobyArgs {
     #[command(flatten)]

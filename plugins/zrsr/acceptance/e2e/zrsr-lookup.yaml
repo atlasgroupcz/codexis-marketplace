@@ -1,12 +1,12 @@
 name: zrsr-lookup
 description: Verify the zrsr skill calls zrsr-cli against the public RPO API and relays the subject identification back to the user.
 
-# Deterministic target: Tatra banka, a.s. — major Slovak bank, IČO 00686930,
+# Deterministic target: Tatra banka, a.s. - major Slovak bank, IČO 00686930,
 # in RPO since 1990, current fullName is exactly "Tatra banka, a.s.".
 # Seat: Hodžovo námestie 3, 811 06 Bratislava. Source register: Obchodný register.
 
 steps:
-  # 1. Lookup by IČO — verify zrsr-cli is invoked and the subject name surfaces.
+  # 1. Lookup by IČO - verify zrsr-cli is invoked and the subject name surfaces.
   - prompt: "Čo je to za firmu IČO 00686930? Stačí mi názov a sídlo."
     expect:
       tool_call:
@@ -23,7 +23,7 @@ steps:
         min: 1
         matches: "api\\.statistics\\.sk/rpo/v1/entity"
 
-  # 2. Follow-up about register + activity — natural Slovak business question.
+  # 2. Follow-up about register + activity - natural Slovak business question.
   #    AI may answer from step-1 context (entity detail already includes
   #    sourceRegister and termination) or call again; either is fine.
   - prompt: "A je tá firma stále aktívna a v akom registri je zapísaná?"

@@ -51,7 +51,7 @@ def test_recipients_add_invalid_errors(tmp_path):
 # ── self-guard: adding your own address is a no-op (you always receive it) ────
 #
 # Driven in-process (not via _run) because dropping self needs notify._query_me_email
-# mocked, which a subprocess can't reach — same reason test_check_* below load _cli.
+# mocked, which a subprocess can't reach - same reason test_check_* below load _cli.
 
 
 def test_recipients_add_drops_signed_in_user(monkeypatch, tmp_path):
@@ -72,7 +72,7 @@ def test_recipients_set_drops_signed_in_user_keeps_others(monkeypatch, tmp_path)
     assert _recipients(tmp_path) == ["a@x.cz"]
 
 
-# Dropping the caller's address without a word reads as a silent failure — an agent
+# Dropping the caller's address without a word reads as a silent failure - an agent
 # that asked for it goes digging (`notify show`, `--help`) to find out what happened.
 
 
@@ -105,11 +105,11 @@ def test_recipients_add_other_address_stays_quiet(monkeypatch, tmp_path, capsys)
 # wiring) so its module-level `tracking`/`notify`/`notify_settings` references
 # can be mocked directly.
 
-_cli = _load_cli()  # defs-only/stateless — load once, reuse across tests
+_cli = _load_cli()  # defs-only/stateless - load once, reuse across tests
 
 
 def _one_result():
-    """A single non-empty check result — just needs to clear the CLI's
+    """A single non-empty check result - just needs to clear the CLI's
     `if not results` guard so the notify path is reached."""
     return [{"cislo_rizeni": "V-1/2026-701", "ok": True, "change": None, "error": None}]
 

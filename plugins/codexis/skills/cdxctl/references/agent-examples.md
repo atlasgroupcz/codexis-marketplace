@@ -2,7 +2,7 @@
 
 Worked `cdxctl agent create` calls. Copy the shape, swap the content.
 
-`--display-name` and `--summary` take `lang:text` and repeat once per language — the
+`--display-name` and `--summary` take `lang:text` and repeat once per language - the
 prompt's language and English.
 
 ## Employment-law reviewer
@@ -12,7 +12,7 @@ mkdir -p ./.tmp
 cat > ./.tmp/koncipient-pp.md <<'EOF'
 Posuď zákonnost výpovědi ze strany zaměstnavatele.
 Na vstupu dostaneš text výpovědi, pracovní smlouvu a popis okolností.
-Vycházej ze zákoníku práce (§ 48–62) a judikatury NS.
+Vycházej ze zákoníku práce (§ 48-62) a judikatury NS.
 Ověř výpovědní důvod, výpovědní dobu, doručení a ochrannou dobu.
 Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 EOF

@@ -1,33 +1,28 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
+import { baseConfig } from '@workspace/vitest-config/base'
+import { defineConfig, mergeConfig } from 'vitest/config'
 
-export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist', '.turbo'],
-    server: {
-      deps: {
-        inline: ['zod'],
+// jsdom, globals, the react/tsconfig-paths plugins and the zod inline all come
+// from the shared base; only this app's setup file, coverage scope and timeouts
+// are local.
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    test: {
+      setupFiles: ['./src/test/setup.ts'],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'html', 'lcov'],
+        reportsDirectory: './coverage',
+        include: ['src/components/**/*.{ts,tsx}', 'src/lib/**/*.ts', 'src/hooks/**/*.ts'],
+        exclude: [
+          '**/*.d.ts',
+          '**/test/**',
+          '**/*.test.{ts,tsx}',
+          '**/*.spec.{ts,tsx}',
+        ],
       },
+      testTimeout: 10000,
+      hookTimeout: 10000,
     },
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
-      reportsDirectory: './coverage',
-      include: ['src/components/**/*.{ts,tsx}', 'src/lib/**/*.ts', 'src/hooks/**/*.ts'],
-      exclude: [
-        '**/*.d.ts',
-        '**/test/**',
-        '**/*.test.{ts,tsx}',
-        '**/*.spec.{ts,tsx}',
-      ],
-    },
-    testTimeout: 10000,
-    hookTimeout: 10000,
-  },
-})
+  }),
+)

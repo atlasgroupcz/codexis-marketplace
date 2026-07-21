@@ -73,7 +73,7 @@
         "type": "object",
         "description": "A single version (toestand) of a CVDR regulation",
         "properties": {
-          "version": { "type": "string", "description": "Manifest expression label — pass as the ?version= parameter on /text, /toc, /parts", "example": "2" },
+          "version": { "type": "string", "description": "Manifest expression label - pass as the ?version= parameter on /text, /toc, /parts", "example": "2" },
           "validFrom": { "type": "string", "description": "Version valid from date (ISO YYYY-MM-DD)" },
           "validTo": { "type": "string", "description": "Version valid to date (null if open-ended)" },
           "validFromEstimated": { "type": "boolean", "description": "True when validFrom was derived/estimated rather than declared verbatim" },

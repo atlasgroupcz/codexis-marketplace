@@ -3,35 +3,35 @@ uuid: 7c1e2a90-5b34-4d21-9f08-3a6e2d4c8b15
 name: nrpzs
 icon: icon.svg
 jurisdictions: [CZ]
-description: Národní registr poskytovatelů zdravotních služeb (NRPZS, ÚZIS). Use for Czech healthcare-provider lookups by IČO, name, or obor péče — provider profile, places of care (adresa, kontakt, GPS, datová schránka), departments and office hours. Triggers on "NRPZS", "poskytovatel zdravotních služeb", "zdravotnické zařízení", "ordinace", "najdi lékaře/nemocnici", "obor péče", "ÚZIS", and IČO + zdravotnictví.
+description: Národní registr poskytovatelů zdravotních služeb (NRPZS, ÚZIS). Use for Czech healthcare-provider lookups by IČO, name, or obor péče - provider profile, places of care (adresa, kontakt, GPS, datová schránka), departments and office hours. Triggers on "NRPZS", "poskytovatel zdravotních služeb", "zdravotnické zařízení", "ordinace", "najdi lékaře/nemocnici", "obor péče", "ÚZIS", and IČO + zdravotnictví.
 version: 1.0.1
 i18n:
   cs:
-    displayName: "NRPZS — poskytovatelé zdravotních služeb"
+    displayName: "NRPZS - poskytovatelé zdravotních služeb"
     summary: "Vyhledávání poskytovatelů zdravotní péče (NRPZS/ÚZIS) podle IČO, názvu nebo oboru péče."
   en:
-    displayName: "NRPZS — Healthcare Providers"
+    displayName: "NRPZS - Healthcare Providers"
     summary: "Look up Czech healthcare providers (NRPZS/ÚZIS) by ICO, name or specialty."
   sk:
-    displayName: "NRPZS — poskytovatelia zdravotných služieb"
+    displayName: "NRPZS - poskytovatelia zdravotných služieb"
     summary: "Vyhľadávanie poskytovateľov zdravotnej starostlivosti (NRPZS/ÚZIS) podľa IČO, názvu alebo odboru."
 ---
 
-# NRPZS — registr poskytovatelů zdravotních služeb
+# NRPZS - registr poskytovatelů zdravotních služeb
 
-A single tool — **`nrpzs-cli`** — wraps the public NRPZS REST API
+A single tool - **`nrpzs-cli`** - wraps the public NRPZS REST API
 (`https://nrpzs-api.uzis.cz/api/v1`). No API key. Read-only.
 
 **IMPORTANT:** The only tool in this skill is `nrpzs-cli`. Do NOT call `curl` or any
 other tool directly. Assume `nrpzs-cli` is installed and available in `PATH`.
 
-**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) - report it, don't guess workarounds and don't blindly retry. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output
 
 `nrpzs-cli` prints **JSON to stdout** (verbatim API responses; `profil` and
 region-filtered `search` are shaped objects/arrays). Parse with `jq`, never `sed`/`grep`.
-Code lists return names inline (e.g. `OborPece: "urologie"`) — you usually don't need
+Code lists return names inline (e.g. `OborPece: "urologie"`) - you usually don't need
 to translate codes. `PravniFormaKod` is returned as a code (e.g. 112 = s.r.o.).
 
 ## Commands

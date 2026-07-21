@@ -125,12 +125,12 @@ pub(crate) fn insert_string_vec(payload: &mut JsonMap, key: &str, values: &[Stri
     }
 }
 
-/// Court-domain default page size — matches the court controllers' DEFAULT_LIMIT (20).
+/// Court-domain default page size - matches the court controllers' DEFAULT_LIMIT (20).
 const DEFAULT_COURT_PAGE_SIZE: u64 = 20;
 
 /// Build a court-domain search payload. The Slovak court `/search` endpoints (nssud_sk,
 /// ustavnysud_sk, nsud_sk) page with `from`/`size` (offset semantics) rather than the
-/// `offset`/`limit` keys the slov-lex sources use — and there are no `@JsonAlias` fallbacks — so
+/// `offset`/`limit` keys the slov-lex sources use - and there are no `@JsonAlias` fallbacks - so
 /// this mirrors the base `query` + paging emission with the correct keys, then applies the domain
 /// filters (`extend`) and any JSON payload override.
 pub(crate) fn build_court_search_payload(
