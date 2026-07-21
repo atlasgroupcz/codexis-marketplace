@@ -2,7 +2,7 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations (cron), plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
+description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
 version: 1.7.0
 i18n:
   cs:
@@ -31,9 +31,9 @@ cdxctl automation list
 # Create an automation
 cdxctl automation create \
     --title "Daily Report" \
-    --cron "0 9 * * *" \
+    --repeat DAILY --day-part MORNING \
     --prompt "Generate a daily summary report" \
-    --description "Runs every morning at 9 AM" \
+    --description "Runs every morning" \
     --agent "<id>" \
     --skill "<id>" \
     --skill "<id>" \
@@ -43,13 +43,13 @@ cdxctl automation create \
 # Create a COMMAND automation
 cdxctl automation create-command \
     --title "Tracked Documents Check" \
-    --cron "0 8 * * 1" \
+    --repeat WEEKLY --day-part MORNING --days-of-week 1 \
     --command "cdx-sledovane-dokumenty check" \
     --description "Weekly tracked-document change check"
 
 # Update (partial — only specified fields change; never touches enabled)
 cdxctl automation update <id> --title "New Title"
-cdxctl automation update <id> --cron "0 */2 * * *"
+cdxctl automation update <id> --repeat WEEKLY --day-part EVENING --days-of-week 1 --days-of-week 4
 cdxctl automation update <id> --prompt "Updated prompt" --max-turns 30
 
 # Enable / disable (separate from update — see note below)
@@ -74,11 +74,11 @@ automation, but you can disable one — e.g. to replace it with your own on a di
 schedule. Find it with `cdxctl automation list`, then `cdxctl automation disable <id>`.
 The disable is remembered per user and survives plugin updates and daemon restarts.
 
-**Required fields for create:** `--title`, `--cron` (5-field unix cron), `--prompt`
+**Required fields for create:** `--title`, `--repeat` (+ `--day-part`), `--prompt`
 
-**Required fields for create-command:** `--title`, `--cron`, `--command`
+**Required fields for create-command:** `--title`, `--repeat` (+ `--day-part`), `--command`
 
-**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative — e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--cron`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt — this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
+**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative — e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--repeat`/`--day-part`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt — this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
 
 **IDs:** Use the `id` or `uuid` from `automation list` output. Both Node IDs (base64) and raw UUIDs work.
 
@@ -123,7 +123,7 @@ cdxctl plugin uninstall <id>
 
 ## Agents
 
-Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API.
+Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API. Agents live one markdown file per agent at `~/.cdx/agents/<name>.md` on the daemon side — always go through `cdxctl agent create`/`update`, never write that file directly.
 
 ```bash
 # List all agents
@@ -142,6 +142,16 @@ name: custom-local-agent
 description: Helps with a focused local workflow.
 tools: Read, Bash
 maxTurns: 8
+i18n:
+  cs:
+    displayName: "Vlastní lokální agent"
+    summary: "Pomáhá s konkrétním lokálním workflow."
+  en:
+    displayName: "Custom Local Agent"
+    summary: "Helps with a focused local workflow."
+  sk:
+    displayName: "Vlastný lokálny agent"
+    summary: "Pomáha s konkrétnym lokálnym workflow."
 ---
 
 You are a custom local agent.
@@ -159,7 +169,22 @@ cdxctl agent delete <id>
 
 **IDs:** `cdxctl agent update` and `cdxctl agent delete` accept the GraphQL `id` from `cdxctl agent list`, a base64 Node ID, or a raw local agent name like `my-agent`.
 
-**Recommended agent workflow:**
+**Agent frontmatter contract:**
+- `name` — required, `^[a-z][a-z0-9-]*$`, max 64 chars, no consecutive hyphens (e.g. `contract-reviewer`). If omitted from a `--file` payload, it falls back to the filename.
+- `description` — required, max 1024 chars, one sentence. This is tool-facing context, not the user-facing summary.
+- `uuid` — optional; the daemon generates one automatically when omitted. Only include it when updating an existing agent (preserve the original) — never invent one for a new agent.
+- `model`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `jurisdictions` — all optional; set only what the user actually asked for.
+- `i18n.<lang>.displayName` and `i18n.<lang>.summary` — **mandatory** for `cs`, `sk`, and `en`. This is what the Agents page renders instead of the raw `name` slug, so a missing translation shows a blank or fallback title. `displayName` must be human-formatted (e.g. "Contract Reviewer", not `contract-reviewer`); `summary` is a one-sentence, user-facing description in that language — distinct from the frontmatter-level `description`, which stays a single technical sentence for tool-facing context.
+- The persona body (everything after the closing `---`) is the system prompt: who the agent is, what it is expert at, how it answers, what it refuses. Write it in the user's language.
+
+**Creating an agent from a persona description:** when the user describes an agent they want (rather than handing you a ready markdown file), design it yourself before calling `cdxctl agent create`:
+1. If the purpose, name, or personality is unclear, ask one short clarifying question before writing anything.
+2. Pick a concise `name` slug, a one-sentence `description`, and write the persona instructions that define the agent's expertise, tone, and boundaries.
+3. Fill in `i18n.cs`, `i18n.sk`, and `i18n.en` with a human-formatted `displayName` and a one-sentence `summary` for each.
+4. Run `cdxctl agent create --stdin` with the composed markdown. `cdxctl` rejects a `name` that collides with an existing agent — on that error, pick a different name and retry instead of overwriting the existing one.
+5. Confirm to the user what was created and that the agent is now available on the Agents page.
+
+**Recommended agent edit workflow:**
 1. Run `cdxctl agent list --editable-only` to find the target agent and its `sourcePath.absolutePath`.
 2. Read or edit the markdown file in the shell.
 3. Apply the change with `cdxctl agent update <id> --file <path>` or pipe the markdown with `--stdin`.
@@ -328,14 +353,32 @@ replies are dropped.
 - **Table:** Add `--table` flag for human-readable columns
 - **Errors:** Printed to stderr
 
-## Cron Format
+## Schedule Format
 
-5-field unix cron: `minute hour day-of-month month day-of-week`
+An automation repeats `DAILY`, `WEEKLY` or `MONTHLY` and runs inside a six-hour
+window, not at an exact time. The daemon picks a time within the window that stays
+the same for a given automation and day, which spreads load across users.
 
-| Expression | Meaning |
+| Flag | Values |
 |---|---|
-| `0 9 * * *` | Daily at 9:00 |
-| `0 */2 * * *` | Every 2 hours |
-| `*/15 * * * *` | Every 15 minutes |
-| `0 9 * * 1-5` | Weekdays at 9:00 |
-| `0 0 1 * *` | First day of each month at midnight |
+| `--repeat` | `DAILY`, `WEEKLY`, `MONTHLY` |
+| `--day-part` | `NIGHT` 00:00-06:00, `MORNING` 06:00-12:00, `AFTERNOON` 12:00-18:00, `EVENING` 18:00-24:00 (default `MORNING`) |
+| `--days-of-week` | Required for `WEEKLY`. `0`=Sunday..`6`=Saturday, repeat the flag for several days |
+| `--day-of-month` | Required for `MONTHLY`. `1`-`28`, so every month has the day and no run is ever skipped |
+
+| Example | Meaning |
+|---|---|
+| `--repeat DAILY --day-part MORNING` | Every day, some time between 06:00 and 12:00 |
+| `--repeat WEEKLY --day-part EVENING --days-of-week 1 --days-of-week 4` | Mondays and Thursdays, between 18:00 and 24:00 |
+| `--repeat MONTHLY --day-part NIGHT --day-of-month 15` | 15th of each month, between 00:00 and 06:00 |
+
+**Exact times and sub-daily schedules are not supported.** There is no "every 15
+minutes" or "at 9:00 sharp" — pick the window the work belongs in.
+
+### Deprecated: `--cron`
+
+`--cron` still accepts a 5-field expression and translates it to the nearest
+day-part window (`0 9 * * *` becomes `DAILY MORNING`). It is a client-side shim —
+the daemon has no cron field any more — and it rejects anything that cannot be
+expressed as a window, such as `*/15 * * * *` or `0 9 * * 1-5`. Use
+`--repeat`/`--day-part` in new work.

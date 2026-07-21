@@ -3,7 +3,7 @@ uuid: 9a4c1f72-6b8e-4d03-a5f1-2c7b0e9d6a48
 name: rzpro
 icon: icon.svg
 description: Registr zdravotnických prostředků (RZPRO, KSRZIS). Use for Czech medical device lookups by device name or evidence number — manufacturer, device kind, risk class, intended purpose, notified body, variants/catalogue numbers, and registered persons and their activities. Triggers on "zdravotnický prostředek", "RZPRO", "evidenční číslo", "notifikovaný prostředek", "výrobce zdravotnických prostředků", "registr ZP", "najdi prostředek", "diagnostický prostředek", "IVD".
-version: 1.1.0
+version: 1.2.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -38,7 +38,11 @@ run each independently.
 
 See `rzpro-cli search CZRZP --help` / `CZRZP-OS --help` or
 `references/search-rzpro.md` for the filter lists. Output is JSON on stdout:
-`{ "results": [...], "total": N, "offset": N, "limit": N }`. Process it with `jq`.
+`{ "results": [...], "total": N, "offset": N, "limit": N }`.
+
+**Always pipe it through `jq`** and select only the fields you need. A bare call puts
+every field of every result into the context window; with a pipe, only the `jq` output
+does. This matters most at `--limit 100`.
 
 ### get
 `rzpro-cli get <rzpro://…> [--dry-run]`:
@@ -51,38 +55,71 @@ See `rzpro-cli search CZRZP --help` / `CZRZP-OS --help` or
 
 ## Workflow
 
-1. Device by name: `rzpro-cli search CZRZP --query "<text>"` → pick the `docId`
-   (e.g. `CZRZP00000019`) → `rzpro-cli get rzpro://doc/<docId>/meta`. Words match
-   device name, trade name and manufacturer together.
-2. Device by evidence number: `rzpro-cli search CZRZP --evidencni-cislo <n>` →
-   take the `docId` → `get …/doc/<docId>/meta`.
-3. Which device a catalogue number belongs to: `rzpro-cli search CZRZP
-   --katalogove-cislo <n>`.
-4. A company (activities + notified devices): `rzpro-cli get rzpro://osoba/<IČO or
-   Registrační číslo>`. To search companies by name: `rzpro-cli search CZRZP-OS
-   --query "<name>"`.
-5. Variants and linked persons of a device live inside the `/meta` record.
+1. Device by name — words match device name, trade name and manufacturer together.
+   Keep `docId` for the follow-up `get`:
+   ```
+   rzpro-cli search CZRZP --query "katetr" \
+     | jq '.total, (.results[] | {docId, nazev, druh, miraRizika, vyrobce})'
+   ```
+2. Device by evidence number → take the `docId` → `get …/doc/<docId>/meta`:
+   ```
+   rzpro-cli search CZRZP --evidencni-cislo 01-0000019-19 \
+     | jq '.results[] | {docId, nazev, obchodniNazev, stav}'
+   ```
+3. Which device a catalogue number belongs to:
+   ```
+   rzpro-cli search CZRZP --katalogove-cislo 4157744 \
+     | jq '.results[] | {docId, nazev, vyrobce}'
+   ```
+4. A company (activities + notified devices) — `osoba` returns
+   `{person, devices}`, so select from each branch. To search companies by name,
+   use the `CZRZP-OS` source:
+   ```
+   rzpro-cli get rzpro://osoba/27082440 | jq '{person: .person, pocetProstredku: (.devices | length)}'
+   rzpro-cli search CZRZP-OS --query "Braun" | jq '.results[] | {nazev, regCislo, evidencniCislo}'
+   ```
+5. Variants and linked persons of a device live inside the `/meta` record, which
+   wraps it as `{docId, device}` — the raw columns are under `.device`. List the keys
+   once, then select:
+   ```
+   rzpro-cli get rzpro://doc/CZRZP00000019/meta | jq '.device | keys'
+   rzpro-cli get rzpro://doc/CZRZP00000019/meta | jq '.device | {nazev, miraRizika}'
+   ```
+
+When a filter yields `null`, inspect the keys with `jq 'keys'` (or `.device | keys`)
+rather than guessing the field name.
 
 ## Result fields (device search)
 
 Each item in `results[]`: `docId` (internal id — for `get`, never shown to the
-user), `url` (public KSRZIS portal link — the **citable source**), `evidencniCislo`,
-`nazev`, `obchodniNazev`, `stav`, `isActive`, `druh`, `miraRizika`, `vyrobce`
-(manufacturer-of-record, incl. foreign makers), `platnostDo`.
+user), `evidencniCislo`, `nazev`, `obchodniNazev`, `stav`, `isActive`, `druh`,
+`miraRizika`, `vyrobce` (manufacturer-of-record, incl. foreign makers),
+`platnostDo`.
 
 ## Presenting results
 
-Present readably — device name, kind, risk class, manufacturer, validity — and
-cite the `url`. Do NOT dump raw JSON; pull only what you need with `jq`. Never
+Present readably — device name, kind, risk class, manufacturer, validity. Do NOT
+dump raw JSON; pull only what you need with `jq`. Never
 show a raw `docId` (`CZRZP…`), a `CZRZP` / `CZRZP-OS` source code, a `rzpro://`
 address, or an env-var name to the user.
 
 ## Pagination & truncation
 
-`search` returns `total` but only `limit` results (**default 20, max 100**). When
-`total` exceeds what you received there are more — page with `--offset` or raise
-`--limit`. **Do NOT draw a global conclusion** from a truncated page. Deep paging
-is capped: `offset + limit <= 10000`.
+`search` returns `total` but only `limit` results (**default 20, max 100**).
+
+**Pick the page size before the call, from what you need.** Re-running the same search
+with a bigger `--limit` costs a whole extra round trip and leaves both outputs in
+context — the first page is paid for twice.
+
+| What you need | Call |
+|---|---|
+| One device / one evidence number (targeted) | default `--limit 20` |
+| Completeness — every device of a manufacturer, every variant | `--limit 100` straight away |
+| Just a count | `--limit 1`, read `total`, stop |
+
+When `total` still exceeds what you received, page with `--offset`. **Do NOT draw a
+global conclusion** from a truncated page. Deep paging is capped:
+`offset + limit <= 10000`.
 
 ## Notes
 
