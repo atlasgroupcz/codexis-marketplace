@@ -45,9 +45,11 @@ An agent is a reusable persona. It has its own model, tools, and instructions.
 
 Write the system prompt to a temp file under `./.tmp/`. Pass its path with `--instructions-file`.
 
-The model and jurisdictions come from the active chat. `update` keeps every field you leave out.
+The model and jurisdictions come from the active chat.
 
-Run `cdxctl skill list` first. Pass `--skill` for each skill the task needs. `cdxctl` shows the accepted values for `--skill` and `--model`.
+`update` keeps every field you do not pass. Pass only the fields you change.
+
+Run `cdxctl skill list` first. Pick the skills the task needs and pass each with `--skill`. `cdxctl` shows the accepted values for `--skill` and `--model`.
 
 ### Writing the instructions file
 
