@@ -3,7 +3,6 @@ import { defineConfig, loadEnv } from 'vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
-import { inlineDeps } from '@workspace/vitest-config/base'
 
 function stripCrossorigin(): Plugin {
   return {
@@ -21,11 +20,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
-    test: {
-      globals: true,
-      // Which deps must be inlined (and why) lives in @workspace/vitest-config.
-      server: { deps: { inline: inlineDeps } },
-    },
     plugins: [
       viteReact({
         babel: {
