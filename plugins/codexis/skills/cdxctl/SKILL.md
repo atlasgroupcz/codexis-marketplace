@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manage Codexis platform objects with the cdxctl CLI — create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 2.0.0
+version: 2.1.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -52,7 +52,11 @@ Every new agent needs `--display-name` and `--summary`, written in the prompt's 
 
 `update` keeps every field you do not pass. Pass only the fields you change.
 
-Run `cdxctl skill list` first. Read the agent's job and give it every skill that fits — pass each with `--skill`, in the same run as the create. A legal agent gets the legal-research skill; a document agent gets the document skills. Choose the fitting skills yourself from the agent's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
+Run `cdxctl skill list` first. Read the agent's job and give it every skill that fits — pass each with `--skill`, in the same run as the create. A legal agent gets the legal-research skill; a document agent gets the document skills. Contract, filing, and compliance work is legal work, so it gets a legal skill on top of any document skill. Choose the fitting skills yourself from the agent's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
+
+Match the legal skill to the agent's jurisdiction. Each legal skill in `cdxctl skill list` covers one country's law. Pick the one that covers the agent's jurisdiction. When the list has no legal skill for that jurisdiction, leave the legal skill out and keep the document skills.
+
+See `references/agent-examples.md` for worked examples: the legal-vs-document choice, the jurisdiction match, restricting tools, and a non-lossy update.
 
 Leave `--tool` and `--disallowed-tool` out so the agent keeps every tool. Set them only to restrict the agent on purpose.
 
