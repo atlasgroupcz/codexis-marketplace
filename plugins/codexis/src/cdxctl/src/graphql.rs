@@ -266,8 +266,10 @@ query GetAgents {
         plugin { id name marketplace { id name } }
         tools { toolName displayName kind source }
         skills
+        jurisdictions
         model
         maxTurns
+        instructions
         disallowedTools { toolName displayName kind source }
         sourceKind
         editable
@@ -278,46 +280,81 @@ query GetAgents {
 }
 "#;
 
-pub const CREATE_AGENT: &str = r#"
+// The chat the shell runs in carries the model and jurisdictions actually in use, which
+// is per chat -- unlike a stored preference, which two concurrent chats would share.
+pub const GET_CHAT_CONTEXT: &str = r#"
+query GetChatContext($id: ID!) {
+    node(id: $id) {
+        ... on Chat {
+            id
+            model
+            jurisdictions
+        }
+    }
+}
+"#;
+
+pub const CREATE_AGENT_MARKDOWN: &str = r#"
 mutation CreateAgent($markdown: Markdown!) {
     createAgent(markdown: $markdown) {
         id
         name
         fullName
         description
-        plugin { id name }
-        tools { toolName displayName kind source }
-        skills
-        model
-        maxTurns
-        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
+        maxTurns
+        tools { toolName }
+        disallowedTools { toolName }
         path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
-pub const UPDATE_AGENT: &str = r#"
+pub const UPDATE_AGENT_MARKDOWN: &str = r#"
 mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
     updateAgent(id: $id, markdown: $markdown) {
         id
         name
         fullName
         description
-        plugin { id name }
-        tools { toolName displayName kind source }
-        skills
-        model
-        maxTurns
-        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
+        maxTurns
+        tools { toolName }
+        disallowedTools { toolName }
         path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const SAVE_AGENT: &str = r#"
+mutation SaveAgent($id: ID, $input: AgentInput!) {
+    saveAgent(id: $id, input: $input) {
+        agent {
+            id
+            name
+            fullName
+            description
+            plugin { id name }
+            tools { toolName displayName kind source }
+            skills
+            jurisdictions
+            model
+            maxTurns
+            instructions
+            disallowedTools { toolName displayName kind source }
+            sourceKind
+            editable
+            deletable
+            path { absolutePath displayPath }
+            sourcePath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
     }
 }
 "#;
@@ -582,22 +619,37 @@ mutation StartTabularExtraction($id: ID!) {
 #[cfg(test)]
 mod tests {
     use super::{
-        CREATE_AGENT, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_SKILLS,
-        REMOVE_MARKETPLACE, SET_AUTOMATION_ENABLED, UPDATE_AGENT, UPDATE_AUTOMATION,
+        CREATE_AGENT_MARKDOWN, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS,
+        GET_CHAT_CONTEXT, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SET_AUTOMATION_ENABLED,
+        UPDATE_AGENT_MARKDOWN, UPDATE_AUTOMATION,
     };
 
     #[test]
     fn agent_queries_target_canonical_agent_api() {
         assert!(GET_AGENTS.contains("query GetAgents"));
         assert!(GET_AGENTS.contains("agents {"));
-        assert!(CREATE_AGENT.contains("createAgent(markdown: $markdown)"));
-        assert!(UPDATE_AGENT.contains("updateAgent(id: $id, markdown: $markdown)"));
+        assert!(SAVE_AGENT.contains("saveAgent(id: $id, input: $input)"));
+        // The markdown path stays on the deprecated mutations so binaries already in a VM
+        // keep working after the daemon ships saveAgent.
+        assert!(CREATE_AGENT_MARKDOWN.contains("createAgent(markdown: $markdown)"));
+        assert!(UPDATE_AGENT_MARKDOWN.contains("updateAgent(id: $id, markdown: $markdown)"));
         assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
+        assert!(GET_CHAT_CONTEXT.contains("... on Chat {"));
+    }
+
+    #[test]
+    fn agent_mutations_read_the_payload_wrapper() {
+        // createAgent/updateAgent return a payload, so every agent field sits under
+        // `agent` and the rejected input is reported in `errors`.
+        for mutation in [SAVE_AGENT] {
+            assert!(mutation.contains("agent {"));
+            assert!(mutation.contains("errors { field message allowedValues }"));
+        }
     }
 
     #[test]
     fn agent_queries_request_local_crud_metadata() {
-        for query in [GET_AGENTS, CREATE_AGENT, UPDATE_AGENT] {
+        for query in [GET_AGENTS, SAVE_AGENT] {
             assert!(query.contains("sourceKind"));
             assert!(query.contains("editable"));
             assert!(query.contains("deletable"));

@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manage Codexis platform objects with the cdxctl CLI - create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 1.7.0
+version: 2.3.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -123,72 +123,62 @@ cdxctl plugin uninstall <id>
 
 ## Agents
 
-Use these commands for custom/local agent CRUD. `cdxctl` returns the agent `id`, `sourcePath`, and `pathInfo`, so the agent can locate the markdown file in the shell, edit it, and push the updated markdown back through the API. Agents live one markdown file per agent at `~/.cdx/agents/<name>.md` on the daemon side - always go through `cdxctl agent create`/`update`, never write that file directly.
-
 ```bash
-# List all agents
-cdxctl agent list
-
-# List only editable custom/local agents
 cdxctl agent list --editable-only
 
-# Create a custom/local agent from an existing markdown file
-cdxctl agent create --file /path/to/local-agent.md
-
-# Create a custom/local agent from stdin
-cat <<'EOF' | cdxctl agent create --stdin
----
-name: custom-local-agent
-description: Helps with a focused local workflow.
-tools: Read, Bash
-maxTurns: 8
-i18n:
-  cs:
-    displayName: "Vlastní lokální agent"
-    summary: "Pomáhá s konkrétním lokálním workflow."
-  en:
-    displayName: "Custom Local Agent"
-    summary: "Helps with a focused local workflow."
-  sk:
-    displayName: "Vlastný lokálny agent"
-    summary: "Pomáha s konkrétnym lokálnym workflow."
----
-
-You are a custom local agent.
+# Write the system prompt to a temp file. Pass its path.
+mkdir -p ./.tmp
+cat > ./.tmp/koncipient-pp.md <<'EOF'
+Posuď zákonnost výpovědi ze strany zaměstnavatele.
+Na vstupu dostaneš text výpovědi, pracovní smlouvu a popis okolností.
+Vycházej ze zákoníku práce (§ 48-62) a judikatury NS.
+Ověř výpovědní důvod, výpovědní dobu, doručení a ochrannou dobu.
+Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 EOF
+cdxctl agent create --name koncipient-pp --description "Posuzuje zákonnost výpovědí podle zákoníku práce" \
+  --display-name cs:"Koncipient pro pracovní právo" --display-name en:"Employment-law associate" \
+  --summary cs:"Posoudí zákonnost výpovědi a navrhne nápravu." --summary en:"Judges a dismissal and proposes a fix." \
+  --instructions-file ./.tmp/koncipient-pp.md
 
-# Update an existing agent from a file
-cdxctl agent update <id> --file /path/to/local-agent.md
-
-# Update an existing agent from stdin
-cat /path/to/local-agent.md | cdxctl agent update <id> --stdin
-
-# Delete an editable custom/local agent
+cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
-**IDs:** `cdxctl agent update` and `cdxctl agent delete` accept the GraphQL `id` from `cdxctl agent list`, a base64 Node ID, or a raw local agent name like `my-agent`.
+An agent is a reusable persona. It has its own model, tools, and instructions.
 
-**Agent frontmatter contract:**
-- `name` - required, `^[a-z][a-z0-9-]*$`, max 64 chars, no consecutive hyphens (e.g. `contract-reviewer`). If omitted from a `--file` payload, it falls back to the filename.
-- `description` - required, max 1024 chars, one sentence. This is tool-facing context, not the user-facing summary.
-- `uuid` - optional; the daemon generates one automatically when omitted. Only include it when updating an existing agent (preserve the original) - never invent one for a new agent.
-- `model`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `jurisdictions` - all optional; set only what the user actually asked for.
-- `i18n.<lang>.displayName` and `i18n.<lang>.summary` - **mandatory** for `cs`, `sk`, and `en`. This is what the Agents page renders instead of the raw `name` slug, so a missing translation shows a blank or fallback title. `displayName` must be human-formatted (e.g. "Contract Reviewer", not `contract-reviewer`); `summary` is a one-sentence, user-facing description in that language - distinct from the frontmatter-level `description`, which stays a single technical sentence for tool-facing context.
-- The persona body (everything after the closing `---`) is the system prompt: who the agent is, what it is expert at, how it answers, what it refuses. Write it in the user's language.
+Write the system prompt to a temp file under `./.tmp/`. Pass its path with `--instructions-file`.
 
-**Creating an agent from a persona description:** when the user describes an agent they want (rather than handing you a ready markdown file), design it yourself before calling `cdxctl agent create`:
-1. If the purpose, name, or personality is unclear, ask one short clarifying question before writing anything.
-2. Pick a concise `name` slug, a one-sentence `description`, and write the persona instructions that define the agent's expertise, tone, and boundaries.
-3. Fill in `i18n.cs`, `i18n.sk`, and `i18n.en` with a human-formatted `displayName` and a one-sentence `summary` for each.
-4. Run `cdxctl agent create --stdin` with the composed markdown. `cdxctl` rejects a `name` that collides with an existing agent - on that error, pick a different name and retry instead of overwriting the existing one.
-5. Confirm to the user what was created and that the agent is now available on the Agents page.
+The model and jurisdictions come from the active chat.
 
-**Recommended agent edit workflow:**
-1. Run `cdxctl agent list --editable-only` to find the target agent and its `sourcePath.absolutePath`.
-2. Read or edit the markdown file in the shell.
-3. Apply the change with `cdxctl agent update <id> --file <path>` or pipe the markdown with `--stdin`.
-4. Use `cdxctl agent create` for new local agents and `cdxctl agent delete` for removal.
+Every new agent needs `--display-name` and `--summary`. Pass each as `lang:text` and repeat it once per language. `--display-name` is what the user sees on the Agents page; `--name` is the technical slug the system uses (lowercase, hyphens).
+
+Give the display name and summary in the prompt's language and in English. A Czech prompt gets Czech and English. Always add English.
+
+`update` keeps every field you do not pass. Pass only the fields you change. On update, `--display-name cs:"…"` replaces the text for the languages you pass and keeps the rest.
+
+Run `cdxctl skill list` first. Read the agent's job and give it every skill that fits - pass each with `--skill`, in the same run as the create. A legal agent gets the legal-research skill; a document agent gets the document skills. Contract, filing, and compliance work is legal work, so it gets a legal skill on top of any document skill. Choose the fitting skills yourself from the agent's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
+
+Match the legal skill to the agent's jurisdiction. Each legal skill in `cdxctl skill list` covers one country's law. Pick the one that covers the agent's jurisdiction. When the list has no legal skill for that jurisdiction, leave the legal skill out and keep the document skills.
+
+See `references/agent-examples.md` for worked examples: the legal-vs-document choice, the jurisdiction match, restricting tools, and a non-lossy update.
+
+Leave `--tool` and `--disallowed-tool` out so the agent keeps every tool. Set them only to restrict the agent on purpose.
+
+When you confirm the new agent to the user, keep it plain and non-technical: the display name, what the agent does, and its skills. Say it in the user's words. Leave out the slug, the command, and other internals.
+
+### Writing the instructions file
+
+Use short sentences. Keep each paragraph to two or three sentences.
+
+Say the agent's job and the input it gets. Name the sources to use, like `zákoník práce § 52`. Say what to check and the output shape, like `table: finding, section, risk`.
+
+```
+Posuď zákonnost výpovědi ze strany zaměstnavatele.
+Na vstupu dostaneš text výpovědi, pracovní smlouvu a popis okolností.
+Vycházej ze zákoníku práce (§ 48-62) a judikatury NS.
+Ověř výpovědní důvod, výpovědní dobu, doručení a ochrannou dobu.
+Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
+```
 
 ## Skills
 
