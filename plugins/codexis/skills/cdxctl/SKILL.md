@@ -27,16 +27,16 @@ cdxctl agent list --editable-only
 
 # Write the system prompt to a temp file. Pass its path.
 mkdir -p ./.tmp
-cat > ./.tmp/hr-vypoved.md <<'EOF'
+cat > ./.tmp/koncipient-pp.md <<'EOF'
 Posuď zákonnost výpovědi ze strany zaměstnavatele.
 Na vstupu dostaneš text výpovědi, pracovní smlouvu a popis okolností.
 Vycházej ze zákoníku práce (§ 48–62) a judikatury NS.
 Ověř výpovědní důvod, výpovědní dobu, doručení a ochrannou dobu.
 Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 EOF
-cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
-  --display-name "Kontrola výpovědi" --summary "Posoudí zákonnost výpovědi." \
-  --instructions-file ./.tmp/hr-vypoved.md
+cdxctl agent create --name koncipient-pp --description "Posuzuje zákonnost výpovědí podle zákoníku práce" \
+  --display-name "Koncipient pro pracovní právo" --summary "Posoudí zákonnost výpovědi a navrhne nápravu." \
+  --instructions-file ./.tmp/koncipient-pp.md
 
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
