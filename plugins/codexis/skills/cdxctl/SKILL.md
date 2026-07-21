@@ -24,21 +24,40 @@ i18n:
 
 ```bash
 cdxctl agent list --editable-only
+
+# Write the system prompt to a temp file. Pass its path.
+mkdir -p ./.tmp
+cat > ./.tmp/hr-vypoved.md <<'EOF'
+Posuď zákonnost výpovědi ze strany zaměstnavatele.
+Na vstupu dostaneš text výpovědi, pracovní smlouvu a popis okolností.
+Vycházej ze zákoníku práce (§ 48–62) a judikatury NS.
+Ověř výpovědní důvod, výpovědní dobu, doručení a ochrannou dobu.
+Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
+EOF
 cdxctl agent create --name hr-vypoved --description "Posuzuje zákonnost výpovědi" \
-  --tool shell --instructions "Posuď zákonnost výpovědi. …"
+  --tool shell --instructions-file ./.tmp/hr-vypoved.md
+
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
-An agent is a reusable persona with its own model, tools and instructions. `create` takes the model and jurisdictions from the active chat, and `update` keeps every field you do not pass.
+An agent is a reusable persona. It has its own model, tools, and instructions.
 
-Run `cdxctl skill list` before creating one and pass `--skill` for the skills its task needs — an agent gets none otherwise. A wrong skill or model is rejected with the list of accepted values.
+Write the system prompt to a temp file under `./.tmp/`. Pass its path with `--instructions-file`.
 
-### Writing `--instructions`
+The model and jurisdictions come from the active chat. `update` keeps every field you leave out.
 
-Five sentences, one job each, and skip the role — it is already in the name. In order: the task, the input, the sources to use, what to check, the output and its shape.
+Run `cdxctl skill list` first. Pass `--skill` for each skill the task needs. `cdxctl` shows the accepted values for `--skill` and `--model`.
 
-Name a concrete source in sentence 3 and make sentence 5 checkable. "Search the law" and "answer clearly" are worthless; "zákoník práce § 52" and "table: finding, section, risk" are instructions.
+### Writing the instructions file
+
+Write five short sentences. One job each.
+
+1. The task.
+2. The input you get.
+3. The sources to use — name a concrete one, like `zákoník práce § 52`.
+4. What to check.
+5. The output and its shape, like `table: finding, section, risk`.
 
 ```
 Posuď zákonnost výpovědi ze strany zaměstnavatele.

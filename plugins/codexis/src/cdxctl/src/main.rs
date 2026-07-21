@@ -299,6 +299,10 @@ enum AgentCommands {
         /// The agent's system prompt, as markdown
         #[arg(long)]
         instructions: Option<String>,
+        /// Read the system prompt from a markdown file instead of inline --instructions —
+        /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -337,6 +341,10 @@ enum AgentCommands {
         /// The agent's system prompt, as markdown
         #[arg(long)]
         instructions: Option<String>,
+        /// Read the system prompt from a markdown file instead of inline --instructions —
+        /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -692,12 +700,14 @@ fn main() {
                 model,
                 max_turns,
                 instructions,
+                instructions_file,
                 file,
                 stdin,
             } => commands::agent::create(
                 &client,
                 file.as_deref(),
                 stdin,
+                instructions_file.as_deref(),
                 commands::agent::AgentFields {
                     name,
                     description,
@@ -722,6 +732,7 @@ fn main() {
                 model,
                 max_turns,
                 instructions,
+                instructions_file,
                 file,
                 stdin,
             } => commands::agent::update(
@@ -729,6 +740,7 @@ fn main() {
                 &id,
                 file.as_deref(),
                 stdin,
+                instructions_file.as_deref(),
                 commands::agent::AgentFields {
                     name,
                     description,

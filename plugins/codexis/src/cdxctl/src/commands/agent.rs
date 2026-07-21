@@ -104,9 +104,11 @@ pub fn create(
     client: &GraphQLClient,
     file: Option<&str>,
     stdin: bool,
+    instructions_file: Option<&str>,
     fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let fields = merge_instructions_file(fields, instructions_file)?;
     if fields.is_empty() {
         let data = client.execute(
             graphql::CREATE_AGENT_MARKDOWN,
@@ -137,8 +139,7 @@ pub fn create(
         json!({ "input": Value::Object(input) })
     };
 
-    let data = client.execute(graphql::SAVE_AGENT, variables)?;
-    print_payload(data.get("saveAgent"), format)
+    save_agent(client, variables, format)
 }
 
 pub fn update(
@@ -146,9 +147,11 @@ pub fn update(
     id: &str,
     file: Option<&str>,
     stdin: bool,
+    instructions_file: Option<&str>,
     fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
+    let fields = merge_instructions_file(fields, instructions_file)?;
     let node_id = resolve_node_id(id, "Agent");
 
     if fields.is_empty() {
@@ -176,8 +179,7 @@ pub fn update(
         json!({ "id": stored_id, "input": Value::Object(input) })
     };
 
-    let data = client.execute(graphql::SAVE_AGENT, variables)?;
-    print_payload(data.get("saveAgent"), format)
+    save_agent(client, variables, format)
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -192,6 +194,45 @@ pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<
     }
     print_output(&json!({ "deleted": result }), format);
     Ok(())
+}
+
+/// Runs the structured `saveAgent` mutation. Daemons that predate it answer with a schema
+/// validation error; rather than fail opaquely, hand the agent the compatible Markdown path so
+/// it can retry on its own — the tool teaches the fallback instead of silently taking it.
+fn save_agent(
+    client: &GraphQLClient,
+    variables: Value,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    match client.execute(graphql::SAVE_AGENT, variables) {
+        Ok(data) => print_payload(data.get("saveAgent"), format),
+        Err(error) if is_unsupported_save_agent(&error) => Err(structured_input_unsupported()),
+        Err(error) => Err(error),
+    }
+}
+
+/// True when the daemon rejected `saveAgent`/`AgentInput` as unknown — i.e. it is too old for the
+/// structured input, not that the input itself was wrong.
+fn is_unsupported_save_agent(error: &CdxctlError) -> bool {
+    matches!(error, CdxctlError::GraphQL(messages) if messages.iter().any(|message| {
+        let message = message.to_ascii_lowercase();
+        (message.contains("saveagent") && (message.contains("undefined") || message.contains("unknown")))
+            || (message.contains("agentinput") && message.contains("unknown"))
+    }))
+}
+
+fn structured_input_unsupported() -> CdxctlError {
+    CdxctlError::Parse(
+        "This daemon does not support the structured agent input yet (the saveAgent mutation is \
+         unavailable). Create the agent from Markdown instead: write a file with YAML frontmatter \
+         and run `cdxctl agent create --file <path>` (or pipe it with --stdin); update an existing \
+         one with `cdxctl agent update <id> --file <path>`. Frontmatter keys: name, description, \
+         tools, disallowed-tools, skills, model (the model name, e.g. gpt-5.6-terra), max-turns, \
+         jurisdictions; put the instructions in the body below the frontmatter. Example:\n\
+         ---\nname: hr-vypoved\ndescription: Posuzuje zákonnost výpovědi\nmodel: gpt-5.6-terra\n\
+         tools: [shell]\nskills: [codexis:codexis]\n---\nPosuď zákonnost výpovědi. …"
+            .to_string(),
+    )
 }
 
 fn print_payload(payload: Option<&Value>, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -332,6 +373,32 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) {
     }
 }
 
+/// Folds `--instructions-file` into the structured fields: the file's contents become the system
+/// prompt, so a long persona can be written to a temp file (e.g. under ./.tmp) instead of a fragile
+/// inline `--instructions` arg. Still the structured path, so it saves through saveAgent.
+fn merge_instructions_file(
+    mut fields: AgentFields,
+    instructions_file: Option<&str>,
+) -> Result<AgentFields, CdxctlError> {
+    let Some(path) = instructions_file else {
+        return Ok(fields);
+    };
+    if fields.instructions.is_some() {
+        return Err(CdxctlError::Parse(
+            "Choose one source for the system prompt: --instructions or --instructions-file, not both".into(),
+        ));
+    }
+    let content = fs::read_to_string(path).map_err(|error| {
+        CdxctlError::Parse(format!(
+            "Failed to read instructions from {}: {}",
+            Path::new(path).display(),
+            error
+        ))
+    })?;
+    fields.instructions = Some(content);
+    Ok(fields)
+}
+
 fn load_markdown(file: Option<&str>, stdin: bool) -> Result<String, CdxctlError> {
     match (file, stdin) {
         (Some(_), true) => Err(CdxctlError::Parse(
@@ -374,8 +441,8 @@ fn validate_markdown(content: String) -> Result<String, CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        format_input_error, load_markdown, load_markdown_from_file, merge_current,
-        validate_markdown, AgentFields,
+        format_input_error, is_unsupported_save_agent, load_markdown, load_markdown_from_file,
+        merge_current, validate_markdown, AgentFields,
     };
     use crate::commands::resolve_node_id;
     use crate::error::CdxctlError;
@@ -493,6 +560,21 @@ mod tests {
             format_input_error(&error),
             "skills: No such skill: typo. Allowed: debugger, planner"
         );
+    }
+
+    #[test]
+    fn detects_a_daemon_without_the_save_agent_mutation() {
+        let undefined = CdxctlError::GraphQL(vec![
+            "Validation error (FieldUndefined@[saveAgent]) : Field 'saveAgent' in type 'Mutation' is undefined".into(),
+        ]);
+        assert!(is_unsupported_save_agent(&undefined));
+
+        let unknown_type = CdxctlError::GraphQL(vec!["Unknown type 'AgentInput'".into()]);
+        assert!(is_unsupported_save_agent(&unknown_type));
+
+        // A real validation rejection (unknown skill) must NOT be mistaken for an old daemon.
+        let rejected = CdxctlError::GraphQL(vec!["skills: No such skill: typo.".into()]);
+        assert!(!is_unsupported_save_agent(&rejected));
     }
 
     fn unique_temp_path(prefix: &str) -> std::path::PathBuf {
