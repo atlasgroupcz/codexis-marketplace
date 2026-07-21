@@ -53,13 +53,9 @@ Run `cdxctl skill list` first. Pick the skills the task needs and pass each with
 
 ### Writing the instructions file
 
-Write five short sentences. One job each.
+Use short sentences. Keep each paragraph to two or three sentences.
 
-1. The task.
-2. The input you get.
-3. The sources to use — name a concrete one, like `zákoník práce § 52`.
-4. What to check.
-5. The output and its shape, like `table: finding, section, risk`.
+Say the agent's job and the input it gets. Name the sources to use, like `zákoník práce § 52`. Say what to check and the output shape, like `table: finding, section, risk`.
 
 ```
 Posuď zákonnost výpovědi ze strany zaměstnavatele.
@@ -98,7 +94,11 @@ There is no "every 15 minutes" and no "at 9:00 sharp". `--cron` still maps a 5-f
 
 ## Skills
 
-A skill is a markdown instruction file the AI loads on demand. Keep the `uuid` when editing an existing one; new skills get one generated.
+A skill is reusable know-how the AI loads on demand: how a task is done — the method, the steps, which sources to use, how to check them, and which tools help. That is different from an agent's instructions, which say who the agent is and how it answers.
+
+If the user did not clearly ask for a skill, ask them first. Create one only when they want it.
+
+A new skill needs YAML frontmatter (name, description, and i18n display strings). Keep the `uuid` when editing an existing skill; new skills get one generated.
 
 ```bash
 cdxctl skill list --editable-only
