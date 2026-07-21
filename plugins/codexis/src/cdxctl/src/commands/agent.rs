@@ -120,7 +120,7 @@ fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) ->
     Ok(())
 }
 
-fn current_chat(client: &GraphQLClient) -> Option<Map<String, Value>> {
+pub(crate) fn current_chat(client: &GraphQLClient) -> Option<Map<String, Value>> {
     let session = std::env::var("CODEXIS_PUBLIC_SESSION_ID").ok()?;
     let node_id = resolve_node_id(&session, "Chat");
     let data = client

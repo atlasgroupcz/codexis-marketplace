@@ -105,6 +105,12 @@ enum AutomationCommands {
         /// Maximum agent turns
         #[arg(long)]
         max_turns: Option<u32>,
+        /// Model the run uses (enum name, e.g. CLAUDE_SONNET_5). Defaults to the active chat's model
+        #[arg(long)]
+        model: Option<String>,
+        /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable. Defaults to the active chat's
+        #[arg(long = "jurisdiction")]
+        jurisdiction: Vec<String>,
         /// Working directory path
         #[arg(long)]
         work_dir: Option<String>,
@@ -173,6 +179,12 @@ enum AutomationCommands {
         skill: Option<Vec<String>>,
         #[arg(long)]
         max_turns: Option<u32>,
+        /// Model the run uses (enum name, e.g. CLAUDE_SONNET_5)
+        #[arg(long)]
+        model: Option<String>,
+        /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable; replaces the stored set
+        #[arg(long = "jurisdiction")]
+        jurisdiction: Vec<String>,
         #[arg(long)]
         work_dir: Option<String>,
     },
@@ -633,6 +645,8 @@ fn main() {
                 agent,
                 skill,
                 max_turns,
+                model,
+                jurisdiction,
                 work_dir,
                 disabled,
             } => commands::automation::create(
@@ -651,6 +665,12 @@ fn main() {
                     agent: agent.as_deref(),
                     skills: &skill,
                     max_turns,
+                    model: model.as_deref(),
+                    jurisdictions: if jurisdiction.is_empty() {
+                        None
+                    } else {
+                        Some(&jurisdiction)
+                    },
                     work_dir: work_dir.as_deref(),
                     disabled,
                 },
@@ -694,6 +714,8 @@ fn main() {
                 agent,
                 skill,
                 max_turns,
+                model,
+                jurisdiction,
                 work_dir,
             } => commands::automation::update(
                 &client,
@@ -712,6 +734,12 @@ fn main() {
                     agent: agent.as_deref(),
                     skills: skill.as_deref(),
                     max_turns,
+                    model: model.as_deref(),
+                    jurisdictions: if jurisdiction.is_empty() {
+                        None
+                    } else {
+                        Some(&jurisdiction)
+                    },
                     work_dir: work_dir.as_deref(),
                 },
                 format,
@@ -1043,6 +1071,47 @@ mod tests {
                 assert!(!stdin);
             }
             _ => panic!("expected agent update command"),
+        }
+    }
+
+    #[test]
+    fn parses_automation_create_with_model_and_jurisdiction() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "automation",
+            "create",
+            "--title",
+            "Judikatura watch",
+            "--repeat",
+            "DAILY",
+            "--day-part",
+            "MORNING",
+            "--prompt",
+            "Report new rulings",
+            "--model",
+            "CLAUDE_SONNET_5",
+            "--jurisdiction",
+            "CZ",
+            "--jurisdiction",
+            "SK",
+        ])
+        .expect("automation create should parse");
+
+        match cli.command {
+            Commands::Automation {
+                command:
+                    AutomationCommands::Create {
+                        title,
+                        model,
+                        jurisdiction,
+                        ..
+                    },
+            } => {
+                assert_eq!(title, "Judikatura watch");
+                assert_eq!(model.as_deref(), Some("CLAUDE_SONNET_5"));
+                assert_eq!(jurisdiction, vec!["CZ", "SK"]);
+            }
+            _ => panic!("expected automation create command"),
         }
     }
 

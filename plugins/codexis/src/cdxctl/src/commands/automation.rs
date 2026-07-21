@@ -4,7 +4,7 @@ use crate::commands::schedule::ScheduleArgs;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 
 /// Fields for creating an AGENT automation.
 pub struct CreateArgs<'a> {
@@ -15,6 +15,8 @@ pub struct CreateArgs<'a> {
     pub agent: Option<&'a str>,
     pub skills: &'a [String],
     pub max_turns: Option<u32>,
+    pub model: Option<&'a str>,
+    pub jurisdictions: Option<&'a [String]>,
     pub work_dir: Option<&'a str>,
     pub disabled: bool,
 }
@@ -29,6 +31,8 @@ pub struct UpdateArgs<'a> {
     pub agent: Option<&'a str>,
     pub skills: Option<&'a [String]>,
     pub max_turns: Option<u32>,
+    pub model: Option<&'a str>,
+    pub jurisdictions: Option<&'a [String]>,
     pub work_dir: Option<&'a str>,
 }
 
@@ -59,6 +63,8 @@ pub fn create(
         agent,
         skills,
         max_turns,
+        model,
+        jurisdictions,
         work_dir,
         disabled,
     } = args;
@@ -81,8 +87,19 @@ pub fn create(
     if let Some(turns) = max_turns {
         input["maxTurns"] = json!(turns);
     }
+    if let Some(m) = model {
+        input["model"] = json!(m);
+    }
+    if let Some(list) = jurisdictions {
+        input["jurisdictions"] = json!(list);
+    }
     if let Some(dir) = work_dir {
         input["workDir"] = json!(dir);
+    }
+    // What the flags did not state comes from the chat this shell runs in, so a scheduled
+    // run works the way the conversation that asked for it does.
+    if let Some(object) = input.as_object_mut() {
+        apply_chat_context(client, object);
     }
 
     let data = client.execute(graphql::CREATE_AUTOMATION, json!({ "input": input }))?;
@@ -134,6 +151,8 @@ pub fn update(
         agent,
         skills,
         max_turns,
+        model,
+        jurisdictions,
         work_dir,
     } = args;
     let node_id = resolve_node_id(id, "Automation");
@@ -223,6 +242,20 @@ pub fn update(
         })
         .map(|s| json!(s))
         .unwrap_or(Value::Null);
+
+    // AutomationInput replaces the whole automation, so model + jurisdictions the flags do
+    // not set have to be carried over from the stored automation or the update would clear them.
+    input["model"] = match model {
+        Some(m) => json!(m),
+        None => current.get("model").cloned().unwrap_or(Value::Null),
+    };
+    input["jurisdictions"] = match jurisdictions {
+        Some(list) => json!(list),
+        None => current
+            .get("jurisdictions")
+            .cloned()
+            .unwrap_or(Value::Array(Vec::new())),
+    };
 
     let data = client.execute(
         graphql::UPDATE_AUTOMATION,
@@ -342,6 +375,35 @@ fn format_schedule(schedule: &Value) -> String {
     }
 }
 
+/// The context keys the chat may fill: only the ones the flags did not already set. An explicit
+/// `--model` / `--jurisdiction` is left alone, so it wins over the chat.
+fn context_keys_to_fill(input: &Map<String, Value>) -> Vec<&'static str> {
+    ["model", "jurisdictions"]
+        .into_iter()
+        .filter(|key| !input.contains_key(*key))
+        .collect()
+}
+
+/// Fill `model` + `jurisdictions` from the active chat for any the flags did not set. Model is
+/// optional (the daemon falls back to the workspace default), so outside a chat this is a no-op.
+fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) {
+    let missing = context_keys_to_fill(input);
+    if missing.is_empty() {
+        return;
+    }
+    let Some(chat) = crate::commands::agent::current_chat(client) else {
+        return;
+    };
+    for key in missing {
+        match chat.get(key) {
+            Some(value) if !value.is_null() => {
+                input.insert(key.into(), value.clone());
+            }
+            _ => {}
+        }
+    }
+}
+
 fn require_schedule(schedule: &ScheduleArgs<'_>) -> Result<Value, CdxctlError> {
     schedule.to_input()?.ok_or_else(|| {
         CdxctlError::Parse(
@@ -383,8 +445,20 @@ fn resolve_skill_ids(client: &GraphQLClient, values: &[String]) -> Result<Vec<Va
 
 #[cfg(test)]
 mod tests {
-    use super::flatten_automation;
-    use serde_json::{json, Value};
+    use super::{context_keys_to_fill, flatten_automation};
+    use serde_json::{json, Map, Value};
+
+    #[test]
+    fn context_keys_to_fill_lists_only_unset_keys() {
+        let mut input = Map::new();
+        assert_eq!(context_keys_to_fill(&input), vec!["model", "jurisdictions"]);
+
+        input.insert("model".into(), json!("CLAUDE_SONNET_5"));
+        assert_eq!(context_keys_to_fill(&input), vec!["jurisdictions"]);
+
+        input.insert("jurisdictions".into(), json!(["CZ"]));
+        assert!(context_keys_to_fill(&input).is_empty());
+    }
 
     #[test]
     fn flatten_automation_lifts_agent_and_skill_names_and_ids() {

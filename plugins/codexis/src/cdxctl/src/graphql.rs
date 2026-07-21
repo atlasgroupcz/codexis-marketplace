@@ -14,6 +14,8 @@ query GetAutomations {
         prompt
         enabled
         maxTurns
+        model
+        jurisdictions
         workDirPath { absolutePath displayPath }
         lastRun {
             id
@@ -41,6 +43,8 @@ mutation CreateAutomation($input: AutomationInput!) {
         prompt
         enabled
         maxTurns
+        model
+        jurisdictions
         workDirPath { absolutePath displayPath }
     }
 }
@@ -60,6 +64,8 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         prompt
         enabled
         maxTurns
+        model
+        jurisdictions
         workDirPath { absolutePath displayPath }
     }
 }
@@ -707,6 +713,8 @@ mod tests {
             assert!(query.contains("skills { id fullName }"));
             assert!(!query.contains("agentFullName"));
             assert!(!query.contains("skillFullNames"));
+            assert!(query.contains("model"));
+            assert!(query.contains("jurisdictions"));
         }
     }
 
