@@ -48,7 +48,7 @@ Write the system prompt to a temp file under `./.tmp/`. Pass its path with `--in
 
 The model and jurisdictions come from the active chat.
 
-Every new agent needs `--display-name` and `--summary`, written in the prompt's language. The Agents page shows them.
+Every new agent needs `--display-name` and `--summary`, written in the prompt's language. `--display-name` is what the user sees on the Agents page; `--name` is the technical slug the system uses (lowercase, hyphens).
 
 `update` keeps every field you do not pass. Pass only the fields you change.
 
