@@ -46,6 +46,6 @@
   "components": "./components",
   "env": {
     "CODEXIS_PLUGIN_BASE_URL": "https://app.codexis.cz",
-    "CODEXIS_PLUGIN_API_URL": "https://app.codexis.cz"
+    "CODEXIS_PLUGIN_API_URL": "http://192.168.65.254:8087"
   }
 }
