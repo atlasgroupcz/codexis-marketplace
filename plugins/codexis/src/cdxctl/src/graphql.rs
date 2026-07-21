@@ -15,6 +15,7 @@ query GetAutomations {
         enabled
         maxTurns
         model
+        modelConfiguration { key value }
         jurisdictions
         workDirPath { absolutePath displayPath }
         lastRun {
@@ -44,6 +45,7 @@ mutation CreateAutomation($input: AutomationInput!) {
         enabled
         maxTurns
         model
+        modelConfiguration { key value }
         jurisdictions
         workDirPath { absolutePath displayPath }
     }
@@ -65,6 +67,7 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         enabled
         maxTurns
         model
+        modelConfiguration { key value }
         jurisdictions
         workDirPath { absolutePath displayPath }
     }
@@ -294,6 +297,7 @@ query GetChatContext($id: ID!) {
         ... on Chat {
             id
             model
+            modelConfiguration { key value }
             jurisdictions
         }
     }
@@ -663,6 +667,7 @@ mod tests {
         assert!(UPDATE_AGENT_MARKDOWN.contains("updateAgent(id: $id, markdown: $markdown)"));
         assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
         assert!(GET_CHAT_CONTEXT.contains("... on Chat {"));
+        assert!(GET_CHAT_CONTEXT.contains("modelConfiguration { key value }"));
     }
 
     #[test]
@@ -714,6 +719,7 @@ mod tests {
             assert!(!query.contains("agentFullName"));
             assert!(!query.contains("skillFullNames"));
             assert!(query.contains("model"));
+            assert!(query.contains("modelConfiguration { key value }"));
             assert!(query.contains("jurisdictions"));
         }
     }

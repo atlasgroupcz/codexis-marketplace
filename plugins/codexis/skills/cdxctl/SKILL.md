@@ -24,7 +24,7 @@ Always go through `cdxctl` for these platform objects - never hand-edit the unde
 
 ## Automations
 
-An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model, same jurisdiction, same skills, same working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
+An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
 
 ```bash
 # List all automations
@@ -63,7 +63,7 @@ cdxctl automation delete <id>
 cdxctl automation trigger <id>
 ```
 
-**Model + jurisdiction:** both default to the active chat, so usually you pass neither. Override with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
+**Model + jurisdiction:** the model, its tuned settings, and the jurisdiction all default to the active chat, so usually you pass nothing. Override the model with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and jurisdiction with `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
 
 **Enable / disable vs update:** toggling on/off is its own command, not a flag on `update`. `enable`/`disable` work for your own automations and for read-only ones shipped by a plugin. `update` only edits USER automations and never changes the enabled state.
 

@@ -96,8 +96,6 @@ pub fn create(
     if let Some(dir) = work_dir {
         input["workDir"] = json!(dir);
     }
-    // What the flags did not state comes from the chat this shell runs in, so a scheduled
-    // run works the way the conversation that asked for it does.
     if let Some(object) = input.as_object_mut() {
         apply_chat_context(client, object);
     }
@@ -243,8 +241,6 @@ pub fn update(
         .map(|s| json!(s))
         .unwrap_or(Value::Null);
 
-    // AutomationInput replaces the whole automation, so model + jurisdictions the flags do
-    // not set have to be carried over from the stored automation or the update would clear them.
     input["model"] = match model {
         Some(m) => json!(m),
         None => current.get("model").cloned().unwrap_or(Value::Null),
@@ -256,6 +252,11 @@ pub fn update(
             .cloned()
             .unwrap_or(Value::Array(Vec::new())),
     };
+
+    input["modelConfiguration"] = current
+        .get("modelConfiguration")
+        .cloned()
+        .unwrap_or(Value::Array(Vec::new()));
 
     let data = client.execute(
         graphql::UPDATE_AUTOMATION,
@@ -375,17 +376,13 @@ fn format_schedule(schedule: &Value) -> String {
     }
 }
 
-/// The context keys the chat may fill: only the ones the flags did not already set. An explicit
-/// `--model` / `--jurisdiction` is left alone, so it wins over the chat.
 fn context_keys_to_fill(input: &Map<String, Value>) -> Vec<&'static str> {
-    ["model", "jurisdictions"]
+    ["model", "modelConfiguration", "jurisdictions"]
         .into_iter()
         .filter(|key| !input.contains_key(*key))
         .collect()
 }
 
-/// Fill `model` + `jurisdictions` from the active chat for any the flags did not set. Model is
-/// optional (the daemon falls back to the workspace default), so outside a chat this is a no-op.
 fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) {
     let missing = context_keys_to_fill(input);
     if missing.is_empty() {
@@ -451,11 +448,18 @@ mod tests {
     #[test]
     fn context_keys_to_fill_lists_only_unset_keys() {
         let mut input = Map::new();
-        assert_eq!(context_keys_to_fill(&input), vec!["model", "jurisdictions"]);
+        assert_eq!(
+            context_keys_to_fill(&input),
+            vec!["model", "modelConfiguration", "jurisdictions"]
+        );
 
         input.insert("model".into(), json!("CLAUDE_SONNET_5"));
-        assert_eq!(context_keys_to_fill(&input), vec!["jurisdictions"]);
+        assert_eq!(
+            context_keys_to_fill(&input),
+            vec!["modelConfiguration", "jurisdictions"]
+        );
 
+        input.insert("modelConfiguration".into(), json!([{"key": "effort", "value": "HIGH"}]));
         input.insert("jurisdictions".into(), json!(["CZ"]));
         assert!(context_keys_to_fill(&input).is_empty());
     }
