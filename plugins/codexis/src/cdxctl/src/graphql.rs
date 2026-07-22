@@ -74,6 +74,31 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
 }
 "#;
 
+pub const SAVE_AUTOMATION: &str = r#"
+mutation SaveAutomation($id: ID, $input: AutomationInput!) {
+    saveAutomation(id: $id, input: $input) {
+        automation {
+            id
+            type
+            command
+            title
+            description
+            agent { id fullName }
+            skills { id fullName }
+            schedule { repeat dayPart daysOfWeek dayOfMonth }
+            prompt
+            enabled
+            maxTurns
+            model
+            modelConfiguration { key value }
+            jurisdictions
+            workDirPath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
+    }
+}
+"#;
+
 // Toggle only the `enabled` flag. Unlike `updateAutomation` (USER-only, rejects
 // read-only carried/plugin automations), the daemon's `setAutomationEnabled`
 // works for both USER and carried automations - for carried ones it persists a
@@ -652,8 +677,8 @@ mutation StartTabularExtraction($id: ID!) {
 mod tests {
     use super::{
         CREATE_AGENT_MARKDOWN, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS,
-        GET_CHAT_CONTEXT, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SET_AUTOMATION_ENABLED,
-        UPDATE_AGENT_MARKDOWN, UPDATE_AUTOMATION,
+        GET_CHAT_CONTEXT, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION,
+        SET_AUTOMATION_ENABLED, UPDATE_AGENT_MARKDOWN, UPDATE_AUTOMATION,
     };
 
     #[test]
@@ -713,7 +738,7 @@ mod tests {
     fn automation_queries_select_agent_and_skills_as_nodes() {
         // Daemon schema exposes `agent: Agent` / `skills: [Skill!]!` (with id +
         // fullName), not the legacy flat `agentFullName` / `skillFullNames` fields.
-        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION] {
+        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION, SAVE_AUTOMATION] {
             assert!(query.contains("agent { id fullName }"));
             assert!(query.contains("skills { id fullName }"));
             assert!(!query.contains("agentFullName"));
@@ -722,6 +747,16 @@ mod tests {
             assert!(query.contains("modelConfiguration { key value }"));
             assert!(query.contains("jurisdictions"));
         }
+    }
+
+    #[test]
+    fn save_automation_reads_the_payload_wrapper() {
+        // saveAutomation returns a payload, so every automation field sits under
+        // `automation` and the rejected input is reported in `errors` - mirroring saveAgent.
+        assert!(SAVE_AUTOMATION.contains("saveAutomation(id: $id, input: $input)"));
+        assert!(SAVE_AUTOMATION.contains("$id: ID, $input: AutomationInput!"));
+        assert!(SAVE_AUTOMATION.contains("automation {"));
+        assert!(SAVE_AUTOMATION.contains("errors { field message allowedValues }"));
     }
 
     #[test]
