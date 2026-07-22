@@ -21,7 +21,7 @@ i18n:
     summary: "Prevod dokumentov (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pre ďalšie AI spracovanie."
 ---
 
-# OCR — Document to Markdown Conversion
+# OCR - Document to Markdown Conversion
 
 Convert binary documents to Markdown text using the `ocr` command available in the shell.
 
@@ -36,7 +36,7 @@ ocr <absolute-path-to-file>
 - **Documents:** PDF, DOC, DOCX, PPTX, XLS, XLSX, ODS, ODT, RTF
 - **Web:** HTML, HTM
 - **Images:** PNG, JPG, TIFF, BMP, GIF, WEBP
-- **Archives:** ZIP (all contained files are converted automatically — do NOT unzip first)
+- **Archives:** ZIP (all contained files are converted automatically - do NOT unzip first)
 
 ## When to Use
 
@@ -46,7 +46,7 @@ ocr <absolute-path-to-file>
 
 ## When NOT to Use
 
-- Plain text files (.txt, .csv, .json, .xml, .md, source code) — use `readFile` instead
+- Plain text files (.txt, .csv, .json, .xml, .md, source code) - use `readFile` instead
 - The file is already in a readable text format
 
 ## How It Works

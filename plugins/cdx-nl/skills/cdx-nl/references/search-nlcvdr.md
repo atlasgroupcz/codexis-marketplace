@@ -1,4 +1,4 @@
-# Search: NLCVDR (Dutch Decentralized Regulations — CVDR)
+# Search: NLCVDR (Dutch Decentralized Regulations - CVDR)
 
 Endpoint: `cdx-nl search NLCVDR [filters]`
 
@@ -26,13 +26,13 @@ Issuing body, exact match against the record's organisatie (DOCUMENT mode only).
 
 ## --organisatie-type
 Issuing-body type (DOCUMENT mode only). Exactly 7 PascalCase values:
-  Gemeente — municipality
-  Provincie — province
-  Waterschap — water board
-  Koninkrijksdeel — kingdom part
-  CaribischOpenbaarLichaam — Caribbean public body (BES)
-  NederlandseAntillen — pre-2010 Antilles/BES records
-  RegionaalSamenwerkingsorgaan — joint regional arrangement (gemeenschappelijke regeling)
+  Gemeente - municipality
+  Provincie - province
+  Waterschap - water board
+  Koninkrijksdeel - kingdom part
+  CaribischOpenbaarLichaam - Caribbean public body (BES)
+  NederlandseAntillen - pre-2010 Antilles/BES records
+  RegionaalSamenwerkingsorgaan - joint regional arrangement (gemeenschappelijke regeling)
   cdx-nl search NLCVDR --organisatie-type Waterschap
 
 ## --rechtsgebied  (repeatable)
@@ -72,7 +72,7 @@ params on /search (backend @RequestParam), not body fields.
 # Worked example: resolving a CVDR work-id directly
 
 When you already know the CVDR work-id (e.g. from an external citation), skip
-`search` — the workid route resolves it to a display ID and the latest version:
+`search` - the workid route resolves it to a display ID and the latest version:
 
 ```
 cdx-nl get "cdx-nl://workid/CVDR72510"
@@ -122,7 +122,7 @@ cdx-nl get "cdx-nl://doc/${DOC_ID}/text?part=<id-from-step-1>"
 
 ### Related laws (grondslag)
 
-CVDR relations are **outgoing-only** legal-basis (grondslag) references — the
+CVDR relations are **outgoing-only** legal-basis (grondslag) references - the
 laws a regulation is based on. `direction=in` returns empty.
 
 ```
@@ -131,7 +131,7 @@ cdx-nl get "cdx-nl://doc/${DOC_ID}/related?direction=out" | jq '.items[] | {raw,
 
 Each item is `{ raw, bwbId, href, kind }`. `kind=bwb` items carry a resolved
 `bwbId` and an `href` to the BWB `/bwbid/{bwbId}` resolver (chase it via the
-NLBWB surface); `kind=external` items are unresolved deeplinks — use `raw`/`href`
+NLBWB surface); `kind=external` items are unresolved deeplinks - use `raw`/`href`
 as-is, do not construct cdx-nl URLs yourself.
 
 ### Attachments

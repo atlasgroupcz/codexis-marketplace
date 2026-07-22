@@ -99,7 +99,7 @@ function initTheme() {
   let themeParam = new URLSearchParams(window.location.search).get('theme');
   if (!themeParam) {
     try { themeParam = new URLSearchParams(window.parent.location.search).get('theme'); }
-    catch (e) { /* cross-origin — ignore */ }
+    catch (e) { /* cross-origin - ignore */ }
   }
   const theme = (themeParam === 'light' || themeParam === 'dark') ? themeParam : 'light';
   document.documentElement.classList.remove('light', 'dark');

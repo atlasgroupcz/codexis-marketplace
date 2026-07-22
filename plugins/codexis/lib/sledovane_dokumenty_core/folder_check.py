@@ -4,7 +4,7 @@ Reads each folder's ``.watched/watched.json``, collects the distinct referenced
 acts (those that resolved to a CODEXIS ``codexisId``) and compares the current
 CODEXIS version id against the stored baseline in ``.watched/tracking-state.json``.
 
-NO AI is involved — change detection is a version-id comparison. Reuses the same
+NO AI is involved - change detection is a version-id comparison. Reuses the same
 CODEXIS clients and compare-URL helpers as the by-id document tracker.
 """
 
@@ -17,7 +17,7 @@ from .state import now_utc
 def _seed_legislation(tracking, ref):
     """Ensure a tracking entry exists for a referenced act and refresh its label.
 
-    Unresolved references (no ``codexisId``) are skipped — they are listed in
+    Unresolved references (no ``codexisId``) are skipped - they are listed in
     watched.json for humans but cannot be tracked deterministically.
     """
     codexis_id = ref.get("codexisId")

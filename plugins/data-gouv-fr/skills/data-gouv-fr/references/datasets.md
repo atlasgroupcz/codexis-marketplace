@@ -1,6 +1,6 @@
 # Dataset Search Parameters
 
-Search for datasets on data.gouv.fr. Uses AND logic — keep queries short and specific.
+Search for datasets on data.gouv.fr. Uses AND logic - keep queries short and specific.
 
 ## query
 Free-text search keywords. Required.
@@ -19,5 +19,5 @@ Number of results per page. Optional, default: 20.
 
 - Start with 2-3 specific keywords describing the subject
 - If no results, try synonyms or shorter queries
-- Dataset titles and descriptions are in French — search in French for best results
+- Dataset titles and descriptions are in French - search in French for best results
 - Each result includes: title, ID, description, organization, resource count, and dates

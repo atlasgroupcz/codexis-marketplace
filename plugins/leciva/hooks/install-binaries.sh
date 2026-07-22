@@ -53,7 +53,7 @@ install_binary "$(select_binary_source "leciva-cli")" "leciva-cli"
 
 # Migrate off the pre-1.4 local index. Old versions downloaded ~23 MB of SÚKL
 # data (TSV index + codelists) to ~/.cdx/apps/leciva; the API client needs none
-# of it. Best-effort — MUST NOT fail install/update, hence || true (no sudo: the
+# of it. Best-effort - MUST NOT fail install/update, hence || true (no sudo: the
 # dir is user-owned under $HOME).
 USER_HOME="${CODEXIS_PUBLIC_USER_HOME:-$HOME}"
 if [[ -e "${USER_HOME}/.cdx/apps/leciva" ]]; then

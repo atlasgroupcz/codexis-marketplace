@@ -8,34 +8,34 @@ jurisdictions: [CZ]
 i18n:
   cs:
     displayName: "Sledované dokumenty"
-    summary: "Sledování změn v české legislativě přes CODEXIS — upozornění na novelizace a srovnání verzí."
+    summary: "Sledování změn v české legislativě přes CODEXIS - upozornění na novelizace a srovnání verzí."
   en:
     displayName: "Document Tracker"
-    summary: "Monitor changes in Czech legislation via CODEXIS — amendment alerts and version diffs."
+    summary: "Monitor changes in Czech legislation via CODEXIS - amendment alerts and version diffs."
   sk:
     displayName: "Sledované dokumenty"
-    summary: "Sledovanie zmien v českej legislatíve cez CODEXIS — upozornenia na novelizácie a porovnanie verzií."
+    summary: "Sledovanie zmien v českej legislatíve cez CODEXIS - upozornenia na novelizácie a porovnanie verzií."
 ---
 
-# Sledované dokumenty — Document Tracking
+# Sledované dokumenty - Document Tracking
 
 Track changes in Czech legislation by monitoring CODEXIS documents for new versions and computing text diffs.
 
-**IMPORTANT:** For document data use only `cdx-sledovane-dokumenty` — do NOT call `cdx-cli`, `curl`, or any other data tool directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch document data.
+**IMPORTANT:** For document data use only `cdx-sledovane-dokumenty` - do NOT call `cdx-cli`, `curl`, or any other data tool directly. `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail, never to fetch document data.
 
 **IMPORTANT:** Assume `cdx-cli`, `cdxctl`, and `cdx-sledovane-dokumenty` are already installed, configured, available in `PATH`, and invokable. Do not run setup or preflight checks.
 
-**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) — report it, don't guess workarounds and don't blindly retry. Adding an already-tracked document or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several documents, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) - report it, don't guess workarounds and don't blindly retry. Adding an already-tracked document or removing one that isn't tracked is a safe no-op (prints `OK:`), so re-running `add`/`remove` is fine. When acting on several documents, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
-`cdx-sledovane-dokumenty` has three kinds of output. Pick the right way to consume each — mixing them up (e.g. `grep` on JSON, or `jq` on plaintext) will fail.
+`cdx-sledovane-dokumenty` has three kinds of output. Pick the right way to consume each - mixing them up (e.g. `grep` on JSON, or `jq` on plaintext) will fail.
 
-- **`list`, `check`, `group list`, `note list`, `related list`, `related types`** — human-readable plain text. Read it directly. **Do not parse with `sed` or `grep`** — the layout is for humans, not machines. Summarize what you see for the user.
+- **`list`, `check`, `group list`, `note list`, `related list`, `related types`** - human-readable plain text. Read it directly. **Do not parse with `sed` or `grep`** - the layout is for humans, not machines. Summarize what you see for the user.
 
-- **`add`, `remove`, `confirm`, `group add`, `group remove`, `group delete`, `note add`, `note remove`, `related add`, `related remove`** — a single `OK: ...` line on success or `ERROR: ...` on failure. No parsing needed; the whole output is the status.
+- **`add`, `remove`, `confirm`, `group add`, `group remove`, `group delete`, `note add`, `note remove`, `related add`, `related remove`** - a single `OK: ...` line on success or `ERROR: ...` on failure. No parsing needed; the whole output is the status.
 
-- **`show`** — structured JSON (full state including diffs and related baselines). Read it directly, or filter with `jq` for a specific field. Never with `sed`/`grep`.
+- **`show`** - structured JSON (full state including diffs and related baselines). Read it directly, or filter with `jq` for a specific field. Never with `sed`/`grep`.
 
   ```bash
   cdx-sledovane-dokumenty show CR13986 | jq '.changes[-1]'
@@ -81,7 +81,7 @@ cdx-sledovane-dokumenty group list
 # Delete a group entirely
 cdx-sledovane-dokumenty group delete "Pracovní právo"
 
-# Add a note — AI will focus on these topics when summarizing changes
+# Add a note - AI will focus on these topics when summarizing changes
 cdx-sledovane-dokumenty note add CR13986 "zajímá mě pracovní doba a výpovědní lhůty"
 
 # List notes for a document
@@ -114,8 +114,8 @@ If the user mentions their profession (e.g. "jsem účetní", "pracuji jako advo
 
 1. User asks to track a document → use `cdx-sledovane-dokumenty add <codexisId>`
 2. `cdx-sledovane-dokumenty` verifies the document exists in CODEXIS, saves the current version as baseline
-3. After adding, run `cdx-sledovane-dokumenty group list` and assign the document to a fitting group with `cdx-sledovane-dokumenty group add`. If no suitable group exists, create one — the command creates the group automatically (e.g. "Pracovní právo", "Daňové zákony", "Soukromé právo"). A document can belong to multiple groups.
-4. If the user mentions specific interests or asks questions about a tracked document (e.g. "zajímá mě pracovní doba", "dej mi vědět jestli se mění výpovědní lhůty"), always save them as notes with `cdx-sledovane-dokumenty note add <codexisId> "<text>"`. These notes personalize AI summaries when changes are detected. Do this proactively — the user doesn't need to explicitly ask for it. Write notes from the user's perspective in 1st person (e.g. "zajímá mě pracovní doba", "jsem účetní") or as instructions in 2nd person (e.g. "sleduj výpovědní lhůty", "zaměř se na BOZP"). Never write in 3rd person (e.g. "uživatel je účetní", "uživatele zajímá").
+3. After adding, run `cdx-sledovane-dokumenty group list` and assign the document to a fitting group with `cdx-sledovane-dokumenty group add`. If no suitable group exists, create one - the command creates the group automatically (e.g. "Pracovní právo", "Daňové zákony", "Soukromé právo"). A document can belong to multiple groups.
+4. If the user mentions specific interests or asks questions about a tracked document (e.g. "zajímá mě pracovní doba", "dej mi vědět jestli se mění výpovědní lhůty"), always save them as notes with `cdx-sledovane-dokumenty note add <codexisId> "<text>"`. These notes personalize AI summaries when changes are detected. Do this proactively - the user doesn't need to explicitly ask for it. Write notes from the user's perspective in 1st person (e.g. "zajímá mě pracovní doba", "jsem účetní") or as instructions in 2nd person (e.g. "sleduj výpovědní lhůty", "zaměř se na BOZP"). Never write in 3rd person (e.g. "uživatel je účetní", "uživatele zajímá").
 5. Later, `cdx-sledovane-dokumenty check` compares the current CODEXIS version against the baseline
 5. If a new version exists, `cdx-sledovane-dokumenty` computes a text diff and stores the change
 6. User reviews the change on the Sledované dokumenty app page or via `cdx-sledovane-dokumenty show`
@@ -123,26 +123,26 @@ If the user mentions their profession (e.g. "jsem účetní", "pracuji jako advo
 
 ## Related Document Tracking
 
-Beyond text changes (new versions/amendments), `cdx-sledovane-dokumenty` can track changes in **related documents** — new case law, implementing regulations, related legislation, etc. The CODEXIS API provides relation types for each document.
+Beyond text changes (new versions/amendments), `cdx-sledovane-dokumenty` can track changes in **related documents** - new case law, implementing regulations, related legislation, etc. The CODEXIS API provides relation types for each document.
 
 ### How it works
 
 1. Add relation types to track: `cdx-sledovane-dokumenty related add CR13986 PROVADECI_PREDPIS`
 2. `cdx-sledovane-dokumenty` downloads the current set of related document IDs for the type and saves them as a baseline
-3. During `cdx-sledovane-dokumenty check`, the current related IDs are compared against the baseline — new or removed documents are reported as `related_change` entries
+3. During `cdx-sledovane-dokumenty check`, the current related IDs are compared against the baseline - new or removed documents are reported as `related_change` entries
 4. Changes appear in the UI alongside version changes
 
 ### Choosing relation types
 
-Run `cdx-sledovane-dokumenty related types CR13986` to see all available types with counts. There are no defaults — the user (or AI) chooses which types to track based on the document and their needs.
+Run `cdx-sledovane-dokumenty related types CR13986` to see all available types with counts. There are no defaults - the user (or AI) chooses which types to track based on the document and their needs.
 
-For types with very high counts (e.g. `JUDIKATURA` with 1000+), consider whether the user really needs to track all of them — the baseline can be large and checks slower.
+For types with very high counts (e.g. `JUDIKATURA` with 1000+), consider whether the user really needs to track all of them - the baseline can be large and checks slower.
 
 ### Recommended workflow
 
 **IMPORTANT:** `related` subcommands only work on documents that are already tracked. Always `add` first, then configure related tracking.
 
-After adding a document, briefly mention that related tracking is available (e.g. "Můžu také zapnout sledování souvisejících dokumentů, chcete?"). Do NOT enable it automatically — wait for the user to ask. If the user wants it:
+After adding a document, briefly mention that related tracking is available (e.g. "Můžu také zapnout sledování souvisejících dokumentů, chcete?"). Do NOT enable it automatically - wait for the user to ask. If the user wants it:
 1. Run `cdx-sledovane-dokumenty related types <codexisId>` to see available types
 2. Recommend types based on the document and user's needs
 3. Add chosen types: `cdx-sledovane-dokumenty related add <codexisId> <type>`
@@ -167,9 +167,9 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-slozky.md` (a plain `folder check`, daily) for watched folders.
 
-**Don't create an automation for periodic checks** — the shipped ones already run them. A change is recorded once; a later run finds it already in the change log and skips it, so a second automation would have nothing to report and would never notify. The user reads changes in the Sledované dokumenty UI component, so an AI-prompt automation generating reports adds nothing either.
+**Don't create an automation for periodic checks** - the shipped ones already run them. A change is recorded once; a later run finds it already in the change log and skips it, so a second automation would have nothing to report and would never notify. The user reads changes in the Sledované dokumenty UI component, so an AI-prompt automation generating reports adds nothing either.
 
-Only if the user wants a different cadence: disable the shipped automation first (`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement — otherwise the shipped run records the change first and yours sees it as already handled.
+Only if the user wants a different cadence: disable the shipped automation first (`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement - otherwise the shipped run records the change first and yours sees it as already handled.
 
 ## Watched folders (legislation referenced by the user's own documents)
 
@@ -189,7 +189,7 @@ cdx-sledovane-dokumenty folder harvest /home/<user>/my-contracts
 # List watched folders with counts + change status
 cdx-sledovane-dokumenty folder list
 
-# Deterministic change check (no AI) — this is what the daily automation runs
+# Deterministic change check (no AI) - this is what the daily automation runs
 cdx-sledovane-dokumenty folder check
 
 # Force a full re-harvest of a folder (e.g. user explicitly refreshes)
@@ -207,7 +207,7 @@ cdx-sledovane-dokumenty folder remove /home/<user>/my-contracts
 # Folder picker support
 cdx-sledovane-dokumenty folder browse [/some/dir]
 
-# Notification settings — a persistent app-wide setting
+# Notification settings - a persistent app-wide setting
 cdx-sledovane-dokumenty notify show
 cdx-sledovane-dokumenty notify set --email --no-inapp
 
@@ -215,11 +215,11 @@ cdx-sledovane-dokumenty notify set --email --no-inapp
 cdx-sledovane-dokumenty notify recipients add|remove|set|clear <email...>
 ```
 
-The signed-in user always receives the notification e-mail; extra recipients are additive. You don't need to add their own address — it's redundant and gets dropped automatically.
+The signed-in user always receives the notification e-mail; extra recipients are additive. You don't need to add their own address - it's redundant and gets dropped automatically.
 
 | User wants | Do |
 |---|---|
-| alerted when a referenced act changes | `notify set --email` — `folder check` then e-mails on a real change |
+| alerted when a referenced act changes | `notify set --email` - `folder check` then e-mails on a real change |
 | the current status in your reply | `folder show <root>` |
 | a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
@@ -231,7 +231,7 @@ The signed-in user always receives the notification e-mail; extra recipients are
    `folder check` automation (idempotent).
 2. `folder harvest` sends each document that needs it (new or changed checksum)
    to the daemon **once** and stores the referenced legislation back into
-   `watched.json`, with a canonical `uri` and — for Czech acts — a `codexisId`.
+   `watched.json`, with a canonical `uri` and - for Czech acts - a `codexisId`.
 3. `folder check` (daily, **no AI**) compares each referenced act's current
    CODEXIS version against the stored baseline and records changes.
 4. On change, the user is notified **from the daemon** (e-mail and/or in-app),
@@ -239,7 +239,7 @@ The signed-in user always receives the notification e-mail; extra recipients are
 5. References are re-harvested **only** when a document's checksum changes or the
    user explicitly runs `folder refresh`.
 
-`.watched/watched.json` is a stable, documented contract — deterministic tools
+`.watched/watched.json` is a stable, documented contract - deterministic tools
 read it as the integration boundary. Never hand-edit it; use the CLI.
 
 ## Storage

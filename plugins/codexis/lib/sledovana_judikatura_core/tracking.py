@@ -88,7 +88,7 @@ def delete(partial_uuid):
                 capture_output=True, text=True, timeout=15,
             )
         except Exception:
-            pass  # non-fatal — automation may already be gone
+            pass  # non-fatal - automation may already be gone
 
     target = state.topic_dir(full_uuid)
     trash = f"{target}.deleted-{uuid_mod.uuid4().hex}"

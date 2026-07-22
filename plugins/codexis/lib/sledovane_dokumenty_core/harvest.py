@@ -3,8 +3,8 @@
 For every document that needs (re)harvesting, we send the file to the daemon
 extract endpoint (``/rest/v1/plugin/llm/extract``) ONCE, asking for the
 legislation it references. The model's answer is then turned into stable
-contract entries: a human ``text`` title, a canonical ``uri`` and — when the
-reference resolves to a Czech act in CODEXIS — a ``codexisId`` that the
+contract entries: a human ``text`` title, a canonical ``uri`` and - when the
+reference resolves to a Czech act in CODEXIS - a ``codexisId`` that the
 deterministic runner uses for change tracking.
 
 AI is used here and ONLY here. The daily check never calls a model.
@@ -29,7 +29,7 @@ HARVEST_SCHEMA = json.dumps({
                     "text": {
                         "type": "string",
                         "description": "Human-friendly title incl. the relevant part, e.g. "
-                                       "'Zákon č. 89/2012 Sb., občanský zákoník — § 2079 a násl.'",
+                                       "'Zákon č. 89/2012 Sb., občanský zákoník - § 2079 a násl.'",
                     },
                     "citation": {
                         "type": "string",
@@ -54,11 +54,11 @@ HARVEST_QUERY = (
     "(zákony, vyhlášky, nařízení, novely, předpisy EU), na které dokument "
     "odkazuje nebo z nichž vychází. Pro každý uveď čtivý název (text), "
     "kanonickou citaci (např. '89/2012 Sb.') pokud ji lze určit, a kanonickou "
-    "veřejnou URL pokud ji znáš. Nevypisuj judikaturu ani smluvní ujednání — "
+    "veřejnou URL pokud ji znáš. Nevypisuj judikaturu ani smluvní ujednání - "
     "pouze odkazy na legislativu. Vrať POUZE JSON dle schématu."
 )
 
-# 89/2012, 262/2006 Sb. … — a Czech act number followed by a 4-digit year.
+# 89/2012, 262/2006 Sb. … - a Czech act number followed by a 4-digit year.
 _CZ_ACT_RE = re.compile(r"(\d{1,4})\s*/\s*((?:19|20)\d{2})\b")
 _EU_MARKERS = ("EU", "ES", "EHS", "EHS)", "nařízení (eu", "směrnice")
 

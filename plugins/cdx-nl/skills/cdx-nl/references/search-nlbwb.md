@@ -14,16 +14,16 @@ Exact BWB document identifier.
 Filter by abbreviation, matched **exactly** against the record's
 `metadata.main.afkorting`. Only useful when the abbreviation IS the record's
 exact afkorting (e.g. `WVW 1994` for the Wegenverkeerswet). For multi-Boek
-codes (`BW`, `Sr`, `Rv`, `Awb`) no record carries that bare abbreviation —
+codes (`BW`, `Sr`, `Rv`, `Awb`) no record carries that bare abbreviation -
 this filter will return zero hits. Use the `/afkorting/<abbr>/meta` resolver
 instead (see "Resolving by afkorting" below).
   cdx-nl search NLBWB --afkorting "WVW 1994"
 
 ## --type
 BWB type letter (NOT regelingSoort). Allowed values:
-  R — Regelgeving
-  V — Verdragen
-  W — Wetgeving
+  R - Regelgeving
+  V - Verdragen
+  W - Wetgeving
 
 ## --regeling-soort
 Regeling soort. Backend example values: "Wet", "Besluit", "Verdrag".
@@ -71,7 +71,7 @@ table so multi-Boek codes (`BW`, `Sr`, `Rv`, `Awb`, `Wvw`) resolve to a
 canonical bwbId even though no record uses those bare strings.
 
 Keys are matched case-insensitively. `BW` resolves to Burgerlijk Wetboek
-Boek 1 by default — for a specific Boek, use the bwb-id route.
+Boek 1 by default - for a specific Boek, use the bwb-id route.
 
   cdx-nl get cdx-nl://afkorting/BW/meta
   cdx-nl get cdx-nl://afkorting/Sr/versions?limit=5
@@ -79,7 +79,7 @@ Boek 1 by default — for a specific Boek, use the bwb-id route.
 
 # Worked example: find one article without downloading the whole law
 
-Two calls are usually enough — `/parts?search=` to locate the article id, then
+Two calls are usually enough - `/parts?search=` to locate the article id, then
 `/text?part=` to read its body. Skip `/text` (without `?part=`) when you only
 need one or two articles; a full BWB toestand is megabytes.
 
@@ -87,7 +87,7 @@ need one or two articles; a full BWB toestand is megabytes.
 # 1. Find article 1:1 BW (legal personality):
 cdx-nl get "cdx-nl://afkorting/BW/parts?search=1:1"
 #   → returns parts[] with { id, nr, title, startPage, startSourceFile }
-#   The `id` is the article's XML id and is opaque — just pass it back as-is.
+#   The `id` is the article's XML id and is opaque - just pass it back as-is.
 
 # 2. Read just that article's text:
 cdx-nl get "cdx-nl://afkorting/BW/text?part=<id-from-step-1>"
@@ -98,7 +98,7 @@ cdx-nl get "cdx-nl://doc/<docId>/meta"
 #   Append #page=<startPage> from the parts[] entry for a page-specific deep-link.
 ```
 
-`?part=` is repeatable — pass multiple ids to concatenate their bodies in one
+`?part=` is repeatable - pass multiple ids to concatenate their bodies in one
 call: `text?part=A&part=B&part=C`.
 
 `/parts?search=` and `/text?part=` are available on all three prefixes
@@ -117,7 +117,7 @@ List toestanden, latest → oldest by validFrom. Per-item shape carries the
 consolidated `pdf` separately from `amendmentPdfs[]` (Stb/Stcrt/Trb).
 
 Query params: `limit` (default 10, max 100), `offset`, `from` / `to`
-(YYYY-MM-DD validFrom window), `includeAll=true` (ETL — bypass paging).
+(YYYY-MM-DD validFrom window), `includeAll=true` (ETL - bypass paging).
 
 Response envelope: `{ docId, total, returned, versions: [...] }`.
 

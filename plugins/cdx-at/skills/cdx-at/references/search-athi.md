@@ -45,7 +45,7 @@ Integer, 0-based. Default: 0.
 Integer, 1-100. Default: 20.
 
 ## Response notes
-Results are collapsed by law: each matching law appears once even when many of its §-versions match the query. Per-hit `id` is a representative §-version's docId (use it with `/doc/{docId}/meta` to drill in). `totalResults` is the count of **distinct matching laws**, not the raw §-version hit count — typically much smaller than the underlying record count (a single large law like ASVG has ~10k §-versions but contributes 1 to `totalResults`).
+Results are collapsed by law: each matching law appears once even when many of its §-versions match the query. Per-hit `id` is a representative §-version's docId (use it with `/doc/{docId}/meta` to drill in). `totalResults` is the count of **distinct matching laws**, not the raw §-version hit count - typically much smaller than the underlying record count (a single large law like ASVG has ~10k §-versions but contributes 1 to `totalResults`).
 
 ## Document retrieval
 
@@ -57,9 +57,9 @@ cdx-at get cdx-at://doc/ATHI1234/attachment/content_1.pdf
 
 `/meta` returns a `RisMetaResponse` envelope, not the raw metadata:
 - `docId`
-- `metadata` — flat scalar fields only (array-valued fields, plus `assets` and `schemaVersion`, are stripped)
-- `relationCounts` — bare map keyed by relation type: `CITING_DECISION`, `RELATED_BGBL`, `CITED_LAW`
-- `assets[]` — each with `file`, `original_name`, `download_url` (a `cdx-at://doc/<docId>/attachment/<file>` link)
+- `metadata` - flat scalar fields only (array-valued fields, plus `assets` and `schemaVersion`, are stripped)
+- `relationCounts` - bare map keyed by relation type: `CITING_DECISION`, `RELATED_BGBL`, `CITED_LAW`
+- `assets[]` - each with `file`, `original_name`, `download_url` (a `cdx-at://doc/<docId>/attachment/<file>` link)
 
 ## Natural-key resolver
 
@@ -91,7 +91,7 @@ Examples:
 # ASVG as it stood on 1 June 2024, just the § list
 cdx-at get 'cdx-at://law/10008147/at?date=2024-06-01' | jq '.paragraphs[] | {articleParagraph, docId, effectiveDate}'
 
-# ABGB (pre-1900 law, no Gesetzesnummer) — full table of contents
+# ABGB (pre-1900 law, no Gesetzesnummer) - full table of contents
 cdx-at get 'cdx-at://law/eli~jgs~1811~946/toc?all=true' | jq '.items | length'
 
 # history of one paragraph across all amendments
@@ -102,5 +102,5 @@ In-force rule: for each paragraph the winning version on date `D` is the one
 with the greatest `effectiveDate <= D` (tie-break: `documentNumber` desc).
 `expiryDate` is ignored; paragraphs not yet effective on `D` are omitted.
 Omit `?date` (or pass `all=true` on `/toc` and `/parts`) for every paragraph ever.
-Each item's `docId` is a normal ATHI document — fetch its text with
+Each item's `docId` is a normal ATHI document - fetch its text with
 `cdx-at get cdx-at://doc/<docId>/text`.

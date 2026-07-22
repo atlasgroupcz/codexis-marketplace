@@ -14,7 +14,7 @@
   },
   "config": {
     "title": "First, set up the app",
-    "text": "The watchdog pulls data from the official EUIPO API. Enter your own EUIPO API credentials (free, ~5 min at dev.euipo.europa.eu) — searching the register is not possible without them.",
+    "text": "The watchdog pulls data from the official EUIPO API. Enter your own EUIPO API credentials (free, ~5 min at dev.euipo.europa.eu) - searching the register is not possible without them.",
     "action": "Set up access",
     "hint": "Keys are stored only in your space (~/.cdx) and used for EUIPO queries."
   },
@@ -34,7 +34,7 @@
     "inAppLabel": "In the notification center",
     "inAppDescription": "",
     "section": "Notifications",
-    "ownAddress": "That's your address — you always get the e-mail.",
+    "ownAddress": "That's your address - you always get the e-mail.",
     "duplicate": "That address is already in the list."
   },
   "connection": {
@@ -101,7 +101,7 @@
     "figurative": "Figurative",
     "text": "Mark text",
     "nice": "Goods/services classes (Nice)",
-    "niceHint": "Numbers 1–45, comma separated. Optional — narrows relevance.",
+    "niceHint": "Numbers 1–45, comma separated. Optional - narrows relevance.",
     "territory": "Territory",
     "logo": "Logo",
     "logoHint": "Click to upload a logo image (PNG, JPG, SVG).",
@@ -162,7 +162,7 @@
     "text": "Add a word or figurative mark and the watchdog will regularly check for similar new trademark filings and registrations.",
     "add": "Add trademark",
     "noSelection": "Select a trademark from the list on the left.",
-    "chatLead": "Or set up monitoring in a conversation — try:",
+    "chatLead": "Or set up monitoring in a conversation - try:",
     "chatPrompt": "Watch the trademark CODEXIS in classes 9 and 42 in CZ and EU and e-mail me similar new filings weekly."
   }
 }

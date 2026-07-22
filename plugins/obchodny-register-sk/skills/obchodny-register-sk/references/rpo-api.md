@@ -1,4 +1,4 @@
-# RPO API — field reference
+# RPO API - field reference
 
 Base: `https://api.statistics.sk/rpo/v1` · Docs: https://susrrpo.docs.apiary.io/
 Free, anonymous, CC-BY 4.0 (the `license` field is embedded in every response).
@@ -7,7 +7,7 @@ All endpoints below are accessed through `orsr-cli`, never directly.
 
 ## GET /search
 
-Query params (at least one required; they combine as logical AND — `orsr-cli
+Query params (at least one required; they combine as logical AND - `orsr-cli
 search` exposes each as a flag):
 
 | Param | `orsr-cli search` flag | Meaning |
@@ -20,12 +20,12 @@ search` exposes each as a flag):
 | `legalStatus` | `--legal-status` | legal status text |
 | `sourceRegister` | `--source-register` | source register text |
 | `mainActivity` | `--main-activity` | main economic activity text |
-| `onlyActive` | `--active` | literal `true` — only active entities |
+| `onlyActive` | `--active` | literal `true` - only active entities |
 | `establishmentAfter` / `establishmentBefore` | `--establishment-after/-before` | YYYY-MM-DD |
 | `terminationAfter` / `terminationBefore` | `--termination-after/-before` | YYYY-MM-DD |
 | `dbModificationDateAfter` / `dbModificationDateBefore` | `--db-modification-after/-before` | YYYY-MM-DD |
 
-Returns `{"results": [<entity>...], "license": "..."}` — each result is the same
+Returns `{"results": [<entity>...], "license": "..."}` - each result is the same
 shape as `/entity/{id}` below. No pagination metadata; at most 500 hits.
 
 ## GET /entity/{id}
@@ -34,7 +34,7 @@ shape as `/entity/{id}` below. No pagination metadata; at most 500 hits.
 params (exposed as `orsr-cli detail` flags): `showHistoricalData=true`
 (`--history`), `showOrganizationUnits=true` (`--units`).
 
-Top-level fields (every nested object carries `validFrom` / `validTo` — an entry
+Top-level fields (every nested object carries `validFrom` / `validTo` - an entry
 with `validTo` set is historical):
 
 | Field | Content |
@@ -58,10 +58,10 @@ with `validTo` set is historical):
 
 Beneficial owners (koneční užívatelia výhod) are **not** in the public API.
 
-## orsr.sk URL patterns (deep links only — no API)
+## orsr.sk URL patterns (deep links only - no API)
 
 `orsr-cli links <ico>` resolves these; the table documents what the URLs mean.
-The HTML behind them is windows-1250 legacy markup — never parse the content.
+The HTML behind them is windows-1250 legacy markup - never parse the content.
 
 | URL | Purpose |
 |---|---|

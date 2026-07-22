@@ -1,4 +1,4 @@
-"""Figurative (logo) similarity — perceptual hashing + colour + Vienna codes.
+"""Figurative (logo) similarity - perceptual hashing + colour + Vienna codes.
 
 Pillow + imagehash are *optional* runtime deps (installed best-effort by the
 plugin's postInstall hook). When they are missing we degrade gracefully: the
@@ -14,7 +14,7 @@ try:  # optional heavy-ish deps
     import imagehash  # type: ignore
 
     HAS_IMAGE_LIBS = True
-except Exception:  # noqa: BLE001 — any import failure means "no pixel signals"
+except Exception:  # noqa: BLE001 - any import failure means "no pixel signals"
     HAS_IMAGE_LIBS = False
 
 __all__ = [
@@ -67,7 +67,7 @@ def hash_similarity(a, b):
             sims.append(1.0 - dist / _PHASH_BITS)
     if not sims:
         return None
-    # Favour the stronger of the two hashes — either alone is a real match.
+    # Favour the stronger of the two hashes - either alone is a real match.
     return round(max(sims) * 0.7 + (sum(sims) / len(sims)) * 0.3, 4)
 
 
@@ -117,7 +117,7 @@ def vienna_overlap(codes_a, codes_b):
 
     Vienna codes are dotted hierarchies (category.division.section, e.g.
     "26.4.1"). Exact matches count fully; sharing only the category/division
-    counts as partial credit — figuratively related even if not identical.
+    counts as partial credit - figuratively related even if not identical.
     """
     a = [c for c in (codes_a or []) if c]
     b = [c for c in (codes_b or []) if c]

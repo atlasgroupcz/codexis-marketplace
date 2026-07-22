@@ -3,11 +3,11 @@
 A *watched folder* is a directory of the user's own documents. For each watched
 root we keep a hidden ``.watched/`` directory containing:
 
-- ``watched.json``        — the stable, documented integration contract (see
+- ``watched.json``        - the stable, documented integration contract (see
   ``skills/sledovane-dokumenty/references/watched-json-contract.md``). Holds one
   entry per document: relative path, SHA-256, ISO-8601 timestamps and the
   AI-harvested ``legislation`` references.
-- ``tracking-state.json`` — deterministic change-tracking bookkeeping written by
+- ``tracking-state.json`` - deterministic change-tracking bookkeeping written by
   the daily runner (CODEXIS baseline version per referenced act). Never touched
   by AI.
 

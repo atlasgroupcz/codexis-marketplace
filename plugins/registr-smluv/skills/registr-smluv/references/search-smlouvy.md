@@ -1,6 +1,6 @@
 # CZRS Search Filter Values
 
-Czech Register of Contracts (Registr smluv, smlouvy.gov.cz) — public-sector contracts.
+Czech Register of Contracts (Registr smluv, smlouvy.gov.cz) - public-sector contracts.
 All filters are optional; combine freely. Use via `registr-smluv search CZRS [OPTIONS]`.
 
 ## --query / -q
@@ -38,7 +38,7 @@ Omit to include superseded / invalidated versions too.
 
 ## --offset / --limit
 Pagination. `limit` default 20, max 100. `offset` default 0.
-`offset + limit` must not exceed **10000** (deep-paging cap) — narrow with filters for more.
+`offset + limit` must not exceed **10000** (deep-paging cap) - narrow with filters for more.
 
 ## Notes
 - IČO is the 8-digit Czech organisation identifier (e.g. `00064581`).
