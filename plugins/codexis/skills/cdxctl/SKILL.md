@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manage Codexis platform objects with the cdxctl CLI - create, list, update, enable/disable, or delete custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 2.4.0
+version: 2.5.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -24,63 +24,58 @@ Always go through `cdxctl` for these platform objects - never hand-edit the unde
 
 ## Automations
 
+An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
+
 ```bash
 # List all automations
 cdxctl automation list
 
-# Create an automation
+# Create an automation (inherits model + jurisdiction + skills + work dir from this chat)
 cdxctl automation create \
     --title "Daily Report" \
     --repeat DAILY --day-part MORNING \
-    --prompt "Generate a daily summary report" \
-    --description "Runs every morning" \
-    --agent "<id>" \
-    --skill "<id>" \
-    --skill "<id>" \
-    --max-turns 10 \
-    --work-dir "/home/user/project"
+    --prompt "Generate a daily summary report"
+
+# Override the inherited setup when needed
+cdxctl automation create \
+    --title "Judikatura watch" \
+    --repeat DAILY --day-part MORNING \
+    --prompt "Report new Supreme Court rulings on notice periods" \
+    --model CLAUDE_SONNET_5 --jurisdiction CZ \
+    --skill "<id>" --work-dir "/home/codexis/judikatura"
 
 # Create a COMMAND automation
 cdxctl automation create-command \
     --title "Tracked Documents Check" \
     --repeat WEEKLY --day-part MORNING --days-of-week 1 \
-    --command "cdx-sledovane-dokumenty check" \
-    --description "Weekly tracked-document change check"
+    --command "cdx-sledovane-dokumenty check"
 
-# Update (partial - only specified fields change; never touches enabled)
+# Update (partial - only the flags you pass change; enabled is untouched)
 cdxctl automation update <id> --title "New Title"
 cdxctl automation update <id> --repeat WEEKLY --day-part EVENING --days-of-week 1 --days-of-week 4
-cdxctl automation update <id> --prompt "Updated prompt" --max-turns 30
 
 # Enable / disable (separate from update - see note below)
 cdxctl automation enable <id>
 cdxctl automation disable <id>
 
-# Delete
+# Delete, or trigger a run now
 cdxctl automation delete <id>
-
-# Manually trigger a run
 cdxctl automation trigger <id>
 ```
 
-**Enable / disable vs update:** toggling the on/off state is its own command, not a
-flag on `update`. `enable`/`disable` go through the daemon's `setAutomationEnabled`
-mutation, which works for **both** your own automations and read-only automations
-shipped by a plugin. `update` only edits USER automations (the daemon rejects edits
-to shipped/plugin automations) and never changes the enabled state.
+**Model + jurisdiction:** the model, its tuned settings, and the jurisdiction all default to the active chat, so usually you pass nothing. Override the model with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and jurisdiction with `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
 
-**Disabling a shipped (plugin) automation:** you cannot edit or delete a plugin-shipped
-automation, but you can disable one - e.g. to replace it with your own on a different
-schedule. Find it with `cdxctl automation list`, then `cdxctl automation disable <id>`.
-The disable is remembered per user and survives plugin updates and daemon restarts.
+**Enable / disable vs update:** toggling on/off is its own command, not a flag on `update`. `enable`/`disable` work for your own automations and for read-only ones shipped by a plugin. `update` only edits USER automations and never changes the enabled state.
 
-**Required fields for create:** `--title`, `--repeat` (+ `--day-part`), `--prompt`
+**Disabling a shipped (plugin) automation:** you cannot edit or delete it, but you can disable it - find it with `cdxctl automation list`, then `cdxctl automation disable <id>`. The override is per user and survives plugin updates and daemon restarts.
 
-**Required fields for create-command:** `--title`, `--repeat` (+ `--day-part`), `--command`
+**Required for create:** `--title`, `--repeat` (+ `--day-part`), `--prompt`. For create-command: the same, with `--command` instead of `--prompt`.
 
-**Writing `--prompt`:** The prompt is a prepared instruction the system runs later, unattended, as the first message of each scheduled run. Write it as the task the automation should perform, imperative - e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. Do **not** write it as a scheduling request ("every morning I want…"); the schedule is `--repeat`/`--day-part`, not the prompt. Do **not** put `cdxctl automation create/update/delete` (or "create an automation that…") inside the prompt - this command already creates the automation, so a nested create makes the run register more automations instead of doing the work.
+**Writing `--prompt`:** keep it short - one or two imperative sentences naming the task, e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. It is the first message of each run, not a scheduling request (the schedule is `--repeat`/`--day-part`). Never put `cdxctl automation create/update` inside the prompt - this command already creates the automation, so a nested create would just register more automations instead of doing the work.
 
-**IDs:** Use the `id` or `uuid` from `automation list` output. Both Node IDs (base64) and raw UUIDs work.
+**IDs:** use the `id` or `uuid` from `automation list`. Both Node IDs (base64) and raw UUIDs work.
+
+More worked calls: `references/automation-examples.md`.
 
 ## Marketplaces
 

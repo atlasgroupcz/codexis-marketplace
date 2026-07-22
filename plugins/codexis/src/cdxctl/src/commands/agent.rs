@@ -90,7 +90,7 @@ pub fn list(
 /// The context keys the chat may fill: only the ones the flags did not already set. An explicit
 /// `--model` / `--jurisdiction` is left alone, so it wins over the chat.
 fn context_keys_to_fill(input: &Map<String, Value>) -> Vec<&'static str> {
-    ["model", "jurisdictions"]
+    ["model", "modelConfiguration", "jurisdictions"]
         .into_iter()
         .filter(|key| !input.contains_key(*key))
         .collect()
@@ -120,7 +120,7 @@ fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) ->
     Ok(())
 }
 
-fn current_chat(client: &GraphQLClient) -> Option<Map<String, Value>> {
+pub(crate) fn current_chat(client: &GraphQLClient) -> Option<Map<String, Value>> {
     let session = std::env::var("CODEXIS_PUBLIC_SESSION_ID").ok()?;
     let node_id = resolve_node_id(&session, "Chat");
     let data = client
@@ -561,9 +561,9 @@ mod tests {
     fn explicit_model_and_jurisdictions_leave_nothing_for_the_chat_to_fill() {
         let mut stated = Map::new();
         stated.insert("model".into(), json!("CLAUDE_OPUS_4_8"));
+        stated.insert("modelConfiguration".into(), json!([{"key": "effort", "value": "HIGH"}]));
         stated.insert("jurisdictions".into(), json!(["SK"]));
 
-        // Both keys are already set by the flags, so the chat is not consulted for either.
         assert!(context_keys_to_fill(&stated).is_empty());
     }
 
@@ -571,11 +571,15 @@ mod tests {
     fn the_chat_fills_only_the_context_keys_the_flags_left_out() {
         let mut only_model = Map::new();
         only_model.insert("model".into(), json!("GPT_5_6_TERRA"));
-        // --model is set, --jurisdiction is not: only jurisdictions is taken from the chat.
-        assert_eq!(context_keys_to_fill(&only_model), vec!["jurisdictions"]);
+        assert_eq!(
+            context_keys_to_fill(&only_model),
+            vec!["modelConfiguration", "jurisdictions"]
+        );
 
-        // Neither flag is set: both come from the chat.
-        assert_eq!(context_keys_to_fill(&Map::new()), vec!["model", "jurisdictions"]);
+        assert_eq!(
+            context_keys_to_fill(&Map::new()),
+            vec!["model", "modelConfiguration", "jurisdictions"]
+        );
     }
 
     #[test]

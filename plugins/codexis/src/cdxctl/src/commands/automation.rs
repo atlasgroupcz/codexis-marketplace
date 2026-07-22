@@ -4,7 +4,7 @@ use crate::commands::schedule::ScheduleArgs;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 
 /// Fields for creating an AGENT automation.
 pub struct CreateArgs<'a> {
@@ -15,6 +15,8 @@ pub struct CreateArgs<'a> {
     pub agent: Option<&'a str>,
     pub skills: &'a [String],
     pub max_turns: Option<u32>,
+    pub model: Option<&'a str>,
+    pub jurisdictions: Option<&'a [String]>,
     pub work_dir: Option<&'a str>,
     pub disabled: bool,
 }
@@ -29,6 +31,8 @@ pub struct UpdateArgs<'a> {
     pub agent: Option<&'a str>,
     pub skills: Option<&'a [String]>,
     pub max_turns: Option<u32>,
+    pub model: Option<&'a str>,
+    pub jurisdictions: Option<&'a [String]>,
     pub work_dir: Option<&'a str>,
 }
 
@@ -59,6 +63,8 @@ pub fn create(
         agent,
         skills,
         max_turns,
+        model,
+        jurisdictions,
         work_dir,
         disabled,
     } = args;
@@ -81,15 +87,20 @@ pub fn create(
     if let Some(turns) = max_turns {
         input["maxTurns"] = json!(turns);
     }
+    if let Some(m) = model {
+        input["model"] = json!(m);
+    }
+    if let Some(list) = jurisdictions {
+        input["jurisdictions"] = json!(list);
+    }
     if let Some(dir) = work_dir {
         input["workDir"] = json!(dir);
     }
+    if let Some(object) = input.as_object_mut() {
+        apply_chat_context(client, object);
+    }
 
-    let data = client.execute(graphql::CREATE_AUTOMATION, json!({ "input": input }))?;
-    let mut result = data.get("createAutomation").cloned().unwrap_or(Value::Null);
-    flatten_automation(&mut result);
-    print_output(&result, format);
-    Ok(())
+    save_automation(client, json!({ "input": input }), format)
 }
 
 pub fn create_command(
@@ -113,11 +124,7 @@ pub fn create_command(
         input["description"] = json!(desc);
     }
 
-    let data = client.execute(graphql::CREATE_AUTOMATION, json!({ "input": input }))?;
-    let mut result = data.get("createAutomation").cloned().unwrap_or(Value::Null);
-    flatten_automation(&mut result);
-    print_output(&result, format);
-    Ok(())
+    save_automation(client, json!({ "input": input }), format)
 }
 
 pub fn update(
@@ -134,6 +141,8 @@ pub fn update(
         agent,
         skills,
         max_turns,
+        model,
+        jurisdictions,
         work_dir,
     } = args;
     let node_id = resolve_node_id(id, "Automation");
@@ -224,13 +233,103 @@ pub fn update(
         .map(|s| json!(s))
         .unwrap_or(Value::Null);
 
-    let data = client.execute(
-        graphql::UPDATE_AUTOMATION,
-        json!({ "id": node_id, "input": input }),
-    )?;
-    let mut result = data.get("updateAutomation").cloned().unwrap_or(Value::Null);
+    input["model"] = match model {
+        Some(m) => json!(m),
+        None => current.get("model").cloned().unwrap_or(Value::Null),
+    };
+    input["jurisdictions"] = match jurisdictions {
+        Some(list) => json!(list),
+        None => current
+            .get("jurisdictions")
+            .cloned()
+            .unwrap_or(Value::Array(Vec::new())),
+    };
+
+    input["modelConfiguration"] = current
+        .get("modelConfiguration")
+        .cloned()
+        .unwrap_or(Value::Array(Vec::new()));
+
+    save_automation(client, json!({ "id": node_id, "input": input }), format)
+}
+
+/// Runs the structured `saveAutomation` mutation (id null → create, id set → update).
+/// Daemons that predate it answer with a schema validation error; rather than fail
+/// opaquely, transparently retry through the deprecated create/update mutations so the
+/// tool keeps working against an older daemon.
+fn save_automation(
+    client: &GraphQLClient,
+    variables: Value,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    match client.execute(graphql::SAVE_AUTOMATION, variables.clone()) {
+        Ok(data) => print_automation_payload(data.get("saveAutomation"), format),
+        Err(error) if is_unsupported_save_automation(&error) => {
+            save_automation_deprecated(client, &variables, format)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// Old-daemon fallback: replay the same `AutomationInput` through the deprecated
+/// `createAutomation` / `updateAutomation` mutations (whichever the presence of `id`
+/// selects). This is exactly the pre-`saveAutomation` behavior.
+fn save_automation_deprecated(
+    client: &GraphQLClient,
+    variables: &Value,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let input = variables.get("input").cloned().unwrap_or(Value::Null);
+    let id = variables.get("id").cloned().filter(|v| !v.is_null());
+    let (mutation, vars, field) = match &id {
+        Some(id) => (
+            graphql::UPDATE_AUTOMATION,
+            json!({ "id": id, "input": input }),
+            "updateAutomation",
+        ),
+        None => (graphql::CREATE_AUTOMATION, json!({ "input": input }), "createAutomation"),
+    };
+    let data = client.execute(mutation, vars)?;
+    let mut result = data.get(field).cloned().unwrap_or(Value::Null);
     flatten_automation(&mut result);
     print_output(&result, format);
+    Ok(())
+}
+
+/// True when the daemon rejected `saveAutomation`/`AutomationInput` as unknown - i.e. it
+/// is too old for the structured mutation, not that the input itself was wrong.
+fn is_unsupported_save_automation(error: &CdxctlError) -> bool {
+    matches!(error, CdxctlError::GraphQL(messages) if messages.iter().any(|message| {
+        let message = message.to_ascii_lowercase();
+        (message.contains("saveautomation") && (message.contains("undefined") || message.contains("unknown")))
+            || (message.contains("automationinput") && message.contains("unknown"))
+    }))
+}
+
+/// Reads the `saveAutomation` payload: a non-empty `errors` list becomes a structured
+/// `CdxctlError::GraphQL` (each `field: message` (+ allowed values), exactly like agents);
+/// otherwise the `automation` is flattened and printed on the normal output path.
+fn print_automation_payload(
+    payload: Option<&Value>,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let payload = payload.cloned().unwrap_or(Value::Null);
+    let errors = payload
+        .get("errors")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if !errors.is_empty() {
+        return Err(CdxctlError::GraphQL(
+            errors
+                .iter()
+                .map(crate::commands::agent::format_input_error)
+                .collect(),
+        ));
+    }
+    let mut automation = payload.get("automation").cloned().unwrap_or(Value::Null);
+    flatten_automation(&mut automation);
+    print_output(&automation, format);
     Ok(())
 }
 
@@ -342,6 +441,31 @@ fn format_schedule(schedule: &Value) -> String {
     }
 }
 
+fn context_keys_to_fill(input: &Map<String, Value>) -> Vec<&'static str> {
+    ["model", "modelConfiguration", "jurisdictions"]
+        .into_iter()
+        .filter(|key| !input.contains_key(*key))
+        .collect()
+}
+
+fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) {
+    let missing = context_keys_to_fill(input);
+    if missing.is_empty() {
+        return;
+    }
+    let Some(chat) = crate::commands::agent::current_chat(client) else {
+        return;
+    };
+    for key in missing {
+        match chat.get(key) {
+            Some(value) if !value.is_null() => {
+                input.insert(key.into(), value.clone());
+            }
+            _ => {}
+        }
+    }
+}
+
 fn require_schedule(schedule: &ScheduleArgs<'_>) -> Result<Value, CdxctlError> {
     schedule.to_input()?.ok_or_else(|| {
         CdxctlError::Parse(
@@ -383,8 +507,32 @@ fn resolve_skill_ids(client: &GraphQLClient, values: &[String]) -> Result<Vec<Va
 
 #[cfg(test)]
 mod tests {
-    use super::flatten_automation;
-    use serde_json::{json, Value};
+    use super::{
+        context_keys_to_fill, flatten_automation, is_unsupported_save_automation,
+        print_automation_payload,
+    };
+    use crate::error::CdxctlError;
+    use crate::output::OutputFormat;
+    use serde_json::{json, Map, Value};
+
+    #[test]
+    fn context_keys_to_fill_lists_only_unset_keys() {
+        let mut input = Map::new();
+        assert_eq!(
+            context_keys_to_fill(&input),
+            vec!["model", "modelConfiguration", "jurisdictions"]
+        );
+
+        input.insert("model".into(), json!("CLAUDE_SONNET_5"));
+        assert_eq!(
+            context_keys_to_fill(&input),
+            vec!["modelConfiguration", "jurisdictions"]
+        );
+
+        input.insert("modelConfiguration".into(), json!([{"key": "effort", "value": "HIGH"}]));
+        input.insert("jurisdictions".into(), json!(["CZ"]));
+        assert!(context_keys_to_fill(&input).is_empty());
+    }
 
     #[test]
     fn flatten_automation_lifts_agent_and_skill_names_and_ids() {
@@ -417,5 +565,65 @@ mod tests {
         assert_eq!(value["agentId"], Value::Null);
         assert_eq!(value["skillFullNames"], json!([]));
         assert_eq!(value["skillIds"], json!([]));
+    }
+
+    #[test]
+    fn print_automation_payload_renders_input_errors_as_structured_graphql() {
+        // A saveAutomation payload whose `errors` are non-empty must surface as a
+        // structured GraphQL error, each formatted `field: message` (+ allowed values).
+        let payload = json!({
+            "automation": Value::Null,
+            "errors": [
+                { "field": "model", "message": "Unknown model.", "allowedValues": ["gpt-5.6-terra", "claude-opus-4-8"] },
+                { "field": "skillIds", "message": "No such skill: typo." }
+            ]
+        });
+
+        let error = print_automation_payload(Some(&payload), OutputFormat::Json).unwrap_err();
+
+        match error {
+            CdxctlError::GraphQL(messages) => {
+                assert_eq!(
+                    messages,
+                    vec![
+                        "model: Unknown model. Allowed: gpt-5.6-terra, claude-opus-4-8".to_string(),
+                        "skillIds: No such skill: typo.".to_string(),
+                    ]
+                );
+            }
+            other => panic!("expected GraphQL error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn print_automation_payload_prints_automation_when_no_errors() {
+        // No errors -> the automation flows through the normal flatten/output path
+        // (Ok result), with `agent`/`skills` lifted into the flat CLI keys.
+        let payload = json!({
+            "automation": {
+                "id": "Automation:x",
+                "title": "Daily digest",
+                "agent": { "id": "Agent:a", "fullName": "codexis:explorer" },
+                "skills": []
+            },
+            "errors": []
+        });
+
+        assert!(print_automation_payload(Some(&payload), OutputFormat::Json).is_ok());
+    }
+
+    #[test]
+    fn detects_a_daemon_without_the_save_automation_mutation() {
+        let undefined = CdxctlError::GraphQL(vec![
+            "Validation error (FieldUndefined@[saveAutomation]) : Field 'saveAutomation' in type 'Mutation' is undefined".into(),
+        ]);
+        assert!(is_unsupported_save_automation(&undefined));
+
+        let unknown_type = CdxctlError::GraphQL(vec!["Unknown type 'AutomationInput'".into()]);
+        assert!(is_unsupported_save_automation(&unknown_type));
+
+        // A real validation rejection (unknown model) must NOT be mistaken for an old daemon.
+        let rejected = CdxctlError::GraphQL(vec!["model: Unknown model.".into()]);
+        assert!(!is_unsupported_save_automation(&rejected));
     }
 }
