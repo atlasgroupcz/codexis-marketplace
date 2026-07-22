@@ -227,9 +227,123 @@ pub fn file_stem(cislo: &str) -> String {
         .collect()
 }
 
+/// Fold a Czech/Slovak diacritic to its ASCII base; pass anything else through.
+/// Callers lowercase first, so only lowercase forms need listing.
+fn fold_diacritic(c: char) -> char {
+    match c {
+        'á' | 'à' | 'â' | 'ä' => 'a',
+        'č' | 'ç' => 'c',
+        'ď' => 'd',
+        'é' | 'ě' | 'ê' | 'ë' => 'e',
+        'í' | 'î' | 'ï' => 'i',
+        'ĺ' | 'ľ' => 'l',
+        'ň' => 'n',
+        'ó' | 'ô' | 'ö' => 'o',
+        'ř' | 'ŕ' => 'r',
+        'š' => 's',
+        'ť' => 't',
+        'ú' | 'ů' | 'ü' | 'û' => 'u',
+        'ý' => 'y',
+        'ž' => 'z',
+        other => other,
+    }
+}
+
+/// A filesystem-safe, human-readable slug for a document `typ`: lowercased,
+/// diacritics folded to ASCII, every run of non-alphanumerics turned into a
+/// single `-`, edges trimmed, length capped. `"účetní závěrka [2024]"` ->
+/// `"ucetni-zaverka-2024"`. Returns an empty string when the typ has no
+/// alphanumerics (the caller then falls back to the bare číslo).
+pub fn slugify_typ(typ: &str) -> String {
+    const MAX: usize = 80;
+    let mut out = String::new();
+    let mut pending_dash = false;
+    for ch in typ.chars() {
+        for lc in ch.to_lowercase() {
+            let folded = fold_diacritic(lc);
+            if folded.is_ascii_alphanumeric() {
+                if pending_dash && !out.is_empty() {
+                    out.push('-');
+                }
+                pending_dash = false;
+                out.push(folded);
+            } else {
+                pending_dash = true;
+            }
+        }
+    }
+    // The slug is pure ASCII (`[a-z0-9-]`), so truncating on a byte boundary is
+    // safe; strip any dash the cut leaves dangling.
+    if out.len() > MAX {
+        out.truncate(MAX);
+        while out.ends_with('-') {
+            out.pop();
+        }
+    }
+    out
+}
+
+/// The on-disk stem for a downloaded document: `<typ-slug>__<cislo-safe>`, or
+/// just `<cislo-safe>` when the typ slugs to nothing. The `__` is unambiguous -
+/// neither the slug (`[a-z0-9-]`) nor `file_stem` (`[A-Z0-9-]`) contains `_`.
+pub fn doc_file_stem(typ: &str, cislo: &str) -> String {
+    let cislo_safe = file_stem(cislo);
+    let slug = slugify_typ(typ);
+    if slug.is_empty() {
+        cislo_safe
+    } else {
+        format!("{slug}__{cislo_safe}")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn slugify_typ_folds_diacritics_and_keeps_the_year() {
+        assert_eq!(slugify_typ("účetní závěrka [2024]"), "ucetni-zaverka-2024");
+        assert_eq!(slugify_typ("výroční zpráva"), "vyrocni-zprava");
+        assert_eq!(slugify_typ("Účetní ZÁVĚRKA"), "ucetni-zaverka");
+    }
+
+    #[test]
+    fn slugify_typ_collapses_punctuation_and_trims_edges() {
+        assert_eq!(
+            slugify_typ("smlouva o převodu obchodního podílu, notářský zápis"),
+            "smlouva-o-prevodu-obchodniho-podilu-notarsky-zapis"
+        );
+        assert_eq!(slugify_typ("  [stanovy]  "), "stanovy");
+    }
+
+    #[test]
+    fn slugify_typ_is_empty_when_no_alphanumerics() {
+        assert_eq!(slugify_typ(""), "");
+        assert_eq!(slugify_typ("[]  -- ,"), "");
+    }
+
+    #[test]
+    fn slugify_typ_caps_length_without_a_trailing_dash() {
+        let long = "slovo ".repeat(40); // ~240 chars of "slovo slovo ..."
+        let s = slugify_typ(&long);
+        assert!(s.len() <= 80, "len was {}", s.len());
+        assert!(!s.ends_with('-'), "ended with dash: {s}");
+        assert!(!s.starts_with('-'), "started with dash: {s}");
+    }
+
+    #[test]
+    fn doc_file_stem_puts_the_typ_before_the_cislo() {
+        assert_eq!(
+            doc_file_stem("účetní závěrka [2024]", "B 8573/SL95/MSPH"),
+            "ucetni-zaverka-2024__B-8573-SL95-MSPH"
+        );
+    }
+
+    #[test]
+    fn doc_file_stem_falls_back_to_cislo_when_typ_is_blank() {
+        assert_eq!(doc_file_stem("", "B 8573/SL95/MSPH"), "B-8573-SL95-MSPH");
+        assert_eq!(doc_file_stem("   ", "B 8573/SL95/MSPH"), "B-8573-SL95-MSPH");
+    }
 
     // Real responses captured 2026-07-20 (Alza.cz a.s., IČO 27082440).
     const SEARCH_ICO: &str = include_str!("../testdata/search-alza-ico.html");
