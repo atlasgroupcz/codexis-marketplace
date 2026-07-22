@@ -98,7 +98,7 @@ Key fields per entry: `cislo` (the document's identifier, e.g.
 ```bash
 sbirka-listin-cli dokument 27082440 "B 8573/SL91/MSPH"
 # → {"ico":"27082440","cislo":"B 8573/SL91/MSPH",
-#    "path":"…/dokumenty/27082440/B-8573-SL91-MSPH.pdf",
+#    "path":"…/dokumenty/27082440/ucetni-zaverka-2023__B-8573-SL91-MSPH.pdf",
 #    "url":"https://or.justice.cz/ias/content/download?id=…","reused":false}
 ```
 
