@@ -2,17 +2,20 @@
 //! reach it.
 //!
 //! Files live under
-//! `$HOME/.cdx/apps/sbirka-listin/dokumenty/<ico>/<cislo>.<ext>`, where `<cislo>`
-//! is the číslo listiny made filesystem-safe (`B-8573-SL95-MSPH`) — the app's own
-//! directory, not the caller's cwd, because chat mode hides the working directory
-//! from everything but apps. One subfolder per subject mirrors the watcher's
+//! `$HOME/.cdx/apps/sbirka-listin/dokumenty/<ico>/<typ-slug>__<cislo>.<ext>`, where
+//! `<cislo>` is the číslo listiny made filesystem-safe (`B-8573-SL95-MSPH`) and
+//! `<typ-slug>` is the document type slugified (`ucetni-zaverka-2024`); an empty
+//! typ falls back to the bare `<cislo>.<ext>`. This is the app's own directory,
+//! not the caller's cwd, because chat mode hides the working directory from
+//! everything but apps. One subfolder per subject mirrors the watcher's
 //! `subjekty/<ico>/` layout and lets "what has this company got downloaded" be a
 //! single `read_dir` rather than a scan-and-filter of every subject's files.
 //!
 //! Re-fetching is avoided by looking for the file, not by keeping a registry: a
 //! registry would go stale the moment the file is touched, whereas a missing
 //! file simply downloads again. The extension is unknown until the response
-//! arrives (PDF vs XHTML/ESEF), so the lookup globs `<cislo>.*`.
+//! arrives (PDF vs XHTML/ESEF), so the lookup keys on the číslo segment of the
+//! name rather than on the extension.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -35,11 +38,23 @@ pub fn subject_dir(ico8: &str) -> PathBuf {
     dir().join(ico8)
 }
 
-/// The stored file for a číslo listiny, when one is already there — matched by
-/// its filesystem-safe stem, so an already downloaded document is found before
-/// any network call.
-fn existing(ico8: &str, stem: &str) -> Option<PathBuf> {
-    let prefix = format!("{stem}.");
+/// Whether a stored file name belongs to this číslo. The match is on the číslo
+/// *segment* of the stem - the full stem equals `<cislo>` (empty-typ fallback)
+/// or ends with `__<cislo>` (descriptive `<typ-slug>__<cislo>`). Keying on the
+/// number, not the typ text, means a reworded typ never hides a download.
+fn name_matches_cislo(file_name: &str, cislo_safe: &str) -> bool {
+    if file_name.starts_with('.') {
+        // hidden files and the `.<name>.tmp.<pid>` write leftovers
+        return false;
+    }
+    let stem = file_name.rsplit_once('.').map_or(file_name, |(s, _)| s);
+    stem == cislo_safe || stem.ends_with(&format!("__{cislo_safe}"))
+}
+
+/// The stored file for a číslo listiny, when one is already there - matched by
+/// its číslo segment, so an already downloaded document is found before any
+/// network call whatever human label its name carries.
+fn existing(ico8: &str, cislo_safe: &str) -> Option<PathBuf> {
     fs::read_dir(subject_dir(ico8))
         .ok()?
         .filter_map(Result::ok)
@@ -49,7 +64,7 @@ fn existing(ico8: &str, stem: &str) -> Option<PathBuf> {
                 && path
                     .file_name()
                     .and_then(|n| n.to_str())
-                    .is_some_and(|n| n.starts_with(&prefix))
+                    .is_some_and(|n| name_matches_cislo(n, cislo_safe))
         })
 }
 
@@ -99,9 +114,9 @@ pub fn fetch(client: &PortalClient, ico8: &str, cislo: &str) -> Result<Fetched> 
     }
 
     let fetched = api::fetch_document(client, ico8, cislo)?;
+    let stem = parse::doc_file_stem(&fetched.listina.typ, &fetched.listina.cislo);
     let path = subject_dir(ico8).join(format!(
-        "{}.{}",
-        parse::file_stem(&fetched.listina.cislo),
+        "{stem}.{}",
         extension_for(fetched.document.content_type.as_deref())
     ));
     write_atomically(&path, &fetched.document.bytes)
@@ -139,6 +154,21 @@ fn write_atomically(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name_matches_cislo_keys_on_the_cislo_segment() {
+        let cislo = "B-8573-SL95-MSPH";
+        // new descriptive name, empty-typ fallback, and a different extension all match
+        assert!(name_matches_cislo("ucetni-zaverka-2024__B-8573-SL95-MSPH.pdf", cislo));
+        assert!(name_matches_cislo("B-8573-SL95-MSPH.pdf", cislo));
+        assert!(name_matches_cislo("stanovy__B-8573-SL95-MSPH.xhtml", cislo));
+        // a different číslo must not match
+        assert!(!name_matches_cislo("ucetni-zaverka-2024__B-8573-SL12-MSPH.pdf", cislo));
+        // a longer number that merely shares a tail must not match on a partial segment
+        assert!(!name_matches_cislo("B-8573-SL95-MSPH-EXTRA.pdf", cislo));
+        // a hidden / .tmp. leftover is ignored
+        assert!(!name_matches_cislo(".ucetni-zaverka-2024__B-8573-SL95-MSPH.pdf.tmp.42", cislo));
+    }
 
     #[test]
     fn extension_follows_the_content_type() {
