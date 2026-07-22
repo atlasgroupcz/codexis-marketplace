@@ -10,6 +10,63 @@ component UI text, SKILL docs, code comments, and commit messages. Em-dashes had
 crept into user-facing names and looked unprofessional, so the repo was
 normalized to hyphens - keep it that way.
 
+## Testing
+
+### Two kinds of test
+
+- **Code tests** exercise a plugin's own code and run under a framework:
+  `test_*.py` (pytest) for Python, `#[cfg(test)]` inline + `src/<crate>/tests/*.rs`
+  (cargo) for Rust.
+- **Scenario specs** are declarative data driven by the central harness:
+  `expected.json` (marketplace/install contract), `e2e/*.yaml` (chat-driven
+  e2e), and `tests/promptfoo/*.config.yaml` (LLM-judge evals).
+
+### Taxonomy
+
+| Tier | Location | Runner |
+| --- | --- | --- |
+| unit | Python: `plugins/<name>/tests/unit/` (pytest); Rust: inline `#[cfg(test)]` in `src/<crate>/src/` | pytest / cargo |
+| integration | Rust: `plugins/<name>/src/<crate>/tests/*.rs`; Python: `tests/integration/` if needed | cargo / pytest |
+| install | `plugins/<name>/tests/install/expected.json` | central harness |
+| e2e | `plugins/<name>/tests/e2e/*.yaml` (one file per binary/skill) | central harness |
+| llm-eval | `tests/promptfoo/*.config.yaml` (central) | promptfoo |
+
+Code tests live next to the code they test (Rust unit/integration are per crate
+under `src/<crate>/`). Data specs are the only plugin-level tests. An e2e scenario
+that uploads binary fixtures keeps them in `plugins/<name>/tests/fixtures/`,
+referenced from the scenario yaml by a relative `source:` path.
+
+Two different `tests/` folders exist: `tests/` at the repo root is the central
+harness; `plugins/<name>/tests/` holds one plugin's Python unit tests and data
+specs. Same name, different scope.
+
+### Running tests
+
+Use the single entry point: `python tests/run.py <unit|marketplace|e2e|eval|all>`.
+
+### Coverage
+
+New or changed plugin code must reach >=90% line coverage on the changed code,
+verified from the coverage report (`pytest --cov` for Python, `cargo llvm-cov`
+for Rust). Checked in review; not an automated CI threshold.
+
+### Test-quality rules
+
+General principles, independent of language or framework:
+
+- Name each test after the behavior it checks; one behavior per test.
+- Cover the happy path first; add an error/negative test only when it catches
+  something real, not mechanically.
+- Every test must assert real behavior. A test that only builds a value or
+  restates the implementation is not a test - if it cannot fail, delete it.
+- Use real dependencies where you can run them; mock only what you cannot
+  (external HTTP APIs, the daemon, third-party services). Never mock the thing
+  under test.
+- On any failure (test, e2e, pipeline), find the cause before changing code -
+  no shotgun fixes.
+- Before calling something green, show the command output - do not assert it
+  passed.
+
 ## Project Overview
 
 This is a **Claude Code Plugin Marketplace** maintained by ATLAS GROUP. It contains plugins that extend Claude Code with legal database access and data visualization capabilities.

@@ -3,12 +3,12 @@
 Codexis Plugin E2E Test
 
 For each plugin, installs it into a running cdx-daemon, drives a multi-turn
-chat via every plugins/<name>/acceptance/e2e/*.yaml file, and asserts on tool
+chat via every plugins/<name>/tests/e2e/*.yaml file, and asserts on tool
 calls and outputs. Failure writes a Markdown transcript to
 test-results/transcripts/<plugin>/<test>.md for debugging.
 
 By default, only runs for plugins changed between --base-ref and HEAD.
-Pass --all to run every plugin with acceptance/e2e/, or --only NAME[,NAME]
+Pass --all to run every plugin with tests/e2e/, or --only NAME[,NAME]
 to restrict to specific plugins.
 
 Usage:
@@ -42,7 +42,7 @@ from _assertions import (
     substitute,
 )
 from _chat_runner import ChatRunner
-from _changed_plugins import get_changed_plugins
+from _changed_plugins import _all_plugins_with_e2e, get_changed_plugins
 from _daemon_client import DaemonClient
 from _output import Results
 from _transcript import write_transcript
@@ -54,18 +54,8 @@ MARKETPLACE_ROOT = Path(__file__).resolve().parent.parent
 # ---------------------------------------------------------------------------
 # Plugin selection
 # ---------------------------------------------------------------------------
-def _all_plugins_with_e2e() -> list[str]:
-    plugins_dir = MARKETPLACE_ROOT / "plugins"
-    if not plugins_dir.is_dir():
-        return []
-    return sorted(
-        p.name for p in plugins_dir.iterdir()
-        if p.is_dir() and (p / "acceptance" / "e2e").is_dir()
-    )
-
-
 def _yaml_files_for(plugin: str, yaml_filter: str = "") -> list[Path]:
-    d = MARKETPLACE_ROOT / "plugins" / plugin / "acceptance" / "e2e"
+    d = MARKETPLACE_ROOT / "plugins" / plugin / "tests" / "e2e"
     if not d.is_dir():
         return []
     files = sorted(d.glob("*.yaml"))
@@ -81,8 +71,8 @@ def pick_plugins(args: argparse.Namespace, r: Results) -> list[str]:
         r.log(f"--only: {', '.join(names) or '(empty)'}")
         return names
     if args.all:
-        names = _all_plugins_with_e2e()
-        r.log(f"--all: {len(names)} plugin(s) with acceptance/e2e/")
+        names = _all_plugins_with_e2e(MARKETPLACE_ROOT)
+        r.log(f"--all: {len(names)} plugin(s) with tests/e2e/")
         return names
     names = get_changed_plugins(args.base_ref, MARKETPLACE_ROOT)
     r.log(f"--changed vs {args.base_ref}: {len(names)} plugin(s)")
@@ -258,7 +248,7 @@ def test_plugin(client: DaemonClient, plugin: dict, args: argparse.Namespace,
 
     r.section(f"Plugin: {name}")
     if not yamls:
-        r.skip(f"{name}: no acceptance/e2e/*.yaml files")
+        r.skip(f"{name}: no tests/e2e/*.yaml files")
         return
 
     r.log("Installing…")
@@ -306,7 +296,7 @@ def main() -> int:
                         help="Base ref for --changed diff (default: origin/main)")
     mx = parser.add_mutually_exclusive_group()
     mx.add_argument("--all", action="store_true",
-                    help="Run every plugin that has acceptance/e2e/ (override default)")
+                    help="Run every plugin that has tests/e2e/ (override default)")
     mx.add_argument("--only", default="",
                     help="Comma-separated plugin names (override default)")
     parser.add_argument("--yaml", default="",

@@ -36,7 +36,7 @@ from _unit_gate import run_default_gate
 # Helpers
 # ---------------------------------------------------------------------------
 def load_expected(plugin_dir: Path) -> dict | None:
-    expected_path = plugin_dir / "acceptance" / "expected.json"
+    expected_path = plugin_dir / "tests" / "install" / "expected.json"
     if expected_path.is_file():
         return json.loads(expected_path.read_text())
     return None

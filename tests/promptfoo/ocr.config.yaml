@@ -18,7 +18,7 @@ setup:
       destination: /home/codexis/ee-ocr-{{ run_id }}
       files:
         - path: ocr-test.pdf
-          source: ../../plugins/ocr/acceptance/fixtures/ocr-test.pdf
+          source: ../../plugins/ocr/tests/fixtures/ocr-test.pdf
 
 prompts:
   - "{{ prompt }}"
