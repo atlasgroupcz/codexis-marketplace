@@ -35,14 +35,14 @@ def _all_plugins_with_e2e(repo_root: Path) -> list[str]:
         return []
     return sorted(
         p.name for p in plugins_dir.iterdir()
-        if p.is_dir() and (p / "acceptance" / "e2e").is_dir()
+        if p.is_dir() and (p / "tests" / "e2e").is_dir()
     )
 
 
 def get_changed_plugins(base_ref: str, repo_root: Path) -> list[str]:
     """Return sorted list of plugin names affected by diff.
 
-    Returns all plugins with acceptance/e2e/ if any CORE_TRIGGERS file changed.
+    Returns all plugins with tests/e2e/ if any CORE_TRIGGERS file changed.
     """
     files = _git_diff_files(base_ref, repo_root)
     plugins_dir = repo_root / "plugins"
