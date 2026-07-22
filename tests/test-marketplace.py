@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _daemon_client import DaemonClient
 from _output import Results
+from _plugin_runner import run_plugins
 from _skills import skills_of_plugin
 from _unit_gate import run_default_gate
 
@@ -211,6 +212,11 @@ def main() -> int:
                         help="oauth2-proxy URL (default: http://localhost:4182)")
     parser.add_argument("--skip-unit-tests", action="store_true",
                         help="Skip the local unit-test gate and go straight to the daemon.")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Number of plugins to install/uninstall concurrently "
+                             "(default: 1, serial). Raise it to shorten the daemon "
+                             "phase when the daemon serves plugins in parallel; the "
+                             "log stays in manifest order regardless.")
     args = parser.parse_args()
 
     marketplace_path = Path(__file__).resolve().parent.parent
@@ -236,8 +242,12 @@ def main() -> int:
     our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)
     validate_listing(client, manifest, our_mkt, r)
 
-    for plugin in our_mkt.get("plugins", []):
-        test_plugin(client, plugin, marketplace_path, r)
+    run_plugins(
+        our_mkt.get("plugins", []),
+        lambda plugin, res: test_plugin(client, plugin, marketplace_path, res),
+        r,
+        workers=args.workers,
+    )
 
     remove_marketplace(client, our_mkt["id"], manifest["name"], r)
     return r.summary()
