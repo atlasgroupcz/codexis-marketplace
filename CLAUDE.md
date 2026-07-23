@@ -130,6 +130,33 @@ plugins/plugin-name/
 └── shared/               # Shared resources
 ```
 
+## Writing skills - Anthropic conventions
+
+Follow Anthropic's skill-authoring best practices (platform.claude.com, Agent Skills >
+Skill authoring best practices) for every SKILL.md in this repo:
+
+- **The description decides triggering.** Write it in third person ("Manages...", never
+  "I can..." / "You can..."), state both WHAT the skill does and WHEN to use it ("Use
+  when..."), and include the trigger keywords users actually say. Max 1024 characters,
+  no XML tags. If a skill fails to trigger, fix the description, not the body.
+- **Name**: max 64 chars, lowercase letters/digits/hyphens; prefer gerund or noun-phrase
+  names (`processing-pdfs`, `pdf-processing`); never vague (`helper`, `utils`).
+- **Concise body.** Claude is already smart - add only what it does not know, and make
+  every paragraph justify its token cost. Keep the SKILL.md body under 500 lines; push
+  depth into `references/*.md` linked ONE level deep from SKILL.md (no reference file
+  pointing at another reference file). Reference files over 100 lines start with a table
+  of contents.
+- **One default, not a menu.** Recommend a single tool/approach with an escape hatch for
+  the exception, instead of listing alternatives.
+- **Concrete examples** (input -> output pairs) beat abstract descriptions. For multi-step
+  workflows give numbered steps or a checklist; for quality-critical steps add a
+  validation loop (run the check, fix, re-run).
+- **Consistent terminology**: pick one term per concept and use it everywhere.
+- **No time-sensitive content.** No "before/after <date>" branches; keep legacy behavior
+  in a clearly marked deprecated/old-patterns note.
+- **Match specificity to fragility**: exact commands for fragile one-way operations,
+  general guidance where many approaches work.
+
 ## Skill Definition Format
 
 Skills are markdown files with YAML frontmatter:
