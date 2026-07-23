@@ -201,7 +201,7 @@ cdxctl skill update <id> --description "New trigger text"
 cdxctl skill delete <id>
 ```
 
-Describe the skill with flags; the whole SKILL.md is built for you. `--file` / `--stdin` still take a hand-written SKILL.md when you need it.
+Describe the skill with flags; the whole SKILL.md is built for you.
 
 Write the skill body to a temp file under `./.tmp/` and pass its path with `--instructions-file`.
 

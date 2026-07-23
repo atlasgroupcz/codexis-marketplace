@@ -323,12 +323,6 @@ enum AgentCommands {
         /// Repeat once per language
         #[arg(long = "summary")]
         summary: Vec<String>,
-        /// Read agent markdown content from a file
-        #[arg(long)]
-        file: Option<String>,
-        /// Read agent markdown content from stdin
-        #[arg(long, default_value = "false")]
-        stdin: bool,
     },
     /// Update an agent; unset flags keep their stored value
     Update {
@@ -373,12 +367,6 @@ enum AgentCommands {
         /// Languages you do not pass keep their stored value
         #[arg(long = "summary")]
         summary: Vec<String>,
-        /// Read agent markdown content from a file
-        #[arg(long)]
-        file: Option<String>,
-        /// Read agent markdown content from stdin
-        #[arg(long, default_value = "false")]
-        stdin: bool,
     },
     /// Delete an agent
     Delete {
@@ -395,8 +383,8 @@ enum SkillCommands {
         #[arg(long, default_value = "false")]
         editable_only: bool,
     },
-    /// Create a skill. Describe it with the field flags (--name, --description, --body-file …),
-    /// or pass a whole SKILL.md via --file/--stdin
+    /// Create a skill. Describe it with the field flags (--name, --description,
+    /// --instructions-file …)
     Create {
         /// Skill name: lowercase letters, digits and hyphens
         #[arg(long)]
@@ -426,12 +414,6 @@ enum SkillCommands {
         /// Tool the skill may use; repeat for more. Leave out to allow every tool
         #[arg(long = "allowed-tool")]
         allowed_tools: Vec<String>,
-        /// Read a whole SKILL.md (frontmatter + body) from a file
-        #[arg(long)]
-        file: Option<String>,
-        /// Read a whole SKILL.md from stdin
-        #[arg(long, default_value = "false")]
-        stdin: bool,
     },
     /// Update a skill; unset flags keep their stored value
     Update {
@@ -464,12 +446,6 @@ enum SkillCommands {
         /// Replaces the whole allowed-tool list; repeat for more
         #[arg(long = "allowed-tool")]
         allowed_tools: Vec<String>,
-        /// Read a whole SKILL.md from a file
-        #[arg(long)]
-        file: Option<String>,
-        /// Read a whole SKILL.md from stdin
-        #[arg(long, default_value = "false")]
-        stdin: bool,
     },
     /// Delete a skill
     Delete {
@@ -803,12 +779,8 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
-                file,
-                stdin,
             } => commands::agent::create(
                 &client,
-                file.as_deref(),
-                stdin,
                 instructions_file.as_deref(),
                 commands::agent::AgentFields {
                     name,
@@ -839,13 +811,9 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
-                file,
-                stdin,
             } => commands::agent::update(
                 &client,
                 &id,
-                file.as_deref(),
-                stdin,
                 instructions_file.as_deref(),
                 commands::agent::AgentFields {
                     name,
@@ -878,12 +846,8 @@ fn main() {
                 jurisdictions,
                 jurisdiction_required,
                 allowed_tools,
-                file,
-                stdin,
             } => commands::skill::create(
                 &client,
-                file.as_deref(),
-                stdin,
                 instructions_file.as_deref(),
                 commands::skill::SkillFields {
                     name,
@@ -908,13 +872,9 @@ fn main() {
                 jurisdictions,
                 jurisdiction_required,
                 allowed_tools,
-                file,
-                stdin,
             } => commands::skill::update(
                 &client,
                 &id,
-                file.as_deref(),
-                stdin,
                 instructions_file.as_deref(),
                 commands::skill::SkillFields {
                     name,
@@ -1049,8 +1009,33 @@ mod tests {
     }
 
     #[test]
-    fn parses_agent_update_with_file_input() {
+    fn parses_agent_update_with_field_flags() {
         let cli = Cli::try_parse_from([
+            "cdxctl",
+            "agent",
+            "update",
+            "local-agent",
+            "--description",
+            "New description",
+        ])
+        .expect("agent update should parse");
+
+        match cli.command {
+            Commands::Agent {
+                command: AgentCommands::Update {
+                    id, description, ..
+                },
+            } => {
+                assert_eq!(id, "local-agent");
+                assert_eq!(description.as_deref(), Some("New description"));
+            }
+            _ => panic!("expected agent update command"),
+        }
+    }
+
+    #[test]
+    fn rejects_the_removed_markdown_file_input() {
+        assert!(Cli::try_parse_from([
             "cdxctl",
             "agent",
             "update",
@@ -1058,20 +1043,8 @@ mod tests {
             "--file",
             "/tmp/local-agent.md",
         ])
-        .expect("agent update should parse");
-
-        match cli.command {
-            Commands::Agent {
-                command: AgentCommands::Update {
-                    id, file, stdin, ..
-                },
-            } => {
-                assert_eq!(id, "local-agent");
-                assert_eq!(file.as_deref(), Some("/tmp/local-agent.md"));
-                assert!(!stdin);
-            }
-            _ => panic!("expected agent update command"),
-        }
+        .is_err());
+        assert!(Cli::try_parse_from(["cdxctl", "skill", "create", "--stdin"]).is_err());
     }
 
     #[test]
@@ -1151,8 +1124,6 @@ mod tests {
                         model,
                         max_turns,
                         instructions,
-                        file,
-                        stdin,
                         ..
                     },
             } => {
@@ -1163,8 +1134,6 @@ mod tests {
                 assert_eq!(model.as_deref(), Some("CLAUDE_OPUS_4_8"));
                 assert_eq!(max_turns, Some(7));
                 assert_eq!(instructions.as_deref(), Some("Posud zakonnost vypovedi."));
-                assert!(file.is_none());
-                assert!(!stdin);
             }
             _ => panic!("expected agent create command"),
         }

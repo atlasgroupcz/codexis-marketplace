@@ -1,5 +1,5 @@
 # Port of plugins/codexis/acceptance/e2e/cdxctl-skill-crud.yaml
-# cdxctl skill lifecycle: create-from-stdin → list → update → delete.
+# cdxctl skill lifecycle: create → list → update → delete.
 #
 # Each test row is a fresh single-turn chat. State carries via the
 # daemon-side skill named `ee-skill-{{ run_id }}` (same run_id across
@@ -8,7 +8,7 @@
 # which is what we want for CRUD ordering. This config runs in parallel
 # with the other codexis-* configs in batch 2.
 
-description: codexis cdxctl - skill CRUD via --stdin
+description: codexis cdxctl - skill CRUD
 target_plugin: codexis
 
 prompts:
@@ -20,7 +20,7 @@ providers:
     config: {}
 
 tests:
-  - description: skill create from stdin lands in daemon's editable skill list
+  - description: skill create lands in daemon's editable skill list
     vars:
       prompt: |
         Vytvoř mi vlastní dovednost (skill) s tímhle obsahem:
@@ -34,7 +34,7 @@ tests:
 
         This is an e2e test skill.
       tool_name: shell
-      input_regex: 'skill\s+create.{0,200}--stdin'
+      input_regex: 'skill\s+create.{0,400}--name'
       tool_calls_min: 1
       tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
