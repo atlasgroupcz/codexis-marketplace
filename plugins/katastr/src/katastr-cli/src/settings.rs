@@ -4,12 +4,11 @@
 //! `API_KEY=<value>\n`, mode 0600. Shared with the legacy `kn` CLI tool -
 //! either runtime can read what the other wrote.
 
-use std::fs;
-use std::io::Write;
 use std::time::Duration;
 
+use cdx_common::env_file;
+
 use crate::error::{KatastrError, Result};
-use crate::fs as atomic_fs;
 use crate::paths;
 
 pub const CUZK_BASE: &str = "https://api-kn.cuzk.gov.cz";
@@ -20,26 +19,13 @@ const HEALTH_CHECK_PATH: &str = "/api/v1/AplikacniSluzby/StavUctu";
 /// as the Python original, so the CGI treats both as "not configured"
 /// rather than erroring out.
 pub fn read_api_key() -> String {
-    let path = paths::env_file();
-    let Ok(contents) = fs::read_to_string(&path) else {
-        return String::new();
-    };
-    for line in contents.lines() {
-        if let Some(rest) = line.strip_prefix("API_KEY=") {
-            return rest.to_string();
-        }
-    }
-    String::new()
+    env_file::read_env_var(&paths::env_file(), "API_KEY").unwrap_or_default()
 }
 
 /// Write the API key to disk atomically with mode 0600.
 /// No validation here - use [`set_api_key`] for the validated path.
 pub fn write_api_key(key: &str) -> Result<()> {
-    let path = paths::env_file();
-    Ok(atomic_fs::atomic_replace(&path, Some(0o600), |file| {
-        writeln!(file, "API_KEY={key}")?;
-        Ok(())
-    })?)
+    Ok(env_file::write_env_file(&paths::env_file(), &[("API_KEY", key)])?)
 }
 
 /// Mask the key for display: `ABCD****WXYZ`. Anything shorter than 12
@@ -174,7 +160,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let _g = cdx_common::test_support::home_guard(tmp.path());
         write_api_key("SECRET").unwrap();
-        let perms = fs::metadata(paths::env_file()).unwrap().permissions();
+        let perms = std::fs::metadata(paths::env_file()).unwrap().permissions();
         assert_eq!(perms.mode() & 0o777, 0o600);
     }
 }

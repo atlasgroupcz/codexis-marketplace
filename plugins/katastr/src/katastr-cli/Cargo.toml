@@ -1,14 +1,54 @@
 [package]
 name = "katastr-cli"
 version = "0.1.0"
-edition.workspace = true
-license.workspace = true
+edition = "2021"
+license = "PROPRIETARY"
 
+# The shared logic (ČÚZK API, state, change detection, notifications) lives in
+# the lib, kept named `katastr_core` so the two binaries import it unchanged.
+[lib]
+name = "katastr_core"
+path = "src/lib.rs"
+
+# Two binaries share the crate's logic through the lib: the system-wide CLI and
+# the plugin-component CGI handler (run in place by the daemon).
 [[bin]]
 name = "katastr-cli"
 path = "src/main.rs"
 
+[[bin]]
+name = "katastr-cgi"
+path = "src/cgi_main.rs"
+
 [dependencies]
-katastr-core = { path = "../katastr-core" }
-clap.workspace = true
-serde_json.workspace = true
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# Synchronous HTTP client - no tokio/async runtime, keeps the CGI binary small
+# and cold-start fast. rustls-tls avoids the OpenSSL build dep. Used for both the
+# ČÚZK REST calls and the daemon notify transport (e-mail + in-app).
+ureq = { version = "2", default-features = false, features = ["tls", "json"] }
+clap = { version = "4", features = ["derive"] }
+# Shared marketplace capability crates. cdx-common: std-only building blocks
+# (atomic fs, per-item store, UTC time, env-file credential storage). cdx-watch:
+# the watcher domain (check loop + change-log confirm). cdx-notify: notify
+# transport + layered settings. cdx-cgi: the CGI runtime (query parsing, body
+# reading, JSON/error emission).
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["fs", "store", "time", "env-file"] }
+cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
+cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
+cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[dev-dependencies]
+# tempfile lets tests exercise filesystem code paths against a scratch dir
+# instead of polluting $HOME; only pulled in for test builds.
+tempfile = "3"
+# The shared HomeGuard test helper (redirects $HOME to a scratch dir) instead of
+# a copy-pasted per-crate one.
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["test-support"] }

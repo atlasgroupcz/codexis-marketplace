@@ -9,7 +9,7 @@ description: Verify the katastr skill covers three typical lookup flows against 
 #   - LV 12069
 #   - ochrana: nemovitá kulturní památka
 # API key is supplied at runtime via `--var katastr_api_key=…` and dropped
-# into the per-app env file the CLI reads (katastr-core settings.rs loads
+# into the per-app env file the CLI reads (the crate's settings.rs loads
 # API_KEY= from $HOME/.cdx/apps/katastr/.env).
 
 setup:

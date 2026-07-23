@@ -62,6 +62,7 @@ describe('fetchNotify', () => {
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
+        json: () => Promise.resolve(null),
       }),
     )
 

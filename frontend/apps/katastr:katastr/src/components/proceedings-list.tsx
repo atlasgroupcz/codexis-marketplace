@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { ErrorMessage } from '@workspace/ui/components/error-message'
 import { ListSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
 import { ProceedingRow } from './proceeding-row'
 import { ListFilter } from './list-filter'
 import type { ListFilterValue } from './list-filter'
@@ -29,7 +29,7 @@ export function ProceedingsList({
 }: ProceedingsListProps) {
   const { t } = useTranslation()
   if (loading && !data) return <div className="p-3"><ListSkeleton /></div>
-  if (error) return <div className="p-3"><ErrorMessage message={error.message} onRetry={refetch} /></div>
+  if (error) return <div className="p-3"><ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} /></div>
   if (!data) return null
 
   const unconfirmed = data.proceedings.filter((p) => p.unconfirmed_count > 0)
