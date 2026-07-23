@@ -1,0 +1,44 @@
+name: cdxctl-agent-from-file
+description: Verify cdxctl creates an agent via the --file path (distinct from --stdin).
+
+# When content already lives on disk, --file is the idiomatic choice — a bug
+# would be the AI shelling out `cat FILE | cdxctl agent create --stdin`.
+
+steps:
+  - prompt: |
+      Uloženě mám tohle jako markdown agenta, ulož to prosím do
+      /tmp/ee-fa-{{ run_id }}.md a zaregistruj ten soubor jako nového agenta:
+
+      ---
+      name: ee-fa-{{ run_id }}
+      description: "E2E test agent (from file)"
+      tools: Read, Bash
+      maxTurns: 6
+      ---
+
+      You are an E2E from-file test agent.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent create.{0,200}--file"   # must be --file, not --stdin
+      tool_calls_min: 1
+      tool_calls_max: 9
+      state:
+        graphql: "{ agents { name description editable } }"
+        jsonpath: "$.agents[?(@.name == 'ee-fa-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          description: "E2E test agent (from file)"
+          editable: true
+
+  - prompt: "Smaž agenta ee-fa-{{ run_id }}."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent delete"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ agents { name } }"
+        jsonpath: "$.agents[*].name"
+        not_contains: "ee-fa-{{ run_id }}"

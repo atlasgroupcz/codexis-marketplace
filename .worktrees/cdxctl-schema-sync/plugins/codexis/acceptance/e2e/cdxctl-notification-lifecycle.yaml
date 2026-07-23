@@ -1,0 +1,61 @@
+name: cdxctl-notification-lifecycle
+description: Verify cdxctl creates a notification and the seen/confirmed transitions persist in the daemon.
+
+# State transitions:
+#   created         → seen=null,   confirmed=null
+#   after `seen`    → seen=<ts>,   confirmed=null
+#   after `confirm` → seen=<ts>,   confirmed=<ts>
+
+steps:
+  - prompt: "Vytvoř mi oznámení s textem 'e2e-notif-{{ run_id }}'."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "notification create"
+      tool_calls_min: 1
+      tool_calls_max: 11   # AI may try OS-notification tools first then self-recover to cdxctl
+      state:
+        graphql: "{ notifications { items { message seen confirmed } } }"
+        jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          seen: null
+          confirmed: null
+
+  - prompt: "Jaká mám oznámení? Je tam to s textem 'e2e-notif-{{ run_id }}'?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "notification list"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        contains: "e2e-notif-{{ run_id }}"
+      state:
+        graphql: "{ notifications { items { message } } }"
+        jsonpath: "$.notifications.items[*].message"
+        contains: "e2e-notif-{{ run_id }}"
+
+  - prompt: "Označ oznámení 'e2e-notif-{{ run_id }}' jako přečtené."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "notification seen"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ notifications { items { message seen confirmed } } }"
+        jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].seen"
+        matches: "\\d{4}-\\d{2}-\\d{2}"
+
+  - prompt: "A teď to oznámení 'e2e-notif-{{ run_id }}' potvrď."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "notification confirm"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ notifications { items { message seen confirmed } } }"
+        jsonpath: "$.notifications.items[?(@.message == 'e2e-notif-{{ run_id }}')].confirmed"
+        matches: "\\d{4}-\\d{2}-\\d{2}"

@@ -1,0 +1,17 @@
+[package]
+name = "cdx-watch"
+version = "0.1.0"
+edition = "2021"
+description = "Shared watcher domain for codexis-marketplace plugins: change-log confirm mechanics and the poll/diff/persist check orchestration over a keyed item store."
+license = "PROPRIETARY"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+# Foundation: the keyed JSON item store (implies fs) the check loop persists to.
+cdx-common = { path = "../cdx-common", default-features = false, features = ["store"] }
+
+[dev-dependencies]
+tempfile = "3"
+# Share the home-fixture test helper instead of copy-pasting it.
+cdx-common = { path = "../cdx-common", default-features = false, features = ["store", "test-support"] }

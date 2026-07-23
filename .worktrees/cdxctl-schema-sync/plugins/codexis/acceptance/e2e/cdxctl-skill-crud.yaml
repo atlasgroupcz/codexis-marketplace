@@ -1,0 +1,67 @@
+name: cdxctl-skill-crud
+description: Verify cdxctl can create, update, and delete a custom skill from stdin.
+
+steps:
+  - prompt: |
+      Vytvoř mi vlastní dovednost (skill) s tímhle obsahem:
+
+      ---
+      name: ee-skill-{{ run_id }}
+      description: "E2E test skill — initial description"
+      ---
+
+      # Instructions
+
+      This is an e2e test skill.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill create.{0,200}--stdin"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ skills { name description editable deletable sourceKind } }"
+        jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          description: "E2E test skill — initial description"
+          editable: true
+          deletable: true
+
+  - prompt: "Jaké mám vlastní dovednosti? Jen ty upravitelné, ne ty z pluginů."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill list.{0,100}--editable-only"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        contains: "ee-skill-{{ run_id }}"
+      state:
+        graphql: "{ skills { name editable } }"
+        jsonpath: "$.skills[?(@.editable == true)].name"
+        contains: "ee-skill-{{ run_id }}"
+
+  - prompt: "U dovednosti ee-skill-{{ run_id }} změň popis na 'E2E test skill — updated'."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill update"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ skills { name description } }"
+        jsonpath: "$.skills[?(@.name == 'ee-skill-{{ run_id }}')].description"
+        equals: "E2E test skill — updated"
+
+  - prompt: "Smaž dovednost ee-skill-{{ run_id }}."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "skill delete"
+      tool_calls_min: 1
+      tool_calls_max: 8   # cdxctl skill delete leaves empty dir; AI verifies + rmdir's it
+      state:
+        graphql: "{ skills { name } }"
+        jsonpath: "$.skills[*].name"
+        not_contains: "ee-skill-{{ run_id }}"

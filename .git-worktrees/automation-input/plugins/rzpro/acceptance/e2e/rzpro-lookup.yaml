@@ -1,0 +1,22 @@
+name: rzpro-lookup
+description: Verify the rzpro skill calls rzpro-cli against the ai-scraper API and relays device identification back to the user.
+
+# Vše jde přes API: search (název / evidenční číslo) → get doc/<id>/meta.
+# Reálný zásah dokazuje odkaz na portál KSRZIS v odpovědi.
+
+steps:
+  - prompt: "Najdi zdravotnický prostředek gliadin."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "rzpro-cli\\s+search"
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        matches: "ksrzis\\.cz"
+
+  - prompt: "A ukaž mi jen prostředky s mírou rizika III."
+    expect:
+      tool_calls_max: 8
+      response:
+        matches: "ksrzis\\.cz"

@@ -1,0 +1,35 @@
+name: rzpro-lookup
+description: Verify the rzpro skill calls rzpro-cli against the KSRZIS RZPRO datasets and relays medical device identification back to the user.
+
+# Deterministická data: Evidenční číslo 00000019 = "EIA Gliadin IgA",
+# výrobce TestLine Clinical Diagnostics s.r.o. (IČ 47913240, reg. číslo 002276).
+# Katalogové číslo G0068486 patří prostředku "Novosyn®" (00987327).
+
+steps:
+  - prompt: "Najdi zdravotnický prostředek EIA Gliadin IgA a řekni mi jeho evidenční číslo a výrobce."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "rzpro-cli\\s+(search|detail)"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?i)00000019|TestLine"
+
+  - prompt: "Kdo má notifikovaný zdravotnický prostředek s evidenčním číslem 00000019?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "rzpro-cli\\s+(detail|osoby)\\s+.*0*19"
+      tool_calls_max: 8
+      response:
+        matches: "(?i)TestLine"
+
+  - prompt: "Ke kterému zdravotnickému prostředku patří katalogové číslo G0068486?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "rzpro-cli\\s+varianta\\s+.*G0068486"
+      tool_calls_max: 8
+      response:
+        matches: "(?i)Novosyn"

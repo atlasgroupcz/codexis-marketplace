@@ -91,7 +91,8 @@ cdxctl agent create --name kontrolor-jen-cteni \
 ## Updating an agent
 
 ```bash
-# Adds a skill and reword the Czech summary; other languages and fields stay put.
+# Adds the pdf skill: --skill replaces the WHOLE list, so repeat the skills the
+# agent already has. The Czech summary is replaced; other languages and fields stay put.
 cdxctl agent update personalista-smlouvy \
   --summary cs:"Připraví, zkontroluje a archivuje pracovní smlouvu." \
   --skill codexis --skill docx --skill pdf

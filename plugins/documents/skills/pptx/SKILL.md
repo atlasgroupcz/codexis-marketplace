@@ -68,7 +68,7 @@ Positions are in inches. Keep at least a 0.5" margin from every slide edge.
 Plain bullets on a white background impress nobody and read as machine-generated.
 
 **Pick a palette that fits the topic.** If you could drop your colours into an unrelated deck
-and it would still "work", you have not chosen anything. One colour dominates (60–70% of the
+and it would still "work", you have not chosen anything. One colour dominates (60-70% of the
 visual weight), one or two support it, one sharp accent. Never give all colours equal weight.
 
 | Theme | Primary | Secondary | Accent |
@@ -89,10 +89,10 @@ text-only slide is a forgettable slide.
 
 | Element | Size |
 |---|---|
-| Slide title | 36–44pt bold |
-| Section header | 20–24pt bold |
-| Body | 14–16pt |
-| Caption | 10–12pt, muted |
+| Slide title | 36-44pt bold |
+| Section header | 20-24pt bold |
+| Body | 14-16pt |
+| Caption | 10-12pt, muted |
 
 **Avoid:** the same layout twice in a row; centred body text (centre titles only, left-align
 prose); low-contrast text or icons; cramming every inch; styling one slide and leaving the rest

@@ -1,8 +1,8 @@
-# sbirka-listin — follow-ups
+# sbirka-listin - follow-ups
 
 Deferred improvements from the `/simplify` review (2026-07-20). Each is a real
 step forward. They were deferred only because the blast radius reaches outside
-this plugin, or the payoff is marginal right now — **not** because they're wrong.
+this plugin, or the payoff is marginal right now - **not** because they're wrong.
 
 ## 1. Extract a shared frontend component-build helper
 
@@ -20,7 +20,7 @@ helpers.
 **Also fix while lifting it:** `sync_component_output`'s preserve-loop only scans
 `$target_dir/assets`, but the CGI plugins pass root-level names (the CGI binary,
 the dispatcher, `component.json`). Those survive today only because the cleanup
-never touches the root — so the args are effectively no-ops. The shared helper
+never touches the root - so the args are effectively no-ops. The shared helper
 should actually model "preserve the CGI binary + dispatcher next to the SPA."
 
 **Blast radius:** edits 5 plugins' `build.sh` (and their install hooks) and needs
@@ -30,7 +30,7 @@ each component rebuilt to verify. Its own PR.
 
 **What:** `cgi_main.rs` hand-picks an HTTP status per call site
 (`fail(500, …)`, `fail(502, …)`) because the domain calls return
-`anyhow::Error` — the error category is erased, so the status is chosen by where
+`anyhow::Error` - the error category is erased, so the status is chosen by where
 the error surfaced, not by what went wrong. (katastr's `katastr-cgi` maps a typed
 `KatastrError` to 400/401/404/409/412/503 in one `emit_katastr_error`.)
 
@@ -55,7 +55,7 @@ small binary and fast cold start.
 already pulls `ureq`, so it's in the tree), or (b) split into a Cargo workspace
 with a ureq-based CGI. Option (a) is lighter.
 
-**Payoff:** smaller binary, ~10–30 ms faster cold start per request. Not urgent —
+**Payoff:** smaller binary, ~10-30 ms faster cold start per request. Not urgent -
 nobody is hurting on it yet.
 
 **Blast radius:** rewrite the HTTP layer (`http.rs`) or restructure the crate.
@@ -69,7 +69,7 @@ Contained to this plugin.
   header and included in the `overview` JSON (not rendered in the list row). It's
   disambiguation metadata, but it's the one field that leans into ARES's
   "company identity" territory. Options: **A** keep everywhere · **B** keep only
-  in the detail, drop from `overview_rows` (recommended — the list UI doesn't use
+  in the detail, drop from `overview_rows` (recommended - the list UI doesn't use
   it) · **C** drop entirely (strict ARES boundary).
 - **Vanished listiny (`zmizele_listiny`):** the Sbírka listin is append-only by
   law, so this is a defensive anomaly channel that in practice never fires. It's

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "ui": "tui",
+  "globalEnv": ["NODE_ENV", "BACKEND_URL", "DEV", "VITE_BACKEND_URL"],
+  "boundaries": {
+    "tags": {
+      "app": {
+        "dependents": {
+          "deny": ["app", "lib", "config", "e2e"]
+        }
+      },
+      "e2e": {
+        "dependents": {
+          "deny": ["app", "lib", "config", "e2e"]
+        }
+      },
+      "lib": {
+        "dependencies": {
+          "allow": ["lib", "config"]
+        }
+      },
+      "config": {
+        "dependencies": {
+          "allow": ["config"]
+        }
+      }
+    }
+  },
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "prebuild": {
+      "dependsOn": ["codegen", "lint", "typecheck", "test"]
+    },
+    "codegen": {
+      "dependsOn": ["^codegen"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "typecheck": {
+      "dependsOn": ["codegen", "^codegen", "^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["codegen", "^codegen", "^test"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "preview": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

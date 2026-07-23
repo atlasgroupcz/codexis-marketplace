@@ -110,7 +110,7 @@ cdx-cli search CR --query "..." --current --limit 5
 3. Mezinárodní smlouvy (zejména smlouvy o zamezení dvojího zdanění)
 4. Zákon
 5. Prováděcí vyhláška / nařízení vlády
-6. **Pokyny GFŘ/MF řady D** a stanoviska koordinačního výboru KDP ČR–GFŘ → **váží správu daně, nevážou soud**
+6. **Pokyny GFŘ/MF řady D** a stanoviska koordinačního výboru KDP ČR-GFŘ → **váží správu daně, nevážou soud**
 7. Judikatura NSS a ÚS (u EU-harmonizovaných daní i SDEU)
 8. Odborná literatura a komentáře (ASPI, Beck, Wolters Kluwer), stanoviska KDP ČR
 
@@ -154,7 +154,7 @@ Každou daňovou otázku procházej těmito aspekty, ne vždy jsou všechny rele
 
 Hmotněprávní pravidlo (kdo, kolik, z čeho) odděluj od procesní povinnosti (kdo podává, kdy, jak). Neodvozuj jedno z druhého automaticky.
 
-## Procesní vrstva (daňový řád § 135–155)
+## Procesní vrstva (daňový řád § 135-155)
 
 Kdykoli má odpověď praktický procesní rozměr (ať je hmotněprávní daň jakákoli), projdi krátce tyto úrovně:
 
@@ -163,7 +163,7 @@ Kdykoli má odpověď praktický procesní rozměr (ať je hmotněprávní daň 
 3. **Lhůty pro podání** - § 136 daňového řádu (základní lhůta, prodloužení, elektronická forma).
 4. **Přeplatek a jeho vrácení** - § 154 daňového řádu (co je přeplatek, započtení) a § 155 (žádost o vrácení, lhůty pro vydání).
 
-**Klíčové pravidlo:** Když odpověď končí závěrem „povinnost podat nevzniká", nezastav se tam. Připoj krátký dodatek: „Přiznání lze podat i dobrovolně podle § 135 daňového řádu, pokud by mohlo přinést uplatnění ročních nároků nebo vrácení přeplatku podle § 154–155 daňového řádu." Konkrétní výhodnost plyne z hmotněprávních nároků dané daně (u DPFO typicky § 15 / § 35ba / § 35c ZDP - viz sekce DPFO níže).
+**Klíčové pravidlo:** Když odpověď končí závěrem „povinnost podat nevzniká", nezastav se tam. Připoj krátký dodatek: „Přiznání lze podat i dobrovolně podle § 135 daňového řádu, pokud by mohlo přinést uplatnění ročních nároků nebo vrácení přeplatku podle § 154-155 daňového řádu." Konkrétní výhodnost plyne z hmotněprávních nároků dané daně (u DPFO typicky § 15 / § 35ba / § 35c ZDP - viz sekce DPFO níže).
 
 ### Upřesňující otázky (nekonkrétní dotaz)
 
@@ -239,7 +239,7 @@ Pokud jedna vrstva odkazuje na druhou („stanoví zvláštní předpis", „pod
 
 ## Proactive Reference Enrichment
 
-Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj ji v CODEXIS a použij `https://` odkaz na dokument (resolvovaná URL ze source bloku). Neprezentuj raw reference bez pokusu o lookup. Pokud reference není v CODEXIS, ponechej plain text. Po sobě jdoucí paragrafy shrň do rozmezí (např. `§ 312–332`).
+Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj ji v CODEXIS a použij `https://` odkaz na dokument (resolvovaná URL ze source bloku). Neprezentuj raw reference bez pokusu o lookup. Pokud reference není v CODEXIS, ponechej plain text. Po sobě jdoucí paragrafy shrň do rozmezí (např. `§ 312-332`).
 
 ## Short Best Practices
 
@@ -250,7 +250,7 @@ Kdykoli v textu, tool outputu nebo extraktu vidíš právní referenci, resolvuj
 
 ## Related references
 
-Procesní vrstva (DŘ § 135–155) je inlined výše. Následující reference Read tool callem načti, když řešíš odpovídající doménu:
+Procesní vrstva (DŘ § 135-155) je inlined výše. Následující reference Read tool callem načti, když řešíš odpovídající doménu:
 
 - **Daň z příjmů fyzických osob (DPFO)** - `references/dane-prijmy-fo.md`. Použij, kdykoli uživatel řeší zdanění fyzické osoby (zaměstnání, OSVČ, nájem, investice, ostatní příjmy, paušální vs skutečné výdaje, slevy na dani a daňové zvýhodnění, daňové přiznání FO). Obsahuje 6-vrstvý workflow (klasifikace → výpočet → evidence → odčitatelné → sazba → slevy), mapu §§ ZDP a DPFO anti-patterny.
 - Deep-dive LAW change assessment: `references/czech-law-change-assessment.md` (jen u dotazů na novely a version boundaries).

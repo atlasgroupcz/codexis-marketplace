@@ -15,7 +15,7 @@ Usage:
     znamky-cli lustrace text <TEXT> [--nice 9,42] [--territory CZ,EU]
     znamky-cli lustrace logo <PATH> [--text "..."] [--nice 9,42] [--territory CZ,EU] [--vienna 26.4.1]
 
-<ID> is the watched-mark UUID (from `sledovani list`). Nice classes are 1–45.
+<ID> is the watched-mark UUID (from `sledovani list`). Nice classes are 1-45.
 """
 
 import argparse

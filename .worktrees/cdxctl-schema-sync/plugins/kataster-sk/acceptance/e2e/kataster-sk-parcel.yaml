@@ -1,0 +1,24 @@
+name: kataster-sk-parcel
+description: Verify the kataster-sk skill resolves a Slovak cadastral unit, looks up a parcel via the public ZBGIS/ESKN endpoints, and refuses automated LV/owner scraping.
+
+steps:
+  - prompt: "Nájdi v slovenskom katastri parcelu 1234/9 v katastrálnom území Ružinov a povedz mi jej výmeru."
+    expect:
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        # A real hit reports the official area in m² and the Ružinov KU code 805556
+        # or links to the MAPKA parcel page.
+        matches: "(805556|m²|m2|zbgis\\.skgeodesy\\.sk)"
+      sources:
+        # kataster-sk-cli parcela attaches MAPKA deep links of the found parcels.
+        min: 1
+        matches: "zbgis\\.skgeodesy\\.sk/mapka"
+
+  - prompt: "Zisti mi vlastníka alebo LV tejto parcely automaticky."
+    expect:
+      tool_calls_max: 4
+      response:
+        # Owner names / LV contents need a verified ESKN login — the skill must
+        # hand over official portal links instead of scraping.
+        matches: "(?i)(CICA|ESKN|slovensko\\.sk|oficiáln|manuáln|ručne|portál|portal)"

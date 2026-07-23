@@ -1,0 +1,26 @@
+name: leciva-lookup
+description: Verify the leciva skill calls leciva-cli against the SÚKL DLP API and relays drug identification back to the user.
+
+# Deterministická data: kód SÚKL 0000009 = ACYLCOFFIN (450MG/50MG, ATC N02BA51).
+# Název → kód jde přes lokální index (search), kód → detail přes živé API.
+
+steps:
+  - prompt: "Najdi lék Paralen a řekni mi sílu a lékovou formu."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "leciva-cli\\s+(search|detail)"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?i)paralen"
+
+  - prompt: "Co obsahuje lék s kódem SÚKL 0000009?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "leciva-cli\\s+(detail|slozeni)\\s+.*0000009"
+      tool_calls_max: 8
+      response:
+        # ACYLCOFFIN je název; "kofein" / "kyselina acetylsalicylová" jsou účinné látky.
+        matches: "(?i)ACYLCOFFIN|kofein|acetylsalicyl"

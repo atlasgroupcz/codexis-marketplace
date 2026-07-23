@@ -10,7 +10,7 @@ Výchozí hmotný předpis: **ZDP** (č. 586/1992 Sb.). Procesní nadstavbu ře�
 
 Při odpovědi na praktický dotaz k DPFO („jak správně podat přiznání", „jak uplatnit výdaje", „co mám řešit") projdi těchto šest vrstev a žádnou tiše nevynechávej. Pokud některá vrstva není pro danou otázku relevantní, napiš to výslovně.
 
-1. **Klasifikace příjmu do dílčího základu daně** (§ 6–10 ZDP)
+1. **Klasifikace příjmu do dílčího základu daně** (§ 6-10 ZDP)
 2. **Výpočet dílčího základu** (výdaje paušálem / skutečné / specifické pravidlo)
 3. **Procesní/evidenční vrstva u skutečných výdajů** (doložení, daňová evidence)
 4. **Součet dílčích základů → odčitatelné položky** (§ 15 ZDP)

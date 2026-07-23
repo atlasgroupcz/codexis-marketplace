@@ -74,7 +74,7 @@ most 500 hits - narrow the query if the result is truncated.
 
 | Flag | RPO parameter | Notes |
 |---|---|---|
-| `--ico <ICO>` | `identifier` | 1–8 digits, padded to 8 with leading zeros |
+| `--ico <ICO>` | `identifier` | 1-8 digits, padded to 8 with leading zeros |
 | `--name <TEXT>` | `fullName` | loose match, includes historical names |
 | `--municipality <TEXT>` | `addressMunicipality` | seat municipality |
 | `--street <TEXT>` | `addressStreet` | seat street |

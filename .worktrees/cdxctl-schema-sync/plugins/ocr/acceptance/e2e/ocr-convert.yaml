@@ -1,0 +1,26 @@
+name: ocr-convert
+description: Verify the ocr skill extracts text from a rasterized image (no text layer) and the AI relays the extracted content to the user.
+
+# Fixture: a PNG rendered with PIL containing the distinctive string
+# "123456 test of ocr 987" — no text layer, pure pixels. The `ocr` binary
+# must actually OCR the image; a shortcut reader would return nothing.
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-ocr-{{ run_id }}
+      files:
+        - path: ocr-test.png
+          source: ../fixtures/ocr-test.png   # binary from repo
+
+steps:
+  - prompt: "Udělej mi OCR na obrázku /home/codexis/ee-ocr-{{ run_id }}/ocr-test.png — co je tam napsáno?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "ocr\\s+.*ocr-test\\.png"
+      tool_calls_min: 1
+      tool_calls_max: 10   # ocr + unzip + readFile + relay
+      response:
+        # Distinctive number strings from the image. If OCR works, the
+        # AI's reply will include both; no realistic way to false-positive.
+        matches: "(?s)123456.{0,200}987|987.{0,200}123456"
