@@ -1,0 +1,67 @@
+name: cdxctl-agent-crud
+description: Verify cdxctl can create, update, and delete a custom local agent from stdin.
+
+steps:
+  - prompt: |
+      Vytvoř mi vlastního lokálního agenta s tímhle obsahem:
+
+      ---
+      name: ee-agent-{{ run_id }}
+      description: "E2E test agent — initial description"
+      tools: Read, Bash
+      maxTurns: 8
+      ---
+
+      You are a custom e2e test agent.
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent create.{0,200}--stdin"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ agents { name description editable deletable sourceKind } }"
+        jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
+        count: 1
+        matches_subset:
+          description: "E2E test agent — initial description"
+          editable: true
+          deletable: true
+
+  - prompt: "Jaké mám vlastní agenty? Jen ty upravitelné, ne ty z pluginů."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent list.{0,100}--editable-only"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        contains: "ee-agent-{{ run_id }}"
+      state:
+        graphql: "{ agents { name editable } }"
+        jsonpath: "$.agents[?(@.editable == true)].name"
+        contains: "ee-agent-{{ run_id }}"
+
+  - prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent — updated'."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent update"
+      tool_calls_min: 1
+      tool_calls_max: 9   # may read/edit memory + find id + update
+      state:
+        graphql: "{ agents { name description } }"
+        jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
+        equals: "E2E test agent — updated"
+
+  - prompt: "Smaž agenta ee-agent-{{ run_id }}."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "agent delete"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: "{ agents { name } }"
+        jsonpath: "$.agents[*].name"
+        not_contains: "ee-agent-{{ run_id }}"

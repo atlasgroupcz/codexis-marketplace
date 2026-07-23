@@ -1,0 +1,992 @@
+#!/usr/bin/env node
+var __defProp = Object.defineProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {
+      get: all[name],
+      enumerable: true,
+      configurable: true,
+      set: (newValue) => all[name] = () => newValue
+    });
+};
+var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
+
+// src/config.ts
+function userHome() {
+  return process.env.CODEXIS_PUBLIC_USER_HOME || import_node_os.homedir();
+}
+function envFilePath() {
+  return process.env.SID_ENV_FILE || import_node_path.join(userHome(), ".cdx", "apps", "sid", ".env");
+}
+function readEnvFile() {
+  const out = {};
+  try {
+    for (const line of import_node_fs.readFileSync(envFilePath(), "utf8").split(`
+`)) {
+      const t = line.trim();
+      if (!t || t.startsWith("#") || !t.includes("="))
+        continue;
+      const i = t.indexOf("=");
+      out[t.slice(0, i).trim()] = t.slice(i + 1).trim();
+    }
+  } catch {}
+  return out;
+}
+function getApiKey() {
+  return readEnvFile().SID_API_KEY ?? "";
+}
+function isPlausibleApiKey(key) {
+  return key.length > 0 && !/\s/.test(key);
+}
+function getBaseUrl() {
+  const raw = process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL;
+  return raw.trim().replace(/\/+$/, "");
+}
+function writeEnvFile(entries) {
+  for (const [k, v] of Object.entries(entries)) {
+    if (/[\r\n]/.test(k) || /[\r\n]/.test(v)) {
+      throw new Error(`Odmítnut zápis do .env: hodnota '${k}' obsahuje konec řádku.`);
+    }
+  }
+  const path = envFilePath();
+  import_node_fs.mkdirSync(import_node_path.dirname(path), { recursive: true, mode: 448 });
+  const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join(`
+`) + `
+`;
+  const tmp = `${path}.tmp-${process.pid}`;
+  import_node_fs.writeFileSync(tmp, body, { mode: 384 });
+  import_node_fs.renameSync(tmp, path);
+}
+function writeEnvValue(key, value) {
+  writeEnvFile({ ...readEnvFile(), [key]: value });
+}
+function writeApiKey(key) {
+  writeEnvFile({ ...readEnvFile(), SID_API_KEY: key });
+}
+function deleteApiKey() {
+  const rest = readEnvFile();
+  delete rest.SID_API_KEY;
+  delete rest.SID_USER_ROLE;
+  delete rest.SID_USER_EMAIL;
+  if (Object.keys(rest).length === 0) {
+    if (import_node_fs.existsSync(envFilePath()))
+      import_node_fs.rmSync(envFilePath());
+    return;
+  }
+  writeEnvFile(rest);
+}
+var import_node_fs, import_node_path, import_node_os, EXIT, DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev";
+var init_config = __esm(() => {
+  import_node_fs = require("node:fs");
+  import_node_path = require("node:path");
+  import_node_os = require("node:os");
+  EXIT = { OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 };
+});
+
+// src/http.ts
+function statusToError(status, bodyText) {
+  const detail = bodyText.slice(0, 300);
+  if (status === 401) {
+    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
+  }
+  if (status === 403)
+    return new CliError(`Přístup odepřen (403). ${detail}`, EXIT.AUTH);
+  if (status === 404)
+    return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND);
+  if (status === 429) {
+    return new CliError(`Rate limit SID (429) — zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT);
+  }
+  return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR);
+}
+function networkError(e, timeoutMs) {
+  const name = e instanceof Error ? e.name : "";
+  if (name === "TimeoutError" || name === "AbortError") {
+    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR);
+  }
+  throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
+}
+async function request(path, init, f, keyOverride, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const key = keyOverride ?? getApiKey();
+  if (!key)
+    throw new CliError(NO_KEY_MSG, EXIT.AUTH);
+  const res = await f(`${getBaseUrl()}${path}`, {
+    ...init,
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: { ...init.headers ?? {}, "x-api-key": key }
+  }).catch((e) => networkError(e, timeoutMs));
+  if (!res.ok)
+    throw statusToError(res.status, await res.text().catch(() => ""));
+  return res;
+}
+async function parseJson(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new CliError(`Odpověď ze SID není JSON — zkontrolujte adresu (${getBaseUrl()}); ` + `server vrátil: ${text.slice(0, 120).replace(/\s+/g, " ").trim()}`, EXIT.ERROR);
+  }
+}
+async function apiGet(path, f = fetch, keyOverride) {
+  return parseJson(await request(path, {}, f, keyOverride));
+}
+async function apiPatch(path, body, f = fetch) {
+  return parseJson(await request(path, { method: "PATCH", body: JSON.stringify(body), headers: { "content-type": "application/json" } }, f));
+}
+async function apiRaw(path, f = fetch, timeoutMs = DOWNLOAD_TIMEOUT_MS) {
+  const key = getApiKey();
+  if (!key)
+    throw new CliError(NO_KEY_MSG, EXIT.AUTH);
+  const url = `${getBaseUrl()}${path}`;
+  const res = await f(url, {
+    signal: AbortSignal.timeout(timeoutMs),
+    redirect: "manual",
+    headers: { "x-api-key": key }
+  }).catch((e) => networkError(e, timeoutMs));
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get("location");
+    if (!location)
+      throw new CliError(`SID vrátil přesměrování bez cíle (HTTP ${res.status}).`, EXIT.ERROR);
+    const target = new URL(location, url).toString();
+    const followed = await f(target, {
+      signal: AbortSignal.timeout(timeoutMs),
+      redirect: "follow"
+    }).catch((e) => networkError(e, timeoutMs));
+    if (!followed.ok)
+      throw statusToError(followed.status, await followed.text().catch(() => ""));
+    return followed;
+  }
+  if (!res.ok)
+    throw statusToError(res.status, await res.text().catch(() => ""));
+  return res;
+}
+var CliError, NO_KEY_MSG, REQUEST_TIMEOUT_MS = 30000, DOWNLOAD_TIMEOUT_MS;
+var init_http = __esm(() => {
+  init_config();
+  CliError = class CliError extends Error {
+    exitCode;
+    constructor(message, exitCode) {
+      super(message);
+      this.exitCode = exitCode;
+    }
+  };
+  NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil → API klíče, " + "/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis.";
+  DOWNLOAD_TIMEOUT_MS = 15 * 60000;
+});
+
+// src/links.ts
+function documentUrl(documentId, role) {
+  const base = role === "ADMIN" ? "/admin/files" : "/files";
+  return `${getBaseUrl()}${base}/${encodeURIComponent(documentId)}`;
+}
+function confirmationsUrl(role) {
+  return `${getBaseUrl()}${role === "ADMIN" ? "/admin/confirmations" : "/confirmations"}`;
+}
+function folderUrl(folderId, role) {
+  const base = role === "ADMIN" ? "/admin/files" : "/files";
+  return `${getBaseUrl()}${base}?folderId=${encodeURIComponent(folderId)}`;
+}
+async function resolveRole(f) {
+  const cached = readEnvFile().SID_USER_ROLE;
+  if (cached === "ADMIN" || cached === "USER")
+    return cached;
+  try {
+    const me = await apiGet("/api/v1/users/me", f);
+    const role = me?.role === "ADMIN" ? "ADMIN" : "USER";
+    writeEnvValue("SID_USER_ROLE", role);
+    return role;
+  } catch {
+    return null;
+  }
+}
+var init_links = __esm(() => {
+  init_http();
+  init_config();
+});
+
+// src/commands/search.ts
+var exports_search = {};
+__export(exports_search, {
+  run: () => run
+});
+async function run(argv, f) {
+  const { values, positionals } = import_node_util.parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: { size: { type: "string", default: "10" }, from: { type: "string" } }
+  });
+  const q = positionals.join(" ").trim();
+  if (!q)
+    throw new CliError("Použití: sid-cli search <dotaz> [--size N] [--from N]", EXIT.USAGE);
+  const sp = new URLSearchParams({ q, size: String(values.size) });
+  if (values.from)
+    sp.set("from", String(values.from));
+  const res = await apiGet(`/api/search?${sp}`, f);
+  const role = await resolveRole(f);
+  const hits = (res.hits ?? []).map((h) => h.documentId ? { ...h, url: documentUrl(h.documentId, role) } : h);
+  if (res.source === "opensearch_unavailable") {
+    return {
+      ...res,
+      hits,
+      warning: "Fulltext je dočasně nedostupný (opensearch_unavailable) — prázdný výsledek NEZNAMENÁ, " + "že nic neexistuje. Zkuste to později nebo použijte `sid-cli docs list --query`."
+    };
+  }
+  return { ...res, hits };
+}
+var import_node_util;
+var init_search = __esm(() => {
+  init_http();
+  init_config();
+  init_links();
+  import_node_util = require("node:util");
+});
+
+// src/commands/docs.ts
+var exports_docs = {};
+__export(exports_docs, {
+  run: () => run2
+});
+async function run2(argv, f) {
+  const [sub, ...rest] = argv;
+  if (sub === "get") {
+    const id = rest[0];
+    if (!id)
+      throw new CliError(USAGE, EXIT.USAGE);
+    const doc = await apiGet(`/api/v1/documents/${encodeURIComponent(id)}`, f);
+    return { ...doc, url: documentUrl(doc.id ?? id, await resolveRole(f)) };
+  }
+  if (sub === "legislation") {
+    const id = rest[0];
+    if (!id)
+      throw new CliError(USAGE, EXIT.USAGE);
+    const legislation = await apiGet(`/api/v1/documents/${encodeURIComponent(id)}/legislation`, f);
+    return { documentId: id, legislation };
+  }
+  if (sub === "set-validity") {
+    const id = rest[0];
+    if (!id)
+      throw new CliError(USAGE, EXIT.USAGE);
+    const { values } = import_node_util2.parseArgs({
+      args: rest.slice(1),
+      options: {
+        from: { type: "string" },
+        to: { type: "string" },
+        "clear-from": { type: "boolean", default: false },
+        "clear-to": { type: "boolean", default: false }
+      }
+    });
+    const patch = {};
+    for (const [flag, field, clearFlag] of [
+      ["from", "effectiveFrom", "clear-from"],
+      ["to", "effectiveTo", "clear-to"]
+    ]) {
+      const raw = values[flag];
+      const clear = values[clearFlag];
+      if (raw !== undefined && clear) {
+        throw new CliError(`--${flag} a --${clearFlag} nelze zadat naráz: buď datum nastavte, nebo ho smažte.`, EXIT.USAGE);
+      }
+      if (raw !== undefined) {
+        if (!ISO_DATE.test(raw)) {
+          throw new CliError(`Datum musí být ve formátu YYYY-MM-DD, dostal jsem '${raw}'.`, EXIT.USAGE);
+        }
+        patch[field] = raw;
+      } else if (clear) {
+        patch[field] = null;
+      }
+    }
+    if (Object.keys(patch).length === 0) {
+      throw new CliError("Nebylo co nastavit — uveďte --from, --to, --clear-from nebo --clear-to.", EXIT.USAGE);
+    }
+    return apiPatch(`/api/v1/documents/${encodeURIComponent(id)}`, patch, f);
+  }
+  if (sub === "list") {
+    const { values } = import_node_util2.parseArgs({
+      args: rest,
+      options: {
+        query: { type: "string" },
+        folder: { type: "string" },
+        author: { type: "string" },
+        sort: { type: "string" },
+        page: { type: "string" },
+        "page-size": { type: "string" },
+        attribute: { type: "string", multiple: true },
+        from: { type: "string" },
+        to: { type: "string" },
+        type: { type: "string" },
+        personal: { type: "boolean", default: false }
+      }
+    });
+    for (const flag of ["from", "to"]) {
+      const v = values[flag];
+      if (v !== undefined && !ISO_DATE.test(v)) {
+        throw new CliError(`--${flag} musí být ve formátu YYYY-MM-DD, dostal jsem '${v}'.`, EXIT.USAGE);
+      }
+    }
+    const sp = new URLSearchParams;
+    if (values.query)
+      sp.set("query", values.query);
+    if (values.folder)
+      sp.set("folderId", values.folder);
+    if (values.author)
+      sp.set("authorId", values.author);
+    if (values.sort)
+      sp.set("sortBy", values.sort);
+    if (values.from)
+      sp.set("dateFrom", values.from);
+    if (values.to)
+      sp.set("dateTo", values.to);
+    if (values.type)
+      sp.set("mimeType", values.type);
+    if (values.personal)
+      sp.set("personalOnly", "true");
+    if (values.page)
+      sp.set("page", values.page);
+    if (values["page-size"])
+      sp.set("pageSize", values["page-size"]);
+    for (const id of values.attribute ?? [])
+      sp.append("attributeIds", id);
+    const qs = sp.toString();
+    const res = await apiGet(`/api/v1/documents${qs ? `?${qs}` : ""}`, f);
+    const role = await resolveRole(f);
+    return {
+      ...res,
+      documents: (res.documents ?? []).map((d) => d.id ? { ...d, url: documentUrl(d.id, role) } : d)
+    };
+  }
+  throw new CliError(USAGE, EXIT.USAGE);
+}
+var import_node_util2, ISO_DATE, USAGE;
+var init_docs = __esm(() => {
+  init_http();
+  init_config();
+  init_links();
+  import_node_util2 = require("node:util");
+  ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  USAGE = "Použití: sid-cli docs list [--query T] [--folder ID] [--author ID] [--attribute ID]… " + "[--from YYYY-MM-DD] [--to YYYY-MM-DD] [--type pdf|word|excel|image] [--personal] " + `[--sort newest|oldest|title|size] [--page N] [--page-size N]
+` + `         sid-cli docs get <id>
+` + `         sid-cli docs legislation <id>
+` + "         sid-cli docs set-validity <id> [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--clear-from] [--clear-to]";
+});
+
+// src/commands/folders.ts
+var exports_folders = {};
+__export(exports_folders, {
+  run: () => run3
+});
+function pathOf(folder, byId) {
+  const names = [];
+  let current = folder;
+  const seen = new Set;
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    names.unshift(current.name);
+    current = current.parentId ? byId.get(current.parentId) : undefined;
+  }
+  return names.join(" / ");
+}
+async function run3(argv, f) {
+  if (argv[0] !== "list")
+    throw new CliError(USAGE2, EXIT.USAGE);
+  const folders = await apiGet("/api/v1/folders", f);
+  const byId = new Map(folders.map((x) => [x.id, x]));
+  const role = await resolveRole(f);
+  return {
+    folders: folders.map((x) => ({ ...x, path: pathOf(x, byId), url: folderUrl(x.id, role) })).sort((a, b) => a.path.localeCompare(b.path, "cs"))
+  };
+}
+var USAGE2 = "Použití: sid-cli folders list";
+var init_folders = __esm(() => {
+  init_http();
+  init_config();
+  init_links();
+});
+
+// src/commands/access.ts
+var exports_access = {};
+__export(exports_access, {
+  run: () => run4
+});
+function matchAll(items, pick, needle) {
+  const n = needle.trim().toLowerCase();
+  return items.filter((x) => (pick(x) ?? "").trim().toLowerCase() === n);
+}
+async function resolveUser(needle, f) {
+  if (UUID.test(needle))
+    return { id: needle };
+  const users = await apiGet("/api/v1/users", f);
+  const byEmail = matchAll(users, (u) => u.email, needle);
+  const hits = byEmail.length > 0 ? byEmail : matchAll(users, (u) => u.name, needle);
+  if (hits.length === 0) {
+    throw new CliError(`Uživatel '${needle}' nenalezen — zadejte e-mail nebo id.`, EXIT.NOT_FOUND);
+  }
+  if (hits.length > 1) {
+    const opts = hits.map((u) => u.email ?? u.id).join(", ");
+    throw new CliError(`'${needle}' odpovídá více uživatelům — upřesněte e-mailem nebo id: ${opts}`, EXIT.USAGE);
+  }
+  return hits[0];
+}
+async function resolveGroup(needle, f) {
+  if (UUID.test(needle))
+    return { id: needle };
+  const groups = await apiGet("/api/v1/groups", f);
+  const hits = matchAll(groups, (g) => g.name, needle);
+  if (hits.length === 0)
+    throw new CliError(`Skupina '${needle}' nenalezena.`, EXIT.NOT_FOUND);
+  if (hits.length > 1) {
+    throw new CliError(`'${needle}' odpovídá více skupinám — upřesněte id: ${hits.map((g) => g.id).join(", ")}`, EXIT.USAGE);
+  }
+  return hits[0];
+}
+function folderLabel(x) {
+  return x.folderPath.map((p) => p.name).join(" / ") || x.folderName;
+}
+async function run4(argv, f) {
+  const [sub] = argv;
+  const needle = argv.slice(1).join(" ").trim();
+  if (sub !== "user" && sub !== "group" || !needle)
+    throw new CliError(USAGE3, EXIT.USAGE);
+  const role = await resolveRole(f);
+  if (sub === "user") {
+    const u = await resolveUser(needle, f);
+    const res2 = await apiGet(`/api/v1/access/users/${encodeURIComponent(u.id)}`, f);
+    const folders2 = res2.folders.map((x) => ({
+      folder: folderLabel(x),
+      role: x.role,
+      source: x.source,
+      url: folderUrl(x.folderId, role)
+    }));
+    return {
+      user: { id: u.id, ...u.email ? { email: u.email } : {}, ...u.name ? { name: u.name } : {} },
+      folders: folders2,
+      ...folders2.length === 0 ? { note: EMPTY_NOTE } : {}
+    };
+  }
+  const g = await resolveGroup(needle, f);
+  const res = await apiGet(`/api/v1/access/groups/${encodeURIComponent(g.id)}`, f);
+  const folders = res.folders.map((x) => ({
+    folder: folderLabel(x),
+    role: x.role,
+    ...x.deny ? { deny: true } : {},
+    url: folderUrl(x.folderId, role)
+  }));
+  return {
+    group: { id: g.id, ...g.name ? { name: g.name } : {} },
+    folders,
+    ...folders.length === 0 ? { note: EMPTY_NOTE } : {}
+  };
+}
+var USAGE3 = "Použití: sid-cli access user <email|jméno|id> | access group <název|id>", UUID, EMPTY_NOTE = "Žádné složky: principal nikde nemá přístup, nebo na dané složky nemáte admin právo. Práva se upravují v SID.";
+var init_access = __esm(() => {
+  init_http();
+  init_config();
+  init_links();
+  UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+});
+
+// src/commands/attributes.ts
+var exports_attributes = {};
+__export(exports_attributes, {
+  run: () => run5
+});
+async function run5(argv, f) {
+  const [sub, ...rest] = argv;
+  if (sub !== "list")
+    throw new CliError(USAGE4, EXIT.USAGE);
+  const { values } = import_node_util3.parseArgs({ args: rest, options: { all: { type: "boolean", default: false } } });
+  const all = await apiGet("/api/v1/attributes", f);
+  const attributes = values.all ? all : all.filter((a) => !a.archivedAt);
+  return {
+    attributes: attributes.map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      options: a.options ?? [],
+      documentCount: a.documentCount ?? 0,
+      ...a.scopeFolderId ? { scopeFolderId: a.scopeFolderId } : {},
+      ...a.archivedAt ? { archivedAt: a.archivedAt } : {}
+    }))
+  };
+}
+var import_node_util3, USAGE4 = "Použití: sid-cli attributes list [--all]";
+var init_attributes = __esm(() => {
+  init_http();
+  init_config();
+  import_node_util3 = require("node:util");
+});
+
+// src/commands/download.ts
+var exports_download = {};
+__export(exports_download, {
+  run: () => run6
+});
+function filenameFrom(res, fileId) {
+  const cd = res.headers.get("content-disposition") ?? "";
+  const m = /filename="?([^";]+)"?/.exec(cd);
+  const raw = m?.[1] ?? fileId;
+  const safe = import_node_path2.basename(raw.trim().replace(/\\/g, "/"));
+  return safe && safe !== "." && safe !== ".." ? safe : import_node_path2.basename(fileId) || "stazeny-soubor";
+}
+async function run6(argv, f) {
+  const { values, positionals } = import_node_util4.parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: { out: { type: "string" } }
+  });
+  const fileId = positionals[0];
+  if (!fileId)
+    throw new CliError("Použití: sid-cli download <fileId> [--out CESTA]", EXIT.USAGE);
+  const res = await apiRaw(`/api/files/download/${encodeURIComponent(fileId)}`, f);
+  const target = import_node_path2.resolve(values.out ?? filenameFrom(res, fileId));
+  if (!res.body)
+    throw new CliError("Prázdná odpověď serveru.", EXIT.ERROR);
+  import_node_fs2.mkdirSync(import_node_path2.dirname(target), { recursive: true });
+  await import_promises.pipeline(import_node_stream.Readable.fromWeb(res.body), import_node_fs2.createWriteStream(target));
+  return { savedTo: target, bytes: import_node_fs2.statSync(target).size };
+}
+var import_node_util4, import_node_fs2, import_node_stream, import_promises, import_node_path2;
+var init_download = __esm(() => {
+  init_http();
+  init_config();
+  import_node_util4 = require("node:util");
+  import_node_fs2 = require("node:fs");
+  import_node_stream = require("node:stream");
+  import_promises = require("node:stream/promises");
+  import_node_path2 = require("node:path");
+});
+
+// src/commands/confirmations.ts
+var exports_confirmations = {};
+__export(exports_confirmations, {
+  run: () => run7
+});
+async function run7(argv, f) {
+  const [sub, ...rest] = argv;
+  if (sub === "confirm") {
+    throw new CliError("Potvrzení se provádí v aplikaci SID, ne z příkazové řádky — " + "otevřete dokument v SID a potvrďte ho tam. " + `Seznam čekajících: ${confirmationsUrl(await resolveRole(f))}`, EXIT.USAGE);
+  }
+  if (sub === "list") {
+    const { values } = import_node_util5.parseArgs({ args: rest, options: { state: { type: "string" } } });
+    if (values.state !== undefined && values.state !== "pending" && values.state !== "confirmed") {
+      throw new CliError(`--state musí být 'pending' nebo 'confirmed', dostal jsem '${values.state}'.`, EXIT.USAGE);
+    }
+    const qs = values.state ? `?state=${encodeURIComponent(values.state)}` : "";
+    const items = await apiGet(`/api/v1/confirmations${qs}`, f);
+    const role = await resolveRole(f);
+    return {
+      confirmations: items.map((c) => c.documentId ? { ...c, url: documentUrl(c.documentId, role) } : c),
+      confirmInApp: confirmationsUrl(role)
+    };
+  }
+  throw new CliError(USAGE5, EXIT.USAGE);
+}
+var import_node_util5, USAGE5 = "Použití: sid-cli confirmations list [--state pending|confirmed]";
+var init_confirmations = __esm(() => {
+  init_http();
+  init_config();
+  init_links();
+  import_node_util5 = require("node:util");
+});
+
+// src/commands/notifications.ts
+var exports_notifications = {};
+__export(exports_notifications, {
+  run: () => run8
+});
+async function run8(argv, f) {
+  const { values } = import_node_util6.parseArgs({
+    args: argv,
+    options: { all: { type: "boolean", default: false }, limit: { type: "string", default: "50" } }
+  });
+  const sp = new URLSearchParams;
+  if (!values.all)
+    sp.set("unreadOnly", "true");
+  sp.set("limit", String(values.limit));
+  const items = await apiGet(`/api/notifications?${sp}`, f);
+  const role = await resolveRole(f);
+  return items.map((n) => n.documentId ? { ...n, url: documentUrl(n.documentId, role) } : n);
+}
+var import_node_util6;
+var init_notifications = __esm(() => {
+  init_http();
+  init_links();
+  import_node_util6 = require("node:util");
+});
+
+// src/notify-settings.ts
+function defaultsPath() {
+  return process.env.SID_DEFAULTS_FILE || import_node_path3.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
+}
+function userSettingsPath() {
+  return import_node_path3.join(userHome(), ".cdx", "apps", "sid", "settings.json");
+}
+function readJson(path) {
+  try {
+    const parsed = JSON.parse(import_node_fs3.readFileSync(path, "utf8"));
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function cleanRecipients(raw) {
+  if (!Array.isArray(raw))
+    return;
+  const seen = new Set;
+  const out = [];
+  for (const v of raw) {
+    if (typeof v !== "string")
+      continue;
+    const t = v.trim();
+    if (!t)
+      continue;
+    const k = t.toLowerCase();
+    if (seen.has(k))
+      continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+}
+function notifyBlock(source) {
+  const raw = source?.notify;
+  if (!raw || typeof raw !== "object")
+    return {};
+  const out = {};
+  const { email, inApp, recipients } = raw;
+  if (typeof email === "boolean")
+    out.email = email;
+  if (typeof inApp === "boolean")
+    out.inApp = inApp;
+  const cleaned = cleanRecipients(recipients);
+  if (cleaned)
+    out.recipients = cleaned;
+  return out;
+}
+function getNotifySettings() {
+  return {
+    ...BUILTIN,
+    ...notifyBlock(readJson(defaultsPath())),
+    ...notifyBlock(readJson(userSettingsPath()))
+  };
+}
+var import_node_fs3, import_node_path3, import_node_os2, BUILTIN;
+var init_notify_settings = __esm(() => {
+  init_config();
+  import_node_fs3 = require("node:fs");
+  import_node_path3 = require("node:path");
+  import_node_os2 = require("node:os");
+  BUILTIN = { email: false, inApp: true, recipients: [] };
+});
+
+// src/notify.ts
+function restBase(daemonUrl) {
+  const base = (daemonUrl || "").replace(/\/+$/, "");
+  return base.endsWith(GRAPHQL_PATH) ? base.slice(0, -GRAPHQL_PATH.length).replace(/\/+$/, "") : base;
+}
+function graphqlUrl(daemonUrl) {
+  const base = (daemonUrl || "").replace(/\/+$/, "");
+  return base.endsWith(GRAPHQL_PATH) ? base : base + GRAPHQL_PATH;
+}
+function daemonAuth() {
+  try {
+    let t = import_node_fs4.readFileSync(import_node_path4.join(userHome(), ".cdx", "env", "secret"), "utf8").trim();
+    if (!t)
+      return null;
+    if (t.toLowerCase().startsWith("authorization:"))
+      t = t.slice("authorization:".length).trim();
+    t = t.replace(/[\r\n]/g, "");
+    if (!t)
+      return null;
+    return t.toLowerCase().startsWith("bearer ") ? t : `Bearer ${t}`;
+  } catch {
+    return null;
+  }
+}
+async function sendEmail(subject, bodyText, auth, daemonUrl, f, to) {
+  const payload = JSON.stringify(to && to.length > 0 ? { subject, bodyText, to } : { subject, bodyText });
+  const boundary = `----sid-${import_node_crypto.randomUUID().replace(/-/g, "")}`;
+  const body = `--${boundary}\r
+` + `Content-Disposition: form-data; name="payload"\r
+` + `Content-Type: application/json; charset=utf-8\r
+\r
+` + `${payload}\r
+` + `--${boundary}--\r
+`;
+  try {
+    const res = await f(`${restBase(daemonUrl)}${EMAIL_ENDPOINT}`, {
+      method: "POST",
+      signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
+      headers: { authorization: auth, "content-type": `multipart/form-data; boundary=${boundary}` },
+      body
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+async function queryMeEmail(auth, daemonUrl, f) {
+  try {
+    const res = await f(graphqlUrl(daemonUrl), {
+      method: "POST",
+      signal: AbortSignal.timeout(ME_QUERY_TIMEOUT_MS),
+      headers: { authorization: auth, "content-type": "application/json" },
+      body: JSON.stringify({ query: "query { me { email } }" })
+    });
+    if (!res.ok)
+      return null;
+    const data = await res.json();
+    const email = data?.data?.me?.email;
+    return typeof email === "string" && email ? email : null;
+  } catch {
+    return null;
+  }
+}
+async function resolveTo(recipients, auth, daemonUrl, f) {
+  const seen = new Set;
+  const extras = [];
+  for (const r of recipients) {
+    const t = r.trim();
+    if (!t)
+      continue;
+    const k = t.toLowerCase();
+    if (seen.has(k))
+      continue;
+    seen.add(k);
+    extras.push(t);
+  }
+  if (extras.length === 0)
+    return null;
+  const me = await queryMeEmail(auth, daemonUrl, f);
+  if (!me)
+    return extras;
+  const meKey = me.trim().toLowerCase();
+  return [me, ...extras.filter((e) => e.toLowerCase() !== meKey)];
+}
+async function sendBell(message, auth, daemonUrl, f) {
+  const query = "mutation Create($input: CreateNotificationInput!) { createNotification(input: $input) { id } }";
+  try {
+    const res = await f(graphqlUrl(daemonUrl), {
+      method: "POST",
+      signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
+      headers: { authorization: auth, "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ query, variables: { input: { message, type: "sid-update" } } })
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+async function sendDigest(subject, bodyText, f = fetch) {
+  const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL;
+  const auth = daemonAuth();
+  if (!daemonUrl || !auth)
+    return false;
+  const { email, inApp, recipients } = getNotifySettings();
+  if (!email && !inApp)
+    return false;
+  const to = email ? await resolveTo(recipients, auth, daemonUrl, f) : null;
+  const results = await Promise.all([
+    email ? sendEmail(subject, bodyText, auth, daemonUrl, f, to) : Promise.resolve(false),
+    inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false)
+  ]);
+  return results.some(Boolean);
+}
+var import_node_fs4, import_node_path4, import_node_crypto, EMAIL_ENDPOINT = "/rest/v1/plugin/email/send", GRAPHQL_PATH = "/graphql", DAEMON_TIMEOUT_MS = 30000, ME_QUERY_TIMEOUT_MS = 1e4;
+var init_notify = __esm(() => {
+  init_config();
+  init_notify_settings();
+  import_node_fs4 = require("node:fs");
+  import_node_path4 = require("node:path");
+  import_node_crypto = require("node:crypto");
+});
+
+// src/commands/check.ts
+var exports_check = {};
+__export(exports_check, {
+  run: () => run9
+});
+async function run9(argv, f) {
+  const { values } = import_node_util7.parseArgs({ args: argv, options: { notify: { type: "boolean", default: false } } });
+  const [notifications, confirmations] = await Promise.all([
+    apiGet("/api/notifications?unreadOnly=true&limit=50", f),
+    apiGet("/api/v1/confirmations?state=pending", f)
+  ]);
+  const role = await resolveRole(f);
+  const withUrl = (items) => items.map((i) => i.documentId ? { ...i, url: documentUrl(i.documentId, role) } : i);
+  const digest = {
+    unreadNotifications: notifications.length,
+    pendingConfirmations: confirmations.length,
+    notifications: withUrl(notifications),
+    confirmations: withUrl(confirmations),
+    confirmInApp: confirmationsUrl(role),
+    notified: false
+  };
+  if (values.notify && (digest.unreadNotifications > 0 || digest.pendingConfirmations > 0)) {
+    const subject = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`;
+    const lines = [
+      `Nepřečtené notifikace: ${digest.unreadNotifications}`,
+      `Čekající potvrzení: ${digest.pendingConfirmations}`,
+      "",
+      `Otevřete v SID: ${confirmationsUrl(role)}`
+    ];
+    digest.notified = await sendDigest(subject, lines.join(`
+`), f);
+  }
+  return digest;
+}
+var import_node_util7;
+var init_check = __esm(() => {
+  init_http();
+  init_notify();
+  init_links();
+  import_node_util7 = require("node:util");
+});
+
+// src/commands/settings.ts
+var exports_settings = {};
+__export(exports_settings, {
+  run: () => run10
+});
+function isAdmin(role) {
+  return role === "ADMIN";
+}
+async function readStdin() {
+  const chunks = [];
+  for await (const c of process.stdin)
+    chunks.push(c);
+  return Buffer.concat(chunks).toString("utf8");
+}
+async function verifyKey(key, f) {
+  try {
+    return await apiGet("/api/v1/users/me", f, key);
+  } catch (e) {
+    const err = e;
+    const code = err.exitCode ?? EXIT.ERROR;
+    const reason = code === EXIT.AUTH ? `SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel. ${err.message}` : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`;
+    throw new CliError(`${reason} Původní nastavení zůstalo beze změny.`, code);
+  }
+}
+async function run10(argv, f, stdin = readStdin) {
+  const [sub] = argv;
+  if (sub === "set-key") {
+    const key = (await stdin()).trim();
+    if (!key)
+      throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE6}`, EXIT.USAGE);
+    if (!isPlausibleApiKey(key)) {
+      throw new CliError("Klíč obsahuje nepovolené znaky (mezera/konec řádku) — vložte jen samotný klíč.", EXIT.USAGE);
+    }
+    const user = await verifyKey(key, f);
+    writeApiKey(key);
+    writeEnvValue("SID_USER_ROLE", user?.role === "ADMIN" ? "ADMIN" : "USER");
+    return { verified: true, user, start: key.slice(0, 7) };
+  }
+  if (sub === "test") {
+    const user = await apiGet("/api/v1/users/me", f);
+    return { ok: true, user };
+  }
+  if (sub === "whoami") {
+    const user = await apiGet("/api/v1/users/me", f);
+    const admin = isAdmin(user.role);
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: admin ? "ADMIN" : "USER",
+      isAdmin: admin
+    };
+  }
+  if (sub === "status") {
+    const key = getApiKey();
+    const cachedRole = readEnvFile().SID_USER_ROLE;
+    return {
+      configured: key !== "",
+      baseUrl: getBaseUrl(),
+      ...key ? { start: key.slice(0, 7) } : {},
+      ...cachedRole ? { role: cachedRole, isAdmin: isAdmin(cachedRole) } : {}
+    };
+  }
+  if (sub === "delete-key") {
+    deleteApiKey();
+    return { deleted: true };
+  }
+  throw new CliError(USAGE6, EXIT.USAGE);
+}
+var USAGE6;
+var init_settings = __esm(() => {
+  init_http();
+  init_config();
+  USAGE6 = "Použití: sid-cli settings set-key|test|status|whoami|delete-key  " + "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)";
+});
+
+// src/main.ts
+init_http();
+init_config();
+var COMMANDS = {
+  search: () => Promise.resolve().then(() => (init_search(), exports_search)),
+  docs: () => Promise.resolve().then(() => (init_docs(), exports_docs)),
+  folders: () => Promise.resolve().then(() => (init_folders(), exports_folders)),
+  access: () => Promise.resolve().then(() => (init_access(), exports_access)),
+  attributes: () => Promise.resolve().then(() => (init_attributes(), exports_attributes)),
+  download: () => Promise.resolve().then(() => (init_download(), exports_download)),
+  confirmations: () => Promise.resolve().then(() => (init_confirmations(), exports_confirmations)),
+  notifications: () => Promise.resolve().then(() => (init_notifications(), exports_notifications)),
+  check: () => Promise.resolve().then(() => (init_check(), exports_check)),
+  settings: () => Promise.resolve().then(() => (init_settings(), exports_settings))
+};
+var HELP = `sid-cli — přístup k SID (Systém interních dokumentů) přes API klíč
+
+Příkazy:
+  search <dotaz> [--size N]                fulltextové hledání
+  docs list [--query|--folder|--attribute…] výpis dokumentů s filtry
+  docs get <id>                            metadata dokumentu
+  docs legislation <id>                    sledovaná legislativa dokumentu
+  docs set-validity <id> --from|--to       datum platnosti (nutné EDITOR právo)
+  folders list                             složky, do kterých vidím
+  access user|group <email|název|id>       (admin) jaká práva má user/skupina ke složkám
+  attributes list [--all]                  katalog atributů pro filtrování
+  download <fileId> [--out CESTA]          stažení souboru
+  confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
+  notifications [--all] [--limit N]        notifikace (default nepřečtené)
+  check [--notify]                         digest: novinky + čekající potvrzení
+  settings set-key|test|status             správa klíče (set-key čte STDIN)
+  settings whoami                          kdo jsem a jestli jsem admin
+
+Klíč: vygenerujte v SID na /api-klice, vložte v panelu pluginu.
+Ukládá se do ~/.cdx/apps/sid/.env — nikdy ho nevkládejte do chatu.`;
+async function main() {
+  const [cmd, ...rest] = process.argv.slice(2);
+  if (!cmd || cmd === "--help" || cmd === "help") {
+    console.log(HELP);
+    return;
+  }
+  const loader = COMMANDS[cmd];
+  if (!loader)
+    throw new CliError(`Neznámý příkaz '${cmd}'.
+
+${HELP}`, EXIT.USAGE);
+  const command = await loader();
+  let result;
+  try {
+    result = await command.run(rest);
+  } catch (e) {
+    const code = e.code;
+    if (typeof code === "string" && code.startsWith("ERR_PARSE_ARGS")) {
+      throw new CliError(`${e.message}
+
+sid-cli ${cmd} --help`, EXIT.USAGE);
+    }
+    throw e;
+  }
+  if (result !== undefined)
+    process.stdout.write(JSON.stringify(result, null, 2) + `
+`);
+}
+main().catch((err) => {
+  if (err instanceof CliError) {
+    process.stderr.write(err.message + `
+`);
+    process.exitCode = err.exitCode;
+  } else {
+    process.stderr.write(`Neočekávaná chyba: ${err instanceof Error ? err.message : String(err)}
+`);
+    process.exitCode = EXIT.ERROR;
+  }
+});

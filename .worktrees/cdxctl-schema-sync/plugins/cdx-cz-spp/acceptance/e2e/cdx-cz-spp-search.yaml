@@ -1,0 +1,25 @@
+name: cdx-cz-spp-search
+description: Verify the cdx-cz-spp skill searches Czech municipal regulations (sbírka právních předpisů).
+
+# Czech municipal regulations (sbirkapp.gov.cz). Tests search both broadly
+# (any municipal ordinance) and narrowly (Prague, a prolific publisher).
+
+steps:
+  - prompt: "Najdi mi obecně závazné vyhlášky hlavního města Prahy."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "cdx-cz-spp search"
+      tool_calls_min: 1
+      tool_calls_max: 10
+      response:
+        # Presence of a real doc link proves search actually returned hits —
+        # immune to "nenašel jsem žádné" false-positives.
+        matches: "/doc/CZSB\\d+"
+
+  - prompt: "A nějaké aktuálně platné obecní vyhlášky — stačí pár příkladů."
+    expect:
+      # Natural follow-up — may be answered from step-1 chat context.
+      tool_calls_max: 8
+      response:
+        matches: "/doc/CZSB\\d+"

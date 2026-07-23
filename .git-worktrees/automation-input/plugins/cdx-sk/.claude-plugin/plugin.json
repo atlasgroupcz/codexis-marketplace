@@ -1,0 +1,37 @@
+{
+  "name": "cdx-sk",
+  "iconPath": "icon.svg",
+  "version": "1.1.2",
+  "description": "Slovak legal database - e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["cdx-sk", "legal", "law", "legislation", "slovak", "judiciary", "case-law", "court", "api"],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "slovak", "legislation", "case-law"],
+  "i18n": {
+    "cs": {
+      "displayName": "Slovenské právo (e-Zbierka a soudy SR)",
+      "description": "Slovenská právní databáze - legislativa z e-Zbierky, rozhodnutí všeobecných soudů (~4,6 mil.) a Nejvyššího a Ústavního soudu SR.",
+      "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislativa", "case-law": "Judikatura" }
+    },
+    "en": {
+      "displayName": "Slovak Legal Database (e-Zbierka & courts)",
+      "description": "Slovak legal database - e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings.",
+      "tagLabels": { "legal": "Law", "slovak": "Slovakia", "legislation": "Legislation", "case-law": "Case Law" }
+    },
+    "sk": {
+      "displayName": "Slovenské právo (e-Zbierka a súdy SR)",
+      "description": "Slovenská právna databáza - legislatíva z e-Zbierky, rozhodnutia všeobecných súdov (~4,6 mil.) a Najvyššieho a Ústavného súdu SR.",
+      "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "legislation": "Legislatíva", "case-law": "Judikatúra" }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills",
+  "env": {
+    "CODEXIS_PLUGIN_SK_API_URL": "https://codexis.ai/sources/api"
+  }
+}

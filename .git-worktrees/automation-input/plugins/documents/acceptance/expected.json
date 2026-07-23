@@ -1,0 +1,28 @@
+{
+  "skills": [
+    "documents:docx",
+    "documents:pdf",
+    "documents:xlsx",
+    "documents:pptx"
+  ],
+  "post_install": [
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-render"
+    },
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/cdx-recalc"
+    }
+  ],
+  "post_uninstall": [
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-render"
+    },
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/cdx-recalc"
+    }
+  ]
+}

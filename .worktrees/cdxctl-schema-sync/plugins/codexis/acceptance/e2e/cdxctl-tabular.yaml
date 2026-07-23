@@ -1,0 +1,61 @@
+name: cdxctl-tabular
+description: Verify cdxctl can define columns, run tabular extraction against files in a folder, and return results.
+
+# Tabular extraction workflow:
+#   DRAFT state → add columns → start → RUNNING → DONE → rows with cell values
+#
+# Uses ONE small file and ONE column so the backend AI extraction finishes
+# quickly. The runner uploads the fixture file before the chat starts so
+# the test focuses strictly on cdxctl tabular commands.
+
+setup:
+  - upload:
+      destination: /home/codexis/ee-tab-{{ run_id }}
+      files:
+        - path: invoice.txt
+          content: "Customer: John Doe. Invoice total: $250. Paid in full.\n"
+
+steps:
+  - prompt: "V /home/codexis/ee-tab-{{ run_id }} mám faktury. Přidej do tabulární extrakce sloupec 'customer' — celé jméno zákazníka z faktury. Extrakci zatím nespouštěj, to řeknu potom."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "tabular add-column"
+      tool_calls_min: 1
+      tool_calls_max: 13   # high-variance exploration; includes occasional spawn_agent
+      state:
+        graphql: 'query($f: String!){ tabularExtraction(folder: $f) { columns { name } status } }'
+        variables:
+          f: "/home/codexis/ee-tab-{{ run_id }}"
+        jsonpath: "$.tabularExtraction.columns[*].name"
+        contains: "customer"
+
+  - prompt: "Spusť extrakci nad /home/codexis/ee-tab-{{ run_id }} a počkej, až bude hotová. Řekni mi, až bude DONE."
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "tabular[^a-z]+start"   # shell form or Python list form
+      tool_calls_min: 1
+      tool_calls_max: 8
+      state:
+        graphql: 'query($f: String!){ tabularExtraction(folder: $f) { status progress { totalFiles extractedFiles } } }'
+        variables:
+          f: "/home/codexis/ee-tab-{{ run_id }}"
+        jsonpath: "$.tabularExtraction.status"
+        equals: "DONE"
+
+  - prompt: "Ukaž mi výsledky extrakce /home/codexis/ee-tab-{{ run_id }} — jaká hodnota vyšla ve sloupci customer?"
+    expect:
+      tool_call:
+        name: shell
+        input_matches: "tabular results"
+      tool_calls_min: 1
+      tool_calls_max: 8
+      response:
+        matches: "(?i)john"   # AI must relay the extracted value back to the user
+      state:
+        graphql: 'query($f: String!){ tabularExtraction(folder: $f) { rows { fileName status } } }'
+        variables:
+          f: "/home/codexis/ee-tab-{{ run_id }}"
+        jsonpath: "$.tabularExtraction.rows[*].status"
+        matches: "DONE|ERROR"   # cdxctl returned rows; extraction backend may flake on specific files

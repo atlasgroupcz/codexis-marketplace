@@ -1,0 +1,46 @@
+{
+  "name": "visualization",
+  "iconPath": "icon.svg",
+  "version": "1.0.0",
+  "description": "Data visualization using D3.js, Leaflet and AG Grid - charts, network graphs, timelines, trees, calendars, flowcharts, kanban boards, tables and maps",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "d3",
+    "visualization",
+    "chart",
+    "graph",
+    "timeline",
+    "tree",
+    "calendar",
+    "flowchart",
+    "kanban",
+    "map",
+    "leaflet",
+    "ag-grid",
+    "legal",
+    "law"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["visualization", "chart", "timeline", "map", "legal"],
+  "i18n": {
+    "cs": {
+      "displayName": "Vizualizace dat",
+      "description": "Interaktivní vizualizace dat (D3.js, Leaflet, AG Grid) - sloupcové, čárové a koláčové grafy, síťové grafy, časové osy a Gantt, stromy, kalendáře, vývojové diagramy, kanban, tabulky a mapy.",
+      "tagLabels": { "visualization": "Vizualizace", "chart": "Grafy", "timeline": "Časová osa", "map": "Mapa", "legal": "Právo" }
+    },
+    "en": {
+      "displayName": "Data Visualization",
+      "description": "Interactive data visualization (D3.js, Leaflet, AG Grid) - bar/line/pie charts, network graphs, timelines and Gantt charts, trees, calendars, flowcharts, kanban boards, tables and maps.",
+      "tagLabels": { "visualization": "Visualization", "chart": "Charts", "timeline": "Timeline", "map": "Map", "legal": "Law" }
+    },
+    "sk": {
+      "displayName": "Vizualizácia dát",
+      "description": "Interaktívna vizualizácia dát (D3.js, Leaflet, AG Grid) - stĺpcové, čiarové a koláčové grafy, sieťové grafy, časové osi a Gantt, stromy, kalendáre, vývojové diagramy, kanban, tabuľky a mapy.",
+      "tagLabels": { "visualization": "Vizualizácia", "chart": "Grafy", "timeline": "Časová os", "map": "Mapa", "legal": "Právo" }
+    }
+  },
+  "skills": "./skills"
+}

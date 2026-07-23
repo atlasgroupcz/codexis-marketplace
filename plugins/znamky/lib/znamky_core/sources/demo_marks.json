@@ -1,0 +1,20 @@
+[
+  { "id": "DEMO-CODEXIS", "name": "CODEXIS", "kind": "word", "office": "CZ", "nice_classes": [9, 42], "applicant": "ATLAS consulting spol. s r.o.", "status": "Registered", "filing_date": "2003-05-14" },
+  { "id": "DEMO-KODEXIS", "name": "KODEXIS", "kind": "word", "office": "EM", "nice_classes": [9, 42, 45], "applicant": "Beta Legal Tech GmbH", "status": "Filed", "filing_date": "2024-11-02" },
+  { "id": "DEMO-CODEX", "name": "CODEX", "kind": "word", "office": "CZ", "nice_classes": [16, 41], "applicant": "Codex Media s.r.o.", "status": "Registered", "filing_date": "1998-02-10" },
+  { "id": "DEMO-CODEXIA", "name": "CODEXIA", "kind": "word", "office": "EM", "nice_classes": [42], "applicant": "Codexia Solutions AG", "status": "Registered", "filing_date": "2019-09-30" },
+  { "id": "DEMO-CODEXIS-PLUS", "name": "CODEXIS PLUS", "kind": "combined", "office": "CZ", "nice_classes": [9], "vienna_codes": ["27.5.1"], "applicant": "Gamma s.r.o.", "status": "Filed", "filing_date": "2025-01-20" },
+  { "id": "DEMO-DIRECTCASE", "name": "DirectCase", "kind": "word", "office": "CZ", "nice_classes": [9, 42], "applicant": "ATLAS consulting spol. s r.o.", "status": "Filed", "filing_date": "2024-03-05" },
+  { "id": "DEMO-DIRECT-CASE", "name": "DIRECT CASE", "kind": "word", "office": "EM", "nice_classes": [9, 42], "applicant": "DirectCase Europe s.r.o.", "status": "Filed", "filing_date": "2025-02-11" },
+  { "id": "DEMO-DIRECTCASE-AI", "name": "DIRECTCASE AI", "kind": "combined", "office": "EM", "nice_classes": [42, 45], "vienna_codes": ["27.5.1"], "applicant": "Caseware Ltd.", "status": "Filed", "filing_date": "2025-04-01" },
+  { "id": "DEMO-CASEDIRECT", "name": "CASEDIRECT", "kind": "word", "office": "CZ", "nice_classes": [42], "applicant": "CaseDirect a.s.", "status": "Registered", "filing_date": "2021-06-18" },
+  { "id": "DEMO-JUSTCASE", "name": "JUSTCASE", "kind": "word", "office": "EM", "nice_classes": [45], "applicant": "JustCase OÜ", "status": "Registered", "filing_date": "2020-10-22" },
+  { "id": "DEMO-LEGALCASE", "name": "LEGALCASE", "kind": "word", "office": "EM", "nice_classes": [45], "applicant": "LegalCase BV", "status": "Registered", "filing_date": "2017-07-07" },
+  { "id": "DEMO-DIRECTUM", "name": "DIRECTUM", "kind": "word", "office": "EM", "nice_classes": [9], "applicant": "Directum LLC", "status": "Registered", "filing_date": "2012-12-01" },
+  { "id": "DEMO-SHIELD-LAW", "name": "SHIELDLAW", "kind": "figurative", "office": "CZ", "nice_classes": [45], "vienna_codes": ["24.1.5", "26.4.1"], "applicant": "ShieldLaw s.r.o.", "status": "Registered", "filing_date": "2016-05-05" },
+  { "id": "DEMO-SHIELD-AI", "name": "AEGIS", "kind": "combined", "office": "EM", "nice_classes": [9, 42], "vienna_codes": ["24.1.5", "26.4.4"], "applicant": "Aegis AI s.r.o.", "status": "Filed", "filing_date": "2025-03-19" },
+  { "id": "DEMO-PLAY-TRIANGLE", "name": "PLAYDIRECT", "kind": "figurative", "office": "CZ", "nice_classes": [9, 42], "vienna_codes": ["26.3.1", "26.4.1"], "applicant": "PlayDirect s.r.o.", "status": "Filed", "filing_date": "2024-08-08" },
+  { "id": "DEMO-AQUA", "name": "AQUABELLA", "kind": "word", "office": "CZ", "nice_classes": [32], "applicant": "Aquabella s.r.o.", "status": "Registered", "filing_date": "2015-04-04" },
+  { "id": "DEMO-BANANA", "name": "BANANA REPUBLIC", "kind": "word", "office": "EM", "nice_classes": [25], "applicant": "Banana Foods a.s.", "status": "Registered", "filing_date": "2010-03-03" },
+  { "id": "DEMO-NIMBUS", "name": "NIMBUS CLOUD", "kind": "combined", "office": "EM", "nice_classes": [9, 42], "vienna_codes": ["1.15.5"], "applicant": "Nimbus Cloud Inc.", "status": "Registered", "filing_date": "2018-11-11" }
+]

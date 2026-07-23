@@ -1,0 +1,55 @@
+[package]
+name = "cdx-common"
+version = "0.1.0"
+edition = "2021"
+description = "Shared building blocks for codexis-marketplace Rust CLI plugins (daemon source publishing, config, errors)."
+license = "PROPRIETARY"
+
+[dependencies]
+serde = { version = "1", optional = true, features = ["derive"] }
+serde_json = { version = "1", optional = true }
+anyhow = { version = "1", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"], optional = true }
+
+[features]
+default = ["sources"]
+# The `sources` module (daemon source publishing). Pulls in `serde_json`.
+# On by default for the search plugins; disable it (default-features = false)
+# for plugins that only need the std-only helpers (e.g. ocr, video-analyze).
+sources = ["dep:serde_json"]
+# The `curl` module (curl HTTP plumbing for the search plugins). Pulls in `serde_json`.
+curl = ["dep:serde_json"]
+# The `schema` module (generic JSON-schema machinery). Pulls in `serde_json`.
+schema = ["dep:serde_json"]
+# The `search` module (search-payload building blocks). Pulls in `serde_json`.
+search = ["dep:serde_json"]
+# The `search_engine` module (the shared search/get request flow). Needs curl +
+# sources (and thus serde_json).
+search-engine = ["curl", "sources"]
+# The `http` module (small reqwest helpers). Pulls in `reqwest` + `anyhow`.
+http = ["dep:reqwest", "dep:anyhow"]
+# The `ico` module (IČO normalization). Pulls in `anyhow`.
+ico = ["dep:anyhow"]
+# The `fs` module (atomic file writes). Needs serde + serde_json for the JSON
+# helper. Off by default so the search CLIs (which don't persist state) stay lean.
+fs = ["dep:serde", "dep:serde_json"]
+# The `env-file` module (KEY=VALUE credential files, atomic 0600 writes). For
+# watcher plugins storing a user-provided API credential.
+env-file = ["fs"]
+# The `settings` module (layered defaults + sparse-override settings store, the
+# generic mechanism behind cdx-notify's NotifySettings).
+settings = ["fs"]
+# The `time` module (UTC timestamp helper). Pulls in chrono. Shared by the
+# watcher plugins' state/change logs; off by default for the search CLIs.
+time = ["dep:chrono"]
+# The `store` module (keyed atomic JSON item store). Builds on `fs` + `paths`;
+# the crash-safe trash dir on remove reuses fs's pid+counter token (no rand dep).
+# For the watcher plugins.
+store = ["fs"]
+# Re-export the `test_support` home fixture so sibling capability crates can share
+# it via a dev-dependency instead of copy-pasting it. No runtime effect.
+test-support = []
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,26 @@
+# Distribution repo exclusions.
+# This file is the single source of truth for what does not go into `dist/`.
+
+# Repository metadata and dist-generation files
+/.git/
+build.sh
+/create-dist.sh
+/dist-exclusions.txt
+/dist-content/
+/dist/
+/README.md
+/CLAUDE.md
+.gitignore
+.idea/
+src/
+/shared/
+/frontend/
+tests/
+acceptance/
+test-results/
+.pytest_cache/
+.claude/
+/docs/
+/pyproject.toml
+__pycache__/
+*.pyc

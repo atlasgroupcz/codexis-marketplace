@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Vrstva_4" data-name="Vrstva 4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ff647f;
+      }
+
+      .cls-2 {
+        fill: #ffe4e6;
+      }
+
+      .cls-3 {
+        fill: #4fba6f;
+      }
+
+      .cls-4 {
+        fill: #00bcff;
+      }
+
+      .cls-5 {
+        fill: #fdc800;
+      }
+    </style>
+  </defs>
+  <rect class="cls-2" y="0" width="300" height="300"/>
+  <g>
+    <path class="cls-1" d="M143.37,147.67l-58.55,77.5c-21.11-18.24-34.45-45.21-34.45-75.26,0-52.69,41.14-96.04,93-99.48v97.24Z"/>
+    <path class="cls-3" d="M149.65,160.06l56.22,72.51c-32.98,22.3-76.94,23.17-111.2.21l54.98-72.72Z"/>
+    <path class="cls-4" d="M162.32,156.02h87.31c-1.66,27.43-14.46,51.86-33.91,68.9l-53.4-68.9Z"/>
+    <path class="cls-5" d="M249.63,143.56h-93.79V50.35c50.2,2.87,90.63,43.05,93.79,93.21Z"/>
+  </g>
+</svg>

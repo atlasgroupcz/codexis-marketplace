@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
+USER_HOME="${CODEXIS_PUBLIC_USER_HOME:-$HOME}"
+
+remove_path() {
+  local path="$1"
+  [[ -e "${path}" ]] || return 0
+  # Best-effort: a locked file / permission error must not fail the uninstall.
+  rm -rf "${path}" 2>/dev/null || true
+}
+
+remove_path "${TARGET_BIN_DIR}/rzpro-cli"
+remove_path "${USER_HOME}/.cdx/apps/rzpro"
+
+# Sweep leftover temp files from an interrupted install (e.g. power loss).
+rm -f "${TARGET_BIN_DIR}"/.rzpro-cli.tmp.* 2>/dev/null || true

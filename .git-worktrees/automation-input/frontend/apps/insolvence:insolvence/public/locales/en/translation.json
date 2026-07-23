@@ -1,0 +1,114 @@
+{
+  "common": {
+    "retry": "Try again",
+    "cancel": "Cancel"
+  },
+  "app": {
+    "title": "Insolvency Watchdog",
+    "subtitle": "Monitoring the Czech Insolvency Register (ISIR)",
+    "checkAll": "Refresh all",
+    "add": "Add subject",
+    "checkChanges": "New changes found: {{count}}",
+    "checkErrors": "Errors during check: {{count}}",
+    "checkNone": "No new changes."
+  },
+  "list": {
+    "count": "Tracked: {{count}}",
+    "activeCount": "active: {{count}}",
+    "unreadCount": "unread: {{count}}",
+    "bornOn": "b. {{date}}",
+    "unreadChanges": "{{count}} unread changes"
+  },
+  "status": {
+    "active": "Active insolvency",
+    "closed": "No active insolvency",
+    "clean": "No insolvency"
+  },
+  "druh": {
+    "konkurs": "Bankruptcy",
+    "oddluzeni": "Debt relief",
+    "reorganizace": "Reorganization",
+    "moratorium": "Moratorium",
+    "neurceno": "Proceeding"
+  },
+  "add": {
+    "title": "Add a subject to watch",
+    "description": "Enter a company by its IČO, or a natural person by surname, given name and date of birth.",
+    "company": "Company",
+    "person": "Person",
+    "ico": "IČO",
+    "icoHint": "8 digits, e.g. 04863313.",
+    "surname": "Surname",
+    "givenName": "Given name",
+    "birthDate": "Date of birth",
+    "personHint": "A person cannot be matched reliably without a date of birth.",
+    "label": "Custom label (optional)",
+    "labelPlaceholder": "e.g. Supplier A",
+    "add": "Add",
+    "adding": "Adding…",
+    "success": "Subject added to the watchlist.",
+    "error": "Could not add the subject."
+  },
+  "detail": {
+    "statusLabel": "Status",
+    "proceedingsCount": "Proceedings",
+    "lastCheck": "Last check",
+    "addedOn": "Watched since",
+    "proceedings": "Insolvency proceedings",
+    "noProceedings": "No insolvency proceedings",
+    "noProceedingsHint": "This subject has no insolvency proceedings in the ISIR register.",
+    "stav": "State",
+    "datumZahajeni": "Insolvency declared",
+    "datumUkonceni": "Closed",
+    "openInIsir": "Open in ISIR",
+    "changeHistory": "Change history",
+    "markAllRead": "Mark all read ({{count}})",
+    "markRead": "Mark read",
+    "noChanges": "No changes yet",
+    "noChangesHint": "When something changes in the tracked proceedings, it will show up here.",
+    "refresh": "Refresh",
+    "refreshed": "Subject refreshed.",
+    "refreshError": "The check could not be completed.",
+    "remove": "Remove",
+    "confirmRemove": "Really remove?",
+    "removed": "Subject removed from the watchlist."
+  },
+  "dph": {
+    "tab": "VAT",
+    "reliable": "Reliable VAT payer",
+    "unreliable": "Unreliable VAT payer",
+    "unreliableSince": "Unreliable since {{date}}",
+    "notPayer": "Not a VAT payer",
+    "taxOffice": "Tax office",
+    "accounts": "Published bank accounts",
+    "noAccounts": "No published accounts",
+    "publishedOn": "published {{date}}",
+    "source": "Source: VAT-payer registry (MF CZ)"
+  },
+  "empty": {
+    "title": "You're not watching any subjects yet",
+    "text": "Add a company or a person and the watchdog will check daily for new and changed insolvency proceedings.",
+    "add": "Add subject",
+    "noSelection": "Select a subject from the list on the left.",
+    "chatLead": "Or set it up in a conversation - just write, for example:",
+    "chatPrompt": "Watch insolvency for company ID 04863313 and email me a weekly summary of new and changed proceedings."
+  },
+  "notify": {
+    "title": "Insolvency settings",
+    "description": "How we notify you about changes.",
+    "save": "Save",
+    "emailLabel": "E-mail on change",
+    "emailDescription": "A summary of changes arrives by e-mail.",
+    "yourAddressLabel": "Your address",
+    "copyToLabel": "Copy to",
+    "addRecipient": "Add recipient",
+    "removeRecipient": "Remove",
+    "addPlaceholder": "name@company.com",
+    "invalidEmail": "Invalid e-mail address.",
+    "inAppLabel": "In the notification center",
+    "inAppDescription": "",
+    "saved": "Notification settings saved.",
+    "ownAddress": "That's your address - you always get the e-mail.",
+    "duplicate": "That address is already in the list."
+  }
+}

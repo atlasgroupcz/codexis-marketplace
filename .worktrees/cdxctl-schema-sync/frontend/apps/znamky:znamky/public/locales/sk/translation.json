@@ -1,0 +1,140 @@
+{
+  "common": {
+    "retry": "Skúsiť znova",
+    "cancel": "Zrušiť",
+    "back": "Späť",
+    "close": "Zavrieť"
+  },
+  "settings": {
+    "title": "Nastavenie prístupu (EUIPO)",
+    "description": "Pre reálne dáta zadajte svoje EUIPO API credentials. Získate ich zdarma na dev.euipo.europa.eu.",
+    "getKey": "Získať kľúče na dev.euipo.europa.eu",
+    "clientId": "EUIPO client_id",
+    "clientSecret": "EUIPO client_secret",
+    "currentKey": "Nastavené",
+    "save": "Uložiť a overiť",
+    "saving": "Overujem…",
+    "saved": "Prístup uložený.",
+    "saveError": "Kľúče sa nepodarilo uložiť.",
+    "deleteKey": "Odobrať kľúče",
+    "deleting": "Odoberám…"
+  },
+  "config": {
+    "title": "Najprv nastavte aplikáciu",
+    "text": "Hliadač čerpá dáta z oficiálneho EUIPO API. Zadajte svoje vlastné EUIPO API credentials (zdarma, ~5 minút na dev.euipo.europa.eu) — bez nich nie je možné prehľadávať register.",
+    "action": "Nastaviť prístup",
+    "hint": "Kľúče sa ukladajú len do tvojho priestoru (~/.cdx) a používajú sa na dopyty na EUIPO."
+  },
+  "app": {
+    "title": "Hliadač ochranných známok",
+    "subtitle": "Sledovanie a ochrana ochranných známok",
+    "checkAll": "Skontrolovať všetko",
+    "add": "Pridať známku",
+    "checkChanges": "Nájdené nové podobné známky: {{count}}",
+    "checkErrors": "Chyby pri kontrole: {{count}}",
+    "checkNone": "Žiadne nové podobné známky."
+  },
+  "list": {
+    "count": "Sledované: {{count}}",
+    "classes": "tr."
+  },
+  "kind": {
+    "word": "Slovná známka",
+    "figurative": "Obrazová známka",
+    "combined": "Kombinovaná známka"
+  },
+  "tier": {
+    "high": "vysoká zhoda",
+    "medium": "stredná zhoda",
+    "low": "nízka zhoda"
+  },
+  "risk": {
+    "high": "vysoké riziko zámeny",
+    "medium": "stredné riziko zámeny",
+    "low": "nízke riziko zámeny",
+    "none": "bez rizika zámeny"
+  },
+  "territory": {
+    "CZ": "Česko",
+    "EU": "EÚ"
+  },
+  "score": {
+    "overall": "Celková zhoda",
+    "text_combined": "Slovná zhoda",
+    "text_phonetic": "Fonetická zhoda",
+    "class_overlap": "Zhoda tried",
+    "vienna_overlap": "Viedenské triedenie",
+    "image_phash": "Obrazová zhoda"
+  },
+  "add": {
+    "title": "Pridať známku na sledovanie",
+    "description": "Zadajte slovnú známku, alebo nahrajte logo. Hliadač potom sleduje podobné nové prihlášky a zápisy ochranných známok.",
+    "word": "Slovná",
+    "figurative": "Obrazová",
+    "text": "Text známky",
+    "nice": "Triedy výrobkov/služieb (Nice)",
+    "niceHint": "Čísla 1–45, oddelené čiarkou. Nepovinné — zúži relevanciu.",
+    "territory": "Územie",
+    "logo": "Logo",
+    "logoHint": "Kliknite a nahrajte obrázok loga (PNG, JPG, SVG).",
+    "logoText": "Text v logu (voliteľné)",
+    "vienna": "Viedenské obrazové kódy (voliteľné)",
+    "owner": "Vlastník (voliteľné)",
+    "label": "Označenie (voliteľné)",
+    "labelPlaceholder": "Napr. naša hlavná značka",
+    "add": "Pridať",
+    "adding": "Pridávam…",
+    "success": "Známka pridaná na sledovanie.",
+    "error": "Známku sa nepodarilo pridať."
+  },
+  "edit": {
+    "title": "Upraviť známku",
+    "description": "Zmeňte prah zhody, triedy, územie, vlastníka alebo označenie sledovanej známky.",
+    "thresholdHint": "Kolízie sa zobrazia len nad týmto prahom. Nižší prah = viac (aj voľnejších) zhôd.",
+    "save": "Uložiť",
+    "saving": "Ukladám…",
+    "success": "Zmeny uložené.",
+    "error": "Zmeny sa nepodarilo uložiť."
+  },
+  "detail": {
+    "owner": "Vlastník",
+    "threshold": "Prah zhody",
+    "lastCheck": "Posledná kontrola",
+    "collisionsCount": "Počet kolízií",
+    "collisions": "Podobné známky (kolízie)",
+    "markAllRead": "Označiť všetko posúdené ({{count}})",
+    "refresh": "Skontrolovať",
+    "refreshedNew": "Nájdené nové: {{count}}",
+    "refreshedNone": "Žiadne nové podobné známky.",
+    "refreshError": "Kontrolu sa nepodarilo vykonať.",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj prestať sledovať túto známku?",
+    "removed": "Známka odobraná zo sledovania.",
+    "allMarked": "Označené ako posúdené.",
+    "noCollisions": "Žiadne podobné známky",
+    "noCollisionsHint": "Zatiaľ nebola nájdená žiadna podobná známka nad prahom zhody."
+  },
+  "collision": {
+    "figurativeMark": "(obrazová známka)",
+    "unknownApplicant": "Neznámy prihlasovateľ",
+    "filed": "podané",
+    "confirm": "Posúdené",
+    "yours": "Vaša",
+    "candidate": "Nájdená",
+    "aiTitle": "AI posúdenie zameniteľnosti",
+    "visual": "Vizuálne",
+    "aural": "Fonetické",
+    "conceptual": "Významové",
+    "goods": "Výrobky a služby",
+    "openSource": "Otvoriť zdroj",
+    "reviewed": "Posúdené"
+  },
+  "empty": {
+    "title": "Zatiaľ nesledujete žiadnu známku",
+    "text": "Pridajte slovnú alebo obrazovú známku a hliadač bude pravidelne kontrolovať podobné nové prihlášky a zápisy ochranných známok.",
+    "add": "Pridať známku",
+    "noSelection": "Vyberte známku v zozname vľavo.",
+    "chatLead": "Alebo si sledovanie nastavte v konverzácii — napíšte napr.:",
+    "chatPrompt": "Sleduj ochrannú známku CODEXIS v triedach 9 a 42 v ČR aj EÚ a raz týždenne mi pošli podobné nové prihlášky e-mailom."
+  }
+}

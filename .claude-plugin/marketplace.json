@@ -1,0 +1,982 @@
+{
+  "uuid": "9a88d852-4179-47d7-b3f4-1422a0de9f1b",
+  "name": "codexis-plugins-test",
+  "iconPath": "icon.svg",
+  "owner": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "i18n": {
+    "cs": {
+      "displayName": "Doplňky ATLAS GROUP (TEST)",
+      "description": "Oficiální sbírka doplňků ATLAS GROUP - právní databáze, státní registry, zpracování dokumentů a vizualizace dat."
+    },
+    "en": {
+      "displayName": "ATLAS GROUP Marketplace (TEST)",
+      "description": "Official ATLAS GROUP plugin marketplace - legal databases, public registries, document processing, and data visualization."
+    },
+    "sk": {
+      "displayName": "Doplnky ATLAS GROUP (TEST)",
+      "description": "Oficiálna zbierka doplnkov ATLAS GROUP - právne databázy, štátne registre, spracovanie dokumentov a vizualizácia dát."
+    }
+  },
+  "plugins": [
+    {
+      "uuid": "c5d7d6ce-6107-4688-b69a-7a04babc480f",
+      "name": "codexis",
+      "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
+      "source": "./plugins/codexis",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "CODEXIS - Právní databáze",
+          "description": "Přístup k databázi CODEXIS - česká, slovenská a evropská legislativa, judikatura, odborná literatura a vzory smluv.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "legislation": "Legislativa",
+            "case-law": "Judikatura",
+            "european": "Evropa"
+          }
+        },
+        "en": {
+          "displayName": "CODEXIS - Legal Database",
+          "description": "Access to the CODEXIS database - Czech, Slovak, and EU legislation, case law, legal literature, and contract templates.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "legislation": "Legislation",
+            "case-law": "Case Law",
+            "european": "European Union"
+          }
+        },
+        "sk": {
+          "displayName": "CODEXIS - Právna databáza",
+          "description": "Prístup k databáze CODEXIS - česká, slovenská a európska legislatíva, judikatúra, odborná literatúra a vzory zmlúv.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "legislation": "Legislatíva",
+            "case-law": "Judikatúra",
+            "european": "Európa"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "ad89bba6-3a8c-456d-adbb-a78d0f1da359",
+      "name": "cdx-sk",
+      "description": "Slovak legal database - e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings",
+      "source": "./plugins/cdx-sk",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Slovenské právo (e-Zbierka a soudy SR)",
+          "description": "Slovenská právní databáze - legislativa z e-Zbierky, rozhodnutí všeobecných soudů (~4,6 mil.) a Nejvyššího a Ústavního soudu SR.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "legislation": "Legislativa",
+            "case-law": "Judikatura"
+          }
+        },
+        "en": {
+          "displayName": "Slovak Legal Database (e-Zbierka & courts)",
+          "description": "Slovak legal database - e-Zbierka legislation, ~4.6M general court decisions, and Supreme & Constitutional Court rulings.",
+          "tagLabels": {
+            "legal": "Law",
+            "slovak": "Slovakia",
+            "legislation": "Legislation",
+            "case-law": "Case Law"
+          }
+        },
+        "sk": {
+          "displayName": "Slovenské právo (e-Zbierka a súdy SR)",
+          "description": "Slovenská právna databáza - legislatíva z e-Zbierky, rozhodnutia všeobecných súdov (~4,6 mil.) a Najvyššieho a Ústavného súdu SR.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "legislation": "Legislatíva",
+            "case-law": "Judikatúra"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "81a06344-5b2b-4c55-a0d0-e7943b988f86",
+      "name": "visualization",
+      "description": "Data visualization using D3.js, Leaflet and AG Grid - charts, network graphs, timelines, trees, calendars, flowcharts, kanban boards, tables and maps",
+      "source": "./plugins/visualization",
+      "category": "visualization",
+      "i18n": {
+        "cs": {
+          "displayName": "Vizualizace dat",
+          "description": "Interaktivní vizualizace dat (D3.js, Leaflet, AG Grid) - sloupcové, čárové a koláčové grafy, síťové grafy, časové osy a Gantt, stromy, kalendáře, vývojové diagramy, kanban, tabulky a mapy.",
+          "tagLabels": {
+            "visualization": "Vizualizace",
+            "chart": "Grafy",
+            "timeline": "Časová osa",
+            "map": "Mapa",
+            "legal": "Právo"
+          }
+        },
+        "en": {
+          "displayName": "Data Visualization",
+          "description": "Interactive data visualization (D3.js, Leaflet, AG Grid) - bar/line/pie charts, network graphs, timelines and Gantt charts, trees, calendars, flowcharts, kanban boards, tables and maps.",
+          "tagLabels": {
+            "visualization": "Visualization",
+            "chart": "Charts",
+            "timeline": "Timeline",
+            "map": "Map",
+            "legal": "Law"
+          }
+        },
+        "sk": {
+          "displayName": "Vizualizácia dát",
+          "description": "Interaktívna vizualizácia dát (D3.js, Leaflet, AG Grid) - stĺpcové, čiarové a koláčové grafy, sieťové grafy, časové osi a Gantt, stromy, kalendáre, vývojové diagramy, kanban, tabuľky a mapy.",
+          "tagLabels": {
+            "visualization": "Vizualizácia",
+            "chart": "Grafy",
+            "timeline": "Časová os",
+            "map": "Mapa",
+            "legal": "Právo"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "32520e57-efd7-47bc-8053-b97cbc9ce304",
+      "name": "katastr",
+      "description": "Katastr nemovitostí ČR - property registry lookup and cadastral data access",
+      "source": "./plugins/katastr",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Katastr nemovitostí ČR",
+          "description": "Vyhledávání a čtení dat z Katastru nemovitostí České republiky - parcely, listy vlastnictví, mapové podklady.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "cadastre": "Katastr",
+            "property": "Nemovitosti"
+          }
+        },
+        "en": {
+          "displayName": "Czech Property Registry",
+          "description": "Search and read the Czech Property Registry (Katastr nemovitostí) - parcels, title deeds, cadastral maps.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "cadastre": "Cadastre",
+            "property": "Property"
+          }
+        },
+        "sk": {
+          "displayName": "Kataster nehnuteľností ČR",
+          "description": "Vyhľadávanie a čítanie dát z Katastru nehnuteľností Českej republiky - parcely, listy vlastníctva, mapové podklady.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "cadastre": "Kataster",
+            "property": "Nehnuteľnosti"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "3d8ea3de-e4cc-46cf-bc6c-faf72026a3cc",
+      "name": "ocr",
+      "description": "Document to Markdown conversion via OCR - supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
+      "source": "./plugins/ocr",
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "OCR dokumentů",
+          "description": "Převod dokumentů (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocí OCR - připraveno pro další AI zpracování.",
+          "tagLabels": {
+            "document-processing": "Zpracování dokumentů",
+            "ocr": "OCR",
+            "pdf": "PDF"
+          }
+        },
+        "en": {
+          "displayName": "Document OCR",
+          "description": "Convert documents (PDF, DOCX, PPTX, XLSX, images, ZIP) into Markdown via OCR - ready for downstream AI processing.",
+          "tagLabels": {
+            "document-processing": "Document Processing",
+            "ocr": "OCR",
+            "pdf": "PDF"
+          }
+        },
+        "sk": {
+          "displayName": "OCR dokumentov",
+          "description": "Prevod dokumentov (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocou OCR - pripravené pre ďalšie AI spracovanie.",
+          "tagLabels": {
+            "document-processing": "Spracovanie dokumentov",
+            "ocr": "OCR",
+            "pdf": "PDF"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "25c0713a-7c9b-439e-ae0f-80683aa29825",
+      "name": "documents",
+      "description": "Create, edit and visually verify Word, PDF, Excel and PowerPoint documents - every deliverable is rendered to page images so the layout is inspected before hand-off",
+      "source": "./plugins/documents",
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "Dokumenty - Word, PDF, Excel, PowerPoint",
+          "description": "Tvorba, úprava a vizuální kontrola dokumentů. Každý výstup se vyrenderuje do obrázků stránek, takže AI vidí výsledné rozvržení dřív, než ho předá.",
+          "tagLabels": {
+            "documents": "Dokumenty",
+            "office": "Office",
+            "pdf": "PDF",
+            "spreadsheet": "Tabulky",
+            "legal": "Právo"
+          }
+        },
+        "en": {
+          "displayName": "Documents - Word, PDF, Excel, PowerPoint",
+          "description": "Create, edit and visually verify documents. Every deliverable is rendered to page images so the AI inspects the final layout before handing it over.",
+          "tagLabels": {
+            "documents": "Documents",
+            "office": "Office",
+            "pdf": "PDF",
+            "spreadsheet": "Spreadsheets",
+            "legal": "Law"
+          }
+        },
+        "sk": {
+          "displayName": "Dokumenty - Word, PDF, Excel, PowerPoint",
+          "description": "Tvorba, úprava a vizuálna kontrola dokumentov. Každý výstup sa vyrenderuje do obrázkov stránok, takže AI vidí výsledné rozloženie skôr, než ho odovzdá.",
+          "tagLabels": {
+            "documents": "Dokumenty",
+            "office": "Office",
+            "pdf": "PDF",
+            "spreadsheet": "Tabuľky",
+            "legal": "Právo"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "4d7e6ced-f344-438f-9d12-141ac694fe65",
+      "name": "video-analyze",
+      "description": "Audio & video content analysis using Gemini - transcripts, summaries and Q&A over YouTube URLs and local video/audio files (MP4, WebM, MOV, MP3, WAV and more)",
+      "source": "./plugins/video-analyze",
+      "category": "media",
+      "i18n": {
+        "cs": {
+          "displayName": "Analýza videa a audia",
+          "description": "Analýza obsahu videa a audia pomocí modelu Gemini - přepisy, shrnutí a otázky nad YouTube odkazy i lokálními soubory (MP4, WebM, MOV, MP3, WAV a další).",
+          "tagLabels": {
+            "media": "Média",
+            "video": "Video",
+            "ai": "AI"
+          }
+        },
+        "en": {
+          "displayName": "Audio & Video Analysis",
+          "description": "Audio and video content analysis powered by Gemini - transcripts, summaries and Q&A over YouTube links and local files (MP4, WebM, MOV, MP3, WAV and more).",
+          "tagLabels": {
+            "media": "Media",
+            "video": "Video",
+            "ai": "AI"
+          }
+        },
+        "sk": {
+          "displayName": "Analýza videa a audia",
+          "description": "Analýza obsahu videa a audia pomocou modelu Gemini - prepisy, zhrnutia a otázky nad YouTube odkazmi i lokálnymi súbormi (MP4, WebM, MOV, MP3, WAV a ďalšie).",
+          "tagLabels": {
+            "media": "Médiá",
+            "video": "Video",
+            "ai": "AI"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "6424383b-d36a-4946-af8d-09b7755fad57",
+      "name": "cdx-cz-spp",
+      "description": "Czech municipal regulations (sbirkapp.gov.cz) - municipal decrees, ordinances, and local legal acts",
+      "source": "./plugins/cdx-cz-spp",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Obecní předpisy ČR",
+          "description": "Sbírka právních předpisů obcí, měst a krajů České republiky (sbirkapp.gov.cz) - vyhlášky, nařízení a místní akty.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "municipal": "Obce",
+            "legislation": "Legislativa"
+          }
+        },
+        "en": {
+          "displayName": "Czech Municipal Regulations",
+          "description": "Czech municipal, city, and regional regulations collection (sbirkapp.gov.cz) - decrees, ordinances, and local legal acts.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "municipal": "Municipalities",
+            "legislation": "Legislation"
+          }
+        },
+        "sk": {
+          "displayName": "Obecné predpisy ČR",
+          "description": "Zbierka právnych predpisov obcí, miest a krajov Českej republiky (sbirkapp.gov.cz) - vyhlášky, nariadenia a miestne akty.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "municipal": "Obce",
+            "legislation": "Legislatíva"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "ffdd45fa-e3b0-4cd3-a8bb-d4749f3360ec",
+      "name": "cdx-cz-psp",
+      "description": "Czech Parliament - parliamentary reports, interpellations, EU documents, and legislative bill tracking",
+      "source": "./plugins/cdx-cz-psp",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Poslanecká sněmovna ČR",
+          "description": "Parlamentní tisky, interpelace, evropské dokumenty a sledování legislativního procesu v Poslanecké sněmovně ČR.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "parliament": "Parlament",
+            "legislation": "Legislativa"
+          }
+        },
+        "en": {
+          "displayName": "Czech Parliament",
+          "description": "Parliamentary papers, interpellations, EU documents, and legislative bill tracking from the Czech Chamber of Deputies.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "parliament": "Parliament",
+            "legislation": "Legislation"
+          }
+        },
+        "sk": {
+          "displayName": "Poslanecká snemovňa ČR",
+          "description": "Parlamentné tlače, interpelácie, európske dokumenty a sledovanie legislatívneho procesu v Poslaneckej snemovni ČR.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "parliament": "Parlament",
+            "legislation": "Legislatíva"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "e6e9938a-d93a-49e2-aac1-a6334573634b",
+      "name": "cdx-nl",
+      "description": "Dutch legal database - national legislation (BWB) and case law (Rechtspraak)",
+      "source": "./plugins/cdx-nl",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Nizozemské právo (BWB a Rechtspraak)",
+          "description": "Nizozemská právní databáze - národní legislativa BWB (wetten.overheid.nl) a rozhodnutí soudů (Rechtspraak.nl).",
+          "tagLabels": {
+            "legal": "Právo",
+            "dutch": "Nizozemsko",
+            "legislation": "Legislativa",
+            "case-law": "Judikatura"
+          }
+        },
+        "en": {
+          "displayName": "Dutch Legal Database (BWB & Rechtspraak)",
+          "description": "Dutch legal database - Basiswettenbestand national legislation (wetten.overheid.nl) and court decisions (Rechtspraak.nl).",
+          "tagLabels": {
+            "legal": "Law",
+            "dutch": "Netherlands",
+            "legislation": "Legislation",
+            "case-law": "Case Law"
+          }
+        },
+        "sk": {
+          "displayName": "Holandské právo (BWB a Rechtspraak)",
+          "description": "Holandská právna databáza - národná legislatíva BWB (wetten.overheid.nl) a rozhodnutia súdov (Rechtspraak.nl).",
+          "tagLabels": {
+            "legal": "Právo",
+            "dutch": "Holandsko",
+            "legislation": "Legislatíva",
+            "case-law": "Judikatúra"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "bc2d2aff-84c6-49e4-8f2b-fed6ff316de8",
+      "name": "cdx-at",
+      "description": "Austrian legal database (RIS) - federal legislation (Bundesrecht), case law (Judikatur) from 7 courts including VfGH and VwGH, state legislation (Landesrecht), other official publications (Sonstige), and consolidated federal norms with full amendment history",
+      "source": "./plugins/cdx-at",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Rakouské právo (RIS)",
+          "description": "Rakouský právní informační systém RIS - spolková (Bundesrecht) a zemská (Landesrecht) legislativa, judikatura sedmi soudů včetně VfGH a VwGH, další úřední publikace (Sonstige) a historické konsolidované předpisy.",
+          "tagLabels": {
+            "legal": "Právo",
+            "austrian": "Rakousko",
+            "legislation": "Legislativa",
+            "case-law": "Judikatura"
+          }
+        },
+        "en": {
+          "displayName": "Austrian Legal Database (RIS)",
+          "description": "Austrian Legal Information System (RIS) - federal (Bundesrecht) and state (Landesrecht) legislation, case law (Judikatur) from seven courts including VfGH and VwGH, other official publications (Sonstige), and consolidated federal norms with full amendment history.",
+          "tagLabels": {
+            "legal": "Law",
+            "austrian": "Austria",
+            "legislation": "Legislation",
+            "case-law": "Case Law"
+          }
+        },
+        "sk": {
+          "displayName": "Rakúske právo (RIS)",
+          "description": "Rakúsky právny informačný systém RIS - spolková (Bundesrecht) a krajinská (Landesrecht) legislatíva, judikatúra siedmich súdov vrátane VfGH a VwGH, ďalšie úradné publikácie (Sonstige) a historické konsolidované predpisy.",
+          "tagLabels": {
+            "legal": "Právo",
+            "austrian": "Rakúsko",
+            "legislation": "Legislatíva",
+            "case-law": "Judikatúra"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "e397b2f1-505e-4b2e-b6ed-df181fd2b9f2",
+      "name": "data-gouv-fr",
+      "description": "French government open data (data.gouv.fr) - search datasets, query tabular data, and discover public APIs from France's national Open Data platform",
+      "source": "./plugins/data-gouv-fr",
+      "category": "open-data",
+      "i18n": {
+        "cs": {
+          "displayName": "Francouzská otevřená data",
+          "description": "Francouzský národní portál otevřených dat (data.gouv.fr) - vyhledávání datasetů, dotazy nad tabulkami a objevování veřejných API.",
+          "tagLabels": {
+            "open-data": "Otevřená data",
+            "french": "Francie",
+            "api": "API"
+          }
+        },
+        "en": {
+          "displayName": "French Open Data",
+          "description": "France's national Open Data portal (data.gouv.fr) - search datasets, query tabular data, and discover public APIs.",
+          "tagLabels": {
+            "open-data": "Open Data",
+            "french": "France",
+            "api": "API"
+          }
+        },
+        "sk": {
+          "displayName": "Francúzske otvorené dáta",
+          "description": "Francúzsky národný portál otvorených dát (data.gouv.fr) - vyhľadávanie datasetov, dopyty nad tabuľkami a objavovanie verejných API.",
+          "tagLabels": {
+            "open-data": "Otvorené dáta",
+            "french": "Francúzsko",
+            "api": "API"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "735dc013-d3c8-40ca-acd4-f0ac3f51a178",
+      "name": "ares",
+      "description": "Czech business registry (ARES) - IČO lookup, company search, business register, trade licence and VAT payer status",
+      "source": "./plugins/ares",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "ARES - registr ekonomických subjektů",
+          "description": "Český registr ekonomických subjektů ARES - vyhledávání firem podle IČO/názvu, výpis z obchodního rejstříku, RES, živnostenského rejstříku a registru plátců DPH.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Registr",
+            "company": "Firmy"
+          }
+        },
+        "en": {
+          "displayName": "ARES - Czech Business Registry",
+          "description": "Czech business registry ARES - company lookup by ICO/name, business register, statistical register, trade licence registry and VAT payer registry.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "registry": "Registry",
+            "company": "Companies"
+          }
+        },
+        "sk": {
+          "displayName": "ARES - register ekonomických subjektov",
+          "description": "Český register ekonomických subjektov ARES - vyhľadávanie firiem podľa IČO/názvu, výpis z obchodného registra, RES, živnostenského registra a registra platcov DPH.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Register",
+            "company": "Firmy"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "ca236714-a713-49d5-b718-1c4b4899d563",
+      "name": "nrpzs",
+      "description": "Czech National Registry of Healthcare Providers (NRPZS, ÚZIS) - provider lookup by IČO/name/specialty, places of care, departments, office hours",
+      "source": "./plugins/nrpzs",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "NRPZS - registr poskytovatelů zdravotních služeb",
+          "description": "Národní registr poskytovatelů zdravotních služeb (ÚZIS) - vyhledávání poskytovatelů podle IČO/názvu/oboru péče, místa poskytování, oddělení a ordinační doba."
+        },
+        "en": {
+          "displayName": "NRPZS - Czech Healthcare Provider Registry",
+          "description": "National Registry of Healthcare Providers (ÚZIS) - provider lookup by ICO/name/specialty, places of care, departments and office hours."
+        },
+        "sk": {
+          "displayName": "NRPZS - register poskytovateľov zdravotných služieb",
+          "description": "Národný register poskytovateľov zdravotných služieb (ÚZIS) - vyhľadávanie poskytovateľov podľa IČO/názvu/odboru, miesta poskytovania, oddelenia a ordinačné hodiny."
+        }
+      }
+    },
+    {
+      "uuid": "4785cc31-461b-4516-8a68-5567b1312dfb",
+      "name": "kataster-sk",
+      "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal",
+      "source": "./plugins/kataster-sk",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Kataster nehnuteľností SR",
+          "description": "Slovenský katastr nemovitostí - vyhledávání parcel podle katastrálního území a parcelního čísla, výměry, druh pozemku a odkazy na list vlastníctva na portálu ESKN.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "cadastre": "Katastr",
+            "property": "Nemovitosti"
+          }
+        },
+        "en": {
+          "displayName": "Slovak Land Cadastre",
+          "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal.",
+          "tagLabels": {
+            "legal": "Law",
+            "slovak": "Slovakia",
+            "cadastre": "Cadastre",
+            "property": "Property"
+          }
+        },
+        "sk": {
+          "displayName": "Kataster nehnuteľností SR",
+          "description": "Slovenský kataster nehnuteľností - vyhľadávanie parciel podľa katastrálneho územia a parcelného čísla, výmery, druh pozemku a odkazy na list vlastníctva na portáli ESKN.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "cadastre": "Kataster",
+            "property": "Nehnuteľnosti"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "9ee5f171-db75-4ff9-b0b3-4eaa5cae9d8a",
+      "name": "obchodny-register-sk",
+      "description": "Slovak commercial register (obchodný register SR) - company lookup by IČO or name via the RPO open API, statutory bodies, share capital, full history, and orsr.sk extracts",
+      "source": "./plugins/obchodny-register-sk",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Obchodný register SR",
+          "description": "Slovenský obchodní rejstřík - vyhledávání firem podle IČO/názvu přes otevřené RPO API, statutární orgány, sídlo, základní kapitál, plná historie a odkazy na výpisy z orsr.sk.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "registry": "Rejstřík",
+            "company": "Firmy"
+          }
+        },
+        "en": {
+          "displayName": "Slovak Commercial Register",
+          "description": "Slovak commercial register - company lookup by IČO/name via the open RPO API, statutory bodies, registered office, share capital, full history and links to orsr.sk extracts.",
+          "tagLabels": {
+            "legal": "Law",
+            "slovak": "Slovakia",
+            "registry": "Registry",
+            "company": "Companies"
+          }
+        },
+        "sk": {
+          "displayName": "Obchodný register SR",
+          "description": "Slovenský obchodný register - vyhľadávanie firiem podľa IČO/názvu cez otvorené RPO API, štatutárne orgány, sídlo, základné imanie, plná história a odkazy na výpisy z orsr.sk.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "registry": "Register",
+            "company": "Firmy"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "6db083df-bcd5-4986-86b2-2eedc7777443",
+      "name": "insolvence",
+      "description": "Czech insolvency register (ISIR) watchdog - monitor companies (IČO) and people for new and changed insolvency proceedings",
+      "source": "./plugins/insolvence",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Hlídač insolvencí ČR",
+          "description": "Sledování insolvenčního rejstříku (ISIR) - hlídejte firmy (IČO) i osoby a nechte se upozornit na nová a změněná insolvenční řízení.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "insolvency": "Insolvence",
+            "registry": "Registr"
+          }
+        },
+        "en": {
+          "displayName": "Czech Insolvency Watchdog",
+          "description": "Monitor the Czech Insolvency Register (ISIR) - watch companies (IČO) and people and get alerted to new and changed insolvency proceedings.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "insolvency": "Insolvency",
+            "registry": "Registry"
+          }
+        },
+        "sk": {
+          "displayName": "Hliadač insolvencií ČR",
+          "description": "Sledovanie insolvenčného registra (ISIR) - sledujte firmy (IČO) aj osoby a nechajte sa upozorniť na nové a zmenené insolvenčné konania.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "insolvency": "Insolvencia",
+            "registry": "Register"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "f8f80532-aeed-4d9c-ba2c-9bb781fe030c",
+      "name": "znamky",
+      "description": "Czech + EU trademark watchdog (ÚPV + EUIPO via TMview) - monitor word and figurative marks for similar new filings and registrations with verbal, phonetic and visual similarity scoring",
+      "source": "./plugins/znamky",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Hlídač ochranných známek",
+          "description": "Sledování ochranných známek v rejstřících ÚPV (ČR) a EUIPO (EU) přes TMview - hlídejte slovní i obrazové známky a nechte se upozornit na podobné nové přihlášky a zápisy (slovní, fonetická i obrazová podobnost).",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "european": "Evropa",
+            "trademark": "Ochranné známky",
+            "registry": "Registr"
+          }
+        },
+        "en": {
+          "displayName": "Trademark Watchdog",
+          "description": "Monitor trademarks in the ÚPV (CZ) and EUIPO (EU) registers via TMview - watch word and figurative marks and get alerted to similar new filings and registrations (verbal, phonetic and visual similarity).",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "european": "European Union",
+            "trademark": "Trademarks",
+            "registry": "Registry"
+          }
+        },
+        "sk": {
+          "displayName": "Hliadač ochranných známok",
+          "description": "Sledovanie ochranných známok v registroch ÚPV (ČR) a EUIPO (EÚ) cez TMview - sledujte slovné aj obrazové známky a nechajte sa upozorniť na podobné nové prihlášky a zápisy (slovná, fonetická aj obrazová podobnosť).",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "european": "Európa",
+            "trademark": "Ochranné známky",
+            "registry": "Register"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "aff0f8f8-7043-48c6-a83b-7dc11c279fa7",
+      "name": "zrsr",
+      "description": "Slovak trade register (živnostenský register SR) - company and sole-trader lookup by IČO or name via the RPO open API, trade licences, Živnostenský and Obchodný register data",
+      "source": "./plugins/zrsr",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "ZRSR - živnostenský registr SR",
+          "description": "Slovenský registr právnických osob a podnikatelů (RPO) - vyhledávání firem a živnostníků podle IČO/názvu, živnostenská oprávnění, údaje z živnostenského i obchodního registru.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "registry": "Registr",
+            "company": "Firmy"
+          }
+        },
+        "en": {
+          "displayName": "ZRSR - Slovak Trade Register",
+          "description": "Slovak register of legal entities and entrepreneurs (RPO) - company and sole-trader lookup by IČO/name, trade licences, Trade and Business Register data.",
+          "tagLabels": {
+            "legal": "Law",
+            "slovak": "Slovakia",
+            "registry": "Registry",
+            "company": "Companies"
+          }
+        },
+        "sk": {
+          "displayName": "ZRSR - živnostenský register SR",
+          "description": "Slovenský register právnických osôb a podnikateľov (RPO) - vyhľadávanie firiem a živnostníkov podľa IČO/názvu, živnostenské oprávnenia, údaje zo živnostenského aj obchodného registra.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "registry": "Register",
+            "company": "Firmy"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "713eb310-3414-4656-9c15-9831e76c7280",
+      "name": "leciva",
+      "description": "Czech medicines registry (SÚKL DLP) - drug lookup by name or SÚKL code, strength, form, active substances, ATC.",
+      "source": "./plugins/leciva",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "SÚKL - registr léčiv",
+          "description": "Registr léčiv SÚKL (DLP) - vyhledávání léků podle názvu nebo kódu SÚKL, síla, léková forma, účinné látky, ATC skupina.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Registr",
+            "health": "Zdraví"
+          }
+        },
+        "en": {
+          "displayName": "SÚKL - Medicines Registry",
+          "description": "SÚKL medicines registry (DLP) - drug lookup by name or SÚKL code, strength, form, active substances, ATC group.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "registry": "Registry",
+            "health": "Health"
+          }
+        },
+        "sk": {
+          "displayName": "SÚKL - register liekov",
+          "description": "Register liekov SÚKL (DLP) - vyhľadávanie liekov podľa názvu alebo kódu SÚKL, sila, lieková forma, účinné látky, ATC skupina.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Register",
+            "health": "Zdravie"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "c1e4a9d2-7f63-48b0-9a51-3d6c2e8b7041",
+      "name": "rzpro",
+      "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) - device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
+      "source": "./plugins/rzpro",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "RZPRO - registr zdravotnických prostředků",
+          "description": "Registr zdravotnických prostředků (RZPRO, KSRZIS) - vyhledávání prostředků podle názvu nebo evidenčního čísla, výrobce, varianty, registrované osoby a jejich činnosti.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Registr",
+            "health": "Zdraví"
+          }
+        },
+        "en": {
+          "displayName": "RZPRO - Medical Devices Registry",
+          "description": "Czech Registry of Medical Devices (RZPRO, KSRZIS) - device lookup by name or evidence number, manufacturer, variants, registered persons and their activities.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "registry": "Registry",
+            "health": "Health"
+          }
+        },
+        "sk": {
+          "displayName": "RZPRO - register zdravotníckych pomôcok",
+          "description": "Register zdravotníckych pomôcok (RZPRO, KSRZIS) - vyhľadávanie pomôcok podľa názvu alebo evidenčného čísla, výrobca, varianty, registrované osoby a ich činnosti.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Register",
+            "health": "Zdravie"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "27a9ef2f-15d6-415b-82d7-24e3ad8afa8a",
+      "name": "registr-smluv",
+      "description": "Czech Register of Contracts (smlouvy.gov.cz) - search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date",
+      "source": "./plugins/registr-smluv",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Registr smluv ČR",
+          "description": "Registr smluv (smlouvy.gov.cz) - vyhledávání veřejných smluv podle předmětu, smluvních stran, IČO, hodnoty a data uzavření.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Registr",
+            "contracts": "Smlouvy"
+          }
+        },
+        "en": {
+          "displayName": "Czech Register of Contracts",
+          "description": "Czech Register of Contracts (smlouvy.gov.cz) - search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "registry": "Registry",
+            "contracts": "Contracts"
+          }
+        },
+        "sk": {
+          "displayName": "Register zmlúv ČR",
+          "description": "Register zmlúv (smlouvy.gov.cz) - vyhľadávanie verejných zmlúv podľa predmetu, zmluvných strán, IČO, hodnoty a dátumu uzavretia.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Register",
+            "contracts": "Zmluvy"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "ccea6720-6e92-40c0-92b6-dffc7348301b",
+      "name": "register-zmluv",
+      "description": "Slovak Register of Contracts (Centrálny register zmlúv, crz.gov.sk) - search public-sector contracts by subject, contracting parties, IČO, value, and contract date",
+      "source": "./plugins/register-zmluv",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Register zmlúv SR",
+          "description": "Centrálny register zmlúv (crz.gov.sk) - vyhledávání slovenských veřejných smluv podle předmětu, smluvních stran, IČO, hodnoty a data uzavření.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "registry": "Registr",
+            "contracts": "Smlouvy"
+          }
+        },
+        "en": {
+          "displayName": "Slovak Register of Contracts",
+          "description": "Slovak Central Register of Contracts (crz.gov.sk) - search public-sector contracts by subject, contracting parties, IČO, value, and contract date.",
+          "tagLabels": {
+            "legal": "Law",
+            "slovak": "Slovakia",
+            "registry": "Registry",
+            "contracts": "Contracts"
+          }
+        },
+        "sk": {
+          "displayName": "Centrálny register zmlúv",
+          "description": "Centrálny register zmlúv (crz.gov.sk) - vyhľadávanie verejných zmlúv podľa predmetu, zmluvných strán, IČO, hodnoty a dátumu uzavretia.",
+          "tagLabels": {
+            "legal": "Právo",
+            "slovak": "Slovensko",
+            "registry": "Register",
+            "contracts": "Zmluvy"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "a6ab6599-ff88-42c8-9011-5d8f9fb39086",
+      "name": "sid",
+      "description": "SID internal document system — search, read-confirmations and notifications via personal API key",
+      "source": "./plugins/sid",
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "SID — Interní dokumenty",
+          "description": "Vyhledávání a čtení řízených dokumentů v SID, potvrzování přečtení a hlídání novinek.",
+          "tagLabels": {
+            "documents": "Dokumenty",
+            "internal": "Interní systémy",
+            "czech": "Česko"
+          }
+        },
+        "en": {
+          "displayName": "SID — Internal Documents",
+          "description": "Search and read managed documents in SID, confirm required reading and watch for updates.",
+          "tagLabels": {
+            "documents": "Documents",
+            "internal": "Internal systems",
+            "czech": "Czech Republic"
+          }
+        },
+        "sk": {
+          "displayName": "SID — Interné dokumenty",
+          "description": "Vyhľadávanie a čítanie riadených dokumentov v SID, potvrdzovanie prečítania a stráženie noviniek.",
+          "tagLabels": {
+            "documents": "Dokumenty",
+            "internal": "Interné systémy",
+            "czech": "Česko"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "99e2d85f-eca8-415a-b410-ef59955777bf",
+      "name": "sbirka-listin",
+      "description": "Czech Collection of Deeds (Sbírka listin) - a subject's filed documents by IČO (financial statements, articles, deeds), document download and new-filing watching",
+      "source": "./plugins/sbirka-listin",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Sbírka listin ČR",
+          "description": "Dokumenty ze Sbírky listin veřejných rejstříků ČR - účetní závěrky, stanovy a další listiny subjektu podle IČO, se stažením dokumentu a hlídáním nových přírůstků.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Registr",
+            "documents": "Dokumenty"
+          }
+        },
+        "en": {
+          "displayName": "Czech Collection of Deeds",
+          "description": "Documents from the Czech public registers' Collection of Deeds (Sbírka listin) - financial statements, articles and other filings by IČO, with document download and new-filing watching.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "registry": "Registry",
+            "documents": "Documents"
+          }
+        },
+        "sk": {
+          "displayName": "Zbierka listín ČR",
+          "description": "Dokumenty zo Zbierky listín verejných registrov ČR - účtovné závierky, stanovy a ďalšie listiny subjektu podľa IČO, so stiahnutím dokumentu a strážením nových prírastkov.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "registry": "Register",
+            "documents": "Dokumenty"
+          }
+        }
+      }
+    }
+  ]
+}

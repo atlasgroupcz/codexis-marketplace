@@ -1,0 +1,17 @@
+{
+  "skills": [
+    "obchodny-register-sk:obchodny-register-sk"
+  ],
+  "post_install": [
+    {
+      "type": "file",
+      "path": "$HOME/.local/bin/orsr-cli"
+    }
+  ],
+  "post_uninstall": [
+    {
+      "type": "absent",
+      "path": "$HOME/.local/bin/orsr-cli"
+    }
+  ]
+}
