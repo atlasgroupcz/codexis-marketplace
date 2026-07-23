@@ -1,8 +1,8 @@
 # Port of plugins/codexis/acceptance/e2e/cdxctl-automation-ai.yaml
-# AGENT-type automation (uses the explorer agent) — distinct from
+# AGENT-type automation (uses the explorer agent) - distinct from
 # create-command. We don't trigger here (would invoke a real LLM).
 
-description: codexis cdxctl — AGENT-type automation create + delete
+description: codexis cdxctl - AGENT-type automation create + delete
 target_plugin: codexis
 
 prompts:
@@ -18,7 +18,7 @@ tests:
     vars:
       prompt: |
         Vytvoř AI automatizaci, která agentem explorer jednou ročně 1. ledna spustí
-        prompt "Popiš aktuální pracovní adresář." — nastav max-turns na 5 a
+        prompt "Popiš aktuální pracovní adresář." - nastav max-turns na 5 a
         pojmenuj to ee-ai-{{ run_id }}.
       tool_name: shell
       # 'automation create' but NOT 'automation create-command'.
@@ -47,7 +47,7 @@ tests:
         maxTurns: 5
         enabled: true
       # The stored prompt must be the WORK to perform, never a request to
-      # create/update/delete another automation — otherwise the scheduled run
+      # create/update/delete another automation - otherwise the scheduled run
       # would recursively register automations instead of doing the task.
       not_matches: '(?i)(automation\s+(create|update|delete)|create an automation|vytvoř\w*\s+(\w+\s+)*automatizaci)'
     assert:

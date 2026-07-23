@@ -1,4 +1,4 @@
-//! Daemon notification transport shared by every watcher/component plugin —
+//! Daemon notification transport shared by every watcher/component plugin -
 //! e-mail via the plugin e-mail API and in-app via the notification bell.
 //!
 //! Auth is the VM/daemon token (`~/.cdx/env/secret`), read via
@@ -145,7 +145,7 @@ pub fn send_email(
 ) -> Result<()> {
     let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
         return Err(NotifyError::Notify(
-            "E-mail nelze odeslat — chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací \
+            "E-mail nelze odeslat - chybí CODEXIS_PUBLIC_DAEMON_URL nebo přihlašovací \
              token (~/.cdx/env/secret). Spouštějte přes automatizaci v CODEXIS."
                 .into(),
         ));
@@ -200,27 +200,45 @@ pub fn send_email(
     }
 }
 
-/// Create an in-app (notification-center bell) notification via the daemon's
-/// GraphQL `createNotification`. Best-effort: returns `false` on missing config
-/// or a transport error, never raises (a notification must not fail the check).
-pub fn send_inapp(message: &str, notification_type: &str, link: Option<&str>) -> bool {
-    let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
-        return false;
-    };
+/// The GraphQL `createNotification` request body. `action` and `link` are
+/// omitted (not null) when unset, mirroring the Python `_send_inapp`.
+fn build_inapp_body(
+    message: &str,
+    notification_type: &str,
+    action: Option<&str>,
+    link: Option<&str>,
+) -> serde_json::Value {
     let mut input = json!({ "message": message, "type": notification_type });
+    if let Some(action) = action {
+        input["action"] = json!(action);
+    }
     if let Some(link) = link {
         input["link"] = json!(link);
     }
-    let body = json!({
+    json!({
         "query": "mutation Create($input: CreateNotificationInput!) \
                   { createNotification(input: $input) { id } }",
         "variables": { "input": input },
-    });
+    })
+}
+
+/// Create an in-app (notification-center bell) notification via the daemon's
+/// GraphQL `createNotification`. Best-effort: returns `false` on missing config
+/// or a transport error, never raises (a notification must not fail the check).
+pub fn send_inapp(
+    message: &str,
+    notification_type: &str,
+    action: Option<&str>,
+    link: Option<&str>,
+) -> bool {
+    let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
+        return false;
+    };
     agent()
         .post(&url)
         .set("Authorization", &auth)
         .set("Content-Type", "application/json; charset=utf-8")
-        .send_json(body)
+        .send_json(build_inapp_body(message, notification_type, action, link))
         .is_ok()
 }
 
@@ -248,5 +266,23 @@ mod tests {
             non_empty(&["  a@x.com ".into(), "".into(), "  ".into()]),
             vec!["a@x.com".to_string()]
         );
+    }
+
+    #[test]
+    fn inapp_body_includes_action_and_link_when_set() {
+        let body = build_inapp_body("msg", "cadastre-changed", Some("open"), Some("/katastr"));
+        let input = &body["variables"]["input"];
+        assert_eq!(input["message"], json!("msg"));
+        assert_eq!(input["type"], json!("cadastre-changed"));
+        assert_eq!(input["action"], json!("open"));
+        assert_eq!(input["link"], json!("/katastr"));
+    }
+
+    #[test]
+    fn inapp_body_omits_action_and_link_when_none() {
+        let body = build_inapp_body("msg", "t", None, None);
+        let input = body["variables"]["input"].as_object().unwrap();
+        assert!(!input.contains_key("action"));
+        assert!(!input.contains_key("link"));
     }
 }

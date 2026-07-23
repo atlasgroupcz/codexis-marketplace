@@ -70,7 +70,7 @@
       "feature2": "Pravidelná kontrola",
       "feature3": "Súhrn e-mailom",
       "step1Title": "Opíšete tému v chate",
-      "step1Text": "Poviete, čo chcete sledovať — oblasť, súdy, ako často a v akej podobe.",
+      "step1Text": "Poviete, čo chcete sledovať - oblasť, súdy, ako často a v akej podobe.",
       "step2Title": "Strážime rozhodnutia súdov",
       "step2Text": "Pravidelne prechádzame nové aj zmenené rozhodnutia k vašej téme.",
       "step3Title": "Dostanete zhrnutie",
@@ -93,7 +93,7 @@
       "inAppLabel": "Oznámenie v centre notifikácií",
       "inAppDescription": "",
       "saved": "Nastavenia oznámení uložené",
-      "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+      "ownAddress": "Táto adresa je vaša - e-mail vám chodí vždy.",
       "duplicate": "Táto adresa už je v zozname."
     }
   }

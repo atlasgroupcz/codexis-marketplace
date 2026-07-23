@@ -3,9 +3,9 @@ import { deriveTimeline } from './timeline'
 
 const op = (nazev: string, datumProvedeni: string) => ({ nazev, datumProvedeni })
 
-describe('deriveTimeline — event list', () => {
+describe('deriveTimeline - event list', () => {
   it('renders operations in the given order without re-sorting', () => {
-    // Input intentionally NOT in date order — the FE must preserve it (the
+    // Input intentionally NOT in date order - the FE must preserve it (the
     // backend already sends oldest→newest). Fails while the .sort() exists.
     const nodes = deriveTimeline({
       stav: 'x',
@@ -37,7 +37,7 @@ describe('deriveTimeline — event list', () => {
       datum_prijeti: '2026-06-01',
       provedene_operace: [op('Přijetí návrhu', '2026-06-01'), op('Zaplombování', '2026-06-01')],
     })
-    // exactly the two real events — no povolení/provedení/vyrozumění invented
+    // exactly the two real events - no povolení/provedení/vyrozumění invented
     expect(nodes).toHaveLength(2)
   })
 
@@ -82,7 +82,7 @@ describe('deriveTimeline — event list', () => {
   })
 })
 
-describe('deriveTimeline — raw ČÚZK names', () => {
+describe('deriveTimeline - raw ČÚZK names', () => {
   it('uses the operation name exactly as ČÚZK reports it', () => {
     const n = deriveTimeline({
       stav: 'x',
@@ -102,7 +102,7 @@ describe('deriveTimeline — raw ČÚZK names', () => {
   })
 })
 
-describe('deriveTimeline — negative outcome', () => {
+describe('deriveTimeline - negative outcome', () => {
   it('appends a terminal node for a rejected proceeding, ops stay done', () => {
     const nodes = deriveTimeline({
       stav: 'Zamítnuto',

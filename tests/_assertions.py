@@ -72,7 +72,7 @@ def matches_subset(expected: Any, actual: Any, path: str = "") -> str | None:
         return f"at {path or '<root>'}: regex {pattern!r} did not match {actual!r}"
     if expected == actual:
         return None
-    return f"at {path or '<root>'}: value mismatch — expected {expected!r}, got {actual!r}"
+    return f"at {path or '<root>'}: value mismatch - expected {expected!r}, got {actual!r}"
 
 
 class AssertionFailure(AssertionError):
@@ -305,13 +305,13 @@ def _check_state_graphql(spec: dict, client: Any, vars_: dict) -> None:
         expected_subset = _substitute_deep(spec["matches_subset"], vars_)
         err = matches_subset(expected_subset, extracted[0])
         if err:
-            raise AssertionFailure(f"state.graphql: matches_subset failed — {err}")
+            raise AssertionFailure(f"state.graphql: matches_subset failed - {err}")
 
 
 def _check_state_file(spec: dict, client: Any, vars_: dict) -> None:
     """Assert on a daemon-visible filesystem entry via getEntry.
 
-    Fields: file (path), type (file|dir|absent — default: file).
+    Fields: file (path), type (file|dir|absent - default: file).
     Leverages the same getEntry API test-marketplace.py uses.
     """
     path = substitute(spec["file"], vars_)
@@ -390,7 +390,7 @@ def _check_sources(spec: dict, tool_calls: list[dict], vars_: dict) -> None:
     Plugins attach sources (URL/file citations shown in the chat "Sources"
     panel) to their shell tool calls via the daemon REST API; the chat query
     surfaces them per tool part. `spec`: {min?: int (default 1),
-    matches?: regex, contains?: substring} — regex/substring run against the
+    matches?: regex, contains?: substring} - regex/substring run against the
     JSON blob of all sources gathered across the turn.
     """
     sources = [s for call in tool_calls for s in (call.get("sources") or [])]
@@ -421,7 +421,7 @@ def _check_tool_calls_count(expect: dict, tool_calls: list) -> None:
     `expect` may contain `tool_calls_min` and/or `tool_calls_max` (int).
     Catches an AI that is too passive (min) or too wasteful (max).
 
-    Skill-loading calls (`name == "skill"`) are excluded — loading a skill
+    Skill-loading calls (`name == "skill"`) are excluded - loading a skill
     is context gathering the AI should always do, not part of the work
     budget. They still show up in the `tool_call` axis for explicit matching.
     """

@@ -1,6 +1,6 @@
 # Python deps for the promptfoo e2e runner + arbitration layer.
 #
-# promptfoo itself is invoked via `npx`, not pip — it is not a Python package.
+# promptfoo itself is invoked via `npx`, not pip - it is not a Python package.
 # The version it runs against is recorded here as a marker so the arbitration
 # cache key can include it (bumping promptfoo invalidates the cache, since a
 # new version may change the --output JSON shape or assertion templates).

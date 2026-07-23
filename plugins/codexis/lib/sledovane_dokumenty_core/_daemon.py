@@ -1,7 +1,7 @@
 """Shared daemon (VM) auth + URL helpers for the plugin's daemon clients.
 
 The daemon plugin API (e-mail, in-app notification, LLM extract) is authed with
-the VM/daemon token the host writes to ~/.cdx/env/secret — the same token cdxctl
+the VM/daemon token the host writes to ~/.cdx/env/secret - the same token cdxctl
 reads. NOT CODEXIS_USER_API_TOKEN: that JWT is for external Codexis sources and
 the gateway rejects it (403).
 """

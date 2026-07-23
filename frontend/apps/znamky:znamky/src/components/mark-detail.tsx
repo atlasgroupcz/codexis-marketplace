@@ -109,7 +109,7 @@ export function MarkDetail({
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
         <div className="text-muted-foreground grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <Stat label={t('detail.owner')} value={mark.owner_name || '—'} />
+          <Stat label={t('detail.owner')} value={mark.owner_name || '-'} />
           <Stat label={t('detail.threshold')} value={`${Math.round(mark.threshold * 100)}%`} />
           <Stat label={t('detail.lastCheck')} value={formatRelative(mark.last_check_at)} />
           <Stat label={t('detail.collisionsCount')} value={String(mark.collisions_count)} />

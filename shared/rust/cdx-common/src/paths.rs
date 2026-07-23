@@ -20,7 +20,7 @@ pub fn user_home() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from("/"))
 }
 
-/// `$HOME/.cdx/apps/<app_id>` — parent dir for a plugin's per-user state.
+/// `$HOME/.cdx/apps/<app_id>` - parent dir for a plugin's per-user state.
 pub fn app_dir(app_id: &str) -> PathBuf {
     user_home().join(".cdx/apps").join(app_id)
 }

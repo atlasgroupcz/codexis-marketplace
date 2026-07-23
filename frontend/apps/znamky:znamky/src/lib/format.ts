@@ -16,7 +16,7 @@ function getDateFnsLocale(language: string): Locale {
 
 /** Format an ISO date (YYYY-MM-DD) as a localized date. Empty input → em dash. */
 export function formatDate(isoString: string | null | undefined): string {
-  if (!isoString) return '—'
+  if (!isoString) return '-'
   try {
     return format(parseISO(isoString), 'P', {
       locale: getDateFnsLocale(i18n.language),
@@ -28,7 +28,7 @@ export function formatDate(isoString: string | null | undefined): string {
 
 /** Format an ISO datetime as a localized date + time. */
 export function formatDateTime(isoString: string | null | undefined): string {
-  if (!isoString) return '—'
+  if (!isoString) return '-'
   try {
     return format(parseISO(isoString), 'Pp', {
       locale: getDateFnsLocale(i18n.language),
@@ -40,7 +40,7 @@ export function formatDateTime(isoString: string | null | undefined): string {
 
 /** Relative time, e.g. "před 5 minutami" / "5 minutes ago" / "pred 3 dňami". */
 export function formatRelative(isoString: string | null | undefined): string {
-  if (!isoString) return '—'
+  if (!isoString) return '-'
   try {
     return formatDistanceToNow(parseISO(isoString), {
       addSuffix: true,

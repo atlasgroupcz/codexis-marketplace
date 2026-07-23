@@ -17,7 +17,7 @@ Court code (exact match):
 
 ## Citation court abbreviations
 Court abbreviation used in the user-facing citation link text (`SÚD - SP. ZN. - DD.MM.RRRR`).
-These match the source titles the API emits — when a resolved source title is shown, reuse it
+These match the source titles the API emits - when a resolved source title is shown, reuse it
 verbatim. The pattern set covers the complete slov-lex court list (68 courts):
 
 | `courtName` value | Abbrev |
@@ -31,7 +31,7 @@ verbatim. The pattern set covers the complete slov-lex court list (68 courts):
 | Špecializovaný trestný súd | ŠTS |
 
 OS/MS keep the city verbatim as it appears in the name (`OS Košice okolie`, `MS Bratislava IV`).
-KS/SS names carry the seat city in the locative ("v Bratislave") — the citation uses the
+KS/SS names carry the seat city in the locative ("v Bratislave") - the citation uses the
 nominative (all 8 seat cities):
 
 | Locative (in `courtName`) | Nominative (in citation) |

@@ -10,7 +10,7 @@ pub(crate) const SEARCH_ZMLUVY_HELP: &str = r#"Example:
   register-zmluv search SKCRZ --query "nájomná zmluva" --value-min 100000"#;
 
 /// Search filters for the Slovak Register of Contracts (crz.gov.sk).
-/// Mirrors `CrzSearchRequest` — every field is optional.
+/// Mirrors `CrzSearchRequest` - every field is optional.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchZmluvyArgs {
     #[command(flatten)]
@@ -19,7 +19,7 @@ pub(crate) struct SearchZmluvyArgs {
     #[arg(
         long,
         value_parser = parse_ico,
-        help = "Party IČO — matches either contract party, exact match (canonicalized to 8 digits)"
+        help = "Party IČO - matches either contract party, exact match (canonicalized to 8 digits)"
     )]
     pub(crate) ico: Option<String>,
     #[arg(long, help = "Publishing sector/ministry id (rezort), exact match")]
@@ -100,7 +100,7 @@ mod tests {
 
     // The SK register indexes one record per contract (upsert by id), so there
     // is no CZ-style `platnyZaznam` version flag and no publisher/counterparty
-    // split — a single `ico` matches either party.
+    // split - a single `ico` matches either party.
     #[test]
     fn does_not_emit_czech_only_filters() {
         let args = SearchZmluvyArgs {

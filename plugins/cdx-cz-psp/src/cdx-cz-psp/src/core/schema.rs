@@ -371,7 +371,7 @@ fn resource_output_description(kind: ResourceSchemaKind) -> &'static str {
             "Per-relation-type counts for the current related-document scope."
         }
         ResourceSchemaKind::History => {
-            "Legislative process history — stages, votes, committee readings, and outcomes."
+            "Legislative process history - stages, votes, committee readings, and outcomes."
         }
     }
 }

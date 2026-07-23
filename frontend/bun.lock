@@ -75,6 +75,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -111,6 +112,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -147,6 +149,44 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
+        "jsdom": "^28.1.0",
+        "prettier": "^3.8.1",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.1",
+        "vite-tsconfig-paths": "^6.1.1",
+        "vitest": "^4.0.18",
+      },
+    },
+    "apps/sbirka-listin:sbirka-listin": {
+      "name": "sbirka-listin:sbirka-listin",
+      "dependencies": {
+        "@tailwindcss/vite": "^4.2.1",
+        "@workspace/ui": "workspace:*",
+        "date-fns": "^4.1.0",
+        "i18next": "^25.8.13",
+        "i18next-browser-languagedetector": "^8.2.1",
+        "lucide-react": "^0.575.0",
+        "next-themes": "^0.4.6",
+        "nuqs": "^2.8.8",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-i18next": "^16.5.4",
+        "tailwindcss": "^4.2.1",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@tanstack/eslint-config": "^0.4.0",
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.1",
+        "@types/node": "^25.3.0",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.4",
+        "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -218,6 +258,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
@@ -340,6 +381,7 @@
         "@vitejs/plugin-react": "^5.1.4",
         "@workspace/eslint-config": "workspace:*",
         "@workspace/typescript-config": "workspace:*",
+        "@workspace/vitest-config": "workspace:*",
         "jsdom": "^28.1.0",
         "tailwindcss": "^4.2.1",
         "typescript": "^5.9.3",
@@ -361,6 +403,23 @@
       "devDependencies": {
         "@tanstack/eslint-config": "^0.4.0",
         "@workspace/eslint-config": "workspace:*",
+      },
+    },
+    "packages/vitest-config": {
+      "name": "@workspace/vitest-config",
+      "version": "0.0.0",
+      "dependencies": {
+        "@vitejs/plugin-react": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
+      },
+      "devDependencies": {
+        "@workspace/eslint-config": "workspace:*",
+        "@workspace/typescript-config": "workspace:*",
+        "vitest": "^4.0.18",
+      },
+      "peerDependencies": {
+        "vite": "^7.0.0",
+        "vitest": "^4.0.0",
       },
     },
   },
@@ -1048,6 +1107,8 @@
     "@workspace/ui": ["@workspace/ui@workspace:packages/ui"],
 
     "@workspace/utils": ["@workspace/utils@workspace:packages/utils"],
+
+    "@workspace/vitest-config": ["@workspace/vitest-config@workspace:packages/vitest-config"],
 
     "@xyflow/react": ["@xyflow/react@12.10.1", "", { "dependencies": { "@xyflow/system": "0.0.75", "classcat": "^5.0.3", "zustand": "^4.4.0" }, "peerDependencies": { "react": ">=17", "react-dom": ">=17" } }, "sha512-5eSWtIK/+rkldOuFbOOz44CRgQRjtS9v5nufk77DV+XBnfCGL9HAQ8PG00o2ZYKqkEU/Ak6wrKC95Tu+2zuK3Q=="],
 
@@ -2107,6 +2168,8 @@
 
     "saxes": ["saxes@6.0.0", "", { "dependencies": { "xmlchars": "^2.2.0" } }, "sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA=="],
 
+    "sbirka-listin:sbirka-listin": ["sbirka-listin:sbirka-listin@workspace:apps/sbirka-listin:sbirka-listin"],
+
     "scheduler": ["scheduler@0.27.0", "", {}, "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q=="],
 
     "semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
@@ -2538,6 +2601,8 @@
     "restore-cursor/signal-exit": ["signal-exit@3.0.7", "", {}, "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ=="],
 
     "rxjs/tslib": ["tslib@1.14.1", "", {}, "sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg=="],
+
+    "sbirka-listin:sbirka-listin/lucide-react": ["lucide-react@0.575.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-VuXgKZrk0uiDlWjGGXmKV6MSk9Yy4l10qgVvzGn2AWBx1Ylt0iBexKOAoA6I7JO3m+M9oeovJd3yYENfkUbOeg=="],
 
     "sid:sid/lucide-react": ["lucide-react@0.575.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-VuXgKZrk0uiDlWjGGXmKV6MSk9Yy4l10qgVvzGn2AWBx1Ylt0iBexKOAoA6I7JO3m+M9oeovJd3yYENfkUbOeg=="],
 

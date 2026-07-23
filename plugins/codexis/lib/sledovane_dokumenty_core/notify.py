@@ -123,7 +123,7 @@ def without_self(recipients):
 
     The signed-in user always receives the e-mail, so listing their own address
     as an extra is redundant (and shows as a duplicate pill in the UI). This is
-    the store-time guard for the CLI and daemon write paths — the FE dialog
+    the store-time guard for the CLI and daemon write paths - the FE dialog
     already blocks it on entry. Case-insensitive. When the signed-in user can't
     be resolved, the list is returned unchanged (keep an extra rather than drop a
     real recipient on a transient lookup failure). No `me` lookup for an empty
@@ -195,7 +195,7 @@ def build_summary(results):
     text_lines = ["Kontrola sledovaných složek zaznamenala změny:", ""]
     html_rows = []
     for r in changed:
-        text_lines.append(f"Složka „{r['name']}“ — {len(r['changes'])} změn:")
+        text_lines.append(f"Složka „{r['name']}“ - {len(r['changes'])} změn:")
         for c in r["changes"]:
             eff = f" (účinné od {c['effective_on']})" if c.get("effective_on") else ""
             text_lines.append(f"  • {c.get('text') or c.get('codexisId')}{eff}")

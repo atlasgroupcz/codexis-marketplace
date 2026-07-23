@@ -1,5 +1,5 @@
 /**
- * Shared file system types — single source of truth.
+ * Shared file system types - single source of truth.
  */
 
 /**

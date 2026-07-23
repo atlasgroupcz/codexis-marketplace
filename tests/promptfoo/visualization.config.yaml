@@ -6,7 +6,7 @@
 #   RUN_ID=$(printf '%s' "$RANDOM$RANDOM" | sha1sum | cut -c1-4)
 #   npx promptfoo eval -c tests/promptfoo/visualization.config.yaml --var run_id=$RUN_ID
 
-description: visualization — bar chart of CZ city populations
+description: visualization - bar chart of CZ city populations
 
 prompts:
   - "{{ prompt }}"
@@ -19,11 +19,11 @@ providers:
 tests:
   - description: Bar chart HTML lands at requested path
     vars:
-      prompt: "Vykresli mi sloupcový graf populace největších českých měst — Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
+      prompt: "Vykresli mi sloupcový graf populace největších českých měst - Praha 1300, Brno 380, Ostrava 280, Plzeň 170 (v tisících). Ulož jako /home/codexis/mesta-{{ run_id }}.html."
       # AI uses the typed writeFile tool (not shell) for the HTML output.
       tool_name: writeFile
       input_regex: 'mesta-[\s\S]*\.html'
-      # Router→sub-skill→template-read→write — allow some headroom.
+      # Router→sub-skill→template-read→write - allow some headroom.
       tool_calls_max: 18
       forbidden_regex: '(curl|wget)\s+http'
       # Arbitration criteria (read only by `run.py --arbitrate` when a

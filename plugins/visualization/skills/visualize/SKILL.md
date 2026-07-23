@@ -51,7 +51,7 @@ This skill is a **router only**. For each visualization type, you MUST:
 ## Workflow
 
 1. **Identify visualization type** based on user's data and intent
-2. **Read the referenced doc** for that type (`references/<type>/<type>.md` — contains full schema with all fields)
+2. **Read the referenced doc** for that type (`references/<type>/<type>.md` - contains full schema with all fields)
 3. **Read the template.html** for that type
 4. **Construct A2UI JSON** following the schema exactly
 5. **Replace placeholders** in template: `{{TITLE}}` and `{{DATA}}`

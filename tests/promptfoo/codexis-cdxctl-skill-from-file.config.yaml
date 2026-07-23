@@ -2,7 +2,7 @@
 # cdxctl skill creation via --file (distinct from --stdin) + cleanup.
 # A regression here would be the AI shelling `cat F | cdxctl skill create --stdin`.
 
-description: codexis cdxctl — skill create via --file
+description: codexis cdxctl - skill create via --file
 target_plugin: codexis
 
 prompts:

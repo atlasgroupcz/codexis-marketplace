@@ -2,38 +2,38 @@
 uuid: 30a77323-ca87-415f-b4de-d8c5f166a11d
 name: docx
 icon: icon.svg
-description: "Word dokumenty (.docx) — smlouva, podání, memo, dopis, report, šablona. Vytvoř, uprav či přeformátuj Word a zkontroluj, jak vypadá. Ne pro Excel, PDF ani prezentace."
+description: "Word dokumenty (.docx) - smlouva, podání, memo, dopis, report, šablona. Vytvoř, uprav či přeformátuj Word a zkontroluj, jak vypadá. Ne pro Excel, PDF ani prezentace."
 version: 1.0.0
 allowed-tools: shell
 i18n:
   cs:
     displayName: "Word dokumenty"
-    summary: "Tvorba, úprava a vizuální kontrola .docx — smlouvy, podání, memoranda, dopisy."
+    summary: "Tvorba, úprava a vizuální kontrola .docx - smlouvy, podání, memoranda, dopisy."
   en:
     displayName: "Word Documents"
-    summary: "Create, edit and visually verify .docx files — contracts, filings, memos, letters."
+    summary: "Create, edit and visually verify .docx files - contracts, filings, memos, letters."
   sk:
     displayName: "Word dokumenty"
-    summary: "Tvorba, úprava a vizuálna kontrola .docx — zmluvy, podania, memorandá, listy."
+    summary: "Tvorba, úprava a vizuálna kontrola .docx - zmluvy, podania, memorandá, listy."
 ---
 
-# DOCX — creation, editing, visual verification
+# DOCX - creation, editing, visual verification
 
 A `.docx` is a ZIP of XML files. You never have to read that XML by hand: generate with
 `docx-js`, then **look at the rendered result** before you hand it over.
 
-**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` — report it and don't blindly
+**IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` - report it and don't blindly
 retry. LibreOffice and poppler are part of the guest image, so a missing `soffice` or `pdftoppm`
 means something is broken with the image, not with your command. Report it; never work around it
 with a hand-rolled conversion that skips the visual check.
 
-## Reading a document — always do both
+## Reading a document - always do both
 
 Text and images answer different questions. Text gives you exact wording; the render gives
 you layout, stamps, signatures and tables that text extraction flattens or loses.
 
 ```bash
-# 1. Text — via the ocr skill's command
+# 1. Text - via the ocr skill's command
 ocr /home/codexis/smlouva.docx      # → {"path": ".../smlouva.docx-ocr.zip"}
 unzip -o /home/codexis/smlouva.docx-ocr.zip -d /tmp/smlouva-text
 cat /tmp/smlouva-text/*.md
@@ -42,7 +42,7 @@ cat /tmp/smlouva-text/*.md
 cdx-render -i /home/codexis/smlouva.docx
 ```
 
-Then `Read` the PNGs. Do not skip this for documents where the layout carries meaning —
+Then `Read` the PNGs. Do not skip this for documents where the layout carries meaning -
 a signature block, a stamp, a two-column annex or a table with merged cells is invisible
 in the markdown but obvious in the image.
 
@@ -99,14 +99,14 @@ const doc = new Document({
 Packer.toBuffer(doc).then((buf) => fs.writeFileSync('/home/codexis/smlouva.docx', buf));
 ```
 
-**Only the `.docx` is the deliverable — write it under `./`.** Everything you produce merely to
+**Only the `.docx` is the deliverable - write it under `./`.** Everything you produce merely to
 build or check it is throwaway scratch that belongs under `./.tmp`, never next to the document:
 your generator script (`./.tmp/create-smlouva.js`), the LibreOffice intermediate `.pdf`, and the
 page PNGs. `cdx-render` already writes its output under `./.tmp` by default, so just `Read` the
-paths it prints — do not pass `-o` pointing back into the working directory.
+paths it prints - do not pass `-o` pointing back into the working directory.
 
 **Page size:** `docx-js` defaults to A4 (11906 × 16838 DXA), which is what Czech and Slovak
-documents want — but set it explicitly anyway. US Letter is 12240 × 15840.
+documents want - but set it explicitly anyway. US Letter is 12240 × 15840.
 
 **Landscape:** pass the *portrait* dimensions plus `orientation: PageOrientation.LANDSCAPE`;
 `docx-js` swaps them internally. Passing pre-swapped values produces a broken page.
@@ -119,9 +119,9 @@ new TableOfContents('Obsah', { hyperlink: true, headingStyleRange: '1-3' })
 ```
 
 Word only populates a TOC on open ("update fields"), so it will look empty in the render.
-That is expected — do not try to "fix" it.
+That is expected - do not try to "fix" it.
 
-## Verification — required, in this order
+## Verification - required, in this order
 
 Your first render is almost never right. Treat QA as a bug hunt, not a confirmation step.
 
@@ -139,7 +139,7 @@ elements, a table spilling off the page, a heading orphaned at the bottom, broke
 what you intended, not what is there. Dispatch a subagent with the page images and this prompt:
 
 ```
-Visually inspect these document pages. Assume there are problems — find them.
+Visually inspect these document pages. Assume there are problems - find them.
 Look for: text clipped or running off the page; overlapping elements; broken tables;
 missing or mangled Czech diacritics; inconsistent heading sizes; widows and orphans;
 placeholder text left behind; signature blocks split across a page break.
@@ -156,7 +156,7 @@ ocr /home/codexis/smlouva.docx && unzip -p /home/codexis/smlouva.docx-ocr.zip |
 **4. Fix, then re-render the affected pages** (`cdx-render -i file.docx -f 3 -l 3`). One fix
 routinely creates the next problem. Do not declare success until a full pass finds nothing new.
 
-## Word compatibility — the render is LibreOffice, not Word
+## Word compatibility - the render is LibreOffice, not Word
 
 `cdx-render` draws the document with LibreOffice. The user opens it in Word. A file can look
 perfect in the render and wrong on their machine, and the render will never tell you. Close the
@@ -172,11 +172,11 @@ paragraph: { spacing: { line: 360, lineRule: LineRuleType.AUTO } }   // 360 = 1.
 **Override headings through `styles.default.heading1`, never through `paragraphStyles`.** A
 `paragraphStyles` entry with `id: 'Heading1'` is silently half-applied: `docx-js` keeps your
 `size` but drops `font` and `bold`, and leaves Word's built-in heading blue (`2E74B5`) in place.
-The heading then comes out **blue and in the wrong font in Word** — while LibreOffice re-styles it
+The heading then comes out **blue and in the wrong font in Word** - while LibreOffice re-styles it
 and the render looks fine, so the QA loop never catches it.
 
 ```javascript
-// WRONG — font and bold are dropped, the heading stays blue
+// WRONG - font and bold are dropped, the heading stays blue
 paragraphStyles: [{ id: 'Heading1', run: { font: FONT, size: 32, bold: true } }]
 
 // RIGHT
@@ -189,7 +189,7 @@ styles: {
 
 Set `color` explicitly. Without it the blue survives.
 
-Verify it landed — the style must carry `rFonts`, `<w:b/>` and your colour:
+Verify it landed - the style must carry `rFonts`, `<w:b/>` and your colour:
 
 ```bash
 unzip -p smlouva.docx word/styles.xml | grep -o '<w:style [^>]*Heading1.*\?</w:style>'
@@ -197,7 +197,7 @@ unzip -p smlouva.docx word/styles.xml | grep -o '<w:style [^>]*Heading1.*\?</w:s
 
 **Use fonts the user actually has.** Times New Roman, Arial and Calibri are safe. LibreOffice
 substitutes a metric-compatible face (Liberation Serif for Times New Roman) and the render looks
-right even when the real font is missing — which is exactly how a font problem hides from you.
+right even when the real font is missing - which is exactly how a font problem hides from you.
 
 ## Quality bar
 
@@ -219,7 +219,7 @@ soffice -env:UserInstallation="file:///tmp/lo_profile_$$" --headless \
 
 ## Dependencies
 
-- `docx-js` (Node, preinstalled) — creating documents
-- `cdx-render` — document → page PNGs (LibreOffice + poppler)
-- `ocr` — text extraction (from the ocr plugin)
-- `pandoc` — tracked changes
+- `docx-js` (Node, preinstalled) - creating documents
+- `cdx-render` - document → page PNGs (LibreOffice + poppler)
+- `ocr` - text extraction (from the ocr plugin)
+- `pandoc` - tracked changes

@@ -1,8 +1,8 @@
-/* Branded spot illustrations for empty states — CODEXIS green, editorial line+fill. */
+/* Branded spot illustrations for empty states - CODEXIS green, editorial line+fill. */
 
 type ArtProps = { className?: string }
 
-/** "We watch your laws for changes" — a document under a radar sweep. */
+/** "We watch your laws for changes" - a document under a radar sweep. */
 export function WatchDocsArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
@@ -38,7 +38,7 @@ export function WatchDocsArt({ className }: ArtProps) {
   )
 }
 
-/** "Nothing changed — you're covered" — a document at rest with a green check. */
+/** "Nothing changed - you're covered" - a document at rest with a green check. */
 export function NoChangesArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">

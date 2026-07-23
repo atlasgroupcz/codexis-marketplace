@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "bun --bun vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "generate-exports": "bun run scripts/generate-exports.ts",
@@ -88,6 +88,7 @@
     "@vitejs/plugin-react": "^5.1.4",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "@workspace/vitest-config": "workspace:*",
     "jsdom": "^28.1.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",

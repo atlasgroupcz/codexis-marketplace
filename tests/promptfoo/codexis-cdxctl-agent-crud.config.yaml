@@ -2,7 +2,7 @@
 # cdxctl local-agent lifecycle: create-from-stdin → list → update → delete.
 # Same shape as skill-crud, different daemon entity.
 
-description: codexis cdxctl — agent CRUD via --stdin
+description: codexis cdxctl - agent CRUD via --stdin
 target_plugin: codexis
 
 prompts:
@@ -21,7 +21,7 @@ tests:
 
         ---
         name: ee-agent-{{ run_id }}
-        description: "E2E test agent — initial description"
+        description: "E2E test agent - initial description"
         tools: Read, Bash
         maxTurns: 8
         ---
@@ -44,7 +44,7 @@ tests:
       jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')]"
       count: 1
       subset:
-        description: "E2E test agent — initial description"
+        description: "E2E test agent - initial description"
         editable: true
         deletable: true
     assert:
@@ -94,7 +94,7 @@ tests:
 
   - description: agent update changes the description
     vars:
-      prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent — updated'."
+      prompt: "U agenta ee-agent-{{ run_id }} změň popis na 'E2E test agent - updated'."
       tool_name: shell
       input_regex: 'agent\s+update'
       tool_calls_min: 1
@@ -111,7 +111,7 @@ tests:
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
       graphql: "{ agents { name description } }"
       jsonpath: "$.agents[?(@.name == 'ee-agent-{{ run_id }}')].description"
-      equals: "E2E test agent — updated"
+      equals: "E2E test agent - updated"
     assert:
       - type: python
         value: file://./assertions.py:assert_tool_call

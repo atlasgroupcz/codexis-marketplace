@@ -105,7 +105,7 @@ def state_to_fe_document(s):
         if not isinstance(change, dict):
             continue
         if change.get("change_type") == "related_change":
-            # related_change is a CODEXIS curation event — no legal "effective"
+            # related_change is a CODEXIS curation event - no legal "effective"
             # date exists for the event itself. Omit effective_on so FE can
             # render just detected_on.
             fe_change = {
@@ -439,7 +439,7 @@ def handle_group_action(action, body):
                 emit_json({"ok": False, "error": "tracked document not found"}, status="404 Not Found")
                 return
         else:
-            # Create empty group — core doesn't have this, do it inline.
+            # Create empty group - core doesn't have this, do it inline.
             groups = state.load_groups()
             _, existing = state.find_group(groups, group_name)
             if existing is None:
@@ -570,7 +570,7 @@ def main():
             handle_get(query_string)
     except DocumentError as e:
         emit_json({"ok": False, "error": str(e)}, status=error_status(e))
-    except Exception as e:  # noqa: BLE001 — last-resort guard
+    except Exception as e:  # noqa: BLE001 - last-resort guard
         emit_json(
             {"ok": False, "error": f"Internal error: {e}"},
             status="500 Internal Server Error",

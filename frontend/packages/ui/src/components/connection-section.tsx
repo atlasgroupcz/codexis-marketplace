@@ -31,10 +31,10 @@ export interface ConnectionSectionProps {
 
 /**
  * Inline credential block for the settings dialog. Two states share one layout so
- * nothing shifts: the top is the only thing that changes — a READ-ONLY masked key
+ * nothing shifts: the top is the only thing that changes - a READ-ONLY masked key
  * (configured) or editable field(s) (not configured). Below it a reserved error
  * slot, then a fixed bottom row with the "get key" link on the left and the single
- * action on the right — Odebrat (2-step confirm) when configured, Uložit
+ * action on the right - Odebrat (2-step confirm) when configured, Uložit
  * (validates on save) when not. Changing a key is remove-then-add. The connected/
  * not-connected status dot lives on the section heading (rendered by the dialog).
  */
@@ -88,7 +88,7 @@ export function ConnectionSection({
 
   return (
     <div className="space-y-2.5">
-      {/* Top — the only thing that changes between states. */}
+      {/* Top - the only thing that changes between states. */}
       {configured ? (
         <div className="bg-brand-50 ring-brand-100 flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 ring-1">
           <Check className="text-primary size-4 shrink-0" />

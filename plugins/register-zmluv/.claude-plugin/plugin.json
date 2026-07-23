@@ -1,8 +1,8 @@
 {
   "name": "register-zmluv",
   "iconPath": "icon.svg",
-  "version": "1.1.0",
-  "description": "Slovak Register of Contracts (Centrálny register zmlúv, crz.gov.sk) — search public-sector contracts by subject, contracting parties, IČO, value, and contract date",
+  "version": "1.2.0",
+  "description": "Slovak Register of Contracts (Centrálny register zmlúv, crz.gov.sk) - search public-sector contracts by subject, contracting parties, IČO, value, and contract date",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -13,17 +13,17 @@
   "i18n": {
     "cs": {
       "displayName": "Register zmlúv SR",
-      "description": "Centrálny register zmlúv (crz.gov.sk) — vyhledávání slovenských veřejných smluv podle předmětu, smluvních stran, IČO, hodnoty a data uzavření.",
+      "description": "Centrálny register zmlúv (crz.gov.sk) - vyhledávání slovenských veřejných smluv podle předmětu, smluvních stran, IČO, hodnoty a data uzavření.",
       "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Registr", "contracts": "Smlouvy" }
     },
     "en": {
       "displayName": "Slovak Register of Contracts",
-      "description": "Slovak Central Register of Contracts (crz.gov.sk) — search public-sector contracts by subject, contracting parties, IČO, value, and contract date.",
+      "description": "Slovak Central Register of Contracts (crz.gov.sk) - search public-sector contracts by subject, contracting parties, IČO, value, and contract date.",
       "tagLabels": { "legal": "Law", "slovak": "Slovakia", "registry": "Registry", "contracts": "Contracts" }
     },
     "sk": {
       "displayName": "Centrálny register zmlúv",
-      "description": "Centrálny register zmlúv (crz.gov.sk) — vyhľadávanie verejných zmlúv podľa predmetu, zmluvných strán, IČO, hodnoty a dátumu uzavretia.",
+      "description": "Centrálny register zmlúv (crz.gov.sk) - vyhľadávanie verejných zmlúv podľa predmetu, zmluvných strán, IČO, hodnoty a dátumu uzavretia.",
       "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "registry": "Register", "contracts": "Zmluvy" }
     }
   },

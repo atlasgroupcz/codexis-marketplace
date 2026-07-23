@@ -129,7 +129,7 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
 
 /// Rewrite ONLY `cdx-at://…/attachment/…` links in `body` to absolute https URLs,
 /// preserving any `#fragment` / `?query`. Non-attachment cdx:// links are left as-is.
-/// Pure string scan (no JSON parse, no regex) — the matched token ends at the first
+/// Pure string scan (no JSON parse, no regex) - the matched token ends at the first
 /// JSON/markdown delimiter.
 pub(crate) fn resolve_attachment_links(body: &str, base_url: &str) -> String {
     let mut out = String::with_capacity(body.len());
@@ -493,7 +493,7 @@ mod tests {
     fn resolves_attachment_amid_multibyte_german_text() {
         let base = "https://example.com/api";
         // Multi-byte chars (Ö, ü, ß) IMMEDIATELY adjacent to the token guard the char-boundary
-        // slicing — this resolver runs on Austrian legal content where a mis-sliced index panics.
+        // slicing - this resolver runs on Austrian legal content where a mis-sliced index panics.
         let body = "Verordnung über…cdx-at://doc/ATBR12/attachment/content_1.pdf#page=3,Änderung ü";
         let out = resolve_attachment_links(body, base);
         assert!(out.contains("https://example.com/api/AT/bundesrecht/doc/ATBR12/attachment/content_1.pdf#page=3"));

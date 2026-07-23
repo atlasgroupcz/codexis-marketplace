@@ -20,10 +20,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
-    test: {
-      globals: true,
-      server: { deps: { inline: ['zod'] } },
-    },
     plugins: [
       viteReact({
         babel: {

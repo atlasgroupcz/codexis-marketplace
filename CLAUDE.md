@@ -2,6 +2,71 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Text conventions
+
+Never write em-dashes (`—`) or en-dashes (`–`). Use a plain hyphen (`-`) instead.
+This applies everywhere: plugin display names, descriptions, i18n labels,
+component UI text, SKILL docs, code comments, and commit messages. Em-dashes had
+crept into user-facing names and looked unprofessional, so the repo was
+normalized to hyphens - keep it that way.
+
+## Testing
+
+### Two kinds of test
+
+- **Code tests** exercise a plugin's own code and run under a framework:
+  `test_*.py` (pytest) for Python, `#[cfg(test)]` inline + `src/<crate>/tests/*.rs`
+  (cargo) for Rust.
+- **Scenario specs** are declarative data driven by the central harness:
+  `expected.json` (marketplace/install contract), `e2e/*.yaml` (chat-driven
+  e2e), and `tests/promptfoo/*.config.yaml` (LLM-judge evals).
+
+### Taxonomy
+
+| Tier | Location | Runner |
+| --- | --- | --- |
+| unit | Python: `plugins/<name>/tests/unit/` (pytest); Rust: inline `#[cfg(test)]` in `src/<crate>/src/` | pytest / cargo |
+| integration | Rust: `plugins/<name>/src/<crate>/tests/*.rs`; Python: `tests/integration/` if needed | cargo / pytest |
+| install | `plugins/<name>/tests/install/expected.json` | central harness |
+| e2e | `plugins/<name>/tests/e2e/*.yaml` (one file per binary/skill) | central harness |
+| llm-eval | `tests/promptfoo/*.config.yaml` (central) | promptfoo |
+
+Code tests live next to the code they test (Rust unit/integration are per crate
+under `src/<crate>/`). Data specs are the only plugin-level tests. An e2e scenario
+that uploads binary fixtures keeps them in `plugins/<name>/tests/fixtures/`,
+referenced from the scenario yaml by a relative `source:` path.
+
+Two different `tests/` folders exist: `tests/` at the repo root is the central
+harness; `plugins/<name>/tests/` holds one plugin's Python unit tests and data
+specs. Same name, different scope.
+
+### Running tests
+
+Use the single entry point: `python tests/run.py <unit|marketplace|e2e|eval|all>`.
+
+### Coverage
+
+New or changed plugin code must reach >=90% line coverage on the changed code,
+verified from the coverage report (`pytest --cov` for Python, `cargo llvm-cov`
+for Rust). Checked in review; not an automated CI threshold.
+
+### Test-quality rules
+
+General principles, independent of language or framework:
+
+- Name each test after the behavior it checks; one behavior per test.
+- Cover the happy path first; add an error/negative test only when it catches
+  something real, not mechanically.
+- Every test must assert real behavior. A test that only builds a value or
+  restates the implementation is not a test - if it cannot fail, delete it.
+- Use real dependencies where you can run them; mock only what you cannot
+  (external HTTP APIs, the daemon, third-party services). Never mock the thing
+  under test.
+- On any failure (test, e2e, pipeline), find the cause before changing code -
+  no shotgun fixes.
+- Before calling something green, show the command output - do not assert it
+  passed.
+
 ## Project Overview
 
 This is a **Claude Code Plugin Marketplace** maintained by ATLAS GROUP. It contains plugins that extend Claude Code with legal database access and data visualization capabilities.
@@ -123,17 +188,17 @@ for `icon.svg`/`icon.png`/etc. Without a declaration the UI renders initials.
 Declare plugin-owned env vars in `plugin.json` under `env`. The host merges these into every shell process the plugin runs. Do not write env files; do not set them in install hooks.
 
 Naming convention:
-- `CODEXIS_PLUGIN_*` — plugin-owned configuration (URLs, IDs). Each key belongs to exactly one plugin; do not redeclare another plugin's key.
-- `CODEXIS_USER_*` — per-user secrets injected by the host (Codexis API tokens, LiteLLM keys). Plugins are read-only consumers; never log, never embed in builds.
-- `CODEXIS_PUBLIC_*` — host-injected runtime context (daemon URL, user home, session id). Plugins are read-only consumers.
+- `CODEXIS_PLUGIN_*` - plugin-owned configuration (URLs, IDs). Each key belongs to exactly one plugin; do not redeclare another plugin's key.
+- `CODEXIS_USER_*` - per-user secrets injected by the host (Codexis API tokens, LiteLLM keys). Plugins are read-only consumers; never log, never embed in builds.
+- `CODEXIS_PUBLIC_*` - host-injected runtime context (daemon URL, user home, session id). Plugins are read-only consumers.
 
 ### Lifecycle Hooks
 
 Plugins support three lifecycle hooks executed as shell commands by the harness:
 
-- **`postInstall`** — runs after the plugin is installed
-- **`postUninstall`** — runs after the plugin is uninstalled
-- **`onUpdate`** — runs after the plugin is updated
+- **`postInstall`** - runs after the plugin is installed
+- **`postUninstall`** - runs after the plugin is uninstalled
+- **`onUpdate`** - runs after the plugin is updated
 
 The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the plugin's installation directory.
 
@@ -170,12 +235,22 @@ Example (from codexis plugin):
 
 For multi-binary plugins, prefer extracting these commands into `hooks/install-binaries.sh` and `hooks/uninstall-binaries.sh` (see the `codexis`, `cdx-sk`, `ares`, `cdx-at`, `cdx-cz-psp`, `cdx-cz-spp` plugins). Those scripts default `TARGET_BIN_DIR` to `${HOME}/.local/bin` and can be overridden via the `TARGET_BIN_DIR` env var if a different prefix is needed.
 
+### Source Previews (`previews/`)
+
+A plugin can render an in-chat HTML preview for the sources it publishes. Publish sources with `previewUrl` in the `<plugin-name>://<resource-path>` form; the daemon resolves it through the plugin's preview handler declared by `previews/preview.json`:
+
+```json
+{ "id": "preview", "runtime": { "type": "cgi", "binary": "../bin/<cli>", "args": ["preview"] } }
+```
+
+The binary path is resolved relative to `previews/` and may point into the plugin's `bin/` (it must stay inside the plugin directory). The daemon executes it CGI-style in the user's VM with the resource path in `PATH_INFO` (+ `QUERY_STRING`); the handler prints a CGI response (`Status`/`Content-Type` headers, blank line, HTML body). Static assets placed next to the descriptor (e.g. `previews/preview.css`) are served as-is, so the page can reference them relatively (`<link rel="stylesheet" href="./preview.css">`). The rendered HTML drives the chat panel: `<title>` becomes the panel title and an optional `<link rel="canonical" href="…">` becomes the "open in new tab" target. See the `codexis` plugin (`cdx-cli preview`) for the reference implementation.
+
 ## Localization (i18n)
 
 Every `marketplace.json` / `plugin.json` / `component.json` and every top-level
 `SKILL.md` frontmatter carries an `i18n` block with localized display strings
 for the CDX daemon UI. Technical identifiers (`name`, `id`) stay
-kebab-case and are **never** translated — only user-facing strings are.
+kebab-case and are **never** translated - only user-facing strings are.
 
 ### JSON manifests
 
@@ -186,7 +261,7 @@ kebab-case and are **never** translated — only user-facing strings are.
   "tags": ["legal", "czech"],
   "i18n": {
     "cs": {
-      "displayName": "CODEXIS — Česká legislativa",
+      "displayName": "CODEXIS - Česká legislativa",
       "description": "Přístup k databázi CODEXIS...",
       "tagLabels": { "legal": "Právo", "czech": "Česko" }
     },
@@ -200,7 +275,7 @@ For `component.json` the same pattern applies with `displayName` + `description`
 
 ### Markdown frontmatter (`SKILL.md`, agents)
 
-The top-level `description` stays as the **LLM trigger text** — never translate it.
+The top-level `description` stays as the **LLM trigger text** - never translate it.
 User-facing short text lives under `i18n.<lang>.summary`.
 
 ```yaml
@@ -210,13 +285,13 @@ description: "This skill should be invoked whenever user needs Czech legal resea
 version: 2.1.0
 i18n:
   cs:
-    displayName: "CODEXIS — Legislativa ČR"
+    displayName: "CODEXIS - Legislativa ČR"
     summary: "Vyhledávání v české a evropské legislativě."
   en:
-    displayName: "CODEXIS — Czech Legislation"
+    displayName: "CODEXIS - Czech Legislation"
     summary: "Search Czech and EU legislation."
   sk:
-    displayName: "CODEXIS — Česká legislatíva"
+    displayName: "CODEXIS - Česká legislatíva"
     summary: "Vyhľadávanie v českej a európskej legislatíve."
 ---
 ```

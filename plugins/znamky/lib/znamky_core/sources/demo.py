@@ -1,10 +1,10 @@
-"""Demo source — a small bundled dataset of sample trademarks.
+"""Demo source - a small bundled dataset of sample trademarks.
 
 Enabled by the CODEXIS_PLUGIN_ZNAMKY_DEMO env flag. Lets the similarity matching
 be exercised end to end (scoring, tiers, donut, collision timeline) in
 environments where the live public registers are not reachable. The scoring +
 threshold layer decides which of these become collisions, exactly like a real
-source — only the candidate list is local instead of fetched.
+source - only the candidate list is local instead of fetched.
 """
 
 import json

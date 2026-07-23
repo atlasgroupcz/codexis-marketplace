@@ -65,7 +65,7 @@ def parse_assistant_message(msg: dict) -> dict:
 
     - Concatenates TextMessagePart.content into `text`.
     - Each *ToolMessagePart variant becomes one entry in `tool_calls` with
-      {id, name, input, output} — `input` is a dict of the typed args the
+      {id, name, input, output} - `input` is a dict of the typed args the
       daemon recorded for that tool kind.
     - Ignores ReasoningMessagePart (model thinking) and unknown part types.
     """
@@ -107,7 +107,7 @@ class ChatRunner:
         """Send one user message and return parsed {text, tool_calls}.
 
         The model's tool activity for the turn lives on AiChatMessage.toolChain
-        (a sibling node) — we merge those parts back into the turn's tool_calls
+        (a sibling node) - we merge those parts back into the turn's tool_calls
         so YAML assertions see the complete picture.
         """
         if self.chat_node_id is None:
@@ -131,5 +131,5 @@ class ChatRunner:
     def _parse_turn(self, last_msg: dict) -> dict:
         # In the new schema, ToolMessageParts already live inline in
         # AiChatMessage.parts. The toolChain is the same entries surfaced via
-        # a sibling node — reading both would double-count every tool call.
+        # a sibling node - reading both would double-count every tool call.
         return parse_assistant_message(last_msg)

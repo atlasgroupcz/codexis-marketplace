@@ -27,13 +27,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _daemon_client import DaemonClient
 from _output import Results
+from _plugin_runner import run_plugins
+from _skills import skills_of_plugin
+from _unit_gate import run_default_gate
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 def load_expected(plugin_dir: Path) -> dict | None:
-    expected_path = plugin_dir / "acceptance" / "expected.json"
+    expected_path = plugin_dir / "tests" / "install" / "expected.json"
     if expected_path.is_file():
         return json.loads(expected_path.read_text())
     return None
@@ -51,8 +54,9 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
         sys.exit(1)
     r.ok("Marketplace manifest found")
 
-    if not client.health_check():
-        print("ERROR: Daemon not reachable or not healthy", file=sys.stderr)
+    if not client.wait_healthy():
+        print("ERROR: Daemon not reachable or healthy within the startup window",
+              file=sys.stderr)
         sys.exit(1)
     r.ok("Daemon is healthy")
 
@@ -138,8 +142,11 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
     expected_skills = (expected or {}).get("skills", []) or [s["fullName"] for s in skills]
     if expected_skills:
         try:
-            skills_list = client.list_skills()
-            available = {s["fullName"] for s in skills_list}
+            # Scope to skills provided by THIS marketplace's plugin instance
+            # (match on plugin.id), not the global fullName - the same plugin
+            # pre-installed from another marketplace (the onboarding preset)
+            # provides the same fullName and would otherwise mask a failed install.
+            available = skills_of_plugin(client.list_skills(), plugin_id)
             for qname in expected_skills:
                 if qname in available:
                     r.ok(f"Skill '{qname}' available")
@@ -157,13 +164,16 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
         r.fail(f"Uninstall failed: {e}")
         return
 
-    # Confirm uninstall over GraphQL: the plugin's skills must disappear from
-    # the skill listing. We deliberately avoid on-disk getEntry probes — they
-    # raced the just-completed (un)install against the VM filesystem and made
-    # the suite flaky (transient "server error" / missing-path reports).
+    # Confirm uninstall over GraphQL: THIS marketplace's plugin instance must no
+    # longer provide the skills. The skill listing is global, so the same plugin
+    # pre-installed from another marketplace (e.g. the onboarding preset) keeps
+    # the same skill fullName alive under a different plugin.id - that copy is
+    # not ours to remove, so we match on plugin.id, not fullName. We also avoid
+    # on-disk getEntry probes: they raced the just-completed (un)install against
+    # the VM filesystem and made the suite flaky (transient server errors).
     if expected_skills:
         try:
-            still = {s["fullName"] for s in client.list_skills()} & set(expected_skills)
+            still = skills_of_plugin(client.list_skills(), plugin_id) & set(expected_skills)
             if still:
                 r.fail(f"Skills still available after uninstall: {sorted(still)}")
             else:
@@ -200,9 +210,24 @@ def main() -> int:
                              "auto-refresh the bearer token on 401.")
     parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
                         help="oauth2-proxy URL (default: http://localhost:4182)")
+    parser.add_argument("--skip-unit-tests", action="store_true",
+                        help="Skip the local unit-test gate and go straight to the daemon.")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Number of plugins to install/uninstall concurrently "
+                             "(default: 1, serial). Raise it to shorten the daemon "
+                             "phase when the daemon serves plugins in parallel; the "
+                             "log stays in manifest order regardless.")
     args = parser.parse_args()
 
     marketplace_path = Path(__file__).resolve().parent.parent
+
+    # Local unit suites first: they need no daemon and finish in seconds, so a
+    # broken commit fails here rather than after the ~2min install/uninstall run.
+    if not args.skip_unit_tests:
+        gate = run_default_gate(marketplace_path)
+        if gate != 0:
+            print("Unit tests failed - not proceeding to the daemon test.", file=sys.stderr)
+            return gate
     refresher = None
     if args.cookie:
         from _daemon_client import make_oauth2_proxy_refresher
@@ -217,8 +242,12 @@ def main() -> int:
     our_mkt = add_marketplace(client, args.git_url, args.git_ref, manifest, r)
     validate_listing(client, manifest, our_mkt, r)
 
-    for plugin in our_mkt.get("plugins", []):
-        test_plugin(client, plugin, marketplace_path, r)
+    run_plugins(
+        our_mkt.get("plugins", []),
+        lambda plugin, res: test_plugin(client, plugin, marketplace_path, res),
+        r,
+        workers=args.workers,
+    )
 
     remove_marketplace(client, our_mkt["id"], manifest["name"], r)
     return r.summary()

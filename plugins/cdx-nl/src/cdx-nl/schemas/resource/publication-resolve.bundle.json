@@ -39,7 +39,7 @@
     "schemas": {
       "PublicationResolveResponse": {
         "type": "object",
-        "description": "Publication resolution result — maps a publication ID to the hosting BWB document and attachment filename",
+        "description": "Publication resolution result - maps a publication ID to the hosting BWB document and attachment filename",
         "properties": {
           "docId": { "type": "string", "description": "Display ID of the BWB document containing this publication", "example": "NLBWB1234" },
           "file": { "type": "string", "description": "Attachment filename to address via /doc/{docId}/attachment/{file}", "example": "content_5.pdf" }

@@ -1,6 +1,6 @@
 //! The check orchestration shared by the watcher plugins. Each check run is the
 //! same shape everywhere: load the tracked item, poll the external source, fold
-//! the result into the item, persist it, and record a per-item result — with one
+//! the result into the item, persist it, and record a per-item result - with one
 //! item's failure isolated from the rest. Only the polling/diffing and the
 //! snapshot/change shapes differ per app, expressed through [`Watcher`].
 

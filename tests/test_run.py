@@ -1,0 +1,81 @@
+"""Unit tests for the tests/run.py dispatcher."""
+
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+
+import pytest
+
+RUN_PY = Path(__file__).resolve().parent / "run.py"
+spec = importlib.util.spec_from_file_location("_run", RUN_PY)
+assert spec is not None and spec.loader is not None
+run = importlib.util.module_from_spec(spec)
+sys.modules["_run"] = run
+spec.loader.exec_module(run)
+
+
+class TestDispatchTable:
+    def test_every_tier_has_a_command(self):
+        assert set(run.COMMANDS) == {"unit", "marketplace", "e2e", "eval"}
+
+    @pytest.mark.parametrize("tier,script", [
+        ("unit", "_unit_gate.py"),
+        ("marketplace", "test-marketplace.py"),
+        ("e2e", "test-plugin-e2e.py"),
+        ("eval", "promptfoo/run.py"),
+    ])
+    def test_tier_maps_to_its_script(self, tier, script):
+        assert run.COMMANDS[tier] == script
+
+
+class TestAllOrdering:
+    def test_all_runs_unit_first(self):
+        assert run.ORDER[0] == "unit"
+
+    def test_all_covers_every_command(self):
+        assert set(run.ORDER) == set(run.COMMANDS)
+
+
+class TestBuildArgv:
+    def test_prefixes_python_and_the_script_path(self):
+        argv = run.build_argv("unit", ["--suite", "backend"])
+        assert argv[0] == sys.executable
+        assert argv[1].endswith("tests/_unit_gate.py")
+        assert argv[-2:] == ["--suite", "backend"]
+
+    def test_unknown_command_raises(self):
+        with pytest.raises(KeyError):
+            run.build_argv("nope", [])
+
+
+class TestMain:
+    def test_unknown_command_returns_2(self):
+        assert run.main(["nope"]) == 2
+
+    def test_all_stops_at_first_failure(self, monkeypatch):
+        calls: list[str] = []
+
+        def fake_run_one(command: str, passthrough: list[str]) -> int:
+            calls.append(command)
+            return 0 if len(calls) == 1 else 1
+
+        monkeypatch.setattr(run, "_run_one", fake_run_one)
+        assert run.main(["all"]) == 1
+        assert calls == run.ORDER[:2]
+
+    def test_all_routes_passthrough_only_to_daemon_tiers(self, monkeypatch):
+        # The unit gate takes no daemon args (and rejects unknown flags), so `all`
+        # must send passthrough only to the daemon-backed tiers, not to unit.
+        seen: dict[str, list[str]] = {}
+
+        def fake_run_one(command: str, passthrough: list[str]) -> int:
+            seen[command] = passthrough
+            return 0
+
+        monkeypatch.setattr(run, "_run_one", fake_run_one)
+        assert run.main(["all", "--daemon", "http://x", "--token", "t"]) == 0
+        assert seen["unit"] == []
+        for tier in ("marketplace", "e2e", "eval"):
+            assert seen[tier] == ["--daemon", "http://x", "--token", "t"]

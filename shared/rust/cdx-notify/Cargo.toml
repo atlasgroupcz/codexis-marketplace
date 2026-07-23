@@ -8,13 +8,14 @@ license = "PROPRIETARY"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Synchronous HTTP only — no tokio/async — so the per-request CGI process stays
+# Synchronous HTTP only - no tokio/async - so the per-request CGI process stays
 # small and cold-start fast. rustls-tls avoids the OpenSSL build dep.
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
 uuid = { version = "1", features = ["v4"] }
 thiserror = "2"
-# Foundation: daemon token/env (config, daemon_rest), atomic fs, path resolution.
-cdx-common = { path = "../cdx-common", default-features = false, features = ["fs"] }
+# Foundation: daemon token/env (config, daemon_rest), atomic fs, path
+# resolution, and the layered settings store NotifySettings builds on.
+cdx-common = { path = "../cdx-common", default-features = false, features = ["fs", "settings"] }
 
 [dev-dependencies]
 tempfile = "3"

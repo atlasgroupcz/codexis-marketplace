@@ -7,14 +7,14 @@ use crate::http::ZrsrClient;
 use crate::sources;
 
 const ROOT_HELP: &str = "\
-zrsr-cli — Slovak trade & business register (ZRSR / RPO) lookup.
+zrsr-cli - Slovak trade & business register (ZRSR / RPO) lookup.
 
 Wraps the public RPO API of the Slovak Statistical Office (Register právnických
-osôb a podnikateľov), which aggregates the source registers — the Živnostenský
+osôb a podnikateľov), which aggregates the source registers - the Živnostenský
 register SR (zrsr.sk) and the Obchodný register among them.
 
 Output: JSON on stdout (consume with `jq`); on failure, an `ERROR:` line on stderr
-and a non-zero exit code. Pass-through of the RPO response body — only --limit
+and a non-zero exit code. Pass-through of the RPO response body - only --limit
 rewrites the `results` array.
 
 Examples:

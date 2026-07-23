@@ -38,6 +38,12 @@ pub mod ico;
 #[cfg(feature = "fs")]
 pub mod fs;
 
+#[cfg(feature = "env-file")]
+pub mod env_file;
+
+#[cfg(feature = "settings")]
+pub mod settings;
+
 #[cfg(feature = "time")]
 pub mod time;
 

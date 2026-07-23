@@ -1,4 +1,4 @@
-"""Verbal (word-mark) similarity scoring — pure standard library, no deps.
+"""Verbal (word-mark) similarity scoring - pure standard library, no deps.
 
 The goal is to approximate the *aural + visual* similarity of two trademark
 verbal elements, which (together with conceptual similarity and similarity of
@@ -178,7 +178,7 @@ def czech_phonetic_key(value: str) -> str:
 
     Maps voiced/voiceless pairs together, normalises common digraphs and
     foreign spellings, then drops repeated letters. Not a strict phonetic
-    transcription — just enough to make "Kodexis"≈"Codexis", "Fillip"≈"Philip".
+    transcription - just enough to make "Kodexis"≈"Codexis", "Fillip"≈"Philip".
     """
     text = _strip_accents(value or "").lower()
     text = re.sub(r"[^a-z]+", "", text)

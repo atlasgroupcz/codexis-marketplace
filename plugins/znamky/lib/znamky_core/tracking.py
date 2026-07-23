@@ -1,7 +1,7 @@
 """Trademark watch-state management on top of the public source search.
 
-A watched *mark* is the sign a user wants to protect — a word ("CODEXIS"), a
-logo (figurative), or both (combined) — scoped to Nice classes and territories
+A watched *mark* is the sign a user wants to protect - a word ("CODEXIS"), a
+logo (figurative), or both (combined) - scoped to Nice classes and territories
 (CZ / EU). For each watched mark we periodically search the public registers
 (via znamky_core.sources), score every hit for similarity, and record the ones
 above the mark's threshold as *collisions*. New collisions appearing on a later
@@ -9,7 +9,7 @@ check are what the watchdog alerts on.
 
 State is one JSON file per mark under
 $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/sledovane/<uuid>/state.json, with any
-stored logos beside it — kept on disk so AI tools can read them as context.
+stored logos beside it - kept on disk so AI tools can read them as context.
 """
 
 import base64
@@ -597,7 +597,7 @@ def logo_data_url(path) -> Optional[str]:
 
     Logos are delivered inline (data URL in the JSON payload) rather than as a
     binary CGI response, because the plugin CGI runtime decodes process stdout as
-    UTF-8 text — which corrupts raw image bytes.
+    UTF-8 text - which corrupts raw image bytes.
     """
     if not path or not os.path.isfile(path):
         return None

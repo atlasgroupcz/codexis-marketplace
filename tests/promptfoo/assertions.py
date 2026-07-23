@@ -25,7 +25,7 @@ _SENTINEL_RE = re.compile(
     re.DOTALL,
 )
 
-# Matches ${TypeName:innerId} — escape hatch for tests that need a daemon
+# Matches ${TypeName:innerId} - escape hatch for tests that need a daemon
 # Relay NodeId computed at assertion time. The daemon's tabularExtraction(id)
 # (and similar) takes the encoded form; this template lets YAML say
 # `id: "${TabularExtraction:/home/codexis/ee-tab-{{ run_id }}}"` and have the
@@ -92,9 +92,9 @@ def assert_tool_call(output: str, context: dict) -> dict:
     """Pass if any captured tool call matches `tool_name` + `input_regex`.
 
     Configure via the test's `vars`:
-        tool_name:    str — concrete *ToolMessagePart.toolName ("shell",
+        tool_name:    str - concrete *ToolMessagePart.toolName ("shell",
                       "writeFile", "readFile", "skill", …).
-        input_regex:  str — Python regex matched against the
+        input_regex:  str - Python regex matched against the
                       JSON-encoded input dict of each candidate call.
     """
     vars_ = (context or {}).get("vars") or {}
@@ -130,9 +130,9 @@ def assert_no_tool_call(output: str, context: dict) -> dict:
     Anti-cheat axis: catches the AI scraping with `curl`/`wget`/raw
     `python -c "import urllib"` etc. when it should be using the
     plugin's binary. Configure via the test's `vars`:
-        forbidden_regex:  str — regex matched against the JSON-encoded
+        forbidden_regex:  str - regex matched against the JSON-encoded
                           input dict of every captured tool call.
-        forbidden_tool:   optional str — only check calls of this tool
+        forbidden_tool:   optional str - only check calls of this tool
                           name (default: any tool).
     """
     vars_ = (context or {}).get("vars") or {}
@@ -163,7 +163,7 @@ def assert_tool_count_max(output: str, context: dict) -> dict:
     exploding past the cap usually means the AI's intended tool errored
     (binary not on PATH, auth 401, etc.) and it fell back to curl/scraping.
     Pick the cap as a realistic upper bound for the workflow, then trust it
-    — when this fires, investigate the daemon/plugin, not the cap.
+    - when this fires, investigate the daemon/plugin, not the cap.
     """
     vars_ = (context or {}).get("vars") or {}
     max_n = vars_.get("tool_calls_max")
@@ -185,7 +185,7 @@ def assert_tool_count_min(output: str, context: dict) -> dict:
     """Pass if the AI made >= `tool_calls_min` work calls (skill loads excluded).
 
     Used for tests that need to confirm the AI actually did *some* work
-    (e.g. cdxctl skill update must run at least one shell call) — distinct
+    (e.g. cdxctl skill update must run at least one shell call) - distinct
     from `assert_tool_call` which checks a regex against a specific call.
     """
     vars_ = (context or {}).get("vars") or {}
@@ -204,7 +204,7 @@ def assert_tool_count_min(output: str, context: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# State-via-filesystem — deterministic side-effect oracle. Asserts on a
+# State-via-filesystem - deterministic side-effect oracle. Asserts on a
 # daemon-visible file/dir AFTER the chat finished (e.g. "the AI saved
 # this HTML at /home/codexis/foo.html"). Lazily imports DaemonClient so
 # this module stays import-cheap when the eval doesn't use it.
@@ -213,7 +213,7 @@ def assert_state_file(output: str, context: dict) -> dict:
     """Assert on a daemon-visible filesystem entry via getEntry.
 
     Configure via the test's `vars`:
-        file:   str — VM-side path (templated vars already substituted by
+        file:   str - VM-side path (templated vars already substituted by
                 promptfoo via {{ var }} in the YAML).
         type:   "file" | "dir" | "absent" (default: "file").
     """
@@ -267,20 +267,20 @@ def assert_state_graphql(output: str, context: dict) -> dict:
     block.
 
     Configure via the test's `vars`:
-        graphql:        str — query body (promptfoo already substitutes
+        graphql:        str - query body (promptfoo already substitutes
                         `{{ run_id }}` / other vars in the YAML).
-        variables:      dict — optional GraphQL variables.
-        jsonpath:       str — optional JSONPath expression to extract values.
+        variables:      dict - optional GraphQL variables.
+        jsonpath:       str - optional JSONPath expression to extract values.
                         Without it, the whole `data` dict is treated as a
                         one-element list.
         And one or more of:
-        contains:       str — pass if any extracted value contains it.
-        not_contains:   str — pass if no extracted value contains it.
-        matches:        str — Python regex pass-if-any.
-        not_matches:    str — Python regex pass-if-none.
-        equals:         any — pass if the FIRST extracted value equals.
-        count:          int — pass if extracted has exactly this length.
-        subset:         dict — first extracted dict contains all key→value
+        contains:       str - pass if any extracted value contains it.
+        not_contains:   str - pass if no extracted value contains it.
+        matches:        str - Python regex pass-if-any.
+        not_matches:    str - Python regex pass-if-none.
+        equals:         any - pass if the FIRST extracted value equals.
+        count:          int - pass if extracted has exactly this length.
+        subset:         dict - first extracted dict contains all key→value
                         pairs (legacy `matches_subset`).
     """
     import os

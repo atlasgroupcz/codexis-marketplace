@@ -21,13 +21,13 @@ i18n:
     title: "Týždenná právna rešerš k téme"
     description: "Každý týždeň zhrnie novú legislatívu, judikatúru a komentáre k téme podľa vášho výberu."
 ---
-Sleduji za vás vývoj k tématu: «UPRAVTE — např. veřejné zakázky, GDPR, pracovní právo».
+Sleduji za vás vývoj k tématu: «UPRAVTE - např. veřejné zakázky, GDPR, pracovní právo».
 
 Pomocí dovednosti CODEXIS projdi za uplynulý týden nový vývoj k tomuto tématu a sestav stručný přehled:
 
-1. **Legislativa** — nové nebo novelizované předpisy, účinnost změn, klíčový dopad.
-2. **Judikatura** — nová relevantní rozhodnutí soudů (spisová značka, soud, datum, právní věta v jedné větě).
-3. **Komentáře a odborná literatura** — nové výklady nebo stanoviska, pokud jsou relevantní.
+1. **Legislativa** - nové nebo novelizované předpisy, účinnost změn, klíčový dopad.
+2. **Judikatura** - nová relevantní rozhodnutí soudů (spisová značka, soud, datum, právní věta v jedné větě).
+3. **Komentáře a odborná literatura** - nové výklady nebo stanoviska, pokud jsou relevantní.
 
 Pravidla:
 - U každého bodu uveď konkrétní zdroj (číslo předpisu / spisovou značku) tak, aby šel dohledat v CODEXIS.

@@ -1,4 +1,4 @@
-# Arbitration — the LLM-judge "second phase"
+# Arbitration - the LLM-judge "second phase"
 
 `run.py --arbitrate` adds a second phase that re-grades **only the rows whose
 deterministic assertions failed**. An independent LLM judge decides whether each
@@ -6,8 +6,8 @@ failure was a real problem (`INCORRECT` → stays FAIL) or a false positive of t
 deterministic check (`CORRECT` → the row flips to PASS). Passing rows never call
 the judge, so there is no cost when everything is green.
 
-Why: deterministic checks — especially the `assert_no_tool_call` anti-scrape
-guard present in every config — over-fire on legitimate behavior. The recurring
+Why: deterministic checks - especially the `assert_no_tool_call` anti-scrape
+guard present in every config - over-fire on legitimate behavior. The recurring
 case: the AI uses a plugin tool, gets a URL back, and runs a single `curl`/HEAD to
 confirm the URL resolves. That is correct; the check flags it as scraping. LLM
 nondeterminism makes such failures intermittent, so retries don't help.
@@ -27,10 +27,10 @@ identical exit code).
 
 ## Judge endpoint (provider-agnostic)
 
-The judge is any **OpenAI-compatible `/chat/completions`** endpoint — the org's
+The judge is any **OpenAI-compatible `/chat/completions`** endpoint - the org's
 LiteLLM proxy, OpenAI directly, or any gateway. It is called with stdlib `urllib`
 (no `requests` dependency), `response_format: {type: json_object}`, `temperature: 0`
-— mirroring cdx-daemon `codexis-eval-ops`'s holistic grader.
+- mirroring cdx-daemon `codexis-eval-ops`'s holistic grader.
 
 | Variable | Purpose | Fallback |
 |---|---|---|
@@ -39,7 +39,7 @@ LiteLLM proxy, OpenAI directly, or any gateway. It is called with stdlib `urllib
 | `CDX_GRADER_MODEL` | model name | default `gpt-5.4-mini` |
 
 If neither base+key pair is set under `--arbitrate`, the run aborts with a config
-error (exit 2) — it never silently skips the judge.
+error (exit 2) - it never silently skips the judge.
 
 ## How a verdict gates pass/fail
 
@@ -83,9 +83,9 @@ the post-processor through promptfoo's `--output` JSON with no extra plumbing.
 
 `run.py --arbitrate` writes (gitignored, archived by CI):
 
-- `tests/promptfoo/.results/arbitration.json` — one record per arbitrated row
+- `tests/promptfoo/.results/arbitration.json` - one record per arbitrated row
   (verdict, confidence, flag, passed, failed assertions, rationale).
-- `tests/promptfoo/.results/transcripts/<config>__<idx>.txt` — full audit per
+- `tests/promptfoo/.results/transcripts/<config>__<idx>.txt` - full audit per
   arbitrated row (both verdicts), with prompt, failed assertions, tool calls, AI
   response, and the judge's decision.
 
@@ -102,4 +102,4 @@ outcomes are never cached, so a transient proxy outage retries next run.
 
 `python3 -m pytest tests/promptfoo/test_arbitration.py tests/promptfoo/test_run_arbitration.py`
 covers parsing, prompt assembly, verdict mapping, cache, endpoint resolution, and the
-`run.py` glue — all with a stubbed judge (no network).
+`run.py` glue - all with a stubbed judge (no network).

@@ -23,12 +23,12 @@ Value to match. Optional. Must be used together with `filter_column`.
 Comparison operator. Optional, default: `exact`.
 
 Available operators:
-- `exact` — Exact match
-- `contains` — Substring match (case-insensitive)
-- `less` — Less than or equal
-- `greater` — Greater than or equal
-- `strictly_less` — Strictly less than
-- `strictly_greater` — Strictly greater than
+- `exact` - Exact match
+- `contains` - Substring match (case-insensitive)
+- `less` - Less than or equal
+- `greater` - Greater than or equal
+- `strictly_less` - Strictly less than
+- `strictly_greater` - Strictly greater than
 
 ## Sorting
 
@@ -37,12 +37,12 @@ Column name to sort by. Optional.
 
 ### sort_direction
 Sort direction. Optional, default: `asc`.
-- `asc` — Ascending
-- `desc` — Descending
+- `asc` - Ascending
+- `desc` - Descending
 
 ## Tips
 
 - Use `get_resource_info` first to check Tabular API availability
-- Column names are returned in query results — use them for filtering and sorting
+- Column names are returned in query results - use them for filtering and sorting
 - For datasets with >1000 rows, use filtering to narrow results
 - Values longer than 100 characters are truncated in results

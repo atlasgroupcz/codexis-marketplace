@@ -3,7 +3,7 @@
 # `seen` (seen=<ts>) → `confirmed` (confirmed=<ts>). Each step verifies
 # the transition persisted in daemon state.
 
-description: codexis cdxctl — notification create + seen + confirm transitions
+description: codexis cdxctl - notification create + seen + confirm transitions
 target_plugin: codexis
 
 prompts:
@@ -83,7 +83,7 @@ tests:
       - type: regex
         value: 'e2e-notif-'
 
-  - description: notification seen — `seen` timestamp gets set
+  - description: notification seen - `seen` timestamp gets set
     vars:
       prompt: "Označ oznámení 'e2e-notif-{{ run_id }}' jako přečtené."
       tool_name: shell
@@ -114,7 +114,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: notification confirm — `confirmed` timestamp gets set
+  - description: notification confirm - `confirmed` timestamp gets set
     vars:
       prompt: "A teď to oznámení 'e2e-notif-{{ run_id }}' potvrď."
       tool_name: shell

@@ -11,7 +11,7 @@ pub(crate) const SEARCH_SMLOUVY_HELP: &str = r#"Example:
   registr-smluv search CZRS --ico 27074358 --value-min 1000000 --only-valid"#;
 
 /// Search filters for the Czech Register of Contracts (smlouvy.gov.cz).
-/// Mirrors `SmlouvySearchRequest` — every field is optional.
+/// Mirrors `SmlouvySearchRequest` - every field is optional.
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchSmlouvyArgs {
     #[command(flatten)]

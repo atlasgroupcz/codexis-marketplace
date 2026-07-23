@@ -2,7 +2,7 @@
 //!
 //! Write to a temp file next to the target, fsync, then rename into place.
 //! POSIX `rename(2)` is atomic within a filesystem, so a reader never observes a
-//! torn file. Returns plain `io::Result` — decoupled from any plugin error enum;
+//! torn file. Returns plain `io::Result` - decoupled from any plugin error enum;
 //! a JSON serialization failure surfaces as `io::ErrorKind::InvalidData`.
 
 use std::fs::{self, File, OpenOptions};
@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::Serialize;
 
-/// Monotonic counter for temp-file names — avoids a rand dependency.
+/// Monotonic counter for temp-file names - avoids a rand dependency.
 static NEXT_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// A process-unique token (pid + monotonic counter) for temp / trash file names,
@@ -29,7 +29,7 @@ pub fn unique_token() -> String {
 }
 
 /// Atomically replace the file at `path` with whatever `writer` emits.
-/// `mode` (if set) applies before the rename — use `0o600` for secrets.
+/// `mode` (if set) applies before the rename - use `0o600` for secrets.
 pub fn atomic_replace<F>(path: &Path, mode: Option<u32>, writer: F) -> io::Result<()>
 where
     F: FnOnce(&mut File) -> io::Result<()>,
@@ -78,7 +78,7 @@ where
     result
 }
 
-/// Atomically write `data` as pretty JSON with a trailing newline — byte-for-byte
+/// Atomically write `data` as pretty JSON with a trailing newline - byte-for-byte
 /// what the Python `atomic_write_json` produced, so state files don't churn.
 pub fn atomic_write_json<T: Serialize>(path: &Path, data: &T) -> io::Result<()> {
     let bytes = serde_json::to_vec_pretty(data)

@@ -3,7 +3,7 @@
 # then disable, then delete. Verifies cdxctl correctly applies the
 # subset of fields the user names without touching the rest.
 
-description: codexis cdxctl — automation partial update
+description: codexis cdxctl - automation partial update
 target_plugin: codexis
 
 prompts:
@@ -50,7 +50,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: automation update — rename + change cron, command preserved
+  - description: automation update - rename + change cron, command preserved
     vars:
       prompt: "U automatizace e2e-upd-{{ run_id }} změň název na e2e-upd-{{ run_id }}-v2 a cron na '0 0 2 2 *'."
       tool_name: shell
@@ -68,7 +68,7 @@ tests:
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
       # State check: the new title exists with new cron, original command preserved.
       # (Legacy had a 2nd check that old title is gone; with a single state check
-      # we trust the rename was atomic — count==1 of v2 with these fields is
+      # we trust the rename was atomic - count==1 of v2 with these fields is
       # enough evidence.)
       graphql: "{ automations { title cron command enabled } }"
       jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')]"
@@ -89,7 +89,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: automation update — disable enabled flag
+  - description: automation update - disable enabled flag
     vars:
       prompt: "Automatizaci e2e-upd-{{ run_id }}-v2 vypni."
       tool_name: shell
@@ -120,7 +120,7 @@ tests:
       - type: python
         value: file://./assertions.py:assert_state_graphql
 
-  - description: automation delete — final cleanup
+  - description: automation delete - final cleanup
     vars:
       prompt: "Smaž automatizaci e2e-upd-{{ run_id }}-v2."
       tool_name: shell

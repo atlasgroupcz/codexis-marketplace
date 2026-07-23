@@ -4,9 +4,9 @@ Uses the public "ISIR WS pro veřejnost / ČÚZK" service:
 
     https://isir.justice.cz:8443/isir_cuzk_ws/IsirWsCuzkService
 
-operation ``getIsirWsCuzkData`` — per-subject lookup by IČO / RČ / name+DOB.
+operation ``getIsirWsCuzkData`` - per-subject lookup by IČO / RČ / name+DOB.
 The response carries one ``<data>`` row per insolvency proceeding. Plain HTTP
-POST of a hand-built SOAP envelope, parsed with the stdlib XML parser — no SOAP
+POST of a hand-built SOAP envelope, parsed with the stdlib XML parser - no SOAP
 library and no third-party dependencies.
 """
 
@@ -60,7 +60,7 @@ _STAV_LABELS = {
     "ODSKRTNUTA": "Řízení ukončeno",
 }
 
-# getIsirWsCuzkDataRequest children — XSD enforces THIS sequence order.
+# getIsirWsCuzkDataRequest children - XSD enforces THIS sequence order.
 _REQUEST_ORDER = [
     "ic",
     "rc",
@@ -97,7 +97,7 @@ def _find_all_local(root, name: str) -> list:
 
 
 def _strip_date(value: str) -> str:
-    """ISIR dates arrive as 'YYYY-MM-DDZ' — drop the trailing Z."""
+    """ISIR dates arrive as 'YYYY-MM-DDZ' - drop the trailing Z."""
     value = (value or "").strip()
     return value[:-1] if value.endswith("Z") else value
 

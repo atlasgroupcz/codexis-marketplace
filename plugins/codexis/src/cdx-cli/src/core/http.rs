@@ -6,7 +6,7 @@ use cdx_common::curl::{
 use cdx_common::sources::publish_from_body;
 
 const CDX_SCHEME: &str = "cdx://";
-const API_PREFIX: &str = "/rest/cdx-api/v2";
+pub(crate) const API_PREFIX: &str = "/rest/cdx-api/v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum SearchFacetMode {
@@ -64,7 +64,7 @@ pub(crate) fn execute_get_request(
 
 /// Best-effort: if running inside a chat VM with daemon access AND the upstream response
 /// declared sources in its `sources` field, attach them to the active tool-call. Any failure
-/// is logged to stderr and never propagates — sources are a side channel; the agent's
+/// is logged to stderr and never propagates - sources are a side channel; the agent's
 /// primary response (already on stdout) must not be affected.
 fn try_publish_sources(sources: Option<&serde_json::Value>) {
     let Some(sources) = sources else {
@@ -80,7 +80,7 @@ fn try_publish_sources(sources: Option<&serde_json::Value>) {
 
 /// Parses the v2 envelope `{content, sources}`. Returns `(content_json, sources_value)`.
 /// If the body is not a JSON object with a `content` field, falls back to returning the
-/// raw body as `content` and `None` sources — keeps the CLI usable against non-v2
+/// raw body as `content` and `None` sources - keeps the CLI usable against non-v2
 /// responses or error payloads.
 fn split_envelope(body: &[u8]) -> (EnvelopeContent, Option<serde_json::Value>) {
     let Ok(mut value) = serde_json::from_slice::<serde_json::Value>(body) else {

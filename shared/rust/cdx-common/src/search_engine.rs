@@ -3,7 +3,7 @@
 //! The flow (build the request URL, shell out to curl, unwrap the envelope,
 //! print content and publish sources) is identical across plugins. What varies
 //! is captured by the [`SearchApi`] trait: the source-code table (data), the
-//! `cdx://` scheme, the plugin name, and two behaviours — resolving a `cdx://`
+//! `cdx://` scheme, the plugin name, and two behaviours - resolving a `cdx://`
 //! resource URL and rewriting attachment links. A plugin implements the trait
 //! and calls [`execute_search_request`] / [`execute_get_request`].
 
@@ -55,7 +55,7 @@ pub fn execute_search_request(
     order: Option<&str>,
 ) -> Result<(), CliError> {
     let curl_args =
-        build_search_curl_args(api, base_url, auth_header, source_code, payload, sort, order);
+        build_search_curl_args(api, base_url, auth_header, source_code, payload, sort, order)?;
 
     if dry_run {
         println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
@@ -114,7 +114,7 @@ fn build_search_curl_args(
     payload: &str,
     sort: Option<&str>,
     order: Option<&str>,
-) -> Vec<String> {
+) -> Result<Vec<String>, CliError> {
     let mut args = vec!["-sS".to_string(), "--fail-with-body".to_string()];
     if let Some(header) = auth_header {
         args.push("-H".to_string());
@@ -124,10 +124,10 @@ fn build_search_curl_args(
     args.push("POST".to_string());
     args.push("-H".to_string());
     args.push("Content-Type: application/json".to_string());
-    args.push(build_search_url(api, base_url, source_code, sort, order));
+    args.push(build_search_url(api, base_url, source_code, sort, order)?);
     args.push("-d".to_string());
     args.push(payload.to_string());
-    args
+    Ok(args)
 }
 
 fn build_get_curl_args(
@@ -151,9 +151,9 @@ fn build_search_url(
     source_code: &str,
     sort: Option<&str>,
     order: Option<&str>,
-) -> String {
-    let api_path = lookup_prefix(api.id_prefixes(), source_code)
-        .unwrap_or_else(|_| panic!("unknown search source: {source_code}"));
+) -> Result<String, CliError> {
+    let api_path =
+        lookup_prefix(api.id_prefixes(), source_code).map_err(CliError::InvalidSearchArgument)?;
     let base = base_url.trim_end_matches('/');
     let mut url = format!("{base}/{api_path}/search");
 
@@ -170,7 +170,7 @@ fn build_search_url(
         url.push_str(order);
     }
 
-    url
+    Ok(url)
 }
 
 fn build_cdx_url(api: &impl SearchApi, base_url: &str, resource: &str) -> Result<String, CliError> {
@@ -211,6 +211,13 @@ mod tests {
     const BASE: &str = "https://api.example.com/api";
 
     #[test]
+    fn search_request_unknown_source_errors_instead_of_panicking() {
+        let err = execute_search_request(&MockApi, BASE, None, "XXX", "{}", true, None, None)
+            .unwrap_err();
+        assert!(matches!(err, CliError::InvalidSearchArgument(_)), "got: {err}");
+    }
+
+    #[test]
     fn lookup_prefix_maps_and_rejects() {
         assert_eq!(lookup_prefix(MockApi.id_prefixes(), "ATBR").unwrap(), "AT/bundesrecht");
         assert!(lookup_prefix(MockApi.id_prefixes(), "XXX").is_err());
@@ -218,7 +225,8 @@ mod tests {
 
     #[test]
     fn search_url_includes_sort_and_order() {
-        let args = build_search_curl_args(&MockApi, BASE, None, "ATBR", "{}", Some("date"), Some("desc"));
+        let args = build_search_curl_args(&MockApi, BASE, None, "ATBR", "{}", Some("date"), Some("desc"))
+            .unwrap();
         assert!(args
             .iter()
             .any(|a| a == "https://api.example.com/api/AT/bundesrecht/search?sort=date&order=desc"));
@@ -226,7 +234,8 @@ mod tests {
 
     #[test]
     fn search_curl_args_are_post_json_with_auth() {
-        let args = build_search_curl_args(&MockApi, BASE, Some("Authorization: Bearer x"), "ATJD", "{\"q\":\"a\"}", None, None);
+        let args = build_search_curl_args(&MockApi, BASE, Some("Authorization: Bearer x"), "ATJD", "{\"q\":\"a\"}", None, None)
+            .unwrap();
         assert!(args.contains(&"POST".to_string()));
         assert!(args.contains(&"Content-Type: application/json".to_string()));
         assert!(args.contains(&"Authorization: Bearer x".to_string()));

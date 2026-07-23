@@ -1,7 +1,7 @@
-"""TMview adapter — the EUIPO-operated common database (tmdn.org/tmview).
+"""TMview adapter - the EUIPO-operated common database (tmdn.org/tmview).
 
 TMview aggregates trademarks from EUIPO (office "EM"), the national offices
-(incl. ÚPV — office "CZ") and WIPO ("WO"), so a single query covers both the
+(incl. ÚPV - office "CZ") and WIPO ("WO"), so a single query covers both the
 Czech and EU registers the watchdog cares about.
 
 The public web app talks to a JSON backend. Exact field names have shifted
@@ -123,5 +123,5 @@ def fetch_image(candidate: dict):
         return None
     try:
         return base.get_bytes(url, SOURCE)
-    except Exception:  # noqa: BLE001 — image fetch is best-effort
+    except Exception:  # noqa: BLE001 - image fetch is best-effort
         return None

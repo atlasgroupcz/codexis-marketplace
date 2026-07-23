@@ -5,7 +5,7 @@ use std::process::Command;
 
 use cdx_common::daemon_rest::daemon_bearer;
 
-// OCR endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL — see ocr_endpoint().
+// OCR endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL - see ocr_endpoint().
 
 fn percent_encode(input: &[u8]) -> String {
     let mut out = String::with_capacity(input.len() * 3);

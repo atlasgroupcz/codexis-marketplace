@@ -1,7 +1,7 @@
 # Port of plugins/codexis/acceptance/e2e/cdxctl-agent-from-file.yaml
 # cdxctl agent creation via --file (distinct from --stdin) + cleanup.
 
-description: codexis cdxctl — agent create via --file
+description: codexis cdxctl - agent create via --file
 target_plugin: codexis
 
 prompts:

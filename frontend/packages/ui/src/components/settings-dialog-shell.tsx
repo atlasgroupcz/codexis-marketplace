@@ -17,7 +17,7 @@ export interface SettingsDialogShellProps {
   children: ReactNode
   /**
    * Optional footer content. Instant-save dialogs (the notification settings) pass
-   * nothing and render no footer — they persist on every change and close via the
+   * nothing and render no footer - they persist on every change and close via the
    * header ✕ / backdrop. Only dialogs with an explicit commit step pass a footer.
    */
   footer?: ReactNode
@@ -31,7 +31,7 @@ export function SettingsDialogShell({
   children,
   footer,
 }: SettingsDialogShellProps) {
-  // Close only on a genuine outside click — the pointer must both PRESS and
+  // Close only on a genuine outside click - the pointer must both PRESS and
   // RELEASE outside the dialog. Radix would dismiss on pointer-down-outside alone,
   // which closes the dialog whenever a text selection crosses the backdrop (start
   // on the backdrop and drag in, or start inside and drag out). We suppress Radix's
@@ -39,7 +39,7 @@ export function SettingsDialogShell({
   // end of the drag is inside the dialog, keep it open.
   //
   // Listeners are registered once while the dialog is open (not per pointer-down),
-  // so they always catch the current interaction — that timing is what an earlier
+  // so they always catch the current interaction - that timing is what an earlier
   // per-interaction listener got wrong.
   useEffect(() => {
     if (!open) return

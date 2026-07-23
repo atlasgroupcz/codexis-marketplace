@@ -14,7 +14,7 @@
   },
   "config": {
     "title": "Najprv nastavte aplikáciu",
-    "text": "Hliadač čerpá dáta z oficiálneho EUIPO API. Zadajte svoje vlastné EUIPO API credentials (zdarma, ~5 minút na dev.euipo.europa.eu) — bez nich nie je možné prehľadávať register.",
+    "text": "Hliadač čerpá dáta z oficiálneho EUIPO API. Zadajte svoje vlastné EUIPO API credentials (zdarma, ~5 minút na dev.euipo.europa.eu) - bez nich nie je možné prehľadávať register.",
     "action": "Nastaviť prístup",
     "hint": "Kľúče sa ukladajú len do vášho priestoru (~/.cdx) a používajú sa na dopyty na EUIPO."
   },
@@ -34,7 +34,7 @@
     "inAppLabel": "Oznámenie v centre notifikácií",
     "inAppDescription": "",
     "section": "Oznámenia",
-    "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+    "ownAddress": "Táto adresa je vaša - e-mail vám chodí vždy.",
     "duplicate": "Táto adresa už je v zozname."
   },
   "connection": {
@@ -101,7 +101,7 @@
     "figurative": "Obrazová",
     "text": "Text známky",
     "nice": "Triedy výrobkov/služieb (Nice)",
-    "niceHint": "Čísla 1–45, oddelené čiarkou. Nepovinné — zúži relevanciu.",
+    "niceHint": "Čísla 1–45, oddelené čiarkou. Nepovinné - zúži relevanciu.",
     "territory": "Územie",
     "logo": "Logo",
     "logoHint": "Kliknite a nahrajte obrázok loga (PNG, JPG, SVG).",
@@ -162,7 +162,7 @@
     "text": "Pridajte slovnú alebo obrazovú známku a hliadač bude pravidelne kontrolovať podobné nové prihlášky a zápisy ochranných známok.",
     "add": "Pridať známku",
     "noSelection": "Vyberte známku v zozname vľavo.",
-    "chatLead": "Alebo si sledovanie nastavte v konverzácii — napíšte napr.:",
+    "chatLead": "Alebo si sledovanie nastavte v konverzácii - napíšte napr.:",
     "chatPrompt": "Sleduj ochrannú známku CODEXIS v triedach 9 a 42 v ČR aj EÚ a raz týždenne mi pošli podobné nové prihlášky e-mailom."
   }
 }

@@ -7,7 +7,7 @@ use crate::http::AresClient;
 use crate::sources;
 
 const ROOT_HELP: &str = "\
-ares-cli — Czech business registry (ARES) lookup.
+ares-cli - Czech business registry (ARES) lookup.
 
 Output: JSON on stdout (consume with `jq`); on failure, an `ERROR:` line on stderr
 and a non-zero exit code. Pass-through of the ARES response body, never reformatted.
@@ -55,7 +55,7 @@ pub struct DetailArgs {
 
     /// Which register to read.
     ///
-    /// Note: ARES v3 has no separate VAT-payer (RPDPH) endpoint — DIČ + VAT
+    /// Note: ARES v3 has no separate VAT-payer (RPDPH) endpoint - DIČ + VAT
     /// registration history are returned by `basic` under `dic` and
     /// `seznamRegistraci`.
     #[arg(long, value_enum, default_value_t = Register::Basic)]
@@ -68,7 +68,7 @@ pub struct SearchArgs {
     #[arg(long)]
     pub name: Option<String>,
 
-    /// Právní forma — ARES code (e.g. 112 for s.r.o.).
+    /// Právní forma - ARES code (e.g. 112 for s.r.o.).
     #[arg(long = "pravni-forma")]
     pub pravni_forma: Option<String>,
 
@@ -184,7 +184,7 @@ fn search(client: &AresClient, args: SearchArgs) -> Result<String> {
 
     if payload.len() == 2 {
         return Err(anyhow!(
-            "search needs at least one filter — use --name, --ico or --pravni-forma"
+            "search needs at least one filter - use --name, --ico or --pravni-forma"
         ));
     }
 

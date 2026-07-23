@@ -5,7 +5,7 @@ use crate::http::KatasterClient;
 use crate::sources;
 
 const ROOT_HELP: &str = "\
-kataster-sk-cli — Slovak land cadastre (kataster nehnuteľností) lookup.
+kataster-sk-cli - Slovak land cadastre (kataster nehnuteľností) lookup.
 
 Output: JSON on stdout (consume with `jq`); on failure, an `ERROR:` line on stderr
 and a non-zero exit code. API responses are passed through verbatim.
@@ -16,7 +16,7 @@ Examples:
   kataster-sk-cli detail 1070374091
   kataster-sk-cli detail 123456 --register e --geometry
 
-Anonymous parcel data only — owner names and title-deed (LV) contents are not
+Anonymous parcel data only - owner names and title-deed (LV) contents are not
 available without a verified ESKN login; hand the user a deep link instead.
 Override base URLs with ZBGIS_BASE_URL and ESKN_BASE_URL.
 ";

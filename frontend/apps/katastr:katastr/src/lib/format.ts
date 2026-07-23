@@ -33,7 +33,7 @@ export function errorMessage(e: unknown): string {
 
 /** Relative time, e.g. "před 2 hodinami" / "2 hours ago". Empty input → em dash. */
 export function formatRelative(isoString: string | null | undefined): string {
-  if (!isoString) return '—'
+  if (!isoString) return '-'
   try {
     return formatDistanceToNow(parseISO(isoString), {
       addSuffix: true,

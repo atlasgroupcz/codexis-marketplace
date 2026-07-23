@@ -10,7 +10,7 @@ use client::GraphQLClient;
 use output::OutputFormat;
 use std::process;
 
-/// cdxctl — kubectl-style CLI for cdx-daemon platform management
+/// cdxctl - kubectl-style CLI for cdx-daemon platform management
 #[derive(Parser)]
 #[command(name = "cdxctl", version, about)]
 struct Cli {
@@ -105,6 +105,12 @@ enum AutomationCommands {
         /// Maximum agent turns
         #[arg(long)]
         max_turns: Option<u32>,
+        /// Model the run uses (enum name, e.g. CLAUDE_SONNET_5). Defaults to the active chat's model
+        #[arg(long)]
+        model: Option<String>,
+        /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable. Defaults to the active chat's jurisdictions
+        #[arg(long = "jurisdiction")]
+        jurisdiction: Vec<String>,
         /// Working directory path
         #[arg(long)]
         work_dir: Option<String>,
@@ -173,6 +179,12 @@ enum AutomationCommands {
         skill: Option<Vec<String>>,
         #[arg(long)]
         max_turns: Option<u32>,
+        /// Model the run uses (enum name, e.g. CLAUDE_SONNET_5)
+        #[arg(long)]
+        model: Option<String>,
+        /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable; replaces the stored set
+        #[arg(long = "jurisdiction")]
+        jurisdiction: Vec<String>,
         #[arg(long)]
         work_dir: Option<String>,
     },
@@ -219,7 +231,7 @@ enum MarketplaceCommands {
         /// Marketplace ID
         id: String,
     },
-    /// Update marketplace(s) — pull latest from git
+    /// Update marketplace(s) - pull latest from git
     Update {
         /// Marketplace ID (omit to update all)
         id: Option<String>,
@@ -267,8 +279,50 @@ enum AgentCommands {
         #[arg(long, default_value = "false")]
         editable_only: bool,
     },
-    /// Create an agent from markdown content
+    /// Create an agent. Needs --name and --description; the model and jurisdictions
+    /// come from the active chat unless you pass them
     Create {
+        /// Agent name: lowercase letters, digits and hyphens
+        #[arg(long)]
+        name: Option<String>,
+        /// What the agent is for; the orchestrator picks agents by it
+        #[arg(long)]
+        description: Option<String>,
+        /// Tool the agent may call, e.g. shell or readFile; repeat for more
+        #[arg(long = "tool")]
+        tools: Vec<String>,
+        /// Tool the agent may never call; repeat for more
+        #[arg(long = "disallowed-tool")]
+        disallowed_tools: Vec<String>,
+        /// Skill granted to the agent by full name, e.g. codexis:cdxctl; repeat for more.
+        /// `cdxctl skill list` shows the names
+        #[arg(long = "skill")]
+        skills: Vec<String>,
+        /// Jurisdiction the agent works in, e.g. CZ; repeat for more. Taken from the
+        /// active chat when omitted
+        #[arg(long = "jurisdiction")]
+        jurisdictions: Vec<String>,
+        /// Model to run on, e.g. CLAUDE_OPUS_4_8; taken from the active chat when omitted
+        #[arg(long)]
+        model: Option<String>,
+        /// Turn budget for one run; the server applies its own when omitted
+        #[arg(long)]
+        max_turns: Option<u32>,
+        /// The agent's system prompt, as markdown
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the system prompt from a markdown file instead of inline --instructions -
+        /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Short label shown on the Agents page, as lang:text (e.g. cs:"Personalista pro smlouvy").
+        /// Repeat once per language
+        #[arg(long = "display-name")]
+        display_name: Vec<String>,
+        /// One user-facing sentence, as lang:text (e.g. cs:"Připraví a zkontroluje smlouvu.").
+        /// Repeat once per language
+        #[arg(long = "summary")]
+        summary: Vec<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -276,10 +330,49 @@ enum AgentCommands {
         #[arg(long, default_value = "false")]
         stdin: bool,
     },
-    /// Update an agent from markdown content
+    /// Update an agent; unset flags keep their stored value
     Update {
         /// Agent ID, node ID, or raw agent name
         id: String,
+        /// Agent name: lowercase letters, digits and hyphens
+        #[arg(long)]
+        name: Option<String>,
+        /// What the agent is for; the orchestrator picks agents by it
+        #[arg(long)]
+        description: Option<String>,
+        /// Replaces the whole tool list; repeat for more
+        #[arg(long = "tool")]
+        tools: Option<Vec<String>>,
+        /// Replaces the whole disallowed-tool list; repeat for more
+        #[arg(long = "disallowed-tool")]
+        disallowed_tools: Option<Vec<String>>,
+        /// Replaces the whole skill list; repeat for more
+        #[arg(long = "skill")]
+        skills: Option<Vec<String>>,
+        /// Replaces the whole jurisdiction list; repeat for more
+        #[arg(long = "jurisdiction")]
+        jurisdictions: Option<Vec<String>>,
+        /// Model to run on, e.g. CLAUDE_OPUS_4_8
+        #[arg(long)]
+        model: Option<String>,
+        /// Turn budget for one run
+        #[arg(long)]
+        max_turns: Option<u32>,
+        /// The agent's system prompt, as markdown
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the system prompt from a markdown file instead of inline --instructions -
+        /// avoids shell-escaping a long multi-line prompt. Still uses the structured save.
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Replaces the display name for the given languages, as lang:text. Repeat once per
+        /// language. Languages you do not pass keep their stored value
+        #[arg(long = "display-name")]
+        display_name: Vec<String>,
+        /// Replaces the summary for the given languages, as lang:text. Repeat once per language.
+        /// Languages you do not pass keep their stored value
+        #[arg(long = "summary")]
+        summary: Vec<String>,
         /// Read agent markdown content from a file
         #[arg(long)]
         file: Option<String>,
@@ -302,23 +395,79 @@ enum SkillCommands {
         #[arg(long, default_value = "false")]
         editable_only: bool,
     },
-    /// Create a skill from SKILL.md content
+    /// Create a skill. Describe it with the field flags (--name, --description, --body-file …),
+    /// or pass a whole SKILL.md via --file/--stdin
     Create {
-        /// Read SKILL.md content from a file
+        /// Skill name: lowercase letters, digits and hyphens
+        #[arg(long)]
+        name: Option<String>,
+        /// What the skill is for; this is the AI trigger text (write it as "Use when …")
+        #[arg(long)]
+        description: Option<String>,
+        /// The skill body (SKILL.md content below the frontmatter), inline
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the skill body from a file instead of inline --instructions
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Short label shown on the Skills page, as lang:text (e.g. cs:"Kontrola výpovědi").
+        /// Repeat once per language
+        #[arg(long = "display-name")]
+        display_name: Vec<String>,
+        /// One user-facing sentence, as lang:text. Repeat once per language
+        #[arg(long = "summary")]
+        summary: Vec<String>,
+        /// Jurisdiction the skill covers, e.g. CZ; repeat for more
+        #[arg(long = "jurisdiction")]
+        jurisdictions: Vec<String>,
+        /// Mark the skill required for its jurisdiction(s)
+        #[arg(long = "jurisdiction-required", default_value = "false")]
+        jurisdiction_required: bool,
+        /// Tool the skill may use; repeat for more. Leave out to allow every tool
+        #[arg(long = "allowed-tool")]
+        allowed_tools: Vec<String>,
+        /// Read a whole SKILL.md (frontmatter + body) from a file
         #[arg(long)]
         file: Option<String>,
-        /// Read SKILL.md content from stdin
+        /// Read a whole SKILL.md from stdin
         #[arg(long, default_value = "false")]
         stdin: bool,
     },
-    /// Update a skill from SKILL.md content
+    /// Update a skill; unset flags keep their stored value
     Update {
         /// Skill ID, node ID, or raw skill name
         id: String,
-        /// Read SKILL.md content from a file
+        /// Skill name: lowercase letters, digits and hyphens
+        #[arg(long)]
+        name: Option<String>,
+        /// What the skill is for; the AI trigger text
+        #[arg(long)]
+        description: Option<String>,
+        /// The skill body, inline
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the skill body from a file instead of inline --instructions
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Replaces the display name for the given languages, as lang:text. Repeat per language
+        #[arg(long = "display-name")]
+        display_name: Vec<String>,
+        /// Replaces the summary for the given languages, as lang:text. Repeat per language
+        #[arg(long = "summary")]
+        summary: Vec<String>,
+        /// Replaces the whole jurisdiction list; repeat for more
+        #[arg(long = "jurisdiction")]
+        jurisdictions: Vec<String>,
+        /// Mark the skill required for its jurisdiction(s)
+        #[arg(long = "jurisdiction-required")]
+        jurisdiction_required: Option<bool>,
+        /// Replaces the whole allowed-tool list; repeat for more
+        #[arg(long = "allowed-tool")]
+        allowed_tools: Vec<String>,
+        /// Read a whole SKILL.md from a file
         #[arg(long)]
         file: Option<String>,
-        /// Read SKILL.md content from stdin
+        /// Read a whole SKILL.md from stdin
         #[arg(long, default_value = "false")]
         stdin: bool,
     },
@@ -460,6 +609,16 @@ fn parse_key_value(s: &str) -> Result<(String, String), String> {
     Ok((s[..pos].to_string(), s[pos + 1..].to_string()))
 }
 
+/// A repeatable flag that was never given arrives as an empty Vec, which on create
+/// must stay "unset" rather than "explicitly empty".
+fn none_if_empty(values: Vec<String>) -> Option<Vec<String>> {
+    if values.is_empty() {
+        None
+    } else {
+        Some(values)
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -486,6 +645,8 @@ fn main() {
                 agent,
                 skill,
                 max_turns,
+                model,
+                jurisdiction,
                 work_dir,
                 disabled,
             } => commands::automation::create(
@@ -504,6 +665,12 @@ fn main() {
                     agent: agent.as_deref(),
                     skills: &skill,
                     max_turns,
+                    model: model.as_deref(),
+                    jurisdictions: if jurisdiction.is_empty() {
+                        None
+                    } else {
+                        Some(&jurisdiction)
+                    },
                     work_dir: work_dir.as_deref(),
                     disabled,
                 },
@@ -547,6 +714,8 @@ fn main() {
                 agent,
                 skill,
                 max_turns,
+                model,
+                jurisdiction,
                 work_dir,
             } => commands::automation::update(
                 &client,
@@ -565,6 +734,12 @@ fn main() {
                     agent: agent.as_deref(),
                     skills: skill.as_deref(),
                     max_turns,
+                    model: model.as_deref(),
+                    jurisdictions: if jurisdiction.is_empty() {
+                        None
+                    } else {
+                        Some(&jurisdiction)
+                    },
                     work_dir: work_dir.as_deref(),
                 },
                 format,
@@ -615,24 +790,144 @@ fn main() {
             AgentCommands::List { editable_only } => {
                 commands::agent::list(&client, editable_only, format)
             }
-            AgentCommands::Create { file, stdin } => {
-                commands::agent::create(&client, file.as_deref(), stdin, format)
-            }
-            AgentCommands::Update { id, file, stdin } => {
-                commands::agent::update(&client, &id, file.as_deref(), stdin, format)
-            }
+            AgentCommands::Create {
+                name,
+                description,
+                tools,
+                disallowed_tools,
+                skills,
+                jurisdictions,
+                model,
+                max_turns,
+                instructions,
+                instructions_file,
+                display_name,
+                summary,
+                file,
+                stdin,
+            } => commands::agent::create(
+                &client,
+                file.as_deref(),
+                stdin,
+                instructions_file.as_deref(),
+                commands::agent::AgentFields {
+                    name,
+                    description,
+                    tools: none_if_empty(tools),
+                    disallowed_tools: none_if_empty(disallowed_tools),
+                    skills: none_if_empty(skills),
+                    jurisdictions: none_if_empty(jurisdictions),
+                    model,
+                    max_turns,
+                    instructions,
+                    display_name,
+                    summary,
+                },
+                format,
+            ),
+            AgentCommands::Update {
+                id,
+                name,
+                description,
+                tools,
+                disallowed_tools,
+                skills,
+                jurisdictions,
+                model,
+                max_turns,
+                instructions,
+                instructions_file,
+                display_name,
+                summary,
+                file,
+                stdin,
+            } => commands::agent::update(
+                &client,
+                &id,
+                file.as_deref(),
+                stdin,
+                instructions_file.as_deref(),
+                commands::agent::AgentFields {
+                    name,
+                    description,
+                    tools,
+                    disallowed_tools,
+                    skills,
+                    jurisdictions,
+                    model,
+                    max_turns,
+                    instructions,
+                    display_name,
+                    summary,
+                },
+                format,
+            ),
             AgentCommands::Delete { id } => commands::agent::delete(&client, &id, format),
         },
         Commands::Skill { command } => match command {
             SkillCommands::List { editable_only } => {
                 commands::skill::list(&client, editable_only, format)
             }
-            SkillCommands::Create { file, stdin } => {
-                commands::skill::create(&client, file.as_deref(), stdin, format)
-            }
-            SkillCommands::Update { id, file, stdin } => {
-                commands::skill::update(&client, &id, file.as_deref(), stdin, format)
-            }
+            SkillCommands::Create {
+                name,
+                description,
+                instructions,
+                instructions_file,
+                display_name,
+                summary,
+                jurisdictions,
+                jurisdiction_required,
+                allowed_tools,
+                file,
+                stdin,
+            } => commands::skill::create(
+                &client,
+                file.as_deref(),
+                stdin,
+                instructions_file.as_deref(),
+                commands::skill::SkillFields {
+                    name,
+                    description,
+                    instructions,
+                    display_name,
+                    summary,
+                    jurisdictions: none_if_empty(jurisdictions),
+                    jurisdiction_required: if jurisdiction_required { Some(true) } else { None },
+                    allowed_tools: none_if_empty(allowed_tools),
+                },
+                format,
+            ),
+            SkillCommands::Update {
+                id,
+                name,
+                description,
+                instructions,
+                instructions_file,
+                display_name,
+                summary,
+                jurisdictions,
+                jurisdiction_required,
+                allowed_tools,
+                file,
+                stdin,
+            } => commands::skill::update(
+                &client,
+                &id,
+                file.as_deref(),
+                stdin,
+                instructions_file.as_deref(),
+                commands::skill::SkillFields {
+                    name,
+                    description,
+                    instructions,
+                    display_name,
+                    summary,
+                    jurisdictions: none_if_empty(jurisdictions),
+                    jurisdiction_required,
+                    allowed_tools: none_if_empty(allowed_tools),
+                },
+                format,
+            ),
             SkillCommands::Delete { id } => commands::skill::delete(&client, &id, format),
         },
         Commands::Tabular { command } => match command {
@@ -767,13 +1062,111 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Update { id, file, stdin },
+                command: AgentCommands::Update {
+                    id, file, stdin, ..
+                },
             } => {
                 assert_eq!(id, "local-agent");
                 assert_eq!(file.as_deref(), Some("/tmp/local-agent.md"));
                 assert!(!stdin);
             }
             _ => panic!("expected agent update command"),
+        }
+    }
+
+    #[test]
+    fn parses_automation_create_with_model_and_jurisdiction() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "automation",
+            "create",
+            "--title",
+            "Judikatura watch",
+            "--repeat",
+            "DAILY",
+            "--day-part",
+            "MORNING",
+            "--prompt",
+            "Report new rulings",
+            "--model",
+            "CLAUDE_SONNET_5",
+            "--jurisdiction",
+            "CZ",
+            "--jurisdiction",
+            "SK",
+        ])
+        .expect("automation create should parse");
+
+        match cli.command {
+            Commands::Automation {
+                command:
+                    AutomationCommands::Create {
+                        title,
+                        model,
+                        jurisdiction,
+                        ..
+                    },
+            } => {
+                assert_eq!(title, "Judikatura watch");
+                assert_eq!(model.as_deref(), Some("CLAUDE_SONNET_5"));
+                assert_eq!(jurisdiction, vec!["CZ", "SK"]);
+            }
+            _ => panic!("expected automation create command"),
+        }
+    }
+
+    #[test]
+    fn parses_agent_create_with_field_flags() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "agent",
+            "create",
+            "--name",
+            "hr-vypoved",
+            "--description",
+            "Posuzuje zakonnost vypovedi",
+            "--tool",
+            "shell",
+            "--tool",
+            "readFile",
+            "--skill",
+            "debugger",
+            "--model",
+            "CLAUDE_OPUS_4_8",
+            "--max-turns",
+            "7",
+            "--instructions",
+            "Posud zakonnost vypovedi.",
+        ])
+        .expect("agent create should parse");
+
+        match cli.command {
+            Commands::Agent {
+                command:
+                    AgentCommands::Create {
+                        name,
+                        description,
+                        tools,
+                        skills,
+                        model,
+                        max_turns,
+                        instructions,
+                        file,
+                        stdin,
+                        ..
+                    },
+            } => {
+                assert_eq!(name.as_deref(), Some("hr-vypoved"));
+                assert_eq!(description.as_deref(), Some("Posuzuje zakonnost vypovedi"));
+                assert_eq!(tools, vec!["shell", "readFile"]);
+                assert_eq!(skills, vec!["debugger"]);
+                assert_eq!(model.as_deref(), Some("CLAUDE_OPUS_4_8"));
+                assert_eq!(max_turns, Some(7));
+                assert_eq!(instructions.as_deref(), Some("Posud zakonnost vypovedi."));
+                assert!(file.is_none());
+                assert!(!stdin);
+            }
+            _ => panic!("expected agent create command"),
         }
     }
 

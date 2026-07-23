@@ -18,7 +18,7 @@ OA types (hlavniTyp=oa):
 - `Smlouva` - Contract
 - `Stav nebezpečí` - State of emergency
 
-**Important:** Values require correct Czech diacritics — ASCII-stripped variants return zero results.
+**Important:** Values require correct Czech diacritics - ASCII-stripped variants return zero results.
 
 ## publikujici
 Publisher / municipality name (match query, all words must match). Example: `Statutární město Brno`
@@ -29,7 +29,7 @@ Legal area (match query, all words must match). Example: `Odpady`
 ## platnost
 Validity status (exact match):
 - `Platné` - Valid
-- `Zrušeno k <date>` - Cancelled (date-specific, e.g. `Zrušeno k 16.12.2025` — not usable as a filter since each value is unique)
+- `Zrušeno k <date>` - Cancelled (date-specific, e.g. `Zrušeno k 16.12.2025` - not usable as a filter since each value is unique)
 
 ## cisloPredpisu
 Document number (exact match). Example: `1/2026`

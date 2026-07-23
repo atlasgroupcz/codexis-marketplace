@@ -2,24 +2,24 @@
 uuid: 7a5c2a2e-0e89-4c93-841a-0788e7aa8f13
 name: zrsr
 icon: icon.svg
-description: Slovenský register právnických osôb a podnikateľov (RPO, Štatistický úrad SR), ktorý agreguje aj Živnostenský register SR (zrsr.sk) a Obchodný register. Use for Slovak company / sole-trader (živnostník, SZČO) lookups by IČO or name — identification, trade licences (predmety podnikania), source register, addresses, legal form, name history. Triggers on "zrsr", "rpo", "živnostenský register", "živnostník", "živnosť", "SZČO", "IČO" (Slovak entity), "obchodný register SR", "vyhľadaj živnostníka", "over firmu na Slovensku", "živnostenské oprávnenie", "slovenská firma".
+description: Slovenský register právnických osôb a podnikateľov (RPO, Štatistický úrad SR), ktorý agreguje aj Živnostenský register SR (zrsr.sk) a Obchodný register. Use for Slovak company / sole-trader (živnostník, SZČO) lookups by IČO or name - identification, trade licences (predmety podnikania), source register, addresses, legal form, name history. Triggers on "zrsr", "rpo", "živnostenský register", "živnostník", "živnosť", "SZČO", "IČO" (Slovak entity), "obchodný register SR", "vyhľadaj živnostníka", "over firmu na Slovensku", "živnostenské oprávnenie", "slovenská firma".
 version: 0.1.2
 jurisdictions: [SK]
 i18n:
   cs:
-    displayName: "ZRSR — živnostenský registr SR"
-    summary: "Vyhledávání slovenských firem a živnostníků v RPO — IČO, živnostenská oprávnění, živnostenský a obchodní registr."
+    displayName: "ZRSR - živnostenský registr SR"
+    summary: "Vyhledávání slovenských firem a živnostníků v RPO - IČO, živnostenská oprávnění, živnostenský a obchodní registr."
   en:
-    displayName: "ZRSR — Slovak Trade Register"
-    summary: "Look up Slovak companies and sole traders in RPO — IČO, trade licences, Trade and Business Register."
+    displayName: "ZRSR - Slovak Trade Register"
+    summary: "Look up Slovak companies and sole traders in RPO - IČO, trade licences, Trade and Business Register."
   sk:
-    displayName: "ZRSR — živnostenský register SR"
-    summary: "Vyhľadávanie slovenských firiem a živnostníkov v RPO — IČO, živnostenské oprávnenia, živnostenský a obchodný register."
+    displayName: "ZRSR - živnostenský register SR"
+    summary: "Vyhľadávanie slovenských firiem a živnostníkov v RPO - IČO, živnostenské oprávnenia, živnostenský a obchodný register."
 ---
 
-# ZRSR — Slovak Trade & Business Register
+# ZRSR - Slovak Trade & Business Register
 
-A single tool — **`zrsr-cli`** — wraps the public RPO API of the Slovak
+A single tool - **`zrsr-cli`** - wraps the public RPO API of the Slovak
 Statistical Office (`https://api.statistics.sk/rpo/v1`). RPO (Register
 právnických osôb a podnikateľov) aggregates the official source registers,
 including the **Živnostenský register SR** (zrsr.sk, which itself has no API)
@@ -29,13 +29,13 @@ and the **Obchodný register**.
 `kn`, `cdx-cli`, or any other tool directly. Assume `zrsr-cli` is installed and
 available in `PATH`.
 
-**IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `HTTP 404 …`, bad input, network) — report it, don't guess workarounds and don't blindly retry; the message text from RPO is authoritative. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `HTTP 404 …`, bad input, network) - report it, don't guess workarounds and don't blindly retry; the message text from RPO is authoritative. When looking up several items, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
 `zrsr-cli` always prints **JSON to stdout** (verbatim RPO response; only
 `--limit` rewrites the `results` array). Parse with `jq`. Never use `sed` or
-`grep` — fields are nested objects.
+`grep` - fields are nested objects.
 
 ```bash
 zrsr-cli detail 686930 | jq '.fullNames, .legalForms'
@@ -43,7 +43,7 @@ zrsr-cli search --name "Tatra banka" --limit 5 | jq '.results[] | {id, ico: .ide
 ```
 
 On failure: `ERROR: HTTP <code> <reason>` on stderr, exit code 2. The body of
-the RPO error response is appended verbatim — read it before retrying.
+the RPO error response is appended verbatim - read it before retrying.
 
 ## Three commands
 
@@ -55,9 +55,9 @@ zrsr-cli api get <PATH>
 
 `<ICO>` accepts 1–8 digit input; `zrsr-cli` left-pads to 8 digits before the
 call. `detail <ICO>` makes two API calls (identifier search → entity fetch);
-the identifier search can take **tens of seconds** — be patient, don't kill it.
+the identifier search can take **tens of seconds** - be patient, don't kill it.
 When the internal RPO `id` is already known (from a previous `search`), prefer
-`detail --id <RPO_ID>` — it skips the slow hop. `--history` adds historical
+`detail --id <RPO_ID>` - it skips the slow hop. `--history` adds historical
 records (`showHistoricalData`), `--units` adds organization units.
 
 ## Search filters (`zrsr-cli search`)
@@ -74,7 +74,7 @@ first five (value filters) is required:
 | `--pravna-forma` (alias `--legal-form`) | `legalForm` | legal form text, e.g. "Spoločnosť s ručením obmedzeným" |
 | `--register zr\|or\|all` | `sourceRegister` | Živnostenský / Obchodný register (default `all` = no filter) |
 | `--only-active` | `onlyActive` | only subjects without a termination date |
-| `--limit N` | — | client-side truncation of `results` |
+| `--limit N` | - | client-side truncation of `results` |
 
 > **Pozor:** the RPO API caps every search at **500 records** with no paging.
 > Narrow broad queries with extra filters (`--obec`, `--register`,
@@ -137,7 +137,7 @@ Pick the right candidate from `results[]`, then `zrsr-cli detail --id <id>`.
 
 `zrsr-cli detail` and `zrsr-cli search` automatically attach the public RPO
 record of each looked-up subject (`https://api.statistics.sk/rpo/v1/entity/<id>`)
-to the chat "Sources" panel — no extra step needed. When naming a subject in
+to the chat "Sources" panel - no extra step needed. When naming a subject in
 your answer, cite that same URL in prose.
 
 ## User-facing output rules
@@ -147,9 +147,9 @@ your answer, cite that same URL in prose.
 - Pick the history entry without `validTo`; if only historical values exist,
   say so explicitly.
 - Addresses are structured (`street`, `buildingNumber`, `postalCodes`,
-  `municipality.value`) — compose them, don't dump raw JSON at the user.
+  `municipality.value`) - compose them, don't dump raw JSON at the user.
 - Iterate history arrays, don't assume a single record.
-- Never fabricate data RPO did not return — if a field is missing, say so.
+- Never fabricate data RPO did not return - if a field is missing, say so.
 
 ## Examples
 
@@ -157,7 +157,7 @@ your answer, cite that same URL in prose.
 # Verify counterparty before a contract
 zrsr-cli detail 686930 | jq '{ico: .identifiers[-1].value, name: (.fullNames[] | select(.validTo == null) | .value), active: (.termination == null), register: .sourceRegister.value.value}'
 
-# Trade licences (predmety podnikania) of a subject — current only
+# Trade licences (predmety podnikania) of a subject - current only
 zrsr-cli detail 686930 | jq '[.activities[] | select(.validTo == null) | .economicActivityDescription]'
 
 # Find a živnostník by name and municipality

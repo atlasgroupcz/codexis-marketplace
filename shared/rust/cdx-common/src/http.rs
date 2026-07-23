@@ -1,7 +1,7 @@
 //! Small reqwest helpers shared by the reqwest-based lookup plugins (ares,
 //! zrsr, kataster-sk, obchodny-register-sk, …).
 //!
-//! Only the byte-identical, self-contained helpers live here — status
+//! Only the byte-identical, self-contained helpers live here - status
 //! formatting, body reading, retry/backoff and URL joining. Each plugin keeps
 //! its own `Client` struct and request logic, which genuinely diverge (single
 //! vs dual base URL, plain GET vs retry loop vs retry+cache, cookies, etc.).

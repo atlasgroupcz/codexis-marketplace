@@ -113,8 +113,14 @@ impl DaemonConfig {
     }
 }
 
-fn read_daemon_secret() -> Option<String> {
-    let home = read_env(CODEXIS_PUBLIC_USER_HOME_ENV).or_else(|| read_env("HOME"))?;
+/// Reads the VM daemon token from `$HOME/.cdx/env/secret`. The host writes the
+/// secret to the real VM home - the same file `cdxctl` and the Python cores
+/// read. The daemon-injected `CODEXIS_PUBLIC_USER_HOME` is deliberately NOT
+/// consulted: it points at per-user app state, not at the VM home. Single
+/// source of truth for the secret lookup - [`DaemonConfig::load`] and
+/// `daemon_rest::daemon_bearer` both use it.
+pub fn read_daemon_secret() -> Option<String> {
+    let home = read_env("HOME")?;
     let path = format!("{}/{}", home.trim_end_matches('/'), DAEMON_SECRET_RELATIVE_PATH);
     std::fs::read_to_string(path).ok().and_then(normalize_config_value)
 }

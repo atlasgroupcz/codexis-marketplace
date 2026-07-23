@@ -132,7 +132,7 @@ def check(codexis_id=None, printer=None):
     Returns {"checked": int, "changes_found": int, "errors": [str], "changed": [...]}.
     `changed` lists {"codexisId", "name"} for each document with a newly
     recorded change this run (used to drive notifications). Use `printer` to
-    surface progress (e.g. print). Never raises on per-doc failures — those
+    surface progress (e.g. print). Never raises on per-doc failures - those
     go into `errors`.
     """
     def _log(msg):
@@ -149,7 +149,7 @@ def check(codexis_id=None, printer=None):
     errors = []
     changes_found = 0
     changed = []
-    seen = set()  # codexisIds already in `changed` — one entry per document
+    seen = set()  # codexisIds already in `changed` - one entry per document
 
     # Phase 1: new versions
     for cid in ids:

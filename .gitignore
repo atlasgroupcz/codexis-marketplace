@@ -134,8 +134,11 @@ test-results/
 
 .worktrees/
 
-# Local superpowers design/plan artifacts — not for this repo
+# Local superpowers design/plan artifacts - not for this repo
 docs/superpowers/
 
 # superpowers brainstorm/sdd scratch (local tooling, never tracked)
 .superpowers/
+
+# uv-managed virtualenv (uv.lock is committed for reproducible CI)
+.venv/

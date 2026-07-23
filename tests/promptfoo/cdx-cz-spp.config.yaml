@@ -1,7 +1,7 @@
 # Port of plugins/cdx-cz-spp/acceptance/e2e/cdx-cz-spp-search.yaml
 # Czech municipal regulations (sbírka právních předpisů obcí).
 
-description: cdx-cz-spp — Czech municipal regulation search
+description: cdx-cz-spp - Czech municipal regulation search
 
 prompts:
   - "{{ prompt }}"
@@ -12,7 +12,7 @@ providers:
     config: {}
 
 tests:
-  - description: Prague municipal regulations — search returns real doc URLs
+  - description: Prague municipal regulations - search returns real doc URLs
     vars:
       prompt: "Najdi mi obecně závazné vyhlášky hlavního města Prahy."
       tool_name: shell

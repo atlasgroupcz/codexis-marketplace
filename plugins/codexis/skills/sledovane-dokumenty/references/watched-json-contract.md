@@ -1,4 +1,4 @@
-# `.watched/watched.json` — integration contract
+# `.watched/watched.json` - integration contract
 
 When the user watches a folder of documents, `cdx-sledovane-dokumenty` keeps a
 hidden `.watched/` directory **inside that folder**. The file
@@ -32,7 +32,7 @@ boundary. Do not parse the app's private state under `~/.cdx/` instead.
       "legislation": [
         {
           "uri": "https://www.zakonyprolidi.cz/cs/2012-89",
-          "text": "Zákon č. 89/2012 Sb., občanský zákoník — § 2079 a násl.",
+          "text": "Zákon č. 89/2012 Sb., občanský zákoník - § 2079 a násl.",
           "codexisId": "CR26785"
         }
       ]
@@ -46,7 +46,7 @@ boundary. Do not parse the app's private state under `~/.cdx/` instead.
 | Field | Type | Meaning |
 |---|---|---|
 | `version` | int | Contract version. Currently `1`. |
-| `watchedRoot` | string | Always `"."` — the file's own folder is the root. |
+| `watchedRoot` | string | Always `"."` - the file's own folder is the root. |
 | `generatedAt` | string | ISO-8601 UTC `Z` of the last write. |
 | `documents` | array | One entry per tracked document. |
 
@@ -89,4 +89,4 @@ Runner bookkeeping, keyed by `codexisId`: `baselineVersionId`,
 `lastKnownVersionId`, `lastCheckAt`, and a `changes[]` log
 (`detected_on`, `effective_on`, `old_version_id`, `new_version_id`,
 `amendments`, `compare_url`, `confirmed_on`). External tools should not depend on
-its shape — read `watched.json` for the list of referenced legislation.
+its shape - read `watched.json` for the list of referenced legislation.

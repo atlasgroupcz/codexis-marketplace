@@ -1,7 +1,7 @@
 """E-mail the user a summary of newly detected similar trademarks.
 
 Uses the daemon's plugin e-mail API (POST /rest/v1/plugin/email/send). Auth is the
-VM/daemon token the host writes to ~/.cdx/env/secret (the same token cdxctl uses) —
+VM/daemon token the host writes to ~/.cdx/env/secret (the same token cdxctl uses) -
 NOT CODEXIS_USER_API_TOKEN, which is a JWT for external Codexis sources and is
 rejected by the gateway. The daemon URL comes from CODEXIS_PUBLIC_DAEMON_URL, whose
 value is the GraphQL URL. Meant to run from a recurring automation.
@@ -98,7 +98,7 @@ def without_self(recipients: list | None) -> list:
 
     The signed-in user always receives the e-mail, so listing their own address
     as an extra is redundant (and shows as a duplicate pill in the UI). This is
-    the store-time guard for the CLI and daemon write paths — the FE dialog
+    the store-time guard for the CLI and daemon write paths - the FE dialog
     already blocks it on entry. Case-insensitive. When the signed-in user can't
     be resolved, the list is returned unchanged (keep an extra rather than drop a
     real recipient on a transient lookup failure). No `me` lookup for an empty
@@ -119,7 +119,7 @@ def _send_email(subject: str, body_text: str, body_html: str = None, to: list | 
     auth = _load_auth()
     if not daemon_url or not auth:
         raise ZnamkyError(
-            "E-mail nelze odeslat — chybí CODEXIS_PUBLIC_DAEMON_URL nebo daemon "
+            "E-mail nelze odeslat - chybí CODEXIS_PUBLIC_DAEMON_URL nebo daemon "
             "token (~/.cdx/env/secret). Spouštějte přes automatizaci v CODEXIS."
         )
 
@@ -171,7 +171,7 @@ def _collision_line(c: dict) -> str:
         bits.append(f"přihlašovatel {applicant}")
     if tier:
         bits.append(tier)
-    return " — ".join(bits)
+    return " - ".join(bits)
 
 
 def build_summary(results: list):
@@ -182,14 +182,14 @@ def build_summary(results: list):
         return None
 
     if len(changed) == 1 and total == 1:
-        subject = f"Ochrana známek: nová podobná známka — {changed[0]['display_name']}"
+        subject = f"Ochrana známek: nová podobná známka - {changed[0]['display_name']}"
     else:
         subject = f"Ochrana známek: {total} nových podobných známek u {len(changed)} sledovaných"
 
     text_lines = ["Hlídač ochranných známek našel nové podobné přihlášky/zápisy:", ""]
     html_rows = []
     for r in changed:
-        text_lines.append(f"{r['display_name']} — {len(r['new_collisions'])} nových:")
+        text_lines.append(f"{r['display_name']} - {len(r['new_collisions'])} nových:")
         for c in r["new_collisions"]:
             text_lines.append(f"  • {_collision_line(c)}")
         text_lines.append("")

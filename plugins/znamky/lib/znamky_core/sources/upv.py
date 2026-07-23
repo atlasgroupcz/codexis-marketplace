@@ -1,9 +1,9 @@
-"""ÚPV direct adapter — optional CZ enrichment on top of TMview.
+"""ÚPV direct adapter - optional CZ enrichment on top of TMview.
 
 ÚPV (Úřad průmyslového vlastnictví) is a TMview participant, so Czech marks are
 already retrieved through TMview's "CZ" office filter. This adapter is an
 optional *direct* source for richer CZ-only detail (Vienna codes, status), and
-stays disabled unless CODEXIS_PLUGIN_ZNAMKY_UPV_URL is configured — we don't
+stays disabled unless CODEXIS_PLUGIN_ZNAMKY_UPV_URL is configured - we don't
 ship a brittle HTML scraper that would silently rot. When enabled, the endpoint
 is expected to return the same JSON record shape TMview's parser understands.
 """

@@ -75,10 +75,10 @@ impl KatasterClient {
                     body = body.trim()
                 ));
             }
-            // A WAF block arrives as HTTP 200 + HTML — never retried.
+            // A WAF block arrives as HTTP 200 + HTML - never retried.
             if body.trim_start().starts_with('<') {
                 return Err(anyhow!(
-                    "GET {final_url} returned HTML instead of JSON — the cadastre WAF blocked the request or the service is unavailable"
+                    "GET {final_url} returned HTML instead of JSON - the cadastre WAF blocked the request or the service is unavailable"
                 ));
             }
             return Ok(body);

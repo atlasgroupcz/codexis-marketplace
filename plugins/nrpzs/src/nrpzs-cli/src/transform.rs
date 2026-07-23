@@ -40,7 +40,7 @@ pub fn obor_code(codelist: &[Value], input: &str) -> Option<String> {
 
 /// Keep rows whose `code_field` equals `arg` (case-insensitive) or whose
 /// `name_field` contains `arg` (accent-insensitive). For client-side kraj/okres
-/// filtering — the NRPZS API has no such query parameter.
+/// filtering - the NRPZS API has no such query parameter.
 pub fn filter_region(
     rows: Vec<Value>,
     code_field: &str,

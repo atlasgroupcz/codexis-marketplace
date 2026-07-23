@@ -14,6 +14,9 @@ query GetAutomations {
         prompt
         enabled
         maxTurns
+        model
+        modelConfiguration { key value }
+        jurisdictions
         workDirPath { absolutePath displayPath }
         lastRun {
             id
@@ -41,6 +44,9 @@ mutation CreateAutomation($input: AutomationInput!) {
         prompt
         enabled
         maxTurns
+        model
+        modelConfiguration { key value }
+        jurisdictions
         workDirPath { absolutePath displayPath }
     }
 }
@@ -60,14 +66,42 @@ mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
         prompt
         enabled
         maxTurns
+        model
+        modelConfiguration { key value }
+        jurisdictions
         workDirPath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const SAVE_AUTOMATION: &str = r#"
+mutation SaveAutomation($id: ID, $input: AutomationInput!) {
+    saveAutomation(id: $id, input: $input) {
+        automation {
+            id
+            type
+            command
+            title
+            description
+            agent { id fullName }
+            skills { id fullName }
+            schedule { repeat dayPart daysOfWeek dayOfMonth }
+            prompt
+            enabled
+            maxTurns
+            model
+            modelConfiguration { key value }
+            jurisdictions
+            workDirPath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
     }
 }
 "#;
 
 // Toggle only the `enabled` flag. Unlike `updateAutomation` (USER-only, rejects
 // read-only carried/plugin automations), the daemon's `setAutomationEnabled`
-// works for both USER and carried automations — for carried ones it persists a
+// works for both USER and carried automations - for carried ones it persists a
 // per-user enabled override. This is how a shipped plugin automation is disabled.
 pub const SET_AUTOMATION_ENABLED: &str = r#"
 mutation SetAutomationEnabled($id: ID!, $enabled: Boolean!) {
@@ -266,8 +300,10 @@ query GetAgents {
         plugin { id name marketplace { id name } }
         tools { toolName displayName kind source }
         skills
+        jurisdictions
         model
         maxTurns
+        instructions
         disallowedTools { toolName displayName kind source }
         sourceKind
         editable
@@ -278,46 +314,82 @@ query GetAgents {
 }
 "#;
 
-pub const CREATE_AGENT: &str = r#"
+// The chat the shell runs in carries the model and jurisdictions actually in use, which
+// is per chat -- unlike a stored preference, which two concurrent chats would share.
+pub const GET_CHAT_CONTEXT: &str = r#"
+query GetChatContext($id: ID!) {
+    node(id: $id) {
+        ... on Chat {
+            id
+            model
+            modelConfiguration { key value }
+            jurisdictions
+        }
+    }
+}
+"#;
+
+pub const CREATE_AGENT_MARKDOWN: &str = r#"
 mutation CreateAgent($markdown: Markdown!) {
     createAgent(markdown: $markdown) {
         id
         name
         fullName
         description
-        plugin { id name }
-        tools { toolName displayName kind source }
-        skills
-        model
-        maxTurns
-        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
+        maxTurns
+        tools { toolName }
+        disallowedTools { toolName }
         path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
     }
 }
 "#;
 
-pub const UPDATE_AGENT: &str = r#"
+pub const UPDATE_AGENT_MARKDOWN: &str = r#"
 mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
     updateAgent(id: $id, markdown: $markdown) {
         id
         name
         fullName
         description
-        plugin { id name }
-        tools { toolName displayName kind source }
-        skills
-        model
-        maxTurns
-        disallowedTools { toolName displayName kind source }
         sourceKind
         editable
         deletable
+        maxTurns
+        tools { toolName }
+        disallowedTools { toolName }
         path { absolutePath displayPath }
         sourcePath { absolutePath displayPath }
+    }
+}
+"#;
+
+pub const SAVE_AGENT: &str = r#"
+mutation SaveAgent($id: ID, $input: AgentInput!) {
+    saveAgent(id: $id, input: $input) {
+        agent {
+            id
+            name
+            fullName
+            description
+            plugin { id name }
+            tools { toolName displayName kind source }
+            skills
+            jurisdictions
+            model
+            maxTurns
+            instructions
+            disallowedTools { toolName displayName kind source }
+            sourceKind
+            editable
+            deletable
+            path { absolutePath displayPath }
+            sourcePath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
     }
 }
 "#;
@@ -387,6 +459,28 @@ mutation UpdateSkill($id: ID!, $markdown: Markdown!) {
 }
 "#;
 
+pub const SAVE_SKILL: &str = r#"
+mutation SaveSkill($id: ID, $input: SkillInput!) {
+    saveSkill(id: $id, input: $input) {
+        skill {
+            id
+            name
+            fullName
+            description
+            allowedTools
+            sourceKind
+            editable
+            deletable
+            displayName
+            summary
+            path { absolutePath displayPath }
+            sourcePath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
+    }
+}
+"#;
+
 pub const DELETE_SKILL: &str = r#"
 mutation DeleteSkill($id: ID!) {
     deleteNode(id: $id) {
@@ -444,7 +538,7 @@ mutation UpdateNotificationState($input: UpdateNotificationStateInput!) {
 // ==================== Tabular Extraction ====================
 //
 // All tabular ops take a `TabularExtraction` Node id (encoded from the folder
-// path) — see commands::tabular::folder_to_node_id.
+// path) - see commands::tabular::folder_to_node_id.
 
 pub const GET_TABULAR_EXTRACTION: &str = r#"
 query GetTabularExtraction($id: ID!) {
@@ -582,22 +676,38 @@ mutation StartTabularExtraction($id: ID!) {
 #[cfg(test)]
 mod tests {
     use super::{
-        CREATE_AGENT, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_SKILLS,
-        REMOVE_MARKETPLACE, SET_AUTOMATION_ENABLED, UPDATE_AGENT, UPDATE_AUTOMATION,
+        CREATE_AGENT_MARKDOWN, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS,
+        GET_CHAT_CONTEXT, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION,
+        SET_AUTOMATION_ENABLED, UPDATE_AGENT_MARKDOWN, UPDATE_AUTOMATION,
     };
 
     #[test]
     fn agent_queries_target_canonical_agent_api() {
         assert!(GET_AGENTS.contains("query GetAgents"));
         assert!(GET_AGENTS.contains("agents {"));
-        assert!(CREATE_AGENT.contains("createAgent(markdown: $markdown)"));
-        assert!(UPDATE_AGENT.contains("updateAgent(id: $id, markdown: $markdown)"));
+        assert!(SAVE_AGENT.contains("saveAgent(id: $id, input: $input)"));
+        // The markdown path stays on the deprecated mutations so binaries already in a VM
+        // keep working after the daemon ships saveAgent.
+        assert!(CREATE_AGENT_MARKDOWN.contains("createAgent(markdown: $markdown)"));
+        assert!(UPDATE_AGENT_MARKDOWN.contains("updateAgent(id: $id, markdown: $markdown)"));
         assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
+        assert!(GET_CHAT_CONTEXT.contains("... on Chat {"));
+        assert!(GET_CHAT_CONTEXT.contains("modelConfiguration { key value }"));
+    }
+
+    #[test]
+    fn agent_mutations_read_the_payload_wrapper() {
+        // createAgent/updateAgent return a payload, so every agent field sits under
+        // `agent` and the rejected input is reported in `errors`.
+        for mutation in [SAVE_AGENT] {
+            assert!(mutation.contains("agent {"));
+            assert!(mutation.contains("errors { field message allowedValues }"));
+        }
     }
 
     #[test]
     fn agent_queries_request_local_crud_metadata() {
-        for query in [GET_AGENTS, CREATE_AGENT, UPDATE_AGENT] {
+        for query in [GET_AGENTS, SAVE_AGENT] {
             assert!(query.contains("sourceKind"));
             assert!(query.contains("editable"));
             assert!(query.contains("deletable"));
@@ -628,18 +738,31 @@ mod tests {
     fn automation_queries_select_agent_and_skills_as_nodes() {
         // Daemon schema exposes `agent: Agent` / `skills: [Skill!]!` (with id +
         // fullName), not the legacy flat `agentFullName` / `skillFullNames` fields.
-        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION] {
+        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION, SAVE_AUTOMATION] {
             assert!(query.contains("agent { id fullName }"));
             assert!(query.contains("skills { id fullName }"));
             assert!(!query.contains("agentFullName"));
             assert!(!query.contains("skillFullNames"));
+            assert!(query.contains("model"));
+            assert!(query.contains("modelConfiguration { key value }"));
+            assert!(query.contains("jurisdictions"));
         }
+    }
+
+    #[test]
+    fn save_automation_reads_the_payload_wrapper() {
+        // saveAutomation returns a payload, so every automation field sits under
+        // `automation` and the rejected input is reported in `errors` - mirroring saveAgent.
+        assert!(SAVE_AUTOMATION.contains("saveAutomation(id: $id, input: $input)"));
+        assert!(SAVE_AUTOMATION.contains("$id: ID, $input: AutomationInput!"));
+        assert!(SAVE_AUTOMATION.contains("automation {"));
+        assert!(SAVE_AUTOMATION.contains("errors { field message allowedValues }"));
     }
 
     #[test]
     fn agent_and_skill_lists_surface_plugin_and_marketplace() {
         // Marketplace is reachable only through the owning plugin in the daemon
-        // schema — Agent/Skill have no direct `marketplace` field.
+        // schema - Agent/Skill have no direct `marketplace` field.
         for query in [GET_AGENTS, GET_SKILLS] {
             assert!(query.contains("plugin { id name marketplace { id name } }"));
         }
