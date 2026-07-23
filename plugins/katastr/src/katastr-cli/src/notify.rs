@@ -23,7 +23,7 @@ const EYEBROW: &str = "Hlídač katastrálních řízení";
 const FOOTER: &str = "Otevřete aplikaci Katastr v CODEXIS pro detail.";
 
 /// Re-export the shared transport helpers the CGI/CLI call directly.
-pub use cdx_notify::notify::{query_me_email, without_self};
+pub use cdx_notify::notify::{query_me_email, recipients_from_body, without_self};
 
 // ── summary building ──────────────────────────────────────────────────────────
 

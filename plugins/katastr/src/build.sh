@@ -9,11 +9,11 @@
 #   plugins/katastr/components/katastr/katastr-cgi{,-aarch64-apple-darwin}
 #     → executed in place by the daemon via the sibling `katastr` bash dispatcher
 #
-# Unlike the single-crate sibling plugins (ares, zrsr, …), katastr is a Cargo
-# workspace with three members (core / cli / cgi) plus a path dependency on
-# shared/rust/cdx-common. We therefore mount the workspace and shared/ at their
-# real repo-relative layout so `../../../shared/...` resolves inside Docker,
-# then build the whole workspace in one pass.
+# Like the other Rust plugins, katastr is a single crate (katastr-cli) with the
+# shared logic in its lib and two [[bin]] targets (cli + cgi). We mount the
+# plugin src/ and shared/ at their real repo-relative layout so the crate's
+# `../../../../shared/...` path deps resolve inside Docker, then build both bins
+# in one pass.
 
 set -euo pipefail
 
@@ -32,6 +32,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # plugins/katastr/s
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"                    # plugins/katastr
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"               # marketplace root
 SRC_REL="${SCRIPT_DIR#$REPO_ROOT/}"                          # plugins/katastr/src
+CRATE_DIR="$SCRIPT_DIR/katastr-cli"                          # the single crate (lib + cli + cgi bins)
+CRATE_REL="$SRC_REL/katastr-cli"
 CGI_TARGET_DIR="$PLUGIN_DIR/components/katastr"
 CLI_TARGET_DIR="$PLUGIN_DIR/bin"
 MACOS_ARM64_TARGET="aarch64-apple-darwin"
@@ -51,7 +53,7 @@ install_built_binary() {
   esac
 
   mkdir -p "$dst_dir"
-  local src="$SCRIPT_DIR/target"
+  local src="$CRATE_DIR/target"
   local dst_name="$bin"
   if [[ -n "$target_triple_dir" ]]; then
     src="$src/$target_triple_dir"
@@ -64,14 +66,14 @@ install_built_binary() {
 }
 
 build_linux() {
-  echo "==> Building workspace for linux/${DOCKER_ARCH} (via Docker)"
+  echo "==> Building katastr-cli (cli + cgi) for linux/${DOCKER_ARCH} (via Docker)"
   docker run --rm \
     --platform "linux/${DOCKER_ARCH}" \
     -u "$(id -u):$(id -g)" \
     -e CARGO_HOME=/tmp/cargo \
     -v "$SCRIPT_DIR:/workspace/${SRC_REL}" \
     -v "$REPO_ROOT/shared:/workspace/shared:ro" \
-    -w "/workspace/${SRC_REL}" \
+    -w "/workspace/${CRATE_REL}" \
     "$RUST_IMAGE" \
     cargo build --release --locked
 
@@ -89,11 +91,11 @@ build_macos_arm64() {
     return 0
   fi
 
-  echo "==> Building workspace for darwin/arm64 (via osxcross)"
+  echo "==> Building katastr-cli (cli + cgi) for darwin/arm64 (via osxcross)"
   rustup target add "$MACOS_ARM64_TARGET" >/dev/null
 
   (
-    cd "$SCRIPT_DIR"
+    cd "$CRATE_DIR"
     SDKROOT="$sdk_root" \
       PATH="$PATH:$osxcross_bin" \
       CC_aarch64_apple_darwin="$linker" \

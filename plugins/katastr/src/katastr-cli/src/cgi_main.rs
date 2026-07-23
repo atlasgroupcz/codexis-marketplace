@@ -36,10 +36,6 @@ fn main() -> ExitCode {
 fn handle_get_json(query: &str) -> ExitCode {
     let params = parse_query(query);
 
-    if params.iter().any(|(k, _)| k == "settings") {
-        return handle_settings();
-    }
-
     if let Some((_, view)) = params.iter().find(|(k, _)| k == "view") {
         if view.trim() == "notify" {
             return handle_notify_view();
@@ -54,14 +50,6 @@ fn handle_get_json(query: &str) -> ExitCode {
     }
 
     handle_overview()
-}
-
-fn handle_settings() -> ExitCode {
-    let status = settings::key_status();
-    emit_json(&SettingsResponse {
-        configured: status.configured,
-        masked_key: status.configured.then_some(status.masked),
-    })
 }
 
 fn handle_notify_view() -> ExitCode {
@@ -225,12 +213,9 @@ fn post_set_label(body: &Value) -> ExitCode {
 }
 
 fn post_save_notify_settings(body: &Value) -> ExitCode {
-    // Drop the signed-in user's own address (they always receive it); guard
-    // None so a save that omits `recipients` leaves the stored list untouched.
-    let recipients: Option<Vec<String>> = body.get("recipients").and_then(|v| v.as_array()).map(|arr| {
-        let raw: Vec<String> = arr.iter().filter_map(|v| v.as_str().map(String::from)).collect();
-        notify::without_self(&raw)
-    });
+    // Drops the signed-in user's own address; `None` when `recipients` is
+    // omitted, leaving the stored list untouched.
+    let recipients = notify::recipients_from_body(body);
     let email = body.get("email").and_then(|v| v.as_bool());
     let in_app = body.get("inApp").and_then(|v| v.as_bool());
 
@@ -299,13 +284,6 @@ impl DetailEntry {
             changes,
         }
     }
-}
-
-#[derive(Serialize)]
-struct SettingsResponse {
-    configured: bool,
-    #[serde(rename = "maskedKey", skip_serializing_if = "Option::is_none")]
-    masked_key: Option<String>,
 }
 
 #[derive(Serialize)]

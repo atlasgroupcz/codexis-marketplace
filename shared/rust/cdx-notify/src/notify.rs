@@ -117,6 +117,17 @@ pub fn without_self(recipients: &[String]) -> Vec<String> {
         .collect()
 }
 
+/// Extract the `recipients` array from a save-notify-settings request body and
+/// run it through [`without_self`]. Returns `None` when the key is absent, so
+/// the "omit `recipients` to leave the stored list untouched" rule lives in one
+/// place; non-string array entries are skipped.
+pub fn recipients_from_body(body: &serde_json::Value) -> Option<Vec<String>> {
+    body.get("recipients").and_then(|v| v.as_array()).map(|arr| {
+        let raw: Vec<String> = arr.iter().filter_map(|v| v.as_str().map(String::from)).collect();
+        without_self(&raw)
+    })
+}
+
 /// Minimal HTML escaping equivalent to Python's `html.escape(s)` (quote=True):
 /// escapes `& < > " '`.
 pub fn html_escape(s: &str) -> String {
