@@ -154,7 +154,7 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
                     const unread = !report.confirmed_on
                     const period =
                       report.period_from && report.period_to
-                        ? ` · ${formatDate(report.period_from)} – ${formatDate(report.period_to)}`
+                        ? ` · ${formatDate(report.period_from)} - ${formatDate(report.period_to)}`
                         : ''
                     return (
                       <FeedItem

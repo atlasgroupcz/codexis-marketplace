@@ -40,7 +40,7 @@ describe("cgi handle", () => {
     expect(out.ok).toBe(false)
   })
 
-  it("save_config odmítne klíč s newlinem — žádná .env injection", async () => {
+  it("save_config odmítne klíč s newlinem - žádná .env injection", async () => {
     const out = (await handle(
       { action: "save_config", api_key: "sid_a\nSID_API_URL=http://evil" },
       okMe,
@@ -82,7 +82,7 @@ describe("renderCgi", () => {
   })
 })
 
-describe("cgi — notifikace", () => {
+describe("cgi - notifikace", () => {
   it("get_status vrací aktuální nastavení kanálů", async () => {
     const out = (await handle({ action: "get_status" }, okMe)) as { notify: unknown }
     expect(out.notify).toEqual({ email: false, inApp: true, recipients: [] })

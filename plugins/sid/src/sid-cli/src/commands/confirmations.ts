@@ -14,7 +14,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
 
   if (sub === "confirm") {
     throw new CliError(
-      "Potvrzení se provádí v aplikaci SID, ne z příkazové řádky — " +
+      "Potvrzení se provádí v aplikaci SID, ne z příkazové řádky - " +
         "otevřete dokument v SID a potvrďte ho tam. " +
         `Seznam čekajících: ${confirmationsUrl(await resolveRole(f))}`,
       EXIT.USAGE,

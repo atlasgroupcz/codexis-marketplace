@@ -5,7 +5,7 @@ const USAGE =
   "Použití: sid-cli settings set-key|test|status|whoami|delete-key  " +
   "(set-key čte klíč ze STDIN: echo KLIC | sid-cli settings set-key)"
 
-/** Only ADMIN is admin; anything else — including an unknown value — is not. */
+/** Only ADMIN is admin; anything else - including an unknown value - is not. */
 function isAdmin(role: unknown): boolean {
   return role === "ADMIN"
 }
@@ -28,7 +28,7 @@ async function verifyKey(key: string, f?: FetchLike): Promise<unknown> {
     const code = err.exitCode ?? EXIT.ERROR
     const reason =
       code === EXIT.AUTH
-        ? `SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel. ${err.message}`
+        ? `SID klíč odmítl - zkontrolujte, že je zkopírovaný celý a že nevypršel. ${err.message}`
         : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`
     throw new CliError(`${reason} Původní nastavení zůstalo beze změny.`, code)
   }
@@ -42,12 +42,12 @@ export async function run(
   const [sub] = argv
 
   if (sub === "set-key") {
-    // STDIN, never argv — argv shows up in `ps` and in the model context.
+    // STDIN, never argv - argv shows up in `ps` and in the model context.
     const key = (await stdin()).trim()
     if (!key) throw new CliError(`Na STDIN nepřišel žádný klíč. ${USAGE}`, EXIT.USAGE)
     // A value with an embedded newline would inject extra .env lines.
     if (!isPlausibleApiKey(key)) {
-      throw new CliError("Klíč obsahuje nepovolené znaky (mezera/konec řádku) — vložte jen samotný klíč.", EXIT.USAGE)
+      throw new CliError("Klíč obsahuje nepovolené znaky (mezera/konec řádku) - vložte jen samotný klíč.", EXIT.USAGE)
     }
 
     // Verify before touching .env, so a failed attempt can't destroy a key
@@ -87,7 +87,7 @@ export async function run(
   if (sub === "status") {
     const key = getApiKey()
     // Role is only known once it has been cached (at set-key), so it is
-    // surfaced when present rather than fetched here — status stays offline.
+    // surfaced when present rather than fetched here - status stays offline.
     const cachedRole = readEnvFile().SID_USER_ROLE
     return {
       configured: key !== "",

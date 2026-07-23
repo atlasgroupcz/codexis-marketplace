@@ -1,5 +1,5 @@
 /** The subject's page in the official public register (or.justice.cz), keyed by
- * IČO. Linked from the detail view — the authoritative source of record, listing
+ * IČO. Linked from the detail view - the authoritative source of record, listing
  * the full Sbírka listin with working download links. */
 export function REGISTER_SUBJECT_URL(ico: string): string {
   return `https://or.justice.cz/ias/ui/rejstrik-$firma?ico=${encodeURIComponent(ico)}`

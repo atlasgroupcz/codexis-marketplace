@@ -123,7 +123,7 @@ global conclusion** from a truncated page. Deep paging is capped:
 
 ## Notes
 
-- Risk classes are tied to the device kind (general `I`–`III`; active implantable
+- Risk classes are tied to the device kind (general `I`-`III`; active implantable
   `AI`; IVD `IVD*` / `IVDR *`) - "implantable class III" yields 0; use `AI`. See
   `references/search-rzpro.md`.
 - `vyrobce` is the manufacturer-of-record and is always present, including foreign

@@ -31,7 +31,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
       ...res,
       hits,
       warning:
-        "Fulltext je dočasně nedostupný (opensearch_unavailable) — prázdný výsledek NEZNAMENÁ, " +
+        "Fulltext je dočasně nedostupný (opensearch_unavailable) - prázdný výsledek NEZNAMENÁ, " +
         "že nic neexistuje. Zkuste to později nebo použijte `sid-cli docs list --query`.",
     }
   }

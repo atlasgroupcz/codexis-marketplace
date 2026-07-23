@@ -2,7 +2,7 @@ import { apiGet, type FetchLike } from "./http"
 import { getBaseUrl, readEnvFile, writeEnvValue } from "./config"
 
 /**
- * Links back into the SID web app — the plugin leads people there rather than
+ * Links back into the SID web app - the plugin leads people there rather than
  * standing in for it.
  *
  * The route depends on the role: SID's `(user)` layout redirects admins to

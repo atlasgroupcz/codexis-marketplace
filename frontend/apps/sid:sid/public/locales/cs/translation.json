@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "SID — Interní dokumenty",
-    "lead": "Klíč propojí tento doplněk s vaším účtem v SID. Má stejná oprávnění jako vy — chraňte ho jako heslo.",
+    "title": "SID - Interní dokumenty",
+    "lead": "Klíč propojí tento doplněk s vaším účtem v SID. Má stejná oprávnění jako vy - chraňte ho jako heslo.",
     "connectionSection": "Připojení k SID",
     "notifySection": "Upozornění",
     "loadFailed": "Stav se nepodařilo načíst.",
@@ -34,7 +34,7 @@
     "invalidEmail": "Neplatná e-mailová adresa.",
     "inAppLabel": "Oznámení v centru notifikací",
     "inAppDescription": "",
-    "ownAddress": "Tato adresa je vaše — e-mail vám chodí vždy.",
+    "ownAddress": "Tato adresa je vaše - e-mail vám chodí vždy.",
     "duplicate": "Tato adresa už je v seznamu.",
     "save": "Uložit upozornění"
   }

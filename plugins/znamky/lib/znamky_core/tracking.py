@@ -58,7 +58,7 @@ def normalize_text(text: str) -> str:
 
 
 def parse_nice_classes(value) -> list:
-    """Accept a list or a 'comma/space separated' string of Nice classes (1–45)."""
+    """Accept a list or a 'comma/space separated' string of Nice classes (1-45)."""
     if isinstance(value, str):
         parts = re.split(r"[,;\s]+", value.strip())
     else:
@@ -69,7 +69,7 @@ def parse_nice_classes(value) -> list:
         if not s:
             continue
         if not s.isdigit() or not (1 <= int(s) <= 45):
-            raise InvalidMarkError(f"Neplatná třída výrobků/služeb (Nice): {p!r}. Očekává se 1–45.")
+            raise InvalidMarkError(f"Neplatná třída výrobků/služeb (Nice): {p!r}. Očekává se 1-45.")
         out.append(int(s))
     return sorted(set(out))
 

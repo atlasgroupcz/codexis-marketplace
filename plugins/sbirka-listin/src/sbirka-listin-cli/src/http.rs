@@ -4,7 +4,7 @@
 //! Azure WAF blocks datacenter egress IPs, so it is unreachable from the AWS
 //! daemon (verified 2026-07-20: 403 to curl and reqwest alike from the daemon,
 //! 200 from a normal IP). or.justice.cz runs on plain Tomcat with no such WAF
-//! and answers from the daemon — so this is the reachable source. It is also the
+//! and answers from the daemon - so this is the reachable source. It is also the
 //! official one; the new portal states it runs in trial operation.
 //!
 //! This layer is pure transport: fetch HTML or bytes. Turning the HTML into data

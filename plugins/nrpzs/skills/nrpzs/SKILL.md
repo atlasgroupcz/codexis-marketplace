@@ -54,6 +54,6 @@ nrpzs-cli api get "/version"                 # raw GET escape hatch
 
 - `--kraj`/`--okres` filter **locally** (the API has no region parameter), so they
   work only together with `--obor` or `--nazev`, and only with `--level mista` (default).
-- IČO accepts 1–8 digits (zero-padded automatically).
+- IČO accepts 1-8 digits (zero-padded automatically).
 - For the full IDs to pass to `detail`/`oddeleni`, read `MistoPoskytovaniId` /
   `ZdravotnickeZarizeniId` from `search` results.

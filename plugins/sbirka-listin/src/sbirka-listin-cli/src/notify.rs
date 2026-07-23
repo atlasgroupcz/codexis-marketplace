@@ -1,4 +1,4 @@
-//! Deliver a summary of newly filed documents from a check run — over the
+//! Deliver a summary of newly filed documents from a check run - over the
 //! daemon's plugin e-mail API and/or the in-app notification bell.
 //!
 //! Sends only when a check actually detected new listiny; a quiet run sends
@@ -107,7 +107,7 @@ fn send_email_summary(
 /// Route a check run's results to e-mail / in-app per the stored notify
 /// settings, returning a compact summary of what was dispatched (for the check
 /// command's JSON output). Best-effort: a transport failure is reported, never
-/// fatal — a check must record its state regardless.
+/// fatal - a check must record its state regardless.
 pub fn dispatch(results: &[CheckResult<Change>]) -> Value {
     let changed = changed(results);
     if changed.is_empty() {
@@ -122,7 +122,7 @@ pub fn dispatch(results: &[CheckResult<Change>]) -> Value {
     } else {
         "vypnuto".to_string()
     };
-    // The bell needs only the subject line — never build the full e-mail body.
+    // The bell needs only the subject line - never build the full e-mail body.
     let in_app = if cfg.in_app {
         if send_inapp(&change_subject(&changed), NOTIFICATION_TYPE, None, Some(APP_LINK)) {
             "odesláno"

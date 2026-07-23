@@ -4,7 +4,7 @@ import cs from '../../public/locales/cs/translation.json'
 import sk from '../../public/locales/sk/translation.json'
 
 // Shared bootstrap: fallback 'en', supported en/cs/sk, querystring→localStorage→
-// navigator detection, escapeValue off, synchronous init — identical to the
+// navigator detection, escapeValue off, synchronous init - identical to the
 // hand-rolled setup this replaced.
 export default createI18n({
   resources: {

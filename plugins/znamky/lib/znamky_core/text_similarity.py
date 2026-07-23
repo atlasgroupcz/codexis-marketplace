@@ -6,7 +6,7 @@ goods/services) drives the legal "likelihood of confusion" test. We deliberately
 combine several complementary orthographic signals plus a Czech-aware phonetic
 key, because no single string metric captures trademark confusability well:
 
-  - Jaro–Winkler   → rewards a shared prefix (brand beginnings matter most)
+  - Jaro-Winkler   → rewards a shared prefix (brand beginnings matter most)
   - Levenshtein    → overall edit proximity
   - trigram Jaccard→ shared character chunks, order-tolerant
   - phonetic key   → "sounds like" matches across spelling variants

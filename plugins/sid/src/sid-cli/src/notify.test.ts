@@ -95,7 +95,7 @@ describe("sendDigest", () => {
     expect(JSON.parse(gqlBody).variables.input.message).toBe("Předmět")
   })
 
-  it("respektuje vypnuté kanály — vypnutý e-mail se neposílá", async () => {
+  it("respektuje vypnuté kanály - vypnutý e-mail se neposílá", async () => {
     writeSecret("t")
     writeFileSync(process.env.SID_DEFAULTS_FILE!, JSON.stringify({ notify: { email: false, inApp: true } }))
     const hit = { rest: false, gql: false }
@@ -166,7 +166,7 @@ describe("recipients v e-mailu", () => {
   })
 })
 
-describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
+describe("resolve_to - přihlášený uživatel nesmí vypadnout", () => {
   function withRecipients(list: string[]): void {
     writeFileSync(
       process.env.SID_DEFAULTS_FILE!,
@@ -241,7 +241,7 @@ describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
   })
 })
 
-describe("daemon token — žádná header injection", () => {
+describe("daemon token - žádná header injection", () => {
   it("token s vnitřním newlinem se očistí, do Authorization se nedostane konec řádku", async () => {
     writeSecret("Bearer abc\nX-Injected: 1")
     let auth = ""
@@ -328,7 +328,7 @@ describe("currentUserEmail", () => {
     writeSecret("t")
     const f = (async () => new Response("x", { status: 500 })) as unknown as typeof fetch
     expect(await currentUserEmail(f)).toBe("")
-    // Nothing cached — the file may not even exist, which is also "not cached".
+    // Nothing cached - the file may not even exist, which is also "not cached".
     const envFile = existsSync(process.env.SID_ENV_FILE!)
       ? readFileSync(process.env.SID_ENV_FILE!, "utf8")
       : ""

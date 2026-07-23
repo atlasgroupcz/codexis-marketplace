@@ -53,7 +53,7 @@ zrsr-cli search [filters …]
 zrsr-cli api get <PATH>
 ```
 
-`<ICO>` accepts 1–8 digit input; `zrsr-cli` left-pads to 8 digits before the
+`<ICO>` accepts 1-8 digit input; `zrsr-cli` left-pads to 8 digits before the
 call. `detail <ICO>` makes two API calls (identifier search → entity fetch);
 the identifier search can take **tens of seconds** - be patient, don't kill it.
 When the internal RPO `id` is already known (from a previous `search`), prefer

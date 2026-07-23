@@ -2,7 +2,7 @@
 //!
 //! A subject's Sbírka listin is reached in two GETs: the search page resolves an
 //! IČO to the internal `subjektId`, then the listiny page carries the documents.
-//! Downloading one adds two more — the detail page holds the only copy of the
+//! Downloading one adds two more - the detail page holds the only copy of the
 //! download link, so it can't be skipped.
 
 use anyhow::{anyhow, bail, Result};
@@ -15,7 +15,7 @@ use crate::parse;
 /// server, but a document's URL always names the official portal.
 const OFFICIAL_HOST: &str = "https://or.justice.cz";
 
-/// A subject and its filed documents — the shape `listiny` emits and the watcher
+/// A subject and its filed documents - the shape `listiny` emits and the watcher
 /// diffs.
 #[derive(Debug, Clone, Serialize)]
 pub struct Detail {
@@ -25,7 +25,7 @@ pub struct Detail {
     pub spisovaznacka: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sidlo: Option<String>,
-    /// The internal register id — needed to build download links, not meaningful
+    /// The internal register id - needed to build download links, not meaningful
     /// to the user, so it stays out of the emitted JSON.
     #[serde(skip)]
     pub subjekt_id: String,
@@ -33,7 +33,7 @@ pub struct Detail {
     pub listiny: Vec<Listina>,
 }
 
-/// One filed document. The full číslo listiny is its only identifier — the
+/// One filed document. The full číslo listiny is its only identifier - the
 /// register's "Číslo listiny", unique and citable on its own.
 #[derive(Debug, Clone, Serialize)]
 pub struct Listina {
@@ -48,7 +48,7 @@ pub struct Listina {
     pub zalozeno: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stran: Option<u32>,
-    /// Download coordinates for the detail page — internal, so not serialized.
+    /// Download coordinates for the detail page - internal, so not serialized.
     #[serde(skip)]
     pub dokument: String,
     #[serde(skip)]
@@ -64,7 +64,7 @@ impl Listina {
 
 /// Resolve an IČO to its subject and fetch the listiny.
 ///
-/// The search is exact on IČO, so it returns 0 or 1 subject — but if it ever
+/// The search is exact on IČO, so it returns 0 or 1 subject - but if it ever
 /// returns more, the block whose IČO matches is taken rather than the first, and
 /// an ambiguous match errors rather than guessing.
 pub fn fetch_detail(client: &PortalClient, ico8: &str) -> Result<Detail> {
@@ -129,7 +129,7 @@ pub fn fetch_document(
     let listina = match matches.as_slice() {
         [one] => (*one).clone(),
         [] => bail!("listina {reference} u IČO {ico8} nenalezena"),
-        _ => bail!("odkaz {reference} je u IČO {ico8} nejednoznačný — použij celé číslo listiny"),
+        _ => bail!("odkaz {reference} je u IČO {ico8} nejednoznačný - použij celé číslo listiny"),
     };
 
     let detail_html = client.get_html(&format!(
@@ -161,7 +161,7 @@ fn pick_subject(search_html: &str, ico8: &str) -> Result<parse::SearchHit> {
     match (exact.next(), exact.next()) {
         (Some(h), None) => Ok(h),
         (None, _) => bail!("IČO {ico8} nenalezeno"),
-        (Some(_), Some(_)) => bail!("IČO {ico8} vrátilo více subjektů — nejednoznačné"),
+        (Some(_), Some(_)) => bail!("IČO {ico8} vrátilo více subjektů - nejednoznačné"),
     }
 }
 

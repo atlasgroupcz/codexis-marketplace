@@ -1,5 +1,5 @@
 /**
- * CGI backend for the "SID — API key" component.
+ * CGI backend for the "SID - API key" component.
  *
  * Protocol (see plugins/znamky/components/znamky/znamky.py and the daemon's
  * CgiProtocol.java): input arrives as REQUEST_METHOD / CONTENT_LENGTH /
@@ -7,7 +7,7 @@
  * CRLF line, then the body.
  *
  * The daemon serves existing files in the component directory statically, so
- * only a path that isn't a file reaches this — hence the frontend POSTs to
+ * only a path that isn't a file reaches this - hence the frontend POSTs to
  * `api`.
  *
  * The key is never returned to the UI, only its prefix.
@@ -71,7 +71,7 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
           ok: false,
           error:
             err.exitCode === EXIT.AUTH
-              ? "SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel."
+              ? "SID klíč odmítl - zkontrolujte, že je zkopírovaný celý a že nevypršel."
               : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`,
         }
       }
@@ -86,7 +86,7 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
       if (typeof body.email === "boolean") patch.email = body.email
       if (typeof body.inApp === "boolean") patch.inApp = body.inApp
       if (Array.isArray(body.recipients)) {
-        // Reject rather than silently drop — otherwise a UI typo would read
+        // Reject rather than silently drop - otherwise a UI typo would read
         // as "saved" with a recipient missing.
         const invalid = body.recipients.filter(
           (r) => typeof r !== "string" || (r.trim() !== "" && !isEmail(r)),

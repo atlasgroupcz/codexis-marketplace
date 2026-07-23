@@ -8,7 +8,7 @@ import type { FetchLike } from "./http"
 /**
  * User-facing notifications through the daemon plugin API.
  *
- * Auth is the VM token from ~/.cdx/env/secret — NOT the SID API key and NOT
+ * Auth is the VM token from ~/.cdx/env/secret - NOT the SID API key and NOT
  * CODEXIS_USER_API_TOKEN, which the gateway rejects with 403.
  *
  * Best-effort throughout: any failure returns false. The digest on stdout is
@@ -23,7 +23,7 @@ const EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 const GRAPHQL_PATH = "/graphql"
 
 /**
- * Ceilings for daemon calls — this is the layer the cron job hangs on.
+ * Ceilings for daemon calls - this is the layer the cron job hangs on.
  * Values follow the reference: 30s for delivery, 10s for the helper query.
  */
 const DAEMON_TIMEOUT_MS = 30_000
@@ -107,7 +107,7 @@ async function queryMeEmail(auth: string, daemonUrl: string, f: FetchLike): Prom
  * Builds the `to` list.
  *
  * When `to` is present the daemon delivers EXCLUSIVELY to it, so the
- * signed-in user has to be added explicitly — otherwise adding a colleague
+ * signed-in user has to be added explicitly - otherwise adding a colleague
  * would silently stop their own mail. With no extras the field is omitted;
  * with extras it is `[me, ...extras]`, deduped. If `me` can't be resolved,
  * send to the extras rather than dropping a real recipient.
@@ -176,7 +176,7 @@ export async function currentUserEmail(f: FetchLike = fetch): Promise<string> {
 /**
  * Sends the digest through whichever channels the settings enable.
  *
- * True means at least one channel delivered — e-mail is off by default, so
+ * True means at least one channel delivered - e-mail is off by default, so
  * keying the result to it alone would report failure on a working bell.
  */
 export async function sendDigest(subject: string, bodyText: string, f: FetchLike = fetch): Promise<boolean> {

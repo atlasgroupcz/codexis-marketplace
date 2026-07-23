@@ -45,7 +45,7 @@ describe("confirmations", () => {
     expect(out.confirmInApp).toBe("http://s/confirmations")
   })
 
-  it("confirm is no longer a CLI command — it must happen in SID", async () => {
+  it("confirm is no longer a CLI command - it must happen in SID", async () => {
     const err = (await run(["confirm", "c1"]).catch((e: unknown) => e)) as CliError
     expect(err.exitCode).toBe(2)
     expect(err.message).toMatch(/SID/)

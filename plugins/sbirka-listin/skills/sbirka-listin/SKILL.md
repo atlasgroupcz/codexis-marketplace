@@ -2,24 +2,24 @@
 uuid: 399947b3-821e-4b60-8777-931e7e138bce
 name: sbirka-listin
 icon: icon.svg
-description: Sbírka listin veřejných rejstříků ČR (obchodní/spolkový/nadační/… rejstřík, Ministerstvo spravedlnosti). Use to list a subject's filed documents by IČO — účetní závěrky, rozvahy, výkazy zisku a ztráty, výroční zprávy, stanovy, společenské/zakladatelské smlouvy, notářské zápisy — to download one of those documents, and to watch a company for newly filed documents. NOT company identification (name, statutory bodies, VAT) — that is the ares skill. Triggers on "sbírka listin", "účetní závěrka", "výroční zpráva", "rozvaha", "výkaz zisku a ztráty", "společenská smlouva", "zakladatelská listina", "stanovy firmy", "dokumenty firmy", "listiny firmy", "sleduj sbírku listin", "hlídat nové dokumenty firmy". Czech (CZ) jurisdiction only.
+description: Sbírka listin veřejných rejstříků ČR (obchodní/spolkový/nadační/… rejstřík, Ministerstvo spravedlnosti). Use to list a subject's filed documents by IČO - účetní závěrky, rozvahy, výkazy zisku a ztráty, výroční zprávy, stanovy, společenské/zakladatelské smlouvy, notářské zápisy - to download one of those documents, and to watch a company for newly filed documents. NOT company identification (name, statutory bodies, VAT) - that is the ares skill. Triggers on "sbírka listin", "účetní závěrka", "výroční zpráva", "rozvaha", "výkaz zisku a ztráty", "společenská smlouva", "zakladatelská listina", "stanovy firmy", "dokumenty firmy", "listiny firmy", "sleduj sbírku listin", "hlídat nové dokumenty firmy". Czech (CZ) jurisdiction only.
 version: 1.0.0
 jurisdictions: [CZ]
 i18n:
   cs:
     displayName: "Sbírka listin ČR"
-    summary: "Dokumenty subjektu ze Sbírky listin podle IČO — účetní závěrky, stanovy a další listiny, stažení a hlídání přírůstků."
+    summary: "Dokumenty subjektu ze Sbírky listin podle IČO - účetní závěrky, stanovy a další listiny, stažení a hlídání přírůstků."
   en:
     displayName: "Czech Collection of Deeds"
-    summary: "A subject's filed documents by IČO — financial statements, articles and other deeds, with download and new-filing watching."
+    summary: "A subject's filed documents by IČO - financial statements, articles and other deeds, with download and new-filing watching."
   sk:
     displayName: "Zbierka listín ČR"
-    summary: "Dokumenty subjektu zo Zbierky listín podľa IČO — účtovné závierky, stanovy a ďalšie listiny, so stiahnutím a strážením prírastkov."
+    summary: "Dokumenty subjektu zo Zbierky listín podľa IČO - účtovné závierky, stanovy a ďalšie listiny, so stiahnutím a strážením prírastkov."
 ---
 
-# Sbírka listin — Czech Collection of Deeds
+# Sbírka listin - Czech Collection of Deeds
 
-A single tool — **`sbirka-listin-cli`** — reads the Sbírka listin of the Czech
+A single tool - **`sbirka-listin-cli`** - reads the Sbírka listin of the Czech
 public registers (obchodní, spolkový, nadační, … rejstřík) from the Ministry of
 Justice portal, keyed by **IČO**. It lists a subject's filed documents,
 downloads one, and watches a subject for new filings.
@@ -29,21 +29,21 @@ downloads one, and watches a subject for new filings.
 `sbirka-listin-cli` is installed and available in `PATH`. The one exception is
 `ocr` (below), used to read a document this tool has already downloaded.
 
-**IMPORTANT:** This skill is **only** the Sbírka listin — the *documents* a
+**IMPORTANT:** This skill is **only** the Sbírka listin - the *documents* a
 company files. It does NOT return the register entry itself (name, sídlo,
 jednatelé/statutární orgán, základní kapitál, plátce DPH). For that use the
 **ares** skill. A típical company check uses both: `ares` for who the company is,
 `sbirka-listin` for what it has filed.
 
 **IMPORTANT:** Stop only on a genuine `ERROR:` line (e.g. `HTTP 404 …`, bad
-input, network) — report it, don't guess workarounds and don't blindly retry.
+input, network) - report it, don't guess workarounds and don't blindly retry.
 When looking up several subjects, run each independently; one `ERROR:` doesn't
 mean skip the rest.
 
 ## Output Format
 
 `sbirka-listin-cli` prints **JSON to stdout**, built from the register pages.
-Parse with `jq` — never use `sed`/`grep`. On failure: `ERROR: <message>` on
+Parse with `jq` - never use `sed`/`grep`. On failure: `ERROR: <message>` on
 stderr, exit code 2.
 
 ## Commands
@@ -62,12 +62,12 @@ sbirka-listin-cli notify set [--email|--no-email] [--inapp|--no-inapp]
 sbirka-listin-cli notify recipients add|remove|set|clear [<EMAIL>...]
 ```
 
-`<ICO>` accepts 1–8 digits; it is left-padded to 8 before the call.
-`<CISLO>` is the full číslo listiny — the register's identifier of the document
+`<ICO>` accepts 1-8 digits; it is left-padded to 8 before the call.
+`<CISLO>` is the full číslo listiny - the register's identifier of the document
 (`"B 8573/SL95/MSPH"`; quote it, it has a space). Copy it verbatim from the
-`cislo` field of `listiny` output — do not invent or abbreviate it.
+`cislo` field of `listiny` output - do not invent or abbreviate it.
 
-## `listiny` — the document list
+## `listiny` - the document list
 
 The output is `{ico, nazev, spisovaznacka, sidlo, pocet_listin, listiny[]}`, one
 entry per filed document:
@@ -81,19 +81,19 @@ sbirka-listin-cli listiny 27082440 | jq -r '.listiny[]
 sbirka-listin-cli listiny 27082440 | jq '.listiny[]
   | select(.typ | contains("účetní závěrka [2024]"))'
 
-# the číslo of the newest document — pass it straight to `dokument`
+# the číslo of the newest document - pass it straight to `dokument`
 sbirka-listin-cli listiny 27082440 | jq -r '.listiny[-1].cislo'
 ```
 
 Key fields per entry: `cislo` (the document's identifier, e.g.
-`B 8573/SL95/MSPH`), `typ` (a sentence — the kind plus, for statements, the
+`B 8573/SL95/MSPH`), `typ` (a sentence - the kind plus, for statements, the
 `[year]`), `zalozeno` (the date filed into the collection), `stran`. An empty
-`listiny` means the subject exists but has filed nothing — not an error.
+`listiny` means the subject exists but has filed nothing - not an error.
 
 > **Note:** rozvaha and výkaz zisku a ztráty are *parts of* the účetní závěrka,
-> not separate filings — they come inside the one "účetní závěrka" document.
+> not separate filings - they come inside the one "účetní závěrka" document.
 
-## `dokument` — download one document
+## `dokument` - download one document
 
 ```bash
 sbirka-listin-cli dokument 27082440 "B 8573/SL91/MSPH"
@@ -105,7 +105,7 @@ sbirka-listin-cli dokument 27082440 "B 8573/SL91/MSPH"
 Takes the IČO and the full číslo listiny (copy the `cislo` from `listiny` output,
 in quotes). Saves the file under the app's own directory and returns its `path`.
 Already downloaded (`reused:true`) → no second fetch. Most documents are PDF;
-older statements of listed companies (ČEZ, banks) are XHTML/ESEF — the extension
+older statements of listed companies (ČEZ, banks) are XHTML/ESEF - the extension
 follows the actual file.
 
 **To answer a question about a document's *contents*** (e.g. "what was the
@@ -118,7 +118,7 @@ ocr "$path"     # → Markdown you can then read
 ```
 
 Do this only when the user asks about contents; for "show me the documents" the
-`listiny` list and the `url` are enough — cite the `url` and let the user open it.
+`listiny` list and the `url` are enough - cite the `url` and let the user open it.
 
 ## Watching for new filings
 
@@ -152,23 +152,23 @@ listin?" and add only on confirmation.
 - "dej mi účetní závěrku firmy X za rok R" → `listiny`, filter the type, take its `cislo`
 - "kolik firma X vydělala / co je v té závěrce" → `listiny` to find the `cislo`, then
   `dokument <ICO> "<cislo>"` + `ocr`, then read
-- "kdo je jednatel / sídlo / plátce DPH firmy X" → **not this skill — use `ares`**
+- "kdo je jednatel / sídlo / plátce DPH firmy X" → **not this skill - use `ares`**
 - "dej mi vědět, když firma X něco založí" → offer, then `sledovani add <ICO>`
 
 ## Chat sources
 
 `listiny` attaches the subject's official register page (`or.justice.cz`) to the
-chat "Sources" panel automatically — no extra step. Cite that same URL in prose;
+chat "Sources" panel automatically - no extra step. Cite that same URL in prose;
 it is the authoritative source of record.
 
 ## Output rules
 
-- Identify and cite documents by their full `cislo` (`B 8573/SL95/MSPH`) — the
+- Identify and cite documents by their full `cislo` (`B 8573/SL95/MSPH`) - the
   register's official "Číslo listiny". A compact list may lead with the type and
   date, but state the `cislo` for any specific document you point to.
 - Never fabricate a document the register did not list. If a subject has filed
   nothing, say so.
-- Present `zalozeno` (the filing date) with each document — it is what tells the
+- Present `zalozeno` (the filing date) with each document - it is what tells the
   user how recent a filing is.
 - The register is the source of truth; relay `typ` as written (it carries the
   year and document kind), don't paraphrase away the `[year]`.

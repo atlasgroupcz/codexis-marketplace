@@ -94,7 +94,7 @@ pub fn extension_for(content_type: Option<&str>) -> &'static str {
 pub struct Fetched {
     pub path: PathBuf,
     pub cislo: String,
-    /// The official download URL — known only when we actually resolved (i.e. not
+    /// The official download URL - known only when we actually resolved (i.e. not
     /// for a file served straight from disk).
     pub url: Option<String>,
     pub reused: bool,
@@ -129,7 +129,7 @@ pub fn fetch(client: &PortalClient, ico8: &str, cislo: &str) -> Result<Fetched> 
     })
 }
 
-/// Temp file in the destination dir, then rename — a crash leaves either nothing
+/// Temp file in the destination dir, then rename - a crash leaves either nothing
 /// or the whole document, never a truncated one that `existing()` would then
 /// hand out as complete.
 fn write_atomically(path: &Path, bytes: &[u8]) -> std::io::Result<()> {

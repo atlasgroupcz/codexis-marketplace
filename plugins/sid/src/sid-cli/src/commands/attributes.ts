@@ -15,7 +15,7 @@ type Attribute = {
 }
 
 /**
- * The attribute catalogue — the counterpart to `docs list --attribute`, which
+ * The attribute catalogue - the counterpart to `docs list --attribute`, which
  * needs ids the caller has no other way to learn.
  */
 export async function run(argv: string[], f?: FetchLike): Promise<unknown> {

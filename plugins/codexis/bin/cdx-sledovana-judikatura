@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""cdx-sledovana-judikatura – track case law topics via AI-driven CODEXIS search.
+"""cdx-sledovana-judikatura - track case law topics via AI-driven CODEXIS search.
 
 Usage:
     cdx-sledovana-judikatura init <name> [--notes "text"]

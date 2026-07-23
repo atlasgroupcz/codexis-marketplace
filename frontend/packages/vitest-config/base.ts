@@ -22,7 +22,7 @@ export const baseConfig = {
     server: { deps: { inline: inlineDeps } },
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', '.turbo'],
-    // A component UI with no test files yet is a green run, not a CI failure —
+    // A component UI with no test files yet is a green run, not a CI failure -
     // consumers of this base config don't each need the --passWithNoTests flag.
     passWithNoTests: true,
   },

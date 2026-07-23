@@ -3,7 +3,7 @@
 //! The diff is a set difference on the full číslo listiny (`B 8573/SL95/MSPH`).
 //! That key is safe to diff on: it is unique per subject and rises monotonically
 //! with the filing date, and a re-filed document takes a new number rather than
-//! overwriting the old one — ČEZ's 2023 účetní závěrka sits at both SL288 and
+//! overwriting the old one - ČEZ's 2023 účetní závěrka sits at both SL288 and
 //! SL289, same file, two rows. The collection is append-only in practice, so
 //! `Change` only reports additions; a listina that disappears is logged as an
 //! anomaly rather than silently absorbed, because we have never observed one.
@@ -26,7 +26,7 @@ pub fn store() -> ItemStore {
     ItemStore::new(APP_ID, COLLECTION)
 }
 
-/// One row of the tracked-subjects overview — the shape both `sledovani list`
+/// One row of the tracked-subjects overview - the shape both `sledovani list`
 /// (CLI) and the dashboard `overview` (CGI) return, so the two can never drift.
 #[derive(Debug, Clone, Serialize)]
 pub struct OverviewRow {
@@ -83,7 +83,7 @@ pub fn overview_rows(store: &ItemStore) -> Vec<OverviewRow> {
         .collect()
 }
 
-/// One row of the persisted document list — the diff baseline.
+/// One row of the persisted document list - the diff baseline.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ListinaSnapshot {
     pub typ: String,
@@ -233,7 +233,7 @@ impl Watcher for SbirkaListinWatcher<'_> {
     }
 
     fn slug(&self, snapshot: &Snapshot) -> String {
-        // IČO is already a single path component — eight digits, nothing to escape.
+        // IČO is already a single path component - eight digits, nothing to escape.
         snapshot.ico.clone()
     }
 

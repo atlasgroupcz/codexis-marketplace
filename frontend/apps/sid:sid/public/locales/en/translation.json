@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "SID — Internal Documents",
-    "lead": "The key links this plugin to your SID account. It carries the same permissions you have — treat it like a password.",
+    "title": "SID - Internal Documents",
+    "lead": "The key links this plugin to your SID account. It carries the same permissions you have - treat it like a password.",
     "connectionSection": "SID connection",
     "notifySection": "Notifications",
     "loadFailed": "Could not load status.",
@@ -34,7 +34,7 @@
     "invalidEmail": "Invalid e-mail address.",
     "inAppLabel": "Notification centre alert",
     "inAppDescription": "",
-    "ownAddress": "This is your own address — you always receive the e-mail.",
+    "ownAddress": "This is your own address - you always receive the e-mail.",
     "duplicate": "This address is already listed.",
     "save": "Save notifications"
   }

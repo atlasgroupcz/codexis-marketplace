@@ -141,7 +141,7 @@ cdx-sledovana-judikatura note add "$UUID" "formát: tabulka + shrnutí pro advok
 Decisions you make in this step:
 
 1. Whether the topic is broad enough to split into sub-areas:
-   - If yes - identify 3–7 key sub-areas and `area add` each
+   - If yes - identify 3-7 key sub-areas and `area add` each
    - If no - work with the topic as a whole (no areas needed)
    - If unclear - ask the user whether to split or how to divide it
 2. What user-specific notes to save (profession, perspective, format preferences) via `--notes` on `init` and/or `note add`
@@ -214,7 +214,7 @@ Create a monthly automation that runs an AI agent to check for new case law. `cd
 
 ```bash
 AUTO_ID=$(cdxctl automation create \
-    --title "Sledovaná judikatura – Náhrada škody" \
+    --title "Sledovaná judikatura - Náhrada škody" \
     --cron "0 8 1 * *" \
     --prompt "Check the tracked case law topic $UUID. Load the topic state with cdx-sledovana-judikatura show $UUID. Search CODEXIS for new judicial decisions since last_check_at using cdx-cli search JD. Compare findings against the baseline summaries. Generate a report and save it with cdx-sledovana-judikatura save-report." \
     --skill "codexis:sledovana-judikatura" \

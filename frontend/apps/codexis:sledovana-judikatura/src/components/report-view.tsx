@@ -107,7 +107,7 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <span>
                 {t('judikatura.period')}: {report.period_from ? formatDate(report.period_from) : '-'}
-                {' – '}
+                {' - '}
                 {report.period_to ? formatDate(report.period_to) : '-'}
               </span>
               <span className="text-border">·</span>

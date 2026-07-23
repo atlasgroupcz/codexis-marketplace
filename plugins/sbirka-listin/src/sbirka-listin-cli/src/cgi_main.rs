@@ -184,7 +184,7 @@ fn post_check_all() -> Handled {
     let store = watch::store();
     let results = check_all(&store, &watcher);
     // Detect-and-notify, same as the CLI: a change is notified whichever route
-    // catches it first. Best-effort — never fails the request.
+    // catches it first. Best-effort - never fails the request.
     let notifikace = notify::dispatch(&results);
 
     let errors: Vec<Value> = results
