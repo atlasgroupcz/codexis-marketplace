@@ -1,5 +1,5 @@
 name: cdxctl-agent-crud
-description: Verify cdxctl can create, update, and delete a custom local agent from stdin.
+description: Verify cdxctl can create, update, and delete a custom local agent.
 
 steps:
   - prompt: |
@@ -16,7 +16,9 @@ steps:
     expect:
       tool_call:
         name: shell
-        input_matches: "agent create.{0,200}--stdin"
+        # Markdown in the prompt must be translated to the field flags - the
+        # markdown --file/--stdin path no longer exists.
+        input_matches: "agent create.{0,400}--name"
       tool_calls_min: 1
       tool_calls_max: 8
       state:

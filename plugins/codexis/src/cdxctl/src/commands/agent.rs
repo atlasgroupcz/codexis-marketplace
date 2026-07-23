@@ -5,7 +5,6 @@ use crate::graphql;
 use crate::output::{print_output, OutputFormat};
 use serde_json::{json, Map, Value};
 use std::fs;
-use std::io::{self, Read};
 use std::path::Path;
 
 #[derive(Default)]
@@ -131,84 +130,52 @@ pub(crate) fn current_chat(client: &GraphQLClient) -> Option<Map<String, Value>>
 
 pub fn create(
     client: &GraphQLClient,
-    file: Option<&str>,
-    stdin: bool,
     instructions_file: Option<&str>,
     fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let fields = merge_instructions_file(fields, instructions_file)?;
-    if fields.is_empty() {
-        let data = client.execute(
-            graphql::CREATE_AGENT_MARKDOWN,
-            json!({ "markdown": load_markdown(file, stdin)? }),
-        )?;
-        print_output(&data.get("createAgent").cloned().unwrap_or(Value::Null), format);
-        return Ok(());
-    }
-    let variables = {
-        if file.is_some() || stdin {
-            return Err(CdxctlError::Parse(
-                "Choose one input style: the field flags, or --file/--stdin markdown".into(),
-            ));
-        }
-        let name = fields.name.clone().ok_or_else(|| {
-            CdxctlError::Parse("Creating an agent needs --name".into())
-        })?;
-        let description = fields.description.clone().ok_or_else(|| {
-            CdxctlError::Parse("Creating an agent needs --description".into())
-        })?;
-        let mut input = Map::new();
-        input.insert("name".into(), json!(name));
-        input.insert("description".into(), json!(description));
-        apply_fields(&mut input, &fields)?;
-        // What the flags did not state comes from the chat this shell runs in, so an agent
-        // starts out working the way the conversation that asked for it does.
-        apply_chat_context(client, &mut input)?;
-        json!({ "input": Value::Object(input) })
-    };
+    let name = fields.name.clone().ok_or_else(|| {
+        CdxctlError::Parse("Creating an agent needs --name".into())
+    })?;
+    let description = fields.description.clone().ok_or_else(|| {
+        CdxctlError::Parse("Creating an agent needs --description".into())
+    })?;
+    let mut input = Map::new();
+    input.insert("name".into(), json!(name));
+    input.insert("description".into(), json!(description));
+    apply_fields(&mut input, &fields)?;
+    // What the flags did not state comes from the chat this shell runs in, so an agent
+    // starts out working the way the conversation that asked for it does.
+    apply_chat_context(client, &mut input)?;
 
-    save_agent(client, variables, format)
+    save_agent(client, json!({ "input": Value::Object(input) }), format)
 }
 
 pub fn update(
     client: &GraphQLClient,
     id: &str,
-    file: Option<&str>,
-    stdin: bool,
     instructions_file: Option<&str>,
     fields: AgentFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let fields = merge_instructions_file(fields, instructions_file)?;
-    let node_id = resolve_node_id(id, "Agent");
-
     if fields.is_empty() {
-        let data = client.execute(
-            graphql::UPDATE_AGENT_MARKDOWN,
-            json!({ "id": node_id, "markdown": load_markdown(file, stdin)? }),
-        )?;
-        print_output(&data.get("updateAgent").cloned().unwrap_or(Value::Null), format);
-        return Ok(());
+        return Err(CdxctlError::Parse(
+            "Nothing to update: pass at least one field flag (--name, --description, --instructions, …)".into(),
+        ));
     }
-    let variables = {
-        if file.is_some() || stdin {
-            return Err(CdxctlError::Parse(
-                "Choose one input style: the field flags, or --file/--stdin markdown".into(),
-            ));
-        }
-        // AgentInput replaces the whole agent, so anything the flags do not set has to be
-        // carried over from the stored agent or the update would clear it.
-        let current = fetch_agent(client, id, &node_id)?;
-        // `resolve_node_id` fabricates an id from a raw name; the daemon only knows the
-        // stored one, so the fetched agent's id is what the mutation has to carry.
-        let stored_id = agent_id(&current, id)?;
-        let mut input = merge_current(&current);
-        apply_fields(&mut input, &fields)?;
-        json!({ "id": stored_id, "input": Value::Object(input) })
-    };
+    let node_id = resolve_node_id(id, "Agent");
+    // AgentInput replaces the whole agent, so anything the flags do not set has to be
+    // carried over from the stored agent or the update would clear it.
+    let current = fetch_agent(client, id, &node_id)?;
+    // `resolve_node_id` fabricates an id from a raw name; the daemon only knows the
+    // stored one, so the fetched agent's id is what the mutation has to carry.
+    let stored_id = agent_id(&current, id)?;
+    let mut input = merge_current(&current);
+    apply_fields(&mut input, &fields)?;
 
-    save_agent(client, variables, format)
+    save_agent(client, json!({ "id": stored_id, "input": Value::Object(input) }), format)
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -225,43 +192,14 @@ pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<
     Ok(())
 }
 
-/// Runs the structured `saveAgent` mutation. Daemons that predate it answer with a schema
-/// validation error; rather than fail opaquely, hand the agent the compatible Markdown path so
-/// it can retry on its own - the tool teaches the fallback instead of silently taking it.
+/// Runs the structured `saveAgent` mutation (id null → create, id set → update).
 fn save_agent(
     client: &GraphQLClient,
     variables: Value,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    match client.execute(graphql::SAVE_AGENT, variables) {
-        Ok(data) => print_payload(data.get("saveAgent"), format),
-        Err(error) if is_unsupported_save_agent(&error) => Err(structured_input_unsupported()),
-        Err(error) => Err(error),
-    }
-}
-
-/// True when the daemon rejected `saveAgent`/`AgentInput` as unknown - i.e. it is too old for the
-/// structured input, not that the input itself was wrong.
-fn is_unsupported_save_agent(error: &CdxctlError) -> bool {
-    matches!(error, CdxctlError::GraphQL(messages) if messages.iter().any(|message| {
-        let message = message.to_ascii_lowercase();
-        (message.contains("saveagent") && (message.contains("undefined") || message.contains("unknown")))
-            || (message.contains("agentinput") && message.contains("unknown"))
-    }))
-}
-
-fn structured_input_unsupported() -> CdxctlError {
-    CdxctlError::Parse(
-        "This daemon does not support the structured agent input yet (the saveAgent mutation is \
-         unavailable). Create the agent from Markdown instead: write a file with YAML frontmatter \
-         and run `cdxctl agent create --file <path>` (or pipe it with --stdin); update an existing \
-         one with `cdxctl agent update <id> --file <path>`. Frontmatter keys: name, description, \
-         tools, disallowed-tools, skills, model (the model name, e.g. gpt-5.6-terra), max-turns, \
-         jurisdictions; put the instructions in the body below the frontmatter. Example:\n\
-         ---\nname: hr-vypoved\ndescription: Posuzuje zákonnost výpovědi\nmodel: gpt-5.6-terra\n\
-         tools: [shell]\nskills: [codexis:codexis]\n---\nPosuď zákonnost výpovědi. …"
-            .to_string(),
-    )
+    let data = client.execute(graphql::SAVE_AGENT, variables)?;
+    print_payload(data.get("saveAgent"), format)
 }
 
 fn print_payload(payload: Option<&Value>, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -435,89 +373,15 @@ fn merge_instructions_file(
     Ok(fields)
 }
 
-fn load_markdown(file: Option<&str>, stdin: bool) -> Result<String, CdxctlError> {
-    match (file, stdin) {
-        (Some(_), true) => Err(CdxctlError::Parse(
-            "Choose exactly one input source: --file or --stdin".into(),
-        )),
-        (None, false) => Err(CdxctlError::Parse(
-            "Provide agent markdown via --file or --stdin, or describe the agent with the field flags".into(),
-        )),
-        (Some(path), false) => load_markdown_from_file(path),
-        (None, true) => load_markdown_from_stdin(),
-    }
-}
-
-fn load_markdown_from_file(path: &str) -> Result<String, CdxctlError> {
-    let content = fs::read_to_string(path).map_err(|error| {
-        CdxctlError::Parse(format!(
-            "Failed to read agent markdown from {}: {}",
-            Path::new(path).display(),
-            error
-        ))
-    })?;
-    validate_markdown(content)
-}
-
-fn load_markdown_from_stdin() -> Result<String, CdxctlError> {
-    let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).map_err(|error| {
-        CdxctlError::Parse(format!("Failed to read agent markdown from stdin: {error}"))
-    })?;
-    validate_markdown(buffer)
-}
-
-fn validate_markdown(content: String) -> Result<String, CdxctlError> {
-    if content.trim().is_empty() {
-        return Err(CdxctlError::Parse("Agent markdown cannot be empty".into()));
-    }
-    Ok(content)
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_fields, context_keys_to_fill, format_input_error, is_unsupported_save_agent,
-        load_markdown, load_markdown_from_file, merge_current, validate_markdown, AgentFields,
+        apply_fields, context_keys_to_fill, format_input_error, merge_current, AgentFields,
     };
     use crate::commands::resolve_node_id;
     use crate::error::CdxctlError;
     use serde_json::Map;
     use serde_json::{json, Value};
-    use std::fs;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    #[test]
-    fn load_markdown_requires_one_input_source() {
-        let error = load_markdown(None, false).unwrap_err();
-        assert!(matches!(error, CdxctlError::Parse(_)));
-
-        let error = load_markdown(Some("/tmp/agent.md"), true).unwrap_err();
-        assert!(matches!(error, CdxctlError::Parse(_)));
-    }
-
-    #[test]
-    fn load_markdown_from_file_reads_agent_contents() {
-        let path = unique_temp_path("agent-md");
-        fs::write(
-            &path,
-            "---\nname: test-agent\ndescription: demo\n---\n\nYou are a test agent.\n",
-        )
-        .unwrap();
-
-        let content = load_markdown_from_file(path.to_str().unwrap()).unwrap();
-
-        assert!(content.contains("name: test-agent"));
-        assert!(content.contains("You are a test agent."));
-
-        let _ = fs::remove_file(path);
-    }
-
-    #[test]
-    fn validate_markdown_rejects_blank_content() {
-        let error = validate_markdown(" \n\t ".to_string()).unwrap_err();
-        assert!(matches!(error, CdxctlError::Parse(_)));
-    }
 
     #[test]
     fn merge_current_carries_every_field_the_flags_do_not_set() {
@@ -680,28 +544,5 @@ mod tests {
             format_input_error(&error),
             "skills: No such skill: typo. Allowed: debugger, planner"
         );
-    }
-
-    #[test]
-    fn detects_a_daemon_without_the_save_agent_mutation() {
-        let undefined = CdxctlError::GraphQL(vec![
-            "Validation error (FieldUndefined@[saveAgent]) : Field 'saveAgent' in type 'Mutation' is undefined".into(),
-        ]);
-        assert!(is_unsupported_save_agent(&undefined));
-
-        let unknown_type = CdxctlError::GraphQL(vec!["Unknown type 'AgentInput'".into()]);
-        assert!(is_unsupported_save_agent(&unknown_type));
-
-        // A real validation rejection (unknown skill) must NOT be mistaken for an old daemon.
-        let rejected = CdxctlError::GraphQL(vec!["skills: No such skill: typo.".into()]);
-        assert!(!is_unsupported_save_agent(&rejected));
-    }
-
-    fn unique_temp_path(prefix: &str) -> std::path::PathBuf {
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        std::env::temp_dir().join(format!("{prefix}-{nanos}.md"))
     }
 }

@@ -1,8 +1,8 @@
 # Port of plugins/codexis/acceptance/e2e/cdxctl-agent-crud.yaml
-# cdxctl local-agent lifecycle: create-from-stdin → list → update → delete.
+# cdxctl local-agent lifecycle: create → list → update → delete.
 # Same shape as skill-crud, different daemon entity.
 
-description: codexis cdxctl - agent CRUD via --stdin
+description: codexis cdxctl - agent CRUD
 target_plugin: codexis
 
 prompts:
@@ -14,7 +14,7 @@ providers:
     config: {}
 
 tests:
-  - description: agent create from stdin lands in daemon's editable agent list
+  - description: agent create lands in daemon's editable agent list
     vars:
       prompt: |
         Vytvoř mi vlastního lokálního agenta s tímhle obsahem:
@@ -28,7 +28,7 @@ tests:
 
         You are a custom e2e test agent.
       tool_name: shell
-      input_regex: 'agent\s+create.{0,200}--stdin'
+      input_regex: 'agent\s+create.{0,400}--name'
       tool_calls_min: 1
       tool_calls_max: 12
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|http://localhost:8086)'
