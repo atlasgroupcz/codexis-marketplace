@@ -1,0 +1,63 @@
+{
+  "name": "sid",
+  "iconPath": "icon.svg",
+  "version": "1.0.0",
+  "description": "SID internal document system access — search, read and download managed documents, track read-confirmations and notifications via a personal API key",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "sid",
+    "documents",
+    "dms",
+    "confirmations",
+    "internal"
+  ],
+  "license": "PROPRIETARY",
+  "tags": [
+    "documents",
+    "internal",
+    "czech"
+  ],
+  "i18n": {
+    "cs": {
+      "displayName": "SID — Interní dokumenty",
+      "description": "Přístup do SID: vyhledávání a čtení řízených dokumentů, stahování souborů, potvrzování přečtení a hlídání novinek — přes osobní API klíč.",
+      "tagLabels": {
+        "documents": "Dokumenty",
+        "internal": "Interní systémy",
+        "czech": "Česko"
+      }
+    },
+    "en": {
+      "displayName": "SID — Internal Documents",
+      "description": "Access SID: search and read managed documents, download files, confirm required reading and watch for updates — via a personal API key.",
+      "tagLabels": {
+        "documents": "Documents",
+        "internal": "Internal systems",
+        "czech": "Czech Republic"
+      }
+    },
+    "sk": {
+      "displayName": "SID — Interné dokumenty",
+      "description": "Prístup do SID: vyhľadávanie a čítanie riadených dokumentov, sťahovanie súborov, potvrdzovanie prečítania a stráženie noviniek — cez osobný API kľúč.",
+      "tagLabels": {
+        "documents": "Dokumenty",
+        "internal": "Interné systémy",
+        "czech": "Česko"
+      }
+    }
+  },
+  "dependencies": [
+    "codexis"
+  ],
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills",
+  "components": "./components",
+  "env": {
+    "CODEXIS_PLUGIN_SID_API_URL": "https://sid.codexis.cz"
+  }
+}
