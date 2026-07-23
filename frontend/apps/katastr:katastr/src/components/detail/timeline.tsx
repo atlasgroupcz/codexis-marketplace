@@ -9,9 +9,9 @@ interface ProceedingTimelineProps {
 }
 
 function dotClass(node: TimelineNode): string {
-  // Red is reserved for a genuinely bad outcome - rejected / stopped / withdrawn.
-  if (node.isTerminal && node.isNegative) return 'bg-destructive border-destructive'
-  if (node.isTerminal) return 'bg-primary border-primary'
+  // Red is reserved for a genuinely bad outcome - rejected / stopped / withdrawn
+  // (the only case `isNegative` is set, always on a terminal node).
+  if (node.isNegative) return 'bg-destructive border-destructive'
   if (node.isPlomba) return 'bg-amber-400 border-amber-400' // caution, not alarm
   return 'bg-primary border-primary'
 }

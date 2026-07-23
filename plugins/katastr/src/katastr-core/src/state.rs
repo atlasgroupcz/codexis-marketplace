@@ -66,7 +66,6 @@ impl ChangeRecord for Change {
 /// `state` dict.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProceedingState {
-    pub uuid: String,
     pub cislo_rizeni: String,
     pub typ_rizeni: String,
     pub poradove_cislo: u32,
@@ -125,9 +124,4 @@ impl ProceedingState {
 /// tolerance as the Python version.
 pub fn list_all_raw() -> Vec<ProceedingState> {
     store().load_all()
-}
-
-/// Find a tracked proceeding by its UUID. Returns `None` when nothing matches.
-pub fn find_by_uuid(target_uuid: &str) -> Option<ProceedingState> {
-    list_all_raw().into_iter().find(|s| s.uuid == target_uuid)
 }

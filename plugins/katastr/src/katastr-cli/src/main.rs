@@ -247,15 +247,15 @@ fn cmd_check(cislo: Option<&str>) -> CliResult {
     let mut total_changes = 0usize;
     for r in &results {
         if !r.ok {
-            println!("  {}: CHYBA - {}", r.cislo_rizeni, r.error.as_deref().unwrap_or(""));
+            println!("  {}: CHYBA - {}", r.display_name, r.error.as_deref().unwrap_or(""));
             continue;
         }
         let Some(change) = r.change.as_ref() else {
-            println!("  {}: beze změn", r.cislo_rizeni);
+            println!("  {}: beze změn", r.display_name);
             continue;
         };
         total_changes += 1;
-        println!("  {}: 1 nová změna", r.cislo_rizeni);
+        println!("  {}: 1 nová změna", r.display_name);
         for line in tracking::describe_change(change) {
             println!("    {line}");
         }
@@ -267,19 +267,19 @@ fn cmd_check(cislo: Option<&str>) -> CliResult {
     );
 
     // Push notifications per the stored settings - mirrors the Python CLI so a
-    // change is notified regardless of which route first catches it.
-    let cfg = notify_settings::get_notify();
-    if cfg.email {
-        let to = notify::resolve_to(&cfg.recipients);
-        match notify::email_change_summary(&results, to) {
-            Ok(sent) if sent > 0 => {
+    // change is notified regardless of which route first catches it. The routing
+    // lives in notify::dispatch; here we only render its outcome.
+    let dispatched = notify::dispatch(&results);
+    if let Some(email) = dispatched.email {
+        match email {
+            notify::EmailOutcome::Sent(sent) => {
                 eprintln!("E-mailem odeslán souhrn ({sent} řízení se změnou).")
             }
-            Ok(_) => eprintln!("Žádné nové změny - e-mail neodeslán."),
-            Err(e) => eprintln!("{e}"),
+            notify::EmailOutcome::Skipped => eprintln!("Žádné nové změny - e-mail neodeslán."),
+            notify::EmailOutcome::Failed(e) => eprintln!("{e}"),
         }
     }
-    if cfg.in_app && notify::inapp_change_summary(&results) {
+    if dispatched.in_app_sent {
         eprintln!("Upozornění odesláno do aplikace (zvoneček).");
     }
     Ok(())
@@ -448,11 +448,9 @@ fn print_state_short(state: &ProceedingState) {
     let stav = if state.stav.is_empty() { "?" } else { &state.stav };
     let ops = state.provedene_operace.len();
     let changes = state.changes.len();
-    let unconfirmed = state
-        .changes
-        .iter()
-        .filter(|c| c.confirmed_on.is_none())
-        .count();
+    // Same "what counts as unread" rule the overview/CGI use, via the shared
+    // cdx-watch helper - so the CLI listing can't drift from the dashboard.
+    let unconfirmed = tracking::unconfirmed_count(&state.changes);
     let badge = if unconfirmed > 0 {
         format!(" • {unconfirmed} nepřečtených změn")
     } else {

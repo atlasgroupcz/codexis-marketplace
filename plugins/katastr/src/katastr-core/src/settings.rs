@@ -154,7 +154,7 @@ mod tests {
         // Point CODEXIS_PUBLIC_USER_HOME at a fresh temp dir so the real user
         // env stays untouched while exercising the path logic.
         let tmp = tempfile::tempdir().unwrap();
-        let _g = crate::test_support::home_guard(tmp.path());
+        let _g = cdx_common::test_support::home_guard(tmp.path());
         assert_eq!(read_api_key(), "");
         assert!(!is_configured());
     }
@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn write_then_read_roundtrips() {
         let tmp = tempfile::tempdir().unwrap();
-        let _g = crate::test_support::home_guard(tmp.path());
+        let _g = cdx_common::test_support::home_guard(tmp.path());
         write_api_key("SECRET123").unwrap();
         assert_eq!(read_api_key(), "SECRET123");
         assert!(is_configured());
@@ -172,7 +172,7 @@ mod tests {
     fn write_sets_mode_0600() {
         use std::os::unix::fs::PermissionsExt;
         let tmp = tempfile::tempdir().unwrap();
-        let _g = crate::test_support::home_guard(tmp.path());
+        let _g = cdx_common::test_support::home_guard(tmp.path());
         write_api_key("SECRET").unwrap();
         let perms = fs::metadata(paths::env_file()).unwrap().permissions();
         assert_eq!(perms.mode() & 0o777, 0o600);

@@ -6,7 +6,6 @@ import type { OverviewResponse, ProceedingSummary } from '@/lib/schemas'
 
 function proc(overrides: Partial<ProceedingSummary>): ProceedingSummary {
   return {
-    uuid: 'u',
     cislo_rizeni: 'V-1/2026-701',
     typ_rizeni: 'V',
     label: '',
@@ -20,7 +19,6 @@ function proc(overrides: Partial<ProceedingSummary>): ProceedingSummary {
     operace_count: 0,
     changes_count: 0,
     unconfirmed_count: 0,
-    provedene_operace: [],
     ...overrides,
   }
 }
@@ -36,9 +34,9 @@ function overview(proceedings: Array<ProceedingSummary>): OverviewResponse {
 }
 
 const DATA = overview([
-  proc({ uuid: 'a', cislo_rizeni: 'V-1/2026-701', unconfirmed_count: 2 }),
-  proc({ uuid: 'b', cislo_rizeni: 'V-2/2026-701', unconfirmed_count: 0 }),
-  proc({ uuid: 'c', cislo_rizeni: 'V-3/2026-701', unconfirmed_count: 1 }),
+  proc({ cislo_rizeni: 'V-1/2026-701', unconfirmed_count: 2 }),
+  proc({ cislo_rizeni: 'V-2/2026-701', unconfirmed_count: 0 }),
+  proc({ cislo_rizeni: 'V-3/2026-701', unconfirmed_count: 1 }),
 ])
 
 const noop = () => {}
@@ -48,7 +46,7 @@ describe('ProceedingsList filter', () => {
     render(
       <ProceedingsList
         data={DATA} loading={false} error={null} refetch={noop}
-        selectedUuid={null} onSelect={noop} filter="all" onFilterChange={noop}
+        selectedCislo={null} onSelect={noop} filter="all" onFilterChange={noop}
       />,
     )
     expect(screen.getByTestId('proceeding-row-V-1/2026-701')).toBeTruthy()
@@ -62,7 +60,7 @@ describe('ProceedingsList filter', () => {
     render(
       <ProceedingsList
         data={DATA} loading={false} error={null} refetch={noop}
-        selectedUuid={null} onSelect={noop} filter="unconfirmed" onFilterChange={noop}
+        selectedCislo={null} onSelect={noop} filter="unconfirmed" onFilterChange={noop}
       />,
     )
     expect(screen.getByTestId('proceeding-row-V-1/2026-701')).toBeTruthy()
@@ -72,12 +70,12 @@ describe('ProceedingsList filter', () => {
 
   it('shows the empty message when filter=unconfirmed and none match', () => {
     const allConfirmed = overview([
-      proc({ uuid: 'a', cislo_rizeni: 'V-1/2026-701', unconfirmed_count: 0 }),
+      proc({ cislo_rizeni: 'V-1/2026-701', unconfirmed_count: 0 }),
     ])
     render(
       <ProceedingsList
         data={allConfirmed} loading={false} error={null} refetch={noop}
-        selectedUuid={null} onSelect={noop} filter="unconfirmed" onFilterChange={noop}
+        selectedCislo={null} onSelect={noop} filter="unconfirmed" onFilterChange={noop}
       />,
     )
     expect(screen.getByTestId('no-unconfirmed')).toBeTruthy()

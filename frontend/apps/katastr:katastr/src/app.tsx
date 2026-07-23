@@ -10,7 +10,7 @@ import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { useNotify } from '@workspace/ui/hooks/use-notify'
 import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
 import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
-import { filterParser, uuidParser, viewParser } from '@/lib/url-state'
+import { cisloRizeniParser, filterParser, viewParser } from '@/lib/url-state'
 import { ProceedingsList } from '@/components/proceedings-list'
 import { ProceedingDetail } from '@/components/proceeding-detail'
 import { AddProceedingForm } from '@/components/add-proceeding-form'
@@ -25,7 +25,7 @@ export function App() {
   const { data, loading, error, refetch } = useOverview()
   const { data: notifyData, refetch: refetchNotify } = useNotify(fetchNotify)
   const [view, setView] = useQueryState('view', viewParser)
-  const [uuid, setUuid] = useQueryState('uuid', uuidParser)
+  const [cisloRizeni, setCisloRizeni] = useQueryState('cislo_rizeni', cisloRizeniParser)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [checking, setChecking] = useState(false)
   const [savingNotify, setSavingNotify] = useState(false)
@@ -33,17 +33,17 @@ export function App() {
 
   const apiKeyConfigured = data?.api_key_configured ?? false
   const hasProceedings = (data?.proceedings.length ?? 0) > 0
-  const detailOpen = view === 'detail' && uuid !== null
+  const detailOpen = view === 'detail' && cisloRizeni !== null
   const notifyValues = notifyData?.settings ?? { email: false, inApp: true, recipients: [] }
   const userEmail = notifyData?.userEmail ?? ''
 
   const handleSelect = (next: string) => {
     void setView('detail')
-    void setUuid(next)
+    void setCisloRizeni(next)
   }
   const handleBack = () => {
     void setView('list')
-    void setUuid(null)
+    void setCisloRizeni(null)
   }
   const handleCheck = () => {
     setChecking(true)
@@ -108,6 +108,48 @@ export function App() {
       .catch((e: unknown) => toast.error(errorMessage(e)))
   }
 
+  const renderMain = () => {
+    if (data && !apiKeyConfigured) {
+      return (
+        <ConfigGate
+          icon={KeyRound}
+          title={t('apiKeyBanner.title')}
+          text={t('apiKeyBanner.text')}
+          action={{ label: t('apiKeyBanner.action'), onClick: () => setSettingsOpen(true), testId: 'open-settings' }}
+          getKey={{ href: CUZK_REGISTRATION_URL, label: t('settings.getKey'), hint: t('settings.getKeyHint') }}
+        />
+      )
+    }
+    if (data && apiKeyConfigured && !hasProceedings) {
+      return <EmptyProceedings onAdded={refetch} />
+    }
+    return (
+      <div className="grid h-full min-h-0 md:grid-cols-[300px_1fr]">
+        <section
+          className={`min-h-0 overflow-y-auto border-r ${detailOpen ? 'hidden md:block' : 'block'}`}
+        >
+          <ProceedingsList
+            data={data}
+            loading={loading}
+            error={error}
+            refetch={refetch}
+            selectedCislo={cisloRizeni}
+            onSelect={handleSelect}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
+        </section>
+        <section className={`min-h-0 overflow-y-auto ${detailOpen ? 'block' : 'hidden md:block'}`}>
+          {detailOpen && cisloRizeni ? (
+            <ProceedingDetail key={cisloRizeni} cisloRizeni={cisloRizeni} onBack={handleBack} onChanged={refetch} />
+          ) : (
+            <NoSelection />
+          )}
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
@@ -136,43 +178,7 @@ export function App() {
         }
       />
 
-      <main className="min-h-0 flex-1">
-        {data && !apiKeyConfigured ? (
-          <ConfigGate
-            icon={KeyRound}
-            title={t('apiKeyBanner.title')}
-            text={t('apiKeyBanner.text')}
-            action={{ label: t('apiKeyBanner.action'), onClick: () => setSettingsOpen(true), testId: 'open-settings' }}
-            getKey={{ href: CUZK_REGISTRATION_URL, label: t('settings.getKey'), hint: t('settings.getKeyHint') }}
-          />
-        ) : data && apiKeyConfigured && !hasProceedings ? (
-          <EmptyProceedings onAdded={refetch} />
-        ) : (
-          <div className="grid h-full min-h-0 md:grid-cols-[300px_1fr]">
-            <section
-              className={`min-h-0 overflow-y-auto border-r ${detailOpen ? 'hidden md:block' : 'block'}`}
-            >
-              <ProceedingsList
-                data={data}
-                loading={loading}
-                error={error}
-                refetch={refetch}
-                selectedUuid={uuid}
-                onSelect={handleSelect}
-                filter={filter}
-                onFilterChange={setFilter}
-              />
-            </section>
-            <section className={`min-h-0 overflow-y-auto ${detailOpen ? 'block' : 'hidden md:block'}`}>
-              {detailOpen && uuid ? (
-                <ProceedingDetail key={uuid} uuid={uuid} onBack={handleBack} onChanged={refetch} />
-              ) : (
-                <NoSelection />
-              )}
-            </section>
-          </div>
-        )}
-      </main>
+      <main className="min-h-0 flex-1">{renderMain()}</main>
 
       <SettingsDialog
         open={settingsOpen}

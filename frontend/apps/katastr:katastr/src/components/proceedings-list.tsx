@@ -11,8 +11,8 @@ interface ProceedingsListProps {
   loading: boolean
   error: Error | null
   refetch: () => void
-  selectedUuid: string | null
-  onSelect: (uuid: string) => void
+  selectedCislo: string | null
+  onSelect: (cisloRizeni: string) => void
   filter: ListFilterValue
   onFilterChange: (value: ListFilterValue) => void
 }
@@ -22,7 +22,7 @@ export function ProceedingsList({
   loading,
   error,
   refetch,
-  selectedUuid,
+  selectedCislo,
   onSelect,
   filter,
   onFilterChange,
@@ -49,9 +49,9 @@ export function ProceedingsList({
       ) : (
         visible.map((proc) => (
           <ProceedingRow
-            key={proc.uuid}
+            key={proc.cislo_rizeni}
             proceeding={proc}
-            selected={proc.uuid === selectedUuid}
+            selected={proc.cislo_rizeni === selectedCislo}
             onClick={onSelect}
           />
         ))
