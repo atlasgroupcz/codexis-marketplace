@@ -5,8 +5,10 @@ import { homedir } from "node:os"
 /** Stable contract — SKILL.md documents these and the automation relies on them. */
 export const EXIT = { OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 } as const
 
-// Onprem for now — production (sid.codexis.cz) does not have headless auth
-// deployed yet. Overridable via CODEXIS_PLUGIN_SID_API_URL.
+// Fallback for runs outside the daemon. The manifest (plugin.json) injects
+// CODEXIS_PLUGIN_SID_API_URL — production (sid.codexis.cz) — which always wins
+// via the resolver below; this onprem default only applies when neither the
+// env var nor a .env override is present.
 const DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev"
 
 export function userHome(): string {
