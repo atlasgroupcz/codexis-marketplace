@@ -1,0 +1,41 @@
+{
+  "app": {
+    "title": "SID — Internal Documents",
+    "lead": "The key links this plugin to your SID account. It carries the same permissions you have — treat it like a password.",
+    "connectionSection": "SID connection",
+    "notifySection": "Notifications",
+    "loadFailed": "Could not load status.",
+    "saved": "Notification settings saved.",
+    "saveFailed": "Saving failed.",
+    "keyDeleted": "Key deleted."
+  },
+  "connection": {
+    "connected": "Connected",
+    "notConnected": "Not connected to SID",
+    "remove": "Remove",
+    "confirmRemove": "Really remove?",
+    "save": "Save",
+    "saving": "Verifying…"
+  },
+  "settings": {
+    "getKey": "Where do I get the API key?",
+    "getKeyHint": "In SID open Profile → API keys and create one. It is shown only once.",
+    "newLabel": "API key from SID",
+    "placeholder": "sid_…"
+  },
+  "notify": {
+    "emailLabel": "E-mail on updates",
+    "emailDescription": "The daily digest arrives by e-mail.",
+    "yourAddressLabel": "Your address",
+    "copyToLabel": "Copy to",
+    "addRecipient": "Add recipient",
+    "removeRecipient": "Remove",
+    "addPlaceholder": "name@company.com",
+    "invalidEmail": "Invalid e-mail address.",
+    "inAppLabel": "Notification centre alert",
+    "inAppDescription": "",
+    "ownAddress": "This is your own address — you always receive the e-mail.",
+    "duplicate": "This address is already listed.",
+    "save": "Save notifications"
+  }
+}

@@ -571,6 +571,30 @@
       }
     },
     {
+      "uuid": "a6ab6599-ff88-42c8-9011-5d8f9fb39086",
+      "name": "sid",
+      "description": "SID internal document system — search, read-confirmations and notifications via personal API key",
+      "source": "./plugins/sid",
+      "category": "document-processing",
+      "i18n": {
+        "cs": {
+          "displayName": "SID — Interní dokumenty",
+          "description": "Vyhledávání a čtení řízených dokumentů v SID, potvrzování přečtení a hlídání novinek.",
+          "tagLabels": { "documents": "Dokumenty", "internal": "Interní systémy", "czech": "Česko" }
+        },
+        "en": {
+          "displayName": "SID — Internal Documents",
+          "description": "Search and read managed documents in SID, confirm required reading and watch for updates.",
+          "tagLabels": { "documents": "Documents", "internal": "Internal systems", "czech": "Czech Republic" }
+        },
+        "sk": {
+          "displayName": "SID — Interné dokumenty",
+          "description": "Vyhľadávanie a čítanie riadených dokumentov v SID, potvrdzovanie prečítania a stráženie noviniek.",
+          "tagLabels": { "documents": "Dokumenty", "internal": "Interné systémy", "czech": "Česko" }
+        }
+      }
+    },
+    {
       "uuid": "99e2d85f-eca8-415a-b410-ef59955777bf",
       "name": "sbirka-listin",
       "description": "Czech Collection of Deeds (Sbírka listin) - a subject's filed documents by IČO (financial statements, articles, deeds), document download and new-filing watching",
