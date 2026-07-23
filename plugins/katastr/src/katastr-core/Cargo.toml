@@ -1,0 +1,27 @@
+[package]
+name = "katastr-core"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+ureq.workspace = true
+# `fs` for the atomic .env writes (settings.rs); `store` for the per-item state
+# directory (ItemStore) that backs tracking. The daemon bearer token + host env
+# parsing come in through cdx-notify/cdx-watch which build on cdx-common.
+cdx-common = { workspace = true, features = ["fs", "store"] }
+# The watcher domain (check loop + change-log confirm) and the notify transport
+# + layered settings store, shared with the other hosted-component plugins.
+cdx-watch.workspace = true
+cdx-notify.workspace = true
+
+[dev-dependencies]
+# tempfile lets tests exercise filesystem code paths against a scratch dir
+# instead of polluting $HOME. We only pull it in for test builds so the
+# runtime binaries stay lean.
+tempfile = "3"

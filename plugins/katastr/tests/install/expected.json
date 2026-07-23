@@ -12,7 +12,7 @@
     },
     {
       "type": "dir",
-      "path": "$HOME/.local/share/katastr/lib/katastr_core"
+      "path": "$HOME/.local/share/katastr/settings"
     }
   ],
   "post_uninstall": [

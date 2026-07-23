@@ -4,7 +4,7 @@ type: COMMAND
 title: Hlídač katastrálních řízení
 description: Pravidelná kontrola sledovaných katastrálních řízení.
 command: katastr-cli tracking check
-cron: 0 7 * * *
+cron: 0 8 * * 1
 enabled: true
 notify-on-success: false
 notify-on-failure: false
@@ -14,7 +14,7 @@ i18n:
     description: "Pravidelná kontrola sledovaných katastrálních řízení."
   en:
     title: "Cadastral proceedings watchdog"
-    description: "Daily check of tracked cadastral proceedings at ČÚZK."
+    description: "Weekly check of tracked cadastral proceedings at ČÚZK."
   sk:
     title: "Strážca katastrálnych konaní"
     description: "Pravidelná kontrola sledovaných katastrálnych konaní."
