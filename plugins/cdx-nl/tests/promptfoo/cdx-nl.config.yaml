@@ -1,0 +1,32 @@
+# Fresh scenario (cdx-nl had no e2e). Structural oracle: the skill must drive
+# cdx-nl (not scrape the Dutch sources) and surface an ECLI-cited decision.
+description: cdx-nl - Dutch legal database search
+prompts:
+  - "{{ prompt }}"
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+tests:
+  - description: Dutch case-law search calls cdx-nl and returns an ECLI citation
+    vars:
+      prompt: "Najdi mi nějaké rozhodnutí nizozemského Hoge Raad. Stačí citace a odkaz."
+      tool_name: shell
+      input_regex: 'cdx-nl\s+search\s+NL(UIT|BWB|CVDR)(?!.*--help)'
+      tool_calls_max: 12
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|rechtspraak\.nl|wetten\.overheid\.nl)'
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that cdx-nl itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch Dutch legal documents from rechtspraak.nl or wetten.overheid.nl instead of cdx-nl."
+          - "Bypassing cdx-nl to scrape the Dutch legal sources for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'ECLI:NL:[A-Z]+:\d{4}:\d+'

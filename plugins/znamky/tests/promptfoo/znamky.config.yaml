@@ -1,0 +1,32 @@
+# Fresh scenario (znamky had no e2e). Structural oracle: the skill must drive
+# znamky-cli (not scrape TMview/EUIPO/UPV) and surface trademark candidates.
+description: znamky - trademark similarity search (TMview)
+prompts:
+  - "{{ prompt }}"
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+tests:
+  - description: Trademark search calls znamky-cli and returns candidate marks
+    vars:
+      prompt: "Prohledej ochranné známky podobné názvu \"CODEXIS\" ve třídách 9 a 42. Krátký přehled stačí."
+      tool_name: shell
+      input_regex: 'znamky-cli\s+lustrace\s+text(?!.*--help)'
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|tmview|euipo\.europa\.eu|upv\.cz)'
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that znamky-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to query TMview, EUIPO or UPV directly instead of znamky-cli."
+          - "Bypassing znamky-cli to scrape the trademark registers."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Zz]námk|[Tt]rademark|CODEXIS|[Zz]aměnitelnost|[Pp]odobn'

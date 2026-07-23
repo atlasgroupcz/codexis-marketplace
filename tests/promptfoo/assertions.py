@@ -124,6 +124,36 @@ def assert_tool_call(output: str, context: dict) -> dict:
                        f"Saw tool names: {saw!r}")}
 
 
+def assert_sources(output: str, context: dict) -> dict:
+    """Pass if the turn attached enough chat sources matching an optional regex.
+
+    Plugins attach sources (the URL/file citations shown in the chat "Sources"
+    panel) to their tool calls; each smuggled tool call carries them in its
+    `sources` list. Proves the answer is backed by a real published document,
+    not hallucinated. Configure via the test's `vars`:
+        sources_min:   int - minimum attached sources across the turn (default 1).
+        sources_regex: str - Python regex matched against the JSON blob of all
+                       sources gathered across the turn (optional).
+    """
+    vars_ = (context or {}).get("vars") or {}
+    minimum = vars_.get("sources_min", 1)
+    pattern = vars_.get("sources_regex")
+
+    tool_calls = _extract_tool_calls(output)
+    sources = [s for tc in tool_calls for s in (tc.get("sources") or [])]
+    blob = json.dumps(sources, ensure_ascii=False)
+
+    if len(sources) < minimum:
+        return {"pass": False, "score": 0.0,
+                "reason": (f"assert_sources: got {len(sources)} source(s), "
+                           f"expected >= {minimum}")}
+    if pattern and not re.search(pattern, blob):
+        return {"pass": False, "score": 0.0,
+                "reason": f"assert_sources: regex /{pattern}/ did not match sources"}
+    return {"pass": True, "score": 1.0,
+            "reason": f"{len(sources)} source(s) attached"}
+
+
 def assert_no_tool_call(output: str, context: dict) -> dict:
     """Pass if NO tool call's input matches the forbidden regex.
 

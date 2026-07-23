@@ -1,0 +1,73 @@
+# Port of plugins/sbirka-listin/tests/e2e/sbirka-listin-lookup.yaml
+# Czech Sbírka listin (Ministry of Justice, or.justice.cz) via sbirka-listin-cli.
+# Deterministic target: Alza.cz a.s., IČO 27082440 - a deep Sbírka listin that
+# always includes účetní závěrky. Step 1 lists filed documents and must attach
+# the or.justice.cz register source; step 2 sets up watching for new filings.
+
+description: sbirka-listin - Sbírka listin filed-documents lookup and watching
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: IČO 27082440 lookup lists filed documents and attaches the or.justice.cz source
+    vars:
+      prompt: "Jaké dokumenty má ve sbírce listin firma s IČO 27082440? Stačí přehled."
+      tool_name: shell
+      input_regex: 'sbirka-listin-cli\s+listiny\s+.*27082440(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|or\.justice\.cz)'
+      sources_min: 1
+      sources_regex: 'or\.justice\.cz'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that sbirka-listin-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from or.justice.cz instead of sbirka-listin-cli."
+          - "Bypassing sbirka-listin-cli to scrape or.justice.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_sources
+      - type: regex
+        value: '[úÚ][čČ][Ee][Tt][Nn][íÍ] [Zz][áÁ][Vv][ěĚ][Rr][Kk]|[Ss][Tt][Aa][Nn][Oo][Vv]|[Ll][Ii][Ss][Tt][Ii][Nn]'
+
+  - description: Follow-up sets up watching the subject for newly filed documents
+    vars:
+      prompt: "A dej mi vědět, kdyby tam něco nového založili."
+      tool_name: shell
+      input_regex: 'sbirka-listin-cli\s+sledovani\s+add\s+.*27082440(?!.*--help)'
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|or\.justice\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that sbirka-listin-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from or.justice.cz instead of sbirka-listin-cli."
+          - "Bypassing sbirka-listin-cli to scrape or.justice.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Ss][Ll][Ee][Dd][Oo][Vv]|[Hh][Ll][íÍ][Dd]|[Pp][řŘ][Ii][Dd][áÁ][Nn]'

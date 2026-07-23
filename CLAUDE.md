@@ -19,8 +19,8 @@ normalized to hyphens - keep it that way.
   `test_*.py` (pytest) for Python, `#[cfg(test)]` inline + `src/<crate>/tests/*.rs`
   (cargo) for Rust.
 - **Scenario specs** are declarative data driven by the central harness:
-  `expected.json` (marketplace/install contract), `e2e/*.yaml` (chat-driven
-  e2e), and `tests/promptfoo/*.config.yaml` (LLM-judge evals).
+  `expected.json` (marketplace/install contract) and
+  `tests/promptfoo/*.config.yaml` (behavioral evals), both per-plugin.
 
 ### Taxonomy
 
@@ -28,22 +28,26 @@ normalized to hyphens - keep it that way.
 | --- | --- | --- |
 | unit | Python: `plugins/<name>/tests/unit/` (pytest); Rust: inline `#[cfg(test)]` in `src/<crate>/src/` | pytest / cargo |
 | integration | Rust: `plugins/<name>/src/<crate>/tests/*.rs`; Python: `tests/integration/` if needed | cargo / pytest |
-| install | `plugins/<name>/tests/install/expected.json` | central harness |
-| e2e | `plugins/<name>/tests/e2e/*.yaml` (one file per binary/skill) | central harness |
-| llm-eval | `tests/promptfoo/*.config.yaml` (central) | promptfoo |
+| install | `plugins/<name>/tests/install/expected.json` (just the `skills` a plugin registers) | central harness |
+| behavioral | `plugins/<name>/tests/promptfoo/*.config.yaml` (one config per scenario) | promptfoo |
 
-Code tests live next to the code they test (Rust unit/integration are per crate
-under `src/<crate>/`). Data specs are the only plugin-level tests. An e2e scenario
-that uploads binary fixtures keeps them in `plugins/<name>/tests/fixtures/`,
-referenced from the scenario yaml by a relative `source:` path.
+promptfoo is the single behavioral tier (the old homegrown e2e runner was
+removed once every scenario had a promptfoo equivalent). Configs live per-plugin;
+the shared machinery (`provider.py`, `assertions.py`, `run.py`) stays central in
+`tests/promptfoo/` and each config reaches it by an explicit relative back-path
+(`file://../../../../tests/promptfoo/...`). A config that uploads binary fixtures
+keeps them in `plugins/<name>/tests/fixtures/`, referenced by a relative `source:`.
+
+Every marketplace plugin must own an install contract AND at least one behavioral
+config - `tests/test_conformance.py` fails the build otherwise.
 
 Two different `tests/` folders exist: `tests/` at the repo root is the central
-harness; `plugins/<name>/tests/` holds one plugin's Python unit tests and data
-specs. Same name, different scope.
+harness; `plugins/<name>/tests/` holds one plugin's own tests (unit, install,
+promptfoo). Same name, different scope.
 
 ### Running tests
 
-Use the single entry point: `python tests/run.py <unit|marketplace|e2e|eval|all>`.
+Use the single entry point: `python tests/run.py <unit|marketplace|eval|all>`.
 
 ### Coverage
 
@@ -63,7 +67,7 @@ General principles, independent of language or framework:
 - Use real dependencies where you can run them; mock only what you cannot
   (external HTTP APIs, the daemon, third-party services). Never mock the thing
   under test.
-- On any failure (test, e2e, pipeline), find the cause before changing code -
+- On any failure (test, eval, pipeline), find the cause before changing code -
   no shotgun fixes.
 - Before calling something green, show the command output - do not assert it
   passed.

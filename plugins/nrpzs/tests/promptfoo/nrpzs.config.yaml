@@ -1,0 +1,69 @@
+# Port of plugins/nrpzs/tests/e2e/nrpzs-lookup.yaml
+# NRPZS healthcare-provider register (ÚZIS). Provider lookup by IČO, then by
+# obor + kraj. Anti-scrape guard blocks the public NRPZS API host (uzis.cz).
+
+description: nrpzs - Czech healthcare-provider register lookup
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: IČO lookup returns provider name + kraj (Příbram / Středočeský)
+    vars:
+      prompt: "Najdi v registru poskytovatelů zdravotních služeb firmu s IČO 27085031. Stačí název a kraj."
+      tool_name: shell
+      input_regex: 'nrpzs-cli\s+(search|profil|api\s+get)\s+.*27085031(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|uzis\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that nrpzs-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch provider records from nrpzs-api.uzis.cz instead of nrpzs-cli."
+          - "Bypassing nrpzs-cli to scrape uzis.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # e2e (?s)P[řr]íbram.{0,200}Středočesk|… - JS regex has no (?s), so `.`→[\s\S].
+      - type: regex
+        value: 'P[řr]íbram[\s\S]{0,200}St[řr]edo[čc]esk|St[řr]edo[čc]esk[\s\S]{0,200}P[řr]íbram'
+
+  - description: obor + kraj filter search surfaces urology ambulances
+    vars:
+      prompt: "Které urologické ambulance jsou ve Středočeském kraji?"
+      tool_name: shell
+      input_regex: 'nrpzs-cli\s+search\s+.*--obor\s+\S+.*--kraj(?!.*--help)'
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|uzis\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that nrpzs-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch provider records from nrpzs-api.uzis.cz instead of nrpzs-cli."
+          - "Bypassing nrpzs-cli to scrape uzis.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # e2e (?i)urolog - JS regex has no (?i); first letter as a class.
+      - type: regex
+        value: '[Uu]rolog'
