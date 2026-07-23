@@ -7,7 +7,7 @@ import { ProceedingDetail } from './proceeding-detail'
 const { refetch, detail } = vi.hoisted(() => ({
   refetch: vi.fn(),
   detail: {
-    uuid: 'u1', cislo_rizeni: 'V-1/2026-701', typ_rizeni: 'Vklad', label: '',
+    cislo_rizeni: 'V-1/2026-701', typ_rizeni: 'Vklad', label: '',
     stav: 'Plomba', stav_uhrady: 'N', stav_uhrady_label: 'Neuhrazeno',
     datum_prijeti: '2026-06-01', added_on: '2026-06-01', last_check_at: '2026-06-12',
     last_op_date: '2026-06-12', operace_count: 1, changes_count: 1, unconfirmed_count: 1,
@@ -35,7 +35,7 @@ describe('ProceedingDetail - confirm refreshes overview', () => {
 
   it('calls onChanged after confirming so the sidebar unread dot clears', async () => {
     const onChanged = vi.fn()
-    render(<ProceedingDetail uuid="u1" onBack={() => {}} onChanged={onChanged} />)
+    render(<ProceedingDetail cisloRizeni="V-1/2026-701" onBack={() => {}} onChanged={onChanged} />)
     // Radix TabsTrigger switches the active tab on mousedown (not click), so a
     // plain fireEvent.click never mounts the "zmeny" TabsContent in jsdom.
     fireEvent.mouseDown(screen.getByTestId('tab-zmeny'))

@@ -11,7 +11,7 @@ use std::env;
 use std::process::ExitCode;
 
 use cdx_cgi::{emit_error, emit_json, parse_query, read_body};
-use katastr_core::state::{find_by_uuid, Change, ProceedingState};
+use katastr_core::state::{Change, Operace, ProceedingState};
 use katastr_core::tracking::{self, now_utc, OverviewEntry};
 use katastr_core::{notify, notify_settings, settings, KatastrError};
 use serde::Serialize;
@@ -46,10 +46,10 @@ fn handle_get_json(query: &str) -> ExitCode {
         }
     }
 
-    if let Some((_, uuid)) = params.iter().find(|(k, _)| k == "uuid") {
-        let uuid = uuid.trim();
-        if !uuid.is_empty() {
-            return handle_detail(uuid);
+    if let Some((_, cislo)) = params.iter().find(|(k, _)| k == "cislo_rizeni") {
+        let cislo = cislo.trim();
+        if !cislo.is_empty() {
+            return handle_detail(cislo);
         }
     }
 
@@ -58,17 +58,10 @@ fn handle_get_json(query: &str) -> ExitCode {
 
 fn handle_settings() -> ExitCode {
     let status = settings::key_status();
-    if status.configured {
-        emit_json(&SettingsResponse {
-            configured: true,
-            masked_key: Some(status.masked),
-        })
-    } else {
-        emit_json(&SettingsResponse {
-            configured: false,
-            masked_key: None,
-        })
-    }
+    emit_json(&SettingsResponse {
+        configured: status.configured,
+        masked_key: status.configured.then_some(status.masked),
+    })
 }
 
 fn handle_notify_view() -> ExitCode {
@@ -91,12 +84,16 @@ fn handle_overview() -> ExitCode {
     })
 }
 
-fn handle_detail(uuid: &str) -> ExitCode {
-    match find_by_uuid(uuid) {
+fn handle_detail(cislo: &str) -> ExitCode {
+    let canonical = match tracking::normalize_number(cislo) {
+        Ok(c) => c,
+        Err(_) => return emit_error(400, "Neplatné číslo řízení"),
+    };
+    match ProceedingState::load(&canonical) {
         Some(state) => emit_json(&DetailResponse {
             mode: "detail",
             generated_at: now_utc(),
-            proceeding: DetailEntry::from_state(&state),
+            proceeding: DetailEntry::from_state(state),
         }),
         None => emit_error(404, "Proceeding not found"),
     }
@@ -155,18 +152,18 @@ fn post_add(body: &Value) -> ExitCode {
     match tracking::add(cislo, label) {
         Ok(state) => emit_json(&serde_json::json!({
             "ok": true,
-            "proceeding": OverviewEntry::from_state(&state),
+            "proceeding": OverviewEntry::from_state(state),
         })),
         Err(e) => emit_katastr_error(&e),
     }
 }
 
 fn post_remove(body: &Value) -> ExitCode {
-    let state = match resolve_uuid(body) {
-        Ok(s) => s,
+    let cislo = match required_cislo(body) {
+        Ok(c) => c,
         Err(code) => return code,
     };
-    match tracking::remove(&state.cislo_rizeni) {
+    match tracking::remove(&cislo) {
         Ok(_) => emit_json(&serde_json::json!({"ok": true})),
         Err(e) => emit_katastr_error(&e),
     }
@@ -177,18 +174,18 @@ fn post_check_all() -> ExitCode {
 
     // Push e-mail + in-app for freshly detected changes - mirrors the CLI check
     // so a change is notified regardless of which route (automation, chat, FE)
-    // first catches it. Best-effort.
-    notify_results(&results);
+    // first catches it. Best-effort; the dispatch outcome only matters to the CLI.
+    let _ = notify::dispatch(&results);
 
     let checked = results.len();
     let new_changes = results.iter().filter(|r| r.has_change()).count();
     let errors: Vec<_> = results
-        .iter()
+        .into_iter()
         .filter(|r| !r.ok)
         .map(|r| {
             serde_json::json!({
-                "cislo_rizeni": r.cislo_rizeni,
-                "error": r.error.clone().unwrap_or_default(),
+                "cislo_rizeni": r.display_name,
+                "error": r.error.unwrap_or_default(),
             })
         })
         .collect();
@@ -201,27 +198,27 @@ fn post_check_all() -> ExitCode {
 }
 
 fn post_confirm(body: &Value) -> ExitCode {
-    let state = match resolve_uuid(body) {
-        Ok(s) => s,
+    let cislo = match required_cislo(body) {
+        Ok(c) => c,
         Err(code) => return code,
     };
     let change_index: Option<usize> = body
         .get("change_index")
         .and_then(|v| v.as_u64())
         .map(|n| n as usize);
-    match tracking::confirm(&state.cislo_rizeni, change_index) {
+    match tracking::confirm(&cislo, change_index) {
         Ok(marked) => emit_json(&serde_json::json!({"ok": true, "marked": marked})),
         Err(e) => emit_katastr_error(&e),
     }
 }
 
 fn post_set_label(body: &Value) -> ExitCode {
-    let state = match resolve_uuid(body) {
-        Ok(s) => s,
+    let cislo = match required_cislo(body) {
+        Ok(c) => c,
         Err(code) => return code,
     };
     let label = body.get("label").and_then(|v| v.as_str()).unwrap_or("");
-    match tracking::set_label(&state.cislo_rizeni, label) {
+    match tracking::set_label(&cislo, label) {
         Ok(_) => emit_json(&serde_json::json!({"ok": true})),
         Err(e) => emit_katastr_error(&e),
     }
@@ -243,32 +240,22 @@ fn post_save_notify_settings(body: &Value) -> ExitCode {
     }
 }
 
-/// Push e-mail + in-app for freshly detected changes. Best-effort: never fails
-/// the request.
-fn notify_results(results: &[tracking::CheckResult]) {
-    let cfg = notify_settings::get_notify();
-    if cfg.email {
-        let to = notify::resolve_to(&cfg.recipients);
-        let _ = notify::email_change_summary(results, to);
-    }
-    if cfg.in_app {
-        notify::inapp_change_summary(results);
-    }
-}
+// ── shared request parsing ────────────────────────────────────────────────────
 
-// ── shared uuid resolution ────────────────────────────────────────────────────
-
-/// Look up a proceeding by `uuid` from the body, emitting the right error
-/// response (and returning `Err(ExitCode)`) when missing/not found.
-fn resolve_uuid(body: &Value) -> Result<ProceedingState, ExitCode> {
-    let uuid = body.get("uuid").and_then(|v| v.as_str()).unwrap_or("");
-    if uuid.is_empty() {
-        return Err(emit_error(400, "uuid required"));
+/// Pull the required `cislo_rizeni` (canonical proceeding number) from a POST
+/// body, emitting a 400 (and returning `Err(ExitCode)`) when it's missing. The
+/// downstream `tracking::*` call normalizes it and reports "not tracked" itself,
+/// so no lookup is needed here.
+fn required_cislo(body: &Value) -> Result<String, ExitCode> {
+    let cislo = body
+        .get("cislo_rizeni")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if cislo.is_empty() {
+        return Err(emit_error(400, "cislo_rizeni required"));
     }
-    match find_by_uuid(uuid) {
-        Some(s) => Ok(s),
-        None => Err(emit_error(404, "Proceeding not found")),
-    }
+    Ok(cislo.to_string())
 }
 
 // ── response types ───────────────────────────────────────────────────────────
@@ -293,14 +280,23 @@ struct DetailResponse {
 struct DetailEntry {
     #[serde(flatten)]
     overview: OverviewEntry,
+    // The overview projection no longer carries the operations list (the list
+    // view only needs the count); the detail view does, so re-attach it here at
+    // the same flattened JSON level the FE already reads.
+    provedene_operace: Vec<Operace>,
     changes: Vec<Change>,
 }
 
 impl DetailEntry {
-    fn from_state(state: &ProceedingState) -> Self {
+    fn from_state(state: ProceedingState) -> Self {
+        // Single-item detail path, so cloning the two vecs the overview
+        // projection would otherwise consume is cheap here (not the hot list).
+        let provedene_operace = state.provedene_operace.clone();
+        let changes = state.changes.clone();
         Self {
             overview: OverviewEntry::from_state(state),
-            changes: state.changes.clone(),
+            provedene_operace,
+            changes,
         }
     }
 }

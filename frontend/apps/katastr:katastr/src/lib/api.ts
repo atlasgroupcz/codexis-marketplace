@@ -80,8 +80,8 @@ export function fetchOverview(): Promise<OverviewResponse> {
   return getJson(overviewResponseSchema)
 }
 
-export function fetchDetail(uuid: string): Promise<DetailResponse> {
-  return getJson(detailResponseSchema, { uuid })
+export function fetchDetail(cisloRizeni: string): Promise<DetailResponse> {
+  return getJson(detailResponseSchema, { cislo_rizeni: cisloRizeni })
 }
 
 export function fetchNotify(): Promise<NotifyResponse> {
@@ -101,15 +101,15 @@ export function checkAll(): Promise<CheckAllResponse> {
   return postJson('check_all', checkAllResponseSchema)
 }
 
-export function removeProceeding(uuid: string): Promise<ActionResponse> {
-  return postJson('remove', actionResponseSchema, { uuid })
+export function removeProceeding(cisloRizeni: string): Promise<ActionResponse> {
+  return postJson('remove', actionResponseSchema, { cislo_rizeni: cisloRizeni })
 }
 
 export function confirmChange(
-  uuid: string,
+  cisloRizeni: string,
   changeIndex?: number,
 ): Promise<ActionResponse> {
-  const payload: Record<string, unknown> = { uuid }
+  const payload: Record<string, unknown> = { cislo_rizeni: cisloRizeni }
   if (changeIndex !== undefined) payload.change_index = changeIndex
   return postJson('confirm_change', actionResponseSchema, payload)
 }
@@ -122,8 +122,8 @@ export function deleteApiKey(): Promise<ActionResponse> {
   return postJson('delete_api_key', actionResponseSchema)
 }
 
-export function setLabel(uuid: string, label: string): Promise<ActionResponse> {
-  return postJson('set_label', actionResponseSchema, { uuid, label })
+export function setLabel(cisloRizeni: string, label: string): Promise<ActionResponse> {
+  return postJson('set_label', actionResponseSchema, { cislo_rizeni: cisloRizeni, label })
 }
 
 export function saveNotify(values: NotifySettingsValues): Promise<ActionResponse> {

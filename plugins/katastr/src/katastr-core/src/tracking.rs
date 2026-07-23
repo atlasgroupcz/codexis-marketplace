@@ -6,11 +6,12 @@
 
 use std::collections::HashSet;
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-use cdx_watch::change::{confirm_changes, unconfirmed_count};
+use cdx_watch::change::confirm_changes;
+/// Re-exported so the CLI's short listing counts unread changes through the same
+/// shared rule the overview projection uses, instead of hand-rolling it.
+pub use cdx_watch::change::unconfirmed_count;
 use cdx_watch::track::{self, Watcher};
 
 use crate::error::{KatastrError, Result};
@@ -87,20 +88,21 @@ pub fn normalize_number(input: &str) -> Result<String> {
     Ok(parse_proceeding_number(input)?.canonical())
 }
 
-/// ISO-8601 UTC timestamp with second precision and `Z` suffix.
-/// Matches the format `datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")`
-/// produces in Python, so mixed Python/Rust state files remain comparable.
-pub fn now_utc() -> String {
-    Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
-}
+/// ISO-8601 UTC timestamp with second precision and `Z` suffix, from the shared
+/// `cdx-common` time helper. Matches what Python's
+/// `datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")`
+/// produces, so mixed Python/Rust state files remain comparable.
+pub use cdx_common::time::now_utc;
 
 // ── presentation projection ───────────────────────────────────────────────────
 
-/// UI-facing summary of a tracked proceeding. Keep field names matching
-/// `state_to_overview_entry` in Python so the TS schemas don't need touching.
+/// UI-facing summary of a tracked proceeding, used for the overview list. The
+/// full `provedene_operace` array is deliberately absent here - the list only
+/// needs `operace_count` + `last_op_date`; the detail response carries the
+/// operations. A proceeding is identified by `cislo_rizeni` (its canonical
+/// number), which the FE also uses as the row key.
 #[derive(Debug, Clone, Serialize)]
 pub struct OverviewEntry {
-    pub uuid: String,
     pub cislo_rizeni: String,
     pub typ_rizeni: String,
     pub label: String,
@@ -114,18 +116,10 @@ pub struct OverviewEntry {
     pub operace_count: usize,
     pub changes_count: usize,
     pub unconfirmed_count: usize,
-    pub provedene_operace: Vec<OverviewOperace>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct OverviewOperace {
-    pub nazev: String,
-    #[serde(rename = "datumProvedeni")]
-    pub datum_provedeni: String,
 }
 
 impl OverviewEntry {
-    pub fn from_state(state: &ProceedingState) -> Self {
+    pub fn from_state(state: ProceedingState) -> Self {
         // ČÚZK returns `provedeneOperace` already oldest→newest (verified live
         // 2026-07). We pass it through unchanged, so the newest operation is the
         // last element - matching Python's `_ordered_operace` + `ops[-1]`.
@@ -134,34 +128,31 @@ impl OverviewEntry {
             .last()
             .map(|op| op.datum_provedeni.clone())
             .filter(|d| !d.is_empty());
+        // Everything that reads `state` by reference is computed first; then the
+        // owned fields move into the entry (no clones, `state` is consumed).
+        let operace_count = state.provedene_operace.len();
+        let changes_count = state.changes.len();
+        let unconfirmed_count = unconfirmed_count(&state.changes);
+        let stav_uhrady_label = state
+            .stav_uhrady
+            .as_deref()
+            .and_then(uhrada_label)
+            .map(String::from);
 
         Self {
-            uuid: state.uuid.clone(),
-            cislo_rizeni: state.cislo_rizeni.clone(),
-            typ_rizeni: state.typ_rizeni.clone(),
-            label: state.label.clone(),
-            stav: state.stav.clone(),
-            stav_uhrady: state.stav_uhrady.clone(),
-            stav_uhrady_label: state
-                .stav_uhrady
-                .as_deref()
-                .and_then(uhrada_label)
-                .map(String::from),
-            datum_prijeti: state.datum_prijeti.clone(),
-            added_on: state.added_on.clone(),
-            last_check_at: state.last_check_at.clone(),
+            cislo_rizeni: state.cislo_rizeni,
+            typ_rizeni: state.typ_rizeni,
+            label: state.label,
+            stav: state.stav,
+            stav_uhrady: state.stav_uhrady,
+            stav_uhrady_label,
+            datum_prijeti: state.datum_prijeti,
+            added_on: state.added_on,
+            last_check_at: state.last_check_at,
             last_op_date,
-            operace_count: state.provedene_operace.len(),
-            changes_count: state.changes.len(),
-            unconfirmed_count: unconfirmed_count(&state.changes),
-            provedene_operace: state
-                .provedene_operace
-                .iter()
-                .map(|op| OverviewOperace {
-                    nazev: op.nazev.clone(),
-                    datum_provedeni: op.datum_provedeni.clone(),
-                })
-                .collect(),
+            operace_count,
+            changes_count,
+            unconfirmed_count,
         }
     }
 }
@@ -216,12 +207,13 @@ pub fn describe_change(change: &Change) -> Vec<String> {
 
 /// Return all tracked proceedings, newest added first - purely by date added.
 /// Confirming a change (or a newly detected one) never reorders; order is
-/// stable once a proceeding is added. `uuid` is a deterministic tiebreaker when
-/// two share an `added_on` second. Matches Python's `list_all`.
+/// stable once a proceeding is added. `cislo_rizeni` (unique per proceeding) is
+/// a deterministic tiebreaker when two share an `added_on` second.
 pub fn list_all() -> Vec<ProceedingState> {
     let mut all = state::list_all_raw();
     all.sort_by(|a, b| {
-        (b.added_on.as_str(), b.uuid.as_str()).cmp(&(a.added_on.as_str(), a.uuid.as_str()))
+        (b.added_on.as_str(), b.cislo_rizeni.as_str())
+            .cmp(&(a.added_on.as_str(), a.cislo_rizeni.as_str()))
     });
     all
 }
@@ -229,7 +221,7 @@ pub fn list_all() -> Vec<ProceedingState> {
 /// Same as `list_all`, but returning the overview projection used by the
 /// CGI's JSON response for the overview endpoint.
 pub fn list_overview() -> Vec<OverviewEntry> {
-    list_all().iter().map(OverviewEntry::from_state).collect()
+    list_all().into_iter().map(OverviewEntry::from_state).collect()
 }
 
 // ── ČÚZK fetch ───────────────────────────────────────────────────────────────
@@ -297,6 +289,12 @@ fn str_field(data: &serde_json::Value, key: &str) -> String {
         .to_string()
 }
 
+/// Like [`str_field`] but yields `None` for a missing/non-string value instead
+/// of an empty string - used for the nullable `stavUhrady` field.
+fn opt_str_field(data: &serde_json::Value, key: &str) -> Option<String> {
+    data.get(key).and_then(|v| v.as_str()).map(String::from)
+}
+
 // ── change detection ────────────────────────────────────────────────────────
 
 /// Compare previous state against a fresh API payload and return a
@@ -308,20 +306,17 @@ fn detect_changes(old_state: &ProceedingState, new_data: &serde_json::Value) -> 
     let new_stav = str_field(new_data, "stav");
 
     let old_uhrada = old_state.stav_uhrady.clone();
-    let new_uhrada = new_data
-        .get("stavUhrady")
-        .and_then(|v| v.as_str())
-        .map(String::from);
+    let new_uhrada = opt_str_field(new_data, "stavUhrady");
 
-    let old_ops: HashSet<(String, String)> = old_state
+    let old_ops: HashSet<(&str, &str)> = old_state
         .provedene_operace
         .iter()
-        .map(|op| (op.nazev.clone(), op.datum_provedeni.clone()))
+        .map(|op| (op.nazev.as_str(), op.datum_provedeni.as_str()))
         .collect();
 
     let new_operations: Vec<Operace> = operace_from_data(new_data)
         .into_iter()
-        .filter(|op| !old_ops.contains(&(op.nazev.clone(), op.datum_provedeni.clone())))
+        .filter(|op| !old_ops.contains(&(op.nazev.as_str(), op.datum_provedeni.as_str())))
         .collect();
 
     let stav_changed = new_stav != old_stav;
@@ -351,7 +346,7 @@ pub fn add(cislo_rizeni: &str, label: &str) -> Result<ProceedingState> {
     let parsed = parse_proceeding_number(cislo_rizeni)?;
     let canonical = parsed.canonical();
 
-    if ProceedingState::load(&canonical).is_some() {
+    if state::store().exists(&crate::paths::dir_name(&canonical)) {
         return Err(KatastrError::ProceedingAlreadyTracked(format!(
             "Řízení {canonical} je již sledováno."
         )));
@@ -363,7 +358,6 @@ pub fn add(cislo_rizeni: &str, label: &str) -> Result<ProceedingState> {
 
     let timestamp = now_utc();
     let state = ProceedingState {
-        uuid: Uuid::new_v4().to_string(),
         cislo_rizeni: canonical.clone(),
         typ_rizeni: parsed.typ_rizeni.clone(),
         poradove_cislo: parsed.poradove_cislo,
@@ -374,7 +368,7 @@ pub fn add(cislo_rizeni: &str, label: &str) -> Result<ProceedingState> {
         added_on: timestamp.clone(),
         last_check_at: timestamp,
         stav: str_field(&data, "stav"),
-        stav_uhrady: data.get("stavUhrady").and_then(|v| v.as_str()).map(String::from),
+        stav_uhrady: opt_str_field(&data, "stavUhrady"),
         datum_prijeti: str_field(&data, "datumPrijeti"),
         provedene_operace: operace_from_data(&data),
         changes: Vec::new(),
@@ -440,11 +434,11 @@ impl Watcher for KatastrWatcher {
     /// `_check_state`, including the backfill-but-never-wipe rules for `api_id`
     /// and `datum_prijeti`. `cdx-watch` persists the returned snapshot.
     fn poll(&self, mut state: ProceedingState) -> Result<(ProceedingState, Option<Change>)> {
-        let canonical = state.cislo_rizeni.clone();
-
         let fetched = match &state.api_id {
             Some(id) if !id.is_null() => fetch_by_id(id)?,
-            _ => fetch_from_cuzk(&parse_proceeding_number(&canonical)?)?,
+            // Only the search fallback re-parses the canonical number, so parse
+            // it here rather than cloning it eagerly on the (common) fast path.
+            _ => fetch_from_cuzk(&parse_proceeding_number(&state.cislo_rizeni)?)?,
         };
         let data = fetched.ok_or_else(|| {
             KatastrError::ProceedingNotFound("Řízení nebylo nalezeno v ČÚZK API.".into())
@@ -462,7 +456,7 @@ impl Watcher for KatastrWatcher {
             }
         }
         state.stav = str_field(&data, "stav");
-        state.stav_uhrady = data.get("stavUhrady").and_then(|v| v.as_str()).map(String::from);
+        state.stav_uhrady = opt_str_field(&data, "stavUhrady");
         let new_prijeti = str_field(&data, "datumPrijeti");
         if !new_prijeti.is_empty() {
             state.datum_prijeti = new_prijeti;
@@ -491,13 +485,10 @@ impl Watcher for KatastrWatcher {
 pub fn check_one(cislo_rizeni: &str) -> Result<CheckResult> {
     let canonical = normalize_number(cislo_rizeni)?;
     let slug = crate::paths::dir_name(&canonical);
-    match track::check_one(&state::store(), &KatastrWatcher, &slug) {
-        Ok(result) => Ok(CheckResult::from_watch(result)),
-        // The only error `check_one` returns here is `NotTracked`.
-        Err(_) => Err(KatastrError::ProceedingNotTracked(format!(
-            "Řízení {canonical} není sledováno."
-        ))),
-    }
+    // The only error `check_one` returns here is `NotTracked`.
+    track::check_one(&state::store(), &KatastrWatcher, &slug).map_err(|_| {
+        KatastrError::ProceedingNotTracked(format!("Řízení {canonical} není sledováno."))
+    })
 }
 
 /// Re-fetch every tracked proceeding. A failure on any single one becomes an
@@ -505,9 +496,6 @@ pub fn check_one(cislo_rizeni: &str) -> Result<CheckResult> {
 /// status.
 pub fn check_all() -> Vec<CheckResult> {
     track::check_all(&state::store(), &KatastrWatcher)
-        .into_iter()
-        .map(CheckResult::from_watch)
-        .collect()
 }
 
 /// Mark changes as confirmed. When `change_index` is `None`, every unconfirmed
@@ -537,34 +525,11 @@ pub fn confirm(cislo_rizeni: &str, change_index: Option<usize>) -> Result<usize>
 
 // ── check result ────────────────────────────────────────────────────────────
 
-/// Per-proceeding result returned by [`check_one`] / [`check_all`].
-/// Matches the Python dict shape so the CGI can pass it straight through.
-#[derive(Debug, Clone, Serialize)]
-pub struct CheckResult {
-    pub cislo_rizeni: String,
-    pub ok: bool,
-    pub change: Option<Change>,
-    pub error: Option<String>,
-}
-
-impl CheckResult {
-    /// Adapt a `cdx-watch` result into katastr's shape. The watcher carries the
-    /// canonical proceeding number in `display_name` (see [`KatastrWatcher`]),
-    /// which is exactly the `cislo_rizeni` the CLI/CGI expose.
-    fn from_watch(result: track::CheckResult<Change>) -> Self {
-        Self {
-            cislo_rizeni: result.display_name,
-            ok: result.ok,
-            change: result.change,
-            error: result.error,
-        }
-    }
-
-    /// True when the check completed and carries a newly detected change.
-    pub fn has_change(&self) -> bool {
-        self.ok && self.change.is_some()
-    }
-}
+/// Per-proceeding result of a check run: the shared `cdx-watch` type specialized
+/// to katastr's `Change`. The proceeding's canonical number is carried in
+/// `display_name` (set by [`KatastrWatcher::display_name`]); `slug` is the
+/// filesystem key. `has_change()` comes from the shared type.
+pub type CheckResult = track::CheckResult<Change>;
 
 // ── state save helper ───────────────────────────────────────────────────────
 
@@ -657,7 +622,6 @@ mod tests {
     #[test]
     fn detect_changes_flags_new_operation() {
         let state = ProceedingState {
-            uuid: "u".into(),
             cislo_rizeni: "V-1/2026-701".into(),
             typ_rizeni: "V".into(),
             poradove_cislo: 1,
@@ -693,7 +657,6 @@ mod tests {
     #[test]
     fn detect_changes_returns_none_when_identical() {
         let state = ProceedingState {
-            uuid: "u".into(),
             cislo_rizeni: "V-1/2026-701".into(),
             typ_rizeni: "V".into(),
             poradove_cislo: 1,

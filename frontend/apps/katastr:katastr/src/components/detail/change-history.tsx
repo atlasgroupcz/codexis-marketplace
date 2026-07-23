@@ -7,12 +7,12 @@ import { confirmChange } from '@/lib/api'
 import { errorMessage, formatDateTime } from '@/lib/format'
 
 interface ChangeHistoryProps {
-  uuid: string
+  cisloRizeni: string
   changes: Array<ProceedingChange>
   onConfirmed: () => void
 }
 
-export function ChangeHistory({ uuid, changes, onConfirmed }: ChangeHistoryProps) {
+export function ChangeHistory({ cisloRizeni, changes, onConfirmed }: ChangeHistoryProps) {
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
 
@@ -31,7 +31,7 @@ export function ChangeHistory({ uuid, changes, onConfirmed }: ChangeHistoryProps
 
   const handleConfirm = (index?: number) => {
     setConfirming(true)
-    confirmChange(uuid, index)
+    confirmChange(cisloRizeni, index)
       .then(() => onConfirmed())
       .catch((e: unknown) => toast.error(errorMessage(e)))
       .finally(() => setConfirming(false))

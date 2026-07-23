@@ -5,7 +5,6 @@ import { ProceedingTimeline } from './timeline'
 import type { ProceedingDetail } from '@/lib/schemas'
 
 const base = {
-  uuid: 'u1',
   cislo_rizeni: 'V-1234/2026-701',
   typ_rizeni: 'Vklad',
   label: '',

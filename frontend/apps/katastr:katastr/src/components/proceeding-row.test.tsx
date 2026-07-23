@@ -6,7 +6,6 @@ import type { ProceedingSummary } from '@/lib/schemas'
 
 // react-i18next returns the key by default in tests (no provider) - assert on keys/values we control.
 const proc: ProceedingSummary = {
-  uuid: 'u1',
   cislo_rizeni: 'V-1234/2026-701',
   typ_rizeni: 'Vklad',
   label: 'Byt Brno-střed',
@@ -20,11 +19,6 @@ const proc: ProceedingSummary = {
   operace_count: 3,
   changes_count: 1,
   unconfirmed_count: 2,
-  provedene_operace: [
-    { nazev: 'Přijetí návrhu', datumProvedeni: '2026-06-01' },
-    { nazev: 'Vyznačení plomby', datumProvedeni: '2026-06-01' },
-    { nazev: 'Povolení vkladu', datumProvedeni: '2026-06-12' },
-  ],
 }
 
 describe('ProceedingRow', () => {

@@ -4,22 +4,26 @@
 //!
 //! Sends only when a change was actually detected; a quiet run sends nothing.
 //! The transport itself (auth, daemon URL resolution, signed-in-user
-//! resolution) lives in `cdx_notify::notify`; this module owns only the
-//! katastr-specific summary content.
+//! resolution) lives in `cdx_notify::notify`; this module owns the
+//! katastr-specific summary content and the dispatch decision (`dispatch`) that
+//! both the CLI and the CGI share.
 
-use cdx_notify::notify::{html_escape, send_email, send_inapp};
+use cdx_notify::email::email_shell;
+use cdx_notify::notify::{html_escape, resolve_to, send_email, send_inapp};
 
 use crate::error::Result;
+use crate::notify_settings::get_notify;
 use crate::tracking::{describe_change, CheckResult};
 
 /// Deep link into the plugin's app + notification type tag for the bell.
 const APP_LINK: &str = "/katastr";
 const NOTIFICATION_TYPE: &str = "cadastre-changed";
+/// Uppercase brand label shown as the e-mail eyebrow.
+const EYEBROW: &str = "Hlídač katastrálních řízení";
 const FOOTER: &str = "Otevřete aplikaci Katastr v CODEXIS pro detail.";
 
-/// Re-export the shared transport helpers so the CGI/CLI call sites keep
-/// working unchanged.
-pub use cdx_notify::notify::{query_me_email, resolve_to, without_self};
+/// Re-export the shared transport helpers the CGI/CLI call directly.
+pub use cdx_notify::notify::{query_me_email, without_self};
 
 // ── summary building ──────────────────────────────────────────────────────────
 
@@ -27,25 +31,20 @@ fn changed(results: &[CheckResult]) -> Vec<&CheckResult> {
     results.iter().filter(|r| r.has_change()).collect()
 }
 
-fn email_shell(heading: &str, inner_html: &str) -> String {
-    format!(
-        "<div style=\"max-width:560px;font:14px sans-serif;color:#0a0a0a\">\
-         <p style=\"margin:0;font:600 12px sans-serif;letter-spacing:.14em;\
-         text-transform:uppercase;color:#5ea500\">Hlídač katastrálních řízení</p>\
-         <h2 style=\"margin:4px 0 2px;font:400 22px Georgia,serif\">{heading}</h2>\
-         {inner_html}\
-         <p style=\"margin-top:20px;font:13px sans-serif;color:#777\">{FOOTER}</p></div>"
-    )
+/// Just the e-mail / bell subject line for the changed proceedings. Split out so
+/// the in-app bell can reuse it without rebuilding the whole e-mail body.
+fn summary_subject(changed: &[&CheckResult]) -> String {
+    if changed.len() == 1 {
+        format!("Katastr: změna u řízení {}", changed[0].display_name)
+    } else {
+        format!("Katastr: změny u {} sledovaných řízení", changed.len())
+    }
 }
 
 /// `(subject, body_text, body_html)` for proceedings with a newly detected
 /// change. Mirrors Python's `_change_summary`.
 fn change_summary(changed: &[&CheckResult]) -> (String, String, String) {
-    let subject = if changed.len() == 1 {
-        format!("Katastr: změna u řízení {}", changed[0].cislo_rizeni)
-    } else {
-        format!("Katastr: změny u {} sledovaných řízení", changed.len())
-    };
+    let subject = summary_subject(changed);
 
     let mut text_lines: Vec<String> =
         vec!["Hlídač katastrálních řízení zaznamenal změny:".to_string(), String::new()];
@@ -53,7 +52,7 @@ fn change_summary(changed: &[&CheckResult]) -> (String, String, String) {
 
     for r in changed {
         let detail = r.change.as_ref().map(describe_change).unwrap_or_default();
-        text_lines.push(format!("{}:", r.cislo_rizeni));
+        text_lines.push(format!("{}:", r.display_name));
         for line in &detail {
             text_lines.push(format!("  {line}"));
         }
@@ -66,51 +65,86 @@ fn change_summary(changed: &[&CheckResult]) -> (String, String, String) {
         html_blocks.push_str(&format!(
             "<h3 style=\"margin:18px 0 6px;font:600 15px sans-serif;color:#0a0a0a\">{}</h3>\
              <ul style=\"margin:0;padding-left:18px;font:14px/1.5 sans-serif;color:#333\">{}</ul>",
-            html_escape(&r.cislo_rizeni),
+            html_escape(&r.display_name),
             items
         ));
     }
     text_lines.push(FOOTER.to_string());
 
-    let body_html = email_shell("Změny u sledovaných řízení", &html_blocks);
+    let body_html = email_shell(EYEBROW, "Změny u sledovaných řízení", &html_blocks, FOOTER);
     (subject, text_lines.join("\n"), body_html)
-}
-
-/// Build `(subject, body_text, body_html)` for proceedings with a new change,
-/// or `None` when nothing changed.
-pub fn build_summary(results: &[CheckResult]) -> Option<(String, String, String)> {
-    let changed = changed(results);
-    if changed.is_empty() {
-        None
-    } else {
-        Some(change_summary(&changed))
-    }
 }
 
 /// Send one summary e-mail for proceedings with newly detected changes.
 /// Returns the number of proceedings with a new change (0 → nothing sent).
 /// Pass `to` to override the recipient (default: the signed-in user).
-pub fn email_change_summary(results: &[CheckResult], to: Option<Vec<String>>) -> Result<usize> {
-    let changed = changed(results);
+fn email_change_summary(changed: &[&CheckResult], to: Option<Vec<String>>) -> Result<usize> {
     if changed.is_empty() {
         return Ok(0);
     }
-    let (subject, text, html) = change_summary(&changed);
+    let (subject, text, html) = change_summary(changed);
     send_email(&subject, &text, Some(&html), to.as_deref(), "katastr")?;
     Ok(changed.len())
 }
 
 /// Send an in-app (bell) notification only when there is a real change (no
 /// heartbeat bell). Returns `true` if sent.
-pub fn inapp_change_summary(results: &[CheckResult]) -> bool {
-    let changed = changed(results);
+fn inapp_change_summary(changed: &[&CheckResult]) -> bool {
     if changed.is_empty() {
         return false;
     }
-    let subject = change_summary(&changed).0;
+    // Only the subject is needed here - no HTML body is built, unlike e-mail.
+    let subject = summary_subject(changed);
     // cdx-notify's send_inapp takes an optional `action` before the deep link;
     // katastr has no action button, only the app link.
     send_inapp(&subject, NOTIFICATION_TYPE, None, Some(APP_LINK))
+}
+
+// ── dispatch ──────────────────────────────────────────────────────────────────
+
+/// The e-mail channel's outcome for a check run.
+pub enum EmailOutcome {
+    /// A summary e-mail was sent covering `n` changed proceedings.
+    Sent(usize),
+    /// E-mail is enabled, but the run was quiet so nothing was sent.
+    Skipped,
+    /// E-mail is enabled, but the send failed.
+    Failed(String),
+}
+
+/// What [`dispatch`] did with a check run's results, so the CLI can report it.
+pub struct Dispatched {
+    /// E-mail channel outcome; `None` when e-mail notifications are disabled.
+    pub email: Option<EmailOutcome>,
+    /// `true` when the in-app bell was enabled and a notification was sent.
+    pub in_app_sent: bool,
+}
+
+/// Read the stored notify settings and route a check run's freshly detected
+/// changes to the enabled channels (e-mail + in-app). The single place the CLI
+/// and CGI share, so the "which channels, in what order" decision lives once.
+/// Best-effort: the CGI ignores the return, the CLI renders its status lines
+/// from it.
+pub fn dispatch(results: &[CheckResult]) -> Dispatched {
+    let cfg = get_notify();
+    // Compute the changed set once and share it between both channels, rather
+    // than each channel re-filtering `results`.
+    let changed = changed(results);
+
+    let email = if cfg.email {
+        let to = resolve_to(&cfg.recipients);
+        Some(match email_change_summary(&changed, to) {
+            Ok(0) => EmailOutcome::Skipped,
+            Ok(n) => EmailOutcome::Sent(n),
+            Err(e) => EmailOutcome::Failed(e.to_string()),
+        })
+    } else {
+        None
+    };
+
+    let in_app_sent = cfg.in_app && inapp_change_summary(&changed);
+
+    Dispatched { email, in_app_sent }
 }
 
 // ── tests ────────────────────────────────────────────────────────────────────
@@ -122,7 +156,8 @@ mod tests {
 
     fn result_with_change() -> CheckResult {
         CheckResult {
-            cislo_rizeni: "V-1/2026-701".into(),
+            slug: "V-1_2026-701".into(),
+            display_name: "V-1/2026-701".into(),
             ok: true,
             change: Some(Change {
                 detected_on: "2026-07-10T00:00:00Z".into(),
@@ -142,19 +177,21 @@ mod tests {
     }
 
     #[test]
-    fn build_summary_none_when_no_changes() {
+    fn change_summary_none_when_no_changes() {
         let quiet = CheckResult {
-            cislo_rizeni: "V-2/2026-701".into(),
+            slug: "V-2_2026-701".into(),
+            display_name: "V-2/2026-701".into(),
             ok: true,
             change: None,
             error: None,
         };
-        assert!(build_summary(&[quiet]).is_none());
+        // A quiet run filters down to no changed proceedings, so no summary.
+        assert!(changed(&[quiet]).is_empty());
     }
 
     #[test]
-    fn build_summary_single_subject_and_body() {
-        let (subject, text, html) = build_summary(&[result_with_change()]).unwrap();
+    fn change_summary_single_subject_and_body() {
+        let (subject, text, html) = change_summary(&changed(&[result_with_change()]));
         assert_eq!(subject, "Katastr: změna u řízení V-1/2026-701");
         assert!(text.contains("Stav: Probíhá → Povoleno"));
         assert!(text.contains("Nová operace: Vklad (2026-07-10)"));
@@ -163,9 +200,9 @@ mod tests {
     }
 
     #[test]
-    fn build_summary_plural_subject() {
+    fn change_summary_plural_subject() {
         let (subject, _, _) =
-            build_summary(&[result_with_change(), result_with_change()]).unwrap();
+            change_summary(&changed(&[result_with_change(), result_with_change()]));
         assert_eq!(subject, "Katastr: změny u 2 sledovaných řízení");
     }
 }

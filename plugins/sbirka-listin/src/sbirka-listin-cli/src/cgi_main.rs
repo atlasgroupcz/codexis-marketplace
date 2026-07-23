@@ -31,6 +31,12 @@ fn main() -> ExitCode {
     let method = env::var("REQUEST_METHOD").unwrap_or_else(|_| "GET".into());
     let query = env::var("QUERY_STRING").unwrap_or_default();
 
+    // Keep the user settings file present + migrated on the dashboard entry too,
+    // matching the CLI's startup. An app-only user never runs the CLI, so the
+    // CGI must ensure it itself. Best-effort: a settings write failure must not
+    // fail the request.
+    let _ = NotifySettings::new(watch::APP_ID).ensure_settings();
+
     match method.as_str() {
         "GET" => handle_get(&query),
         "POST" => handle_post(),

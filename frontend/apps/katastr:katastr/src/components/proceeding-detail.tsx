@@ -18,14 +18,14 @@ import { removeProceeding, setLabel } from '@/lib/api'
 import { errorMessage, formatDate, formatRelative } from '@/lib/format'
 
 interface ProceedingDetailProps {
-  uuid: string
+  cisloRizeni: string
   onBack: () => void
   onChanged?: () => void
 }
 
-export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailProps) {
+export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingDetailProps) {
   const { t } = useTranslation()
-  const { data, loading, error, refetch } = useDetail(uuid)
+  const { data, loading, error, refetch } = useDetail(cisloRizeni)
 
   const [labelOverride, setLabelOverride] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
@@ -33,7 +33,7 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
   const inputRef = useRef<HTMLInputElement>(null)
 
   const remove = useConfirmAction(() =>
-    removeProceeding(uuid)
+    removeProceeding(cisloRizeni)
       .then(() => {
         onChanged?.()
         onBack()
@@ -74,7 +74,7 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
     // Optimistic display first; persist, then refetch so the list reflects the
     // new label instead of racing the write.
     setLabelOverride(next)
-    setLabel(uuid, next)
+    setLabel(cisloRizeni, next)
       .then(() => {
         refetch()
         onChanged?.()
@@ -182,7 +182,7 @@ export function ProceedingDetail({ uuid, onBack, onChanged }: ProceedingDetailPr
         </TabsContent>
         <TabsContent value="zmeny">
           <ChangeHistory
-            uuid={uuid}
+            cisloRizeni={cisloRizeni}
             changes={proc.changes}
             onConfirmed={() => {
               refetch()

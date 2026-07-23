@@ -18,8 +18,11 @@ export const proceedingChangeSchema = z.object({
 })
 export type ProceedingChange = z.infer<typeof proceedingChangeSchema>
 
+// A proceeding is identified by its canonical number `cislo_rizeni` (unique and
+// stable); it is also the row key and the detail-route param. The overview list
+// deliberately omits the full `provedene_operace` array - it only needs
+// `operace_count` + `last_op_date`; the operations list rides on the detail.
 export const proceedingSummarySchema = z.object({
-  uuid: z.string(),
   cislo_rizeni: z.string(),
   typ_rizeni: z.string(),
   label: z.string().optional().default(''),
@@ -33,11 +36,11 @@ export const proceedingSummarySchema = z.object({
   operace_count: z.number(),
   changes_count: z.number(),
   unconfirmed_count: z.number().optional().default(0),
-  provedene_operace: z.array(operaceSchema),
 })
 export type ProceedingSummary = z.infer<typeof proceedingSummarySchema>
 
 export const proceedingDetailSchema = proceedingSummarySchema.extend({
+  provedene_operace: z.array(operaceSchema).optional().default([]),
   changes: z.array(proceedingChangeSchema).optional().default([]),
 })
 export type ProceedingDetail = z.infer<typeof proceedingDetailSchema>
