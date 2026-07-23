@@ -4,14 +4,12 @@ set -euo pipefail
 PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
-SHARED_LIB_DIR="${HOME}/.local/share/katastr/lib"
 SHARE_DIR="${HOME}/.local/share"
 
 # Remove only THIS run's temp artifacts, even on crash or interrupt. Scoped to
 # the current PID so a concurrent install can't delete an in-flight temp file.
 cleanup_own_temps() {
   rm -f "${TARGET_BIN_DIR}"/.*.tmp.$$ 2>/dev/null || true
-  rm -rf "${SHARED_LIB_DIR}"/.*.tmp.$$ "${SHARED_LIB_DIR}"/.*.old.$$ 2>/dev/null || true
 }
 trap cleanup_own_temps EXIT INT TERM
 
@@ -40,36 +38,8 @@ install_binary() {
   echo "Installed ${name} -> ${target_path}"
 }
 
-install_lib() {
-  local module_name="$1"
-  local source_path="${PLUGIN_DIR}/lib/${module_name}"
-  if [[ ! -d "${source_path}" ]]; then
-    return
-  fi
-  # Atomic install: copy the module into a temp dir, flush it to disk, then
-  # swap it into place via rename. A crash never leaves a half-copied module
-  # at the real path; worst case it is briefly absent and the next run restores it.
-  local dest="${SHARED_LIB_DIR}/${module_name}"
-  local tmp_dest="${SHARED_LIB_DIR}/.${module_name}.tmp.$$"
-  local old_dest="${SHARED_LIB_DIR}/.${module_name}.old.$$"
-  if mkdir -p "${SHARED_LIB_DIR}" 2>/dev/null && [[ -w "${SHARED_LIB_DIR}" ]]; then
-    cp -r "${source_path}" "${tmp_dest}"
-    sync "${tmp_dest}" 2>/dev/null || sync
-    [[ -e "${dest}" ]] && mv -f "${dest}" "${old_dest}"
-    mv -f "${tmp_dest}" "${dest}"
-    rm -rf "${old_dest}"
-  else
-    sudo install -d "${SHARED_LIB_DIR}"
-    sudo cp -r "${source_path}" "${tmp_dest}"
-    sudo sync "${tmp_dest}" 2>/dev/null || sudo sync
-    [[ -e "${dest}" ]] && sudo mv -f "${dest}" "${old_dest}"
-    sudo mv -f "${tmp_dest}" "${dest}"
-    sudo rm -rf "${old_dest}"
-  fi
-  echo "Installed ${module_name} -> ${dest}"
-}
-
-install_lib "katastr_core"
+# The katastr-cli binary is a self-contained Rust executable - no Python lib to
+# install anymore (the former `install_lib katastr_core` step is gone).
 install_binary "katastr-cli"
 
 install_settings() {

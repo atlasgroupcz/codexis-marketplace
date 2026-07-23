@@ -20,7 +20,7 @@ i18n:
 
 A single tool - **`katastr-cli`** - wraps the entire ČÚZK REST API KN plus a stateful tracker for cadastral proceedings.
 
-**IMPORTANT:** For cadastral data use only `katastr-cli` - do NOT call `kn`, `cdx-cli`, or `curl` (the one data exception is the RUIAN address lookup in `references/api.md`). `cdxctl` is the platform's automation and notification tool: use it to set up recurring monitoring or send an on-demand status e-mail (see *Monitoring & e-mail*), never to fetch cadastral data. Stop only on genuine `ERROR:` lines (invalid number, API key rejected/missing, network, "nebylo nalezeno v ČÚZK") - report them, don't guess workarounds. When acting on several proceedings, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** For cadastral data use only `katastr-cli` - do NOT call `kn`, `cdx-cli`, or `curl` (the one data exception is the RUIAN address lookup in `references/api.md`). `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring (see *Monitoring & e-mail*), never to fetch cadastral data. Stop only on genuine `ERROR:` lines (invalid number, API key rejected/missing, network, "nebylo nalezeno v ČÚZK") - report them, don't guess workarounds. When acting on several proceedings, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
@@ -63,13 +63,13 @@ are in **`references/api.md`** - read it when doing raw lookups.
 1. `katastr-cli tracking show V-XYZ` (or `tracking list`)
 2. **If tracked** → `tracking show V-XYZ` (rich state + change history); optionally `tracking check V-XYZ` first to refresh from ČÚZK.
 3. **If NOT tracked** → `api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=...&Rok=...&KodPracoviste=..."`, present it, and offer:
-   *"Pokud chceš, můžu řízení přidat ke sledování - budu hlídat změny stavu a operací každý den."*
+   *"Pokud chceš, můžu řízení přidat ke sledování - budu hlídat změny stavu a operací každý týden."*
 
 **API key error** (`ERROR: API klíč ... není nastaven` / `... byl odmítnut`) → see **settings** below.
 
 ## `katastr-cli tracking` - proceeding monitoring
 
-Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron automation (`0 7 * * *`) runs `katastr-cli tracking check` daily at 7:00 to refresh all tracked proceedings.
+Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
 
 ```bash
 katastr-cli tracking add V-123/2026-701 [--label "Novákovi"]       # verify in ČÚZK + save baseline
@@ -90,8 +90,8 @@ katastr-cli tracking remove V-123/2026-701
 
 ### Monitoring & notifications
 
-E-mail and in-app (bell) notifications are a **persistent app setting** - turn them
-on or off with `notify set`:
+E-mail and in-app (bell) notifications are a **persistent app setting**, not a
+per-run flag on `check`:
 
 ```bash
 katastr-cli notify set --email      # turn on e-mail
@@ -101,8 +101,9 @@ katastr-cli notify set --no-inapp   # turn off the in-app bell
 katastr-cli notify show             # show current settings
 ```
 
-`tracking check` reads this setting on every run; the recipient is always the
-**signed-in user**, and you never touch a token, SMTP or cron yourself.
+`tracking check` reads this setting every run - there is no `--email`/`--to` flag on
+`check` anymore. Recipient is always the **signed-in user**; you never touch a
+token, SMTP or cron yourself.
 
 **Extra recipients (optional):** the signed-in user always gets the e-mail; add
 others who should get a copy. You don't need to add the signed-in user's own
@@ -115,44 +116,46 @@ katastr-cli notify recipients set <email...>    # replace the whole extra-recipi
 katastr-cli notify recipients clear             # remove all extras - e-mail then goes only to the signed-in user
 ```
 
-- **E-mail (if on):** sent **only when a proceeding actually changed** - a quiet run
-  sends nothing.
-- **In-app bell (if on):** fires **only when a proceeding actually changed.**
+- **E-mail (if on):** sent **every run**, either the detected changes or a
+  **"no new changes" heartbeat** - so the user sees the watchdog is alive even on a
+  quiet week.
+- **In-app bell (if on):** fires **only when a proceeding actually changed** - no
+  heartbeat spam in the notification center.
 
 **Shipped default - no notifications sent by `check` unless the setting is on.**
-`automations/check-rizeni.md` runs a plain `tracking check` daily to keep state
+`automations/check-rizeni.md` runs a plain `tracking check` weekly to keep state
 fresh and the UI unread badge current; it sends e-mail/bell only if the user has
 turned the corresponding setting on. Leave it as-is unless the user asks for
 notifications.
 
-**"Give me the status / e-mail me now":** for an on-demand status, run
-`tracking show <V-…>` and summarise the state in your reply:
+**One-off "e-mail me / notify me now":** turn the setting on, then run
+`katastr-cli tracking check` once - no flags needed:
 
 ```bash
-katastr-cli tracking show V-123/2026-701
+katastr-cli notify set --email
+katastr-cli tracking check
 ```
 
-| User wants | Do |
-|---|---|
-| alerted when a proceeding changes | `notify set --email` - `check` then e-mails on a real change |
-| a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
+(Sends a summary even right after `tracking add`, when nothing has changed yet - the
+e-mail heartbeat confirms it works; the bell stays quiet until a real change.)
 
-**Recurring ("sleduj a každý den/týden mi pošli e-mail"):** one prompt run fires at most
-once, so the recurrence has to come from a schedule - and the schedule already exists:
+**Recurring ("sleduj a každý den/týden mi pošli e-mail"):** the recurrence *is* a
+scheduled automation - one prompt run fires at most once. Set it up with `cdxctl`
+(the one place you may call it):
 
 1. Add the proceeding(s) (`tracking add`).
 2. Turn on the wanted setting(s): `katastr-cli notify set --email` and/or
    `katastr-cli notify set --inapp`.
-3. Confirm what that gives them: the shipped `automations/check-rizeni.md` runs a plain
-   `tracking check` daily at 7:00 and notifies as soon as a proceeding changes.
-
-That is the whole setup - **don't create an automation for this.** The shipped one already
-runs the same `tracking check`, and `check` advances the stored snapshot, so a second
-automation would compare fresh data against fresh data, find nothing, and never notify.
-
-Only if the user wants a cadence other than daily: disable the shipped automation first
-(`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the
-replacement - otherwise the daily run keeps consuming changes before yours sees them.
+3. Create the automation running plain `tracking check` (no flags):
+   ```bash
+   cdxctl automation create-command \
+     --title "Katastr: hlídání řízení" \
+     --cron "0 8 * * *" \
+     --command "katastr-cli tracking check"
+   ```
+   Pick the cron from the user's cadence (daily `0 8 * * *`, weekly `0 8 * * 1`, …).
+4. Briefly confirm what you set up (which proceedings, how often, which
+   notification channels).
 
 ## `katastr-cli api` - raw ČÚZK lookups
 
