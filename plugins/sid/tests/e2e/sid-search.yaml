@@ -4,7 +4,7 @@ description: Verify the sid skill drives sid-cli for internal document lookups a
 # Needs `--var sid_api_key=…`, and a SID instance that accepts API keys.
 # Neither exists yet: headless auth is still an unmerged SID branch, so
 # onprem answers /api/v1/* with a 307 to /login. Remove this `skip` once SID
-# is deployed and CI has a key to pass — the steps below are ready as they
+# is deployed and CI has a key to pass - the steps below are ready as they
 # are. Skipping is deliberate: without a key the run would only ever exercise
 # the "no key" path and would pass whether SID works or not.
 skip: "waiting for SID headless auth to be deployed and a CI key to be provisioned"
@@ -22,7 +22,7 @@ setup:
           content: "SID_API_KEY={{ sid_api_key }}\nSID_API_URL={{ sid_api_base }}\n"
 
 steps:
-  # 1. The key must actually authenticate — `settings test` returns the signed-in
+  # 1. The key must actually authenticate - `settings test` returns the signed-in
   #    user, which proves the whole chain (env file → x-api-key → SID) works.
   #    A broken key surfaces here instead of hiding behind an empty result set.
   - prompt: "Ověř, že mám funkční připojení do SID a řekni mi, pod jakým účtem jsem přihlášený."
@@ -46,10 +46,10 @@ steps:
       tool_calls_max: 8
       response:
         # Either hits were relayed, or the model correctly reported an empty
-        # result / fulltext outage — but never a raw error or a curl fallback.
+        # result / fulltext outage - but never a raw error or a curl fallback.
         matches: "(?is)(směrnic|dokument|nenalez|nedostupn)"
 
-  # 3. Personal query — a different subcommand of the same tool.
+  # 3. Personal query - a different subcommand of the same tool.
   - prompt: "Co mám v SID potvrdit?"
     expect:
       tool_call:

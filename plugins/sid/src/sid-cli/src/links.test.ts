@@ -16,7 +16,7 @@ describe("documentUrl", () => {
     expect(documentUrl("doc-1", "USER")).toBe("https://sid.test/files/doc-1")
   })
 
-  it("admin gets /admin/files — the (user) layout bounces admins to the dashboard", () => {
+  it("admin gets /admin/files - the (user) layout bounces admins to the dashboard", () => {
     expect(documentUrl("doc-1", "ADMIN")).toBe("https://sid.test/admin/files/doc-1")
   })
 

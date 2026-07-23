@@ -10,7 +10,7 @@ steps:
     expect:
       tool_call:
         name: shell
-        # The flags replace the markdown loop entirely — a --stdin here is a bug.
+        # The flags replace the markdown loop entirely - a --stdin here is a bug.
         input_matches: "agent create.{0,400}--name"
       tool_calls_min: 1
       tool_calls_max: 6
@@ -23,7 +23,7 @@ steps:
           maxTurns: 7
           editable: true
 
-  - prompt: "U agenta ee-flags-{{ run_id }} změň jen popis na 'E2E flags — updated'."
+  - prompt: "U agenta ee-flags-{{ run_id }} změň jen popis na 'E2E flags - updated'."
     expect:
       tool_call:
         name: shell
@@ -37,7 +37,7 @@ steps:
         # AgentInput is a full replace, so a single --description must not wipe
         # the model or the turn budget.
         matches_subset:
-          description: "E2E flags — updated"
+          description: "E2E flags - updated"
           model: "claude-opus-4-8"
           maxTurns: 7
 

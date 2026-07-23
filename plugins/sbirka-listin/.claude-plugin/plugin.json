@@ -2,7 +2,7 @@
   "name": "sbirka-listin",
   "iconPath": "icon.svg",
   "version": "1.0.0",
-  "description": "Sbírka listin veřejných rejstříků ČR — dokumenty subjektu podle IČO a hlídání nových přírůstků",
+  "description": "Sbírka listin veřejných rejstříků ČR - dokumenty subjektu podle IČO a hlídání nových přírůstků",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
@@ -21,17 +21,17 @@
   "i18n": {
     "cs": {
       "displayName": "Sbírka listin ČR",
-      "description": "Dokumenty ze Sbírky listin veřejných rejstříků ČR — účetní závěrky, stanovy a další listiny subjektu podle IČO, se stažením dokumentu a hlídáním nových přírůstků.",
+      "description": "Dokumenty ze Sbírky listin veřejných rejstříků ČR - účetní závěrky, stanovy a další listiny subjektu podle IČO, se stažením dokumentu a hlídáním nových přírůstků.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Registr", "documents": "Dokumenty" }
     },
     "en": {
       "displayName": "Czech Collection of Deeds",
-      "description": "Documents from the Czech public registers' Collection of Deeds (Sbírka listin) — financial statements, articles and other filings by IČO, with document download and new-filing watching.",
+      "description": "Documents from the Czech public registers' Collection of Deeds (Sbírka listin) - financial statements, articles and other filings by IČO, with document download and new-filing watching.",
       "tagLabels": { "legal": "Law", "czech": "Czech Republic", "registry": "Registry", "documents": "Documents" }
     },
     "sk": {
       "displayName": "Zbierka listín ČR",
-      "description": "Dokumenty zo Zbierky listín verejných registrov ČR — účtovné závierky, stanovy a ďalšie listiny subjektu podľa IČO, so stiahnutím dokumentu a strážením nových prírastkov.",
+      "description": "Dokumenty zo Zbierky listín verejných registrov ČR - účtovné závierky, stanovy a ďalšie listiny subjektu podľa IČO, so stiahnutím dokumentu a strážením nových prírastkov.",
       "tagLabels": { "legal": "Právo", "czech": "Česko", "registry": "Register", "documents": "Dokumenty" }
     }
   },

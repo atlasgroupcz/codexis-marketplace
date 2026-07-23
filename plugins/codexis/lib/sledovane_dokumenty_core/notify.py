@@ -279,7 +279,7 @@ def build_document_summary(changed):
     if not changed:
         return None
     n = len(changed)
-    subject = f"Sledované dokumenty – {n} změn" if n != 1 else "Sledované dokumenty – 1 změna"
+    subject = f"Sledované dokumenty - {n} změn" if n != 1 else "Sledované dokumenty - 1 změna"
     names = [c.get("name") or c.get("codexisId") or "?" for c in changed]
     body_text = "Změny ve sledovaných dokumentech:\n" + "\n".join(f"- {x}" for x in names)
     inner = "".join(f"<li>{escape(x)}</li>" for x in names)

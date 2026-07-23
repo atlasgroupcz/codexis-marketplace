@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-// NATURE_OF_LAND_USE_ID is the 1–10 sequential internal id of the KN code
+// NATURE_OF_LAND_USE_ID is the 1-10 sequential internal id of the KN code
 // list ordered by the official kód druhu pozemku (vyhláška č. 461/2009 Z. z.,
 // príloha 1). Mapping verified empirically per value by cross-referencing the
 // same parcels between the ESKN ArcGIS identify service and the ESKN portal

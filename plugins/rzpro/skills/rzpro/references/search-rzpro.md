@@ -20,7 +20,7 @@ Risk classes (`--riziko`) come in families tied to the device kind - pick the
 right family or the filter returns nothing:
 - **General** (Obecný): `I`, `Is`, `Im`, `IIa`, `IIb`, `III`
 - **Active implantable** (Aktivní implantabilní): `AI` - not `III`
-- **IVD** (Diagnostický): `IVD`, `IVD A`, `IVD B`, `IVDst`; new `IVDR A`–`IVDR D`
+- **IVD** (Diagnostický): `IVD`, `IVD A`, `IVD B`, `IVDst`; new `IVDR A`-`IVDR D`
 
 `--druh` has three values: "Obecný zdravotnický prostředek", "Diagnostický
 zdravotnický prostředek in vitro", "Aktivní implantabilní zdravotnický

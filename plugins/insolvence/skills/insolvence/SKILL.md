@@ -185,7 +185,7 @@ insolvence-cli lustrace osoba <PŘÍJMENÍ> <JMÉNO> <RRRR-MM-DD>
 ```
 
 Returns JSON: `{ "nazev"?, "rizeni": [ { spisova_znacka, soud, druh, stav, datum_zahajeni,
-datum_ukonceni, aktivni, url_detail } ], "relevance" }`. The `relevance` field (1–7) reports the
+datum_ukonceni, aktivni, url_detail } ], "relevance" }`. The `relevance` field (1-7) reports the
 ISIR match quality (1 = by rodné číslo, 2 = by IČO, 4/5 = surname + DOB matched, 6/7 = weak
 surname-only - discarded for persons). `url_detail` is the official ISIR detail page for the
 proceeding.

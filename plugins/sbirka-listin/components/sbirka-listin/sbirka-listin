@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Platform dispatcher. The CGI handler (JSON dispatch, POST actions) lives in the
-# native Rust binary — this script only picks the right build for the host. The
+# native Rust binary - this script only picks the right build for the host. The
 # HTML shell (index.html) is served by cdx-daemon's SpaCgi runtime directly, so
 # the binary never runs for HTML requests.
 #

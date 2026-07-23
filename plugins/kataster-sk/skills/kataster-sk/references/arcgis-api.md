@@ -50,7 +50,7 @@ GET {layer}/query?objectIds={id}&outFields=*&returnGeometry=false&f=json
 
 ## Land-use translation (`DRUH_POZEMKU`)
 
-`NATURE_OF_LAND_USE_ID` is the 1–10 sequential internal id of the KN code list
+`NATURE_OF_LAND_USE_ID` is the 1-10 sequential internal id of the KN code list
 ordered by the official kód druhu pozemku. `kataster-sk-cli detail` injects the
 translation as `DRUH_POZEMKU` + `DRUH_POZEMKU_KOD`:
 

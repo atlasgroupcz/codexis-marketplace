@@ -1,6 +1,6 @@
 """Client for the MF/GFŘ public VAT-payer reliability registry (no key, no auth).
 
-SOAP service "Registr plátců DPH – rozhraní pro veřejnost":
+SOAP service "Registr plátců DPH - rozhraní pro veřejnost":
 
     https://adisrws.mfcr.cz/adistc/axis2/services/rozhraniCRPDPH.rozhraniCRPDPHSOAP
 

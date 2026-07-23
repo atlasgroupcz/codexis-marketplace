@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "SID — Interné dokumenty",
-    "lead": "Kľúč prepojí tento doplnok s vaším účtom v SID. Má rovnaké oprávnenia ako vy — chráňte ho ako heslo.",
+    "title": "SID - Interné dokumenty",
+    "lead": "Kľúč prepojí tento doplnok s vaším účtom v SID. Má rovnaké oprávnenia ako vy - chráňte ho ako heslo.",
     "connectionSection": "Pripojenie k SID",
     "notifySection": "Upozornenia",
     "loadFailed": "Stav sa nepodarilo načítať.",
@@ -34,7 +34,7 @@
     "invalidEmail": "Neplatná e-mailová adresa.",
     "inAppLabel": "Oznámenie v centre notifikácií",
     "inAppDescription": "",
-    "ownAddress": "Táto adresa je vaša — e-mail vám chodí vždy.",
+    "ownAddress": "Táto adresa je vaša - e-mail vám chodí vždy.",
     "duplicate": "Táto adresa už je v zozname.",
     "save": "Uložiť upozornenia"
   }

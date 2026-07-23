@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""cdx-sledovane-dokumenty – track Czech legislation changes via CODEXIS API.
+"""cdx-sledovane-dokumenty - track Czech legislation changes via CODEXIS API.
 
 Usage:
     cdx-sledovane-dokumenty add <codexisId> [--parts paragraf1,paragraf2]

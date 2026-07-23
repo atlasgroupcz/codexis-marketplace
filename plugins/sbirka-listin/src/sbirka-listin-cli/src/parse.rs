@@ -1,6 +1,6 @@
 //! Parsing the or.justice.cz register pages.
 //!
-//! The portal is an Apache Wicket app — every page is server-rendered HTML with
+//! The portal is an Apache Wicket app - every page is server-rendered HTML with
 //! no JSON behind it (verified 2026-07-20 across the search, listiny and detail
 //! pages: the only XHR is an unrelated support chatbot). So the HTML *is* the
 //! API, and these functions turn it into data.
@@ -27,14 +27,14 @@ pub struct SearchHit {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListinaRow {
     /// The full číslo listiny, e.g. `B 8573/SL95/MSPH` (nbsp normalized to space).
-    /// This is the document's only identifier — the register's "Číslo listiny".
+    /// This is the document's only identifier - the register's "Číslo listiny".
     pub cislo: String,
     pub typ: String,
     pub vznik: Option<String>,
     pub doslo: Option<String>,
     pub zalozeno: Option<String>,
     pub stran: Option<u32>,
-    /// The `dokument`/`spis` ids from the row's detail link — the download chain
+    /// The `dokument`/`spis` ids from the row's detail link - the download chain
     /// needs both alongside the subjektId.
     pub dokument: String,
     pub spis: String,
@@ -91,7 +91,7 @@ pub fn search_hits(html: &str) -> Vec<SearchHit> {
             .map(|c| text_of(&c[1]))
             .unwrap_or_default();
         // The IČO cell interleaves the digit groups with spacer spans whose
-        // `style="…0.5em"` carries stray digits — strip tags first, then keep
+        // `style="…0.5em"` carries stray digits - strip tags first, then keep
         // only the digits of the resulting text.
         let ico = re(&ICO, r"(?s)IČO:.*?<strong>(.*?)</strong>")
             .captures(block)
@@ -197,7 +197,7 @@ pub fn listiny(html: &str) -> Vec<ListinaRow> {
     rows
 }
 
-/// The `content/download?id=<32-hex>` handle on a `vypis-sl-detail` page — the
+/// The `content/download?id=<32-hex>` handle on a `vypis-sl-detail` page - the
 /// only place the actual download link exists. `None` when the document has no
 /// digital form.
 pub fn download_id(html: &str) -> Option<String> {
@@ -406,7 +406,7 @@ mod tests {
     #[test]
     fn download_id_extracts_the_guid() {
         // The GUID rotates per request, so this asserts the value in the captured
-        // fixture — which is why the download must fetch the detail fresh and use
+        // fixture - which is why the download must fetch the detail fresh and use
         // the GUID immediately rather than storing it.
         assert_eq!(
             download_id(DETAIL).as_deref(),

@@ -62,7 +62,7 @@ pub enum Command {
 
 #[derive(Args, Debug)]
 pub struct SearchArgs {
-    /// IČO (1–8 digits).
+    /// IČO (1-8 digits).
     #[arg(long)]
     pub ico: Option<String>,
     /// Name or part of name (min. 3 characters).

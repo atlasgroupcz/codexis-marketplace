@@ -101,7 +101,7 @@
     "figurative": "Obrazová",
     "text": "Text známky",
     "nice": "Třídy výrobků/služeb (Nice)",
-    "niceHint": "Čísla 1–45, oddělená čárkou. Nepovinné - zúží relevanci.",
+    "niceHint": "Čísla 1-45, oddělená čárkou. Nepovinné - zúží relevanci.",
     "territory": "Území",
     "logo": "Logo",
     "logoHint": "Klikněte a nahrajte obrázek loga (PNG, JPG, SVG).",

@@ -45,7 +45,7 @@ describe("docs", () => {
   })
 })
 
-describe("docs list — the rest of the documented filters", () => {
+describe("docs list - the rest of the documented filters", () => {
   it("passes attributes through, repeatable (AND across attributes)", async () => {
     await run(["list", "--attribute", "a1", "--attribute", "a2"], f)
     expect(cap.url).toBe("http://s/api/v1/documents?attributeIds=a1&attributeIds=a2")
@@ -73,7 +73,7 @@ describe("docs list — the rest of the documented filters", () => {
     )
   })
 
-  it("odmítne --from mimo formát YYYY-MM-DD — stejně jako set-validity, ne prázdný list", async () => {
+  it("odmítne --from mimo formát YYYY-MM-DD - stejně jako set-validity, ne prázdný list", async () => {
     let called = false
     const f2 = (async () => {
       called = true
@@ -146,7 +146,7 @@ describe("docs set-validity", () => {
     expect(called).toBe(false)
   })
 
-  it("refuses to do nothing — no dates at all is a mistake", async () => {
+  it("refuses to do nothing - no dates at all is a mistake", async () => {
     const err = (await run(["set-validity", "doc-1"]).catch((e: unknown) => e)) as CliError
     expect(err.exitCode).toBe(2)
   })

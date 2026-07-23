@@ -39,7 +39,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   // `--out ./sub/file.pdf` should work without creating the directory first.
   mkdirSync(dirname(target), { recursive: true })
 
-  // Streamed — documents run to tens of megabytes. The cast goes through
+  // Streamed - documents run to tens of megabytes. The cast goes through
   // `unknown` because the DOM and node:stream/web ReadableStream types are
   // structurally different declarations of the same runtime object.
   await pipeline(Readable.fromWeb(res.body as unknown as WebReadableStream), createWriteStream(target))

@@ -1,7 +1,7 @@
 name: sbirka-listin-lookup
 description: Verify the sbirka-listin skill calls sbirka-listin-cli against the public Sbírka listin API and relays the subject's filed documents back to the user.
 
-# Deterministic target: Alza.cz a.s. — a large, long-lived Czech joint-stock
+# Deterministic target: Alza.cz a.s. - a large, long-lived Czech joint-stock
 # company, IČO 27082440, spisová značka B 8573 at the Městský soud v Praze. It
 # has a deep Sbírka listin (90+ listiny) that always includes účetní závěrky
 # whose typlistiny text carries the year in [brackets], e.g.

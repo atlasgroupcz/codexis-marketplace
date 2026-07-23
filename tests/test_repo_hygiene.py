@@ -6,6 +6,7 @@ here fails in seconds instead of in the deploy pipeline.
 
 from __future__ import annotations
 
+import os
 import stat
 from pathlib import Path
 
@@ -66,4 +67,54 @@ def test_no_plugin_keeps_a_legacy_acceptance_dir() -> None:
     assert not offenders, (
         f"plugins still using the legacy acceptance/ layout: {offenders}. "
         f"Move specs to tests/install/expected.json and tests/e2e/*.yaml."
+    )
+
+
+# CLAUDE.md rule: authored text uses plain hyphens only - never an em-dash
+# (U+2014) or en-dash (U+2013). A one-time sweep regressed within hours because
+# nothing enforced it and multiple authors kept reintroducing them, so guard it.
+_DASH_CHARS = (chr(0x2014), chr(0x2013))  # em-dash, en-dash
+# Hand-editable text where the rule applies.
+_DASH_SUFFIXES = {
+    ".rs", ".ts", ".tsx", ".js", ".jsx", ".md", ".json", ".yaml", ".yml",
+    ".sh", ".py", ".css", ".html", ".toml",
+}
+# Generated artifacts and heavyweight trees that are never hand-edited. `assets`
+# holds compiled FE bundles; `testdata` holds captured external fixtures.
+_DASH_PRUNE_DIRS = {
+    ".git", "node_modules", "target", "dist", ".venv", ".turbo", "assets", "testdata",
+}
+
+
+def _dash_offenders() -> list[str]:
+    offenders: list[str] = []
+    for root, dirs, files in os.walk(REPO_ROOT):
+        dirs[:] = [d for d in dirs if d not in _DASH_PRUNE_DIRS]
+        rel_root = Path(root).relative_to(REPO_ROOT)
+        if _in_nested_worktree(rel_root):
+            dirs[:] = []
+            continue
+        for name in files:
+            # CLAUDE.md names the characters as examples of the rule; lockfiles are
+            # generated.
+            if name == "CLAUDE.md" or name.endswith(".lock") or name.endswith("-lock.json"):
+                continue
+            if Path(name).suffix.lower() not in _DASH_SUFFIXES:
+                continue
+            path = Path(root) / name
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            if any(ch in text for ch in _DASH_CHARS):
+                offenders.append(str(path.relative_to(REPO_ROOT)))
+    return sorted(offenders)
+
+
+def test_no_em_or_en_dashes_in_source() -> None:
+    offenders = _dash_offenders()
+    assert not offenders, (
+        "em-dash or en-dash (U+2014 / U+2013) found in authored source; the repo "
+        "uses plain hyphens only (see CLAUDE.md). Replace with a hyphen. Offenders:\n  "
+        + "\n  ".join(offenders)
     )

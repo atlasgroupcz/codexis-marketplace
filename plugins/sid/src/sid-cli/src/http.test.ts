@@ -133,7 +133,7 @@ describe("download timeout", () => {
   })
 })
 
-describe("apiRaw — redirect na storage nesmí vynést klíč", () => {
+describe("apiRaw - redirect na storage nesmí vynést klíč", () => {
   it("následuje 302 na jiný host BEZ x-api-key", async () => {
     const { apiRaw } = await import("./http")
     const calls: Array<{ url: string; key: string | null; redirect?: RequestRedirect }> = []

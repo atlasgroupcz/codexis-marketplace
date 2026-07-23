@@ -1,6 +1,6 @@
 //! Chat sources for the Sources panel.
 //!
-//! Citations point at `or.justice.cz` — which is both the portal we query and
+//! Citations point at `or.justice.cz` - which is both the portal we query and
 //! the official source of record.
 
 use serde_json::{json, Value};
@@ -15,12 +15,12 @@ pub(crate) fn try_publish(entries: &[Value]) {
     cdx_common::sources::try_publish("sbirka-listin-cli", entries);
 }
 
-/// One source for `listiny <ICO>` — the subject's official register page.
+/// One source for `listiny <ICO>` - the subject's official register page.
 pub(crate) fn listiny_source(detail: &Detail) -> Vec<Value> {
     let title = if detail.nazev.is_empty() {
-        format!("IČO {} — Sbírka listin", detail.ico)
+        format!("IČO {} - Sbírka listin", detail.ico)
     } else {
-        format!("{} — Sbírka listin", detail.nazev)
+        format!("{} - Sbírka listin", detail.nazev)
     };
     let count = detail.pocet_listin;
     let snippet = match (detail.spisovaznacka.as_deref(), detail.sidlo.as_deref()) {
@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn source_carries_name_and_count() {
         let entries = listiny_source(&alza());
-        assert_eq!(entries[0]["title"], json!("Alza.cz a.s. — Sbírka listin"));
+        assert_eq!(entries[0]["title"], json!("Alza.cz a.s. - Sbírka listin"));
         assert_eq!(
             entries[0]["snippet"],
             json!("B 8573/MSPH · Jankovcova 1522/53, Holešovice, 170 00 Praha 7 · 1 listin")
@@ -87,7 +87,7 @@ mod tests {
         d.nazev = String::new();
         d.pocet_listin = 0;
         let entries = listiny_source(&d);
-        assert_eq!(entries[0]["title"], json!("IČO 27082440 — Sbírka listin"));
+        assert_eq!(entries[0]["title"], json!("IČO 27082440 - Sbírka listin"));
     }
 
     #[test]

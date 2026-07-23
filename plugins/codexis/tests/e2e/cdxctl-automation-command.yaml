@@ -17,7 +17,7 @@ steps:
         name: shell
         input_matches: "automation create-command.{0,500}e2e-"
       tool_calls_min: 1
-      tool_calls_max: 9   # readFile (lookup cdxctl syntax) + create + slack for 1–2 retries
+      tool_calls_max: 9   # readFile (lookup cdxctl syntax) + create + slack for 1-2 retries
       state:
         graphql: "{ automations { title cron command enabled } }"
         jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"

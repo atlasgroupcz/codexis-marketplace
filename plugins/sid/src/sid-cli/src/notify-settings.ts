@@ -4,18 +4,18 @@ import { homedir } from "node:os"
 import { userHome } from "./config"
 
 /**
- * Notification channel settings — same convention as the znamky, katastr,
+ * Notification channel settings - same convention as the znamky, katastr,
  * insolvence and codexis plugins:
  *
  *   shipped defaults → ~/.local/share/sid/settings/defaults.json
  *                      (placed there by the install hook)
  *   user override    → $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/settings.json
- *                      (sparse — only the changed keys)
+ *                      (sparse - only the changed keys)
  *
  * The effective config is composed at read time; nothing is merged back into
  * the user file.
  *
- * E-mail is off by default, matching the peers — a daily automation should
+ * E-mail is off by default, matching the peers - a daily automation should
  * not reach someone's inbox unasked.
  */
 
@@ -32,7 +32,7 @@ export function userSettingsPath(): string {
   return join(userHome(), ".cdx", "apps", "sid", "settings.json")
 }
 
-/** Deliberately loose — the mail server validates properly anyway. */
+/** Deliberately loose - the mail server validates properly anyway. */
 export function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim())
 }
@@ -59,13 +59,13 @@ function readJson(path: string): Record<string, unknown> | null {
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"))
     return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null
   } catch {
-    // Missing or malformed file falls back to what we have — a typo in the
+    // Missing or malformed file falls back to what we have - a typo in the
     // config must not fail the scheduled run.
     return null
   }
 }
 
-/** Extra recipients — non-empty strings only, trimmed and de-duplicated (case-insensitive). */
+/** Extra recipients - non-empty strings only, trimmed and de-duplicated (case-insensitive). */
 function cleanRecipients(raw: unknown): string[] | undefined {
   if (!Array.isArray(raw)) return undefined
   const seen = new Set<string>()
