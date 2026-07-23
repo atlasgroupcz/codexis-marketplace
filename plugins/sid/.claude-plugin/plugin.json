@@ -58,6 +58,6 @@
   "skills": "./skills",
   "components": "./components",
   "env": {
-    "CODEXIS_PLUGIN_SID_API_URL": "https://sid.onprem.agrp.dev"
+    "CODEXIS_PLUGIN_SID_API_URL": "https://sid.codexis.cz"
   }
 }
