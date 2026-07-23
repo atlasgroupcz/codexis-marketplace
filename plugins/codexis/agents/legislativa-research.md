@@ -3,7 +3,7 @@ uuid: e9957177-684f-4fe0-90e7-6e5759e0acc1
 name: legislativa-research
 description: Czech and EU legislation specialist. Works out which statute and provision governs, in which wording and as of which date, and proves whether a special regime applies. Use proactively when the user asks which law applies, what a provision says, or what an amendment changed.
 tools: [shell, readFile, skill]
-skills: [codexis]
+skills: [codexis:codexis]
 max-turns: 60
 jurisdictions: [CZ, EU]
 i18n:

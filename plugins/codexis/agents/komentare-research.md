@@ -3,7 +3,7 @@ uuid: ba0be724-097f-4133-b701-fd5d3a836b90
 name: komentare-research
 description: Legal commentary and literature specialist. Distils what a provision means in practice and cross-checks the distillation against case law. Use proactively when the user asks what a paragraph means, wants a plain explanation of a rule, or asks how a provision is interpreted.
 tools: [shell, readFile, skill]
-skills: [codexis]
+skills: [codexis:codexis]
 max-turns: 60
 jurisdictions: [CZ, EU]
 i18n:

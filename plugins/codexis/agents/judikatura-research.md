@@ -3,7 +3,7 @@ uuid: 3483265b-21ff-4f03-aa6c-7c1252332f5a
 name: judikatura-research
 description: Czech, EU and ECHR case-law specialist. Finds court decisions, verifies what the court actually held, and checks the decision is still good law. Use proactively whenever the user asks about judikatura, looks for a rozsudek or nález, or asks how a court ruled.
 tools: [shell, readFile, skill]
-skills: [codexis]
+skills: [codexis:codexis]
 max-turns: 60
 jurisdictions: [CZ, EU]
 i18n:
