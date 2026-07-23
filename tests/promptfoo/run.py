@@ -486,15 +486,23 @@ def main() -> int:
     if args.arbitrate and arb_ctx is None:
         return 2  # config error already reported
 
-    here = THIS.parent
-    all_cfgs = sorted(here.glob("*.config.yaml"))
+    # Configs live per-plugin (plugins/<name>/tests/promptfoo/*.config.yaml); the
+    # shared machinery (provider.py, assertions.py, this runner) stays central in
+    # tests/promptfoo/ and each config reaches it by a relative back-path.
+    all_cfgs = sorted(REPO_ROOT.glob("plugins/*/tests/promptfoo/*.config.yaml"))
     if not args.configs and not args.plugins:
         cfgs = all_cfgs
     else:
         seen: set[Path] = set()
         cfgs: list[Path] = []
         for arg in args.configs:
-            p = Path(arg) if Path(arg).is_absolute() else (here / arg)
+            p = Path(arg)
+            if not p.is_file():
+                # A bare basename (e.g. "ares-ico.config.yaml") - locate it among
+                # the per-plugin configs discovered above.
+                by_name = [c for c in all_cfgs if c.name == p.name]
+                if by_name:
+                    p = by_name[0]
             if not p.is_file():
                 print(f"no such config file: {arg!r}", file=sys.stderr)
                 return 2

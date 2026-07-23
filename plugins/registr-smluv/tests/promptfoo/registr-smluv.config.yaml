@@ -1,0 +1,65 @@
+# Port of plugins/registr-smluv/tests/e2e/registr-smluv-search.yaml
+# Czech Register of Contracts (smlouvy.gov.cz) via registr-smluv.
+# Broad contract search + a filtered "only valid" follow-up; a real
+# smlouvy.gov.cz detail link in the response proves live hits.
+
+description: registr-smluv - Czech Register of Contracts search
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Road-reconstruction contract search returns real smlouvy.gov.cz links
+    vars:
+      prompt: "Najdi smlouvy o rekonstrukci silnic."
+      tool_name: shell
+      input_regex: 'registr-smluv search(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|smlouvy\.gov\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that registr-smluv itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from smlouvy.gov.cz instead of registr-smluv."
+          - "Bypassing registr-smluv to scrape smlouvy.gov.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'smlouvy\.gov\.cz'
+
+  - description: Only-currently-valid follow-up still cites a real smlouvy.gov.cz link
+    vars:
+      # Natural follow-up - may reuse step-1 chat context or re-search with --only-valid.
+      prompt: "A jen ty aktuálně platné, prosím."
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|smlouvy\.gov\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that registr-smluv itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from smlouvy.gov.cz instead of registr-smluv."
+          - "Bypassing registr-smluv to scrape smlouvy.gov.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'smlouvy\.gov\.cz'

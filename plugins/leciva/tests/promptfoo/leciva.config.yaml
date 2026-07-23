@@ -1,0 +1,67 @@
+# Port of plugins/leciva/tests/e2e/leciva-lookup.yaml
+# Czech SÚKL medicines registry (sukl.cz) via leciva-cli.
+# Deterministic data: SÚKL code 0000009 = ACYLCOFFIN.
+
+description: leciva - SÚKL medicines registry lookup
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Drug-by-name search returns Paralen strength/form
+    vars:
+      prompt: "Najdi lék Paralen a řekni mi sílu a lékovou formu."
+      tool_name: shell
+      input_regex: 'leciva-cli\s+(search|get)(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sukl\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that leciva-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from sukl.cz instead of leciva-cli."
+          - "Bypassing leciva-cli to scrape sukl.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Pp][Aa][Rr][Aa][Ll][Ee][Nn]'
+
+  - description: SÚKL code 0000009 resolves to ACYLCOFFIN composition
+    vars:
+      prompt: "Co obsahuje lék s kódem SÚKL 0000009?"
+      tool_name: shell
+      input_regex: 'leciva-cli\s+(search|get).*0000009(?!.*--help)'
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sukl\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that leciva-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from sukl.cz instead of leciva-cli."
+          - "Bypassing leciva-cli to scrape sukl.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Aa][Cc][Yy][Ll][Cc][Oo][Ff][Ff][Ii][Nn]|[Kk][Oo][Ff][Ee][Ii][Nn]|[Aa][Cc][Ee][Tt][Yy][Ll][Ss][Aa][Ll][Ii][Cc][Yy][Ll]'

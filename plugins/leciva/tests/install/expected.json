@@ -1,21 +1,5 @@
 {
   "skills": [
     "leciva:leciva"
-  ],
-  "env_vars": [
-    "CODEXIS_PLUGIN_LECIVA_API_URL",
-    "CODEXIS_USER_API_TOKEN"
-  ],
-  "post_install": [
-    {
-      "type": "file",
-      "path": "$HOME/.local/bin/leciva-cli"
-    }
-  ],
-  "post_uninstall": [
-    {
-      "type": "absent",
-      "path": "$HOME/.local/bin/leciva-cli"
-    }
   ]
 }
