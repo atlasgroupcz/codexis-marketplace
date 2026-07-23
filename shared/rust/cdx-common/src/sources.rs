@@ -3,6 +3,11 @@ use std::process::{Command, Output, Stdio};
 
 use crate::config::DaemonConfig;
 
+// Publishing sources is a best-effort side channel: never let it stall the CLI
+// when the daemon endpoint is unreachable from the sandbox.
+const CONNECT_TIMEOUT_SECONDS: &str = "3";
+const REQUEST_TIMEOUT_SECONDS: &str = "10";
+
 /// Publishes the `sources` array from a tool response body to the CDX daemon.
 ///
 /// A `Null` or empty array is a no-op. Anything else is POSTed to the daemon's
@@ -66,7 +71,10 @@ pub fn try_publish(plugin_name: &str, entries: &[serde_json::Value]) {
 fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), SourcesError> {
     let output = Command::new("curl")
         .args([
-            "-sS", "--fail-with-body", "-H", auth_header, "-X", "POST",
+            "-sS", "--fail-with-body",
+            "--connect-timeout", CONNECT_TIMEOUT_SECONDS,
+            "--max-time", REQUEST_TIMEOUT_SECONDS,
+            "-H", auth_header, "-X", "POST",
             "-H", "Content-Type: application/json", url, "-d", body,
         ])
         .stdin(Stdio::null())
