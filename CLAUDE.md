@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Text conventions
 
-Never write em-dashes (`—`) or en-dashes (`–`). Use a plain hyphen (`-`) instead.
+Never write em-dashes or en-dashes (the long typographic dashes, Unicode U+2014
+and U+2013). Use a plain hyphen (`-`) instead.
 This applies everywhere: plugin display names, descriptions, i18n labels,
 component UI text, SKILL docs, code comments, and commit messages. Em-dashes had
 crept into user-facing names and looked unprofessional, so the repo was
@@ -233,7 +234,7 @@ The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the p
 
 Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to install these binaries into the user-local `${HOME}/.local/bin/` location on install/update and remove them on uninstall. The cdx guest VM has `${HOME}/.local/bin` on `PATH` (both for interactive login shells and for the `cdx-remote-exec` service), so no `sudo` and no system-wide writes are needed.
 
-Executables don't have to be native binaries — the guest VM ships `python3`
+Executables don't have to be native binaries - the guest VM ships `python3`
 and `nodejs` from apt, so interpreted entrypoints are fine (`katastr-cli`,
 `insolvence-cli` are Python; `sid-cli` is bundled TypeScript).
 
@@ -245,7 +246,7 @@ Two constraints learned the hard way:
 
 - **Bundle as CJS** (`bun build --target=node --format=cjs`). Artifacts are
   installed without an extension (`sid-cli`), and Node loads an
-  extensionless file as CommonJS — an ESM bundle dies with "Cannot use
+  extensionless file as CommonJS - an ESM bundle dies with "Cannot use
   import statement outside a module".
 - **Don't prepend a shebang** in the build script if the entrypoint source
   already has one; bun preserves it, and a doubled shebang is invalid JS.

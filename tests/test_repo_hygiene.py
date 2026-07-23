@@ -6,8 +6,8 @@ here fails in seconds instead of in the deploy pipeline.
 
 from __future__ import annotations
 
-import os
 import stat
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -79,35 +79,38 @@ _DASH_SUFFIXES = {
     ".rs", ".ts", ".tsx", ".js", ".jsx", ".md", ".json", ".yaml", ".yml",
     ".sh", ".py", ".css", ".html", ".toml",
 }
-# Generated artifacts and heavyweight trees that are never hand-edited. `assets`
-# holds compiled FE bundles; `testdata` holds captured external fixtures.
-_DASH_PRUNE_DIRS = {
-    ".git", "node_modules", "target", "dist", ".venv", ".turbo", "assets", "testdata",
-}
+# Compiled FE bundles (under `assets/`) and captured external fixtures (under
+# `testdata/`) are committed but not hand-edited, so they are exempt.
+_DASH_EXEMPT_DIRS = {"assets", "testdata"}
 
 
 def _dash_offenders() -> list[str]:
+    # Only tracked files: the guard enforces committed source. Using git ls-files
+    # (rather than walking the tree) skips gitignored working dirs like
+    # .superpowers, .venv, node_modules, dist and target for free.
+    tracked = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "ls-files", "-z"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split("\0")
     offenders: list[str] = []
-    for root, dirs, files in os.walk(REPO_ROOT):
-        dirs[:] = [d for d in dirs if d not in _DASH_PRUNE_DIRS]
-        rel_root = Path(root).relative_to(REPO_ROOT)
-        if _in_nested_worktree(rel_root):
-            dirs[:] = []
+    for rel in tracked:
+        if not rel:
             continue
-        for name in files:
-            # CLAUDE.md names the characters as examples of the rule; lockfiles are
-            # generated.
-            if name == "CLAUDE.md" or name.endswith(".lock") or name.endswith("-lock.json"):
-                continue
-            if Path(name).suffix.lower() not in _DASH_SUFFIXES:
-                continue
-            path = Path(root) / name
-            try:
-                text = path.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                continue
-            if any(ch in text for ch in _DASH_CHARS):
-                offenders.append(str(path.relative_to(REPO_ROOT)))
+        path = REPO_ROOT / rel
+        if path.suffix.lower() not in _DASH_SUFFIXES:
+            continue
+        if path.name.endswith(".lock") or path.name.endswith("-lock.json"):
+            continue
+        if _DASH_EXEMPT_DIRS.intersection(path.parts):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if any(ch in text for ch in _DASH_CHARS):
+            offenders.append(rel)
     return sorted(offenders)
 
 
