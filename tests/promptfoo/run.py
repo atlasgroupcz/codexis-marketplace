@@ -368,6 +368,32 @@ def run_batch(client: DaemonClient,
     return results
 
 
+def config_skip_reason(cfg: dict) -> str | None:
+    """The human reason a config is skipped, or None to run it.
+
+    A truthy top-level `skip:` excludes the config from the default full run -
+    for scenarios that cannot pass in CI yet, e.g. a plugin whose upstream needs
+    a credential the CI VM does not have. Explicitly targeting the config
+    (`--config`/`--plugin`) still runs it, so a dev who has the credential can
+    exercise it without editing the file.
+    """
+    reason = cfg.get("skip")
+    return str(reason) if reason else None
+
+
+def partition_skipped(cfgs: list[Path]) -> tuple[list[Path], list[tuple[str, str]]]:
+    """Split `cfgs` into (runnable, [(name, reason), ...]) by their `skip:` key."""
+    runnable: list[Path] = []
+    skipped: list[tuple[str, str]] = []
+    for c in cfgs:
+        reason = config_skip_reason(yaml.safe_load(c.read_text()))
+        if reason:
+            skipped.append((c.name, reason))
+        else:
+            runnable.append(c)
+    return runnable, skipped
+
+
 def assign_batches(cfgs: list[Path]) -> list[list[Path]]:
     """Group `cfgs` into batches per BATCHES; everything else runs solo."""
     cfg_by_name = {c.name: c for c in cfgs}
@@ -491,7 +517,13 @@ def main() -> int:
     # tests/promptfoo/ and each config reaches it by a relative back-path.
     all_cfgs = sorted(REPO_ROOT.glob("plugins/*/tests/promptfoo/*.config.yaml"))
     if not args.configs and not args.plugins:
-        cfgs = all_cfgs
+        # The default full run honors each config's `skip:` key: scenarios that
+        # cannot pass in CI yet (e.g. an upstream credential the VM lacks) are
+        # excluded with their reason, instead of failing the run. Explicit
+        # targeting below skips this filter on purpose.
+        cfgs, skipped = partition_skipped(all_cfgs)
+        for name, reason in skipped:
+            print(f"skipping {name}: {reason}", flush=True)
     else:
         seen: set[Path] = set()
         cfgs: list[Path] = []

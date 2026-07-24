@@ -7,8 +7,8 @@
 # CI has no key, so onprem answers /api/v1/* with a 307 -> /login. Without a key
 # the run would only ever exercise the "no key" path and would pass whether SID
 # works or not. The steps below are ready as-is; remove `skip` once SID is
-# deployed and a CI key is provisioned. sid is also not listed in run.py BATCHES,
-# so it does not run by default either.
+# deployed and a CI key is provisioned. run.py's `skip:` filter excludes this
+# from the default full run; explicit --config/--plugin still runs it.
 skip: "waiting for SID headless auth to be deployed and a CI key to be provisioned"
 
 # The key lands in the per-app env file the CLI reads (config.ts loads

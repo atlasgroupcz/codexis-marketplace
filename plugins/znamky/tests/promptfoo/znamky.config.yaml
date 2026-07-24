@@ -1,6 +1,16 @@
 # Fresh scenario (znamky had no e2e). Structural oracle: the skill must drive
 # znamky-cli (not scrape TMview/EUIPO/UPV) and surface trademark candidates.
 description: znamky - trademark similarity search (TMview)
+
+# SKIPPED in CI: znamky-cli queries the OAuth2-protected EUIPO API and reads
+# EUIPO_CLIENT_ID/EUIPO_CLIENT_SECRET from .cdx/apps/znamky/.env (see
+# znamky_core/settings.py). The pipeline does not provision those, so without
+# them the CLI cannot get a token and the run only exercises the failure path.
+# Remove `skip` once the EUIPO credentials are wired into CI (the test below is
+# ready as-is). Run it locally with an explicit --config/--plugin once the
+# per-app .env is in place.
+skip: "needs EUIPO OAuth2 credentials (EUIPO_CLIENT_ID/SECRET in .cdx/apps/znamky/.env) that the pipeline does not provision"
+
 prompts:
   - "{{ prompt }}"
 providers:

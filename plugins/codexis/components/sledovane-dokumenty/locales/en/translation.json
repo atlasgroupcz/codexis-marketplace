@@ -103,6 +103,7 @@
     "untracked": "Unverified",
     "confirm": "Confirm",
     "viewInCodexis": "View in CODEXIS",
+    "openInCodexis": "Open in CODEXIS",
     "effectiveFrom": "Effective from {{date}}",
     "extractingProgress": "Extracting references ({{done}}/{{total}})",
     "legislationExtracting": "Extracting legislation references…",
