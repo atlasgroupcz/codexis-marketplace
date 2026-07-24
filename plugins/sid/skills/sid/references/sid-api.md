@@ -17,7 +17,7 @@ without guessing.
 | `access user <email\|name\|id>` | `GET /api/v1/users` (resolve) + `GET /api/v1/access/users/{id}` |
 | `access group <name\|id>` | `GET /api/v1/groups` (resolve) + `GET /api/v1/access/groups/{id}` |
 | `attributes list` | `GET /api/v1/attributes` |
-| `download <fileId>` | `GET /api/files/download/{fileId}` |
+| `download <fileId\|documentId>` | `GET /api/files/download/{fileId}`; a documentId is first resolved via `GET /api/v1/documents/{id}` → `currentFile.id` (both calls access-checked) |
 | `confirmations list` | `GET /api/v1/confirmations` |
 | `notifications` | `GET /api/notifications` |
 | `check` | notifications + confirmations in one call each |

@@ -92,3 +92,136 @@ describe("download - bezpečnost jména souboru", () => {
     expect(res.savedTo).toBe(out)
   })
 })
+
+/**
+ * `download` takes a fileId, but every listing and search result hands out
+ * documentIds, and both are bare UUIDs. SID answers an unknown file id with
+ * 403 (it won't confirm which ids exist), so the mix-up used to surface as
+ * "Přístup odepřen" and the agent gave up on a document the user could read.
+ *
+ * So a documentId is now resolved to its current file and retried. The point
+ * of these tests is that convenience buys no extra rights: BOTH calls go to
+ * SID with the API key and SID gates both, so anything the user may not see
+ * still fails.
+ */
+describe("download — documentId se doresí na fileId", () => {
+  /** Router over (url → Response), recording every request in order. */
+  function routed(handler: (url: string) => Response): { f: typeof fetch; calls: string[] } {
+    const calls: string[] = []
+    const f = (async (url: unknown) => {
+      const u = String(url)
+      calls.push(u)
+      return handler(u)
+    }) as unknown as typeof fetch
+    return { f, calls }
+  }
+
+  const forbidden = () =>
+    new Response(JSON.stringify({ error: { code: "FORBIDDEN", message: "Access denied" } }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    })
+
+  it("fileId stáhne napřímo — žádné dohledávání navíc", async () => {
+    const { f, calls } = routed(() => new Response("PDF", { status: 200 }))
+    const out = join(dir, "a.pdf")
+
+    await run(["file-1", "--out", out], f)
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toContain("/api/files/download/file-1")
+  })
+
+  it("documentId: po 403 si dojde pro currentFile.id a stáhne ho", async () => {
+    const { f, calls } = routed((url) => {
+      if (url.includes("/api/files/download/doc-1")) return forbidden()
+      if (url.includes("/api/v1/documents/doc-1")) {
+        return new Response(JSON.stringify({ id: "doc-1", currentFile: { id: "file-9" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      }
+      return new Response("PDFDATA", { status: 200 })
+    })
+    const out = join(dir, "b.pdf")
+
+    const res = (await run(["doc-1", "--out", out], f)) as { savedTo: string; bytes: number }
+
+    expect(readFileSync(out, "utf8")).toBe("PDFDATA")
+    expect(res.savedTo).toBe(out)
+    expect(calls[0]).toContain("/api/files/download/doc-1")
+    expect(calls[1]).toContain("/api/v1/documents/doc-1")
+    expect(calls[2]).toContain("/api/files/download/file-9")
+  })
+
+  // The one that matters: SID gates the lookup too, so a document the caller
+  // may not read resolves to nothing and no bytes are ever fetched.
+  it("na cizí dokument práva nedá — dohledání je taky hlídané a soubor se nestáhne", async () => {
+    const { f, calls } = routed(() => forbidden())
+
+    const err = (await run(["doc-cizi", "--out", join(dir, "c.pdf")], f).catch(
+      (e: unknown) => e,
+    )) as CliError
+
+    expect(err.exitCode).toBe(6)
+    expect(String(err.message)).toContain("403")
+    // download(403) → docs get(403) → hlášení. Nikdy třetí, stahovací pokus.
+    expect(calls).toHaveLength(2)
+    expect(calls.some((u) => u.includes("/api/files/download/") && !u.includes("doc-cizi"))).toBe(false)
+  })
+
+  it("dokument bez souboru → srozumitelná chyba, ne prázdný soubor", async () => {
+    const { f } = routed((url) => {
+      if (url.includes("/api/v1/documents/")) {
+        return new Response(JSON.stringify({ id: "doc-2", currentFile: null }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      }
+      return forbidden()
+    })
+
+    const err = (await run(["doc-2", "--out", join(dir, "d.pdf")], f).catch(
+      (e: unknown) => e,
+    )) as CliError
+
+    expect(err.exitCode).toBe(6)
+  })
+
+  it("vypršelý klíč při dohledání se hlásí jako klíč, ne jako odepřený přístup", async () => {
+    const { f } = routed((url) => {
+      if (url.includes("/api/v1/documents/")) {
+        return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED" } }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        })
+      }
+      return forbidden()
+    })
+
+    const err = (await run(["doc-3", "--out", join(dir, "e.pdf")], f).catch(
+      (e: unknown) => e,
+    )) as CliError
+
+    expect(err.exitCode).toBe(3)
+  })
+
+  it("dohledání proběhne nejvýš jednou — žádná smyčka", async () => {
+    const { f, calls } = routed((url) => {
+      if (url.includes("/api/v1/documents/")) {
+        return new Response(JSON.stringify({ id: "doc-4", currentFile: { id: "file-x" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      }
+      return forbidden()
+    })
+
+    const err = (await run(["doc-4", "--out", join(dir, "f.pdf")], f).catch(
+      (e: unknown) => e,
+    )) as CliError
+
+    expect(err.exitCode).toBe(6)
+    expect(calls).toHaveLength(3)
+  })
+})
