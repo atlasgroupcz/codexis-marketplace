@@ -24,7 +24,18 @@ function statusToError(status: number, bodyText: string): CliError {
       EXIT.AUTH,
     )
   }
-  if (status === 403) return new CliError(`Přístup odepřen (403). ${detail}`, EXIT.AUTH)
+  // NOT an expired key — that is 401. SID also answers an id it doesn't know
+  // with 403 instead of 404, so it can't be used to probe which ids exist.
+  // The usual trigger is a documentId handed to `download`, which wants the
+  // fileId from `docs get`, so the id comes first in the advice.
+  if (status === 403) {
+    return new CliError(
+      `Přístup odepřen (403). Nejdřív ověřte id: SID vrací 403 i na neznámé id. ` +
+        `Pro download je potřeba fileId z 'sid-cli docs get <documentId>', ne samotné documentId. ` +
+        `Pokud id sedí, k dokumentu nemáte přístup. ${detail}`,
+      EXIT.FORBIDDEN,
+    )
+  }
   if (status === 404) return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND)
   if (status === 429) {
     return new CliError(`Rate limit SID (429) — zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT)

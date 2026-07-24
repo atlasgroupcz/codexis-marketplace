@@ -2,8 +2,23 @@ import { readFileSync, writeFileSync, mkdirSync, renameSync, rmSync, existsSync 
 import { join, dirname } from "node:path"
 import { homedir } from "node:os"
 
-/** Stable contract — SKILL.md documents these and the automation relies on them. */
-export const EXIT = { OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 } as const
+/**
+ * Stable contract — SKILL.md documents these and the automation relies on them.
+ *
+ * AUTH is strictly "the key won't authenticate" (401). FORBIDDEN is separate
+ * because SID answers an unknown id with 403 rather than 404 (it refuses to
+ * confirm which ids exist), so the two need different advice: renew the key
+ * vs. check the id.
+ */
+export const EXIT = {
+  OK: 0,
+  ERROR: 1,
+  USAGE: 2,
+  AUTH: 3,
+  NOT_FOUND: 4,
+  RATE_LIMIT: 5,
+  FORBIDDEN: 6,
+} as const
 
 // Fallback for runs outside the daemon. The manifest (plugin.json) injects
 // CODEXIS_PLUGIN_SID_API_URL — production (sid.codexis.cz) — which always wins

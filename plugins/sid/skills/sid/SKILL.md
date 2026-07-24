@@ -61,6 +61,13 @@ Exit codes are a stable contract:
 | 3 | key missing or expired | send the user to `/api-klice` (see above) |
 | 4 | not found | verify the id |
 | 5 | rate limited | slow down, retry shortly |
+| 6 | access denied — **or an id SID doesn't know** | check the id first, then treat it as a rights problem |
+
+Code 6 is not a key problem; only code 3 is. SID answers an unknown id with
+403 rather than 404 so the API can't be used to find out which ids exist,
+which means "wrong id" and "no access" arrive identically. Always re-check the
+id before telling the user they lack rights — for `download` that means
+fetching the `fileId` with `docs get`, never reusing a `documentId`.
 
 ## Commands
 
@@ -118,7 +125,10 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 - **"anything new in SID?"** → `notifications`, or `check` for a combined
   digest with pending confirmations.
 - **"download / send me the file"** → `docs get` for the `fileId`, then
-  `download`.
+  `download <fileId>`. The two ids are both UUIDs and nothing about them says
+  which is which, so never pass a `documentId` — a listing or a search result
+  gives you document ids, not file ids. Getting it wrong returns 403, not 404;
+  re-read the id before concluding the user has no access.
 - **"which laws does this document rest on"** → `docs legislation <id>`.
   Read-only: what a document tracks is managed in SID, where the Codexis
   picker and the change-approval flow live.
