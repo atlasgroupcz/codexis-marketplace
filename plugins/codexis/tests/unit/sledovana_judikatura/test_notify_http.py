@@ -1,6 +1,6 @@
 """HTTP CGI notify wiring: GET ?view=notify shape + POST save_notify_settings.
 
-Loads components/sledovana-judikatura/judikatura.py in-process (same harness
+Loads components/sledovana-judikatura/judikatura-cgi in-process (same harness
 test_cli_notify.py uses for bin/cdx-sledovana-judikatura) so handle_get/handle_post
 run directly against the `judikatura_app_dir` fixture's isolated state, and so
 module-level `notify`/`notify_settings` references can be monkeypatched.
@@ -19,7 +19,7 @@ from sledovana_judikatura_core import notify_settings
 def _load_component():
     path = os.path.join(
         os.path.dirname(__file__), "..", "..", "..",
-        "components", "sledovana-judikatura", "judikatura.py",
+        "components", "sledovana-judikatura", "judikatura-cgi",
     )
     loader = importlib.machinery.SourceFileLoader("cdx_sledovana_judikatura_http", path)
     spec = importlib.util.spec_from_file_location(

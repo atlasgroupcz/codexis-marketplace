@@ -1,16 +1,15 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
-use reqwest::blocking::Client;
-use reqwest::header::ACCEPT;
 use serde_json::Value;
+use ureq::Agent;
 
 const DEFAULT_BASE_URL: &str = "https://nrpzs-api.uzis.cz/api/v1";
 const USER_AGENT_VALUE: &str = concat!("nrpzs-cli/", env!("CARGO_PKG_VERSION"));
 const PAGE: usize = 100;
 
 pub struct NrpzsClient {
-    client: Client,
+    agent: Agent,
     base_url: String,
 }
 
@@ -19,41 +18,56 @@ impl NrpzsClient {
         let base_url =
             std::env::var("NRPZS_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
         let base_url = base_url.trim_end_matches('/').to_string();
-        let client = Client::builder()
-            .user_agent(USER_AGENT_VALUE)
-            .timeout(Duration::from_secs(30))
-            .build()?;
-        Ok(Self { client, base_url })
+        // ureq keeps a connection pool on the Agent -> requests to the same host
+        // (e.g. the fetch_all pagination loop) reuse the TCP+TLS connection.
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(Duration::from_secs(10))
+            .timeout_read(Duration::from_secs(30))
+            .build();
+        Ok(Self { agent, base_url })
     }
 
-    /// Raw GET, body returned verbatim. `params` are URL query pairs.
     pub fn get_raw(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
-        let url = self.url_for(path);
-        let resp = self
-            .client
+        let url = resolve_url(&self.base_url, path);
+        let mut req = self
+            .agent
             .get(&url)
-            .query(params)
-            .header(ACCEPT, "application/json")
-            .send()?;
-        cdx_common::http::read_body(resp, &url, "GET")
-    }
-
-    /// Like get_raw, but maps HTTP 404 (NRPZS "Empty result") to an empty JSON array.
-    pub fn get_raw_allow_empty(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
-        let url = self.url_for(path);
-        let resp = self
-            .client
-            .get(&url)
-            .query(params)
-            .header(ACCEPT, "application/json")
-            .send()?;
-        if resp.status() == reqwest::StatusCode::NOT_FOUND {
-            return Ok("[]".to_string());
+            .set("Accept", "application/json")
+            .set("User-Agent", USER_AGENT_VALUE);
+        for &(k, v) in params {
+            req = req.query(k, v);
         }
-        cdx_common::http::read_body(resp, &url, "GET")
+        match req.call() {
+            Ok(resp) => Ok(resp.into_string()?),
+            Err(ureq::Error::Status(code, resp)) => {
+                let body = resp.into_string().unwrap_or_default();
+                Err(anyhow!("HTTP {code} on GET {url}\n{}", body.trim()))
+            }
+            Err(e) => Err(anyhow!("GET {url} failed: {e}")),
+        }
     }
 
-    /// GET parsed as a JSON array.
+    pub fn get_raw_allow_empty(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
+        let url = resolve_url(&self.base_url, path);
+        let mut req = self
+            .agent
+            .get(&url)
+            .set("Accept", "application/json")
+            .set("User-Agent", USER_AGENT_VALUE);
+        for &(k, v) in params {
+            req = req.query(k, v);
+        }
+        match req.call() {
+            Ok(resp) => Ok(resp.into_string()?),
+            Err(ureq::Error::Status(404, _)) => Ok("[]".to_string()),
+            Err(ureq::Error::Status(code, resp)) => {
+                let body = resp.into_string().unwrap_or_default();
+                Err(anyhow!("HTTP {code} on GET {url}\n{}", body.trim()))
+            }
+            Err(e) => Err(anyhow!("GET {url} failed: {e}")),
+        }
+    }
+
     pub fn get_array(&self, path: &str, params: &[(&str, &str)]) -> Result<Vec<Value>> {
         let body = self.get_raw(path, params)?;
         let v: Value =
@@ -64,7 +78,6 @@ impl NrpzsClient {
         }
     }
 
-    /// Page through all results for `params` (adds limit/offset), max 100/page.
     pub fn fetch_all(&self, path: &str, params: &[(&str, &str)]) -> Result<Vec<Value>> {
         let mut all = Vec::new();
         let mut offset = 0usize;
@@ -84,8 +97,16 @@ impl NrpzsClient {
         }
         Ok(all)
     }
+}
 
-    fn url_for(&self, path: &str) -> String {
-        cdx_common::http::resolve_url(&self.base_url, path)
+/// Resolves a request path against a base URL (was cdx_common::http::resolve_url).
+fn resolve_url(base_url: &str, path: &str) -> String {
+    if path.starts_with("http://") || path.starts_with("https://") {
+        return path.to_string();
+    }
+    if path.starts_with('/') {
+        format!("{base_url}{path}")
+    } else {
+        format!("{base_url}/{path}")
     }
 }

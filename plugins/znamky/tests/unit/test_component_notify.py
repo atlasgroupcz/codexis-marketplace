@@ -3,12 +3,13 @@
 - GET ?view=notify -> {"mode": "notify", "settings": ..., "userEmail": ...}
 - POST action=save_notify_settings -> persists via notify_settings.set_notify
 
-Loads components/znamky/znamky.py directly (it isn't an importable package -
+Loads components/znamky/znamky-cgi directly (it isn't an importable package -
 it's the CGI entrypoint) and calls handle_get/handle_post, capturing the
 emit_json output written to stdout. Isolates settings I/O to a tmp HOME, same
 as test_notify_settings.py's `home` fixture.
 """
 
+import importlib.machinery
 import importlib.util
 import json
 from pathlib import Path
@@ -17,11 +18,12 @@ import pytest
 
 from znamky_core import notify_settings as ns
 
-_COMPONENT_PATH = Path(__file__).resolve().parents[2] / "components" / "znamky" / "znamky.py"
+_COMPONENT_PATH = Path(__file__).resolve().parents[2] / "components" / "znamky" / "znamky-cgi"
 
 
 def _load_component():
-    spec = importlib.util.spec_from_file_location("znamky_component", _COMPONENT_PATH)
+    loader = importlib.machinery.SourceFileLoader("znamky_component", str(_COMPONENT_PATH))
+    spec = importlib.util.spec_from_file_location("znamky_component", _COMPONENT_PATH, loader=loader)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

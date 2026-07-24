@@ -97,9 +97,7 @@ sync_component_output \
   "$FRONTEND_DIR/apps/sbirka-listin:sbirka-listin/dist" \
   "$SCRIPT_DIR/sbirka-listin" \
   "icon.svg" \
-  "sbirka-listin" \
   "sbirka-listin-cgi" \
-  "sbirka-listin-cgi-aarch64-apple-darwin" \
   "component.json"
 
 echo "Completed component build: $(basename "$PLUGIN_DIR")"
