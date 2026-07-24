@@ -1,5 +1,10 @@
 # Distribution repo exclusions.
-# This file is the single source of truth for what does not go into `dist/`.
+#
+# create-dist.sh seeds the dist from git-tracked files only (git ls-files), so
+# untracked build junk (target/, node_modules/, .venv, .turbo, worktrees, ...)
+# never ships - no need to list it here. This file is the second layer: it
+# drops tracked-but-dev files that must not reach the public dist (src/, tests/,
+# build.sh, Cargo.toml, uv.lock, ...).
 
 # Repository metadata and dist-generation files
 /.git/
@@ -19,10 +24,20 @@ tests/
 test-results/
 .pytest_cache/
 .claude/
+# Local dev / tooling junk. The git-ls-files seeding already keeps these out
+# (they are untracked), so this block is defense-in-depth: it still catches
+# them if anything here ever gets accidentally git-added.
+.superpowers/
+.worktrees/
+.git-worktrees/
+.venv/
+venv/
 /docs/
 /pyproject.toml
+/uv.lock
 __pycache__/
 *.pyc
+.turbo/
 /Cargo.toml
 /Cargo.lock
 /target/
