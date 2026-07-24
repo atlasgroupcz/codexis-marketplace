@@ -12,6 +12,14 @@
 
 description: video-analyze - transcribe a short YouTube clip and relay content
 
+# SKIPPED in CI: `video-analyze transcript` hands the YouTube URL to Gemini's
+# file API, which needs a Google API credential the test VM does not have.
+# Without it the binary errors and the run only exercises the failure path -
+# it would pass or fail regardless of whether transcription actually works.
+# Remove `skip` once a Gemini key is provisioned in the VM (the test below is
+# ready as-is). Run it locally anyway with an explicit --config/--plugin.
+skip: "needs a Gemini API credential in the CI VM (video-analyze transcript uses Gemini's file API)"
+
 prompts:
   - "{{ prompt }}"
 
