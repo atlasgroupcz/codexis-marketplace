@@ -104,7 +104,7 @@ describe("download - bezpečnost jména souboru", () => {
  * SID with the API key and SID gates both, so anything the user may not see
  * still fails.
  */
-describe("download — documentId se doresí na fileId", () => {
+describe("download - documentId se doresí na fileId", () => {
   /** Router over (url → Response), recording every request in order. */
   function routed(handler: (url: string) => Response): { f: typeof fetch; calls: string[] } {
     const calls: string[] = []
@@ -122,7 +122,7 @@ describe("download — documentId se doresí na fileId", () => {
       headers: { "content-type": "application/json" },
     })
 
-  it("fileId stáhne napřímo — žádné dohledávání navíc", async () => {
+  it("fileId stáhne napřímo - žádné dohledávání navíc", async () => {
     const { f, calls } = routed(() => new Response("PDF", { status: 200 }))
     const out = join(dir, "a.pdf")
 
@@ -156,7 +156,7 @@ describe("download — documentId se doresí na fileId", () => {
 
   // The one that matters: SID gates the lookup too, so a document the caller
   // may not read resolves to nothing and no bytes are ever fetched.
-  it("na cizí dokument práva nedá — dohledání je taky hlídané a soubor se nestáhne", async () => {
+  it("na cizí dokument práva nedá - dohledání je taky hlídané a soubor se nestáhne", async () => {
     const { f, calls } = routed(() => forbidden())
 
     const err = (await run(["doc-cizi", "--out", join(dir, "c.pdf")], f).catch(
@@ -206,7 +206,7 @@ describe("download — documentId se doresí na fileId", () => {
     expect(err.exitCode).toBe(3)
   })
 
-  it("dohledání proběhne nejvýš jednou — žádná smyčka", async () => {
+  it("dohledání proběhne nejvýš jednou - žádná smyčka", async () => {
     const { f, calls } = routed((url) => {
       if (url.includes("/api/v1/documents/")) {
         return new Response(JSON.stringify({ id: "doc-4", currentFile: { id: "file-x" } }), {

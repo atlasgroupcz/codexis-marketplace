@@ -61,13 +61,13 @@ Exit codes are a stable contract:
 | 3 | key missing or expired | send the user to `/api-klice` (see above) |
 | 4 | not found | verify the id |
 | 5 | rate limited | slow down, retry shortly |
-| 6 | access denied — **or an id SID doesn't know** | check the id first, then treat it as a rights problem |
+| 6 | access denied - **or an id SID doesn't know** | check the id first, then treat it as a rights problem |
 
 Code 6 is not a key problem; only code 3 is. SID answers an unknown id with
 403 rather than 404 so the API can't be used to find out which ids exist,
 which means "wrong id" and "no access" arrive identically. Re-check the id
 before telling the user they lack rights. (`download` already does this for
-you — it retries a refused id as a document — so a 6 from `download` really
+you - it retries a refused id as a document - so a 6 from `download` really
 does mean the user has no access to it.)
 
 ## Commands
