@@ -3,7 +3,7 @@ import { join, dirname } from "node:path"
 import { homedir } from "node:os"
 
 /**
- * Stable contract — SKILL.md documents these and the automation relies on them.
+ * Stable contract - SKILL.md documents these and the automation relies on them.
  *
  * AUTH is strictly "the key won't authenticate" (401). FORBIDDEN is separate
  * because SID answers an unknown id with 403 rather than 404 (it refuses to

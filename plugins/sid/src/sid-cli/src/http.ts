@@ -24,7 +24,7 @@ function statusToError(status: number, bodyText: string): CliError {
       EXIT.AUTH,
     )
   }
-  // NOT an expired key — that is 401. SID also answers an id it doesn't know
+  // NOT an expired key - that is 401. SID also answers an id it doesn't know
   // with 403 instead of 404, so the endpoint can't be used to probe which ids
   // exist; "wrong id" and "no rights" are indistinguishable here, and the
   // message has to name both. Deliberately command-agnostic: `download`
@@ -33,7 +33,7 @@ function statusToError(status: number, bodyText: string): CliError {
   if (status === 403) {
     return new CliError(
       `Přístup odepřen (403). SID vrací 403 i na id, které nezná, takže neplatné id ` +
-        `a chybějící oprávnění od sebe nerozliší — ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`,
+        `a chybějící oprávnění od sebe nerozliší - ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`,
       EXIT.FORBIDDEN,
     )
   }
