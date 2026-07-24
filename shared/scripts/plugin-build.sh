@@ -1,14 +1,27 @@
 #!/usr/bin/env bash
 # Shared build logic for the marketplace Rust plugins. Sourced by each plugin's
-# `src/build.sh`. Build-time only - never shipped (`shared/` is dist-excluded).
+# `src/build.sh` (and by the repo-root build.sh). Build-time only - never shipped
+# (`shared/` is dist-excluded).
 #
-# Usage from a plugin's src/build.sh:
+# All Rust crates live in ONE Cargo workspace (root Cargo.toml). The root
+# build.sh compiles every crate ONCE with a single `cargo build --workspace`
+# (all shared deps compiled once, not per plugin) - see build_rust_workspace in
+# build.sh. Each plugin's src/build.sh then just installs its already-built
+# binary from the shared target/ via `build_plugin_crate` /
+# `install_workspace_binary` - no per-plugin compile. The produced binaries are
+# unchanged: static, self-contained.
+#
+# This file holds the shared build CONFIG (pinned image, arch, target dir) and
+# the per-plugin INSTALL helpers. The one-time whole-workspace compile lives in
+# the root build.sh orchestrator (which sources this file for the config).
+#
+# Usage from a plugin's src/build.sh (unchanged for the simple single-bin plugins):
 #   set -euo pipefail
 #   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   source "$SCRIPT_DIR/../../../shared/scripts/plugin-build.sh"
 #   build_plugin_crate "$SCRIPT_DIR/<crate-dir>" "<bin-name>"
 #
-# Override before `source` when a plugin needs it:
+# Override before `source` when needed:
 #   RUST_IMAGE        Docker image (default: pinned rust:1.86 slim, by digest)
 #   CARGO_BUILD_ARGS  cargo flags (default: --release --locked)
 
@@ -32,17 +45,24 @@ REPO_ROOT="$(cd "$_CDX_BUILD_DIR/../.." && pwd)"
 RUST_IMAGE="${RUST_IMAGE:-rust:1.86.0-slim-bookworm@sha256:57d415bbd61ce11e2d5f73de068103c7bd9f3188dc132c97cef4a8f62989e944}"
 CARGO_BUILD_ARGS="${CARGO_BUILD_ARGS:---release --locked}"
 _CDX_DOCKER_PLATFORM="linux/${_CDX_DOCKER_ARCH}"
-_CDX_MACOS_ARM64_TARGET="aarch64-apple-darwin"
 
-# Builds one crate for linux (in Docker) and, when osxcross is present, macOS
-# arm64 (natively), installing both into the plugin's bin/ dir.
-#   $1  absolute crate dir (…/plugins/<p>/src/<crate>)
-#   $2  binary name
-build_plugin_crate() {
-  local crate_dir="$1"
-  local bin_name="$2"
-  _cdx_build_linux "$crate_dir" "$bin_name"
-  _cdx_build_macos_arm64 "$crate_dir" "$bin_name"
+# Install one already-built binary from the shared workspace target/ into a
+# destination dir (Linux).
+#   $1  binary name (as it appears in target/release/)
+#   $2  destination directory
+install_workspace_binary() {
+  local bin_name="$1"
+  local dst_dir="$2"
+  mkdir -p "$dst_dir"
+
+  local lin="$REPO_ROOT/target/release/$bin_name"
+  if [[ ! -f "$lin" ]]; then
+    echo "ERROR: $bin_name not found in workspace target ($lin)." >&2
+    echo "       Did build_rust_workspace run first (root build.sh)?" >&2
+    exit 1
+  fi
+  install -m 0755 "$lin" "$dst_dir/$bin_name"
+  echo "   installed -> $dst_dir/$bin_name"
 }
 
 _cdx_bin_dir() {
@@ -53,68 +73,48 @@ _cdx_bin_dir() {
   echo "$plugin_dir/bin"
 }
 
-_cdx_build_linux() {
+# --- standalone fallback ------------------------------------------------------
+# In the release pipeline the root build.sh runs the one-pass workspace build
+# first, so every binary is already in target/ and the plugins just install them
+# (the fallback below never fires). But a plugin's src/build.sh can also be run
+# on its own (no prior workspace build) - then we build just that crate here, the
+# same release artifact the workspace build would produce, before installing.
+
+# Build one crate's release binaries (all its [[bin]]) for linux (Docker).
+# The whole repo is mounted so the shared
+# Cargo.lock + path deps resolve; --manifest-path builds only this crate.
+_build_one_crate() {
   local crate_dir="$1"
-  local bin_name="$2"
-  local bin_dir
-  bin_dir="$(_cdx_bin_dir "$crate_dir")"
-  mkdir -p "$bin_dir"
+  local crate_rel="${crate_dir#$REPO_ROOT/}"
 
-  if [[ ! -f "$crate_dir/Cargo.toml" ]]; then
-    echo "ERROR: Missing Cargo.toml in $crate_dir" >&2
-    exit 1
-  fi
-
-  echo "==> Building $bin_name for $_CDX_DOCKER_PLATFORM"
-  # Mount only the crate and shared/ (not the whole repo), rebuilding their real
-  # relative layout under /workspace so the crate's `../../../../shared/...`
-  # path dependency resolves. The crate still builds in isolation: workdir is
-  # the crate dir and, with no workspace manifest above it, cargo writes
-  # `target/` into the crate dir.
+  echo "==> Workspace not pre-built - building $crate_rel standalone for $_CDX_DOCKER_PLATFORM (Docker)"
   docker run --rm \
     --platform "$_CDX_DOCKER_PLATFORM" \
     -u "$(id -u):$(id -g)" \
     -e CARGO_HOME=/tmp/cargo \
-    -v "$crate_dir:/workspace/${crate_dir#$REPO_ROOT/}" \
-    -v "$REPO_ROOT/shared:/workspace/shared:ro" \
-    -w "/workspace/${crate_dir#$REPO_ROOT/}" \
+    -v "$REPO_ROOT:/workspace" \
+    -w /workspace \
     "$RUST_IMAGE" \
-    cargo build $CARGO_BUILD_ARGS
-
-  install -m 0755 "$crate_dir/target/release/$bin_name" "$bin_dir/$bin_name"
-  echo "   installed -> $bin_dir/$bin_name"
+    cargo build --manifest-path "$crate_rel/Cargo.toml" $CARGO_BUILD_ARGS
 }
 
-_cdx_build_macos_arm64() {
+# Build the crate only if its binary isn't already in the shared target/ (i.e. a
+# standalone run without the one-pass workspace build). Checks one representative
+# binary - a crate's [[bin]] targets are all produced by the same build.
+_ensure_crate_built() {
+  local crate_dir="$1"
+  local a_bin="$2"
+  [[ -f "$REPO_ROOT/target/release/$a_bin" ]] || _build_one_crate "$crate_dir"
+}
+
+# Entry point for the simple single-binary plugins. Installs the binary from the
+# shared target/ into the plugin's bin/ - building the crate first only if the
+# workspace build hasn't already produced it (standalone run). Signature
+# unchanged, so those plugins' src/build.sh need no edits.
+#   $1  crate dir (…/plugins/<p>/src/<crate>)   $2  binary name
+build_plugin_crate() {
   local crate_dir="$1"
   local bin_name="$2"
-  local bin_dir
-  bin_dir="$(_cdx_bin_dir "$crate_dir")"
-  local osxcross_bin="$HOME/opt/macos/target/bin"
-  local sdk_root="$HOME/opt/macos/target/SDK/MacOSX26.1.sdk"
-  local linker="aarch64-apple-darwin25.1-clang"
-  local target_bin="$crate_dir/target/$_CDX_MACOS_ARM64_TARGET/release/$bin_name"
-  local dst_bin="$bin_dir/${bin_name}-${_CDX_MACOS_ARM64_TARGET}"
-
-  if [[ ! -d "$osxcross_bin" ]] || [[ ! -d "$sdk_root" ]]; then
-    echo "==> Skipping $bin_name macOS ARM64 build: osxcross not found at $osxcross_bin"
-    return 0
-  fi
-
-  echo "==> Building $bin_name for darwin/arm64"
-  rustup target add "$_CDX_MACOS_ARM64_TARGET" >/dev/null
-
-  # macOS builds natively (no Docker): the crate's relative path dependency on
-  # shared/rust/cdx-common resolves directly on the host filesystem.
-  (
-    cd "$crate_dir"
-    SDKROOT="$sdk_root" \
-      PATH="$PATH:$osxcross_bin" \
-      CC_aarch64_apple_darwin="$linker" \
-      CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER="$linker" \
-      cargo build $CARGO_BUILD_ARGS --target "$_CDX_MACOS_ARM64_TARGET"
-  )
-
-  install -m 0755 "$target_bin" "$dst_bin"
-  echo "   installed -> $dst_bin"
+  _ensure_crate_built "$crate_dir" "$bin_name"
+  install_workspace_binary "$bin_name" "$(_cdx_bin_dir "$crate_dir")"
 }

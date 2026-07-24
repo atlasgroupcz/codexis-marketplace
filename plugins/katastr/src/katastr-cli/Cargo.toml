@@ -39,12 +39,6 @@ cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
 cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
 
-[profile.release]
-strip = true
-lto = true
-codegen-units = 1
-panic = "abort"
-
 [dev-dependencies]
 # tempfile lets tests exercise filesystem code paths against a scratch dir
 # instead of polluting $HOME; only pulled in for test builds.

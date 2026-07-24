@@ -5,7 +5,7 @@
   "route": "insolvence",
   "description": "Sledujte firmy a osoby v insolvenčním rejstříku s automatickou kontrolou změn.",
   "entrypoint": "index.html",
-  "binary": "insolvence.py",
+  "binary": "insolvence-cgi",
   "i18n": {
     "cs": {
       "displayName": "Hlídač insolvencí",

@@ -12,22 +12,6 @@ cleanup_own_temps() {
 }
 trap cleanup_own_temps EXIT INT TERM
 
-select_binary_source() {
-  local binary_name="$1"
-
-  case "$(uname -s):$(uname -m)" in
-    Darwin:arm64|Darwin:aarch64)
-      echo "${binary_name}-aarch64-apple-darwin"
-      ;;
-    Darwin:*)
-      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
-      exit 1
-      ;;
-    *)
-      echo "${binary_name}"
-      ;;
-  esac
-}
 
 install_binary() {
   local source_name="$1"
@@ -55,4 +39,4 @@ install_binary() {
   echo "Installed ${target_name} -> ${target_path}"
 }
 
-install_binary "$(select_binary_source "video-analyze")" "video-analyze"
+install_binary "video-analyze" "video-analyze"

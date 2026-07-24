@@ -5,7 +5,7 @@
   "route": "onepost",
   "description": "Nastavení API klíče pro propojení agenta s ONEPOSTem.",
   "entrypoint": "index.html",
-  "binary": "onepost.py",
+  "binary": "onepost-cgi",
   "i18n": {
     "cs": {
       "displayName": "ONEPOST API klíč",

@@ -23,3 +23,6 @@ test-results/
 /pyproject.toml
 __pycache__/
 *.pyc
+/Cargo.toml
+/Cargo.lock
+/target/

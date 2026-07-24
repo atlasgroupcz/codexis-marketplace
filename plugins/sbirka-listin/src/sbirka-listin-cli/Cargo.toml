@@ -18,21 +18,16 @@ name = "sbirka-listin-cgi"
 path = "src/cgi_main.rs"
 
 [dependencies]
-cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["ico", "http", "store", "time"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["ico", "store", "time"] }
 cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
 cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
 clap = { version = "4", features = ["derive"] }
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+ureq = { version = "2", default-features = false, features = ["tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 regex = "1"
-
-[profile.release]
-strip = true
-lto = true
-codegen-units = 1
 
 [dev-dependencies]
 tempfile = "3"
