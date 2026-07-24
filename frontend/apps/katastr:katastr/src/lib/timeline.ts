@@ -1,3 +1,5 @@
+import { isNegativeTerminal, isPlomba } from '@/lib/stav'
+
 export type TimelineState = 'done' | 'current'
 
 export interface TimelineNode {
@@ -19,18 +21,6 @@ interface TimelineInput {
   stav: string
   datum_prijeti: string
   provedene_operace: Array<Operace>
-}
-
-// Negative/closing outcomes - a proceeding that ended without an entry.
-const NEGATIVE_TERMINAL_STEMS = ['zamít', 'zastav', 'zpětvz', 'zpetvz', 'odmít', 'vzat zpět']
-
-function isNegativeTerminal(stav: string): boolean {
-  const s = stav.toLowerCase()
-  return NEGATIVE_TERMINAL_STEMS.some((stem) => s.includes(stem))
-}
-
-export function isPlomba(text: string): boolean {
-  return text.toLowerCase().includes('plomb')
 }
 
 /**

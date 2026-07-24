@@ -24,7 +24,7 @@ install_binary() {
   fi
   # Atomic install: write to a temp file in the destination dir, flush it to
   # disk, then rename into place. A crash leaves either the old binary or the
-  # complete new one — never a truncated/empty file at the real name. This
+  # complete new one - never a truncated/empty file at the real name. This
   # matters because onUpdate re-runs this hook over a sid-cli that may be
   # executing.
   local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"

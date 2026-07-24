@@ -29,11 +29,11 @@ async function resolveUser(needle: string, f?: FetchLike): Promise<User> {
   const byEmail = matchAll(users, (u) => u.email, needle)
   const hits = byEmail.length > 0 ? byEmail : matchAll(users, (u) => u.name, needle)
   if (hits.length === 0) {
-    throw new CliError(`Uživatel '${needle}' nenalezen — zadejte e-mail nebo id.`, EXIT.NOT_FOUND)
+    throw new CliError(`Uživatel '${needle}' nenalezen - zadejte e-mail nebo id.`, EXIT.NOT_FOUND)
   }
   if (hits.length > 1) {
     const opts = hits.map((u) => u.email ?? u.id).join(", ")
-    throw new CliError(`'${needle}' odpovídá více uživatelům — upřesněte e-mailem nebo id: ${opts}`, EXIT.USAGE)
+    throw new CliError(`'${needle}' odpovídá více uživatelům - upřesněte e-mailem nebo id: ${opts}`, EXIT.USAGE)
   }
   return hits[0]!
 }
@@ -44,7 +44,7 @@ async function resolveGroup(needle: string, f?: FetchLike): Promise<Group> {
   const hits = matchAll(groups, (g) => g.name, needle)
   if (hits.length === 0) throw new CliError(`Skupina '${needle}' nenalezena.`, EXIT.NOT_FOUND)
   if (hits.length > 1) {
-    throw new CliError(`'${needle}' odpovídá více skupinám — upřesněte id: ${hits.map((g) => g.id).join(", ")}`, EXIT.USAGE)
+    throw new CliError(`'${needle}' odpovídá více skupinám - upřesněte id: ${hits.map((g) => g.id).join(", ")}`, EXIT.USAGE)
   }
   return hits[0]!
 }

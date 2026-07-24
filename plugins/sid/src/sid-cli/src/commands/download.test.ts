@@ -50,7 +50,7 @@ describe("download", () => {
   })
 })
 
-describe("download — bezpečnost jména souboru", () => {
+describe("download - bezpečnost jména souboru", () => {
   it("server nemůže path traversalem zapsat mimo cílový adresář", async () => {
     // The server controls content-disposition; without basename() ../ escapes cwd.
     const f = (async () =>

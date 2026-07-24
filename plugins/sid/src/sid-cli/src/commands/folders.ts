@@ -12,7 +12,7 @@ type Folder = {
 }
 
 /**
- * "Směrnice / Bezpečnost" — a bare id means nothing to a person, and the API
+ * "Směrnice / Bezpečnost" - a bare id means nothing to a person, and the API
  * returns a flat list with `parentId` only.
  */
 function pathOf(folder: Folder, byId: Map<string, Folder>): string {

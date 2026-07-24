@@ -1,4 +1,4 @@
-//! The system-wide `sbirka-listin-cli` binary — a thin shell over the crate's
+//! The system-wide `sbirka-listin-cli` binary - a thin shell over the crate's
 //! `cli` module.
 
 fn main() {

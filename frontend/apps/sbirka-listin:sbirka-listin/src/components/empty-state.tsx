@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ConversationHint } from '@workspace/ui/components/conversation-hint'
 import { AddSubjektForm } from './add-subjekt-form'
 
-/** Collection-of-deeds motif — stacked filings with one lifted, highlighted sheet. */
+/** Collection-of-deeds motif - stacked filings with one lifted, highlighted sheet. */
 function DeedsArt({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">

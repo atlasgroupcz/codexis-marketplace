@@ -88,3 +88,11 @@ Run:
 ```bash
 ./create-dist.sh
 ```
+
+## Tests
+
+Run the suites through the single entry point:
+
+```bash
+python tests/run.py <unit|marketplace|eval|all>
+```

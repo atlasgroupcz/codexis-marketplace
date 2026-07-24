@@ -16,11 +16,11 @@ const NO_KEY_MSG =
   "/api-klice) a vložte v nastavení pluginu SID v aplikaci Codexis."
 
 function statusToError(status: number, bodyText: string): CliError {
-  // Truncate the body and never attach headers — the key must not leak into errors.
+  // Truncate the body and never attach headers - the key must not leak into errors.
   const detail = bodyText.slice(0, 300)
   if (status === 401) {
     return new CliError(
-      `SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`,
+      `SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen - vydejte nový na /api-klice. ${detail}`,
       EXIT.AUTH,
     )
   }
@@ -39,7 +39,7 @@ function statusToError(status: number, bodyText: string): CliError {
   }
   if (status === 404) return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND)
   if (status === 429) {
-    return new CliError(`Rate limit SID (429) — zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT)
+    return new CliError(`Rate limit SID (429) - zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT)
   }
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR)
 }
@@ -58,7 +58,7 @@ export const DOWNLOAD_TIMEOUT_MS = 15 * 60_000
 function networkError(e: unknown, timeoutMs: number): never {
   const name = e instanceof Error ? e.name : ""
   if (name === "TimeoutError" || name === "AbortError") {
-    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR)
+    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) - server neodpovídá.`, EXIT.ERROR)
   }
   throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR)
 }
@@ -83,7 +83,7 @@ async function request(
 }
 
 /**
- * A 2xx that isn't JSON means this wasn't the SID API at all — typically a
+ * A 2xx that isn't JSON means this wasn't the SID API at all - typically a
  * proxy, captive portal or login page behind a wrong base URL.
  */
 async function parseJson(res: Response): Promise<unknown> {
@@ -92,7 +92,7 @@ async function parseJson(res: Response): Promise<unknown> {
     return JSON.parse(text)
   } catch {
     throw new CliError(
-      `Odpověď ze SID není JSON — zkontrolujte adresu (${getBaseUrl()}); ` +
+      `Odpověď ze SID není JSON - zkontrolujte adresu (${getBaseUrl()}); ` +
         `server vrátil: ${text.slice(0, 120).replace(/\s+/g, " ").trim()}`,
       EXIT.ERROR,
     )
@@ -114,13 +114,13 @@ export async function apiPatch(path: string, body: unknown, f: FetchLike = fetch
 }
 
 /**
- * For downloads — returns the Response so the caller can stream the body.
+ * For downloads - returns the Response so the caller can stream the body.
  *
  * SID's download route 302s to a short-lived presigned URL on the storage
  * host (SeaweedFS/S3), a DIFFERENT origin. `fetch` does not strip a custom
  * `x-api-key` header across origins, so following the redirect automatically
  * would hand the SID key to the storage layer. We follow the redirect
- * ourselves, without the key — the presigned query params are the auth.
+ * ourselves, without the key - the presigned query params are the auth.
  */
 export async function apiRaw(
   path: string,

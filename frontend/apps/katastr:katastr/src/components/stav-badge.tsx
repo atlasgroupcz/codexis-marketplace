@@ -1,5 +1,5 @@
 import { Badge } from '@workspace/ui/components/badge'
-import { isPlomba } from '@/lib/timeline'
+import { isNegativeTerminal, isPlomba } from '@/lib/stav'
 
 interface StavBadgeProps {
   stav: string
@@ -8,6 +8,9 @@ interface StavBadgeProps {
 // Keyword → tailwind classes. Order matters: most specific first.
 function getStavColor(stav: string): string | null {
   const s = stav.toLowerCase()
+  // A bad ending (rejected / stopped / withdrawn) reads red, matching the
+  // timeline's terminal node - checked first so it wins over any other keyword.
+  if (isNegativeTerminal(stav)) return 'bg-red-100 text-red-700'
   if (s.includes('ukončeno')) return 'bg-stone-100 text-stone-600'
   if (s.includes('vyrozumění') || s.includes('provedení vkladu'))
     return 'bg-brand-100 text-brand-700'

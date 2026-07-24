@@ -49,7 +49,7 @@ ares-cli search [filters …]
 ares-cli api {get|post} <PATH> [<JSON_BODY>]
 ```
 
-`<ICO>` accepts 1–8 digit input; `ares-cli` left-pads to 8 digits before the call.
+`<ICO>` accepts 1-8 digit input; `ares-cli` left-pads to 8 digits before the call.
 
 ### Registers (`--register`)
 

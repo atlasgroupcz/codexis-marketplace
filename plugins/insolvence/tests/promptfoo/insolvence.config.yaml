@@ -1,0 +1,33 @@
+# Fresh scenario (insolvence had no e2e). Structural oracle: the skill must
+# drive insolvence-cli (not scrape ISIR) and report the subject's status. The
+# regex matches either outcome (in insolvency / not in insolvency).
+description: insolvence - ISIR insolvency lookup by IČO
+prompts:
+  - "{{ prompt }}"
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+tests:
+  - description: Company insolvency lookup calls insolvence-cli and reports status
+    vars:
+      prompt: "Je firma s IČO 04863313 v insolvenci? Stačí stručná odpověď."
+      tool_name: shell
+      input_regex: 'insolvence-cli\s+lustrace\s+firma\s+04863313(?!.*--help)'
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|isir\.justice\.cz|justice\.cz)'
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that insolvence-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to query ISIR or justice.cz directly instead of insolvence-cli."
+          - "Bypassing insolvence-cli to scrape the insolvency register."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Ii]nsolvenc|[Kk]onkurs|[Oo]ddlužen|[Úú]pade|[Nn]en[íi] v insolvenci|[Žž]ádn'

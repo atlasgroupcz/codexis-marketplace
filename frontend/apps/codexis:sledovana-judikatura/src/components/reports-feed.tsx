@@ -74,7 +74,7 @@ export function ReportsFeed({ topics, topicFilter, onSelectReport }: ReportsFeed
             const unread = !report.confirmed_on
             const period =
               report.period_from && report.period_to
-                ? ` · ${formatDate(report.period_from)} – ${formatDate(report.period_to)}`
+                ? ` · ${formatDate(report.period_from)} - ${formatDate(report.period_to)}`
                 : ''
             return (
               <FeedItem

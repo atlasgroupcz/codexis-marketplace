@@ -41,7 +41,7 @@ describe('fetchStatus', () => {
 
   it('rejects a response that does not match the schema', async () => {
     // Guards against the panel rendering `undefined` when the CGI contract
-    // drifts — zod should refuse it rather than let it through.
+    // drifts - zod should refuse it rather than let it through.
     stubFetch({ ok: true, configured: 'yes' })
     await expect(fetchStatus()).rejects.toThrow()
   })

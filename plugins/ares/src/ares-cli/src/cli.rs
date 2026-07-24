@@ -50,7 +50,7 @@ pub enum Command {
 
 #[derive(Args, Debug)]
 pub struct DetailArgs {
-    /// IČO (1–8 digits; padded to 8 with leading zeros for the API call).
+    /// IČO (1-8 digits; padded to 8 with leading zeros for the API call).
     pub ico: String,
 
     /// Which register to read.

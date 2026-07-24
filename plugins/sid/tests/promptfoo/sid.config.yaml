@@ -1,0 +1,112 @@
+# Port of plugins/sid/tests/e2e/sid-search.yaml
+# SID (internal document system) via sid-cli: auth-check -> search -> personal
+# confirmations. sid-cli talks to an upstream SID API (sid.codexis.cz), so the
+# anti-scrape guard forbids curl/wget against it.
+#
+# SKIPPED, mirroring the e2e: headless SID auth is still an unmerged branch and
+# CI has no key, so onprem answers /api/v1/* with a 307 -> /login. Without a key
+# the run would only ever exercise the "no key" path and would pass whether SID
+# works or not. The steps below are ready as-is; remove `skip` once SID is
+# deployed and a CI key is provisioned. sid is also not listed in run.py BATCHES,
+# so it does not run by default either.
+skip: "waiting for SID headless auth to be deployed and a CI key to be provisioned"
+
+# The key lands in the per-app env file the CLI reads (config.ts loads
+# SID_API_KEY= from $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/.env), the same way
+# the katastr plugin does it. sid_api_base lets CI point at a staging SID;
+# otherwise CODEXIS_PLUGIN_SID_API_URL from plugin.json applies.
+setup:
+  - upload:
+      destination: /home/codexis/.cdx/apps/sid
+      files:
+        - path: .env
+          content: "SID_API_KEY={{ sid_api_key }}\nSID_API_URL={{ sid_api_base }}\n"
+
+description: sid - internal document lookups via sid-cli
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: settings test authenticates - relays the signed-in account e-mail
+    vars:
+      prompt: "Ověř, že mám funkční připojení do SID a řekni mi, pod jakým účtem jsem přihlášený."
+      tool_name: shell
+      input_regex: 'sid-cli\s+settings\s+test(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sid\.codexis\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Verifying the connection through sid-cli (settings test)."
+        incorrect:
+          - "Using curl/wget/requests against sid.codexis.cz instead of sid-cli."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # The e-mail of the authenticated account proves a real 200 from SID.
+      - type: regex
+        value: '@'
+
+  - description: search reaches for sid-cli, never curl; relays hits or a clean empty/outage
+    vars:
+      prompt: "Najdi mi v SID interní směrnice o bezpečnosti práce."
+      tool_name: shell
+      input_regex: 'sid-cli\s+(search|docs\s+list)\s+(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sid\.codexis\.cz)'
+      arbitration:
+        correct:
+          - "Searching SID through sid-cli (search or docs list)."
+        incorrect:
+          - "Using curl/wget/requests against sid.codexis.cz instead of sid-cli."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # Hits relayed, or a correct empty-result / fulltext-outage report - never a
+      # raw error or a curl fallback. JS regex - character classes stand in for (?i).
+      - type: regex
+        value: '([Ss]měrnic|[Dd]okument|[Nn]enalez|[Nn]edostupn)'
+
+  - description: personal confirmations query - a different sid-cli subcommand
+    vars:
+      prompt: "Co mám v SID potvrdit?"
+      tool_name: shell
+      input_regex: 'sid-cli\s+confirmations\s+list(?!.*--help)'
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sid\.codexis\.cz)'
+      arbitration:
+        correct:
+          - "Listing pending confirmations through sid-cli (confirmations list)."
+        incorrect:
+          - "Using curl/wget/requests against sid.codexis.cz instead of sid-cli."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # JS regex - character classes stand in for the e2e's (?i).
+      - type: regex
+        value: '([Pp]otvr|[Nn]ic|[Žž]ádn)'

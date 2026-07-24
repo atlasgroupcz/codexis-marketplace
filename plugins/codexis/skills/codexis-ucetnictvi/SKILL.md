@@ -65,7 +65,7 @@ Referenční mapa - vždy ověř aktuální verzi přes `/versions` před extrak
 | Vyhláška pro VÚJ | 410/2009 Sb. | `cz_law/410/2009` | vybrané účetní jednotky (veřejný sektor) |
 | ZDP (tax-accounting vazba) | 586/1992 Sb. | `cz_law/586/1992` | daňová uznatelnost, daňové odpisy |
 
-České účetní standardy (ČÚS): vydává MF, číslované podle vyhlášky - ČÚS 001–024 pro podnikatele, samostatné řady pro banky, pojišťovny, VÚJ.
+České účetní standardy (ČÚS): vydává MF, číslované podle vyhlášky - ČÚS 001-024 pro podnikatele, samostatné řady pro banky, pojišťovny, VÚJ.
 
 ## Jak hledat přes cdx-cli
 
@@ -132,7 +132,7 @@ Než odpovíš, projdi tento checklist. Pokud některý bod nesplňuješ, **nepo
 - **Vybrané účetní jednotky (VÚJ - stát, obce, kraje, příspěvkové organizace, státní fondy)**: před odpovědí vždy ověř, zda existuje zvláštní veřejnosektorová úprava (zejména vyhláška 410/2009 Sb., vyhláška 270/2010 Sb. pro inventarizaci, České účetní standardy řady 700+). Neodpovídej z obecné úpravy pro podnikatele (vyhláška 500/2002 Sb.), pokud dotaz směřuje na VÚJ.
 - **Obsah výkazové položky** (rozvaha, výsledovka, příloha): otevři příslušný paragraf prováděcí vyhlášky (500/2002 pro podnikatele, 410/2009 pro VÚJ, 501/2002 banky, 502/2002 pojišťovny) a odpovídej z **obsahového vymezení** položky v této vyhlášce. Název položky v běžném jazyce je zavádějící - obsah je definován legislativou.
 - **Definiční pojem se zákonnou definicí** („účetní jednotka", „účetní období", „roční úhrn čistého obratu", „kategorie účetní jednotky"): otevři přesný § ZoÚ nebo prováděcí vyhlášky a **reprodukuj přesnou definici včetně všech kvalifikátorů** (obsahuje-li vzorec/výpočet, uveď ho úplně).
-- **Dotaz na konkrétní účetní knihu / výkaz / metodu**: ověř v ČÚS pro daný typ účetní jednotky (ČÚS 001–024 pro podnikatele, 700+ pro VÚJ). Pokud ČÚS mlčí, ověř příslušný § vyhlášky a teprve potom ZoÚ.
+- **Dotaz na konkrétní účetní knihu / výkaz / metodu**: ověř v ČÚS pro daný typ účetní jednotky (ČÚS 001-024 pro podnikatele, 700+ pro VÚJ). Pokud ČÚS mlčí, ověř příslušný § vyhlášky a teprve potom ZoÚ.
 
 ## Časté pasti
 

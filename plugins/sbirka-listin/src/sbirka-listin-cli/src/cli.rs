@@ -1,6 +1,6 @@
 //! Command surface.
 //!
-//! Output: JSON on stdout — built from the scraped register pages (the source is
+//! Output: JSON on stdout - built from the scraped register pages (the source is
 //! HTML, so we serialize our own shape). Errors go to stderr as `ERROR: …` with
 //! exit code 2.
 
@@ -35,7 +35,7 @@ Examples:
 #[command(
     name = "sbirka-listin-cli",
     version,
-    about = "Sbírka listin veřejných rejstříků ČR — seznam listin subjektu, stažení dokumentu, hlídání přírůstků.",
+    about = "Sbírka listin veřejných rejstříků ČR - seznam listin subjektu, stažení dokumentu, hlídání přírůstků.",
     disable_version_flag = true,
     disable_help_subcommand = true,
     subcommand_required = true,
@@ -54,7 +54,7 @@ enum Command {
         #[arg(value_parser = ico_value_parser, value_name = "ICO")]
         ico: String,
     },
-    /// Stáhne jeden dokument podle celého čísla listiny ("B 8573/SL95/MSPH" —
+    /// Stáhne jeden dokument podle celého čísla listiny ("B 8573/SL95/MSPH" -
     /// dej ho do uvozovek, má mezeru). Už stažený vrátí bez dotazu na portál.
     Dokument {
         #[arg(value_parser = ico_value_parser, value_name = "ICO")]
@@ -324,7 +324,7 @@ fn notify_recipients(command: RecipientsCommand) -> Result<()> {
         RecipientsCommand::Set { emails } => current = emails,
         RecipientsCommand::Clear => current.clear(),
     }
-    // The signed-in user always receives the e-mail, so drop their own address —
+    // The signed-in user always receives the e-mail, so drop their own address -
     // listing yourself as an extra is redundant.
     let current = without_self(&current);
     let eff = notify_settings().set_notify(None, None, Some(current))?;

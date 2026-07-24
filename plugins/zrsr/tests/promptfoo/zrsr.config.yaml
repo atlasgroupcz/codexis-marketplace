@@ -1,0 +1,67 @@
+# Port of plugins/zrsr/tests/e2e/zrsr-lookup.yaml
+# Slovak RPO lookup (api.statistics.sk) via zrsr-cli.
+# Deterministic target: Tatra banka, a.s. - IČO 00686930.
+
+description: zrsr - Slovak RPO company/sole-trader lookup
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: IČO lookup surfaces the subject name + seat and attaches the RPO record
+    vars:
+      prompt: "Čo je to za firmu IČO 00686930? Stačí mi názov a sídlo."
+      tool_name: shell
+      input_regex: 'zrsr-cli\s+(detail|search|api\s+get)\s+.*686930(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|statistics\.sk)'
+      sources_min: 1
+      sources_regex: 'api\.statistics\.sk/rpo/v1/entity'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that zrsr-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from api.statistics.sk instead of zrsr-cli."
+          - "Bypassing zrsr-cli to scrape api.statistics.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_sources
+      - type: regex
+        value: 'Tatra\s?bank[\s\S]{0,200}(Hodžovo|Bratislav)|(Hodžovo|Bratislav)[\s\S]{0,200}Tatra\s?bank'
+
+  - description: Follow-up confirms active status + source register (may answer from context)
+    vars:
+      prompt: "A je tá firma stále aktívna a v akom registri je zapísaná?"
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|statistics\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that zrsr-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from api.statistics.sk instead of zrsr-cli."
+          - "Bypassing zrsr-cli to scrape api.statistics.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Oo][Bb][Cc][Hh][Oo][Dd][Nn][ýÝyY].{0,40}[Rr][Ee][Gg][Ii][Ss][Tt][Rr]?|[Aa][Kk][Tt][íÍ][Vv][Nn]|[Aa][Kk][Tt][Ii][Vv][Nn]'

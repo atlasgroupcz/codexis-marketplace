@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { ErrorMessage } from '@workspace/ui/components/error-message'
 import { ListSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
 import { ProceedingRow } from './proceeding-row'
 import { ListFilter } from './list-filter'
 import type { ListFilterValue } from './list-filter'
@@ -11,8 +11,8 @@ interface ProceedingsListProps {
   loading: boolean
   error: Error | null
   refetch: () => void
-  selectedUuid: string | null
-  onSelect: (uuid: string) => void
+  selectedCislo: string | null
+  onSelect: (cisloRizeni: string) => void
   filter: ListFilterValue
   onFilterChange: (value: ListFilterValue) => void
 }
@@ -22,14 +22,14 @@ export function ProceedingsList({
   loading,
   error,
   refetch,
-  selectedUuid,
+  selectedCislo,
   onSelect,
   filter,
   onFilterChange,
 }: ProceedingsListProps) {
   const { t } = useTranslation()
   if (loading && !data) return <div className="p-3"><ListSkeleton /></div>
-  if (error) return <div className="p-3"><ErrorMessage message={error.message} onRetry={refetch} /></div>
+  if (error) return <div className="p-3"><ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} /></div>
   if (!data) return null
 
   const unconfirmed = data.proceedings.filter((p) => p.unconfirmed_count > 0)
@@ -49,9 +49,9 @@ export function ProceedingsList({
       ) : (
         visible.map((proc) => (
           <ProceedingRow
-            key={proc.uuid}
+            key={proc.cislo_rizeni}
             proceeding={proc}
-            selected={proc.uuid === selectedUuid}
+            selected={proc.cislo_rizeni === selectedCislo}
             onClick={onSelect}
           />
         ))

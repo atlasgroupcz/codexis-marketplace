@@ -1,0 +1,38 @@
+# Port of plugins/cdx-cz-spp/acceptance/e2e/cdx-cz-spp-search.yaml
+# Czech municipal regulations (sbírka právních předpisů obcí).
+
+description: cdx-cz-spp - Czech municipal regulation search
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Prague municipal regulations - search returns real doc URLs
+    vars:
+      prompt: "Najdi mi obecně závazné vyhlášky hlavního města Prahy."
+      tool_name: shell
+      input_regex: 'cdx-cz-spp[\s"\\]+search\s+(CZSPP[A-Z]+|[A-Z]+)(?!.*--help)'
+      tool_calls_max: 19
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|sbirka\.gov\.cz|mvcr\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a doc URL that cdx-cz-spp itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch regulations from sbirka.gov.cz or mvcr.cz instead of cdx-cz-spp."
+          - "Bypassing cdx-cz-spp to scrape those sites for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '/doc/CZSB\d+'

@@ -12,13 +12,13 @@ notify-on-success: true
 notify-on-failure: true
 i18n:
   cs:
-    title: "Veřejné zakázky – sledování regulace"
+    title: "Veřejné zakázky - sledování regulace"
     description: "Každý měsíc shrne změny v právu veřejných zakázek, rozhodnutí ÚOHS a metodiku MMR."
   en:
     title: "Public procurement regulation watch"
     description: "Each month, summarize changes in public-procurement law, ÚOHS decisions and MMR methodology."
   sk:
-    title: "Verejné obstarávanie – sledovanie regulácie"
+    title: "Verejné obstarávanie - sledovanie regulácie"
     description: "Každý mesiac zhrnie zmeny v práve verejného obstarávania, rozhodnutia ÚOHS a metodiku MMR."
 ---
 Pomocí dovednosti CODEXIS sestav měsíční přehled vývoje v oblasti veřejných zakázek za uplynulý měsíc:

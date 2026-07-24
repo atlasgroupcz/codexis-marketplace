@@ -66,7 +66,7 @@ function ListinaRow({
   }
 
   const saved = Boolean(listina.path)
-  // Ghost buttons — the downloaded state is carried by the green icon + tag, so
+  // Ghost buttons - the downloaded state is carried by the green icon + tag, so
   // the actions stay quiet (opening isn't loud, downloading isn't pushed).
   const actBase =
     'inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium transition-colors'

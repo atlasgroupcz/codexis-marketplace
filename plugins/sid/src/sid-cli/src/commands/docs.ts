@@ -53,7 +53,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
     ] as const) {
       const raw = values[flag]
       const clear = values[clearFlag]
-      // Setting and clearing the same date is contradictory — refuse rather
+      // Setting and clearing the same date is contradictory - refuse rather
       // than silently letting one win and wiping the date the user supplied.
       if (raw !== undefined && clear) {
         throw new CliError(
@@ -75,7 +75,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
 
     if (Object.keys(patch).length === 0) {
       throw new CliError(
-        "Nebylo co nastavit — uveďte --from, --to, --clear-from nebo --clear-to.",
+        "Nebylo co nastavit - uveďte --from, --to, --clear-from nebo --clear-to.",
         EXIT.USAGE,
       )
     }
@@ -100,7 +100,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
         personal: { type: "boolean", default: false },
       },
     })
-    // Same date guard as set-validity — forwarding a Czech-style date raw
+    // Same date guard as set-validity - forwarding a Czech-style date raw
     // just yields a misleading empty list instead of a clear misuse error.
     for (const flag of ["from", "to"] as const) {
       const v = values[flag]

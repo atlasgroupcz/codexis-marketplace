@@ -1,5 +1,5 @@
 //! Shared library for the sbirka-listin plugin: the register scraping, document
-//! fetch, watcher, and notification logic used by both binaries — the
+//! fetch, watcher, and notification logic used by both binaries - the
 //! system-wide `sbirka-listin-cli` and the plugin-component `sbirka-listin-cgi`
 //! handler run in place by the daemon.
 

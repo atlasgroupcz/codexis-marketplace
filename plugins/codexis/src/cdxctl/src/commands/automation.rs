@@ -254,56 +254,13 @@ pub fn update(
 }
 
 /// Runs the structured `saveAutomation` mutation (id null → create, id set → update).
-/// Daemons that predate it answer with a schema validation error; rather than fail
-/// opaquely, transparently retry through the deprecated create/update mutations so the
-/// tool keeps working against an older daemon.
 fn save_automation(
     client: &GraphQLClient,
     variables: Value,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    match client.execute(graphql::SAVE_AUTOMATION, variables.clone()) {
-        Ok(data) => print_automation_payload(data.get("saveAutomation"), format),
-        Err(error) if is_unsupported_save_automation(&error) => {
-            save_automation_deprecated(client, &variables, format)
-        }
-        Err(error) => Err(error),
-    }
-}
-
-/// Old-daemon fallback: replay the same `AutomationInput` through the deprecated
-/// `createAutomation` / `updateAutomation` mutations (whichever the presence of `id`
-/// selects). This is exactly the pre-`saveAutomation` behavior.
-fn save_automation_deprecated(
-    client: &GraphQLClient,
-    variables: &Value,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
-    let input = variables.get("input").cloned().unwrap_or(Value::Null);
-    let id = variables.get("id").cloned().filter(|v| !v.is_null());
-    let (mutation, vars, field) = match &id {
-        Some(id) => (
-            graphql::UPDATE_AUTOMATION,
-            json!({ "id": id, "input": input }),
-            "updateAutomation",
-        ),
-        None => (graphql::CREATE_AUTOMATION, json!({ "input": input }), "createAutomation"),
-    };
-    let data = client.execute(mutation, vars)?;
-    let mut result = data.get(field).cloned().unwrap_or(Value::Null);
-    flatten_automation(&mut result);
-    print_output(&result, format);
-    Ok(())
-}
-
-/// True when the daemon rejected `saveAutomation`/`AutomationInput` as unknown - i.e. it
-/// is too old for the structured mutation, not that the input itself was wrong.
-fn is_unsupported_save_automation(error: &CdxctlError) -> bool {
-    matches!(error, CdxctlError::GraphQL(messages) if messages.iter().any(|message| {
-        let message = message.to_ascii_lowercase();
-        (message.contains("saveautomation") && (message.contains("undefined") || message.contains("unknown")))
-            || (message.contains("automationinput") && message.contains("unknown"))
-    }))
+    let data = client.execute(graphql::SAVE_AUTOMATION, variables)?;
+    print_automation_payload(data.get("saveAutomation"), format)
 }
 
 /// Reads the `saveAutomation` payload: a non-empty `errors` list becomes a structured
@@ -507,10 +464,7 @@ fn resolve_skill_ids(client: &GraphQLClient, values: &[String]) -> Result<Vec<Va
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        context_keys_to_fill, flatten_automation, is_unsupported_save_automation,
-        print_automation_payload,
-    };
+    use super::{context_keys_to_fill, flatten_automation, print_automation_payload};
     use crate::error::CdxctlError;
     use crate::output::OutputFormat;
     use serde_json::{json, Map, Value};
@@ -610,20 +564,5 @@ mod tests {
         });
 
         assert!(print_automation_payload(Some(&payload), OutputFormat::Json).is_ok());
-    }
-
-    #[test]
-    fn detects_a_daemon_without_the_save_automation_mutation() {
-        let undefined = CdxctlError::GraphQL(vec![
-            "Validation error (FieldUndefined@[saveAutomation]) : Field 'saveAutomation' in type 'Mutation' is undefined".into(),
-        ]);
-        assert!(is_unsupported_save_automation(&undefined));
-
-        let unknown_type = CdxctlError::GraphQL(vec!["Unknown type 'AutomationInput'".into()]);
-        assert!(is_unsupported_save_automation(&unknown_type));
-
-        // A real validation rejection (unknown model) must NOT be mistaken for an old daemon.
-        let rejected = CdxctlError::GraphQL(vec!["model: Unknown model.".into()]);
-        assert!(!is_unsupported_save_automation(&rejected));
     }
 }

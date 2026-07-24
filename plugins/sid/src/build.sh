@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Dockerized, reproducible build (repo policy — README "Per-Plugin src/build.sh Contract").
+# Dockerized, reproducible build (repo policy - README "Per-Plugin src/build.sh Contract").
 #
 # Na rozdíl od Rust pluginů nevzniká nativní binárka: sid-cli je TypeScript
 # zbundlovaný do JEDNOHO self-contained .mjs se shebangem `#!/usr/bin/env node`.
 # Guest VM má nodejs z aptu (viz cdx-daemon rootfs), takže za runtime nejsou
 # potřeba žádné node_modules ani cross-compilace pro architektury.
 #
-# Testy běží uvnitř TÉHOŽ image jako bundle — co se testuje, to se ships.
+# Testy běží uvnitř TÉHOŽ image jako bundle - co se testuje, to se ships.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,7 +29,7 @@ docker run --rm \
 # Bundle → spustitelný artefakt.
 #
 # Formát je CJS záměrně: artefakty se instalují BEZ přípony (`sid-cli`), a
-# takový soubor Node načítá jako CommonJS — ESM bundle by spadl na
+# takový soubor Node načítá jako CommonJS - ESM bundle by spadl na
 # "Cannot use import statement outside a module". Shebang si nese sám bundle
 # ze zdrojáku, takže ho tu nepřidáváme (jinak vznikne dvojitý a soubor je
 # nevalidní JS).
@@ -44,6 +44,6 @@ emit() {
 }
 
 emit sid-cli.cjs bin/sid-cli
-# Komponenta (CGI backend) je volitelná — build ji přeskočí, dokud
+# Komponenta (CGI backend) je volitelná - build ji přeskočí, dokud
 # src/cgi-main.ts neexistuje.
 [ -f "${SCRIPT_DIR}/sid-cli/dist/sid-cgi.cjs" ] && emit sid-cgi.cjs components/sid/sid-cgi

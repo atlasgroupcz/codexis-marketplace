@@ -15,7 +15,7 @@ describe('slNumber', () => {
 describe('byNewest', () => {
   const l = (cislo: string) => ({ cislo, typ: 'listina' })
 
-  it('orders by SL number descending — SL10 before SL2, not lexicographically', () => {
+  it('orders by SL number descending - SL10 before SL2, not lexicographically', () => {
     const out = byNewest([l('B/SL2/M'), l('B/SL10/M'), l('B/SL1/M')])
     expect(out.map((x) => x.cislo)).toEqual(['B/SL10/M', 'B/SL2/M', 'B/SL1/M'])
   })

@@ -110,7 +110,7 @@ Whenever legal references appear in user text, tool output, or extracts, resolve
 - Do not present raw legal references without attempting lookup first.
 - If a reference cannot be found in CODEXIS, keep it as plain text instead of omitting it.
 - When listing laws with paragraphs, use one bullet per law and keep paragraph links inline, comma-separated.
-- Collapse truly consecutive paragraphs into a single range, for example `§ 312–332`.
+- Collapse truly consecutive paragraphs into a single range, for example `§ 312-332`.
 
 ## Short Best Practices
 

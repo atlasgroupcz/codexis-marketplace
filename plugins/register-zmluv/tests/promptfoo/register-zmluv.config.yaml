@@ -1,0 +1,65 @@
+# Port of plugins/register-zmluv/tests/e2e/register-zmluv-search.yaml
+# Slovak Central Register of Contracts (crz.gov.sk) via register-zmluv.
+# Broad contract search + a "since 2024" follow-up; a real crz.gov.sk
+# detail link in the response proves live hits.
+
+description: register-zmluv - Slovak Central Register of Contracts search
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Road-maintenance contract search returns real crz.gov.sk links
+    vars:
+      prompt: "Nájdi zmluvy na údržbu ciest."
+      tool_name: shell
+      input_regex: 'register-zmluv search(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|crz\.gov\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that register-zmluv itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from crz.gov.sk instead of register-zmluv."
+          - "Bypassing register-zmluv to scrape crz.gov.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'crz\.gov\.sk'
+
+  - description: Concluded-since-2024 follow-up still cites a real crz.gov.sk link
+    vars:
+      # Natural follow-up - may reuse step-1 chat context or re-search with --date-from.
+      prompt: "A len tie uzavreté od roku 2024, prosím."
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|crz\.gov\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that register-zmluv itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from crz.gov.sk instead of register-zmluv."
+          - "Bypassing register-zmluv to scrape crz.gov.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'crz\.gov\.sk'

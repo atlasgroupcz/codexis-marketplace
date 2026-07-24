@@ -24,7 +24,7 @@ Sleduji za vás vývoj k tématu: «UPRAVTE - např. konkrétní obor, trh, konk
 
 Projdi za uplynulý týden nový vývoj k tomuto tématu z důvěryhodných veřejných zdrojů a sestav stručný přehled:
 
-1. **Hlavní novinky** - 3–5 nejdůležitějších událostí nebo zpráv, každá v jedné až dvou větách.
+1. **Hlavní novinky** - 3-5 nejdůležitějších událostí nebo zpráv, každá v jedné až dvou větách.
 2. **Souvislosti** - proč jsou podstatné a koho se týkají.
 3. **Co sledovat dál** - nadcházející události nebo očekávaný vývoj, pokud jsou relevantní.
 

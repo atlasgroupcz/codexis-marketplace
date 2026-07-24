@@ -15,7 +15,7 @@ use std::process::ExitCode;
 use cdx_cgi::{emit_error, emit_json, parse_query, read_body};
 use cdx_common::ico::normalize_ico;
 use cdx_common::time::now_utc;
-use cdx_notify::notify::{query_me_email, without_self};
+use cdx_notify::notify::{query_me_email, recipients_from_body};
 use cdx_notify::notify_settings::NotifySettings;
 use cdx_watch::change::{confirm_changes, unconfirmed_count};
 use cdx_watch::track::check_all;
@@ -30,6 +30,12 @@ use sbirka_listin_cli::watch::{self, OverviewRow, SbirkaListinWatcher, Snapshot}
 fn main() -> ExitCode {
     let method = env::var("REQUEST_METHOD").unwrap_or_else(|_| "GET".into());
     let query = env::var("QUERY_STRING").unwrap_or_default();
+
+    // Keep the user settings file present + migrated on the dashboard entry too,
+    // matching the CLI's startup. An app-only user never runs the CLI, so the
+    // CGI must ensure it itself. Best-effort: a settings write failure must not
+    // fail the request.
+    let _ = NotifySettings::new(watch::APP_ID).ensure_settings();
 
     match method.as_str() {
         "GET" => handle_get(&query),
@@ -178,7 +184,7 @@ fn post_check_all() -> Handled {
     let store = watch::store();
     let results = check_all(&store, &watcher);
     // Detect-and-notify, same as the CLI: a change is notified whichever route
-    // catches it first. Best-effort — never fails the request.
+    // catches it first. Best-effort - never fails the request.
     let notifikace = notify::dispatch(&results);
 
     let errors: Vec<Value> = results
@@ -217,15 +223,9 @@ fn post_confirm(body: &Value) -> Handled {
 fn post_save_notify_settings(body: &Value) -> Handled {
     let email = body.get("email").and_then(Value::as_bool);
     let in_app = body.get("inApp").and_then(Value::as_bool);
-    // Drop the signed-in user's own address (they always receive it); a save
-    // that omits `recipients` leaves the stored list untouched (None).
-    let recipients: Option<Vec<String>> = body.get("recipients").and_then(Value::as_array).map(|arr| {
-        let raw: Vec<String> = arr
-            .iter()
-            .filter_map(|v| v.as_str().map(String::from))
-            .collect();
-        without_self(&raw)
-    });
+    // Drops the signed-in user's own address; `None` when `recipients` is
+    // omitted, leaving the stored list untouched.
+    let recipients = recipients_from_body(body);
     match NotifySettings::new(watch::APP_ID).set_notify(email, in_app, recipients) {
         Ok(cfg) => Ok(emit_json(&json!({ "ok": true, "settings": cfg }))),
         Err(e) => Ok(emit_error(e.http_status(), &e.to_string())),

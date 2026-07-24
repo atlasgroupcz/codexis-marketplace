@@ -46,7 +46,7 @@ The command prints the **file path** to stdout (e.g. `.transcripts/meeting.mp4.t
 
 The transcript uses a simple timestamped format with spoken dialogue, scene descriptions, and audio cues. Produced by Gemini Pro.
 
-**CRITICAL - always pass `timeoutMs: 300000` (5 minutes) to the shell call.** The default 30-second shell timeout is too short for transcription: Gemini upload + multi-pass transcription regularly takes 30s–3min even for short clips, and the daemon will kill the call mid-flight without it. Without `timeoutMs`, the call times out, leaving no transcript file on disk and no useful path on stdout.
+**CRITICAL - always pass `timeoutMs: 300000` (5 minutes) to the shell call.** The default 30-second shell timeout is too short for transcription: Gemini upload + multi-pass transcription regularly takes 30s-3min even for short clips, and the daemon will kill the call mid-flight without it. Without `timeoutMs`, the call times out, leaving no transcript file on disk and no useful path on stdout.
 
 ### Step 2: Answer from the transcript
 
@@ -84,7 +84,7 @@ video-analyze /home/codexis/meeting.mp4 "What color is the logo shown at 2:15?"
 
 ## Error handling
 
-- **429 / rate limit errors are transient.** Wait 10–30 seconds and retry.
+- **429 / rate limit errors are transient.** Wait 10-30 seconds and retry.
 
 ## Output
 

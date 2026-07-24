@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Text conventions
 
-Never write em-dashes (`—`) or en-dashes (`–`). Use a plain hyphen (`-`) instead.
+Never write em-dashes or en-dashes (the long typographic dashes, Unicode U+2014
+and U+2013). Use a plain hyphen (`-`) instead.
 This applies everywhere: plugin display names, descriptions, i18n labels,
 component UI text, SKILL docs, code comments, and commit messages. Em-dashes had
 crept into user-facing names and looked unprofessional, so the repo was
@@ -18,8 +19,8 @@ normalized to hyphens - keep it that way.
   `test_*.py` (pytest) for Python, `#[cfg(test)]` inline + `src/<crate>/tests/*.rs`
   (cargo) for Rust.
 - **Scenario specs** are declarative data driven by the central harness:
-  `expected.json` (marketplace/install contract), `e2e/*.yaml` (chat-driven
-  e2e), and `tests/promptfoo/*.config.yaml` (LLM-judge evals).
+  `expected.json` (marketplace/install contract) and
+  `tests/promptfoo/*.config.yaml` (behavioral evals), both per-plugin.
 
 ### Taxonomy
 
@@ -27,22 +28,31 @@ normalized to hyphens - keep it that way.
 | --- | --- | --- |
 | unit | Python: `plugins/<name>/tests/unit/` (pytest); Rust: inline `#[cfg(test)]` in `src/<crate>/src/` | pytest / cargo |
 | integration | Rust: `plugins/<name>/src/<crate>/tests/*.rs`; Python: `tests/integration/` if needed | cargo / pytest |
-| install | `plugins/<name>/tests/install/expected.json` | central harness |
-| e2e | `plugins/<name>/tests/e2e/*.yaml` (one file per binary/skill) | central harness |
-| llm-eval | `tests/promptfoo/*.config.yaml` (central) | promptfoo |
+| install | `plugins/<name>/tests/install/expected.json` (just the `skills` a plugin registers) | central harness |
+| behavioral | `plugins/<name>/tests/promptfoo/*.config.yaml` (one config per scenario) | promptfoo |
 
-Code tests live next to the code they test (Rust unit/integration are per crate
-under `src/<crate>/`). Data specs are the only plugin-level tests. An e2e scenario
-that uploads binary fixtures keeps them in `plugins/<name>/tests/fixtures/`,
-referenced from the scenario yaml by a relative `source:` path.
+promptfoo is the single behavioral tier (the old homegrown e2e runner was
+removed once every scenario had a promptfoo equivalent). Configs live per-plugin;
+the shared machinery (`provider.py`, `assertions.py`, `run.py`) stays central in
+`tests/promptfoo/` and each config reaches it by an explicit relative back-path
+(`file://../../../../tests/promptfoo/...`). A config that uploads binary fixtures
+keeps them in `plugins/<name>/tests/fixtures/`, referenced by a relative `source:`.
+
+Every marketplace plugin must own an install contract
+(`tests/install/expected.json`) - `tests/test_conformance.py` fails the build
+otherwise. A behavioral (promptfoo) config is recommended but not enforced: the
+eval tier is opt-in in CI, so requiring a config that does not routinely run adds
+friction without a signal. Add one when a plugin's behavior is worth an
+LLM-driven check; the requirement can return once the eval tier becomes a
+routine gate.
 
 Two different `tests/` folders exist: `tests/` at the repo root is the central
-harness; `plugins/<name>/tests/` holds one plugin's Python unit tests and data
-specs. Same name, different scope.
+harness; `plugins/<name>/tests/` holds one plugin's own tests (unit, install,
+promptfoo). Same name, different scope.
 
 ### Running tests
 
-Use the single entry point: `python tests/run.py <unit|marketplace|e2e|eval|all>`.
+Use the single entry point: `python tests/run.py <unit|marketplace|eval|all>`.
 
 ### Coverage
 
@@ -62,7 +72,7 @@ General principles, independent of language or framework:
 - Use real dependencies where you can run them; mock only what you cannot
   (external HTTP APIs, the daemon, third-party services). Never mock the thing
   under test.
-- On any failure (test, e2e, pipeline), find the cause before changing code -
+- On any failure (test, eval, pipeline), find the cause before changing code -
   no shotgun fixes.
 - Before calling something green, show the command output - do not assert it
   passed.
@@ -129,6 +139,33 @@ plugins/plugin-name/
 │       └── references/   # Type-specific implementations
 └── shared/               # Shared resources
 ```
+
+## Writing skills - Anthropic conventions
+
+Follow Anthropic's skill-authoring best practices (platform.claude.com, Agent Skills >
+Skill authoring best practices) for every SKILL.md in this repo:
+
+- **The description decides triggering.** Write it in third person ("Manages...", never
+  "I can..." / "You can..."), state both WHAT the skill does and WHEN to use it ("Use
+  when..."), and include the trigger keywords users actually say. Max 1024 characters,
+  no XML tags. If a skill fails to trigger, fix the description, not the body.
+- **Name**: max 64 chars, lowercase letters/digits/hyphens; prefer gerund or noun-phrase
+  names (`processing-pdfs`, `pdf-processing`); never vague (`helper`, `utils`).
+- **Concise body.** Claude is already smart - add only what it does not know, and make
+  every paragraph justify its token cost. Keep the SKILL.md body under 500 lines; push
+  depth into `references/*.md` linked ONE level deep from SKILL.md (no reference file
+  pointing at another reference file). Reference files over 100 lines start with a table
+  of contents.
+- **One default, not a menu.** Recommend a single tool/approach with an escape hatch for
+  the exception, instead of listing alternatives.
+- **Concrete examples** (input -> output pairs) beat abstract descriptions. For multi-step
+  workflows give numbered steps or a checklist; for quality-critical steps add a
+  validation loop (run the check, fix, re-run).
+- **Consistent terminology**: pick one term per concept and use it everywhere.
+- **No time-sensitive content.** No "before/after <date>" branches; keep legacy behavior
+  in a clearly marked deprecated/old-patterns note.
+- **Match specificity to fragility**: exact commands for fragile one-way operations,
+  general guidance where many approaches work.
 
 ## Skill Definition Format
 
@@ -206,7 +243,7 @@ The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the p
 
 Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to install these binaries into the user-local `${HOME}/.local/bin/` location on install/update and remove them on uninstall. The cdx guest VM has `${HOME}/.local/bin` on `PATH` (both for interactive login shells and for the `cdx-remote-exec` service), so no `sudo` and no system-wide writes are needed.
 
-Executables don't have to be native binaries — the guest VM ships `python3`
+Executables don't have to be native binaries - the guest VM ships `python3`
 and `nodejs` from apt, so interpreted entrypoints are fine (`katastr-cli`,
 `insolvence-cli` are Python; `sid-cli` is bundled TypeScript).
 
@@ -218,7 +255,7 @@ Two constraints learned the hard way:
 
 - **Bundle as CJS** (`bun build --target=node --format=cjs`). Artifacts are
   installed without an extension (`sid-cli`), and Node loads an
-  extensionless file as CommonJS — an ESM bundle dies with "Cannot use
+  extensionless file as CommonJS - an ESM bundle dies with "Cannot use
   import statement outside a module".
 - **Don't prepend a shebang** in the build script if the entrypoint source
   already has one; bun preserves it, and a doubled shebang is invalid JS.
