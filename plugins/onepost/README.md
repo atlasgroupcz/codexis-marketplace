@@ -1,4 +1,4 @@
-# ONEPOST — datové schránky
+# ONEPOST - datové schránky
 
 Propojení AI agenta s **ONEPOSTem** pro práci s datovými schránkami (ISDS). Agent umí pracovat se schránkami, složkami, zprávami, přílohami a koncepty, vyhledávat ve zprávách, stahovat nové zprávy z ISDS a odesílat připravené koncepty.
 
@@ -8,8 +8,8 @@ Nastavte API klíč přes aplikaci **ONEPOST API klíč**:
 
 1. Otevřete aplikaci ONEPOST API klíč.
 2. Klikněte na **Otevřít ONEPOST** a v profilu vygenerujte klíč.
-3. Zvolte typ přístupu — **Pouze čtení** pro prohlížení dat, nebo **Čtení a akce** pro operace jménem uživatele.
-4. Vložte klíč do pole a uložte — agent ho ihned ověří.
+3. Zvolte typ přístupu - **Pouze čtení** pro prohlížení dat, nebo **Čtení a akce** pro operace jménem uživatele.
+4. Vložte klíč do pole a uložte - agent ho ihned ověří.
 
 Klíč se ukládá lokálně do konfigurace pluginu a kdykoli ho můžete přepsat nebo smazat.
 

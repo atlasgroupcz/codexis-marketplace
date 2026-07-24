@@ -126,7 +126,7 @@ export function App() {
 
   useEffect(() => {
     refreshSettings().catch(() => {
-      // Backend pluginu nemusí být v lokálním náhledu dostupný – ponecháme stav z initial settings.
+      // Backend pluginu nemusí být v lokálním náhledu dostupný - ponecháme stav z initial settings.
     })
   }, [refreshSettings])
 
@@ -193,7 +193,7 @@ export function App() {
           Aplikace
         </button>
         <ChevronRight className="size-3.5 text-gray-300" />
-        <span className="text-gray-500">ONEPOST — datové schránky</span>
+        <span className="text-gray-500">ONEPOST - datové schránky</span>
         <ChevronRight className="size-3.5 text-gray-300" />
         <span className="text-gray-800 font-medium">ONEPOST API klíč</span>
       </div>
@@ -253,15 +253,15 @@ export function App() {
                 <dl className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-x-4 gap-y-2.5 min-w-0">
                   <dt className="text-gray-500 text-[13px] font-medium">API URL</dt>
                   <dd className="text-gray-800 text-[12.5px] font-mono break-all">
-                    {settings.apiUrl || '—'}
+                    {settings.apiUrl || '-'}
                   </dd>
                   <dt className="text-gray-500 text-[13px] font-medium">Uložený klíč</dt>
                   <dd className="text-gray-800 text-[12.5px] font-mono break-all">
-                    {settings.maskedKey || '—'}
+                    {settings.maskedKey || '-'}
                   </dd>
                   <dt className="text-gray-500 text-[13px] font-medium">Zdroj</dt>
                   <dd className="text-gray-800 text-[12.5px] font-mono break-all">
-                    {settings.settingsFile || '—'}
+                    {settings.settingsFile || '-'}
                   </dd>
                 </dl>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -418,7 +418,7 @@ export function App() {
                   Vložte a uložte klíč
                 </h3>
                 <p className="text-gray-500 text-[12.5px] mt-1 leading-relaxed">
-                  Vložte zkopírovaný klíč — agent ho ihned ověří.
+                  Vložte zkopírovaný klíč - agent ho ihned ověří.
                 </p>
                 <div className="mt-3.5">
                   <div className="flex items-center gap-2 flex-wrap">

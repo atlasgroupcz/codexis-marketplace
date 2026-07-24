@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""onepost-cli — ONEPOST REST API wrapper."""
+"""onepost-cli - ONEPOST REST API wrapper."""
 
 import argparse
 import json
