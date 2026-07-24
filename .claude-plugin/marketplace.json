@@ -475,6 +475,30 @@
       }
     },
     {
+      "uuid": "41839689-bdef-43b3-be18-5459ffa21783",
+      "name": "onepost",
+      "description": "ONEPOST API access for Czech ISDS data boxes - mailboxes, folders, messages, attachments, concepts, sending, search and message receiving",
+      "source": "./plugins/onepost",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "ONEPOST - datové schránky",
+          "description": "Přístup k ONEPOST API pro práci s datovými schránkami - schránky, složky, zprávy, přílohy, koncepty, odesílání, vyhledávání a stažení nových zpráv z ISDS.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "isds": "ISDS", "data-boxes": "Datové schránky" }
+        },
+        "en": {
+          "displayName": "ONEPOST - Data Boxes",
+          "description": "Access the ONEPOST API for Czech ISDS data boxes - mailboxes, folders, messages, attachments, concepts, sending, search, and receiving new ISDS messages.",
+          "tagLabels": { "legal": "Law", "czech": "Czech Republic", "isds": "ISDS", "data-boxes": "Data Boxes" }
+        },
+        "sk": {
+          "displayName": "ONEPOST - dátové schránky",
+          "description": "Prístup k ONEPOST API pre prácu s dátovými schránkami - schránky, priečinky, správy, prílohy, koncepty, odosielanie, vyhľadávanie a stiahnutie nových správ z ISDS.",
+          "tagLabels": { "legal": "Právo", "czech": "Česko", "isds": "ISDS", "data-boxes": "Dátové schránky" }
+        }
+      }
+    },
+    {
       "uuid": "713eb310-3414-4656-9c15-9831e76c7280",
       "name": "leciva",
       "description": "Czech medicines registry (SÚKL DLP) - drug lookup by name or SÚKL code, strength, form, active substances, ATC.",
