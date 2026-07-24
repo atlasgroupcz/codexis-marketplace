@@ -200,6 +200,10 @@ export function FolderDetail({
   )
 }
 
+function codexisDocUrl(codexisId: string): string {
+  return `https://next.codexis.cz/doc/${codexisId}`
+}
+
 function LegislationItem({ leg, onConfirm }: { leg: TrackedLegislation; onConfirm: () => void }) {
   const { t } = useTranslation()
   const changes = leg.changes
@@ -213,14 +217,14 @@ function LegislationItem({ leg, onConfirm }: { leg: TrackedLegislation; onConfir
           <Scale className="text-muted-foreground mt-0.5 size-4 shrink-0" />
           <div className="min-w-0">
             <p className="text-sm leading-snug">{leg.text}</p>
-            {leg.uri && (
+            {leg.codexisId && (
               <a
-                href={leg.uri}
+                href={codexisDocUrl(leg.codexisId)}
                 target="_blank"
                 rel="noreferrer"
-                className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 truncate text-xs"
+                className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-xs"
               >
-                <span className="truncate">{leg.uri}</span>
+                <span>{t('folders.openInCodexis')}</span>
                 <ExternalLink className="size-3 shrink-0" />
               </a>
             )}
