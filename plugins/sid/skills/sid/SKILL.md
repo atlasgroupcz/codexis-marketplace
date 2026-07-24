@@ -65,9 +65,10 @@ Exit codes are a stable contract:
 
 Code 6 is not a key problem; only code 3 is. SID answers an unknown id with
 403 rather than 404 so the API can't be used to find out which ids exist,
-which means "wrong id" and "no access" arrive identically. Always re-check the
-id before telling the user they lack rights — for `download` that means
-fetching the `fileId` with `docs get`, never reusing a `documentId`.
+which means "wrong id" and "no access" arrive identically. Re-check the id
+before telling the user they lack rights. (`download` already does this for
+you — it retries a refused id as a document — so a 6 from `download` really
+does mean the user has no access to it.)
 
 ## Commands
 
@@ -81,7 +82,7 @@ sid-cli folders list                              # folders you can see, with pa
 sid-cli access user <email|name|id>               # (admin) a user's folder rights
 sid-cli access group <name|id>                    # (admin) a group's folder rights
 sid-cli attributes list                           # the attribute catalogue
-sid-cli download <fileId> --out ./smernice.pdf
+sid-cli download <fileId|documentId> --out ./smernice.pdf
 sid-cli confirmations list --state pending        # what the user must confirm
 sid-cli notifications                             # unread updates
 sid-cli check                                     # digest: updates + pending
@@ -124,11 +125,12 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
   link — do not look for a workaround.
 - **"anything new in SID?"** → `notifications`, or `check` for a combined
   digest with pending confirmations.
-- **"download / send me the file"** → `docs get` for the `fileId`, then
-  `download <fileId>`. The two ids are both UUIDs and nothing about them says
-  which is which, so never pass a `documentId` — a listing or a search result
-  gives you document ids, not file ids. Getting it wrong returns 403, not 404;
-  re-read the id before concluding the user has no access.
+- **"download / send me the file"** → `download <id>` with whatever id you
+  have. It takes a `fileId`, but a `documentId` (what listings and search
+  results give you) is resolved to that document's current file, so the two
+  are interchangeable here and no `docs get` round-trip is needed first. The
+  resolution is access-checked like any other read, so it grants nothing the
+  user couldn't already open.
 - **"which laws does this document rest on"** → `docs legislation <id>`.
   Read-only: what a document tracks is managed in SID, where the Codexis
   picker and the change-approval flow live.

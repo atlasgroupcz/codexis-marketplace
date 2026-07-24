@@ -76,13 +76,21 @@ describe("apiGet", () => {
     expect(String((forbidden as CliError).message)).not.toMatch(/api-klice|klíč vypršel/i)
   })
 
-  it("403 radí ověřit id přes docs get, protože záměna documentId/fileId je nejčastější příčina", async () => {
+  it("403 řekne, že může jít i o neznámé id, ne jen o chybějící právo", async () => {
     const err = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
     const message = String((err as CliError).message)
 
     expect(message).toContain("403")
-    expect(message).toMatch(/docs get/)
-    expect(message).toMatch(/fileId/)
+    expect(message).toMatch(/nezná|neplatné id/i)
+    expect(message).toMatch(/oprávnění|přístup/i)
+  })
+
+  // `download` resolves a documentId on its own, so the shared 403 text must
+  // not tell anyone to go fetch a fileId — that step is already handled and
+  // the advice would only send them in circles.
+  it("403 neradí ruční dohledávání fileId — to si download řeší sám", async () => {
+    const err = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
+    expect(String((err as CliError).message)).not.toMatch(/docs get/)
   })
 
   it("chybová hláška nikdy neobsahuje klíč", async () => {

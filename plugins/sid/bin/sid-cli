@@ -98,7 +98,7 @@ function statusToError(status, bodyText) {
     return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
   }
   if (status === 403) {
-    return new CliError(`Přístup odepřen (403). Nejdřív ověřte id: SID vrací 403 i na neznámé id. ` + `Pro download je potřeba fileId z 'sid-cli docs get <documentId>', ne samotné documentId. ` + `Pokud id sedí, k dokumentu nemáte přístup. ${detail}`, EXIT.FORBIDDEN);
+    return new CliError(`Přístup odepřen (403). SID vrací 403 i na id, které nezná, takže neplatné id ` + `a chybějící oprávnění od sebe nerozliší — ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`, EXIT.FORBIDDEN);
   }
   if (status === 404)
     return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND);
@@ -534,16 +534,43 @@ function filenameFrom(res, fileId) {
   const safe = import_node_path2.basename(raw.trim().replace(/\\/g, "/"));
   return safe && safe !== "." && safe !== ".." ? safe : import_node_path2.basename(fileId) || "stazeny-soubor";
 }
+async function currentFileIdOf(documentId, f) {
+  try {
+    const doc = await apiGet(`/api/v1/documents/${encodeURIComponent(documentId)}`, f);
+    return doc.currentFile?.id ?? null;
+  } catch (e) {
+    if (e instanceof CliError && (e.exitCode === EXIT.FORBIDDEN || e.exitCode === EXIT.NOT_FOUND)) {
+      return null;
+    }
+    throw e;
+  }
+}
+async function fetchFile(id, f) {
+  try {
+    return { res: await apiRaw(`/api/files/download/${encodeURIComponent(id)}`, f), fileId: id };
+  } catch (e) {
+    if (!(e instanceof CliError) || e.exitCode !== EXIT.FORBIDDEN)
+      throw e;
+    const resolved = await currentFileIdOf(id, f);
+    if (!resolved)
+      throw e;
+    return {
+      res: await apiRaw(`/api/files/download/${encodeURIComponent(resolved)}`, f),
+      fileId: resolved
+    };
+  }
+}
 async function run6(argv, f) {
   const { values, positionals } = import_node_util4.parseArgs({
     args: argv,
     allowPositionals: true,
     options: { out: { type: "string" } }
   });
-  const fileId = positionals[0];
-  if (!fileId)
-    throw new CliError("Použití: sid-cli download <fileId> [--out CESTA]", EXIT.USAGE);
-  const res = await apiRaw(`/api/files/download/${encodeURIComponent(fileId)}`, f);
+  const id = positionals[0];
+  if (!id) {
+    throw new CliError("Použití: sid-cli download <fileId|documentId> [--out CESTA]", EXIT.USAGE);
+  }
+  const { res, fileId } = await fetchFile(id, f);
   const target = import_node_path2.resolve(values.out ?? filenameFrom(res, fileId));
   if (!res.body)
     throw new CliError("Prázdná odpověď serveru.", EXIT.ERROR);
@@ -951,7 +978,7 @@ Příkazy:
   folders list                             složky, do kterých vidím
   access user|group <email|název|id>       (admin) jaká práva má user/skupina ke složkám
   attributes list [--all]                  katalog atributů pro filtrování
-  download <fileId> [--out CESTA]          stažení souboru
+  download <fileId|documentId> [--out CESTA]  stažení souboru
   confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení

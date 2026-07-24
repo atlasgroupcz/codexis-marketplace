@@ -25,14 +25,15 @@ function statusToError(status: number, bodyText: string): CliError {
     )
   }
   // NOT an expired key — that is 401. SID also answers an id it doesn't know
-  // with 403 instead of 404, so it can't be used to probe which ids exist.
-  // The usual trigger is a documentId handed to `download`, which wants the
-  // fileId from `docs get`, so the id comes first in the advice.
+  // with 403 instead of 404, so the endpoint can't be used to probe which ids
+  // exist; "wrong id" and "no rights" are indistinguishable here, and the
+  // message has to name both. Deliberately command-agnostic: `download`
+  // resolves a documentId by itself, so pinning the text to that one mix-up
+  // would send the reader chasing a step the CLI already took.
   if (status === 403) {
     return new CliError(
-      `Přístup odepřen (403). Nejdřív ověřte id: SID vrací 403 i na neznámé id. ` +
-        `Pro download je potřeba fileId z 'sid-cli docs get <documentId>', ne samotné documentId. ` +
-        `Pokud id sedí, k dokumentu nemáte přístup. ${detail}`,
+      `Přístup odepřen (403). SID vrací 403 i na id, které nezná, takže neplatné id ` +
+        `a chybějící oprávnění od sebe nerozliší — ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`,
       EXIT.FORBIDDEN,
     )
   }

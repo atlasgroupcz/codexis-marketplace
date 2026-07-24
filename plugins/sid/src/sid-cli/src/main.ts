@@ -28,7 +28,7 @@ Příkazy:
   folders list                             složky, do kterých vidím
   access user|group <email|název|id>       (admin) jaká práva má user/skupina ke složkám
   attributes list [--all]                  katalog atributů pro filtrování
-  download <fileId> [--out CESTA]          stažení souboru
+  download <fileId|documentId> [--out CESTA]  stažení souboru
   confirmations list [--state pending]     co mám potvrdit (potvrzuje se v SID)
   notifications [--all] [--limit N]        notifikace (default nepřečtené)
   check [--notify]                         digest: novinky + čekající potvrzení
