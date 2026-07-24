@@ -20,6 +20,14 @@
 
 description: katastr - ČÚZK parcel / LV / protection lookups via katastr-cli
 
+# SKIPPED in CI: the setup below uploads a ČÚZK API key via `--var
+# katastr_api_key`, which the pipeline does not provision - without it
+# katastr-cli hits ČÚZK unauthenticated and the run only exercises the failure
+# path. Remove `skip` once the ČÚZK key is wired into the pipeline (the setup
+# and tests are ready as-is). Run it locally with an explicit --config/--plugin
+# and `--var katastr_api_key=...`.
+skip: "needs a ČÚZK API key (--var katastr_api_key) that the pipeline does not provision"
+
 setup:
   - upload:
       destination: /home/codexis/.cdx/apps/katastr
