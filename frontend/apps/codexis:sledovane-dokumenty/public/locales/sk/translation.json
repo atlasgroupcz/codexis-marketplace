@@ -103,6 +103,7 @@
     "untracked": "Neoverené",
     "confirm": "Potvrdiť",
     "viewInCodexis": "Zobraziť v CODEXISe",
+    "openInCodexis": "Otvoriť v CODEXISe",
     "effectiveFrom": "Účinné od {{date}}",
     "extractingProgress": "Extrahujem odkazy ({{done}}/{{total}})",
     "legislationExtracting": "Prebieha extrakcia odkazov na legislatívu…",
