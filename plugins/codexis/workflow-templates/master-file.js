@@ -121,7 +121,7 @@ export default async function (args) {
         gaps: ["kapitolu se nepodařilo zpracovat"] }))))
 
   phase("Kontrola")
-  const drafted = chapters.map(c =>
+  const drafted = chapters.filter(Boolean).map(c =>
     "### " + c.chapter +
     "\n    podklady: " + (c.basedOn.length > 0 ? c.basedOn.join(", ") : "žádné") +
     "\n    mezery: " + (c.gaps && c.gaps.length > 0 ? c.gaps.join("; ") : "žádné") +

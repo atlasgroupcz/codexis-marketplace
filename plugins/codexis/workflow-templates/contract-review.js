@@ -30,8 +30,10 @@ const RISK = { type: "object", required: ["risks"], properties: { risks: { type:
     severity: { enum: ["vysoká", "střední", "nízká"] },
     consequence: { type: "string" } } } } } }
 
-const CURRENCY = { type: "object", required: ["stillGood", "evidence"], properties: {
-  stillGood: { type: "boolean" }, evidence: { type: "string" }, effectiveAt: { type: "string" } } }
+// Four states, never a boolean: "could not check" must never be able to pass for "checked".
+const CURRENCY = { type: "object", required: ["status", "evidence"], properties: {
+  status: { enum: ["supported", "refuted", "unverified", "source_unreachable"] },
+  evidence: { type: "string" }, effectiveAt: { type: "string" } } }
 
 const REDRAFT = { type: "object", required: ["summary", "items"], properties: {
   summary: { type: "string" },
@@ -85,7 +87,7 @@ export default async function (args) {
       .catch(() => ({ risks: [] }))
       .then(result => ({ clause, risks: result.risks }))))
 
-  const flagged = perClause.flatMap(r => r.risks.map(risk => ({ clause: r.clause, risk })))
+  const flagged = perClause.filter(Boolean).flatMap(r => r.risks.map(risk => ({ clause: r.clause, risk })))
   const bySeverity = { vysoká: 0, střední: 1, nízká: 2 }
   const ranked = [...flagged].sort((a, b) => bySeverity[a.risk.severity] - bySeverity[b.risk.severity])
   log("Nalezená rizika: " + ranked.length)
@@ -105,13 +107,23 @@ export default async function (args) {
       "\nCitace: " + entry.risk.quote + "\n\n" +
       "U předpisu ověř účinné znění: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že " +
       "rozhodnutí nebylo překonáno. Otevři zdroj celý. Do 'evidence' napiš rozhodující formulaci — " +
-      "půjde do návrhu úprav. Structured output only.",
+      "půjde do návrhu úprav.\n\n" +
+      "Status voli takto: 'supported' jen když jsi zdroj otevřel a norma i riziko obstály; 'refuted' " +
+      "když jsi našel konkrétní důvod, proč riziko neplatí; 'source_unreachable' když se ti zdroj " +
+      "nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi to rozhodnout. " +
+      "Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení. Structured output only.",
       { label: "ověření: " + entry.clause.label, agentType: "codexis:verifier", skills: SKILLS, schema: CURRENCY })
       .then(verdict => ({ ...entry, verdict }))
-      .catch(() => ({ ...entry, verdict: { stillGood: true, evidence: "ověření se nepodařilo provést" } }))))
+      // A verifier that crashed has verified nothing. Failing open here would put an unchecked
+      // risk in front of the client as if it had been confirmed.
+      .catch(() => ({ ...entry, verdict: { status: "unverified",
+        evidence: "ověření se nepodařilo provést (chyba běhu)" } }))))
 
-  const holding = verified.filter(v => v.verdict.stillGood)
-  log("Obstálo " + holding.length + " z " + verified.length + " rizik")
+  // parallel() keeps failed positions as null, so drop those before reading a verdict off them.
+  const checked = verified.filter(Boolean)
+  const holding = checked.filter(v => v.verdict.status === "supported")
+  const unconfirmed = checked.filter(v => v.verdict.status !== "supported")
+  log("Obstálo " + holding.length + " z " + checked.length + " rizik")
 
   phase("Úpravy")
   const block = holding.map((v, i) =>
@@ -125,6 +137,11 @@ export default async function (args) {
 
   const redraft = await agent(
     BRIEF + "\n\nSepiš výstup pro klienta z ověřených rizik níže.\n\n" + block + "\n\n" +
+    (unconfirmed.length > 0
+      ? "Tato rizika se NEPODAŘILO OVĚŘIT a nesmíš je klientovi předložit jako potvrzená; pokud jsou " +
+        "podstatná, uveď je v caveats jako neověřená: " +
+        unconfirmed.map(v => v.clause.label + " — " + v.risk.issue).join("; ") + "\n\n"
+      : "") +
     "Vše, o co se smíš opřít, je zde — nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. " +
     "U každého rizika navrhni KONKRÉTNÍ přeformulování ustanovení, ne obecné doporučení: napiš text, " +
     "který má nahradit ten stávající. Seřaď od nejzávažnějšího. Shrnutí piš pro klienta, ne pro " +
@@ -132,5 +149,6 @@ export default async function (args) {
     { label: "návrh úprav", agentType: "codexis:synthesizer", schema: REDRAFT })
 
   return { path: PATH, contractType: breakdown.contractType, ...redraft,
-    stats: { clauses: breakdown.clauses.length, risks: flagged.length, holding: holding.length } }
+    stats: { clauses: breakdown.clauses.length, risks: flagged.length, checked: checked.length,
+      holding: holding.length, unconfirmed: unconfirmed.length } }
 }

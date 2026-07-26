@@ -40,9 +40,11 @@ const FRAMEWORK = { type: "object", required: ["criteria", "provisions", "requir
     importance: { enum: ["rozhodující", "podpůrný"] } } } } } }
 
 const INVENTORY = { type: "object", required: ["present", "missing"], properties: {
-  present: { type: "array", items: { type: "object", required: ["material", "path"], properties: {
-    material: { type: "string" }, path: { type: "string" }, note: { type: "string" } } } },
-  missing: { type: "array", items: { type: "string" } } } }
+  present: { type: "array", items: { type: "object", required: ["materialId", "path"], properties: {
+    materialId: { type: "string" }, material: { type: "string" }, path: { type: "string" },
+    note: { type: "string" } } } },
+  missing: { type: "array", items: { type: "object", required: ["materialId", "material"], properties: {
+    materialId: { type: "string" }, material: { type: "string" } } } } } }
 
 const FINDINGS = { type: "object", required: ["findings"], properties: { findings: { type: "array", items: {
   type: "object", required: ["proposition", "source", "quote", "sourceKind"], properties: {
@@ -50,8 +52,10 @@ const FINDINGS = { type: "object", required: ["findings"], properties: { finding
     sourceKind: { enum: ["předpis", "komentář", "judikatura", "literatura"] },
     weight: { enum: ["nosný", "podpůrný"] } } } } } }
 
-const CURRENCY = { type: "object", required: ["stillGood", "evidence"], properties: {
-  stillGood: { type: "boolean" }, evidence: { type: "string" }, supersededBy: { type: "string" },
+// Four states, never a boolean: "could not check" must never be able to masquerade as "checked".
+const CURRENCY = { type: "object", required: ["status", "evidence"], properties: {
+  status: { enum: ["supported", "refuted", "unverified", "source_unreachable"] },
+  evidence: { type: "string" }, supersededBy: { type: "string" },
   effectiveAt: { type: "string" } } }
 
 const OPINION = { type: "object", required: ["answer", "reasoning", "caveats"], properties: {
@@ -109,33 +113,49 @@ export default async function (args) {
 
   phase("Podklady")
   const materials = framework.requiredMaterials
-    .map(m => "- " + m.material + " (" + (m.importance || "podpůrný") + "): " + m.why)
+    .map((m, i) => "- [M" + i + "] " + m.material + " (" + (m.importance || "podpůrný") + "): " + m.why)
     .join("\n")
   const inventory = await agent(
     BRIEF + "\n\nProjdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam " +
     "jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, " +
     "stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing' přesně tak, jak je " +
-    "to pojmenované níže.\n\nPotřebné podklady:\n" + materials + "\n\nStructured output only.",
+    "to pojmenované níže; v 'materialId' vrať jeho značku [M0], [M1], … beze změny.\n\n" +
+    "Potřebné podklady:\n" + materials + "\n\nStructured output only.",
     { label: "inventura podkladů", schema: INVENTORY })
 
   let supplied = inventory.present
-  if (inventory.missing.length > 0) {
+  let stillMissing = inventory.missing
+  if (stillMissing.length > 0) {
     const answer = await ask(
       "Pro posouzení potřebuji ještě tyto podklady:\n" +
-      inventory.missing.map(m => "• " + m).join("\n") +
+      stillMissing.map(m => "• " + m.material).join("\n") +
       "\n\nNahrajte je prosím, nebo napište, že je nemáte — budu pokračovat bez nich a v závěru to uvedu.",
       { files: true })
     if (answer.answered && answer.files.length > 0) {
-      supplied = supplied.concat(answer.files.map(path => ({ material: "doplněno uživatelem", path })))
-      log("Uživatel doplnil " + answer.files.length + " soubor(ů)")
+      log("Uživatel doplnil " + answer.files.length + " soubor(ů) — přiřazuji je k požadovaným podkladům")
+      // Which uploads cover which requested material is a judgement call, so ask an agent — counting
+      // files would silently declare everything supplied after a single upload.
+      const matched = await agent(
+        BRIEF + "\n\nUživatel právě nahrál tyto soubory:\n" +
+        answer.files.map(p => "- " + p).join("\n") + "\n\n" +
+        "Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému podkladu níže. " +
+        "Do 'present' dej jen ty, které jsi opravdu pokryl, s jejich materialId a cestou. " +
+        "Do 'missing' vrať ty, které ani po nahrání nemáš.\n\n" +
+        "Požadované podklady:\n" +
+        stillMissing.map(m => "- [" + m.materialId + "] " + m.material).join("\n") + "\n\n" +
+        "Structured output only.",
+        { label: "přiřazení nahraných podkladů", schema: INVENTORY })
+        .catch(() => null)
+      if (matched) {
+        supplied = supplied.concat(matched.present)
+        stillMissing = matched.missing
+      }
     } else {
       log("Podklady nedoplněny — pokračuji s tím, co je k dispozici")
     }
   }
 
-  const missingAfterAsk = inventory.missing.length > 0 && supplied.length === inventory.present.length
-    ? inventory.missing
-    : []
+  const missingAfterAsk = stillMissing.map(m => m.material)
 
   phase("Rešerše")
   // One researcher per sub-question, each working the sources in the order that matters: the rule
@@ -158,7 +178,7 @@ export default async function (args) {
       { label: issue.label, skills: SKILLS, schema: FINDINGS })
       .catch(() => ({ findings: [] }))))
 
-  const allFindings = perIssue.flatMap(r => r.findings)
+  const allFindings = perIssue.filter(Boolean).flatMap(r => r.findings)
   const load = { nosný: 0, podpůrný: 1 }
   const loadBearing = [...allFindings]
     .sort((a, b) => (load[a.weight] ?? 1) - (load[b.weight] ?? 1))
@@ -181,15 +201,26 @@ export default async function (args) {
       "U judikatury ověř, že rozhodnutí je stále dobrou autoritou: nebylo překonáno velkým senátem, " +
       "zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází " +
       "z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující " +
-      "formulaci — cituje se do závěrečného stanoviska. Structured output only.",
+      "formulaci — cituje se do závěrečného stanoviska.\n\n" +
+      "Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo; 'refuted' když " +
+      "jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo " +
+      "otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. " +
+      "Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení. Structured output only.",
       { label: "ověření: " + finding.proposition.slice(0, 40), agentType: "codexis:verifier", skills: SKILLS,
         schema: CURRENCY })
       .then(verdict => ({ finding, verdict }))
-      .catch(() => ({ finding, verdict: { stillGood: true, evidence: "ověření se nepodařilo provést" } }))))
+      // A verifier that crashed has verified nothing. Failing open here would let a rate limit
+      // promote an unchecked claim into the opinion.
+      .catch(() => ({ finding, verdict: { status: "unverified",
+        evidence: "ověření se nepodařilo provést (chyba běhu)" } }))))
 
-  const holding = verified.filter(v => v.verdict.stillGood)
-  const superseded = verified.filter(v => !v.verdict.stillGood)
-  log("Obstálo " + holding.length + " z " + verified.length + " zjištění")
+  // parallel() keeps failed positions as null, so drop those before reading a verdict off them.
+  const checked = verified.filter(Boolean)
+  const holding = checked.filter(v => v.verdict.status === "supported")
+  const refuted = checked.filter(v => v.verdict.status === "refuted")
+  const unverified = checked.filter(v => v.verdict.status !== "supported" && v.verdict.status !== "refuted")
+  log("Obstálo " + holding.length + " z " + checked.length + " zjištění, "
+    + refuted.length + " vyvráceno, " + unverified.length + " neověřeno")
 
   phase("Syntéza")
   // The synthesizer has no research tools at all, so everything it may rely on has to be here:
@@ -209,9 +240,15 @@ export default async function (args) {
     BRIEF + "\n\nNapiš právní stanovisko k otázce výše.\n\n" +
     "Ověřená zjištění (každé se zdrojem, doslovnou citací a poznámkou z ověření):\n" + block + "\n\n" +
     "Podklady klienta, na které se závěry aplikují:\n" + clientDocuments + "\n\n" +
-    (superseded.length > 0
-      ? "Tato zjištění NEOBSTÁLA a nesmíš o ně opřít závěr: " +
-        superseded.map(v => v.finding.source + " (" + v.verdict.evidence + ")").join("; ") + "\n\n"
+    (refuted.length > 0
+      ? "Tato zjištění byla VYVRÁCENA a nesmíš o ně opřít závěr: " +
+        refuted.map(v => v.finding.source + " (" + v.verdict.evidence + ")").join("; ") + "\n\n"
+      : "") +
+    (unverified.length > 0
+      ? "Tato zjištění se NEPODAŘILO OVĚŘIT. Nesmíš o ně opřít závěr ani je citovat jako platná; " +
+        "pokud jsou pro otázku podstatná, uveď v caveats, že v tomto rozsahu je stanovisko " +
+        "předběžné: " +
+        unverified.map(v => v.finding.source + " (" + v.verdict.evidence + ")").join("; ") + "\n\n"
       : "") +
     (missingAfterAsk.length > 0
       ? "Tyto podklady chybí a závěr je v jejich rozsahu předběžný: " + missingAfterAsk.join(", ") +
@@ -228,9 +265,10 @@ export default async function (args) {
     question: QUESTION,
     ...opinion,
     framework: framework.criteria,
-    supersededSources: superseded.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
+    refutedSources: refuted.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
+    unverifiedSources: unverified.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
     missingMaterials: missingAfterAsk,
-    stats: { issues: frame.issues.length, findings: allFindings.length, verified: verified.length,
-      holding: holding.length }
+    stats: { issues: frame.issues.length, findings: allFindings.length, checked: checked.length,
+      holding: holding.length, refuted: refuted.length, unverified: unverified.length }
   }
 }
