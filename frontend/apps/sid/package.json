@@ -1,0 +1,49 @@
+{
+  "name": "sid:sid",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "./node_modules/.bin/vite --port 3007",
+    "build": "tsc && ./node_modules/.bin/vite build",
+    "preview": "./node_modules/.bin/vite preview",
+    "test": "bun --bun vitest run",
+    "test:watch": "bun --bun vitest",
+    "lint": "eslint --max-warnings=0 'src/**/*.{ts,tsx}'",
+    "typecheck": "tsc --noEmit",
+    "codegen": "echo 'no codegen needed'"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@workspace/ui": "workspace:*",
+    "i18next": "^26.3.6",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "lucide-react": "^1.27.0",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.11",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tanstack/eslint-config": "^0.4.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "@workspace/vite-config": "workspace:*",
+    "@workspace/vitest-config": "workspace:*",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10"
+  }
+}

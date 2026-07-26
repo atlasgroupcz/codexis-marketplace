@@ -43,7 +43,7 @@ build_frontend_apps() {
     bash -lc '
       set -euo pipefail
       bun install --frozen-lockfile
-      cd apps/znamky:znamky
+      cd apps/znamky
       bun run build
     '
 }
@@ -90,7 +90,7 @@ sync_component_output() {
 build_frontend_apps
 
 sync_component_output \
-  "$FRONTEND_DIR/apps/znamky:znamky/dist" \
+  "$FRONTEND_DIR/apps/znamky/dist" \
   "$SCRIPT_DIR/znamky" \
   "icon.png" \
   "icon.svg"

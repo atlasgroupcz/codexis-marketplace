@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the sbirka-listin dashboard frontend (frontend/apps/sbirka-listin:sbirka-listin)
+# Builds the sbirka-listin dashboard frontend (frontend/apps/sbirka-listin)
 # in a pinned bun Docker image and syncs the built SPA (index.html + assets +
 # locales) into components/sbirka-listin/. The CGI binary is built separately by
 # src/build.sh; this script only produces the static shell the daemon serves.
@@ -47,7 +47,7 @@ build_frontend_apps() {
     bash -lc '
       set -euo pipefail
       bun install --frozen-lockfile
-      cd apps/sbirka-listin:sbirka-listin
+      cd apps/sbirka-listin
       bun run build
     '
 }
@@ -94,7 +94,7 @@ sync_component_output() {
 build_frontend_apps
 
 sync_component_output \
-  "$FRONTEND_DIR/apps/sbirka-listin:sbirka-listin/dist" \
+  "$FRONTEND_DIR/apps/sbirka-listin/dist" \
   "$SCRIPT_DIR/sbirka-listin" \
   "icon.svg" \
   "sbirka-listin-cgi" \

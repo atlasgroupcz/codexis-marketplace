@@ -43,7 +43,7 @@ build_frontend_apps() {
     bash -lc '
       set -euo pipefail
       bun install --frozen-lockfile
-      cd apps/onepost:onepost
+      cd apps/onepost
       bun run build
     '
 }
@@ -90,7 +90,7 @@ sync_component_output() {
 build_frontend_apps
 
 sync_component_output \
-  "$FRONTEND_DIR/apps/onepost:onepost/dist" \
+  "$FRONTEND_DIR/apps/onepost/dist" \
   "$SCRIPT_DIR/onepost"
 
 echo "Completed component build: $(basename "$PLUGIN_DIR")"

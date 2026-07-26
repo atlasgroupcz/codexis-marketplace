@@ -1,0 +1,32 @@
+{
+  "name": "@workspace/vite-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "PROPRIETARY",
+  "type": "module",
+  "exports": {
+    "./app": "./app.ts"
+  },
+  "files": [
+    "app.ts"
+  ],
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "@babel/core": "^8.0.1",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "babel-plugin-react-compiler": "^1.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "vite": "^8.1.5",
+    "@types/babel__core": "^7.20.5"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
