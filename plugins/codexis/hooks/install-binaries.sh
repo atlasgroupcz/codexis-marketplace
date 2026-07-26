@@ -59,10 +59,36 @@ select_binary_source() {
   esac
 }
 
+install_script() {
+  local source_path="$1"
+  local target_name="$2"
+  local target_path="${TARGET_BIN_DIR}/${target_name}"
+  if [[ ! -f "${source_path}" ]]; then
+    echo "ERROR: Missing script ${source_path}" >&2
+    exit 1
+  fi
+  # Same atomic install as install_binary, for scripts that ship outside bin/ because they belong
+  # to a skill. Being on PATH is what lets a workflow run the checker without guessing at the
+  # plugin's install location.
+  local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"
+  if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
+    install -m 0755 "${source_path}" "${tmp_path}"
+    sync "${tmp_path}" 2>/dev/null || sync
+    mv -f "${tmp_path}" "${target_path}"
+  else
+    sudo install -d "${TARGET_BIN_DIR}"
+    sudo install -m 0755 "${source_path}" "${tmp_path}"
+    sudo sync "${tmp_path}" 2>/dev/null || sudo sync
+    sudo mv -f "${tmp_path}" "${target_path}"
+  fi
+  echo "Installed ${target_name} -> ${target_path}"
+}
+
 install_binary "$(select_binary_source "cdx-cli")" "cdx-cli"
 install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"
 install_binary "$(select_binary_source "cdxctl")" "cdxctl"
+install_script "${PLUGIN_DIR}/skills/codexis/scripts/citation_checker.sh" "cdx-citation-check"
 
 install_lib() {
   local module_name="$1"

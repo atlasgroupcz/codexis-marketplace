@@ -6,19 +6,25 @@
 // @args question (required) — the legal question, in the user's own words
 // @args jurisdiction — CZ, SK or EU; defaults to CZ
 //
-// Six phases, in the order a lawyer actually works: frame the question, find out from case law and
-// statutes WHAT DECIDES IT and which documents that requires, get those documents from the user,
-// research each sub-question in source order, check the sources still hold today, and only then write.
+// Seven phases, in the order a lawyer actually works: frame the question, find out from case law and
+// statutes WHAT DECIDES IT and which documents that requires, get those documents from the user, pull
+// the decisive passages out of them, research each sub-question in source order, check the sources
+// still hold today, and only then write.
 // Every agent gets BRIEF — it sees nothing else — and every finding travels on with its citation and
-// its verbatim quote. Tune the sub-question count, the verification depth and the schemas to the task.
+// its verbatim quote. Before the write-up, cdx-citation-check re-opens each cited document and drops
+// any finding whose quote is not literally in it; that is the one check no model performs.
+// Tune the sub-question count, the verification depth and the schemas to the task.
+
+import { execFileSync } from "node:child_process"
 
 export const meta = {
   name: "legal-research",
-  description: "Právní rešerše: rámec → rekognoskace → podklady → rešerše → ověření → syntéza.",
+  description: "Právní rešerše: rámec → rekognoskace → podklady → extrakce → rešerše → ověření → syntéza.",
   phases: [
     { title: "Rámec", detail: "Určit právní obor, jurisdikci, časový řez a sporné otázky" },
     { title: "Rekognoskace", detail: "Zjistit z judikatury a předpisů, podle čeho se rozhoduje a co je třeba doložit" },
     { title: "Podklady", detail: "Inventura dokumentů klienta a dožádání toho, co chybí" },
+    { title: "Extrakce", detail: "Vytěžení rozhodných skutečností z dokumentů klienta" },
     { title: "Rešerše", detail: "Předpisy → komentáře → judikatura → literatura, po dílčích otázkách" },
     { title: "Ověření", detail: "Platnost, účinnost a překonanost každého nosného zdroje" },
     { title: "Syntéza", detail: "Aplikace ověřených závěrů na podklady klienta" }
@@ -47,10 +53,21 @@ const INVENTORY = { type: "object", required: ["present", "missing"], properties
     materialId: { type: "string" }, material: { type: "string" } } } } } }
 
 const FINDINGS = { type: "object", required: ["findings"], properties: { findings: { type: "array", items: {
-  type: "object", required: ["proposition", "source", "quote", "sourceKind"], properties: {
-    proposition: { type: "string" }, source: { type: "string" }, quote: { type: "string" },
+  type: "object", required: ["proposition", "source", "docId", "quote", "sourceKind"], properties: {
+    proposition: { type: "string" }, source: { type: "string" },
+    // The id the agent actually fetched, so the quote can be checked against the document itself
+    // instead of against another model's recollection of it.
+    docId: { type: "string" }, part: { type: "string" },
+    quote: { type: "string" },
     sourceKind: { enum: ["předpis", "komentář", "judikatura", "literatura"] },
     weight: { enum: ["nosný", "podpůrný"] } } } } } }
+
+// What the client's own documents actually say, pulled out before anyone reasons about them.
+const FACTS = { type: "object", required: ["facts"], properties: {
+  facts: { type: "array", items: { type: "object", required: ["fact", "path", "quote"], properties: {
+    fact: { type: "string" }, path: { type: "string" }, locator: { type: "string" },
+    quote: { type: "string" } } } },
+  notCovered: { type: "array", items: { type: "string" } } } }
 
 // Four states, never a boolean: "could not check" must never be able to masquerade as "checked".
 const CURRENCY = { type: "object", required: ["status", "evidence"], properties: {
@@ -157,6 +174,26 @@ export default async function (args) {
 
   const missingAfterAsk = stillMissing.map(m => m.material)
 
+  phase("Extrakce")
+  // The synthesizer has no research tools, so a file path in its prompt is a fact it can never read.
+  // Pull the decisive passages out of the client's documents here, while an agent that CAN open them
+  // is still running, and carry the quotes forward instead of the paths.
+  const criteriaList = framework.criteria.map(c => "- " + c.criterion).join("\n")
+  const extracted = await parallel(supplied.map(doc => () =>
+    agent(
+      BRIEF + "\n\nOtevři dokument klienta a vytěž z něj skutečnosti rozhodné pro posouzení.\n\n" +
+      "Soubor: " + doc.path + (doc.note ? "\nPoznámka z inventury: " + doc.note : "") + "\n\n" +
+      "Posuzuje se podle těchto kritérií:\n" + criteriaList + "\n\n" +
+      "Ke každému kritériu, které dokument zmiňuje, vrať jednu skutečnost: co z dokumentu plyne, " +
+      "kde přesně to je (článek, odstavec, strana) a DOSLOVNÝ výňatek. Nevykládej právo a nedomýšlej " +
+      "— jen popiš, co v dokumentu stojí. Kritéria, ke kterým dokument nic neříká, vypiš do " +
+      "'notCovered'. Structured output only.",
+      { label: "vytěžení: " + doc.path.split("/").pop(), schema: FACTS })
+      .catch(() => null)))
+
+  const clientFacts = extracted.filter(Boolean).flatMap(r => r.facts)
+  log("Skutečnosti z podkladů klienta: " + clientFacts.length)
+
   phase("Rešerše")
   // One researcher per sub-question, each working the sources in the order that matters: the rule
   // first, then how it is read, then how it is decided, then what the literature says.
@@ -173,8 +210,12 @@ export default async function (args) {
       "3. JUDIKATURA (JD, ES) — jak se podle nich fakticky rozhoduje; přednostně vyšší soudy.\n" +
       "4. LITERATURA (LT) — jen pokud po předchozích krocích zbývá sporná otázka.\n\n" +
       "Tvá zjištění půjdou na ověření a pak do syntézy, takže u každého uveď přesnou citaci " +
-      "(číslo předpisu a ustanovení, spisovou značku) a doslovný výňatek. Označ, které je nosné a " +
-      "které jen podpůrné. Structured output only.",
+      "(číslo předpisu a ustanovení, spisovou značku) a doslovný výňatek. Do 'docId' vrať " +
+      "identifikátor dokumentu, který jsi SKUTEČNĚ otevřel (to, co jsi předal do 'cdx-cli get " +
+      "cdx://doc/<docId>/text'), a pokud jsi četl konkrétní část, i 'part'. Citace se strojově " +
+      "porovná s textem toho dokumentu, takže musí být doslovná — přepsaná nebo zpaměti " +
+      "rekonstruovaná citace zjištění vyřadí. Označ, které je nosné a které jen podpůrné. " +
+      "Structured output only.",
       { label: issue.label, skills: SKILLS, schema: FINDINGS })
       .catch(() => ({ findings: [] }))))
 
@@ -222,19 +263,38 @@ export default async function (args) {
   log("Obstálo " + holding.length + " z " + checked.length + " zjištění, "
     + refuted.length + " vyvráceno, " + unverified.length + " neověřeno")
 
+  // Everything above is one model checking another. This is the one step that is not: cdx-citation-check
+  // re-fetches each cited document and looks for the quote in it. A quote that is not there did not
+  // come from that source, whatever the verifier concluded.
+  const citationVerdicts = checkCitations(holding.map((v, i) => ({
+    id: String(i), docId: v.finding.docId, part: v.finding.part, quote: v.finding.quote })))
+  const grounded = citationVerdicts === null
+    ? holding
+    : holding.filter((v, i) => citationVerdicts[i] && citationVerdicts[i].status === "verbatim")
+  const fabricated = citationVerdicts === null
+    ? []
+    : holding.filter((v, i) => citationVerdicts[i] && citationVerdicts[i].status !== "verbatim")
+  if (citationVerdicts === null) {
+    log("Kontrolu citací se nepodařilo spustit — citace zůstávají neověřené strojem")
+  } else {
+    log("Citace ověřené v dokumentu: " + grounded.length + " z " + holding.length)
+  }
+
   phase("Syntéza")
   // The synthesizer has no research tools at all, so everything it may rely on has to be here:
   // the proposition, its citation, the quote, and what the verifier found.
-  const block = holding.map((v, i) =>
+  const block = grounded.map((v, i) =>
     "[" + i + "] " + v.finding.proposition +
     "\n    zdroj (" + v.finding.sourceKind + "): " + v.finding.source +
     "\n    citace: \"" + v.finding.quote + "\"" +
     (v.verdict.effectiveAt ? "\n    účinné znění k: " + v.verdict.effectiveAt : "") +
     (v.verdict.evidence ? "\n    ověření: " + v.verdict.evidence : "")).join("\n\n")
 
-  const clientDocuments = supplied.length > 0
-    ? supplied.map(d => "- " + d.material + ": " + d.path + (d.note ? " — " + d.note : "")).join("\n")
-    : "(žádné podklady klienta nejsou k dispozici)"
+  const clientDocuments = clientFacts.length > 0
+    ? clientFacts.map(f => "- " + f.fact +
+        "\n    dokument: " + f.path + (f.locator ? ", " + f.locator : "") +
+        "\n    znění: \"" + f.quote + "\"").join("\n")
+    : "(z podkladů klienta se nepodařilo vytěžit žádné skutečnosti)"
 
   const opinion = await agent(
     BRIEF + "\n\nNapiš právní stanovisko k otázce výše.\n\n" +
@@ -254,6 +314,15 @@ export default async function (args) {
       ? "Tyto podklady chybí a závěr je v jejich rozsahu předběžný: " + missingAfterAsk.join(", ") +
         " — uveď to v caveats.\n\n"
       : "") +
+    (fabricated.length > 0
+      ? "Tyto citace se v uvedeném dokumentu NENAŠLY a byly proto vyřazeny; necituj je ani je " +
+        "nezmiňuj jako oporu: " +
+        fabricated.map(v => v.finding.source).join("; ") + "\n\n"
+      : "") +
+    (citationVerdicts === null
+      ? "POZOR: strojovou kontrolu citací se nepodařilo provést, takže doslovnost výňatků nikdo " +
+        "neověřil. Uveď to v caveats.\n\n"
+      : "") +
     "Přečti celý materiál výše, než začneš psát. Vše, o co se smíš opřít, je v něm — nedoplňuj nic " +
     "z vlastní paměti a nedohledávej nové zdroje. Nejdřív odpověz na otázku přímo, pak rozveď " +
     "argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní " +
@@ -266,9 +335,37 @@ export default async function (args) {
     ...opinion,
     framework: framework.criteria,
     refutedSources: refuted.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
+    fabricatedCitations: fabricated.map(v => ({ source: v.finding.source, docId: v.finding.docId })),
+    citationCheck: citationVerdicts === null ? "unavailable" : "ran",
     unverifiedSources: unverified.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
     missingMaterials: missingAfterAsk,
     stats: { issues: frame.issues.length, findings: allFindings.length, checked: checked.length,
-      holding: holding.length, refuted: refuted.length, unverified: unverified.length }
+      holding: holding.length, grounded: grounded.length, refuted: refuted.length,
+      unverified: unverified.length }
+  }
+}
+
+// Runs the checker that ships with the codexis skill. It is installed on PATH as cdx-citation-check;
+// when it is not there we return null so the caller can say the citations went unchecked, rather
+// than quietly treating them as sound.
+function checkCitations(citations) {
+  if (citations.length === 0) {
+    return []
+  }
+  try {
+    const out = execFileSync("cdx-citation-check", [], {
+      input: JSON.stringify(citations), encoding: "utf8", timeout: 300000
+    })
+    return JSON.parse(out)
+  } catch (failure) {
+    // A non-zero exit just means some citation failed — the report is still on stdout.
+    if (failure && failure.stdout) {
+      try {
+        return JSON.parse(failure.stdout)
+      } catch (unparseable) {
+        return null
+      }
+    }
+    return null
   }
 }
