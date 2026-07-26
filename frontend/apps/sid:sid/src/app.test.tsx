@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import { App } from './app'
+import { Providers } from '@/components/providers'
+import i18n from '@/lib/i18n'
+
 // next-themes reads the OS colour-scheme preference; jsdom has no
 // matchMedia, so ThemeProvider throws on render without this.
 vi.stubGlobal(
@@ -27,10 +31,6 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/api', () => mocks)
-
-import { App } from './app'
-import { Providers } from '@/components/providers'
-import i18n from '@/lib/i18n'
 
 const NOT_CONFIGURED = {
   ok: true as const,

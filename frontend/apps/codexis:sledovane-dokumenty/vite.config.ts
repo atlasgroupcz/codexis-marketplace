@@ -25,8 +25,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
+    // The daemon serves these bundles from disk inside the user's VM, so vite's
+    // default 500 kB warning does not describe a cost anyone pays. Kept as a
+    // ceiling that still catches a bundle growing out of proportion.
     build: {
-      chunkSizeWarningLimit: 700,
+      chunkSizeWarningLimit: 1000,
     },
     plugins: [
       viteReact({

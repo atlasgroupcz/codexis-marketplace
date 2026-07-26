@@ -6,8 +6,8 @@ import { Button } from '@workspace/ui/components/button'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
 import type { NotifyBodyLabels, NotifyValues } from '@workspace/ui/components/notify-settings-body'
-import { deleteApiKey, fetchStatus, saveApiKey, saveNotifySettings } from '@/lib/api'
 import type { StatusResponse } from '@/lib/schemas'
+import { deleteApiKey, fetchStatus, saveApiKey, saveNotifySettings } from '@/lib/api'
 
 const EMPTY_NOTIFY: NotifyValues = { email: false, inApp: true, recipients: [] }
 
