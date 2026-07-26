@@ -1,0 +1,43 @@
+{
+  "name": "onepost",
+  "version": "0.4.0",
+  "description": "ONEPOST API access for Czech ISDS data boxes - mailboxes, folders, messages, attachments, concepts, sending, search and message receiving",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "onepost",
+    "isds",
+    "datove-schranky",
+    "zfo",
+    "messages",
+    "attachments",
+    "concepts",
+    "sending"
+  ],
+  "license": "PROPRIETARY",
+  "tags": ["legal", "czech", "isds", "data-boxes"],
+  "i18n": {
+    "cs": {
+      "displayName": "ONEPOST - datové schránky",
+      "description": "Přístup k ONEPOST API pro práci s datovými schránkami - schránky, složky, zprávy, přílohy, koncepty, odesílání, vyhledávání a stažení nových zpráv z ISDS.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "isds": "ISDS", "data-boxes": "Datové schránky" }
+    },
+    "en": {
+      "displayName": "ONEPOST - Data Boxes",
+      "description": "Access the ONEPOST API for Czech ISDS data boxes - mailboxes, folders, messages, attachments, concepts, sending, search, and receiving new ISDS messages.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "isds": "ISDS", "data-boxes": "Data Boxes" }
+    },
+    "sk": {
+      "displayName": "ONEPOST - dátové schránky",
+      "description": "Prístup k ONEPOST API pre prácu s dátovými schránkami - schránky, priečinky, správy, prílohy, koncepty, odosielanie, vyhľadávanie a stiahnutie nových správ z ISDS.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "isds": "ISDS", "data-boxes": "Dátové schránky" }
+    }
+  },
+  "postInstall": "mkdir -p \"${HOME}/.local/share/onepost/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/onepost/lib/onepost_core\" && cp -r \"${PLUGIN_DIR}/lib/onepost_core\" \"${HOME}/.local/share/onepost/lib/onepost_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/onepost-cli\" \"${HOME}/.local/bin/onepost-cli\"",
+  "postUninstall": "rm -f \"${HOME}/.local/bin/onepost-cli\" && rm -rf \"${HOME}/.local/share/onepost\"",
+  "onUpdate": "mkdir -p \"${HOME}/.local/share/onepost/lib\" \"${HOME}/.local/bin\" && rm -rf \"${HOME}/.local/share/onepost/lib/onepost_core\" && cp -r \"${PLUGIN_DIR}/lib/onepost_core\" \"${HOME}/.local/share/onepost/lib/onepost_core\" && install -m 0755 \"${PLUGIN_DIR}/bin/onepost-cli\" \"${HOME}/.local/bin/onepost-cli\"",
+  "skills": "./skills",
+  "components": "./components"
+}

@@ -4,7 +4,15 @@
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
 var import_node_os = require("node:os");
-var EXIT = { OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 };
+var EXIT = {
+  OK: 0,
+  ERROR: 1,
+  USAGE: 2,
+  AUTH: 3,
+  NOT_FOUND: 4,
+  RATE_LIMIT: 5,
+  FORBIDDEN: 6
+};
 var DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev";
 function userHome() {
   return process.env.CODEXIS_PUBLIC_USER_HOME || import_node_os.homedir();
@@ -84,8 +92,9 @@ function statusToError(status, bodyText) {
   if (status === 401) {
     return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen - vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
   }
-  if (status === 403)
-    return new CliError(`Přístup odepřen (403). ${detail}`, EXIT.AUTH);
+  if (status === 403) {
+    return new CliError(`Přístup odepřen (403). SID vrací 403 i na id, které nezná, takže neplatné id ` + `a chybějící oprávnění od sebe nerozliší - ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`, EXIT.FORBIDDEN);
+  }
   if (status === 404)
     return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND);
   if (status === 429) {

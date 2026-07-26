@@ -17,7 +17,7 @@ without guessing.
 | `access user <email\|name\|id>` | `GET /api/v1/users` (resolve) + `GET /api/v1/access/users/{id}` |
 | `access group <name\|id>` | `GET /api/v1/groups` (resolve) + `GET /api/v1/access/groups/{id}` |
 | `attributes list` | `GET /api/v1/attributes` |
-| `download <fileId>` | `GET /api/files/download/{fileId}` |
+| `download <fileId\|documentId>` | `GET /api/files/download/{fileId}`; a documentId is first resolved via `GET /api/v1/documents/{id}` → `currentFile.id` (both calls access-checked) |
 | `confirmations list` | `GET /api/v1/confirmations` |
 | `notifications` | `GET /api/notifications` |
 | `check` | notifications + confirmations in one call each |
@@ -189,7 +189,9 @@ and the signed-in user always receives it regardless.
 
 - search 60 requests/min per IP, download 120/min, upload 20/min
 - 120 requests/min per key (independent of IP)
-- Keys have a 90-day TTL; once expired the API returns 401 (`sid-cli` → exit 3)
+- Keys have a one-year TTL; once expired the API returns 401 (`sid-cli` → exit 3).
+  Keys issued before that change keep their original 90-day expiry, and SID
+  shows the exact date next to each key in `/api-klice`.
 - Every request times out after 30 s
 
 ## `docs legislation`
