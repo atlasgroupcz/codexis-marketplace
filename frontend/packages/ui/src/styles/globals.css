@@ -1,6 +1,12 @@
 @import "tailwindcss";
-@source "../../../../apps/**/*.{ts,tsx}";
-@source "../../../../packages/**/*.{ts,tsx}";
+/* Scan only what can land in one app's bundle: this package and the shared
+   utils. The app's own src is picked up by Tailwind's automatic detection,
+   which is rooted at the Vite project directory.
+
+   Do NOT add an `apps/**` glob here. Every app imports this file, so a glob
+   over all apps makes each app ship every other app's utilities - that was
+   ~20 kB of dead CSS per app. */
+@source "../../../../packages/utils/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 @plugin "@tailwindcss/typography";
 @import "tw-animate-css";
