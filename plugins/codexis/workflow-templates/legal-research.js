@@ -182,7 +182,7 @@ export default async function (args) {
       "zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází " +
       "z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující " +
       "formulaci — cituje se do závěrečného stanoviska. Structured output only.",
-      { label: "ověření: " + finding.proposition.slice(0, 40), role: "verify", skills: SKILLS,
+      { label: "ověření: " + finding.proposition.slice(0, 40), agent: "codexis:verifier", skills: SKILLS,
         schema: CURRENCY })
       .then(verdict => ({ finding, verdict }))
       .catch(() => ({ finding, verdict: { stillGood: true, evidence: "ověření se nepodařilo provést" } }))))
@@ -222,7 +222,7 @@ export default async function (args) {
     "argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní " +
     "podklad klienta se aplikuje. Přiřaď míru jistoty. Kde materiál otázku neuzavírá, řekni to " +
     "a dej to do caveats nebo otevřených otázek. Structured output only.",
-    { label: "stanovisko", role: "synthesize", schema: OPINION })
+    { label: "stanovisko", agent: "codexis:synthesizer", schema: OPINION })
 
   return {
     question: QUESTION,

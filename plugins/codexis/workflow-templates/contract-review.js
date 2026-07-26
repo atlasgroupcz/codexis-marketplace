@@ -104,7 +104,7 @@ export default async function (args) {
       "U předpisu ověř účinné znění: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že " +
       "rozhodnutí nebylo překonáno. Otevři zdroj celý. Do 'evidence' napiš rozhodující formulaci — " +
       "půjde do návrhu úprav. Structured output only.",
-      { label: "ověření: " + entry.clause.label, role: "verify", skills: SKILLS, schema: CURRENCY })
+      { label: "ověření: " + entry.clause.label, agent: "codexis:verifier", skills: SKILLS, schema: CURRENCY })
       .then(verdict => ({ ...entry, verdict }))
       .catch(() => ({ ...entry, verdict: { stillGood: true, evidence: "ověření se nepodařilo provést" } }))))
 
@@ -127,7 +127,7 @@ export default async function (args) {
     "U každého rizika navrhni KONKRÉTNÍ přeformulování ustanovení, ne obecné doporučení: napiš text, " +
     "který má nahradit ten stávající. Seřaď od nejzávažnějšího. Shrnutí piš pro klienta, ne pro " +
     "právníka. Structured output only.",
-    { label: "návrh úprav", role: "synthesize", schema: REDRAFT })
+    { label: "návrh úprav", agent: "codexis:synthesizer", schema: REDRAFT })
 
   return { path: PATH, contractType: breakdown.contractType, ...redraft,
     stats: { clauses: breakdown.clauses.length, risks: flagged.length, holding: holding.length } }
