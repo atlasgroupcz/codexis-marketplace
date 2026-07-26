@@ -69,16 +69,14 @@ export default async function (args) {
   const JURISDICTION = (args && args.jurisdiction) || "CZ"
 
   phase("Rámec")
-  // The framing agent is the one step that may see the conversation: what the user actually wants is
-  // in the chat, not in `args`. Everything downstream reads BRIEF instead.
   const frame = await agent(
-    "Jsi na začátku právní rešerše. Z otázky, z konverzace a ze souborů v pracovním adresáři urči " +
+    "Jsi na začátku právní rešerše. Z otázky a ze souborů v pracovním adresáři urči " +
     "rámec: právní obor, rozhodnou jurisdikci, časový řez (ke kterému dni se posuzuje) a rozpad na " +
     "3-8 dílčích právních otázek, které je nutné zodpovědět, aby šlo odpovědět na tu hlavní.\n\n" +
     "Otázka: " + QUESTION + "\nJurisdikce: " + JURISDICTION + "\n\n" +
     "Každá dílčí otázka musí být samostatně zodpověditelná a nesmí se s ostatními překrývat — každá " +
     "z nich dostane vlastního rešeršistu, který neuvidí nic než její zadání. Structured output only.",
-    { label: "rámec", inheritChat: true, schema: FRAME })
+    { label: "rámec", schema: FRAME })
 
   const BRIEF =
     "Právní otázka: " + QUESTION +
@@ -182,7 +180,7 @@ export default async function (args) {
       "zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází " +
       "z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující " +
       "formulaci — cituje se do závěrečného stanoviska. Structured output only.",
-      { label: "ověření: " + finding.proposition.slice(0, 40), agent: "codexis:verifier", skills: SKILLS,
+      { label: "ověření: " + finding.proposition.slice(0, 40), agentType: "codexis:verifier", skills: SKILLS,
         schema: CURRENCY })
       .then(verdict => ({ finding, verdict }))
       .catch(() => ({ finding, verdict: { stillGood: true, evidence: "ověření se nepodařilo provést" } }))))
@@ -222,7 +220,7 @@ export default async function (args) {
     "argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní " +
     "podklad klienta se aplikuje. Přiřaď míru jistoty. Kde materiál otázku neuzavírá, řekni to " +
     "a dej to do caveats nebo otevřených otázek. Structured output only.",
-    { label: "stanovisko", agent: "codexis:synthesizer", schema: OPINION })
+    { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION })
 
   return {
     question: QUESTION,

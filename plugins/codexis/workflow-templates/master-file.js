@@ -134,7 +134,7 @@ export default async function (args) {
     "Vše, o co se smíš opřít, je zde — nedohledávej nic nového. U každé kapitoly urči, zda je úplná, " +
     "částečná, nebo chybí, a proč. Do 'gaps' shrň, co je nutné od skupiny ještě získat, seřazené " +
     "podle toho, jak moc to dokumentaci ohrožuje. Structured output only.",
-    { label: "kontrola úplnosti", agent: "codexis:synthesizer", schema: REVIEW })
+    { label: "kontrola úplnosti", agentType: "codexis:synthesizer", schema: REVIEW })
 
   return { group: GROUP, period: YEAR, ...review,
     draftedChapters: chapters,
