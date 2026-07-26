@@ -58,9 +58,62 @@ HARVEST_QUERY = (
     "pouze odkazy na legislativu. Vrať POUZE JSON dle schématu."
 )
 
-# 89/2012, 262/2006 Sb. … - a Czech act number followed by a 4-digit year.
-_CZ_ACT_RE = re.compile(r"(\d{1,4})\s*/\s*((?:19|20)\d{2})\b")
-_EU_MARKERS = ("EU", "ES", "EHS", "EHS)", "nařízení (eu", "směrnice")
+# A year as legislation cites it. Written once: the Czech act pattern embeds it and
+# the EU pair disambiguation tests against it, and the two used to disagree.
+_YEAR = r"(?:19|20)\d{2}"
+# 89/2012, 262/2006 Sb. … - a Czech act number followed by a year.
+_CZ_ACT_RE = re.compile(rf"(\d{{1,4}})\s*/\s*({_YEAR})\b")
+_YEAR_RE = re.compile(rf"^{_YEAR}$")
+
+# CELEX sector-3 type letter per EU act type, as the type is written in a Czech
+# citation. This is the single vocabulary of EU act types: the markers below that
+# keep an EU citation out of the Czech resolver derive from it, so adding a type
+# here teaches both sides at once.
+_EU_TYPE_LETTERS = {"nařízení": "R", "směrnice": "L", "rozhodnutí": "D"}
+# An EU act may also be cited by treaty abbreviation alone, with no type word.
+_EU_MARKERS = tuple(_EU_TYPE_LETTERS) + ("eu", "es", "ehs")
+# Either NUMBER/YEAR (pre-2015 acts) or YEAR/NUMBER (2015 on).
+_EU_NUMBER_RE = re.compile(r"(\d{1,4})\s*/\s*(\d{1,4})")
+
+
+def _looks_like_year(value):
+    return _YEAR_RE.match(value) is not None
+
+
+def parse_eu_citation(citation, text=""):
+    """Return ``(type_letter, year, number)`` for an EU act citation, else None.
+
+    These are the coordinates the citation carries; CODEXIS composes the CELEX
+    from them. The one thing that has to be decided here is which side of the
+    pair is the year: EU numbering flipped in 2015, so older acts are cited
+    NUMBER/YEAR (``988/2009``) and newer ones YEAR/NUMBER (``2016/679``).
+    """
+    low = f"{citation} {text}".lower()
+    letter = next(
+        (letter for keyword, letter in _EU_TYPE_LETTERS.items() if keyword in low),
+        None,
+    )
+    if not letter:
+        return None
+
+    m = _EU_NUMBER_RE.search(low)
+    if not m:
+        return None
+    left, right = m.group(1), m.group(2)
+    if _looks_like_year(right):
+        year, number = right, left
+    elif _looks_like_year(left):
+        year, number = left, right
+    else:
+        return None
+    # Unpadded, so "679" and "0679" key the resolver cache identically; CODEXIS
+    # pads it when composing the CELEX.
+    return letter, year, number.lstrip("0") or "0"
+
+
+def canonical_eu_uri(celex):
+    """Stable public URL for an EU act (EUR-Lex, the official EU portal)."""
+    return f"https://eur-lex.europa.eu/legal-content/CS/TXT/?uri=CELEX:{celex}"
 
 
 def canonical_cz_uri(num, year):
@@ -87,8 +140,9 @@ def parse_cz_citation(citation, text=""):
 def build_legislation_entry(ref):
     """Turn a model reference {text, citation, uri} into a contract entry.
 
-    Resolves Czech acts to a canonical Zákony-pro-lidi URI + CODEXIS base id.
-    Falls back to the model-supplied URI (or empty) for anything unresolved.
+    Resolves Czech acts to a canonical Zákony-pro-lidi URI + CODEXIS base id, and
+    EU acts to a CODEXIS id by their citation coordinates. Falls back to the
+    model-supplied URI (or empty) for anything unresolved.
     """
     text = (ref.get("text") or ref.get("citation") or "").strip()
     citation = (ref.get("citation") or "").strip()
@@ -101,8 +155,15 @@ def build_legislation_entry(ref):
         num, year = parsed
         entry["uri"] = canonical_cz_uri(num, year)
         codexis_id = clients.resolve_cz_law(num, year)
-        if codexis_id:
-            entry["codexisId"] = codexis_id
+    else:
+        eu_parts = parse_eu_citation(citation, text)
+        resolved = clients.resolve_eu_law(*eu_parts) if eu_parts else None
+        codexis_id, celex = resolved or (None, None)
+        if celex:
+            entry["uri"] = canonical_eu_uri(celex)
+
+    if codexis_id:
+        entry["codexisId"] = codexis_id
     return entry
 
 

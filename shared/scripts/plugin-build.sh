@@ -81,13 +81,17 @@ _cdx_bin_dir() {
 # same release artifact the workspace build would produce, before installing.
 
 # Build one crate's release binaries (all its [[bin]]) for linux (Docker).
-# The whole repo is mounted so the shared
-# Cargo.lock + path deps resolve; --manifest-path builds only this crate.
+# The whole repo is mounted so the shared Cargo.lock + path deps resolve; `-p`
+# (rather than --manifest-path) keeps cargo resolving the whole workspace, so
+# feature unification - and therefore the reused artifacts - match the one-pass
+# `cargo build --workspace`.
 _build_one_crate() {
   local crate_dir="$1"
   local crate_rel="${crate_dir#$REPO_ROOT/}"
+  local crate_name
+  crate_name="$(basename "$crate_dir")"
 
-  echo "==> Workspace not pre-built - building $crate_rel standalone for $_CDX_DOCKER_PLATFORM (Docker)"
+  echo "==> Building $crate_rel for $_CDX_DOCKER_PLATFORM (Docker)"
   docker run --rm \
     --platform "$_CDX_DOCKER_PLATFORM" \
     -u "$(id -u):$(id -g)" \
@@ -95,26 +99,34 @@ _build_one_crate() {
     -v "$REPO_ROOT:/workspace" \
     -w /workspace \
     "$RUST_IMAGE" \
-    cargo build --manifest-path "$crate_rel/Cargo.toml" $CARGO_BUILD_ARGS
+    cargo build -p "$crate_name" $CARGO_BUILD_ARGS
 }
 
-# Build the crate only if its binary isn't already in the shared target/ (i.e. a
-# standalone run without the one-pass workspace build). Checks one representative
-# binary - a crate's [[bin]] targets are all produced by the same build.
+# Compile the crate unless the one-pass workspace build already ran in THIS
+# invocation - the root build.sh exports CDX_WORKSPACE_BUILT before calling the
+# plugin scripts.
+#
+# Two things this must NOT do:
+#   - skip because the binary exists in target/: a leftover binary is not
+#     necessarily current, so a per-plugin build.sh run after editing a crate
+#     silently installed a stale artifact.
+#   - rebuild per crate after the workspace pass: measured at ~1 min per crate,
+#     because a single-crate build resolves features differently than
+#     `--workspace` and so cannot reuse its artifacts. That is the cost the
+#     one-pass build exists to avoid.
 _ensure_crate_built() {
   local crate_dir="$1"
-  local a_bin="$2"
-  [[ -f "$REPO_ROOT/target/release/$a_bin" ]] || _build_one_crate "$crate_dir"
+  [[ -n "${CDX_WORKSPACE_BUILT:-}" ]] || _build_one_crate "$crate_dir"
 }
 
 # Entry point for the simple single-binary plugins. Installs the binary from the
-# shared target/ into the plugin's bin/ - building the crate first only if the
-# workspace build hasn't already produced it (standalone run). Signature
-# unchanged, so those plugins' src/build.sh need no edits.
+# shared target/ into the plugin's bin/, compiling the crate first unless the
+# workspace pass already did. Signature unchanged, so those plugins' src/build.sh
+# need no edits.
 #   $1  crate dir (…/plugins/<p>/src/<crate>)   $2  binary name
 build_plugin_crate() {
   local crate_dir="$1"
   local bin_name="$2"
-  _ensure_crate_built "$crate_dir" "$bin_name"
+  _ensure_crate_built "$crate_dir"
   install_workspace_binary "$bin_name" "$(_cdx_bin_dir "$crate_dir")"
 }
