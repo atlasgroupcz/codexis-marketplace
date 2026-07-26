@@ -4,7 +4,7 @@ import { ArrowRight, Plus, RefreshCw, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
 import { TopicRail } from './topic-rail'
 import { ReportsFeed } from './reports-feed'
 import { EmptyTopics } from './empty-state'
@@ -20,7 +20,7 @@ interface JudikaturaHomeProps {
 }
 
 export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: JudikaturaHomeProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const [topicFilter, setTopicFilter] = useQueryState('topic', topicFilterParser)
 
@@ -55,6 +55,7 @@ export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: 
                 </Button>
               </>
             )}
+            <HeaderHelp app="sledovana-judikatura" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
           </>
         }

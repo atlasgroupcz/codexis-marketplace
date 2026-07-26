@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Badge } from '@workspace/ui/components/badge'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
@@ -39,7 +39,7 @@ function codexisUrl(codexisId: string): string {
 }
 
 export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportViewProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { data, loading, error, refetch } = useReport(uuid, reportId)
 
   if (loading && !data) return <LoadingSkeleton />
@@ -96,6 +96,7 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
                 {t('judikatura.confirmReport')}
               </Button>
             )}
+            <HeaderHelp app="sledovana-judikatura" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
           </>
         }
