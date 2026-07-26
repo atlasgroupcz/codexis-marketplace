@@ -45,8 +45,6 @@ const REVIEW = { type: "object", required: ["summary", "chapters", "gaps"], prop
     note: { type: "string" } } } },
   gaps: { type: "array", items: { type: "string" } }, caveats: { type: "string" } } }
 
-const SKILLS = ["codexis"]
-
 export default async function (args) {
   const GROUP = (typeof args === "object" && args && typeof args.group === "string" && args.group.trim()) || ""
   if (!GROUP) {
@@ -64,7 +62,7 @@ export default async function (args) {
     "zdroj s doslovnou citací, a jaké konkrétní podklady od skupiny jsou k jejímu zpracování potřeba " +
     "(např. schéma vlastnické struktury, seznam nehmotných aktiv, vnitroskupinové smlouvy, " +
     "konsolidovaná účetní závěrka). Structured output only.",
-    { label: "požadavky na Master File", skills: SKILLS, schema: REQUIREMENTS })
+    { label: "požadavky na Master File", schema: REQUIREMENTS })
 
   const BRIEF =
     "Master File k převodním cenám" +
@@ -87,18 +85,8 @@ export default async function (args) {
     "Structured output only.",
     { label: "inventura podkladů", schema: INVENTORY })
 
-  let supplied = inventory.present
-  if (inventory.missing.length > 0) {
-    const answer = await ask(
-      "Pro sestavení Master File potřebuji ještě tyto podklady:\n" +
-      inventory.missing.map(m => "• " + m).join("\n") +
-      "\n\nNahrajte je prosím. Co nedodáte, zůstane v dokumentaci označené jako mezera.",
-      { files: true })
-    if (answer.answered && answer.files.length > 0) {
-      supplied = supplied.concat(answer.files.map(path => ({ input: "doplněno uživatelem", path })))
-      log("Uživatel doplnil " + answer.files.length + " soubor(ů)")
-    }
-  }
+  // No mid-run questions: draft from what the group already has and mark the rest as a gap.
+  const supplied = inventory.present
 
   const documents = supplied.length > 0
     ? supplied.map(d => "- " + d.input + ": " + d.path + (d.note ? " — " + d.note : "")).join("\n")

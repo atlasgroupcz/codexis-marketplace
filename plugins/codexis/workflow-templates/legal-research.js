@@ -82,8 +82,6 @@ const OPINION = { type: "object", required: ["answer", "reasoning", "caveats"], 
     appliesTo: { type: "string" }, confidence: { enum: ["vysoká", "střední", "nízká"] } } } },
   caveats: { type: "string" }, openQuestions: { type: "array", items: { type: "string" } } } }
 
-const SKILLS = ["codexis"]
-
 export default async function (args) {
   const QUESTION = (typeof args === "object" && args && typeof args.question === "string" && args.question.trim()) || ""
   if (!QUESTION) {
@@ -124,7 +122,7 @@ export default async function (args) {
     "U každého napiš, co se z něj prokazuje, a označ, jestli je rozhodující, nebo jen podpůrný.\n\n" +
     "Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci. " +
     "Structured output only.",
-    { label: "rozhodovací rámec", skills: SKILLS, schema: FRAMEWORK })
+    { label: "rozhodovací rámec", schema: FRAMEWORK })
 
   log("Rozhodovací kritéria: " + framework.criteria.map(c => c.criterion).join(" | "))
 
@@ -140,39 +138,10 @@ export default async function (args) {
     "Potřebné podklady:\n" + materials + "\n\nStructured output only.",
     { label: "inventura podkladů", schema: INVENTORY })
 
-  let supplied = inventory.present
-  let stillMissing = inventory.missing
-  if (stillMissing.length > 0) {
-    const answer = await ask(
-      "Pro posouzení potřebuji ještě tyto podklady:\n" +
-      stillMissing.map(m => "• " + m.material).join("\n") +
-      "\n\nNahrajte je prosím, nebo napište, že je nemáte — budu pokračovat bez nich a v závěru to uvedu.",
-      { files: true })
-    if (answer.answered && answer.files.length > 0) {
-      log("Uživatel doplnil " + answer.files.length + " soubor(ů) — přiřazuji je k požadovaným podkladům")
-      // Which uploads cover which requested material is a judgement call, so ask an agent — counting
-      // files would silently declare everything supplied after a single upload.
-      const matched = await agent(
-        BRIEF + "\n\nUživatel právě nahrál tyto soubory:\n" +
-        answer.files.map(p => "- " + p).join("\n") + "\n\n" +
-        "Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému podkladu níže. " +
-        "Do 'present' dej jen ty, které jsi opravdu pokryl, s jejich materialId a cestou. " +
-        "Do 'missing' vrať ty, které ani po nahrání nemáš.\n\n" +
-        "Požadované podklady:\n" +
-        stillMissing.map(m => "- [" + m.materialId + "] " + m.material).join("\n") + "\n\n" +
-        "Structured output only.",
-        { label: "přiřazení nahraných podkladů", schema: INVENTORY })
-        .catch(() => null)
-      if (matched) {
-        supplied = supplied.concat(matched.present)
-        stillMissing = matched.missing
-      }
-    } else {
-      log("Podklady nedoplněny — pokračuji s tím, co je k dispozici")
-    }
-  }
-
-  const missingAfterAsk = stillMissing.map(m => m.material)
+  // No mid-run questions any more: work with the documents that are already in the workspace and
+  // name whatever is missing in the caveats.
+  const supplied = inventory.present
+  const missingAfterAsk = inventory.missing.map(m => m.material)
 
   phase("Extrakce")
   // The synthesizer has no research tools, so a file path in its prompt is a fact it can never read.
@@ -216,7 +185,7 @@ export default async function (args) {
       "porovná s textem toho dokumentu, takže musí být doslovná — přepsaná nebo zpaměti " +
       "rekonstruovaná citace zjištění vyřadí. Označ, které je nosné a které jen podpůrné. " +
       "Structured output only.",
-      { label: issue.label, skills: SKILLS, schema: FINDINGS })
+      { label: issue.label, schema: FINDINGS })
       .catch(() => ({ findings: [] }))))
 
   const allFindings = perIssue.filter(Boolean).flatMap(r => r.findings)
@@ -247,7 +216,7 @@ export default async function (args) {
       "jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo " +
       "otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. " +
       "Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení. Structured output only.",
-      { label: "ověření: " + finding.proposition.slice(0, 40), agentType: "codexis:verifier", skills: SKILLS,
+      { label: "ověření: " + finding.proposition.slice(0, 40), agentType: "codexis:verifier",
         schema: CURRENCY })
       .then(verdict => ({ finding, verdict }))
       // A verifier that crashed has verified nothing. Failing open here would let a rate limit

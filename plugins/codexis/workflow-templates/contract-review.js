@@ -43,8 +43,6 @@ const REDRAFT = { type: "object", required: ["summary", "items"], properties: {
       sources: { type: "array", items: { type: "string" } } } } },
   caveats: { type: "string" } } }
 
-const SKILLS = ["codexis"]
-
 export default async function (args) {
   const PATH = (typeof args === "object" && args && typeof args.path === "string" && args.path.trim()) || ""
   if (!PATH) {
@@ -83,7 +81,7 @@ export default async function (args) {
       "jinou ochrannou úpravou a mezery, které se v praxi vymstí. Pokud je ustanovení v pořádku, " +
       "vrať prázdný seznam rizik — nevymýšlej si problémy. U každého rizika uveď následek. " +
       "Structured output only.",
-      { label: clause.label, skills: SKILLS, schema: RISK })
+      { label: clause.label, schema: RISK })
       .catch(() => ({ risks: [] }))
       .then(result => ({ clause, risks: result.risks }))))
 
@@ -112,7 +110,7 @@ export default async function (args) {
       "když jsi našel konkrétní důvod, proč riziko neplatí; 'source_unreachable' když se ti zdroj " +
       "nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi to rozhodnout. " +
       "Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení. Structured output only.",
-      { label: "ověření: " + entry.clause.label, agentType: "codexis:verifier", skills: SKILLS, schema: CURRENCY })
+      { label: "ověření: " + entry.clause.label, agentType: "codexis:verifier", schema: CURRENCY })
       .then(verdict => ({ ...entry, verdict }))
       // A verifier that crashed has verified nothing. Failing open here would put an unchecked
       // risk in front of the client as if it had been confirmed.
