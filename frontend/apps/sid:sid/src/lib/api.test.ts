@@ -22,8 +22,15 @@ function stubFetch(payload: unknown, ok = true) {
   return mock
 }
 
+/** The one fetch call the test expects, so a missing call fails as a missing call. */
+function callOf(mock: ReturnType<typeof vi.fn>): [string, RequestInit] {
+  const call = mock.mock.calls[0]
+  if (!call) throw new Error('fetch was never called')
+  return call as [string, RequestInit]
+}
+
 function bodyOf(mock: ReturnType<typeof vi.fn>): Record<string, unknown> {
-  return JSON.parse(String(mock.mock.calls[0]![1].body))
+  return JSON.parse(String(callOf(mock)[1].body))
 }
 
 beforeEach(() => {
@@ -89,9 +96,9 @@ describe('endpoint', () => {
     // the CGI binary; the dev proxy adds a trailing slash, hence the optional /.
     const mock = stubFetch(STATUS)
     await fetchStatus()
-    const url = new URL(String(mock.mock.calls[0]![0]))
+    const url = new URL(String(callOf(mock)[0]))
     expect(url.pathname).toMatch(/\/api\/?$/)
     expect(url.origin).toBe(window.location.origin)
-    expect(mock.mock.calls[0]![1].method).toBe('POST')
+    expect(callOf(mock)[1].method).toBe('POST')
   })
 })
