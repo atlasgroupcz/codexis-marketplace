@@ -26,8 +26,11 @@ build_rust_workspace() {
     cargo build --workspace $CARGO_BUILD_ARGS
 }
 
-# 1. Compile all Rust crates once.
+# 1. Compile all Rust crates once. The flag tells the plugin scripts that target/
+#    is current for this invocation, so they install without recompiling; run on
+#    their own they compile first (see _ensure_crate_built).
 build_rust_workspace
+export CDX_WORKSPACE_BUILT=1
 
 # 2. Run every plugin's build.sh. Rust plugins install their binary from the
 #    shared target/ (build_plugin_crate, no per-plugin compile); non-Rust plugins

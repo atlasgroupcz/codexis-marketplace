@@ -1,5 +1,6 @@
 """External process clients: cdx-cli (CODEXIS access) and cdx-daemon LLM extract."""
 
+import functools
 import json
 import os
 import subprocess
@@ -258,20 +259,57 @@ def llm_extract(text, query):
 # ── citation → canonical URI + CODEXIS id ────────────────────────────────────
 
 
+def _get_meta(path):
+    """Metadata dict for a ``cdx://`` resource, or None when it cannot be read.
+
+    An unresolvable citation is a normal outcome here (the act may not be in
+    CODEXIS, or the endpoint may not exist yet), so a client error is not fatal.
+    """
+    try:
+        meta = cdx_get(path)
+    except CdxClientError:
+        return None
+    return meta if isinstance(meta, dict) else None
+
+
+def _base_doc_id(doc_id):
+    """Strip any ``_YYYY_MM_DD`` version suffix, leaving the stable base id."""
+    if not doc_id:
+        return None
+    return doc_id.split("_")[0] if "_" in doc_id else doc_id
+
+
+# One harvest run cites the same act repeatedly - across paragraphs of one
+# document and across documents of a folder - and each miss costs a subprocess.
+# Both entry points are one-shot processes, so a per-process cache cannot go
+# stale; caching the misses matters just as much as the hits.
+@functools.lru_cache(maxsize=None)
+def resolve_eu_law(type_letter, year, number):
+    """Resolve an EU act's citation coordinates to ``(doc_id, celex)``, or None.
+
+    CODEXIS composes the CELEX from type + year + number and looks the act up by
+    it, so the padding rule lives there rather than in every client. The CELEX it
+    resolved comes back in the metadata, which is where the public EUR-Lex URL
+    comes from.
+    """
+    meta = _get_meta(f"cdx://eu_law/{type_letter}/{year}/{number}/meta")
+    if meta is None:
+        return None
+    doc_id = _base_doc_id(meta.get("docId"))
+    if not doc_id:
+        return None
+    return doc_id, (meta.get("eu") or {}).get("celex")
+
+
+@functools.lru_cache(maxsize=None)
 def resolve_cz_law(num, year):
     """Resolve a Czech act ``num/year`` to its base CODEXIS document id, or None.
 
     Strips any ``_YYYY_MM_DD`` version suffix so the result is the stable base id
     (e.g. ``CR26785``) suitable for deterministic version tracking.
     """
-    try:
-        meta = cdx_get(f"cdx://cz_law/{num}/{year}/meta")
-    except CdxClientError:
-        return None
-    if not isinstance(meta, dict):
+    meta = _get_meta(f"cdx://cz_law/{num}/{year}/meta")
+    if meta is None:
         return None
     main = (meta.get("cr") or {}).get("main") or {}
-    doc_id = main.get("docId")
-    if not doc_id:
-        return None
-    return doc_id.split("_")[0] if "_" in doc_id else doc_id
+    return _base_doc_id(main.get("docId"))

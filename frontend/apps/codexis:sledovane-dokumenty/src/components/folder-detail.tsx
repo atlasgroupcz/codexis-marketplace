@@ -222,9 +222,9 @@ function LegislationItem({ leg, onConfirm }: { leg: TrackedLegislation; onConfir
                 href={codexisDocUrl(leg.codexisId)}
                 target="_blank"
                 rel="noreferrer"
-                className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-xs"
+                className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 truncate text-xs"
               >
-                <span>{t('folders.openInCodexis')}</span>
+                <span className="truncate">{codexisDocUrl(leg.codexisId)}</span>
                 <ExternalLink className="size-3 shrink-0" />
               </a>
             )}

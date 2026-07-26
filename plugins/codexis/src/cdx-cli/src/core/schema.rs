@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use serde_json::{json, Map, Value};
 
 use crate::core::error::CliError;
+use crate::core::patterns;
 use cdx_common::schema::make_standalone_json_schema;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -409,15 +410,22 @@ fn resource_cdx_patterns(kind: ResourceSchemaKind) -> Vec<String> {
     let endpoint = resource_endpoint_name(kind);
 
     vec![
-        format!("cdx://doc/<DOC_ID>/{endpoint}"),
-        format!("cdx://cz_law/<NUM>/<YEAR>/{endpoint}"),
+        format!("{}/{endpoint}", patterns::DOC),
+        format!("{}/{endpoint}", patterns::CZ_LAW),
+        format!("{}/{endpoint}", patterns::EU_LAW),
+        format!("{}/{endpoint}", patterns::EU_LAW_BY_CELEX),
     ]
 }
 
+
 fn meta_source_patterns(source: MetaSchemaSource) -> Vec<String> {
-    let mut patterns = vec!["cdx://doc/<DOC_ID>/meta".to_string()];
+    let mut patterns = vec![format!("{}/meta", patterns::DOC)];
     if source.supports_cz_law() {
-        patterns.push("cdx://cz_law/<NUM>/<YEAR>/meta".to_string());
+        patterns.push(format!("{}/meta", patterns::CZ_LAW));
+    }
+    if source.supports_eu_law() {
+        patterns.push(format!("{}/meta", patterns::EU_LAW));
+        patterns.push(format!("{}/meta", patterns::EU_LAW_BY_CELEX));
     }
     patterns
 }
@@ -483,6 +491,10 @@ impl MetaSchemaSource {
     fn supports_cz_law(self) -> bool {
         matches!(self, Self::Cr)
     }
+
+    fn supports_eu_law(self) -> bool {
+        matches!(self, Self::Eu)
+    }
 }
 
 #[cfg(test)]
@@ -541,6 +553,29 @@ mod tests {
         assert!(intro.contains("part (repeatable)"));
         assert_eq!(schema["type"], "string");
         assert!(!output.contains("/rest/cdx-api/"));
+    }
+
+    #[test]
+    fn eu_meta_schema_advertises_both_eu_law_patterns() {
+        let output = render_resource_schema_with_source(
+            ResourceSchemaKind::Meta,
+            Some(MetaSchemaSource::Eu),
+        )
+        .unwrap();
+        let (intro, _) = split_rendered_schema_document(&output).unwrap();
+
+        assert!(intro.contains("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/meta"));
+        assert!(intro.contains("cdx://eu_law/by-celex/<CELEX>/meta"));
+        assert!(!intro.contains("cdx://cz_law/<NUM>/<YEAR>/meta"));
+    }
+
+    #[test]
+    fn eu_law_patterns_are_offered_for_every_endpoint() {
+        for kind in [ResourceSchemaKind::Versions, ResourceSchemaKind::Text, ResourceSchemaKind::Toc] {
+            let rendered = render_resource_schema_with_source(kind, None).unwrap();
+            assert!(rendered.contains("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/"), "{kind:?} lacks the EU route");
+            assert!(rendered.contains("cdx://eu_law/by-celex/<CELEX>/"), "{kind:?} lacks the by-celex route");
+        }
     }
 
     #[test]
