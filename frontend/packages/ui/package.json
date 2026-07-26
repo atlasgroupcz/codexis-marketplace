@@ -100,6 +100,7 @@
     "./globals.css": "./src/styles/globals.css",
     "./postcss.config": "./postcss.config.mjs",
     "./lib/api-client": "./src/lib/api-client.ts",
+    "./lib/docs": "./src/lib/docs.ts",
     "./lib/file-icons": "./src/lib/file-icons.ts",
     "./lib/i18n": "./src/lib/i18n.ts",
     "./lib/notify-recipients": "./src/lib/notify-recipients.ts",

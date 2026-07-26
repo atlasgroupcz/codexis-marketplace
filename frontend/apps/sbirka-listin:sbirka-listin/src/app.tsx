@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQueryState } from 'nuqs'
 import { FileStack, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
@@ -18,7 +18,7 @@ import { checkAll, fetchNotify, saveNotify } from '@/lib/api'
 import { errorMessage } from '@/lib/format'
 
 export function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const { data: notifyData, refetch: refetchNotify } = useNotify(fetchNotify)
   const [view, setView] = useQueryState('view', viewParser)
@@ -106,6 +106,7 @@ export function App() {
               <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">{t('subjekty.checkAll')}</span>
             </Button>
+            <HeaderHelp app="sbirka-listin" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={() => setSettingsOpen(true)} title={t('notify.title')} />
           </>
         }

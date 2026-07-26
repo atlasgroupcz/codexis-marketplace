@@ -1,6 +1,8 @@
-import { ArrowLeft, Settings } from "lucide-react"
+import { ArrowLeft, CircleQuestionMark, Settings } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { docsUrl } from "@workspace/ui/lib/docs"
 import { cn } from "@workspace/ui/lib/utils"
+import type { DocsApp } from "@workspace/ui/lib/docs"
 import type { ComponentType, ReactNode } from "react"
 
 interface BrandSpec {
@@ -72,6 +74,26 @@ export function HeaderGear({ onClick, title }: HeaderGearProps) {
   return (
     <Button variant="ghost" size="icon" onClick={onClick} title={title} aria-label={title}>
       <Settings className="size-5" />
+    </Button>
+  )
+}
+
+export interface HeaderHelpProps {
+  app: DocsApp
+  lang: string
+  title: string
+}
+
+/**
+ * Link to the app's manual page. It sits in the header of every screen, so a user
+ * who does not know what to do has one place to look, in every app the same.
+ */
+export function HeaderHelp({ app, lang, title }: HeaderHelpProps) {
+  return (
+    <Button variant="ghost" size="icon" asChild title={title} aria-label={title}>
+      <a href={docsUrl(app, lang)} target="_blank" rel="noreferrer">
+        <CircleQuestionMark className="size-5" />
+      </a>
     </Button>
   )
 }

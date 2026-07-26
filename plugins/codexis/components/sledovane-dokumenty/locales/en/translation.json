@@ -149,5 +149,8 @@
     "saved": "Settings saved",
     "ownAddress": "That's your address - you always get the e-mail.",
     "duplicate": "That address is already in the list."
+  },
+  "help": {
+    "docs": "Help"
   }
 }

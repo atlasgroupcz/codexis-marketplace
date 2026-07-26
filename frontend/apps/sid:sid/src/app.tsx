@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { HeaderHelp } from '@workspace/ui/components/app-header'
 import { ConnectionSection } from '@workspace/ui/components/connection-section'
 import { NotifySettingsBody } from '@workspace/ui/components/notify-settings-body'
 import { Button } from '@workspace/ui/components/button'
@@ -12,7 +13,7 @@ import { deleteApiKey, fetchStatus, saveApiKey, saveNotifySettings } from '@/lib
 const EMPTY_NOTIFY: NotifyValues = { email: false, inApp: true, recipients: [] }
 
 export function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [status, setStatus] = useState<StatusResponse | null>(null)
   const [notify, setNotify] = useState<NotifyValues>(EMPTY_NOTIFY)
   const [savingNotify, setSavingNotify] = useState(false)
@@ -99,9 +100,12 @@ export function App() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold">{t('app.title')}</h1>
-        <p className="text-muted-foreground text-sm">{t('app.lead')}</p>
+      <header className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold">{t('app.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('app.lead')}</p>
+        </div>
+        <HeaderHelp app="sid" lang={i18n.language} title={t('help.docs')} />
       </header>
 
       {loadFailed && <p className="text-destructive text-sm">{t('app.loadFailed')}</p>}

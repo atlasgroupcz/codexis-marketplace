@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQueryState } from 'nuqs'
 import { KeyRound, Landmark, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { ConfigGate } from '@workspace/ui/components/config-gate'
 import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
@@ -21,7 +21,7 @@ import { CUZK_REGISTRATION_URL } from '@/lib/constants'
 import { errorMessage } from '@/lib/format'
 
 export function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const { data: notifyData, refetch: refetchNotify } = useNotify(fetchNotify)
   const [view, setView] = useQueryState('view', viewParser)
@@ -173,6 +173,7 @@ export function App() {
                 <span className="hidden sm:inline">{t('proceedings.checkAll')}</span>
               </Button>
             )}
+            <HeaderHelp app="katastr" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={() => setSettingsOpen(true)} title={t('notify.title')} />
           </>
         }
