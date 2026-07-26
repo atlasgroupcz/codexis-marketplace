@@ -1,0 +1,22 @@
+{
+  "extends": "@workspace/typescript-config/vite-app.json",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "eslint.config.js",
+    "vite.config.js"
+  ],
+  "compilerOptions": {
+    "types": [
+      "vite/client"
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@workspace/ui/*": [
+        "../../packages/ui/src/*"
+      ]
+    }
+  }
+}

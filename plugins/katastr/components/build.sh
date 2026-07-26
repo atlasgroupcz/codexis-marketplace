@@ -43,7 +43,7 @@ build_frontend_apps() {
     bash -lc '
       set -euo pipefail
       bun install --frozen-lockfile
-      cd apps/katastr:katastr
+      cd apps/katastr
       bun run build
     '
 }
@@ -90,7 +90,7 @@ sync_component_output() {
 build_frontend_apps
 
 sync_component_output \
-  "$FRONTEND_DIR/apps/katastr:katastr/dist" \
+  "$FRONTEND_DIR/apps/katastr/dist" \
   "$SCRIPT_DIR/katastr" \
   "icon.png" \
   "icon.svg"

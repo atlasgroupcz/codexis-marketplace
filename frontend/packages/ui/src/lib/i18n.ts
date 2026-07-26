@@ -33,7 +33,6 @@ export function createI18n({
         lookupQuerystring: 'lang',
         caches: ['localStorage'],
       },
-      initImmediate: false,
     })
   return instance
 }
