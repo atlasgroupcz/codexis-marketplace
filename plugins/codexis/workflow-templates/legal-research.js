@@ -3,6 +3,8 @@
 //   own documents: find the governing rules, learn what the courts actually decide on, collect the
 //   papers that decide it, check nothing is repealed or overruled, then write the opinion.
 // @jurisdictions CZ SK EU
+// @args question (required) — the legal question, in the user's own words
+// @args jurisdiction — CZ, SK or EU; defaults to CZ
 //
 // Six phases, in the order a lawyer actually works: frame the question, find out from case law and
 // statutes WHAT DECIDES IT and which documents that requires, get those documents from the user,

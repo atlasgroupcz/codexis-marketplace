@@ -2,6 +2,8 @@
 // @use-when A contract the client wants reviewed: pull it apart clause by clause, judge each against
 //   the law that actually governs it, and come back with the risky ones and concrete redrafts.
 // @jurisdictions CZ SK EU
+// @args path (required) — path to the contract file to review
+// @args side — whose position it is judged from; defaults to objednatele
 //
 // Clause-level fan-out: one reviewer per clause, each seeing the clause text verbatim and nothing
 // else, then a currency check on the provisions the risks lean on, then one drafting pass.

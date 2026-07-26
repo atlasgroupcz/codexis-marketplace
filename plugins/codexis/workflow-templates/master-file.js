@@ -3,6 +3,8 @@
 //   work out which chapters the rules require, collect what the group already has, and draft the
 //   chapters from those documents rather than from memory.
 // @jurisdictions CZ SK EU
+// @args group (required) — name of the group the Master File is assembled for
+// @args year — the tax period; defaults to the last closed one
 //
 // The chapter list comes from the rules themselves (OECD Chapter V as implemented locally), not from
 // a hardcoded outline, so the template survives a change in the requirements. Missing inputs are
