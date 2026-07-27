@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HeaderHelp } from '@workspace/ui/components/app-header'
+import { HeaderDocsLink } from '@workspace/ui/components/app-header'
 import { ConnectionSection } from '@workspace/ui/components/connection-section'
 import { NotifySettingsBody } from '@workspace/ui/components/notify-settings-body'
 import { Button } from '@workspace/ui/components/button'
@@ -100,12 +100,14 @@ export function App() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <header className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">{t('app.title')}</h1>
-          <p className="text-muted-foreground text-sm">{t('app.lead')}</p>
+      <header className="space-y-1">
+        <div className="flex min-w-0 items-baseline gap-2.5">
+          <h1 className="truncate text-xl font-semibold">{t('app.title')}</h1>
+          <span className="shrink-0">
+            <HeaderDocsLink app="sid" lang={i18n.language} label={t('help.docs')} />
+          </span>
         </div>
-        <HeaderHelp app="sid" lang={i18n.language} title={t('help.docs')} />
+        <p className="text-muted-foreground text-sm">{t('app.lead')}</p>
       </header>
 
       {loadFailed && <p className="text-destructive text-sm">{t('app.loadFailed')}</p>}
