@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "SID - Interné dokumenty",
+    "lead": "Kľúč prepojí tento doplnok s vaším účtom v SID. Má rovnaké oprávnenia ako vy - chráňte ho ako heslo.",
+    "connectionSection": "Pripojenie k SID",
+    "notifySection": "Upozornenia",
+    "loadFailed": "Stav sa nepodarilo načítať.",
+    "saved": "Nastavenie upozornení uložené.",
+    "saveFailed": "Uloženie sa nepodarilo.",
+    "keyDeleted": "Kľúč bol zmazaný."
+  },
+  "connection": {
+    "connected": "Pripojené",
+    "notConnected": "Nepripojené k SID",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "save": "Uložiť",
+    "saving": "Overujem…"
+  },
+  "settings": {
+    "getKey": "Kde získam API kľúč?",
+    "getKeyHint": "V SID otvorte Profil → API kľúče a vytvorte nový. Zobrazí sa iba raz.",
+    "newLabel": "API kľúč zo SID",
+    "placeholder": "sid_…"
+  },
+  "notify": {
+    "emailLabel": "E-mail pri novinkách",
+    "emailDescription": "Denný súhrn príde e-mailom.",
+    "yourAddressLabel": "Vaša adresa",
+    "copyToLabel": "Kópia na",
+    "addRecipient": "Pridať príjemcu",
+    "removeRecipient": "Odobrať",
+    "addPlaceholder": "meno@firma.sk",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámenie v centre notifikácií",
+    "inAppDescription": "",
+    "ownAddress": "Táto adresa je vaša - e-mail vám chodí vždy.",
+    "duplicate": "Táto adresa už je v zozname.",
+    "save": "Uložiť upozornenia"
+  },
+  "help": {
+    "docs": "Nápoveda"
+  }
+}

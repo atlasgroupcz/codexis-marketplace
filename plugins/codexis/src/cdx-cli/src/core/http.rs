@@ -5,7 +5,7 @@ use cdx_common::curl::{
 };
 use cdx_common::sources::publish_from_body;
 
-const CDX_SCHEME: &str = "cdx://";
+pub(crate) const CDX_SCHEME: &str = "cdx://";
 pub(crate) const API_PREFIX: &str = "/rest/cdx-api/v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

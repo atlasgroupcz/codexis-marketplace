@@ -61,6 +61,14 @@ Exit codes are a stable contract:
 | 3 | key missing or expired | send the user to `/api-klice` (see above) |
 | 4 | not found | verify the id |
 | 5 | rate limited | slow down, retry shortly |
+| 6 | access denied - **or an id SID doesn't know** | check the id first, then treat it as a rights problem |
+
+Code 6 is not a key problem; only code 3 is. SID answers an unknown id with
+403 rather than 404 so the API can't be used to find out which ids exist,
+which means "wrong id" and "no access" arrive identically. Re-check the id
+before telling the user they lack rights. (`download` already does this for
+you - it retries a refused id as a document - so a 6 from `download` really
+does mean the user has no access to it.)
 
 ## Commands
 
@@ -74,7 +82,7 @@ sid-cli folders list                              # folders you can see, with pa
 sid-cli access user <email|name|id>               # (admin) a user's folder rights
 sid-cli access group <name|id>                    # (admin) a group's folder rights
 sid-cli attributes list                           # the attribute catalogue
-sid-cli download <fileId> --out ./smernice.pdf
+sid-cli download <fileId|documentId> --out ./smernice.pdf
 sid-cli confirmations list --state pending        # what the user must confirm
 sid-cli notifications                             # unread updates
 sid-cli check                                     # digest: updates + pending
@@ -117,8 +125,12 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
   link - do not look for a workaround.
 - **"anything new in SID?"** → `notifications`, or `check` for a combined
   digest with pending confirmations.
-- **"download / send me the file"** → `docs get` for the `fileId`, then
-  `download`.
+- **"download / send me the file"** → `download <id>` with whatever id you
+  have. It takes a `fileId`, but a `documentId` (what listings and search
+  results give you) is resolved to that document's current file, so the two
+  are interchangeable here and no `docs get` round-trip is needed first. The
+  resolution is access-checked like any other read, so it grants nothing the
+  user couldn't already open.
 - **"which laws does this document rest on"** → `docs legislation <id>`.
   Read-only: what a document tracks is managed in SID, where the Codexis
   picker and the change-approval flow live.

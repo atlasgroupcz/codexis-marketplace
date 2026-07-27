@@ -1,6 +1,8 @@
-"""Every marketplace plugin must own its tests next to its code: an install
-contract (expected.json) and at least one behavioral (promptfoo) config. This
-makes "a plugin ships without a test" a red build, not a thing to remember."""
+"""Every marketplace plugin must own an install contract (expected.json) next to
+its code, so "a plugin ships without an install spec" is a red build, not a thing
+to remember. A behavioral (promptfoo) config is recommended but deliberately not
+enforced here: the eval tier is opt-in in CI, so requiring a config that does not
+routinely run would add friction without a signal (see CLAUDE.md)."""
 
 from __future__ import annotations
 
@@ -36,13 +38,4 @@ def test_plugin_has_install_contract(name: str):
     assert expected.is_file(), (
         f"{name}: missing tests/install/expected.json - every plugin needs an "
         f"install contract (the skills it registers)."
-    )
-
-
-@pytest.mark.parametrize("name", _PLUGINS)
-def test_plugin_has_behavioral_config(name: str):
-    configs = list((PLUGINS / name / "tests" / "promptfoo").glob("*.config.yaml"))
-    assert configs, (
-        f"{name}: missing tests/promptfoo/*.config.yaml - every plugin needs at "
-        f"least one behavioral (promptfoo) test."
     )

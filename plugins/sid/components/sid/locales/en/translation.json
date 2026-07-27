@@ -37,5 +37,8 @@
     "ownAddress": "This is your own address - you always receive the e-mail.",
     "duplicate": "This address is already listed.",
     "save": "Save notifications"
+  },
+  "help": {
+    "docs": "Help"
   }
 }

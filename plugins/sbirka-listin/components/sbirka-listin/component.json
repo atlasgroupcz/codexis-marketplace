@@ -5,7 +5,7 @@
   "route": "sbirka-listin",
   "description": "Sledujte nové listiny subjektů ve sbírce listin veřejných rejstříků ČR.",
   "entrypoint": "index.html",
-  "binary": "sbirka-listin",
+  "binary": "sbirka-listin-cgi",
   "i18n": {
     "cs": {
       "displayName": "Sbírka listin - sledované subjekty",

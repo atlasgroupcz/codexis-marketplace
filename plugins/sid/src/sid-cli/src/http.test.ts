@@ -47,9 +47,10 @@ describe("apiGet", () => {
     expect(called).toBe(false)
   })
 
-  it("401 → AUTH, 404 → NOT_FOUND, 429 → RATE_LIMIT, 500 → ERROR", async () => {
+  it("401 → AUTH, 403 → FORBIDDEN, 404 → NOT_FOUND, 429 → RATE_LIMIT, 500 → ERROR", async () => {
     const cases = [
       [401, EXIT.AUTH],
+      [403, EXIT.FORBIDDEN],
       [404, EXIT.NOT_FOUND],
       [429, EXIT.RATE_LIMIT],
       [500, EXIT.ERROR],
@@ -58,6 +59,38 @@ describe("apiGet", () => {
       const err = await apiGet("/api/x", fakeFetch(status, { error: { code: "X" } })).catch((e: unknown) => e)
       expect((err as CliError).exitCode).toBe(code)
     }
+  })
+
+  // SID answers an UNKNOWN file id with 403, not 404 - deliberate, so the
+  // endpoint can't be used to enumerate which ids exist. The most common way
+  // to hit it is passing a documentId to `download`, which takes a fileId.
+  // Reporting that as EXIT.AUTH told the model "the key expired" (that's what
+  // code 3 means in SKILL.md) and sent it to /api-klice instead of to
+  // `docs get` - a dead end we watched happen in a live session.
+  it("403 se NEhlásí jako problém s klíčem - to je 401", async () => {
+    const forbidden = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
+    const unauthorized = await apiGet("/api/x", fakeFetch(401, {})).catch((e: unknown) => e)
+
+    expect((forbidden as CliError).exitCode).not.toBe(EXIT.AUTH)
+    expect((unauthorized as CliError).exitCode).toBe(EXIT.AUTH)
+    expect(String((forbidden as CliError).message)).not.toMatch(/api-klice|klíč vypršel/i)
+  })
+
+  it("403 řekne, že může jít i o neznámé id, ne jen o chybějící právo", async () => {
+    const err = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
+    const message = String((err as CliError).message)
+
+    expect(message).toContain("403")
+    expect(message).toMatch(/nezná|neplatné id/i)
+    expect(message).toMatch(/oprávnění|přístup/i)
+  })
+
+  // `download` resolves a documentId on its own, so the shared 403 text must
+  // not tell anyone to go fetch a fileId - that step is already handled and
+  // the advice would only send them in circles.
+  it("403 neradí ruční dohledávání fileId - to si download řeší sám", async () => {
+    const err = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
+    expect(String((err as CliError).message)).not.toMatch(/docs get/)
   })
 
   it("chybová hláška nikdy neobsahuje klíč", async () => {

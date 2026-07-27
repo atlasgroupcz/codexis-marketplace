@@ -1,4 +1,4 @@
-"""HTTP-layer contract for the notify view/action in sledovane.py.
+"""HTTP-layer contract for the notify view/action in sledovane-cgi.
 
 Loads the CGI handler by file path (it lives under a hyphenated component
 directory, so it isn't an importable package) and drives its `handle_folder_*`
@@ -15,7 +15,7 @@ import pytest
 
 def _load_http():
     path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "components", "sledovane-dokumenty", "sledovane.py",
+        os.path.dirname(__file__), "..", "..", "..", "components", "sledovane-dokumenty", "sledovane-cgi",
     )
     loader = importlib.machinery.SourceFileLoader("sledovane_http", path)
     spec = importlib.util.spec_from_file_location("sledovane_http", path, loader=loader)

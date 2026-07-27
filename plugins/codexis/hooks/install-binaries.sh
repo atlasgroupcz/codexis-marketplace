@@ -42,23 +42,6 @@ install_binary() {
   echo "Installed ${target_name} -> ${target_path}"
 }
 
-select_binary_source() {
-  local binary_name="$1"
-
-  case "$(uname -s):$(uname -m)" in
-    Darwin:arm64|Darwin:aarch64)
-      echo "${binary_name}-aarch64-apple-darwin"
-      ;;
-    Darwin:*)
-      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
-      exit 1
-      ;;
-    *)
-      echo "${binary_name}"
-      ;;
-  esac
-}
-
 install_script() {
   local source_path="$1"
   local target_name="$2"
@@ -84,10 +67,10 @@ install_script() {
   echo "Installed ${target_name} -> ${target_path}"
 }
 
-install_binary "$(select_binary_source "cdx-cli")" "cdx-cli"
+install_binary "cdx-cli" "cdx-cli"
 install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"
-install_binary "$(select_binary_source "cdxctl")" "cdxctl"
+install_binary "cdxctl" "cdxctl"
 install_script "${PLUGIN_DIR}/skills/codexis/scripts/citation_checker.sh" "cdx-citation-check"
 
 install_lib() {

@@ -38,8 +38,13 @@ the shared machinery (`provider.py`, `assertions.py`, `run.py`) stays central in
 (`file://../../../../tests/promptfoo/...`). A config that uploads binary fixtures
 keeps them in `plugins/<name>/tests/fixtures/`, referenced by a relative `source:`.
 
-Every marketplace plugin must own an install contract AND at least one behavioral
-config - `tests/test_conformance.py` fails the build otherwise.
+Every marketplace plugin must own an install contract
+(`tests/install/expected.json`) - `tests/test_conformance.py` fails the build
+otherwise. A behavioral (promptfoo) config is recommended but not enforced: the
+eval tier is opt-in in CI, so requiring a config that does not routinely run adds
+friction without a signal. Add one when a plugin's behavior is worth an
+LLM-driven check; the requirement can return once the eval tier becomes a
+routine gate.
 
 Two different `tests/` folders exist: `tests/` at the repo root is the central
 harness; `plugins/<name>/tests/` holds one plugin's own tests (unit, install,

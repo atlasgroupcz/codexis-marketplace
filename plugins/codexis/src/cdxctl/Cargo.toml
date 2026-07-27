@@ -14,7 +14,3 @@ uuid = { version = "1", features = ["v4"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false }
 
-[profile.release]
-strip = true
-lto = true
-codegen-units = 1

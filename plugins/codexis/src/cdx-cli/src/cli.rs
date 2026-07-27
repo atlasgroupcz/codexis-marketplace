@@ -48,7 +48,7 @@ Endpoint schema help:
   cdx-cli schema [meta|toc|versions|text|related|related/counts]
   cdx-cli schema meta [CR|SK|JD|ES|EU|LT|VS|COMMENT]
 
-Common get resource suffixes:
+Common get resources (cdx://doc/<DOC_ID> + suffix):
   /meta, /toc, /text
   /versions (supported for CR documents only)
   /related, /related/counts
@@ -59,7 +59,16 @@ Direct Czech law fetches:
   cdx://cz_law/<NUM>/<YEAR>/text[?part=PART]
   cdx://cz_law/<NUM>/<YEAR>/versions
   cdx://cz_law/<NUM>/<YEAR>/related[?type=TYPE&part=PART&offset=N&limit=N&sort=FIELD&order=ORDER]
-  cdx://cz_law/<NUM>/<YEAR>/related/counts[?part=PART]";
+  cdx://cz_law/<NUM>/<YEAR>/related/counts[?part=PART]
+
+Direct EU law fetches (TYPE is R regulation, L directive, D decision):
+  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/meta
+  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/toc
+  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/text[?part=PART]
+  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/versions
+  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/related[?type=TYPE&part=PART&offset=N&limit=N&sort=FIELD&order=ORDER]
+  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/related/counts[?part=PART]
+  cdx://eu_law/by-celex/<CELEX>/...           same suffixes, when a CELEX is already at hand";
 
 #[derive(Parser, Debug)]
 #[command(
@@ -622,6 +631,40 @@ mod tests {
         let rendered = error.to_string();
         assert!(rendered.contains("unrecognized subcommand"));
         assert!(rendered.contains("cz_law"));
+    }
+
+    #[test]
+    fn every_cdx_prefix_is_documented_on_both_help_surfaces() {
+        // Keeps the two hand-written help blocks in step with core::patterns.
+        let mut command = Cli::command();
+        let get = command
+            .find_subcommand_mut("get")
+            .expect("get subcommand")
+            .render_long_help()
+            .to_string();
+        let root = command.render_long_help().to_string();
+        for prefix in [
+            crate::core::patterns::DOC,
+            crate::core::patterns::CZ_LAW,
+            crate::core::patterns::EU_LAW,
+            crate::core::patterns::EU_LAW_BY_CELEX,
+        ] {
+            assert!(root.contains(prefix), "root help is missing {prefix}");
+            assert!(get.contains(prefix), "get help is missing {prefix}");
+        }
+    }
+
+    #[test]
+    fn root_help_lists_the_same_suffixes_for_eu_as_for_czech_law() {
+        // The prefixes themselves are covered by the sync test above; this pins the
+        // suffix parity, which is what the eu_law routes gained.
+        let help = Cli::command().render_long_help().to_string();
+        for suffix in ["meta", "toc", "text[?part=PART]", "versions", "related/counts[?part=PART]"] {
+            assert!(
+                help.contains(&format!("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/{suffix}")),
+                "root help is missing the eu_law {suffix} route"
+            );
+        }
     }
 
     #[test]

@@ -43,7 +43,7 @@ build_frontend_apps() {
     bash -lc '
       set -euo pipefail
       bun install --frozen-lockfile
-      cd apps/sid:sid
+      cd apps/sid
       bun run build
     '
 }
@@ -90,7 +90,7 @@ sync_component_output() {
 build_frontend_apps
 
 sync_component_output \
-  "$FRONTEND_DIR/apps/sid:sid/dist" \
+  "$FRONTEND_DIR/apps/sid/dist" \
   "$SCRIPT_DIR/sid" \
   "icon.png" \
   "icon.svg"

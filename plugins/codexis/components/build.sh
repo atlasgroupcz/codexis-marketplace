@@ -43,9 +43,9 @@ build_frontend_apps() {
     bash -lc '
       set -euo pipefail
       bun install --frozen-lockfile
-      cd apps/codexis:sledovane-dokumenty
+      cd apps/sledovane-dokumenty
       bun run build
-      cd /workspace/frontend/apps/codexis:sledovana-judikatura
+      cd /workspace/frontend/apps/sledovana-judikatura
       bun run build
     '
 }
@@ -96,14 +96,14 @@ build_frontend_apps
 # sync, so it does not need to be listed as a preserved asset or copied around.
 # (The old shared icon.png was dropped in favour of per-component SVGs.)
 sync_component_output \
-  "$FRONTEND_DIR/apps/codexis:sledovane-dokumenty/dist" \
+  "$FRONTEND_DIR/apps/sledovane-dokumenty/dist" \
   "$SCRIPT_DIR/sledovane-dokumenty" \
   "banner.png" \
   "logo.svg" \
   "styles.css"
 
 sync_component_output \
-  "$FRONTEND_DIR/apps/codexis:sledovana-judikatura/dist" \
+  "$FRONTEND_DIR/apps/sledovana-judikatura/dist" \
   "$SCRIPT_DIR/sledovana-judikatura"
 
 echo "Completed component build: $(basename "$PLUGIN_DIR")"

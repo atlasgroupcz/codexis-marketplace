@@ -126,20 +126,12 @@ cdx-cli schema related
 cdx-cli schema related/counts
 ```
 
-Common `get` resource patterns:
+Accepted `get` resource patterns are printed by the CLI itself, which is the only
+copy that cannot go stale:
 
-- `cdx://doc/<DOC_ID>/meta`
-- `cdx://doc/<DOC_ID>/toc`
-- `cdx://doc/<DOC_ID>/text`
-- `cdx://doc/<DOC_ID>/versions` for CR documents only
-- `cdx://doc/<DOC_ID>/related`
-- `cdx://doc/<DOC_ID>/related/counts`
-- `cdx://cz_law/<NUM>/<YEAR>/meta`
-- `cdx://cz_law/<NUM>/<YEAR>/toc`
-- `cdx://cz_law/<NUM>/<YEAR>/text`
-- `cdx://cz_law/<NUM>/<YEAR>/versions`
-- `cdx://cz_law/<NUM>/<YEAR>/related`
-- `cdx://cz_law/<NUM>/<YEAR>/related/counts`
+```bash
+cdx-cli get --help
+```
 
 Rules:
 

@@ -33,23 +33,8 @@ install_binary() {
   echo "Installed ${target_name} -> ${target_path}"
 }
 
-select_binary_source() {
-  local binary_name="$1"
-  case "$(uname -s):$(uname -m)" in
-    Darwin:arm64|Darwin:aarch64)
-      echo "${binary_name}-aarch64-apple-darwin"
-      ;;
-    Darwin:*)
-      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
-      exit 1
-      ;;
-    *)
-      echo "${binary_name}"
-      ;;
-  esac
-}
 
-install_binary "$(select_binary_source "leciva-cli")" "leciva-cli"
+install_binary "leciva-cli" "leciva-cli"
 
 # Migrate off the pre-1.4 local index. Old versions downloaded ~23 MB of SÚKL
 # data (TSV index + codelists) to ~/.cdx/apps/leciva; the API client needs none

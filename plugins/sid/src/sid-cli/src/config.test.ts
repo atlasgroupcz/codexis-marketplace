@@ -14,7 +14,18 @@ afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
 describe("config", () => {
   it("EXIT kódy jsou stabilní kontrakt", () => {
-    expect(EXIT).toEqual({ OK: 0, ERROR: 1, USAGE: 2, AUTH: 3, NOT_FOUND: 4, RATE_LIMIT: 5 })
+    // Additive only: existing codes keep their meaning, new ones go on the end
+    // and get a row in SKILL.md. FORBIDDEN (6) split off from AUTH (3) once it
+    // turned out 403 was being reported to the model as an expired key.
+    expect(EXIT).toEqual({
+      OK: 0,
+      ERROR: 1,
+      USAGE: 2,
+      AUTH: 3,
+      NOT_FOUND: 4,
+      RATE_LIMIT: 5,
+      FORBIDDEN: 6,
+    })
   })
 
   it("bez souboru: prázdný klíč, default baseUrl", () => {

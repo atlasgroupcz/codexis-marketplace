@@ -1,4 +1,4 @@
-"""HTTP CGI handler (components/insolvence/insolvence.py): notify settings.
+"""HTTP CGI handler (components/insolvence/insolvence-cgi): notify settings.
 
 Covers the uniform notify contract added on top of insolvence_core's
 already-merged notify_settings/notify recipients backend:
@@ -6,6 +6,7 @@ already-merged notify_settings/notify recipients backend:
 - POST save_notify_settings -> {ok, settings} / {ok:false, error} on ValueError
 """
 
+import importlib.machinery
 import importlib.util
 import io
 import json
@@ -15,13 +16,14 @@ from pathlib import Path
 import pytest
 
 COMPONENT_PATH = (
-    Path(__file__).resolve().parents[2] / "components" / "insolvence" / "insolvence.py"
+    Path(__file__).resolve().parents[2] / "components" / "insolvence" / "insolvence-cgi"
 )
 
 
 def _load_component():
-    """Import insolvence.py fresh (it's a script, not a package)."""
-    spec = importlib.util.spec_from_file_location("insolvence_component", COMPONENT_PATH)
+    """Import insolvence-cgi fresh (it's a script, not a package)."""
+    loader = importlib.machinery.SourceFileLoader("insolvence_component", str(COMPONENT_PATH))
+    spec = importlib.util.spec_from_file_location("insolvence_component", COMPONENT_PATH, loader=loader)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

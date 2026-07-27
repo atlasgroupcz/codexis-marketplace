@@ -15,15 +15,13 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
-use reqwest::blocking::{Client, Response};
-use reqwest::header::{CONTENT_TYPE, USER_AGENT};
-
-use cdx_common::http::{backoff, format_status, resolve_url, retryable_status};
+use ureq::{Agent, Response};
 
 const DEFAULT_BASE_URL: &str = "https://or.justice.cz";
 const BASE_URL_ENV: &str = "CODEXIS_PLUGIN_SBIRKA_LISTIN_API_URL";
 const USER_AGENT_VALUE: &str = concat!("sbirka-listin-cli/", env!("CARGO_PKG_VERSION"));
-const TIMEOUT: Duration = Duration::from_secs(60);
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const READ_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_ATTEMPTS: usize = 3;
 
 /// A fetched document: its bytes and the Content-Type the server labelled them
@@ -35,39 +33,39 @@ pub struct Document {
 }
 
 pub struct PortalClient {
-    client: Client,
+    agent: Agent,
     base_url: String,
 }
 
 impl PortalClient {
     pub fn new() -> Result<Self> {
-        let base_url = cdx_common::http::base_url_from_env(BASE_URL_ENV, DEFAULT_BASE_URL);
-        let client = Client::builder()
-            .user_agent(USER_AGENT_VALUE)
-            .timeout(TIMEOUT)
-            .build()?;
-        Ok(Self { client, base_url })
+        let base_url = base_url_from_env(BASE_URL_ENV, DEFAULT_BASE_URL);
+        // ureq keeps a connection pool on the Agent, so the two-to-four GETs a
+        // single fetch makes against or.justice.cz reuse the TCP+TLS connection.
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(CONNECT_TIMEOUT)
+            .timeout_read(READ_TIMEOUT)
+            .build();
+        Ok(Self { agent, base_url })
     }
 
     /// GET a page and return its HTML. Retries on 429/5xx; a 404 is an answer,
     /// not something to retry.
     pub fn get_html(&self, path: &str) -> Result<String> {
-        let mut resp = self.fetch(&resolve_url(&self.base_url, path))?;
+        let resp = self.fetch(&resolve_url(&self.base_url, path))?;
         let mut buf = Vec::new();
-        resp.read_to_end(&mut buf)?;
+        resp.into_reader().read_to_end(&mut buf)?;
         Ok(String::from_utf8_lossy(&buf).into_owned())
     }
 
     /// GET a document's bytes plus its Content-Type. Retries on 429/5xx.
     pub fn get_bytes(&self, path: &str) -> Result<Document> {
-        let mut resp = self.fetch(&resolve_url(&self.base_url, path))?;
+        let resp = self.fetch(&resolve_url(&self.base_url, path))?;
         let content_type = resp
-            .headers()
-            .get(CONTENT_TYPE)
-            .and_then(|v| v.to_str().ok())
+            .header("Content-Type")
             .map(|v| v.split(';').next().unwrap_or(v).trim().to_string());
         let mut bytes = Vec::new();
-        resp.read_to_end(&mut bytes)?;
+        resp.into_reader().read_to_end(&mut bytes)?;
         Ok(Document {
             bytes,
             content_type,
@@ -76,32 +74,67 @@ impl PortalClient {
 
     fn fetch(&self, url: &str) -> Result<Response> {
         for attempt in 0..MAX_ATTEMPTS {
-            match self
-                .client
-                .get(url)
-                .header(USER_AGENT, USER_AGENT_VALUE)
-                .send()
-            {
-                Ok(resp) => {
-                    let status = resp.status();
-                    if status.is_success() {
-                        return Ok(resp);
-                    }
-                    if retryable_status(status) && attempt + 1 < MAX_ATTEMPTS {
+            match self.agent.get(url).set("User-Agent", USER_AGENT_VALUE).call() {
+                Ok(resp) => return Ok(resp),
+                Err(ureq::Error::Status(code, resp)) => {
+                    if retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
                         sleep(backoff(attempt));
                         continue;
                     }
-                    return Err(anyhow!("HTTP {} on GET {url}", format_status(status)));
+                    return Err(anyhow!(
+                        "HTTP {} on GET {url}",
+                        format_status(code, resp.status_text())
+                    ));
                 }
-                Err(error) => {
+                Err(ureq::Error::Transport(transport)) => {
                     if attempt + 1 < MAX_ATTEMPTS {
                         sleep(backoff(attempt));
                         continue;
                     }
-                    return Err(error.into());
+                    return Err(anyhow!("GET {url} failed: {transport}"));
                 }
             }
         }
         Err(anyhow!("GET {url} failed after {MAX_ATTEMPTS} attempts"))
     }
+}
+
+/// Reads an env var (trimmed of a trailing slash), falling back to `default`.
+fn base_url_from_env(var: &str, default: &str) -> String {
+    std::env::var(var)
+        .unwrap_or_else(|_| default.to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+/// Resolves a request path against a base URL: absolute `http(s)://` paths pass
+/// through; otherwise the path is appended to the base (a leading `/` is kept).
+fn resolve_url(base_url: &str, path: &str) -> String {
+    if path.starts_with("http://") || path.starts_with("https://") {
+        return path.to_string();
+    }
+    if path.starts_with('/') {
+        format!("{base_url}{path}")
+    } else {
+        format!("{base_url}/{path}")
+    }
+}
+
+/// `"<code> <reason>"`, or just the code when the response carries no reason.
+fn format_status(code: u16, reason: &str) -> String {
+    if reason.is_empty() {
+        code.to_string()
+    } else {
+        format!("{code} {reason}")
+    }
+}
+
+/// Whether a status is worth retrying (429 or any 5xx).
+fn retryable_status(code: u16) -> bool {
+    code == 429 || (500..=599).contains(&code)
+}
+
+/// Exponential backoff: 250ms · 2^attempt.
+fn backoff(attempt: usize) -> Duration {
+    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
 }
