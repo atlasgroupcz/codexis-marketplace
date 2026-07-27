@@ -5,7 +5,7 @@ import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { ChangesFeed } from './changes-feed'
 import { DocumentGrid } from './document-grid'
 import { EmptyDocuments } from './empty-state'
@@ -40,6 +40,7 @@ export function DocumentsHome({
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
         brand={{ icon: BookMarked, title: t('followedDocs.title'), subtitle: t('followedDocs.subtitle') }}
+        docs={{ app: 'sledovane-dokumenty', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             <SectionSwitch section={section} onChange={onChangeSection} />
@@ -49,7 +50,6 @@ export function DocumentsHome({
                 <span className="hidden sm:inline">{t('followedDocs.refresh')}</span>
               </Button>
             )}
-            <HeaderHelp app="sledovane-dokumenty" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />
           </>
         }

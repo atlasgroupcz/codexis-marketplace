@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQueryState } from 'nuqs'
 import { FileStack, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
@@ -89,6 +89,7 @@ export function App() {
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
         brand={{ icon: FileStack, title: t('subjekty.title'), subtitle: t('subjekty.subtitle') }}
+        docs={{ app: 'sbirka-listin', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             {hasSubjekty && (
@@ -106,7 +107,6 @@ export function App() {
               <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">{t('subjekty.checkAll')}</span>
             </Button>
-            <HeaderHelp app="sbirka-listin" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={() => setSettingsOpen(true)} title={t('notify.title')} />
           </>
         }

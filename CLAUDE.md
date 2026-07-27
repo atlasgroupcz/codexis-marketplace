@@ -303,6 +303,40 @@ A plugin can render an in-chat HTML preview for the sources it publishes. Publis
 
 The binary path is resolved relative to `previews/` and may point into the plugin's `bin/` (it must stay inside the plugin directory). The daemon executes it CGI-style in the user's VM with the resource path in `PATH_INFO` (+ `QUERY_STRING`); the handler prints a CGI response (`Status`/`Content-Type` headers, blank line, HTML body). Static assets placed next to the descriptor (e.g. `previews/preview.css`) are served as-is, so the page can reference them relatively (`<link rel="stylesheet" href="./preview.css">`). The rendered HTML drives the chat panel: `<title>` becomes the panel title and an optional `<link rel="canonical" href="…">` becomes the "open in new tab" target. See the `codexis` plugin (`cdx-cli preview`) for the reference implementation.
 
+### Frontend changes need a component rebuild
+
+`frontend/apps/<app>/` is **source**. The daemon never runs it. What the daemon
+serves is the built copy committed under `plugins/<plugin>/components/<app>/`
+(hashed JS/CSS in `assets/`, plus its own `locales/`). Change the source without
+rebuilding and the dev server shows your change while the daemon keeps serving
+the old bundle - the change looks done and is not.
+
+After touching anything under `frontend/`, rebuild the affected plugins and
+commit the result. The builder is `plugins/<plugin>/components/build.sh`; it
+needs docker, builds the app in a pinned `oven/bun` image and syncs `dist/`
+into the component directory.
+
+Which plugin ships which app is not a fixed list - one plugin can ship several
+apps, and the set changes. Ask the repo instead of remembering:
+
+```bash
+# which plugin ships app <app>
+grep -l "apps/<app>" plugins/*/components/build.sh
+```
+
+A change under `frontend/packages/` reaches **every** app, so rebuild all of
+them:
+
+```bash
+for b in plugins/*/components/build.sh; do "$b"; done
+```
+
+When in doubt, rebuild everything - it is cheap and a stale bundle is silent.
+
+The generated filenames carry a content hash and therefore change on every
+rebuild - that is the point, see the caching rules above. Expect the diff to
+delete the old `index-<hash>.js` and add a new one.
+
 ## Localization (i18n)
 
 Every `marketplace.json` / `plugin.json` / `component.json` and every top-level

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus, RefreshCw, ShieldAlert } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { NotifySettings } from '@workspace/ui/components/notify-settings'
 import { useNotify } from '@workspace/ui/hooks/use-notify'
 import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
@@ -83,6 +83,7 @@ export function App() {
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
         brand={{ icon: ShieldAlert, title: t('app.title'), subtitle: t('app.subtitle') }}
+        docs={{ app: 'insolvence', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             {subjects.length > 0 && (
@@ -101,7 +102,6 @@ export function App() {
               <Plus className="size-4" />
               <span className="hidden sm:inline">{t('app.add')}</span>
             </Button>
-            <HeaderHelp app="insolvence" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={() => setSettingsOpen(true)} title={t('notify.title')} />
           </>
         }
