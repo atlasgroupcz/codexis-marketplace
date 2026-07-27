@@ -42,7 +42,6 @@ install_binary() {
   echo "Installed ${target_name} -> ${target_path}"
 }
 
-
 install_binary "cdx-cli" "cdx-cli"
 install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"

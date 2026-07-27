@@ -137,8 +137,29 @@ plugins/plugin-name/
 │   └── skill-name/
 │       ├── SKILL.md      # Skill definition
 │       └── references/   # Type-specific implementations
+├── workflow-templates/   # Workflow scripts the chat can fetch and adapt (*.js)
 └── shared/               # Shared resources
 ```
+
+## Workflow templates
+
+`workflow-templates/*.js` are ready-made multi-phase workflows the daemon offers the model when
+it reaches for the `workflow` tool. Each file is a normal workflow script - `export const meta`
+plus `export default async function (args)` - with a header comment that decides how it is
+advertised:
+
+```js
+// @template legal-research
+// @use-when A legal question that must be answered from the law and applied to the client's
+//   own documents.
+// @jurisdictions CZ SK EU
+```
+
+`@use-when` is required and is the only thing the model sees before fetching the template, so
+write it as the selection hint, not as a summary. `@template` defaults to the file name and
+`@jurisdictions` ranks the template for chats in that jurisdiction. A file without `@use-when`
+is skipped. Templates are never run as they are: the model fetches the source, adapts it, and
+submits the adapted script, so keep them well under the 32 000-character script limit.
 
 ## Writing skills - Anthropic conventions
 
