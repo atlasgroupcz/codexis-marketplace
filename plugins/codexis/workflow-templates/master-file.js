@@ -1,10 +1,10 @@
 // @template master-file
-// @use-when Transfer pricing documentation — assembling or reviewing the Master File for a group:
+// @use-when Transfer pricing documentation - assembling or reviewing the Master File for a group:
 //   work out which chapters the rules require, collect what the group already has, and draft the
 //   chapters from those documents rather than from memory.
 // @jurisdictions CZ SK EU
-// @args group (required) — name of the group the Master File is assembled for
-// @args year — the tax period; defaults to the last closed one
+// @args group (required) - name of the group the Master File is assembled for
+// @args year - the tax period; defaults to the last closed one
 //
 // The chapter list comes from the rules themselves (OECD Chapter V as implemented locally), not from
 // a hardcoded outline, so the template survives a change in the requirements. Missing inputs are
@@ -58,7 +58,7 @@ export default async function (args) {
     "za období: " + YEAR + ".\n\n" +
     "Vyjdi z rozhodné úpravy a z pokynů daňové správy (zdroje CR, u unijního rámce EU); OECD Kapitolu V " +
     "ber jako výkladový rámec, ne jako náhradu za místní úpravu. Vrať seznam kapitol tak, jak je " +
-    "úprava vyžaduje — neopisuj obecnou osnovu zpaměti. U každé kapitoly uveď, co přesně má obsahovat, " +
+    "úprava vyžaduje - neopisuj obecnou osnovu zpaměti. U každé kapitoly uveď, co přesně má obsahovat, " +
     "zdroj s doslovnou citací, a jaké konkrétní podklady od skupiny jsou k jejímu zpracování potřeba " +
     "(např. schéma vlastnické struktury, seznam nehmotných aktiv, vnitroskupinové smlouvy, " +
     "konsolidovaná účetní závěrka). Structured output only.",
@@ -69,7 +69,7 @@ export default async function (args) {
     "\nSkupina: " + GROUP +
     "\nObdobí: " + YEAR +
     (requirements.regime ? "\nRozhodná úprava: " + requirements.regime : "") +
-    "\n(Piš česky, věcně, ve stylu daňové dokumentace. Vše musí být doloženo podkladem skupiny — " +
+    "\n(Piš česky, věcně, ve stylu daňové dokumentace. Vše musí být doloženo podkladem skupiny - " +
     "co doložené není, výslovně označ jako mezeru. Nikdy si údaje nevymýšlej.)"
 
   log("Kapitoly: " + requirements.chapters.map(c => c.chapter).join(", "))
@@ -89,7 +89,7 @@ export default async function (args) {
   const supplied = inventory.present
 
   const documents = supplied.length > 0
-    ? supplied.map(d => "- " + d.input + ": " + d.path + (d.note ? " — " + d.note : "")).join("\n")
+    ? supplied.map(d => "- " + d.input + ": " + d.path + (d.note ? " - " + d.note : "")).join("\n")
     : "(žádné podklady skupiny nejsou k dispozici)"
 
   phase("Kapitoly")
@@ -102,7 +102,7 @@ export default async function (args) {
       (chapter.quote ? "\nCitace požadavku: \"" + chapter.quote + "\"" : "") + "\n\n" +
       "Dostupné podklady skupiny (čti z nich, nevymýšlej si obsah):\n" + documents + "\n\n" +
       "Napiš text kapitoly tak, jak má stát v dokumentaci. Do 'basedOn' uveď cesty podkladů, ze " +
-      "kterých jsi čerpal. Co podklady nepokrývají, nedomýšlej — vypiš to do 'gaps'. " +
+      "kterých jsi čerpal. Co podklady nepokrývají, nedomýšlej - vypiš to do 'gaps'. " +
       "Structured output only.",
       { label: chapter.chapter, schema: CHAPTER })
       .catch(() => ({ chapter: chapter.chapter, content: "", basedOn: [],
@@ -121,7 +121,7 @@ export default async function (args) {
   const review = await agent(
     BRIEF + "\n\nZkontroluj úplnost zpracované dokumentace proti požadavkům.\n\n" +
     "Požadavky:\n" + required + "\n\nZpracované kapitoly:\n" + drafted + "\n\n" +
-    "Vše, o co se smíš opřít, je zde — nedohledávej nic nového. U každé kapitoly urči, zda je úplná, " +
+    "Vše, o co se smíš opřít, je zde - nedohledávej nic nového. U každé kapitoly urči, zda je úplná, " +
     "částečná, nebo chybí, a proč. Do 'gaps' shrň, co je nutné od skupiny ještě získat, seřazené " +
     "podle toho, jak moc to dokumentaci ohrožuje. Structured output only.",
     { label: "kontrola úplnosti", agentType: "codexis:synthesizer", schema: REVIEW })

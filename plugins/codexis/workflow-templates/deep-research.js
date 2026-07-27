@@ -1,19 +1,19 @@
 // @template deep-research
 // @use-when A broad open question whose answer must be assembled from many sources, and where every
 //   claim has to survive an attempt to refute it before it reaches the user.
-// @args question (required) — the research question, in the user's own words
+// @args question (required) - the research question, in the user's own words
 //
-// Reference example of a deep-research workflow — the worked "fan-out + adversarial verification" shape.
+// Reference example of a deep-research workflow - the worked "fan-out + adversarial verification" shape.
 // A workflow is `export const meta = {...}` plus `export default async function (args) { ... return result }`.
 // The `agent(prompt, {label, schema, agentType, skills})` primitive runs an isolated subagent that sees NOTHING but the
 // prompt string, using whatever capabilities that agent has (installed skills/tools, the user's files and
 // shell, or the internet) and knows today's date. That is why BRIEF below is built once and pasted into
 // every prompt, and why each confirmed claim travels on with its source, quote and verification notes
-// rather than as a bare sentence — copy that, it is the point of the example.
+// rather than as a bare sentence - copy that, it is the point of the example.
 // parallel(thunks) is a barrier (waits for all) and keeps every position, putting null where a branch
 // failed; pipeline(items, produce, consume) streams each item independently, hands (result, item, index)
 // to consume, and follows the same null-on-failure contract. Author your own workflow in this shape, tuned to the
-// task — tune angle count, verification votes and schemas per task.
+// task - tune angle count, verification votes and schemas per task.
 export const meta = {
   name: "deep-research",
   description: "Fan-out research: decompose into angles, gather+extract cited claims from the available sources, adversarially verify, synthesize a cited report.",
@@ -69,7 +69,7 @@ export default async function (args) {
           (a.rationale ? "\nWhy this angle: " + a.rationale : "") + "\n\n" +
           "Your claims go to adversarial verifiers who will re-open your sources, so give them something " +
           "checkable: each claim concrete, and for 'source' ONLY the exact source you actually retrieved " +
-          "(a precise citation, document id, or URL) — never invent one. Include the supporting quote " +
+          "(a precise citation, document id, or URL) - never invent one. Include the supporting quote " +
           "verbatim. Rate each central/supporting/tangential. Structured output only.",
           { label: a.label, schema: CLAIMS })
       .catch(() => ({ claims: [] }))))
@@ -90,11 +90,11 @@ export default async function (args) {
             "using the sources available to you.\n\n" +
             "Claim: \"" + c.claim + "\"\nSource: " + c.source +
             "\nQuote: " + (c.quote || "") + "\n\n" +
-            "Read the cited source in full — don't judge from the snippet alone. Check the claim is still " +
+            "Read the cited source in full - don't judge from the snippet alone. Check the claim is still " +
             "current: the source is in force and up to date. If the source is case law or another precedent, " +
             "confirm it is still good authority.\n\n" +
             "Choose status like this: 'supported' only when you opened the source and the claim held up; " +
-            "'refuted' when you found a concrete reason it does not hold — overruled, superseded, " +
+            "'refuted' when you found a concrete reason it does not hold - overruled, superseded, " +
             "reversed, departed from, or simply not what the source says; 'source_unreachable' when you " +
             "could not open the source at all; 'unverified' when you opened it but could neither confirm " +
             "nor refute. Absence of evidence is NOT refutation, and lack of access is NOT support.\n\n" +
@@ -102,7 +102,7 @@ export default async function (args) {
             "'evidence' is quoted to the writer of the final report, so put the deciding wording in it. " +
             "Structured output only.",
             { label: "verify #" + (v + 1) + ": " + c.claim.slice(0, 40), agentType: "codexis:verifier", schema: VERDICT })
-        // A verifier that crashed has verified nothing — counting it as support would let a rate
+        // A verifier that crashed has verified nothing - counting it as support would let a rate
         // limit promote an unchecked claim into the report.
         .catch(() => ({ status: "unverified", evidence: "verification unavailable" }))))
     .then(votes => {
@@ -132,7 +132,7 @@ export default async function (args) {
   }
 
   // Pass the RICH context forward: each confirmed claim keeps its source, the gathering agent's supporting
-  // quote, and the verifiers' corroboration — so the synthesizer writes grounded findings, not a re-statement.
+  // quote, and the verifiers' corroboration - so the synthesizer writes grounded findings, not a re-statement.
   const block = confirmed.map((v, i) => {
     const c = v.claim
     return "[" + i + "] " + c.claim +
@@ -144,14 +144,14 @@ export default async function (args) {
   phase("Synthesize")
   const report = await agent(BRIEF + "\n\nSynthesize a cited research report." +
         "\n\nConfirmed claims (each with its source, relevance, supporting quote and verification notes):\n" + block +
-        "\n\nRead ALL the material above in full before writing — every claim, quote and verification note, " +
+        "\n\nRead ALL the material above in full before writing - every claim, quote and verification note, " +
         "not just the snippets. Ground every finding in the quotes and verification notes; this material is " +
         "everything you have, so introduce no claim that is not in it. Merge duplicates, group into findings " +
         "that answer the question, and ORDER the findings from most to least relevant/central to the " +
         "question. Give more weight to current, primary and still-authoritative sources; down-rank or caveat " +
         "anything outdated or superseded. Assign confidence, write a 3-5 sentence summary, note caveats and " +
         "2-4 open questions. In each finding's 'sources' put ONLY the exact sources (precise citation, " +
-        "document id, or URL) carried by the confirmed claims — never invent any. Write findings as plain " +
+        "document id, or URL) carried by the confirmed claims - never invent any. Write findings as plain " +
         "statements without meta-commentary about the research process. Structured output only.",
         { label: "synthesize", agentType: "codexis:synthesizer", schema: REPORT })
 

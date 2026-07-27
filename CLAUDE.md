@@ -144,8 +144,8 @@ plugins/plugin-name/
 ## Workflow templates
 
 `workflow-templates/*.js` are ready-made multi-phase workflows the daemon offers the model when
-it reaches for the `workflow` tool. Each file is a normal workflow script — `export const meta`
-plus `export default async function (args)` — with a header comment that decides how it is
+it reaches for the `workflow` tool. Each file is a normal workflow script - `export const meta`
+plus `export default async function (args)` - with a header comment that decides how it is
 advertised:
 
 ```js

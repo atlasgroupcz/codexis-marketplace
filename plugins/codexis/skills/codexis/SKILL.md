@@ -64,21 +64,6 @@ All CODEXIS documents are in Czech.
 | `COMMENT` | Legal Commentaries | LIBERIS legal commentaries on Czech legislation |
 | `ALL` | Global Search | Exploratory search across all sources; use only for orientation |
 
-## Verifying a Quote
-
-`cdx-citation-check` checks that quoted passages really appear in the documents they are attributed
-to. Reach for it whenever you are about to present quotes you did not fetch yourself in this turn —
-reviewing another agent's findings, assembling a citation list, or checking a draft before it goes
-to the user.
-
-    echo '[{"id":"1","docId":"JD402788","quote":"…","part":"paragraf19c"}]' | cdx-citation-check
-
-`docId` is the id you passed to `cdx-cli get cdx://doc/<docId>/text`; `part` and `id` are optional.
-It prints one verdict per citation — `verbatim`, `not_found` or `unreachable` — and exits non-zero
-unless every quote was found. Comparison ignores case, whitespace and typographic quotes and dashes,
-but not diacritics. A quote it could not check is reported `unreachable`, never as found: treat that
-as unverified, not as confirmation.
-
 ## User-Facing Output Rules
 
 - User-facing document links MUST use the resolved `https://` URL from the source block. Each cited document is appended to tool output as a `【src_xxx】 url: https://…` block - use that `https://` URL as the link target: `[title](https://…)` or `[title](https://…#elementId)` (append the same `#elementId` anchor you would have used). The `cdx://` scheme is ONLY an addressing scheme for `cdx-cli get cdx://...` fetch arguments - never put a `cdx://` link in output shown to the user. Never expose raw IDs, source codes, relation enums, or API suffixes like `/text`, `/meta`, `/toc` as user has no way to access it.

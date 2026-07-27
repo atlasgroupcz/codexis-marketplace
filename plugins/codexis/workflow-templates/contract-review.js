@@ -2,8 +2,8 @@
 // @use-when A contract the client wants reviewed: pull it apart clause by clause, judge each against
 //   the law that actually governs it, and come back with the risky ones and concrete redrafts.
 // @jurisdictions CZ SK EU
-// @args path (required) — path to the contract file to review
-// @args side — whose position it is judged from; defaults to objednatele
+// @args path (required) - path to the contract file to review
+// @args side - whose position it is judged from; defaults to objednatele
 //
 // Clause-level fan-out: one reviewer per clause, each seeing the clause text verbatim and nothing
 // else, then a currency check on the provisions the risks lean on, then one drafting pass.
@@ -55,7 +55,7 @@ export default async function (args) {
     "Přečti smlouvu v souboru " + PATH + " a rozlož ji na jednotlivá ustanovení.\n\n" +
     "Posuzuje se z pozice " + SIDE + ".\n\n" +
     "Urči typ smlouvy a rozhodné právo. Každé ustanovení vrať s jeho označením (článek, odstavec) a " +
-    "s jeho DOSLOVNÝM zněním — každé z nich dostane vlastního posuzovatele, který smlouvu neuvidí, " +
+    "s jeho DOSLOVNÝM zněním - každé z nich dostane vlastního posuzovatele, který smlouvu neuvidí, " +
     "takže cokoli vynecháš, se ztratí. Drobná a čistě technická ustanovení slučuj. " +
     "Structured output only.",
     { label: "rozklad smlouvy", schema: BREAKDOWN })
@@ -79,7 +79,7 @@ export default async function (args) {
       "(COMMENT) a proti tomu, jak takové doložky posuzují soudy (JD, ES). Hledej neplatnost, " +
       "nepřiměřenost, nevyváženost v neprospěch posuzované strany, rozpor se spotřebitelskou nebo " +
       "jinou ochrannou úpravou a mezery, které se v praxi vymstí. Pokud je ustanovení v pořádku, " +
-      "vrať prázdný seznam rizik — nevymýšlej si problémy. U každého rizika uveď následek. " +
+      "vrať prázdný seznam rizik - nevymýšlej si problémy. U každého rizika uveď následek. " +
       "Structured output only.",
       { label: clause.label, schema: RISK })
       .catch(() => ({ risks: [] }))
@@ -104,7 +104,7 @@ export default async function (args) {
       "\nZdroj: " + entry.risk.source +
       "\nCitace: " + entry.risk.quote + "\n\n" +
       "U předpisu ověř účinné znění: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že " +
-      "rozhodnutí nebylo překonáno. Otevři zdroj celý. Do 'evidence' napiš rozhodující formulaci — " +
+      "rozhodnutí nebylo překonáno. Otevři zdroj celý. Do 'evidence' napiš rozhodující formulaci - " +
       "půjde do návrhu úprav.\n\n" +
       "Status voli takto: 'supported' jen když jsi zdroj otevřel a norma i riziko obstály; 'refuted' " +
       "když jsi našel konkrétní důvod, proč riziko neplatí; 'source_unreachable' když se ti zdroj " +
@@ -125,7 +125,7 @@ export default async function (args) {
 
   phase("Úpravy")
   const block = holding.map((v, i) =>
-    "[" + i + "] ustanovení " + v.clause.label + " — " + v.risk.issue +
+    "[" + i + "] ustanovení " + v.clause.label + " - " + v.risk.issue +
     "\n    závažnost: " + v.risk.severity +
     "\n    znění ustanovení: \"" + v.clause.text + "\"" +
     "\n    zdroj: " + v.risk.source +
@@ -138,9 +138,9 @@ export default async function (args) {
     (unconfirmed.length > 0
       ? "Tato rizika se NEPODAŘILO OVĚŘIT a nesmíš je klientovi předložit jako potvrzená; pokud jsou " +
         "podstatná, uveď je v caveats jako neověřená: " +
-        unconfirmed.map(v => v.clause.label + " — " + v.risk.issue).join("; ") + "\n\n"
+        unconfirmed.map(v => v.clause.label + " - " + v.risk.issue).join("; ") + "\n\n"
       : "") +
-    "Vše, o co se smíš opřít, je zde — nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. " +
+    "Vše, o co se smíš opřít, je zde - nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. " +
     "U každého rizika navrhni KONKRÉTNÍ přeformulování ustanovení, ne obecné doporučení: napiš text, " +
     "který má nahradit ten stávající. Seřaď od nejzávažnějšího. Shrnutí piš pro klienta, ne pro " +
     "právníka. Structured output only.",
