@@ -8,6 +8,7 @@
 //! katastr-specific summary content and the dispatch decision (`dispatch`) that
 //! both the CLI and the CGI share.
 
+use cdx_notify::app_link::resolve_app_link;
 use cdx_notify::email::email_shell;
 use cdx_notify::notify::{html_escape, resolve_to, send_email, send_inapp};
 
@@ -15,8 +16,13 @@ use crate::error::Result;
 use crate::notify_settings::get_notify;
 use crate::tracking::{describe_change, CheckResult};
 
-/// Deep link into the plugin's app + notification type tag for the bell.
-const APP_LINK: &str = "/katastr";
+/// Identifies this plugin so the bell's deep link resolves to the daemon's
+/// `/apps/<applicationId>` route - the only route serving a plugin app. A
+/// hand-written `/katastr` matches no route and lands on a 404. The component
+/// half comes from `state::APP_ID`, already the single source for this
+/// component's id.
+const PLUGIN_NAME: &str = "katastr";
+/// Notification type tag for the bell.
 const NOTIFICATION_TYPE: &str = "cadastre-changed";
 /// Uppercase brand label shown as the e-mail eyebrow.
 const EYEBROW: &str = "Hlídač katastrálních řízení";
@@ -96,8 +102,10 @@ fn inapp_change_summary(changed: &[&CheckResult]) -> bool {
     // Only the subject is needed here - no HTML body is built, unlike e-mail.
     let subject = summary_subject(changed);
     // cdx-notify's send_inapp takes an optional `action` before the deep link;
-    // katastr has no action button, only the app link.
-    send_inapp(&subject, NOTIFICATION_TYPE, None, Some(APP_LINK))
+    // katastr has no action button, only the app link. Resolution is
+    // best-effort - an unresolvable link is omitted rather than sent broken.
+    let link = resolve_app_link(PLUGIN_NAME, crate::state::APP_ID);
+    send_inapp(&subject, NOTIFICATION_TYPE, None, link.as_deref())
 }
 
 // ── dispatch ──────────────────────────────────────────────────────────────────

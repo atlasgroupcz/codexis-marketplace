@@ -7,6 +7,7 @@
 //! sbirka-listin summary content and the dispatch decision.
 
 use cdx_notify::email::email_shell;
+use cdx_notify::app_link::resolve_app_link;
 use cdx_notify::notify::{html_escape, resolve_to, send_email, send_inapp};
 use cdx_notify::notify_settings::NotifySettings;
 use cdx_watch::track::CheckResult;
@@ -14,8 +15,13 @@ use serde_json::{json, Value};
 
 use crate::watch::{Change, NovaListina, APP_ID};
 
-/// Deep link into the plugin's app + the bell's notification-type tag.
-const APP_LINK: &str = "/sbirka-listin";
+/// Identifies this plugin so the bell's deep link resolves to the daemon's
+/// `/apps/<applicationId>` route - the only route serving a plugin app. A
+/// hand-written `/sbirka-listin` matches no route and lands on a 404. The
+/// component half comes from `watch::APP_ID`, already the single source for
+/// this component's id.
+const PLUGIN_NAME: &str = "sbirka-listin";
+/// The bell's notification-type tag.
 const NOTIFICATION_TYPE: &str = "sbirka-listin-changed";
 const EYEBROW: &str = "Hlídač sbírky listin";
 const FOOTER: &str = "Otevřete aplikaci Sbírka listin pro detail.";
@@ -124,7 +130,10 @@ pub fn dispatch(results: &[CheckResult<Change>]) -> Value {
     };
     // The bell needs only the subject line - never build the full e-mail body.
     let in_app = if cfg.in_app {
-        if send_inapp(&change_subject(&changed), NOTIFICATION_TYPE, None, Some(APP_LINK)) {
+        // Resolution is best-effort - an unresolvable link is omitted rather
+        // than sent broken.
+        let link = resolve_app_link(PLUGIN_NAME, APP_ID);
+        if send_inapp(&change_subject(&changed), NOTIFICATION_TYPE, None, link.as_deref()) {
             "odesláno"
         } else {
             "selhalo"

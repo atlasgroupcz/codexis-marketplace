@@ -7,6 +7,7 @@
 //! of the CGI runtime (`cdx-cgi`) and of the watcher/tracking domain
 //! (`cdx-watch`). A plugin composes the capabilities it actually uses.
 
+pub mod app_link;
 pub mod email;
 pub mod error;
 pub mod notify;
