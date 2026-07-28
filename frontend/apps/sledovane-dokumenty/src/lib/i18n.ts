@@ -12,7 +12,9 @@ void i18n
     fallbackLng: 'en',
     supportedLngs: ['en', 'cs', 'sk'],
     defaultNS: 'translation',
-    debug: import.meta.env.DEV,
+    // DEV is true under Vitest too, and i18next then dumps its whole config
+    // into the test log on every init - keep the debug output for real dev only.
+    debug: import.meta.env.DEV && !import.meta.env.VITEST,
     interpolation: {
       escapeValue: false,
     },

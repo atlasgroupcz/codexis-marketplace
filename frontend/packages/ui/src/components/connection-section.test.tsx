@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { ConnectionSection } from './connection-section'
 import type { ConnectionSectionLabels } from './connection-section'
 
@@ -30,14 +30,19 @@ function setup(props: Partial<React.ComponentProps<typeof ConnectionSection>> = 
 }
 
 describe('ConnectionSection', () => {
-  it('not configured: Uložit is disabled until a value is typed, then saves it', () => {
+  it('not configured: Uložit is disabled until a value is typed, then saves it', async () => {
     const onSave = vi.fn()
     setup({ onSave })
     expect(screen.getByRole('button', { name: 'Uložit' })).toBeDisabled()
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ABC123' } })
     const save = screen.getByRole('button', { name: 'Uložit' })
     expect(save).toBeEnabled()
-    fireEvent.click(save)
+    // Saving ends in `.finally(() => setSaving(false))`, a microtask that lands
+    // after a synchronous click - drain it inside act() so the state update is
+    // not reported as happening outside one.
+    await act(async () => {
+      fireEvent.click(save)
+    })
     expect(onSave).toHaveBeenCalledWith({ apiKey: 'ABC123' })
   })
 

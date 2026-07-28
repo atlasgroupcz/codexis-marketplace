@@ -32,7 +32,6 @@
     "@workspace/vitest-config": "workspace:*",
     "typescript": "^5.9.3",
     "vite": "^8.1.5",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"
   }
 }
