@@ -6,21 +6,25 @@
 // @args question (required) - the legal question, in the user's own words
 // @args jurisdiction - CZ, SK or EU; defaults to CZ
 //
-// Seven phases, in the order a lawyer actually works: frame the question, find out from case law and
-// statutes WHAT DECIDES IT and which documents that requires, get those documents from the user, pull
-// the decisive passages out of them, research each sub-question in source order, check the sources
-// still hold today, and only then write.
+// Eight phases, in the order a lawyer actually works: frame the question, find out from case law and
+// statutes WHAT DECIDES IT and which documents that requires, take stock of what the client already
+// gave us, ask the client for the rest, pull the decisive passages out of the documents, research each
+// sub-question in source order, check the sources still hold today, and only then write.
+// Dožádání is the one phase that talks to a human, and it is reached unconditionally: the recognition
+// phase has just derived from case law what the courts actually look at, and that is the only moment
+// where we know enough to ask for the right papers and the right facts.
 // Every agent gets BRIEF - it sees nothing else - and every finding travels on with its citation and
 // its verbatim quote.
 // Tune the sub-question count, the verification depth and the schemas to the task.
 
 export const meta = {
   name: "legal-research",
-  description: "Právní rešerše: rámec → rekognoskace → podklady → extrakce → rešerše → ověření → syntéza.",
+  description: "Právní rešerše: rámec → rekognoskace → podklady → dožádání → extrakce → rešerše → ověření → syntéza.",
   phases: [
     { title: "Rámec", detail: "Určit právní obor, jurisdikci, časový řez a sporné otázky" },
     { title: "Rekognoskace", detail: "Zjistit z judikatury a předpisů, podle čeho se rozhoduje a co je třeba doložit" },
-    { title: "Podklady", detail: "Inventura dokumentů klienta a dožádání toho, co chybí" },
+    { title: "Podklady", detail: "Inventura dokumentů klienta, které už jsou v pracovním adresáři" },
+    { title: "Dožádání", detail: "Vyžádat od uživatele chybějící dokumenty a skutečnosti, které z nich neplynou" },
     { title: "Extrakce", detail: "Vytěžení rozhodných skutečností z dokumentů klienta" },
     { title: "Rešerše", detail: "Předpisy → komentáře → judikatura → literatura, po dílčích otázkách" },
     { title: "Ověření", detail: "Platnost, účinnost a překonanost každého nosného zdroje" },
@@ -135,10 +139,60 @@ export default async function (args) {
     "Potřebné podklady:\n" + materials + "\n\nStructured output only.",
     { label: "inventura podkladů", schema: INVENTORY })
 
-  // No mid-run questions any more: work with the documents that are already in the workspace and
-  // name whatever is missing in the caveats.
-  const supplied = inventory.present
-  const missingAfterAsk = inventory.missing.map(m => m.material)
+  phase("Dožádání")
+  // The card goes up whether or not the inventory found gaps. The inventory agent can only see files,
+  // so "nothing is missing" still leaves untouched every fact that exists nowhere but in the client's
+  // head - what was agreed orally, how it actually ran, when it happened - and the recognition phase
+  // has just told us which of those facts the courts weigh.
+  let supplied = inventory.present
+  let stillMissing = inventory.missing
+
+  const inventoryLine = stillMissing.length > 0
+    ? "Pro posouzení mi chybí tyto podklady:\n" + stillMissing.map(m => "• " + m.material).join("\n")
+    : "V pracovním adresáři jsem našel všechny podklady, které jsem hledal:\n" +
+      supplied.map(d => "• " + (d.material || d.path)).join("\n")
+
+  const answer = await ask(
+    inventoryLine + "\n\n" +
+    "Soudy v takových věcech posuzují:\n" +
+    framework.criteria.map(c => "• " + c.criterion).join("\n") + "\n\n" +
+    "Nahrajte prosím dokumenty, které k tomu máte - smlouvy, obchodní podmínky, výzvy, korespondenci, " +
+    "faktury, protokoly - a do textu napište skutečnosti, které z dokumentů neplynou, ale pro " +
+    "posouzení jsou rozhodné: co bylo ujednáno ústně, jak to fakticky probíhalo, kdy se co stalo. " +
+    "Pokud nic dalšího nemáte, řekněte to a já budu pokračovat s tím, co je, a v závěru to uvedu.",
+    { options: ["Nahrál jsem, co mám", "Nic dalšího nemám, pokračuj"] })
+
+  const statedFacts = answer.answered && answer.text ? answer.text.trim() : ""
+  if (!answer.answered) {
+    log("Dožádání zůstalo bez odpovědi - pokračuji s tím, co je k dispozici")
+  }
+  if (statedFacts) {
+    log("Uživatel doplnil skutečnosti, které v dokumentech nejsou")
+  }
+  if (answer.answered && answer.files.length > 0) {
+    log("Uživatel nahrál " + answer.files.length + " soubor(ů) - přiřazuji je k požadovaným podkladům")
+    // Which upload covers which requested material is a judgement call, so ask an agent - counting
+    // files would silently declare everything supplied after a single upload.
+    const wanted = stillMissing.length > 0
+      ? stillMissing.map(m => "- [" + m.materialId + "] " + m.material)
+      : framework.requiredMaterials.map((m, i) => "- [M" + i + "] " + m.material)
+    const matched = await agent(
+      BRIEF + "\n\nUživatel právě nahrál tyto soubory:\n" +
+      answer.files.map(p => "- " + p).join("\n") + "\n\n" +
+      "Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému podkladu níže. " +
+      "Do 'present' dej jen ty, které jsi opravdu pokryl, s jejich materialId a cestou; soubor, " +
+      "který k žádnému z nich nepatří, ale pro věc je relevantní, dej do 'present' také a do " +
+      "'materialId' mu napiš [X]. Do 'missing' vrať ty požadované podklady, které ani po nahrání " +
+      "nemáš.\n\nPožadované podklady:\n" + wanted.join("\n") + "\n\nStructured output only.",
+      { label: "přiřazení nahraných podkladů", schema: INVENTORY })
+      .catch(() => null)
+    if (matched) {
+      supplied = supplied.concat(matched.present)
+      stillMissing = matched.missing
+    }
+  }
+
+  const missingAfterAsk = stillMissing.map(m => m.material)
 
   phase("Extrakce")
   // The synthesizer has no research tools, so a file path in its prompt is a fact it can never read.
@@ -249,6 +303,12 @@ export default async function (args) {
     BRIEF + "\n\nNapiš právní stanovisko k otázce výše.\n\n" +
     "Ověřená zjištění (každé se zdrojem, doslovnou citací a poznámkou z ověření):\n" + block + "\n\n" +
     "Podklady klienta, na které se závěry aplikují:\n" + clientDocuments + "\n\n" +
+    // Kept apart from the extracted facts on purpose: these carry no document and no quote, so the
+    // opinion may rest on them only as the client's assertion, never as something proven.
+    (statedFacts
+      ? "Skutečnosti, které klient uvedl sám a NEJSOU ničím doloženy - ber je jako jeho tvrzení, " +
+        "u závěru, který na nich stojí, to výslovně napiš a dej to do caveats:\n" + statedFacts + "\n\n"
+      : "") +
     (refuted.length > 0
       ? "Tato zjištění byla VYVRÁCENA a nesmíš o ně opřít závěr: " +
         refuted.map(v => v.finding.source + " (" + v.verdict.evidence + ")").join("; ") + "\n\n"
@@ -277,6 +337,7 @@ export default async function (args) {
     refutedSources: refuted.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
     unverifiedSources: unverified.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
     missingMaterials: missingAfterAsk,
+    clientStatedFacts: statedFacts,
     stats: { issues: frame.issues.length, findings: allFindings.length, checked: checked.length,
       holding: holding.length, refuted: refuted.length,
       unverified: unverified.length }
