@@ -50,12 +50,13 @@ impl AresClient {
     }
 
     fn url_for(&self, path: &str) -> String {
-        resolve_url(&self.base_url, path)
+        cdx_common::http::resolve_url(&self.base_url, path)
     }
 }
 
 /// Reads a ureq response, returning the body on success or an error carrying
-/// the status, method, URL and body on failure (was cdx_common::http::read_body).
+/// the status, method, URL and body on failure. Stays local: each plugin's
+/// error type and message differ, so there is nothing shared to lift out.
 fn read_response(
     result: Result<ureq::Response, ureq::Error>,
     url: &str,
@@ -71,14 +72,3 @@ fn read_response(
     }
 }
 
-/// Resolves a request path against a base URL (was cdx_common::http::resolve_url).
-fn resolve_url(base_url: &str, path: &str) -> String {
-    if path.starts_with("http://") || path.starts_with("https://") {
-        return path.to_string();
-    }
-    if path.starts_with('/') {
-        format!("{base_url}{path}")
-    } else {
-        format!("{base_url}/{path}")
-    }
-}

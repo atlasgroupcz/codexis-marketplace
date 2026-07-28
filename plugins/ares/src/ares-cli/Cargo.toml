@@ -4,7 +4,7 @@ version = "0.2.3"
 edition = "2021"
 
 [dependencies]
-cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["ico"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["http", "ico"] }
 clap = { version = "4", features = ["derive"] }
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
 serde = { version = "1", features = ["derive"] }
