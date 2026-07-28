@@ -39,8 +39,11 @@ the shared machinery (`provider.py`, `assertions.py`, `run.py`) stays central in
 keeps them in `plugins/<name>/tests/fixtures/`, referenced by a relative `source:`.
 
 Every marketplace plugin must own an install contract
-(`tests/install/expected.json`) - `tests/test_conformance.py` fails the build
-otherwise. A behavioral (promptfoo) config is recommended but not enforced: the
+(`tests/install/expected.json`) naming **exactly** the skills under `skills/` -
+`tests/test_conformance.py` fails the build otherwise. The contract is consumed
+as an allowlist by the marketplace tier: a skill it omits is never install- or
+uninstall-tested, and nothing else notices, so the two must not drift apart.
+A behavioral (promptfoo) config is recommended but not enforced: the
 eval tier is opt-in in CI, so requiring a config that does not routinely run adds
 friction without a signal. Add one when a plugin's behavior is worth an
 LLM-driven check; the requirement can return once the eval tier becomes a
@@ -138,8 +141,45 @@ plugins/plugin-name/
 │       ├── SKILL.md      # Skill definition
 │       └── references/   # Type-specific implementations
 ├── workflow-templates/   # Workflow scripts the chat can fetch and adapt (*.js)
+├── README.md             # User-facing overview (required, Czech)
 └── shared/               # Shared resources
 ```
+
+## Plugin README
+
+Every plugin needs a `README.md`; `tests/test_conformance.py` fails the build
+without one. It is the only text that tells a user what they just installed, and
+it ships publicly (`dist-exclusions.txt` anchors `/README.md` to the repo root,
+so `plugins/*/README.md` reaches the dist).
+
+**Start at `## Co to je?` - no `# Title`, no tagline.** The daemon renders the
+README on the plugin page underneath a header it builds from the manifest
+(`i18n.<lang>.displayName` as the heading, `i18n.<lang>.description` as the
+subtitle). A README that opens with its own title and one-liner prints the plugin
+name twice and says the same thing twice. `##` is therefore the top level a
+README may use.
+
+Write it for the person using the plugin, not the person building it. Follow
+`plugins/codexis/README.md`: `## Co to je?`, what the source contains,
+`## K čemu se to hodí v praxi?`, and the official source. Add
+`## Nastavení` when the user must supply a key themselves, `## Součásti pluginu`
+when the plugin ships an app, and `## Doporučená kombinace` to point at plugins
+that pair with it.
+
+Two rules learned the hard way:
+
+- **Never describe a capability you have not read in the plugin's own
+  `SKILL.md` / `references/`.** The first draft claimed the Czech cadastre
+  returns owner names; `references/api.md` says *"this API has no owners"*.
+  A confident wrong claim reads as a broken plugin.
+- **Keep out anything that ages on its own** - our libraries and models, exact
+  counts ("seven courts"), schedules ("every morning at 7"). Name the capability,
+  not the implementation. Defaults that only change by a deliberate edit (an
+  e-mail toggle) are fine and worth stating.
+
+The conformance test checks only that the file exists. Contents are a review
+concern - pinning prose to manifests constrains how the README may be written
+and catches only cosmetic drift.
 
 ## Workflow templates
 

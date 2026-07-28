@@ -1,7 +1,3 @@
-# ONEPOST - datové schránky
-
-Propojení AI agenta s **ONEPOSTem** pro práci s datovými schránkami (ISDS). Agent umí pracovat se schránkami, složkami, zprávami, přílohami a koncepty, vyhledávat ve zprávách, stahovat nové zprávy z ISDS a odesílat připravené koncepty.
-
 ## Nastavení
 
 Nastavte API klíč přes aplikaci **ONEPOST API klíč**:
