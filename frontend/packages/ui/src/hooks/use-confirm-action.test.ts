@@ -8,7 +8,12 @@ describe('useConfirmAction', () => {
   })
 
   afterEach(() => {
-    vi.runOnlyPendingTimers()
+    // A test that leaves the action armed leaves its auto-disarm timer pending,
+    // and draining it here fires setConfirming(false) - a state update, so it
+    // has to happen inside act() like any other.
+    act(() => {
+      vi.runOnlyPendingTimers()
+    })
     vi.useRealTimers()
   })
 

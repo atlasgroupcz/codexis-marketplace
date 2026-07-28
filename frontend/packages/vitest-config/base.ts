@@ -1,5 +1,4 @@
 import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import type { ViteUserConfig } from 'vitest/config'
 
 // The single source of truth for which dependencies Vitest must inline.
@@ -15,7 +14,10 @@ export const inlineDeps = ['zod']
 // Vitest settings shared by the plugin component UIs. Consumers layer their own
 // setupFiles, coverage and timeouts on top via `mergeConfig`.
 export const baseConfig = {
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react()],
+  // Vite 8 resolves tsconfig `paths` natively; the vite-tsconfig-paths plugin
+  // that used to do this now warns on every run that it is redundant.
+  resolve: { tsconfigPaths: true },
   test: {
     environment: 'jsdom',
     globals: true,

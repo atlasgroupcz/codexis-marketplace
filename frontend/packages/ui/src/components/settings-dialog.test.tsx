@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { SettingsDialog } from './settings-dialog'
 import type { NotifyLabels } from './notify-settings'
 import type { ConnectionSectionLabels } from './connection-section'
@@ -50,7 +50,7 @@ describe('SettingsDialog', () => {
     expect(screen.queryByText('Nepřipojeno')).toBeNull()
   })
 
-  it('renders both sections and saves notify values via the footer Save', () => {
+  it('renders both sections and saves notify values via the footer Save', async () => {
     const onSaveNotify = vi.fn()
     const onSaveConnection = vi.fn()
     render(
@@ -81,7 +81,11 @@ describe('SettingsDialog', () => {
 
     // connection self-manages via its own inline control, independent of notify
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'XYZ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Uložit' }))
+    // The connection section finishes saving in a `.finally` microtask; drain it
+    // inside act() so its setSaving(false) is not an update outside one.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Uložit' }))
+    })
     expect(onSaveConnection).toHaveBeenCalledWith({ apiKey: 'XYZ' })
     expect(onSaveNotify).not.toHaveBeenCalled()
 
