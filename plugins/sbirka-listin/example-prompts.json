@@ -11,17 +11,17 @@
     {
       "id": "ucetni-zaverka",
       "i18n": {
-        "cs": { "prompt": "Stáhni poslední účetní závěrku firmy s IČO 27082440." },
-        "en": { "prompt": "Download the latest financial statements of company 27082440." },
-        "sk": { "prompt": "Stiahni poslednú účtovnú závierku firmy s IČO 27082440." }
+        "cs": { "prompt": "Stáhni poslední účetní závěrku firmy s IČO 45274649." },
+        "en": { "prompt": "Download the latest financial statements of company 45274649." },
+        "sk": { "prompt": "Stiahni poslednú účtovnú závierku firmy s IČO 45274649." }
       }
     },
     {
       "id": "hlidani-novych-listin",
       "i18n": {
-        "cs": { "prompt": "Hlídej, jestli firma s IČO 27082440 založí do sbírky listin novou listinu." },
-        "en": { "prompt": "Watch company 27082440 and tell me when it files a new document." },
-        "sk": { "prompt": "Sleduj, či firma s IČO 27082440 založí do zbierky listín novú listinu." }
+        "cs": { "prompt": "Hlídej, jestli firma s IČO 00177041 založí do sbírky listin novou listinu." },
+        "en": { "prompt": "Watch company 00177041 and tell me when it files a new document." },
+        "sk": { "prompt": "Sleduj, či firma s IČO 00177041 založí do zbierky listín novú listinu." }
       }
     }
   ]

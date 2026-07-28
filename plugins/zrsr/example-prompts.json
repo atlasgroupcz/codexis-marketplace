@@ -11,9 +11,9 @@
     {
       "id": "hledani-podle-nazvu",
       "i18n": {
-        "cs": { "prompt": "Najdi ve slovenském registru firmy s názvem Tatra banka." },
-        "en": { "prompt": "Find companies named Tatra banka in the Slovak register." },
-        "sk": { "prompt": "Nájdi v slovenskom registri firmy s názvom Tatra banka." }
+        "cs": { "prompt": "Najdi ve slovenském registru firmy s názvem Železnice Slovenskej republiky." },
+        "en": { "prompt": "Find entities named Železnice Slovenskej republiky in the Slovak register." },
+        "sk": { "prompt": "Nájdi v slovenskom registri firmy s názvom Železnice Slovenskej republiky." }
       }
     },
     {
