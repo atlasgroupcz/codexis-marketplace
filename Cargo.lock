@@ -808,7 +808,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "katastr-cli"
+name = "katastr"
 version = "0.1.0"
 dependencies = [
  "cdx-cgi",
@@ -1282,7 +1282,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sbirka-listin-cli"
+name = "sbirka-listin"
 version = "1.0.0"
 dependencies = [
  "anyhow",

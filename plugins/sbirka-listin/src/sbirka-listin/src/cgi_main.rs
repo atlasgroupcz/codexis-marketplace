@@ -21,11 +21,11 @@ use cdx_watch::change::{confirm_changes, unconfirmed_count};
 use cdx_watch::track::check_all;
 use serde_json::{json, Value};
 
-use sbirka_listin_cli::api;
-use sbirka_listin_cli::dokument;
-use sbirka_listin_cli::http::PortalClient;
-use sbirka_listin_cli::notify;
-use sbirka_listin_cli::watch::{self, OverviewRow, SbirkaListinWatcher, Snapshot};
+use sbirka_listin_core::api;
+use sbirka_listin_core::dokument;
+use sbirka_listin_core::http::PortalClient;
+use sbirka_listin_core::notify;
+use sbirka_listin_core::watch::{self, OverviewRow, SbirkaListinWatcher, Snapshot};
 
 fn main() -> ExitCode {
     let method = env::var("REQUEST_METHOD").unwrap_or_else(|_| "GET".into());

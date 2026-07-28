@@ -1,10 +1,10 @@
 [package]
-name = "sbirka-listin-cli"
+name = "sbirka-listin"
 version = "1.0.0"
 edition = "2021"
 
 [lib]
-name = "sbirka_listin_cli"
+name = "sbirka_listin_core"
 path = "src/lib.rs"
 
 # Two binaries share the crate's logic through the lib: the system-wide CLI and

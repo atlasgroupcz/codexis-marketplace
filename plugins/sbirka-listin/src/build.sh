@@ -13,10 +13,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # plugins/sbirka-li
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"                    # plugins/sbirka-listin
 source "$SCRIPT_DIR/../../../shared/scripts/plugin-build.sh"
 
-# build_plugin_crate ensures the sbirka-listin-cli crate is built (the standalone
+# build_plugin_crate ensures the sbirka-listin crate is built (the standalone
 # fallback, when run without the one-pass workspace build) and installs the CLI;
 # sbirka-listin-cgi comes from that same crate build, so it just installs.
-build_plugin_crate "$SCRIPT_DIR/sbirka-listin-cli" "sbirka-listin-cli"
+build_plugin_crate "$SCRIPT_DIR/sbirka-listin" "sbirka-listin-cli"
 install_workspace_binary sbirka-listin-cgi "$PLUGIN_DIR/components/sbirka-listin"
 
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

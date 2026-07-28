@@ -2,7 +2,7 @@
 //! `cli` module.
 
 fn main() {
-    std::process::exit(match sbirka_listin_cli::cli::run() {
+    std::process::exit(match sbirka_listin_core::cli::run() {
         Ok(()) => 0,
         Err(e) => {
             eprintln!("ERROR: {e:#}");
