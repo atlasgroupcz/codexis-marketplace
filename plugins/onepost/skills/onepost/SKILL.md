@@ -1,6 +1,7 @@
 ---
 uuid: 2b229bd1-c3ed-4aed-aea8-1a1d9a5b953c
 name: onepost
+icon: icon.svg
 description: 'ONEPOST - datové schránky (ISDS) přes ONEPOST API. Use for ONEPOST / ISDS Czech data box work: list datové schránky, folders, messages, attachments, search messages, download attachments, upload attachments, create/update/send concepts, receive new ISDS messages, ZFO, datové zprávy. Triggers on "ONEPOST", "datová schránka", "datové schránky", "ISDS", "ZFO", "zprávy", "příloha", "koncept", "odeslat koncept", "vyhledej zprávu", "stáhni zprávy", "přijmi zprávy".'
 version: 0.4.0
 jurisdictions: [CZ]

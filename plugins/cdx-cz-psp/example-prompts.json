@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "projednavane-novely",
+      "i18n": {
+        "cs": { "prompt": "Jaké novely zákoníku práce právě projednává Poslanecká sněmovna?" },
+        "en": { "prompt": "Which Labour Code amendments is the Chamber of Deputies currently debating?" },
+        "sk": { "prompt": "Aké novely zákonníka práce práve prerokúva česká Poslanecká snemovňa?" }
+      }
+    },
+    {
+      "id": "prubeh-projednavani",
+      "i18n": {
+        "cs": { "prompt": "Jak probíhalo ve sněmovně projednávání zákona o kybernetické bezpečnosti?" },
+        "en": { "prompt": "How did the Chamber of Deputies handle the cybersecurity act?" },
+        "sk": { "prompt": "Ako prebiehalo v snemovni prerokovanie zákona o kybernetickej bezpečnosti?" }
+      }
+    },
+    {
+      "id": "interpelace-k-tematu",
+      "i18n": {
+        "cs": { "prompt": "Najdi interpelace poslanců k tématu cen energií." },
+        "en": { "prompt": "Find MPs' interpellations on energy prices." },
+        "sk": { "prompt": "Nájdi interpelácie poslancov k téme cien energií." }
+      }
+    }
+  ]
+}

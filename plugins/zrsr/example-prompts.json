@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "subjekt-podle-ico",
+      "i18n": {
+        "cs": { "prompt": "Ověř slovenský subjekt s IČO 686930 - název, právní formu a jestli je aktivní." },
+        "en": { "prompt": "Check Slovak entity 686930 - name, legal form and whether it is still active." },
+        "sk": { "prompt": "Over slovenský subjekt s IČO 686930 - názov, právnu formu a či je aktívny." }
+      }
+    },
+    {
+      "id": "hledani-podle-nazvu",
+      "i18n": {
+        "cs": { "prompt": "Najdi ve slovenském registru firmy s názvem Železnice Slovenskej republiky." },
+        "en": { "prompt": "Find entities named Železnice Slovenskej republiky in the Slovak register." },
+        "sk": { "prompt": "Nájdi v slovenskom registri firmy s názvom Železnice Slovenskej republiky." }
+      }
+    },
+    {
+      "id": "predmety-podnikani",
+      "i18n": {
+        "cs": { "prompt": "Jaké předměty podnikání má zapsané slovenský živnostník?" },
+        "en": { "prompt": "What business activities does a Slovak sole trader have registered?" },
+        "sk": { "prompt": "Aké predmety podnikania má zapísané slovenský živnostník?" }
+      }
+    }
+  ]
+}

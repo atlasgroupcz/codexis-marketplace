@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "prover-protistranu",
+      "i18n": {
+        "cs": { "prompt": "Ověř v ARES firmu s IČO 27082440 - sídlo, aktivitu a jestli je plátcem DPH." },
+        "en": { "prompt": "Check company 27082440 in ARES - address, whether it is active and VAT-registered." },
+        "sk": { "prompt": "Over v ARES firmu s IČO 27082440 - sídlo, či je aktívna a či je platiteľom DPH." }
+      }
+    },
+    {
+      "id": "statutarni-organ",
+      "i18n": {
+        "cs": { "prompt": "Kdo je jednatelem a společníky firmy s IČO 27082440?" },
+        "en": { "prompt": "Who are the statutory bodies and partners of company 27082440?" },
+        "sk": { "prompt": "Kto je konateľom a spoločníkmi firmy s IČO 27082440?" }
+      }
+    },
+    {
+      "id": "hledani-podle-nazvu",
+      "i18n": {
+        "cs": { "prompt": "Najdi v ARES firmy, které mají v názvu advokátní kancelář." },
+        "en": { "prompt": "Find companies in ARES with advokátní kancelář in their name." },
+        "sk": { "prompt": "Nájdi v ARES firmy, ktoré majú v názve advokátní kancelář." }
+      }
+    }
+  ]
+}

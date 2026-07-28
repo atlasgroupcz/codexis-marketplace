@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "smlouvy-podle-predmetu",
+      "i18n": {
+        "cs": { "prompt": "Najdi v registru smluv veřejné smlouvy na rekonstrukci silnice." },
+        "en": { "prompt": "Find public contracts for road reconstruction in the Register of Contracts." },
+        "sk": { "prompt": "Nájdi v českom registri zmlúv verejné zmluvy na rekonštrukciu cesty." }
+      }
+    },
+    {
+      "id": "objem-zakazek",
+      "i18n": {
+        "cs": { "prompt": "Kolik smluv na IT služby je v registru smluv a za jakou celkovou částku?" },
+        "en": { "prompt": "How many IT services contracts are in the register and what is their total value?" },
+        "sk": { "prompt": "Koľko zmlúv na IT služby je v registri a za akú celkovú sumu?" }
+      }
+    },
+    {
+      "id": "smlouvy-dodavatele",
+      "i18n": {
+        "cs": { "prompt": "Vypiš veřejné smlouvy, které uzavřela firma s IČO 27082440." },
+        "en": { "prompt": "List the public contracts signed by company 27082440." },
+        "sk": { "prompt": "Vypíš verejné zmluvy, ktoré uzavrela firma s IČO 27082440." }
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "poskytovatel-podle-ico",
+      "i18n": {
+        "cs": { "prompt": "Najdi poskytovatele zdravotních služeb s IČO 27085031 a vypiš jeho místa péče." },
+        "en": { "prompt": "Find the healthcare provider with company number 27085031 and list its places of care." },
+        "sk": { "prompt": "Nájdi poskytovateľa zdravotných služieb s IČO 27085031 a vypíš jeho miesta starostlivosti." }
+      }
+    },
+    {
+      "id": "obor-v-kraji",
+      "i18n": {
+        "cs": { "prompt": "Které urologické ordinace jsou ve Středočeském kraji?" },
+        "en": { "prompt": "Which urology practices are in the Central Bohemian Region?" },
+        "sk": { "prompt": "Ktoré urologické ambulancie sú v Stredočeskom kraji?" }
+      }
+    },
+    {
+      "id": "ordinacni-doba",
+      "i18n": {
+        "cs": { "prompt": "Jaká je ordinační doba Nemocnice Příbram a jaká má oddělení?" },
+        "en": { "prompt": "What are the opening hours and departments of Nemocnice Příbram?" },
+        "sk": { "prompt": "Aké sú ordinačné hodiny Nemocnice Příbram a aké má oddelenia?" }
+      }
+    }
+  ]
+}

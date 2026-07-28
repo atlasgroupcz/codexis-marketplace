@@ -1,7 +1,3 @@
-# Dokumenty - Word, PDF, Excel, PowerPoint
-
-**Řekněte si o dokument. Dostanete hotový soubor, ne návod, jak si ho vyrobit.**
-
 ## Co to je?
 
 Doplněk, díky kterému umí asistent pracovat s běžnými kancelářskými dokumenty - smlouvami,
