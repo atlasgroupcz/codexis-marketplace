@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "atributy-parcely",
+      "i18n": {
+        "cs": { "prompt": "Zjisti výměru, druh pozemku a registr parcely v katastrálním území Ružinov." },
+        "en": { "prompt": "Find the area, land use and register of a parcel in the Ružinov cadastral unit." },
+        "sk": { "prompt": "Zisti výmeru, druh pozemku a register parcely v katastrálnom území Ružinov." }
+      }
+    },
+    {
+      "id": "list-vlastnictva",
+      "i18n": {
+        "cs": { "prompt": "Kde získám list vlastnictví k parcele v katastrálním území Ružinov?" },
+        "en": { "prompt": "Where do I get the title deed for a parcel in the Ružinov cadastral unit?" },
+        "sk": { "prompt": "Kde získam list vlastníctva k parcele v katastrálnom území Ružinov?" }
+      }
+    },
+    {
+      "id": "hranice-na-mape",
+      "i18n": {
+        "cs": { "prompt": "Ukaž mi na mapě hranice parcely v katastrálním území Petržalka." },
+        "en": { "prompt": "Show me the boundaries of a parcel in the Petržalka cadastral unit on a map." },
+        "sk": { "prompt": "Ukáž mi na mape hranice parcely v katastrálnom území Petržalka." }
+      }
+    }
+  ]
+}

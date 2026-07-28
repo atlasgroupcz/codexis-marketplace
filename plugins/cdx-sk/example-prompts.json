@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "znenie-zakona",
+      "i18n": {
+        "cs": { "prompt": "Najdi v e-Zbierce aktuální znění zákona o slobodnom prístupe k informáciám." },
+        "en": { "prompt": "Find the current wording of the Slovak freedom of information act in e-Zbierka." },
+        "sk": { "prompt": "Nájdi v e-Zbierke aktuálne znenie zákona o slobodnom prístupe k informáciám." }
+      }
+    },
+    {
+      "id": "ustavny-sud",
+      "i18n": {
+        "cs": { "prompt": "Najdi rozhodnutí Ústavního soudu SR k ochraně osobních údajů." },
+        "en": { "prompt": "Find Slovak Constitutional Court decisions on personal data protection." },
+        "sk": { "prompt": "Nájdi rozhodnutia Ústavného súdu SR k ochrane osobných údajov." }
+      }
+    },
+    {
+      "id": "spravny-sud",
+      "i18n": {
+        "cs": { "prompt": "Najdi rozhodnutí Nejvyššího správního soudu SR k daňovým sporům." },
+        "en": { "prompt": "Find Slovak Supreme Administrative Court decisions on tax disputes." },
+        "sk": { "prompt": "Nájdi rozhodnutia Najvyššieho správneho súdu SR k daňovým sporom." }
+      }
+    }
+  ]
+}

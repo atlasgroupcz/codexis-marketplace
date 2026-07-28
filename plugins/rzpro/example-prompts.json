@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "prostredek-podle-nazvu",
+      "i18n": {
+        "cs": { "prompt": "Najdi v registru zdravotnických prostředků katetry a vypiš výrobce a rizikovou třídu." },
+        "en": { "prompt": "Find catheters in the medical device register and list manufacturer and risk class." },
+        "sk": { "prompt": "Nájdi v registri zdravotníckych pomôcok katétre a vypíš výrobcu a rizikovú triedu." }
+      }
+    },
+    {
+      "id": "katalogove-cislo",
+      "i18n": {
+        "cs": { "prompt": "K jakému zdravotnickému prostředku patří katalogové číslo 4157744?" },
+        "en": { "prompt": "Which medical device does catalogue number 4157744 belong to?" },
+        "sk": { "prompt": "Ku ktorej zdravotníckej pomôcke patrí katalógové číslo 4157744?" }
+      }
+    },
+    {
+      "id": "prostredky-vyrobce",
+      "i18n": {
+        "cs": { "prompt": "Jaké zdravotnické prostředky má v registru ohlášené firma B. Braun?" },
+        "en": { "prompt": "Which medical devices has B. Braun notified in the register?" },
+        "sk": { "prompt": "Aké zdravotnícke pomôcky má v registri ohlásené firma B. Braun?" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "vyhlaska-obce",
+      "i18n": {
+        "cs": { "prompt": "Najdi obecně závaznou vyhlášku Brna o nočním klidu." },
+        "en": { "prompt": "Find the Brno municipal ordinance on night-time quiet hours." },
+        "sk": { "prompt": "Nájdi všeobecne záväznú vyhlášku Brna o nočnom pokoji." }
+      }
+    },
+    {
+      "id": "vyhlasky-k-tematu",
+      "i18n": {
+        "cs": { "prompt": "Jaké vyhlášky k odpadům vydalo město Plzeň?" },
+        "en": { "prompt": "Which waste-management ordinances has the city of Plzeň issued?" },
+        "sk": { "prompt": "Aké vyhlášky k odpadom vydalo mesto Plzeň?" }
+      }
+    },
+    {
+      "id": "obce-s-vyhlaskou",
+      "i18n": {
+        "cs": { "prompt": "Které obce mají vyhlášku o zákazu podomního prodeje?" },
+        "en": { "prompt": "Which municipalities have an ordinance banning door-to-door sales?" },
+        "sk": { "prompt": "Ktoré obce majú vyhlášku o zákaze podomového predaja?" }
+      }
+    }
+  ]
+}
