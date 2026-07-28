@@ -1,5 +1,5 @@
 [package]
-name = "katastr-cli"
+name = "katastr"
 version = "0.1.0"
 edition = "2021"
 license = "PROPRIETARY"

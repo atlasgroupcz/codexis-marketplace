@@ -28,7 +28,7 @@ members = [
   "plugins/codexis/src/cdx-cli",
   "plugins/codexis/src/cdxctl",
   "plugins/kataster-sk/src/kataster-sk-cli",
-  "plugins/katastr/src/katastr-cli",
+  "plugins/katastr/src/katastr",
   "plugins/leciva/src/leciva-cli",
   "plugins/nrpzs/src/nrpzs-cli",
   "plugins/obchodny-register-sk/src/orsr-cli",
@@ -36,7 +36,7 @@ members = [
   "plugins/register-zmluv/src/register-zmluv",
   "plugins/registr-smluv/src/registr-smluv",
   "plugins/rzpro/src/rzpro-cli",
-  "plugins/sbirka-listin/src/sbirka-listin-cli",
+  "plugins/sbirka-listin/src/sbirka-listin",
   "plugins/video-analyze/src/video-analyze",
   "plugins/zrsr/src/zrsr-cli",
 ]
