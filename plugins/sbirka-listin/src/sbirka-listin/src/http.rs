@@ -39,7 +39,7 @@ pub struct PortalClient {
 
 impl PortalClient {
     pub fn new() -> Result<Self> {
-        let base_url = base_url_from_env(BASE_URL_ENV, DEFAULT_BASE_URL);
+        let base_url = cdx_common::http::base_url_from_env(BASE_URL_ENV, DEFAULT_BASE_URL);
         // ureq keeps a connection pool on the Agent, so the two-to-four GETs a
         // single fetch makes against or.justice.cz reuse the TCP+TLS connection.
         let agent = ureq::AgentBuilder::new()
@@ -52,7 +52,7 @@ impl PortalClient {
     /// GET a page and return its HTML. Retries on 429/5xx; a 404 is an answer,
     /// not something to retry.
     pub fn get_html(&self, path: &str) -> Result<String> {
-        let resp = self.fetch(&resolve_url(&self.base_url, path))?;
+        let resp = self.fetch(&cdx_common::http::resolve_url(&self.base_url, path))?;
         let mut buf = Vec::new();
         resp.into_reader().read_to_end(&mut buf)?;
         Ok(String::from_utf8_lossy(&buf).into_owned())
@@ -60,7 +60,7 @@ impl PortalClient {
 
     /// GET a document's bytes plus its Content-Type. Retries on 429/5xx.
     pub fn get_bytes(&self, path: &str) -> Result<Document> {
-        let resp = self.fetch(&resolve_url(&self.base_url, path))?;
+        let resp = self.fetch(&cdx_common::http::resolve_url(&self.base_url, path))?;
         let content_type = resp
             .header("Content-Type")
             .map(|v| v.split(';').next().unwrap_or(v).trim().to_string());
@@ -77,18 +77,18 @@ impl PortalClient {
             match self.agent.get(url).set("User-Agent", USER_AGENT_VALUE).call() {
                 Ok(resp) => return Ok(resp),
                 Err(ureq::Error::Status(code, resp)) => {
-                    if retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     return Err(anyhow!(
                         "HTTP {} on GET {url}",
-                        format_status(code, resp.status_text())
+                        cdx_common::http::format_status(code, resp.status_text())
                     ));
                 }
                 Err(ureq::Error::Transport(transport)) => {
                     if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     return Err(anyhow!("GET {url} failed: {transport}"));
@@ -99,42 +99,3 @@ impl PortalClient {
     }
 }
 
-/// Reads an env var (trimmed of a trailing slash), falling back to `default`.
-fn base_url_from_env(var: &str, default: &str) -> String {
-    std::env::var(var)
-        .unwrap_or_else(|_| default.to_string())
-        .trim_end_matches('/')
-        .to_string()
-}
-
-/// Resolves a request path against a base URL: absolute `http(s)://` paths pass
-/// through; otherwise the path is appended to the base (a leading `/` is kept).
-fn resolve_url(base_url: &str, path: &str) -> String {
-    if path.starts_with("http://") || path.starts_with("https://") {
-        return path.to_string();
-    }
-    if path.starts_with('/') {
-        format!("{base_url}{path}")
-    } else {
-        format!("{base_url}/{path}")
-    }
-}
-
-/// `"<code> <reason>"`, or just the code when the response carries no reason.
-fn format_status(code: u16, reason: &str) -> String {
-    if reason.is_empty() {
-        code.to_string()
-    } else {
-        format!("{code} {reason}")
-    }
-}
-
-/// Whether a status is worth retrying (429 or any 5xx).
-fn retryable_status(code: u16) -> bool {
-    code == 429 || (500..=599).contains(&code)
-}
-
-/// Exponential backoff: 250ms · 2^attempt.
-fn backoff(attempt: usize) -> Duration {
-    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
-}

@@ -18,7 +18,7 @@ name = "sbirka-listin-cgi"
 path = "src/cgi_main.rs"
 
 [dependencies]
-cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["ico", "store", "time"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["http", "ico", "store", "time"] }
 cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
 cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }

@@ -1,71 +1,24 @@
-//! Small reqwest helpers shared by the reqwest-based lookup plugins (ares,
-//! zrsr, kataster-sk, obchodny-register-sk, …).
+//! URL, retry and prefix-table helpers shared by the lookup plugins.
 //!
-//! Only the byte-identical, self-contained helpers live here - status
-//! formatting, body reading, retry/backoff and URL joining. Each plugin keeps
-//! its own `Client` struct and request logic, which genuinely diverge (single
-//! vs dual base URL, plain GET vs retry loop vs retry+cache, cookies, etc.).
+//! These once lived here in a reqwest flavour. When the plugins moved to ureq
+//! they each re-implemented them locally rather than porting the shared module,
+//! leaving `(was cdx_common::http::…)` breadcrumbs behind and this module dead
+//! behind a feature nobody enabled. This is the ureq-era replacement.
+//!
+//! Only the stateless helpers that are genuinely identical across plugins live
+//! here. Request logic - the per-plugin `Client` structs and the search/get
+//! flows - stays where it is: measured across the plugins, those really do
+//! differ implementation by implementation, and folding them together would
+//! trade a real difference for a false one.
+//!
+//! Nothing here needs an HTTP crate, so the module is std-only and the `http`
+//! feature carries no dependencies. Statuses are plain `u16`, which is what
+//! ureq reports.
 
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
-use reqwest::blocking::Response;
-use reqwest::StatusCode;
-
-/// `"<code> <reason>"`, or just the code when there is no canonical reason.
-pub fn format_status(status: StatusCode) -> String {
-    match status.canonical_reason() {
-        Some(reason) => format!("{} {}", status.as_u16(), reason),
-        None => status.as_u16().to_string(),
-    }
-}
-
-/// Reads a response body, returning it on success or an error carrying the
-/// status, method, URL and body on failure.
-pub fn read_body(resp: Response, url: &str, method: &str) -> Result<String> {
-    let status = resp.status();
-    let body = resp.text().unwrap_or_default();
-    if status.is_success() {
-        Ok(body)
-    } else {
-        Err(anyhow!(
-            "HTTP {status} on {method} {url}\n{body}",
-            status = format_status(status),
-            method = method,
-            url = url,
-            body = body.trim()
-        ))
-    }
-}
-
-/// Reads an env var (trimmed of a trailing slash), falling back to `default`.
-pub fn base_url_from_env(var: &str, default: &str) -> String {
-    std::env::var(var)
-        .unwrap_or_else(|_| default.to_string())
-        .trim_end_matches('/')
-        .to_string()
-}
-
-/// Joins a base URL and a path; an empty path yields the base unchanged.
-pub fn join_url(base: &str, path: &str) -> String {
-    if path.is_empty() {
-        return base.to_string();
-    }
-    format!("{base}/{}", path.trim_start_matches('/'))
-}
-
-/// Whether a status is worth retrying (429 or any 5xx).
-pub fn retryable_status(status: StatusCode) -> bool {
-    status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error()
-}
-
-/// Exponential backoff: 250ms · 2^attempt.
-pub fn backoff(attempt: usize) -> Duration {
-    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
-}
-
-/// Resolves a request path against a base URL: absolute `http(s)://` paths pass
-/// through; otherwise the path is appended to the base (a leading `/` is kept).
+/// Resolves a request path against a base URL. An absolute `http(s)://` path
+/// passes through, so callers can mix full URLs and paths freely.
 pub fn resolve_url(base_url: &str, path: &str) -> String {
     if path.starts_with("http://") || path.starts_with("https://") {
         return path.to_string();
@@ -77,28 +30,155 @@ pub fn resolve_url(base_url: &str, path: &str) -> String {
     }
 }
 
+/// Joins a path onto a base with exactly one separator. Unlike [`resolve_url`]
+/// this always treats `path` as relative; an empty path yields the base.
+pub fn join_url(base: &str, path: &str) -> String {
+    if path.is_empty() {
+        return base.to_string();
+    }
+    format!("{base}/{}", path.trim_start_matches('/'))
+}
+
+/// Base URL from an environment override, falling back to `default`. The
+/// trailing slash is stripped so callers can concatenate without doubling it.
+pub fn base_url_from_env(var: &str, default: &str) -> String {
+    std::env::var(var)
+        .unwrap_or_else(|_| default.to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+/// `"404 Not Found"`, or just `"404"` when the reason phrase is empty.
+pub fn format_status(code: u16, reason: &str) -> String {
+    if reason.is_empty() {
+        code.to_string()
+    } else {
+        format!("{code} {reason}")
+    }
+}
+
+/// Whether a status is worth retrying: rate limiting or a server-side fault.
+pub fn retryable_status(code: u16) -> bool {
+    code == 429 || (500..=599).contains(&code)
+}
+
+/// Exponential backoff for retry `attempt` (0-based): 250ms, 500ms, 1s, …
+pub fn backoff(attempt: usize) -> Duration {
+    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
+}
+
+/// Resolves a display id to its API path by matching the id's leading prefix.
+///
+/// The table stays with the plugin - each has its own document kinds - while the
+/// lookup itself was identical in nine of them.
+pub fn lookup_display_id_prefix<'a>(
+    id: &str,
+    prefixes: &[(&str, &'a str)],
+) -> Result<&'a str, String> {
+    for &(prefix, api_path) in prefixes {
+        if id.starts_with(prefix) {
+            return Ok(api_path);
+        }
+    }
+    Err(format!("Unknown display ID prefix in: {id}"))
+}
+
+/// Resolves a search prefix code to its API path by exact match.
+///
+/// Note the difference from [`lookup_display_id_prefix`]: that one matches the
+/// start of a longer id, this one compares the whole code.
+pub fn lookup_search_prefix<'a>(
+    code: &str,
+    prefixes: &[(&str, &'a str)],
+) -> Result<&'a str, String> {
+    for &(prefix, api_path) in prefixes {
+        if prefix == code {
+            return Ok(api_path);
+        }
+    }
+    Err(format!("Unknown search prefix: {code}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    const PREFIXES: &[(&str, &str)] = &[("SB", "/sbirka"), ("ZZ", "/zakon")];
+
     #[test]
-    fn status_formats_with_reason() {
-        assert_eq!(format_status(StatusCode::NOT_FOUND), "404 Not Found");
+    fn resolve_url_passes_an_absolute_url_through() {
+        assert_eq!(
+            resolve_url("https://base.example", "https://other.example/x"),
+            "https://other.example/x"
+        );
     }
 
     #[test]
-    fn join_and_env_base() {
-        assert_eq!(join_url("https://x/api", "a/b"), "https://x/api/a/b");
-        assert_eq!(join_url("https://x/api", "/a"), "https://x/api/a");
-        assert_eq!(join_url("https://x/api", ""), "https://x/api");
+    fn resolve_url_inserts_exactly_one_slash() {
+        assert_eq!(resolve_url("https://b.example", "/a"), "https://b.example/a");
+        assert_eq!(resolve_url("https://b.example", "a"), "https://b.example/a");
     }
 
     #[test]
-    fn retry_and_backoff() {
-        assert!(retryable_status(StatusCode::TOO_MANY_REQUESTS));
-        assert!(retryable_status(StatusCode::BAD_GATEWAY));
-        assert!(!retryable_status(StatusCode::NOT_FOUND));
+    fn join_url_treats_the_path_as_relative_even_when_it_looks_absolute() {
+        // The difference from resolve_url: no pass-through, no doubled slash.
+        assert_eq!(join_url("https://b.example", "/a"), "https://b.example/a");
+        assert_eq!(join_url("https://b.example", "a"), "https://b.example/a");
+    }
+
+    #[test]
+    fn join_url_returns_the_base_for_an_empty_path() {
+        assert_eq!(join_url("https://b.example", ""), "https://b.example");
+    }
+
+    #[test]
+    fn base_url_from_env_falls_back_and_strips_a_trailing_slash() {
+        let var = "CDX_COMMON_TEST_BASE_URL_UNSET";
+        std::env::remove_var(var);
+        assert_eq!(
+            base_url_from_env(var, "https://d.example/"),
+            "https://d.example"
+        );
+    }
+
+    #[test]
+    fn format_status_omits_an_empty_reason() {
+        assert_eq!(format_status(404, "Not Found"), "404 Not Found");
+        assert_eq!(format_status(404, ""), "404");
+    }
+
+    #[test]
+    fn only_rate_limits_and_server_faults_are_retryable() {
+        assert!(retryable_status(429));
+        assert!(retryable_status(500));
+        assert!(retryable_status(599));
+        assert!(!retryable_status(400));
+        assert!(!retryable_status(404));
+        assert!(!retryable_status(200));
+    }
+
+    #[test]
+    fn backoff_doubles_from_250ms() {
         assert_eq!(backoff(0), Duration::from_millis(250));
-        assert_eq!(backoff(2), Duration::from_millis(1000));
+        assert_eq!(backoff(1), Duration::from_millis(500));
+        assert_eq!(backoff(3), Duration::from_millis(2000));
+    }
+
+    #[test]
+    fn display_id_prefix_matches_the_start_of_the_id() {
+        assert_eq!(
+            lookup_display_id_prefix("SB123/2026", PREFIXES).unwrap(),
+            "/sbirka"
+        );
+        assert!(lookup_display_id_prefix("XX1", PREFIXES)
+            .unwrap_err()
+            .contains("XX1"));
+    }
+
+    #[test]
+    fn search_prefix_needs_the_whole_code_to_match() {
+        assert_eq!(lookup_search_prefix("SB", PREFIXES).unwrap(), "/sbirka");
+        // Would match under lookup_display_id_prefix; must not match here.
+        assert!(lookup_search_prefix("SB123", PREFIXES).is_err());
     }
 }
