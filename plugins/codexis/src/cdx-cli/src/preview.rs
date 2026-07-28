@@ -105,6 +105,7 @@ fn render_preview(path_info: &str) -> Result<Value, PreviewError> {
         "name": file.path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
         "size": size,
         "title": title,
+        "anchor": document.part_id.clone(),
         "externalUrl": canonical_url(&document),
     }))
 }
@@ -168,10 +169,10 @@ fn download_preview(
     document: &DocumentPreviewPath,
     target: &Path,
 ) -> Option<String> {
-    let resource_path = match &document.part_id {
-        Some(part) => format!("doc/{}/preview/{part}", document.doc_id),
-        None => format!("doc/{}/preview", document.doc_id),
-    };
+    // Always download the whole law; the referenced part is surfaced as a scroll
+    // anchor (see render_preview) so the preview shows the full document and jumps
+    // to the paragraph instead of rendering it in isolation.
+    let resource_path = format!("doc/{}/preview", document.doc_id);
     let url = format!("{}{}/{resource_path}", config.base_url, crate::core::http::API_PREFIX);
     let mut curl_args = vec![
         "-sS".to_string(),
@@ -345,16 +346,19 @@ fn first_title(value: &Value) -> Option<String> {
 
 fn canonical_url(document: &DocumentPreviewPath) -> Option<String> {
     let base = read_env(WEB_BASE_URL_ENV)?;
-    let part_suffix = document
+    Some(canonical_url_for_base(&base, document))
+}
+
+/// The web app's document route is `/doc/<DOC_ID>`, with the referenced part as a
+/// URL fragment (`#paragrafN`) so "open in new tab" lands on the whole law scrolled
+/// to the paragraph - matching the backend `CdxSourceUrlBuilder.forDocIdAndPart`.
+fn canonical_url_for_base(base: &str, document: &DocumentPreviewPath) -> String {
+    let fragment = document
         .part_id
         .as_ref()
-        .map(|part| format!("/{part}"))
+        .map(|part| format!("#{part}"))
         .unwrap_or_default();
-    Some(format!(
-        "{}/document/{}/text{part_suffix}",
-        base.trim_end_matches('/'),
-        document.doc_id
-    ))
+    format!("{}/doc/{}{fragment}", base.trim_end_matches('/'), document.doc_id)
 }
 
 fn document_page(title: &str, content_html: &str, stylesheet_href: &str) -> String {
@@ -409,6 +413,27 @@ mod tests {
 
         assert_eq!(text_query(&with_part), "part=paragraf10");
         assert_eq!(text_query(&without_part), "");
+    }
+
+    #[test]
+    fn canonical_url_points_at_the_doc_route_with_the_part_as_a_fragment() {
+        let with_part = DocumentPreviewPath {
+            doc_id: "CR10_2026_04_01".to_string(),
+            part_id: Some("paragraf10".to_string()),
+        };
+        let without_part = DocumentPreviewPath {
+            doc_id: "CR10_2026_04_01".to_string(),
+            part_id: None,
+        };
+
+        assert_eq!(
+            canonical_url_for_base("https://next.codexis.cz/", &with_part),
+            "https://next.codexis.cz/doc/CR10_2026_04_01#paragraf10"
+        );
+        assert_eq!(
+            canonical_url_for_base("https://next.codexis.cz", &without_part),
+            "https://next.codexis.cz/doc/CR10_2026_04_01"
+        );
     }
 
     #[test]
