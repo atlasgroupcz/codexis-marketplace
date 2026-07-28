@@ -8,7 +8,7 @@ pub(crate) use cdx_common::search::{insert_string, insert_u64, insert_bool, load
 pub(crate) type JsonMap = Map<String, Value>;
 
 const DEFAULT_RESULT_LIMIT: u64 = 10;
-const DEFAULT_RESULT_OFFSET: u64 = 1;
+const DEFAULT_RESULT_OFFSET: u64 = 0;
 const DEFAULT_SORT_MODE: &str = "RELEVANCE";
 const DEFAULT_SORT_ORDER: &str = "DESC";
 
@@ -20,7 +20,7 @@ pub(crate) struct SearchBaseArgs {
     #[arg(long, help = "Result limit (default: 10)")]
     pub(crate) limit: Option<u64>,
 
-    #[arg(long, help = "Result offset (default: 1)")]
+    #[arg(long, help = "Result offset, zero-based (default: 0)")]
     pub(crate) offset: Option<u64>,
 
     #[arg(
@@ -360,7 +360,7 @@ mod tests {
         let payload = args.build_payload("CR").unwrap();
         assert_eq!(
             payload,
-            r#"{"limit":10,"offset":1,"query":"from-json","sortBy":"DATE","sortOrder":"ASC"}"#
+            r#"{"limit":10,"offset":0,"query":"from-json","sortBy":"DATE","sortOrder":"ASC"}"#
         );
     }
 
@@ -380,7 +380,7 @@ mod tests {
         let payload = args.build_payload("JD").unwrap();
         assert_eq!(
             payload,
-            r#"{"limit":10,"offset":1,"query":"from-json","sort":"DATE","sortOrder":"ASC"}"#
+            r#"{"limit":10,"offset":0,"query":"from-json","sort":"DATE","sortOrder":"ASC"}"#
         );
     }
 
@@ -400,7 +400,7 @@ mod tests {
         let payload = args.build_payload("CR").unwrap();
         assert_eq!(
             payload,
-            r#"{"limit":5,"offset":1,"query":"občanský zákoník","sortBy":"RELEVANCE","sortOrder":"DESC","typ":["Zákon"],"validNow":true}"#
+            r#"{"limit":5,"offset":0,"query":"občanský zákoník","sortBy":"RELEVANCE","sortOrder":"DESC","typ":["Zákon"],"validNow":true}"#
         );
     }
 
@@ -417,7 +417,7 @@ mod tests {
         let payload = args.build_payload("ALL").unwrap();
         assert_eq!(
             payload,
-            r#"{"limit":10,"offset":1,"query":"insolvence","sort":"RELEVANCE","sortOrder":"DESC"}"#
+            r#"{"limit":10,"offset":0,"query":"insolvence","sort":"RELEVANCE","sortOrder":"DESC"}"#
         );
     }
 
@@ -440,7 +440,7 @@ mod tests {
         let payload = args.build_payload("JD").unwrap();
         assert_eq!(
             payload,
-            r#"{"issuedFrom":"2026-05-26","issuedTo":"2026-06-01","limit":10,"offset":1,"sort":"RELEVANCE","sortOrder":"DESC"}"#
+            r#"{"issuedFrom":"2026-05-26","issuedTo":"2026-06-01","limit":10,"offset":0,"sort":"RELEVANCE","sortOrder":"DESC"}"#
         );
     }
 
