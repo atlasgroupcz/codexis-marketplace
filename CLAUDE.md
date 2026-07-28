@@ -181,6 +181,64 @@ The conformance test checks only that the file exists. Contents are a review
 concern - pinning prose to manifests constrains how the README may be written
 and catches only cosmetic drift.
 
+## Example prompts
+
+`plugins/<name>/example-prompts.json` holds ready-made prompts the daemon renders
+on the plugin page. The file is **optional** - `ocr`, `video-analyze` and
+`visualization` ship none on purpose, because nobody addresses them directly;
+they run as part of another request.
+
+```json
+{
+  "prompts": [
+    {
+      "id": "stavba-podle-adresy",
+      "i18n": {
+        "cs": { "prompt": "..." },
+        "en": { "prompt": "..." },
+        "sk": { "prompt": "..." }
+      }
+    }
+  ]
+}
+```
+
+Technical key on top, user-facing text under `i18n` - the same split as every
+other manifest here. The prompt text lives in exactly one place: unlike
+`plugin.json`, this file has no outside reader, so a top-level copy would only be
+a second place to drift. All three languages are mandatory. `id` is kebab-case
+and unique within the file; it exists so language keys keep their own namespace,
+not for telemetry. There is deliberately no `title` - the whole prompt renders,
+so a separate label would say the same thing twice and would let the chip
+advertise something other than what it sends.
+
+Three prompts is the target, and they must cover different capabilities rather
+than one question reworded. The two README rules apply unchanged:
+
+- **Never write a prompt for a capability you have not read in the plugin's own
+  `SKILL.md` / `references/`.** Both cadastre plugins document that their API
+  returns no owners; a "who owns this parcel" prompt would look like a broken
+  plugin on the first click.
+- **Keep out anything that ages on its own** - counts, deadlines, model names.
+
+Two rules specific to prompts:
+
+- **The whole text renders**, so keep it to one sentence of roughly 100
+  characters.
+- **A concrete value is only allowed when that record exists for everyone.**
+  A real IČO is fine; an invented one returns nothing and reads as broken. Where
+  the subject is inherently the user's own - their parcel, their proceeding,
+  their data box, their internal directives - name the capability and let the
+  assistant ask for the identifier. That still runs; a `«fill this in»`
+  placeholder does not.
+
+Source prompts from user-facing skills only: `codexis` also ships `cdxctl`, which
+administers platform objects and is not something a user asks about.
+
+`tests/test_conformance.py` validates the file when it exists and never requires
+it. Em-dashes are not checked there - `tests/test_repo_hygiene.py` already sweeps
+every tracked `.json`.
+
 ## Workflow templates
 
 `workflow-templates/*.js` are ready-made multi-phase workflows the daemon offers the model when

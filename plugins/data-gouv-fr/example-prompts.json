@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "hledani-datove-sady",
+      "i18n": {
+        "cs": { "prompt": "Najdi na data.gouv.fr datovou sadu o kvalitě ovzduší ve Francii." },
+        "en": { "prompt": "Find a dataset on air quality in France on data.gouv.fr." },
+        "sk": { "prompt": "Nájdi na data.gouv.fr dátovú sadu o kvalite ovzdušia vo Francúzsku." }
+      }
+    },
+    {
+      "id": "dotaz-nad-daty",
+      "i18n": {
+        "cs": { "prompt": "Vypiš z francouzských otevřených dat počet obyvatel největších měst." },
+        "en": { "prompt": "List the population of the largest French cities from French open data." },
+        "sk": { "prompt": "Vypíš z francúzskych otvorených dát počet obyvateľov najväčších miest." }
+      }
+    },
+    {
+      "id": "verejna-api",
+      "i18n": {
+        "cs": { "prompt": "Jaká veřejná API nabízí francouzská správa pro dopravní data?" },
+        "en": { "prompt": "Which public APIs does the French administration offer for transport data?" },
+        "sk": { "prompt": "Aké verejné API ponúka francúzska správa pre dopravné dáta?" }
+      }
+    }
+  ]
+}

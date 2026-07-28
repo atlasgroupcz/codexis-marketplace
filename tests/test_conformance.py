@@ -9,6 +9,7 @@ without a signal (see CLAUDE.md)."""
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -148,4 +149,128 @@ def test_skill_directory_matches_declared_name(skill_md: Path):
     assert declared == skill_md.parent.name, (
         f"{skill_md.relative_to(REPO)}: frontmatter name {declared!r} does not "
         f"match its directory {skill_md.parent.name!r} - pick one."
+    )
+
+
+# --- example-prompts.json -----------------------------------------------------
+# Optional per-plugin file holding ready-made prompts the daemon renders on the
+# plugin page. The rules live in a pure function so they can be exercised against
+# in-memory payloads; the plugin-level test below just feeds it real files.
+_EXAMPLE_PROMPT_LANGS = ("cs", "en", "sk")
+_EXAMPLE_PROMPT_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+def _example_prompt_errors(data: object) -> list[str]:
+    """Schema violations in an example-prompts.json payload; empty means valid.
+
+    Returns every problem rather than raising on the first, so an author fixing a
+    hand-written file sees the whole list in one run instead of one per attempt.
+    """
+    if not isinstance(data, dict):
+        return ["top level must be a JSON object"]
+
+    prompts = data.get("prompts")
+    if not isinstance(prompts, list) or not prompts:
+        return ["`prompts` must be a non-empty array"]
+
+    errors: list[str] = []
+    seen: set[str] = set()
+
+    for index, item in enumerate(prompts):
+        where = f"prompts[{index}]"
+        if not isinstance(item, dict):
+            errors.append(f"{where}: must be an object")
+            continue
+
+        prompt_id = item.get("id")
+        if not isinstance(prompt_id, str) or not _EXAMPLE_PROMPT_ID_RE.match(prompt_id):
+            errors.append(f"{where}: `id` must be kebab-case, got {prompt_id!r}")
+        elif prompt_id in seen:
+            errors.append(f"{where}: duplicate id {prompt_id!r}")
+        else:
+            seen.add(prompt_id)
+
+        i18n = item.get("i18n")
+        if not isinstance(i18n, dict):
+            errors.append(f"{where}: `i18n` must be an object")
+            continue
+
+        for lang in _EXAMPLE_PROMPT_LANGS:
+            entry = i18n.get(lang)
+            if not isinstance(entry, dict):
+                errors.append(f"{where}.i18n.{lang}: missing or not an object")
+                continue
+            text = entry.get("prompt")
+            if not isinstance(text, str) or not text.strip():
+                errors.append(f"{where}.i18n.{lang}.prompt: must be a non-empty string")
+
+    return errors
+
+
+def _valid_example_prompt(prompt_id: str = "najdi-parcelu") -> dict:
+    """A minimal payload entry the assertions below mutate one field at a time."""
+    return {
+        "id": prompt_id,
+        "i18n": {
+            "cs": {"prompt": "Najdi parcelu 123/4 v k. u. Nove Mesto."},
+            "en": {"prompt": "Look up parcel 123/4 in the Nove Mesto area."},
+            "sk": {"prompt": "Najdi parcelu 123/4 v k. u. Nove Mesto."},
+        },
+    }
+
+
+def test_valid_example_prompts_payload_has_no_errors():
+    assert _example_prompt_errors({"prompts": [_valid_example_prompt()]}) == []
+
+
+def test_example_prompts_must_not_be_empty():
+    assert _example_prompt_errors({"prompts": []})
+
+
+def test_example_prompt_id_must_be_kebab_case():
+    entry = _valid_example_prompt()
+    entry["id"] = "Najdi_Parcelu"
+    assert _example_prompt_errors({"prompts": [entry]})
+
+
+def test_example_prompt_ids_must_be_unique_within_a_file():
+    payload = {"prompts": [_valid_example_prompt("same"), _valid_example_prompt("same")]}
+    assert _example_prompt_errors(payload)
+
+
+def test_example_prompt_requires_every_language():
+    entry = _valid_example_prompt()
+    del entry["i18n"]["sk"]
+    assert _example_prompt_errors({"prompts": [entry]})
+
+
+def test_example_prompt_text_must_not_be_blank():
+    entry = _valid_example_prompt()
+    entry["i18n"]["en"]["prompt"] = "   "
+    assert _example_prompt_errors({"prompts": [entry]})
+
+
+@pytest.mark.parametrize("name", _PLUGINS)
+def test_example_prompts_match_the_schema(name: str):
+    """Optional file, pinned shape.
+
+    ocr, video-analyze and visualization ship none on purpose: they run as part of
+    another request, so there is no opening prompt to suggest. Absence is valid, so
+    only the contents are pinned. Em-dashes are not checked here -
+    test_repo_hygiene.py::test_no_em_or_en_dashes_in_source already sweeps every
+    tracked .json, and a second check would report one mistake twice.
+    """
+    path = PLUGINS / name / "example-prompts.json"
+    if not path.is_file():
+        pytest.skip("no example-prompts.json - the file is optional")
+
+    rel = path.relative_to(REPO)
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        pytest.fail(f"{rel}: invalid JSON - {exc}")
+
+    errors = _example_prompt_errors(data)
+    assert not errors, (
+        f"{rel}: does not match the example-prompts schema:\n  " + "\n  ".join(errors)
     )

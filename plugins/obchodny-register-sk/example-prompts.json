@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "detail-firmy",
+      "i18n": {
+        "cs": { "prompt": "Ověř v slovenském obchodním rejstříku firmu ESET - sídlo, statutáry a kapitál." },
+        "en": { "prompt": "Check ESET in the Slovak Commercial Register - address, statutory bodies and capital." },
+        "sk": { "prompt": "Over v obchodnom registri firmu ESET - sídlo, konateľov a základné imanie." }
+      }
+    },
+    {
+      "id": "ucetni-zaverky",
+      "i18n": {
+        "cs": { "prompt": "Stáhni účetní závěrky firmy ESET ze slovenského registru závěrek." },
+        "en": { "prompt": "Download ESET's financial statements from the Slovak register of statements." },
+        "sk": { "prompt": "Stiahni účtovné závierky firmy ESET z registra účtovných závierok." }
+      }
+    },
+    {
+      "id": "vypis-z-registra",
+      "i18n": {
+        "cs": { "prompt": "Kde najdu výpis ze slovenského obchodního rejstříku pro firmu?" },
+        "en": { "prompt": "Where do I find a Slovak Commercial Register extract for a company?" },
+        "sk": { "prompt": "Kde nájdem výpis z obchodného registra pre firmu?" }
+      }
+    }
+  ]
+}

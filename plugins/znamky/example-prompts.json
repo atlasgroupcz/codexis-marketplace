@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "lustrace-nazvu",
+      "i18n": {
+        "cs": { "prompt": "Zjisti, jestli už existuje ochranná známka podobná názvu CODEXIS." },
+        "en": { "prompt": "Check whether a trademark similar to the name CODEXIS already exists." },
+        "sk": { "prompt": "Zisti, či už existuje ochranná známka podobná názvu CODEXIS." }
+      }
+    },
+    {
+      "id": "lustrace-loga",
+      "i18n": {
+        "cs": { "prompt": "Prověř, jestli naše logo nekoliduje se zapsanou ochrannou známkou." },
+        "en": { "prompt": "Check whether our logo clashes with a registered trademark." },
+        "sk": { "prompt": "Prever, či naše logo nekoliduje so zapísanou ochrannou známkou." }
+      }
+    },
+    {
+      "id": "hlidani-znamky",
+      "i18n": {
+        "cs": { "prompt": "Hlídej naši ochrannou známku a dej vědět, když někdo zapíše podobnou." },
+        "en": { "prompt": "Watch our trademark and tell me when someone registers a similar one." },
+        "sk": { "prompt": "Sleduj našu ochrannú známku a daj vedieť, keď niekto zapíše podobnú." }
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "prompts": [
+    {
+      "id": "detail-leku",
+      "i18n": {
+        "cs": { "prompt": "Najdi lék Paralen - sílu, lékovou formu a jestli je vázán na předpis." },
+        "en": { "prompt": "Look up the medicine Paralen - strength, dosage form and whether it needs a prescription." },
+        "sk": { "prompt": "Nájdi liek Paralen - silu, liekovú formu a či je viazaný na predpis." }
+      }
+    },
+    {
+      "id": "leky-s-latkou",
+      "i18n": {
+        "cs": { "prompt": "Které léky registrované v ČR obsahují ibuprofen?" },
+        "en": { "prompt": "Which medicines registered in Czechia contain ibuprofen?" },
+        "sk": { "prompt": "Ktoré lieky registrované v ČR obsahujú ibuprofen?" }
+      }
+    },
+    {
+      "id": "doplatek-a-uhrada",
+      "i18n": {
+        "cs": { "prompt": "Kolik pacient doplácí na Ibalgin a kolik hradí pojišťovna?" },
+        "en": { "prompt": "What is the patient copay for Ibalgin and how much does insurance cover?" },
+        "sk": { "prompt": "Koľko pacient dopláca na Ibalgin a koľko hradí poisťovňa?" }
+      }
+    }
+  ]
+}
