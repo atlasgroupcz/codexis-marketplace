@@ -1,6 +1,8 @@
 {
   "skills": [
     "codexis:codexis",
+    "codexis:codexis-dane",
+    "codexis:codexis-ucetnictvi",
     "codexis:cdxctl",
     "codexis:sledovana-judikatura",
     "codexis:sledovane-dokumenty"
