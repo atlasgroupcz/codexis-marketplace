@@ -16,9 +16,24 @@ pub fn report(
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let payload = build_payload(title, description, severity)?;
-    let created = client.rest_post_json(REPORT_PATH, &payload)?;
+    let created = client
+        .rest_post_json(REPORT_PATH, &payload)
+        .map_err(explain_missing_endpoint)?;
     print_output(&created, format);
     Ok(())
+}
+
+/// A daemon older than the bug report feature has no such endpoint. Say that
+/// instead of letting a bare 404 look like the report was malformed.
+fn explain_missing_endpoint(error: CdxctlError) -> CdxctlError {
+    match error {
+        CdxctlError::Unsupported(_) => CdxctlError::Unsupported(
+            "this daemon does not support bug reports yet, so the report was not filed. \
+             Mention the problem in your answer instead and carry on."
+                .to_string(),
+        ),
+        other => other,
+    }
 }
 
 /// Severity is normalized here so `--severity high` and `--severity HIGH` produce
@@ -95,6 +110,24 @@ mod tests {
         let parsed: Value = serde_json::from_str(body).unwrap();
         assert_eq!(parsed["severity"], json!("HIGH"));
         assert_eq!(parsed["title"], json!("Chat hangs"));
+    }
+
+    #[test]
+    fn tells_the_agent_when_the_daemon_predates_bug_reports() {
+        let (address, _requests) = stub_daemon("HTTP/1.1 404 Not Found", "{}");
+        let client = GraphQLClient::with_endpoint(
+            format!("http://{address}/graphql"),
+            "Bearer test-token".to_string(),
+        );
+
+        let error = report(&client, "t", "d", "LOW", OutputFormat::Json).unwrap_err();
+        match error {
+            CdxctlError::Unsupported(message) => {
+                assert!(message.contains("does not support bug reports"));
+                assert!(!message.contains("404"));
+            }
+            other => panic!("expected an unsupported error, got {other:?}"),
+        }
     }
 
     #[test]

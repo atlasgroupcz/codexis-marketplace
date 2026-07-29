@@ -349,6 +349,10 @@ Severity is one of `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` (case does not matter). R
 platform misbehaves; do not report user mistakes, missing input data, or a one-off network
 timeout that succeeded on retry.
 
+If the daemon is older than this feature the command exits with `Not supported: this daemon does
+not support bug reports yet`. That is not your fault and not worth retrying - mention the problem in
+your answer to the user and carry on with the task.
+
 Nothing is collected automatically, so put everything a maintainer needs into `--description`:
 what you ran, what you expected, what you got, and how to reproduce it. Reports are append-only -
 there is no `cdxctl bug list`, `update` or `delete`, and filing the same bug twice creates two

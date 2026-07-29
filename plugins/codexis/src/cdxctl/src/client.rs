@@ -67,6 +67,11 @@ impl GraphQLClient {
             .send()?;
         let status = response.status();
         let text = response.text()?;
+        if status == reqwest::StatusCode::NOT_FOUND {
+            return Err(CdxctlError::Unsupported(format!(
+                "this daemon has no {path} endpoint"
+            )));
+        }
         if !status.is_success() {
             return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
         }
