@@ -55,6 +55,40 @@ impl GraphQLClient {
         serde_json::from_str(&text).map_err(CdxctlError::from)
     }
 
+    /// POST a JSON body (used for /rest/v1/plugin/bug-report).
+    pub fn rest_post_json(&self, path: &str, body: &Value) -> Result<Value, CdxctlError> {
+        let url = format!("{}{}", self.rest_base_url(), path);
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", &self.auth)
+            .header("Accept", "application/json")
+            .json(body)
+            .send()?;
+        let status = response.status();
+        let text = response.text()?;
+        if status == reqwest::StatusCode::NOT_FOUND {
+            return Err(CdxctlError::Unsupported(format!(
+                "this daemon has no {path} endpoint"
+            )));
+        }
+        if !status.is_success() {
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
+        }
+        serde_json::from_str(&text).map_err(CdxctlError::from)
+    }
+
+    /// Test-only constructor: point the client at a loopback stub. `new()` cannot
+    /// be used in tests because it exits the process when ~/.cdx/env/secret is missing.
+    #[cfg(test)]
+    pub(crate) fn with_endpoint(url: String, auth: String) -> Self {
+        GraphQLClient {
+            url,
+            auth,
+            client: reqwest::blocking::Client::new(),
+        }
+    }
+
     /// Execute a GraphQL operation and return the `data` field.
     pub fn execute(&self, query: &str, variables: Value) -> Result<Value, CdxctlError> {
         let body = json!({

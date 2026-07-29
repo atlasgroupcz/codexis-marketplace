@@ -64,6 +64,11 @@ enum Commands {
         #[command(subcommand)]
         command: NotificationCommands,
     },
+    /// Report bugs in the platform
+    Bug {
+        #[command(subcommand)]
+        command: BugCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -578,6 +583,22 @@ enum EmailCommands {
     },
 }
 
+#[derive(Subcommand)]
+enum BugCommands {
+    /// File a bug report. Append-only: it cannot be edited, listed or deleted afterwards
+    Report {
+        /// One-line summary of what is broken
+        #[arg(long)]
+        title: String,
+        /// What happened, what was expected, and how to reproduce it
+        #[arg(long)]
+        description: String,
+        /// How bad it is: LOW, MEDIUM, HIGH or CRITICAL
+        #[arg(long)]
+        severity: String,
+    },
+}
+
 fn parse_key_value(s: &str) -> Result<(String, String), String> {
     let pos = s
         .find('=')
@@ -966,6 +987,13 @@ fn main() {
                 ),
             },
         },
+        Commands::Bug { command } => match command {
+            BugCommands::Report {
+                title,
+                description,
+                severity,
+            } => commands::bug::report(&client, &title, &description, &severity, format),
+        },
     };
 
     if let Err(e) = result {
@@ -1208,5 +1236,52 @@ mod tests {
             } => no_thread,
             _ => panic!("expected notification email send command"),
         }
+    }
+
+    #[test]
+    fn parses_bug_report_command() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "Chat hangs",
+            "--description",
+            "Steps: open chat, wait",
+            "--severity",
+            "HIGH",
+        ])
+        .expect("bug report should parse");
+        match cli.command {
+            Commands::Bug {
+                command:
+                    BugCommands::Report {
+                        title,
+                        description,
+                        severity,
+                    },
+            } => {
+                assert_eq!(title, "Chat hangs");
+                assert_eq!(description, "Steps: open chat, wait");
+                assert_eq!(severity, "HIGH");
+            }
+            _ => panic!("expected bug report command"),
+        }
+    }
+
+    #[test]
+    fn requires_every_bug_report_field() {
+        assert!(Cli::try_parse_from([
+            "cdxctl", "bug", "report", "--description", "d", "--severity", "LOW"
+        ])
+        .is_err());
+        assert!(Cli::try_parse_from([
+            "cdxctl", "bug", "report", "--title", "t", "--severity", "LOW"
+        ])
+        .is_err());
+        assert!(Cli::try_parse_from([
+            "cdxctl", "bug", "report", "--title", "t", "--description", "d"
+        ])
+        .is_err());
     }
 }
