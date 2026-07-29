@@ -2,8 +2,8 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat.
-version: 2.5.1
+description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+version: 2.6.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -330,6 +330,29 @@ cdxctl notification email send --subject "Newsletter" --body "..." --no-thread
 
 Replying into a chat requires the reply to be S/MIME signed with a trusted certificate; unsigned
 replies are dropped.
+
+## Bug reports
+
+When you hit something that is broken in the platform itself - a skill that returns nonsense, a
+CLI that crashes or contradicts its own `--help`, documentation that does not match reality - file
+a bug report so the team sees it. Do it right after you notice the problem, then carry on with the
+user's task.
+
+```bash
+cdxctl bug report \
+    --title "kataster-sk search returns an empty list" \
+    --description "Ran: kataster-sk-cli search --obec Bratislava. Expected a parcel list, got []. The same query works in the web UI, so the skill is not passing --obec through." \
+    --severity HIGH
+```
+
+Severity is one of `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` (case does not matter). Report when the
+platform misbehaves; do not report user mistakes, missing input data, or a one-off network
+timeout that succeeded on retry.
+
+Nothing is collected automatically, so put everything a maintainer needs into `--description`:
+what you ran, what you expected, what you got, and how to reproduce it. Reports are append-only -
+there is no `cdxctl bug list`, `update` or `delete`, and filing the same bug twice creates two
+records, so do not resend one you have already filed in this conversation.
 
 ## Output
 
