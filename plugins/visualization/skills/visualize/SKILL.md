@@ -14,12 +14,24 @@ i18n:
   cs:
     displayName: "Vizualizace dat"
     summary: "Interaktivní grafy, síťové diagramy, časové osy, Gantt, stromy, kalendáře, vývojové diagramy, kanban, tabulky a mapy (D3.js, Leaflet, AG Grid)."
+    examplePrompts:
+      - "Zobraz vývoj počtu rozhodnutí po letech jako sloupcový graf."
+      - "Vykresli časovou osu kroků řízení od podání žaloby po rozsudek."
+      - "Udělej z těchhle úkolů kanban board rozdělený podle stavu."
   en:
     displayName: "Data Visualization"
     summary: "Interactive charts, network graphs, timelines, Gantt, trees, calendars, flowcharts, kanban, tables and maps (D3.js, Leaflet, AG Grid)."
+    examplePrompts:
+      - "Show the number of decisions per year as a bar chart."
+      - "Draw a timeline of the proceedings from filing the claim to the judgment."
+      - "Turn these tasks into a kanban board split by status."
   sk:
     displayName: "Vizualizácia dát"
     summary: "Interaktívne grafy, sieťové diagramy, časové osi, Gantt, stromy, kalendáre, vývojové diagramy, kanban, tabuľky a mapy (D3.js, Leaflet, AG Grid)."
+    examplePrompts:
+      - "Zobraz vývoj počtu rozhodnutí po rokoch ako stĺpcový graf."
+      - "Vykresli časovú os krokov konania od podania žaloby po rozsudok."
+      - "Urob z týchto úloh kanban board rozdelený podľa stavu."
 ---
 
 # Visualization Router

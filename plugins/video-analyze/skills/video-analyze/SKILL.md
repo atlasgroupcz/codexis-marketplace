@@ -18,12 +18,24 @@ i18n:
   cs:
     displayName: "Analýza videa a audia"
     summary: "Přepisy a analýza videa i audia (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) pomocí multimodálního modelu Gemini."
+    examplePrompts:
+      - "Přepiš tenhle záznam jednání i s časovými značkami."
+      - "Shrň do několika bodů, co zaznělo v tomhle YouTube videu."
+      - "Najdi v nahrávce místo, kde se mluví o ceně, a řekni, v kolikáté minutě to je."
   en:
     displayName: "Audio & Video Analysis"
     summary: "Transcribe and analyze audio and video (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) using Gemini multimodal models."
+    examplePrompts:
+      - "Transcribe this recording of the meeting, including timestamps."
+      - "Summarize in a few bullet points what is said in this YouTube video."
+      - "Find the part of the recording where the price is discussed and tell me the timestamp."
   sk:
     displayName: "Analýza videa a audia"
     summary: "Prepisy a analýza videa i audia (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) pomocou multimodálneho modelu Gemini."
+    examplePrompts:
+      - "Prepíš tento záznam rokovania aj s časovými značkami."
+      - "Zhrň do niekoľkých bodov, čo odznelo v tomto YouTube videu."
+      - "Nájdi v nahrávke miesto, kde sa hovorí o cene, a povedz, v ktorej minúte to je."
 ---
 
 # Video & Audio Analysis

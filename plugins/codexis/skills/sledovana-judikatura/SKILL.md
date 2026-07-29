@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Sledovaná judikatura"
     summary: "Pravidelné sledování nové judikatury podle tématu s AI reporty o trendech a dopadech."
+    examplePrompts:
+      - "Sleduj judikaturu k náhradě škody a rozděl si ji na podoblasti."
+      - "Připrav report o nové judikatuře k okamžitému zrušení pracovního poměru za poslední měsíc."
+      - "Poznamenej si, že jsem samostatný advokát a chci reporty v tabulce se shrnutím pro advokáta."
   en:
     displayName: "Case Law Monitor"
     summary: "Periodic tracking of new case law by topic with AI-generated reports on trends and impact."
+    examplePrompts:
+      - "Track case law on damages and split it into sub-areas."
+      - "Prepare a report on new case law about immediate termination of employment over the last month."
+      - "Note that I am a solo attorney and want the reports as a table with a summary for lawyers."
   sk:
     displayName: "Sledovaná judikatúra"
     summary: "Pravidelné sledovanie novej judikatúry podľa témy s AI reportmi o trendoch a dopadoch."
+    examplePrompts:
+      - "Sleduj judikatúru k náhrade škody a rozdeľ si ju na podoblasti."
+      - "Priprav report o novej judikatúre k okamžitému zrušeniu pracovného pomeru za posledný mesiac."
+      - "Poznač si, že som samostatný advokát a chcem reporty v tabuľke so zhrnutím pre advokáta."
 ---
 
 # Sledovaná judikatura - Case Law Monitoring

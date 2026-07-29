@@ -11,16 +11,22 @@ i18n:
     summary: "Tvorba a úprava prezentací (.pptx) s vizuální kontrolou každého slidu."
     examplePrompts:
       - "Připrav prezentaci, která shrne náš návrh do deseti slidů."
+      - "Předělej tuhle prezentaci do tmavého firemního vzhledu a na každý slide přidej vizuální prvek."
+      - "Projdi přiloženou prezentaci slide po slidu a najdi překrývající se nebo přetékající texty."
   en:
     displayName: "PowerPoint Presentations"
     summary: "Build and edit .pptx decks with visual inspection of every slide."
     examplePrompts:
       - "Prepare a presentation summarizing our proposal in ten slides."
+      - "Restyle this deck into a dark corporate look and add a visual element to every slide."
+      - "Go through the attached deck slide by slide and find overlapping or overflowing text."
   sk:
     displayName: "PowerPoint prezentácie"
     summary: "Tvorba a úprava prezentácií (.pptx) s vizuálnou kontrolou každého slidu."
     examplePrompts:
       - "Priprav prezentáciu, ktorá zhrnie náš návrh do desiatich slajdov."
+      - "Prerob túto prezentáciu do tmavého firemného vzhľadu a na každý slajd pridaj vizuálny prvok."
+      - "Prejdi priloženú prezentáciu slajd po slajde a nájdi prekrývajúce sa alebo pretekajúce texty."
 ---
 
 # PPTX - building decks that survive being looked at

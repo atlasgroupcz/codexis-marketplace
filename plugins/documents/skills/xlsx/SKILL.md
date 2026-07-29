@@ -11,16 +11,22 @@ i18n:
     summary: "Tvorba a úprava .xlsx - vzorce, formátování, finanční modely, kontrola chyb a vizuální náhled."
     examplePrompts:
       - "Vytvoř v Excelu cash flow na dvanáct měsíců včetně vzorců."
+      - "Zkontroluj v tomhle sešitu vzorce a najdi chybové buňky jako #REF! nebo #DIV/0!."
+      - "Ukliď tenhle rozbitý export do přehledné tabulky s hlavičkou a správným formátem čísel."
   en:
     displayName: "Excel Spreadsheets"
     summary: "Create and edit .xlsx - formulas, formatting, financial models, error checking, visual review."
     examplePrompts:
       - "Create a twelve-month cash flow in Excel, including the formulas."
+      - "Check the formulas in this workbook and find error cells like #REF! or #DIV/0!."
+      - "Clean up this broken export into a readable sheet with a header row and proper number formats."
   sk:
     displayName: "Excel tabuľky"
     summary: "Tvorba a úprava .xlsx - vzorce, formátovanie, finančné modely, kontrola chýb a náhľad."
     examplePrompts:
       - "Vytvor v Exceli cash flow na dvanásť mesiacov vrátane vzorcov."
+      - "Skontroluj v tomto zošite vzorce a nájdi chybové bunky ako #REF! alebo #DIV/0!."
+      - "Uprac tento rozbitý export do prehľadnej tabuľky s hlavičkou a správnym formátom čísel."
 ---
 
 # XLSX - creation, editing, verification

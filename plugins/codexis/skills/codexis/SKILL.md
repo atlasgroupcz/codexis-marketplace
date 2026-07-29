@@ -12,16 +12,22 @@ i18n:
     summary: "Česká, slovenská a evropská legislativa, česká a evropská judikatura, odborné komentáře, právní literatura a vzory smluv."
     examplePrompts:
       - "Najdi judikaturu Nejvyššího soudu k náhradě škody a shrň závěry."
+      - "Ukaž, jak se v čase měnil § 52 zákoníku práce a od kdy platí aktuální znění."
+      - "Najdi vzor smlouvy o dílo a shrň, na co si při jejím uzavírání dát pozor."
   en:
     displayName: "CODEXIS - Legal Database"
     summary: "Czech, Slovak and EU legislation, Czech and European case law, legal commentaries, literature and contract templates."
     examplePrompts:
       - "Find Supreme Court case law on damages and summarize the conclusions."
+      - "Show how § 52 of the Czech Labour Code has changed over time and since when the current wording applies."
+      - "Find a contract-for-work template and summarize what to watch out for when signing it."
   sk:
     displayName: "CODEXIS - Právna databáza"
     summary: "Česká, slovenská a európska legislatíva, česká a európska judikatúra, odborné komentáre, právna literatúra a vzory zmlúv."
     examplePrompts:
       - "Nájdi judikatúru českého Najvyššieho súdu k náhrade škody a zhrň závery."
+      - "Ukáž, ako sa v čase menil § 52 českého zákonníka práce a odkedy platí aktuálne znenie."
+      - "Nájdi vzor zmluvy o dielo a zhrň, na čo si pri jej uzatváraní dať pozor."
 ---
 
 # CODEXIS Legal Database CLI

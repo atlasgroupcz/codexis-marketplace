@@ -11,16 +11,22 @@ i18n:
     summary: "Sledování změn v české legislativě přes CODEXIS - upozornění na novelizace a srovnání verzí."
     examplePrompts:
       - "Sleduj zákoník práce a dej vědět, až vyjde jeho novela."
+      - "U sledovaného občanského zákoníku mě zajímá hlavně promlčení - ulož si to jako poznámku."
+      - "Hlídej složku s mými smlouvami a upozorni mě, když se změní zákon, na který odkazují."
   en:
     displayName: "Document Tracker"
     summary: "Monitor changes in Czech legislation via CODEXIS - amendment alerts and version diffs."
     examplePrompts:
       - "Track the Czech Labour Code and tell me when an amendment is published."
+      - "For the tracked Civil Code I mainly care about limitation periods - save that as a note."
+      - "Watch the folder with my contracts and alert me when a law they reference changes."
   sk:
     displayName: "Sledované dokumenty"
     summary: "Sledovanie zmien v českej legislatíve cez CODEXIS - upozornenia na novelizácie a porovnanie verzií."
     examplePrompts:
       - "Sleduj český zákonník práce a daj vedieť, keď vyjde jeho novela."
+      - "Pri sledovanom občianskom zákonníku ma zaujíma hlavne premlčanie - ulož si to ako poznámku."
+      - "Sleduj priečinok s mojimi zmluvami a upozorni ma, keď sa zmení zákon, na ktorý odkazujú."
 ---
 
 # Sledované dokumenty - Document Tracking

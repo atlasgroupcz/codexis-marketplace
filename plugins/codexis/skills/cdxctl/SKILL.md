@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "Správa platformy"
     summary: "Vytváření a správa vlastních agentů, dovedností, automatizací a doplňků přímo z konverzace."
+    examplePrompts:
+      - "Vytvoř automatizaci, která mi každé pondělí ráno zkontroluje sledované dokumenty."
+      - "Vypiš moje automatizace a tu, která běží denně, mi vypni."
+      - "Vytvoř agenta, který posoudí zákonnost výpovědi podle zákoníku práce."
   en:
     displayName: "Platform Management"
     summary: "Create and manage custom agents, skills, automations, and plugins directly from chat."
+    examplePrompts:
+      - "Create an automation that checks my tracked documents every Monday morning."
+      - "List my automations and disable the one that runs daily."
+      - "Create an agent that reviews whether a dismissal is lawful under the Czech Labour Code."
   sk:
     displayName: "Správa platformy"
     summary: "Vytváranie a správa vlastných agentov, zručností, automatizácií a doplnkov priamo z konverzácie."
+    examplePrompts:
+      - "Vytvor automatizáciu, ktorá mi každý pondelok ráno skontroluje sledované dokumenty."
+      - "Vypíš moje automatizácie a tú, ktorá beží denne, mi vypni."
+      - "Vytvor agenta, ktorý posúdi zákonnosť výpovede podľa českého zákonníka práce."
 ---
 
 # cdxctl - Platform Management CLI
