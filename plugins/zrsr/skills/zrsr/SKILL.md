@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "ZRSR - živnostenský registr SR"
     summary: "Vyhledávání slovenských firem a živnostníků v RPO - IČO, živnostenská oprávnění, živnostenský a obchodní registr."
+    examplePrompts:
+      - "Ověř slovenský subjekt s IČO 686930 - název, právní formu a jestli je aktivní."
+      - "Najdi ve slovenském registru firmy s názvem Železnice Slovenskej republiky."
+      - "Jaké předměty podnikání má zapsané slovenský živnostník?"
   en:
     displayName: "ZRSR - Slovak Trade Register"
     summary: "Look up Slovak companies and sole traders in RPO - IČO, trade licences, Trade and Business Register."
+    examplePrompts:
+      - "Check Slovak entity 686930 - name, legal form and whether it is still active."
+      - "Find entities named Železnice Slovenskej republiky in the Slovak register."
+      - "What business activities does a Slovak sole trader have registered?"
   sk:
     displayName: "ZRSR - živnostenský register SR"
     summary: "Vyhľadávanie slovenských firiem a živnostníkov v RPO - IČO, živnostenské oprávnenia, živnostenský a obchodný register."
+    examplePrompts:
+      - "Over slovenský subjekt s IČO 686930 - názov, právnu formu a či je aktívny."
+      - "Nájdi v slovenskom registri firmy s názvom Železnice Slovenskej republiky."
+      - "Aké predmety podnikania má zapísané slovenský živnostník?"
 ---
 
 # ZRSR - Slovak Trade & Business Register

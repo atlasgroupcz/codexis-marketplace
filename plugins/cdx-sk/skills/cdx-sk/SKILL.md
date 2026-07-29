@@ -10,12 +10,24 @@ i18n:
   cs:
     displayName: "Slovenské právo (e-Zbierka a soudy SR)"
     summary: "Slovenská právní databáze - legislativa z e-Zbierky, ~4,6 mil. rozhodnutí všeobecných soudů a rozhodnutí Nejvyššího a Ústavního soudu SR."
+    examplePrompts:
+      - "Najdi v e-Zbierce aktuální znění zákona o slobodnom prístupe k informáciám."
+      - "Najdi rozhodnutí Ústavního soudu SR k ochraně osobních údajů."
+      - "Najdi rozhodnutí Nejvyššího správního soudu SR k daňovým sporům."
   en:
     displayName: "Slovak Legal Database (e-Zbierka & courts)"
     summary: "Slovak legal database - e-Zbierka legislation, ~4.6M general court decisions and Supreme & Constitutional Court rulings."
+    examplePrompts:
+      - "Find the current wording of the Slovak freedom of information act in e-Zbierka."
+      - "Find Slovak Constitutional Court decisions on personal data protection."
+      - "Find Slovak Supreme Administrative Court decisions on tax disputes."
   sk:
     displayName: "Slovenské právo (e-Zbierka a súdy SR)"
     summary: "Slovenská právna databáza - legislatíva z e-Zbierky, ~4,6 mil. rozhodnutí všeobecných súdov a rozhodnutia Najvyššieho a Ústavného súdu SR."
+    examplePrompts:
+      - "Nájdi v e-Zbierke aktuálne znenie zákona o slobodnom prístupe k informáciám."
+      - "Nájdi rozhodnutia Ústavného súdu SR k ochrane osobných údajov."
+      - "Nájdi rozhodnutia Najvyššieho správneho súdu SR k daňovým sporom."
 ---
 
 # Slovak Legal Database (cdx-sk)

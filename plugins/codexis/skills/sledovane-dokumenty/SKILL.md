@@ -9,12 +9,18 @@ i18n:
   cs:
     displayName: "Sledované dokumenty"
     summary: "Sledování změn v české legislativě přes CODEXIS - upozornění na novelizace a srovnání verzí."
+    examplePrompts:
+      - "Sleduj zákoník práce a dej vědět, až vyjde jeho novela."
   en:
     displayName: "Document Tracker"
     summary: "Monitor changes in Czech legislation via CODEXIS - amendment alerts and version diffs."
+    examplePrompts:
+      - "Track the Czech Labour Code and tell me when an amendment is published."
   sk:
     displayName: "Sledované dokumenty"
     summary: "Sledovanie zmien v českej legislatíve cez CODEXIS - upozornenia na novelizácie a porovnanie verzií."
+    examplePrompts:
+      - "Sleduj český zákonník práce a daj vedieť, keď vyjde jeho novela."
 ---
 
 # Sledované dokumenty - Document Tracking

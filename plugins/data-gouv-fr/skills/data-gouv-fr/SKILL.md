@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Francouzská otevřená data"
     summary: "Oficiální data a informace o Francii - demografie, ekonomika, doprava, instituce a další - z francouzského portálu otevřených dat data.gouv.fr."
+    examplePrompts:
+      - "Najdi na data.gouv.fr datovou sadu o kvalitě ovzduší ve Francii."
+      - "Vypiš z francouzských otevřených dat počet obyvatel největších měst."
+      - "Jaká veřejná API nabízí francouzská správa pro dopravní data?"
   en:
     displayName: "French Open Data"
     summary: "Official data and information about France - demographics, economy, transport, institutions and more - from France's open data portal data.gouv.fr."
+    examplePrompts:
+      - "Find a dataset on air quality in France on data.gouv.fr."
+      - "List the population of the largest French cities from French open data."
+      - "Which public APIs does the French administration offer for transport data?"
   sk:
     displayName: "Francúzske otvorené dáta"
     summary: "Oficiálne dáta a informácie o Francúzsku - demografia, ekonomika, doprava, inštitúcie a ďalšie - z francúzskeho portálu otvorených dát data.gouv.fr."
+    examplePrompts:
+      - "Nájdi na data.gouv.fr dátovú sadu o kvalite ovzdušia vo Francúzsku."
+      - "Vypíš z francúzskych otvorených dát počet obyvateľov najväčších miest."
+      - "Aké verejné API ponúka francúzska správa pre dopravné dáta?"
 ---
 
 # French Government Open Data (data.gouv.fr)

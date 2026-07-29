@@ -9,12 +9,18 @@ i18n:
   cs:
     displayName: "Excel tabulky"
     summary: "Tvorba a úprava .xlsx - vzorce, formátování, finanční modely, kontrola chyb a vizuální náhled."
+    examplePrompts:
+      - "Vytvoř v Excelu cash flow na dvanáct měsíců včetně vzorců."
   en:
     displayName: "Excel Spreadsheets"
     summary: "Create and edit .xlsx - formulas, formatting, financial models, error checking, visual review."
+    examplePrompts:
+      - "Create a twelve-month cash flow in Excel, including the formulas."
   sk:
     displayName: "Excel tabuľky"
     summary: "Tvorba a úprava .xlsx - vzorce, formátovanie, finančné modely, kontrola chýb a náhľad."
+    examplePrompts:
+      - "Vytvor v Exceli cash flow na dvanásť mesiacov vrátane vzorcov."
 ---
 
 # XLSX - creation, editing, verification

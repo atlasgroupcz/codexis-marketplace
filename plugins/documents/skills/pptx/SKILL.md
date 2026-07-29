@@ -9,12 +9,18 @@ i18n:
   cs:
     displayName: "PowerPoint prezentace"
     summary: "Tvorba a úprava prezentací (.pptx) s vizuální kontrolou každého slidu."
+    examplePrompts:
+      - "Připrav prezentaci, která shrne náš návrh do deseti slidů."
   en:
     displayName: "PowerPoint Presentations"
     summary: "Build and edit .pptx decks with visual inspection of every slide."
+    examplePrompts:
+      - "Prepare a presentation summarizing our proposal in ten slides."
   sk:
     displayName: "PowerPoint prezentácie"
     summary: "Tvorba a úprava prezentácií (.pptx) s vizuálnou kontrolou každého slidu."
+    examplePrompts:
+      - "Priprav prezentáciu, ktorá zhrnie náš návrh do desiatich slajdov."
 ---
 
 # PPTX - building decks that survive being looked at

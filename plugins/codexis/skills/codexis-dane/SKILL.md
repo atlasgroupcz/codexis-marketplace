@@ -8,12 +8,18 @@ i18n:
   cs:
     displayName: "CODEXIS - Daně ČR"
     summary: "Česká daňová legislativa a praxe - DPH, daň z příjmů, daňový řád, vyhlášky a judikatura."
+    examplePrompts:
+      - "Jak se daní příjem z prodeje nemovitosti u fyzické osoby?"
   en:
     displayName: "CODEXIS - Czech Tax Law"
     summary: "Czech tax legislation and practice - VAT, income tax, tax code, decrees, and case law."
+    examplePrompts:
+      - "How is income from selling a property taxed for an individual in Czechia?"
   sk:
     displayName: "CODEXIS - Dane ČR"
     summary: "Česká daňová legislatíva a prax - DPH, daň z príjmov, daňový poriadok, vyhlášky a judikatúra."
+    examplePrompts:
+      - "Ako sa v ČR zdaňuje príjem z predaja nehnuteľnosti u fyzickej osoby?"
 description: Use when the user's question relates to Czech tax law, or when the answer may depend on a tax rule even if framed around something else - daň z příjmů (DPFO/DPPO), DPH, spotřební daně, daň silniční, daň z nemovitých věcí, daňový řád, daňové přiznání, srážková/zálohová daň, výdajový paušál, paušální daň, OSVČ, DPP/DPČ, plátce, poplatník, dvojí zdanění, prodej nemovitosti, prodej podílu, dědění, darování, příjmy ze zahraničí, kryptoměny, investiční příjmy, pronájem, honoráře, § ZDP/ZDPH/DŘ, zákon č. 586/1992 / 235/2004 / 280/2009 / 353/2003 / 338/1992 Sb., or any § in a Czech tax statute. Activate also when the user does not name a tax but their situation has tax consequences (income events, transactions, ownership changes, cross-border flows, business obligations). Standalone authoritative skill - bundles general CODEXIS methodology with Czech tax-law reasoning framework; no need to load the general codexis skill.
 ---
 

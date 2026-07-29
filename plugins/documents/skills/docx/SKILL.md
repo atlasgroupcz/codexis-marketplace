@@ -9,12 +9,18 @@ i18n:
   cs:
     displayName: "Word dokumenty"
     summary: "Tvorba, úprava a vizuální kontrola .docx - smlouvy, podání, memoranda, dopisy."
+    examplePrompts:
+      - "Připrav ve Wordu vzor nájemní smlouvy k bytu."
   en:
     displayName: "Word Documents"
     summary: "Create, edit and visually verify .docx files - contracts, filings, memos, letters."
+    examplePrompts:
+      - "Draft a residential lease agreement template in Word."
   sk:
     displayName: "Word dokumenty"
     summary: "Tvorba, úprava a vizuálna kontrola .docx - zmluvy, podania, memorandá, listy."
+    examplePrompts:
+      - "Priprav vo Worde vzor nájomnej zmluvy k bytu."
 ---
 
 # DOCX - creation, editing, visual verification

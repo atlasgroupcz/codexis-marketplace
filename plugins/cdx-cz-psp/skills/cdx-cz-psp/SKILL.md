@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Poslanecká sněmovna ČR"
     summary: "Parlamentní tisky, interpelace, evropské dokumenty a sledování legislativních návrhů v PSP ČR."
+    examplePrompts:
+      - "Jaké novely zákoníku práce právě projednává Poslanecká sněmovna?"
+      - "Jak probíhalo ve sněmovně projednávání zákona o kybernetické bezpečnosti?"
+      - "Najdi interpelace poslanců k tématu cen energií."
   en:
     displayName: "Czech Parliament"
     summary: "Parliamentary papers, interpellations, EU documents and legislative bill tracking from the Czech Chamber of Deputies."
+    examplePrompts:
+      - "Which Labour Code amendments is the Chamber of Deputies currently debating?"
+      - "How did the Chamber of Deputies handle the cybersecurity act?"
+      - "Find MPs' interpellations on energy prices."
   sk:
     displayName: "Poslanecká snemovňa ČR"
     summary: "Parlamentné tlače, interpelácie, európske dokumenty a sledovanie legislatívnych návrhov v PSP ČR."
+    examplePrompts:
+      - "Aké novely zákonníka práce práve prerokúva česká Poslanecká snemovňa?"
+      - "Ako prebiehalo v snemovni prerokovanie zákona o kybernetickej bezpečnosti?"
+      - "Nájdi interpelácie poslancov k téme cien energií."
 ---
 
 # Czech Parliament Database (cdx-cz-psp)

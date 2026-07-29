@@ -10,12 +10,18 @@ i18n:
   cs:
     displayName: "CODEXIS - Právní databáze"
     summary: "Česká, slovenská a evropská legislativa, česká a evropská judikatura, odborné komentáře, právní literatura a vzory smluv."
+    examplePrompts:
+      - "Najdi judikaturu Nejvyššího soudu k náhradě škody a shrň závěry."
   en:
     displayName: "CODEXIS - Legal Database"
     summary: "Czech, Slovak and EU legislation, Czech and European case law, legal commentaries, literature and contract templates."
+    examplePrompts:
+      - "Find Supreme Court case law on damages and summarize the conclusions."
   sk:
     displayName: "CODEXIS - Právna databáza"
     summary: "Česká, slovenská a európska legislatíva, česká a európska judikatúra, odborné komentáre, právna literatúra a vzory zmlúv."
+    examplePrompts:
+      - "Nájdi judikatúru českého Najvyššieho súdu k náhrade škody a zhrň závery."
 ---
 
 # CODEXIS Legal Database CLI
