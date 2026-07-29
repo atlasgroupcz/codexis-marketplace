@@ -27,6 +27,7 @@ members = [
   "plugins/cdx-sk/src/cdx-sk",
   "plugins/codexis/src/cdx-cli",
   "plugins/codexis/src/cdxctl",
+  "plugins/datify/src/datify",
   "plugins/kataster-sk/src/kataster-sk-cli",
   "plugins/katastr/src/katastr",
   "plugins/leciva/src/leciva-cli",

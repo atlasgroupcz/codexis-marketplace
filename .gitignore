@@ -142,3 +142,7 @@ docs/superpowers/
 
 # uv-managed virtualenv (uv.lock is committed for reproducible CI)
 .venv/
+
+# Raw coverage profiles. cargo llvm-cov writes these next to the crate when a
+# test spawns the binary under test; they are build output, never sources.
+*.profraw

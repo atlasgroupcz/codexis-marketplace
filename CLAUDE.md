@@ -278,6 +278,13 @@ Skill authoring best practices) for every SKILL.md in this repo:
   workflows give numbered steps or a checklist; for quality-critical steps add a
   validation loop (run the check, fix, re-run).
 - **Consistent terminology**: pick one term per concept and use it everywhere.
+- **Write the behaviour, not its provenance.** State how the system behaves and what
+  to do about it. How that was discovered, what the vendor's own docs claim, and why
+  our code enforces it where it does are invisible to the reader and cost it tokens -
+  they belong in the commit message and code comments, where a maintainer looks for
+  them. A skill is not a changelog. Same rule bans describing the CLI's own leniency
+  ("a lone condition is wrapped for you"): it is true, and the only thing it tells
+  the reader is that it may be sloppy. State the required form instead.
 - **No time-sensitive content.** No "before/after <date>" branches; keep legacy behavior
   in a clearly marked deprecated/old-patterns note.
 - **Match specificity to fragility**: exact commands for fragile one-way operations,
@@ -431,6 +438,34 @@ When in doubt, rebuild everything - it is cheap and a stale bundle is silent.
 The generated filenames carry a content hash and therefore change on every
 rebuild - that is the point, see the caching rules above. Expect the diff to
 delete the old `index-<hash>.js` and add a new one.
+
+## Display names and versions
+
+### `displayName`: add a qualifier only when the name needs one
+
+Two shapes are in use, and which one applies follows from the name itself:
+
+- **Opaque name → `Brand - what it is`.** A brand or acronym a user cannot
+  decode: `CODEXIS - Právní databáze`, `ARES - registr ekonomických subjektů`,
+  `ONEPOST - datové schránky`, `SÚKL - registr léčiv`.
+- **Self-describing name → leave it alone.** Adding a qualifier would only
+  repeat it: `Katastr nemovitostí ČR`, `Hlídač insolvencí ČR`, `Vizualizace dat`.
+
+**Take the qualifier from how the product describes itself**, not from what its
+API happens to expose. Datify's API is collections and datasets, which reads
+like a "data platform" - but Datify calls itself a *digitální AI kancelář*, and
+that is what belongs in the name. Check the vendor's own site before inventing
+a label; a wrong one ships to every user and is awkward to change later.
+
+Keep `displayName` in step across all three places that carry it:
+`marketplace.json`, `plugin.json` and the skill's `SKILL.md` frontmatter.
+
+### Versions start at 1.0.0
+
+A plugin that ships is `1.0.0`, not `0.1.0` - the marketplace has no pre-release
+channel, so anything installable is released. Bump `version` in `plugin.json`
+and, for Rust plugins, the crate's `Cargo.toml` in the same commit: the CLI
+reports it (`--version`) and it usually reaches the API as the `User-Agent`.
 
 ## Localization (i18n)
 
