@@ -398,6 +398,15 @@ A plugin can render an in-chat HTML preview for the sources it publishes. Publis
 
 The binary path is resolved relative to `previews/` and may point into the plugin's `bin/` (it must stay inside the plugin directory). The daemon executes it CGI-style in the user's VM with the resource path in `PATH_INFO` (+ `QUERY_STRING`); the handler prints a CGI response (`Status`/`Content-Type` headers, blank line, HTML body). Static assets placed next to the descriptor (e.g. `previews/preview.css`) are served as-is, so the page can reference them relatively (`<link rel="stylesheet" href="./preview.css">`). The rendered HTML drives the chat panel: `<title>` becomes the panel title and an optional `<link rel="canonical" href="…">` becomes the "open in new tab" target. See the `codexis` plugin (`cdx-cli preview`) for the reference implementation.
 
+A handler that writes preview files to disk must never derive the target path itself. The daemon owns the filesystem layout and passes it in the CGI environment:
+
+| ENV | Meaning |
+| --- | --- |
+| `PREVIEW_DIR` | absolute directory the handler writes generated preview files into (already scoped to the chat) |
+| `PREVIEW_ASSET_BASE_URL` | URL prefix the daemon serves the plugin's `previews/` assets from, e.g. `<PREVIEW_ASSET_BASE_URL>/preview.css` |
+
+A file-writing handler must fail (`Status: 5xx`) when either is missing rather than falling back to a hardcoded path. `PREVIEW_ASSET_BASE_URL` is needed because such a page is opened through the file preview renderer, not from the plugin endpoint, so a relative `./preview.css` would not resolve.
+
 ### Frontend changes need a component rebuild
 
 `frontend/apps/<app>/` is **source**. The daemon never runs it. What the daemon

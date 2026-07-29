@@ -2,8 +2,8 @@
 //! (`/rest/v1/plugin-previews/…`, LM-207). The daemon passes the resource path of
 //! a `cdx://preview/doc/<DOC_ID>[/<DOC_PART_ID>]` preview reference via
 //! `PATH_INFO`; the handler downloads the document's native preview content from
-//! the CODEXIS API into `~/.cdx/tmp/previews/` and emits a JSON manifest the
-//! frontend feeds to its file preview renderer.
+//! the CODEXIS API into the directory the daemon names in `PREVIEW_DIR` and emits
+//! a JSON manifest the frontend feeds to its file preview renderer.
 
 use std::env;
 use std::fs;
@@ -17,9 +17,8 @@ use cdx_common::config::{read_env, to_authorization_header};
 use cdx_common::curl::{execute_curl, split_envelope_str};
 
 const WEB_BASE_URL_ENV: &str = "CODEXIS_PLUGIN_BASE_URL";
-const PLUGIN_DIR_ENV: &str = "PLUGIN_DIR";
-const PREVIEWS_TMP_DIR: &str = ".cdx/tmp/previews";
-const FILE_DOWNLOAD_URL_PREFIX: &str = "/rest/files/download?path=";
+const PREVIEW_DIR_ENV: &str = "PREVIEW_DIR";
+const PREVIEW_ASSET_BASE_URL_ENV: &str = "PREVIEW_ASSET_BASE_URL";
 
 pub(crate) fn execute_preview() -> Result<(), CliError> {
     let path_info = env::var("PATH_INFO").unwrap_or_default();
@@ -96,7 +95,7 @@ fn render_preview(path_info: &str) -> Result<Value, PreviewError> {
         .map_err(|source| PreviewError::Cli(CliError::Io { context: "create previews dir".to_string(), source }))?;
 
     let title = fetch_title(&config, &document.doc_id).unwrap_or_else(|| document.doc_id.clone());
-    let file = write_preview_file(&config, &document, &previews_dir, &title)?;
+    let file = write_preview_file(&config, &document, &previews_dir, &title, &asset_base_url()?)?;
     let size = fs::metadata(&file.path).map(|m| m.len()).unwrap_or(0);
 
     Ok(json!({
@@ -117,7 +116,7 @@ struct PreviewFile {
 
 /// Downloads the document's native preview content and stores it as a file the
 /// frontend renderer understands: HTML documents become a standalone `.html`
-/// page (stylesheet linked from the previews tmp dir), binary documents keep
+/// page (stylesheet served by the daemon out of the plugin), binary documents keep
 /// their native format (`.pdf`), and backends without a preview fall back to
 /// the markdown text render stored as `.md`.
 fn write_preview_file(
@@ -125,6 +124,7 @@ fn write_preview_file(
     document: &DocumentPreviewPath,
     previews_dir: &Path,
     title: &str,
+    asset_base_url: &str,
 ) -> Result<PreviewFile, PreviewError> {
     let base_name = file_base_name(document);
     let download_path = previews_dir.join(format!("{base_name}.download"));
@@ -135,7 +135,7 @@ fn write_preview_file(
             let content = fs::read_to_string(&download_path)
                 .map_err(|source| PreviewError::Cli(CliError::Io { context: "read downloaded preview".to_string(), source }))?;
             let _ = fs::remove_file(&download_path);
-            let page = document_page(title, &content, &stylesheet_href(previews_dir));
+            let page = document_page(title, &content, &stylesheet_href(asset_base_url));
             let path = previews_dir.join(format!("{base_name}.html"));
             fs::write(&path, page)
                 .map_err(|source| PreviewError::Cli(CliError::Io { context: "write html preview".to_string(), source }))?;
@@ -198,34 +198,23 @@ fn download_preview(
     Some(content_type.to_string())
 }
 
+/// The daemon owns the filesystem layout and names the target directory in
+/// `PREVIEW_DIR`; the plugin never derives a path of its own.
 fn previews_dir() -> Result<PathBuf, PreviewError> {
-    let home = read_env("HOME").ok_or(PreviewError::Cli(CliError::MissingConfig("HOME")))?;
-    Ok(PathBuf::from(home).join(PREVIEWS_TMP_DIR))
+    let dir = read_env(PREVIEW_DIR_ENV)
+        .ok_or(PreviewError::Cli(CliError::MissingConfig(PREVIEW_DIR_ENV)))?;
+    Ok(PathBuf::from(dir))
 }
 
-/// The generated HTML links the stylesheet through the daemon's file download
-/// endpoint (same origin as the app); the stylesheet is copied from the plugin's
-/// `previews/` directory into the previews tmp dir on each render.
-fn stylesheet_href(previews_dir: &Path) -> String {
-    let css_path = previews_dir.join("preview.css");
-    if let Some(plugin_dir) = read_env(PLUGIN_DIR_ENV) {
-        let source = PathBuf::from(plugin_dir).join("previews/preview.css");
-        let _ = fs::copy(source, &css_path);
-    }
-    format!("{FILE_DOWNLOAD_URL_PREFIX}{}", url_encode(&css_path.to_string_lossy()))
+fn asset_base_url() -> Result<String, PreviewError> {
+    read_env(PREVIEW_ASSET_BASE_URL_ENV)
+        .ok_or(PreviewError::Cli(CliError::MissingConfig(PREVIEW_ASSET_BASE_URL_ENV)))
 }
 
-fn url_encode(value: &str) -> String {
-    let mut encoded = String::with_capacity(value.len() * 3);
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                encoded.push(byte as char);
-            }
-            _ => encoded.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    encoded
+/// The generated HTML links the stylesheet straight out of the plugin's `previews/`
+/// directory, which the daemon serves as a static asset under the preview endpoint.
+fn stylesheet_href(asset_base_url: &str) -> String {
+    format!("{}/preview.css", asset_base_url.trim_end_matches('/'))
 }
 
 fn file_base_name(document: &DocumentPreviewPath) -> String {
@@ -458,10 +447,14 @@ mod tests {
     }
 
     #[test]
-    fn url_encodes_paths_for_the_file_download_link() {
+    fn links_the_stylesheet_under_the_preview_asset_base_url() {
         assert_eq!(
-            url_encode("/home/codexis/.cdx/tmp/previews/preview.css"),
-            "%2Fhome%2Fcodexis%2F.cdx%2Ftmp%2Fpreviews%2Fpreview.css"
+            stylesheet_href("/rest/v1/plugin-previews/UGx1Z2lu"),
+            "/rest/v1/plugin-previews/UGx1Z2lu/preview.css"
+        );
+        assert_eq!(
+            stylesheet_href("/rest/v1/plugin-previews/UGx1Z2lu/"),
+            "/rest/v1/plugin-previews/UGx1Z2lu/preview.css"
         );
     }
 
@@ -470,12 +463,12 @@ mod tests {
         let page = document_page(
             "Zákon č. 586/1992 Sb.",
             "<h1>586/1992 Sb.</h1>",
-            "/rest/files/download?path=%2Fhome%2Fx%2Fpreview.css",
+            "/rest/v1/plugin-previews/UGx1Z2lu/preview.css",
         );
 
         assert!(page.contains("<title>Zákon č. 586/1992 Sb.</title>"));
         assert!(page.contains(
-            "<link rel=\"stylesheet\" href=\"/rest/files/download?path=%2Fhome%2Fx%2Fpreview.css\">"
+            "<link rel=\"stylesheet\" href=\"/rest/v1/plugin-previews/UGx1Z2lu/preview.css\">"
         ));
         assert!(page.contains("<h1>586/1992 Sb.</h1>"));
     }
