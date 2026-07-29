@@ -3,6 +3,12 @@
 Worked `cdxctl skill create` calls. Copy the shape, swap the content. Write the body to a
 temp file under `./.tmp/` and pass it with `--instructions-file`.
 
+`--display-name`, `--summary` and `--example-prompt` take `lang:text` and repeat once per
+language. `--example-prompt` repeats once per prompt as well, at most three per language,
+in the order they should appear. It is optional on a skill - the AI reaches for a skill on
+its own, where an agent is started by clicking a prompt. When you do give prompts, write
+them concrete and directly runnable.
+
 ## Legal-research skill (jurisdiction-specific)
 
 ```bash
@@ -20,6 +26,10 @@ cdxctl skill create --name vypoved-kontrola \
   --display-name cs:"Kontrola výpovědi" --display-name en:"Dismissal review" \
   --summary cs:"Posoudí zákonnost výpovědi a navrhne nápravu." \
   --summary en:"Judges a dismissal and proposes a fix." \
+  --example-prompt cs:"Posuď zákonnost této výpovědi a navrhni nápravu." \
+  --example-prompt cs:"Zkontroluj, zda byla u této výpovědi dodržena výpovědní doba." \
+  --example-prompt en:"Judge whether this dismissal is lawful and propose a fix." \
+  --example-prompt en:"Check whether the notice period was observed." \
   --jurisdiction CZ \
   --instructions-file ./.tmp/vypoved-kontrola.md
 ```
@@ -59,4 +69,11 @@ cdxctl skill create --name kontrolor-jen-cteni \
 ```bash
 cdxctl skill update vypoved-kontrola \
   --summary cs:"Posoudí zákonnost výpovědi, doručení a navrhne nápravu."
+
+# --example-prompt is per-language, and repeating it replaces that language's whole list -
+# so pass every Czech prompt even when only one changes. English is not passed, so the
+# stored English prompts stay.
+cdxctl skill update vypoved-kontrola \
+  --example-prompt cs:"Posuď zákonnost této výpovědi a navrhni nápravu." \
+  --example-prompt cs:"Ověř, zda byla výpověď řádně doručena."
 ```

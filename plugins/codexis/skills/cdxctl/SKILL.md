@@ -133,6 +133,12 @@ EOF
 cdxctl agent create --name koncipient-pp --description "Posuzuje zákonnost výpovědí podle zákoníku práce" \
   --display-name cs:"Koncipient pro pracovní právo" --display-name en:"Employment-law associate" \
   --summary cs:"Posoudí zákonnost výpovědi a navrhne nápravu." --summary en:"Judges a dismissal and proposes a fix." \
+  --example-prompt cs:"Posuď zákonnost této výpovědi a navrhni nápravu." \
+  --example-prompt cs:"Zkontroluj, zda byla dodržena výpovědní doba." \
+  --example-prompt cs:"Shrň rizika této výpovědi do tabulky." \
+  --example-prompt en:"Judge whether this dismissal is lawful and propose a fix." \
+  --example-prompt en:"Check whether the notice period was observed." \
+  --example-prompt en:"Summarize the risks of this dismissal in a table." \
   --instructions-file ./.tmp/koncipient-pp.md
 
 cdxctl agent update <id> --description "New description"
@@ -149,7 +155,9 @@ Every new agent needs `--display-name` and `--summary`. Pass each as `lang:text`
 
 Give the display name and summary in the prompt's language and in English. A Czech prompt gets Czech and English. Always add English.
 
-`update` keeps every field you do not pass. Pass only the fields you change. List flags (`--skill`, `--tool`, `--disallowed-tool`, `--jurisdiction`) replace the whole stored list - to add one skill, pass the full list including the skills the agent already has. `--display-name` and `--summary` are per-language: the languages you pass are replaced, the rest stay.
+Every new agent also gets **three `--example-prompt` per language** - the same `lang:text` shape, repeated once per prompt, in the order they should appear. They are what the user clicks to start a run, so write them concrete and directly runnable: a real sentence that asks this agent for one of its jobs, not a category label like "smlouvy" and not a `«fill this in»` placeholder. Cover three different things the agent does rather than one question reworded, and keep each to one sentence.
+
+`update` keeps every field you do not pass. Pass only the fields you change. List flags (`--skill`, `--tool`, `--disallowed-tool`, `--jurisdiction`) replace the whole stored list - to add one skill, pass the full list including the skills the agent already has. `--display-name`, `--summary` and `--example-prompt` are per-language: the languages you pass are replaced, the rest stay. Repeating `--example-prompt` for one language replaces that language's whole list, so pass all three prompts when you change one.
 
 Run `cdxctl skill list` first. Read the agent's job and give it every skill that fits - pass each with `--skill`, in the same run as the create. A legal agent gets the legal-research skill; a document agent gets the document skills. Contract, filing, and compliance work is legal work, so it gets a legal skill on top of any document skill. Choose the fitting skills yourself from the agent's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
 
@@ -194,6 +202,8 @@ cdxctl skill create --name vypoved-kontrola \
   --description "Use when the user needs a Czech employment dismissal reviewed for lawfulness." \
   --display-name cs:"Kontrola výpovědi" --display-name en:"Dismissal review" \
   --summary cs:"Posoudí zákonnost výpovědi a navrhne nápravu." --summary en:"Judges a dismissal and proposes a fix." \
+  --example-prompt cs:"Posuď zákonnost této výpovědi a navrhni nápravu." \
+  --example-prompt en:"Judge whether this dismissal is lawful and propose a fix." \
   --jurisdiction CZ \
   --instructions-file ./.tmp/vypoved-kontrola.md
 
@@ -209,9 +219,11 @@ Write the skill body to a temp file under `./.tmp/` and pass its path with `--in
 
 Every new skill needs `--display-name` and `--summary`. Pass each as `lang:text` and repeat once per language - the prompt's language and English. `--display-name` is what the user sees on the Skills page; `--name` is the technical slug (lowercase, hyphens).
 
+`--example-prompt` takes the same `lang:text` shape and is repeated once per prompt, in the order they should appear. At most three per language. Optional on a skill, which the AI reaches for on its own - unlike an agent, which the user starts by clicking a prompt.
+
 Give the skill `--jurisdiction` when it covers one country's law (e.g. `CZ`), and `--jurisdiction-required` when the AI should reach for it only in that jurisdiction. Leave `--allowed-tool` out so the skill keeps every tool; set it only to restrict on purpose.
 
-`update` keeps every field you do not pass. List flags (`--jurisdiction`, `--allowed-tool`) replace the whole stored list. `--display-name` and `--summary` are per-language: the languages you pass are replaced, the rest stay.
+`update` keeps every field you do not pass. List flags (`--jurisdiction`, `--allowed-tool`) replace the whole stored list. `--display-name`, `--summary` and `--example-prompt` are per-language: the languages you pass are replaced, the rest stay.
 
 When you confirm the new skill to the user, keep it plain: the display name, what it does, its jurisdiction. Leave out the slug, the command, and other internals.
 
