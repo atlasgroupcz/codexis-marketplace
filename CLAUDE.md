@@ -183,37 +183,33 @@ and catches only cosmetic drift.
 
 ## Example prompts
 
-`plugins/<name>/example-prompts.json` holds ready-made prompts the daemon renders
-on the plugin page. The file is **optional** - `ocr`, `video-analyze` and
-`visualization` ship none on purpose, because nobody addresses them directly;
-they run as part of another request.
+A skill's `SKILL.md` frontmatter holds ready-made prompts the daemon renders on
+the plugin page, under the `i18n` block it already carries. They are **optional** -
+`ocr`, `video-analyze` and `visualization` ship none on purpose, because nobody
+addresses them directly; they run as part of another request.
 
-```json
-{
-  "prompts": [
-    {
-      "id": "stavba-podle-adresy",
-      "i18n": {
-        "cs": { "prompt": "..." },
-        "en": { "prompt": "..." },
-        "sk": { "prompt": "..." }
-      }
-    }
-  ]
-}
+```yaml
+i18n:
+  cs:
+    displayName: "..."
+    summary: "..."
+    examplePrompts:
+      - "Ověř v ARES firmu s IČO 27082440 - sídlo, aktivitu a jestli je plátcem DPH."
+  en:
+    ...
 ```
 
-Technical key on top, user-facing text under `i18n` - the same split as every
-other manifest here. The prompt text lives in exactly one place: unlike
-`plugin.json`, this file has no outside reader, so a top-level copy would only be
-a second place to drift. All three languages are mandatory. `id` is kebab-case
-and unique within the file; it exists so language keys keep their own namespace,
-not for telemetry. There is deliberately no `title` - the whole prompt renders,
-so a separate label would say the same thing twice and would let the chip
-advertise something other than what it sends.
+Prompts sit next to the `displayName` and `summary` they belong to, so a skill
+carries its own user-facing text in one place. They are an ordered list of plain
+strings - no `id` and no `title`. The whole prompt renders, so a separate label
+would say the same thing twice and would let the chip advertise something other
+than what it sends; ordering carries whatever a key used to. All three languages
+are mandatory once any of them lists a prompt, and every language must list the
+same number.
 
-Three prompts is the target, and they must cover different capabilities rather
-than one question reworded. The two README rules apply unchanged:
+At most three prompts per language, and three is the target. They must cover
+different capabilities rather than one question reworded. The two README rules
+apply unchanged:
 
 - **Never write a prompt for a capability you have not read in the plugin's own
   `SKILL.md` / `references/`.** Both cadastre plugins document that their API
@@ -232,12 +228,13 @@ Two rules specific to prompts:
   assistant ask for the identifier. That still runs; a `«fill this in»`
   placeholder does not.
 
-Source prompts from user-facing skills only: `codexis` also ships `cdxctl`, which
-administers platform objects and is not something a user asks about.
+Put each prompt on the skill that actually serves it, and only on user-facing
+skills: `codexis` also ships `cdxctl`, which administers platform objects and is
+not something a user asks about.
 
-`tests/test_conformance.py` validates the file when it exists and never requires
+`tests/test_conformance.py` validates the block when it exists and never requires
 it. Em-dashes are not checked there - `tests/test_repo_hygiene.py` already sweeps
-every tracked `.json`.
+every tracked source file.
 
 ## Workflow templates
 

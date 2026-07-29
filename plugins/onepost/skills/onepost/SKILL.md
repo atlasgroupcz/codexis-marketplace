@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "ONEPOST - datové schránky"
     summary: "Práce s ONEPOST API - schránky, zprávy, přílohy, koncepty, odesílání a stažení zpráv z ISDS."
+    examplePrompts:
+      - "Ukaž mi nepřečtené zprávy v datové schránce."
+      - "Najdi v datové schránce zprávy od finančního úřadu a stáhni přílohy."
+      - "Připrav v datové schránce zprávu k odeslání."
   en:
     displayName: "ONEPOST - Data Boxes"
     summary: "Use the ONEPOST API for mailboxes, messages, attachments, concepts, sending, search, and receiving ISDS messages."
+    examplePrompts:
+      - "Show me the unread messages in my data box."
+      - "Find data box messages from the tax office and download their attachments."
+      - "Draft a data box message ready to send."
   sk:
     displayName: "ONEPOST - dátové schránky"
     summary: "Práca s ONEPOST API - schránky, správy, prílohy, koncepty, odosielanie a stiahnutie správ z ISDS."
+    examplePrompts:
+      - "Ukáž mi neprečítané správy v dátovej schránke."
+      - "Nájdi v dátovej schránke správy z finančného úradu a stiahni prílohy."
+      - "Priprav v dátovej schránke správu na odoslanie."
 ---
 
 # ONEPOST

@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "Hlídač ochranných známek"
     summary: "Rešerše a sledování ochranných známek (ÚPV, EUIPO) - slovní, fonetická i obrazová podobnost a posouzení zaměnitelnosti."
+    examplePrompts:
+      - "Zjisti, jestli už existuje ochranná známka podobná názvu CODEXIS."
+      - "Prověř, jestli naše logo nekoliduje se zapsanou ochrannou známkou."
+      - "Hlídej naši ochrannou známku a dej vědět, když někdo zapíše podobnou."
   en:
     displayName: "Trademark Watchdog"
     summary: "Search and monitor trademarks (ÚPV, EUIPO) - verbal, phonetic and visual similarity and likelihood-of-confusion assessment."
+    examplePrompts:
+      - "Check whether a trademark similar to the name CODEXIS already exists."
+      - "Check whether our logo clashes with a registered trademark."
+      - "Watch our trademark and tell me when someone registers a similar one."
   sk:
     displayName: "Hliadač ochranných známok"
     summary: "Rešerš a sledovanie ochranných známok (ÚPV, EUIPO) - slovná, fonetická aj obrazová podobnosť a posúdenie zameniteľnosti."
+    examplePrompts:
+      - "Zisti, či už existuje ochranná známka podobná názvu CODEXIS."
+      - "Prever, či naše logo nekoliduje so zapísanou ochrannou známkou."
+      - "Sleduj našu ochrannú známku a daj vedieť, keď niekto zapíše podobnú."
 ---
 
 # Hlídač ochranných známek (ÚPV + EUIPO)

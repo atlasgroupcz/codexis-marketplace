@@ -9,12 +9,25 @@ i18n:
   cs:
     displayName: "Nizozemské právo (BWB, Rechtspraak.nl a CVDR)"
     summary: "Nizozemská právní databáze - národní legislativa z Basiswettenbestand (BWB), rozhodnutí nizozemských soudů z Rechtspraak.nl a decentralizované předpisy obcí/provincií/vodních úřadů (CVDR)."
+    examplePrompts:
+      - "Co říká nizozemské právo o výpovědi z nájmu bytu?"
+      - "Najdi nizozemská soudní rozhodnutí k odpovědnosti za škodu."
+      - "Jaké obecní vyhlášky vydal Amsterdam?"
   en:
     displayName: "Dutch Legal Database (BWB, Rechtspraak.nl & CVDR)"
     summary: "Dutch legal database - national legislation from Basiswettenbestand (BWB), Dutch court decisions from Rechtspraak.nl, and decentralized regulations of municipalities/provinces/water boards (CVDR)."
+    examplePrompts:
+      - "What does Dutch law say about terminating a residential lease?"
+      - "Find Dutch court decisions on liability for damages."
+      - "Which municipal regulations has Amsterdam issued?"
   nl:
     displayName: "Nederlandse rechtsdatabase (BWB, Rechtspraak.nl & CVDR)"
     summary: "Nederlandse rechtsdatabase - nationale wetgeving uit Basiswettenbestand (BWB), uitspraken van Nederlandse rechtbanken via Rechtspraak.nl en decentrale regelgeving van gemeenten/provincies/waterschappen (CVDR)."
+  sk:
+    examplePrompts:
+      - "Čo hovorí holandské právo o výpovedi z nájmu bytu?"
+      - "Nájdi holandské súdne rozhodnutia k zodpovednosti za škodu."
+      - "Aké obecné vyhlášky vydal Amsterdam?"
 ---
 
 # Dutch Legal Database (cdx-nl)

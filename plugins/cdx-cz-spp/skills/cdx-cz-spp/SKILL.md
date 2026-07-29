@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Obecní předpisy ČR"
     summary: "Obecně závazné vyhlášky, nařízení a místní právní akty obcí a krajů ze sbirkapp.gov.cz."
+    examplePrompts:
+      - "Najdi obecně závaznou vyhlášku Brna o nočním klidu."
+      - "Jaké vyhlášky k odpadům vydalo město Plzeň?"
+      - "Které obce mají vyhlášku o zákazu podomního prodeje?"
   en:
     displayName: "Czech Municipal Regulations"
     summary: "Generally binding ordinances, decrees, and local legal acts from Czech municipalities (sbirkapp.gov.cz)."
+    examplePrompts:
+      - "Find the Brno municipal ordinance on night-time quiet hours."
+      - "Which waste-management ordinances has the city of Plzeň issued?"
+      - "Which municipalities have an ordinance banning door-to-door sales?"
   sk:
     displayName: "Obecné predpisy ČR"
     summary: "Všeobecne záväzné vyhlášky, nariadenia a miestne právne akty českých obcí a krajov (sbirkapp.gov.cz)."
+    examplePrompts:
+      - "Nájdi všeobecne záväznú vyhlášku Brna o nočnom pokoji."
+      - "Aké vyhlášky k odpadom vydalo mesto Plzeň?"
+      - "Ktoré obce majú vyhlášku o zákaze podomového predaja?"
 ---
 
 # Czech Municipal Regulations (cdx-cz-spp)

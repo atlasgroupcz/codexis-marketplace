@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "RZPRO - registr zdravotnických prostředků"
     summary: "Vyhledávání zdravotnických prostředků v registru RZPRO - podle názvu nebo evidenčního čísla, výrobce, varianty, osoby."
+    examplePrompts:
+      - "Najdi v registru zdravotnických prostředků katetry a vypiš výrobce a rizikovou třídu."
+      - "K jakému zdravotnickému prostředku patří katalogové číslo 4157744?"
+      - "Jaké zdravotnické prostředky má v registru ohlášené firma B. Braun?"
   en:
     displayName: "RZPRO - Medical Devices Registry"
     summary: "Look up medical devices in the RZPRO registry - by name or evidence number, manufacturer, variants, persons."
+    examplePrompts:
+      - "Find catheters in the medical device register and list manufacturer and risk class."
+      - "Which medical device does catalogue number 4157744 belong to?"
+      - "Which medical devices has B. Braun notified in the register?"
   sk:
     displayName: "RZPRO - register zdravotníckych pomôcok"
     summary: "Vyhľadávanie zdravotníckych pomôcok v registri RZPRO - podľa názvu alebo evidenčného čísla, výrobca, varianty, osoby."
+    examplePrompts:
+      - "Nájdi v registri zdravotníckych pomôcok katétre a vypíš výrobcu a rizikovú triedu."
+      - "Ku ktorej zdravotníckej pomôcke patrí katalógové číslo 4157744?"
+      - "Aké zdravotnícke pomôcky má v registri ohlásené firma B. Braun?"
 ---
 
 # RZPRO - registr zdravotnických prostředků

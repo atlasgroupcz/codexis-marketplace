@@ -22,6 +22,8 @@ pub struct AgentFields {
     pub display_name: Vec<String>,
     /// Localized summaries as raw `lang:text` entries, one per language.
     pub summary: Vec<String>,
+    /// Localized example prompts as raw `lang:text` entries, repeated per prompt and language.
+    pub example_prompts: Vec<String>,
 }
 
 impl AgentFields {
@@ -37,6 +39,7 @@ impl AgentFields {
             && self.instructions.is_none()
             && self.display_name.is_empty()
             && self.summary.is_empty()
+            && self.example_prompts.is_empty()
     }
 }
 
@@ -344,6 +347,12 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) -> Result<
     if !fields.summary.is_empty() {
         input.insert("summary".into(), json!(parse_localized(&fields.summary, "summary")?));
     }
+    if !fields.example_prompts.is_empty() {
+        input.insert(
+            "examplePrompts".into(),
+            json!(parse_localized(&fields.example_prompts, "example-prompt")?),
+        );
+    }
     Ok(())
 }
 
@@ -502,6 +511,52 @@ mod tests {
             ])
         );
         assert_eq!(input["summary"], json!([{ "language": "cs", "text": "Připraví smlouvu." }]));
+        assert!(!input.contains_key("examplePrompts"));
+    }
+
+    #[test]
+    fn apply_fields_builds_localized_example_prompts_in_the_order_given() {
+        let fields = AgentFields {
+            example_prompts: vec![
+                "cs:Zkontroluj tuto smlouvu a shrň rizika.".into(),
+                "cs:Připrav dodatek ke smlouvě.".into(),
+                "en:Review this contract and summarize the risks.".into(),
+            ],
+            ..AgentFields::default()
+        };
+        let mut input = Map::new();
+
+        apply_fields(&mut input, &fields).unwrap();
+
+        assert_eq!(
+            input["examplePrompts"],
+            json!([
+                { "language": "cs", "text": "Zkontroluj tuto smlouvu a shrň rizika." },
+                { "language": "cs", "text": "Připrav dodatek ke smlouvě." },
+                { "language": "en", "text": "Review this contract and summarize the risks." }
+            ])
+        );
+    }
+
+    #[test]
+    fn apply_fields_rejects_an_example_prompt_without_a_language() {
+        let fields = AgentFields {
+            example_prompts: vec!["Zkontroluj tuto smlouvu.".into()],
+            ..AgentFields::default()
+        };
+        let mut input = Map::new();
+
+        let error = apply_fields(&mut input, &fields).unwrap_err();
+        assert!(matches!(error, CdxctlError::Parse(_)));
+    }
+
+    #[test]
+    fn example_prompts_alone_are_enough_to_update() {
+        assert!(!AgentFields {
+            example_prompts: vec!["cs:Zkontroluj tuto smlouvu.".into()],
+            ..AgentFields::default()
+        }
+        .is_empty());
     }
 
     #[test]

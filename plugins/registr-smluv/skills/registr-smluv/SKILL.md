@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Registr smluv ČR"
     summary: "Vyhledávání veřejných smluv v Registru smluv (smlouvy.gov.cz) - podle předmětu, stran, IČO, hodnoty a data uzavření."
+    examplePrompts:
+      - "Najdi v registru smluv veřejné smlouvy na rekonstrukci silnice."
+      - "Kolik smluv na IT služby je v registru smluv a za jakou celkovou částku?"
+      - "Vypiš veřejné smlouvy, které uzavřela firma s IČO 27082440."
   en:
     displayName: "Czech Register of Contracts"
     summary: "Search public-sector contracts in the Czech Register of Contracts (smlouvy.gov.cz) - by subject, parties, IČO, value, and conclusion date."
+    examplePrompts:
+      - "Find public contracts for road reconstruction in the Register of Contracts."
+      - "How many IT services contracts are in the register and what is their total value?"
+      - "List the public contracts signed by company 27082440."
   sk:
     displayName: "Register zmlúv ČR"
     summary: "Vyhľadávanie verejných zmlúv v Registri zmlúv (smlouvy.gov.cz) - podľa predmetu, strán, IČO, hodnoty a dátumu uzavretia."
+    examplePrompts:
+      - "Nájdi v českom registri zmlúv verejné zmluvy na rekonštrukciu cesty."
+      - "Koľko zmlúv na IT služby je v registri a za akú celkovú sumu?"
+      - "Vypíš verejné zmluvy, ktoré uzavrela firma s IČO 27082440."
 ---
 
 # Czech Register of Contracts (registr-smluv)

@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "Katastr nemovitostí ČR"
     summary: "Vyhledávání parcel, staveb, listů vlastnictví a sledování řízení (vklad/záznam) v katastru ČR."
+    examplePrompts:
+      - "Najdi v katastru dům na adrese Staroměstské náměstí 1, Praha a vypiš jeho parcely a číslo LV."
+      - "Zjisti, jestli na mé parcele vázne plomba nebo na ní běží katastrální řízení."
+      - "Sleduj vkladové řízení v katastru a upozorni mě, jakmile se změní jeho stav."
   en:
     displayName: "Czech Property Registry"
     summary: "Look up parcels, buildings, title deeds and track cadastral proceedings in the Czech Property Registry."
+    examplePrompts:
+      - "Look up the building at Staroměstské náměstí 1, Prague and list its parcels and title deed number."
+      - "Check whether my parcel has a pending cadastral proceeding recorded on it."
+      - "Track a cadastral deposit proceeding and alert me as soon as its status changes."
   sk:
     displayName: "Kataster nehnuteľností ČR"
     summary: "Vyhľadávanie parciel, stavieb, listov vlastníctva a sledovanie konaní (vklad/záznam) v katastri ČR."
+    examplePrompts:
+      - "Nájdi v katastri dom na adrese Staroměstské náměstí 1, Praha a vypíš jeho parcely a číslo LV."
+      - "Zisti, či na mojej parcele viazne plomba alebo na nej beží katastrálne konanie."
+      - "Sleduj vkladové konanie v katastri a upozorni ma, keď sa zmení jeho stav."
 ---
 
 # Katastr nemovitostí ČR

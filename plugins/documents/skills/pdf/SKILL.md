@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "PDF dokumenty"
     summary: "Čtení PDF včetně vizuální kontroly, tvorba PDF, vyplňování formulářů, slučování a dělení."
+    examplePrompts:
+      - "Přečti tenhle naskenovaný rozsudek a zkontroluj i razítka a podpisy na stránkách."
+      - "Vyplň v přiloženém formuláři jméno a datum a výsledek ulož jako PDF."
+      - "Slouč přiložená PDF do jednoho dokumentu ve správném pořadí."
   en:
     displayName: "PDF Documents"
     summary: "Read PDFs visually, produce PDF deliverables, fill forms, merge, split and watermark."
+    examplePrompts:
+      - "Read this scanned judgment and check the stamps and signatures on the pages too."
+      - "Fill in the name and date in the attached form and save the result as a PDF."
+      - "Merge the attached PDFs into a single document in the right order."
   sk:
     displayName: "PDF dokumenty"
     summary: "Čítanie PDF vrátane vizuálnej kontroly, tvorba PDF, vypĺňanie formulárov, zlučovanie."
+    examplePrompts:
+      - "Prečítaj tento naskenovaný rozsudok a skontroluj aj pečiatky a podpisy na stranách."
+      - "Vyplň v priloženom formulári meno a dátum a výsledok ulož ako PDF."
+      - "Zlúč priložené PDF do jedného dokumentu v správnom poradí."
 ---
 
 # PDF - reading, creation, forms
