@@ -323,6 +323,11 @@ enum AgentCommands {
         /// Repeat once per language
         #[arg(long = "summary")]
         summary: Vec<String>,
+        /// A ready-made prompt shown on the agent, as lang:text (e.g. cs:"Zkontroluj tuto
+        /// smlouvu a shrň rizika."). Repeat once per prompt and language; order is kept.
+        /// Give three per language
+        #[arg(long = "example-prompt")]
+        example_prompts: Vec<String>,
     },
     /// Update an agent; unset flags keep their stored value
     Update {
@@ -367,6 +372,10 @@ enum AgentCommands {
         /// Languages you do not pass keep their stored value
         #[arg(long = "summary")]
         summary: Vec<String>,
+        /// Replaces the example prompts for the given languages, as lang:text. Repeat once per
+        /// prompt and language; order is kept. Languages you do not pass keep their stored value
+        #[arg(long = "example-prompt")]
+        example_prompts: Vec<String>,
     },
     /// Delete an agent
     Delete {
@@ -405,6 +414,10 @@ enum SkillCommands {
         /// One user-facing sentence, as lang:text. Repeat once per language
         #[arg(long = "summary")]
         summary: Vec<String>,
+        /// A ready-made prompt shown on the skill, as lang:text. Repeat once per prompt and
+        /// language; order is kept
+        #[arg(long = "example-prompt")]
+        example_prompts: Vec<String>,
         /// Jurisdiction the skill covers, e.g. CZ; repeat for more
         #[arg(long = "jurisdiction")]
         jurisdictions: Vec<String>,
@@ -437,6 +450,10 @@ enum SkillCommands {
         /// Replaces the summary for the given languages, as lang:text. Repeat per language
         #[arg(long = "summary")]
         summary: Vec<String>,
+        /// Replaces the example prompts for the given languages, as lang:text. Repeat once per
+        /// prompt and language; order is kept
+        #[arg(long = "example-prompt")]
+        example_prompts: Vec<String>,
         /// Replaces the whole jurisdiction list; repeat for more
         #[arg(long = "jurisdiction")]
         jurisdictions: Vec<String>,
@@ -779,6 +796,7 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
+                example_prompts,
             } => commands::agent::create(
                 &client,
                 instructions_file.as_deref(),
@@ -794,6 +812,7 @@ fn main() {
                     instructions,
                     display_name,
                     summary,
+                    example_prompts,
                 },
                 format,
             ),
@@ -811,6 +830,7 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
+                example_prompts,
             } => commands::agent::update(
                 &client,
                 &id,
@@ -827,6 +847,7 @@ fn main() {
                     instructions,
                     display_name,
                     summary,
+                    example_prompts,
                 },
                 format,
             ),
@@ -843,6 +864,7 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
+                example_prompts,
                 jurisdictions,
                 jurisdiction_required,
                 allowed_tools,
@@ -855,6 +877,7 @@ fn main() {
                     instructions,
                     display_name,
                     summary,
+                    example_prompts,
                     jurisdictions: none_if_empty(jurisdictions),
                     jurisdiction_required: if jurisdiction_required { Some(true) } else { None },
                     allowed_tools: none_if_empty(allowed_tools),
@@ -869,6 +892,7 @@ fn main() {
                 instructions_file,
                 display_name,
                 summary,
+                example_prompts,
                 jurisdictions,
                 jurisdiction_required,
                 allowed_tools,
@@ -882,6 +906,7 @@ fn main() {
                     instructions,
                     display_name,
                     summary,
+                    example_prompts,
                     jurisdictions: none_if_empty(jurisdictions),
                     jurisdiction_required,
                     allowed_tools: none_if_empty(allowed_tools),
@@ -1030,6 +1055,57 @@ mod tests {
                 assert_eq!(description.as_deref(), Some("New description"));
             }
             _ => panic!("expected agent update command"),
+        }
+    }
+
+    #[test]
+    fn repeated_example_prompt_flags_keep_their_order_on_agent_and_skill() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "agent",
+            "create",
+            "--name",
+            "hr-vypoved",
+            "--description",
+            "Posuzuje zakonnost vypovedi",
+            "--example-prompt",
+            "cs:Zkontroluj tuto smlouvu a shrn rizika.",
+            "--example-prompt",
+            "cs:Priprav dodatek ke smlouve.",
+            "--example-prompt",
+            "en:Review this contract and summarize the risks.",
+        ])
+        .expect("agent create should parse");
+
+        match cli.command {
+            Commands::Agent {
+                command: AgentCommands::Create { example_prompts, .. },
+            } => assert_eq!(
+                example_prompts,
+                vec![
+                    "cs:Zkontroluj tuto smlouvu a shrn rizika.",
+                    "cs:Priprav dodatek ke smlouve.",
+                    "en:Review this contract and summarize the risks."
+                ]
+            ),
+            _ => panic!("expected agent create command"),
+        }
+
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "skill",
+            "update",
+            "vypoved",
+            "--example-prompt",
+            "cs:Zkontroluj vypoved z pracovniho pomeru.",
+        ])
+        .expect("skill update should parse");
+
+        match cli.command {
+            Commands::Skill {
+                command: SkillCommands::Update { example_prompts, .. },
+            } => assert_eq!(example_prompts, vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]),
+            _ => panic!("expected skill update command"),
         }
     }
 
