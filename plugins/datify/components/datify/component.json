@@ -1,0 +1,23 @@
+{
+  "id": "datify",
+  "title": "Datify API token",
+  "icon": "icon.svg",
+  "route": "datify",
+  "description": "Nastavení API tokenu pro propojení agenta s Datify.",
+  "entrypoint": "index.html",
+  "binary": "datify-cgi",
+  "i18n": {
+    "cs": {
+      "displayName": "Datify API token",
+      "description": "Vygenerujte API token v Datify a uložte ho pro použití agentem."
+    },
+    "en": {
+      "displayName": "Datify API Token",
+      "description": "Generate a Datify API token and save it for agent access."
+    },
+    "sk": {
+      "displayName": "Datify API token",
+      "description": "Vygenerujte API token v Datify a uložte ho pre použitie agentom."
+    }
+  }
+}
