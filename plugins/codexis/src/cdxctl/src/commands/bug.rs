@@ -16,24 +16,22 @@ pub fn report(
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let payload = build_payload(title, description, severity)?;
-    let created = client
-        .rest_post_json(REPORT_PATH, &payload)
-        .map_err(explain_missing_endpoint)?;
-    print_output(&created, format);
+    match client.rest_post_json(REPORT_PATH, &payload) {
+        Ok(created) => print_output(&created, format),
+        Err(CdxctlError::Unsupported(_)) => print_output(&unsupported_response(), format),
+        Err(other) => return Err(other),
+    }
     Ok(())
 }
 
-/// A daemon older than the bug report feature has no such endpoint. Say that
-/// instead of letting a bare 404 look like the report was malformed.
-fn explain_missing_endpoint(error: CdxctlError) -> CdxctlError {
-    match error {
-        CdxctlError::Unsupported(_) => CdxctlError::Unsupported(
-            "this daemon does not support bug reports yet, so the report was not filed. \
-             Mention the problem in your answer instead and carry on."
-                .to_string(),
-        ),
-        other => other,
-    }
+/// A daemon older than the bug report feature has no such endpoint. Report that
+/// as normal output rather than an error: nothing is wrong with the call, there
+/// is simply nowhere to file it, and a bare 404 would invite a pointless retry.
+fn unsupported_response() -> Value {
+    json!({
+        "status": "unsupported",
+        "message": "this daemon does not support bug reports yet, so nothing was filed",
+    })
 }
 
 /// Severity is normalized here so `--severity high` and `--severity HIGH` produce
@@ -113,21 +111,24 @@ mod tests {
     }
 
     #[test]
-    fn tells_the_agent_when_the_daemon_predates_bug_reports() {
+    fn succeeds_with_an_unsupported_response_when_the_daemon_predates_bug_reports() {
         let (address, _requests) = stub_daemon("HTTP/1.1 404 Not Found", "{}");
         let client = GraphQLClient::with_endpoint(
             format!("http://{address}/graphql"),
             "Bearer test-token".to_string(),
         );
 
-        let error = report(&client, "t", "d", "LOW", OutputFormat::Json).unwrap_err();
-        match error {
-            CdxctlError::Unsupported(message) => {
-                assert!(message.contains("does not support bug reports"));
-                assert!(!message.contains("404"));
-            }
-            other => panic!("expected an unsupported error, got {other:?}"),
-        }
+        assert!(report(&client, "t", "d", "LOW", OutputFormat::Json).is_ok());
+    }
+
+    #[test]
+    fn unsupported_response_says_nothing_was_filed_without_mentioning_http() {
+        let response = unsupported_response();
+        assert_eq!(response["status"], json!("unsupported"));
+        let message = response["message"].as_str().unwrap();
+        assert!(message.contains("does not support bug reports"));
+        assert!(message.contains("nothing was filed"));
+        assert!(!message.contains("404"));
     }
 
     #[test]
