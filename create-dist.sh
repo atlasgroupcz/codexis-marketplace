@@ -60,8 +60,16 @@ commit_dist_changes() {
   source_branch="$(git -C "$ROOT_DIR" branch --show-current 2>/dev/null || true)"
   source_rev="$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || printf 'unknown')"
 
-  if [[ -n "$(git -C "$ROOT_DIR" status --short 2>/dev/null)" ]]; then
+  # `-dirty` says the dist cannot be reproduced from `source_rev` alone, but not
+  # what was extra - and `git status --short` counts untracked files too, so a
+  # single stray build directory earns it. Name them, or the next person reading
+  # a dirty commit message has nothing to go on but guesses.
+  local source_status
+  source_status="$(git -C "$ROOT_DIR" status --short 2>/dev/null)"
+  if [[ -n "$source_status" ]]; then
     source_dirty='-dirty'
+    printf 'Source tree is dirty; marking the commit. Untracked or modified:\n%s\n' \
+      "$source_status" >&2
   fi
 
   commit_message="${DIST_COMMIT_MESSAGE:-Sync dist from ${REPO_NAME} (${source_branch:-detached}@${source_rev}${source_dirty})}"
