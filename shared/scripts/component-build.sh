@@ -19,15 +19,10 @@
 #   build_component <app> <component-dir>   # when the two names differ
 #
 # Override before `source` when needed:
-#   BUN_IMAGE   Docker image (default: pinned oven/bun)
+#   BUN_IMAGE            Docker image (default: pinned oven/bun)
+#   CDX_DOCKER_PLATFORM  build platform (default: linux/amd64)
 
 set -euo pipefail
-
-case "$(uname -m)" in
-  x86_64|amd64) _CDX_DOCKER_ARCH="amd64" ;;
-  aarch64|arm64) _CDX_DOCKER_ARCH="arm64" ;;
-  *) echo "ERROR: Unsupported CPU architecture: $(uname -m)" >&2; exit 1 ;;
-esac
 
 # Repo root, derived from this file's own location (shared/scripts/ -> ../..).
 _CDX_COMPONENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -42,7 +37,14 @@ _CDX_CALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 FRONTEND_DIR="$REPO_ROOT/frontend"
 
 BUN_IMAGE="${BUN_IMAGE:-oven/bun:1.3.9-slim}"
-_CDX_DOCKER_PLATFORM="linux/${_CDX_DOCKER_ARCH}"
+
+# One platform for everyone, rather than the build machine's own. The bundle is
+# a committed artifact, so whether its bytes depend on the architecture that
+# produced them decides whether two developers rebuilding the same source get
+# the same diff. Nothing here establishes that they do not, and a wrong guess
+# costs the same silent mismatch the binaries used to have, so do not let the
+# host decide.
+_CDX_DOCKER_PLATFORM="${CDX_DOCKER_PLATFORM:-linux/amd64}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "ERROR: docker is required to build plugin frontend components." >&2
