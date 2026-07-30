@@ -121,3 +121,68 @@ def test_no_em_or_en_dashes_in_source() -> None:
         "uses plain hyphens only (see CLAUDE.md). Replace with a hyphen. Offenders:\n  "
         + "\n  ".join(offenders)
     )
+
+
+# Plugin binaries are committed artifacts, and the guest VM that runs them is
+# x86-64. The build used to take its target platform from the build machine's
+# own CPU, so an arm64 host produced arm64 binaries: cargo succeeded, the
+# artifacts were committed like any other, and nothing complained until the
+# daemon tried to exec them. shared/scripts/plugin-build.sh now pins
+# linux/amd64; this guards the outcome, which is what actually ships.
+_ELF_MAGIC = b"\x7fELF"
+_ELF_HEADER_LEN = 20  # through e_machine at offset 18..19
+_ELF_LITTLE_ENDIAN = 1  # EI_DATA
+_ELF_MACHINE_X86_64 = 0x3E
+_ELF_MACHINE_NAMES = {0x3E: "x86-64", 0xB7: "aarch64", 0x28: "arm", 0x03: "i386"}
+
+
+def _plugin_elf_binaries() -> list[tuple[str, int]]:
+    """Every tracked ELF under plugins/, as (path, e_machine).
+
+    Covers bin/ and the CGI binaries that sit in components/ alike, without
+    naming either - a new location would otherwise escape the check silently.
+    """
+    tracked = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "ls-files", "-z", "--", "plugins"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split("\0")
+    found: list[tuple[str, int]] = []
+    for rel in tracked:
+        if not rel:
+            continue
+        try:
+            with (REPO_ROOT / rel).open("rb") as handle:
+                header = handle.read(_ELF_HEADER_LEN)
+        except OSError:
+            continue
+        if not header.startswith(_ELF_MAGIC) or len(header) < _ELF_HEADER_LEN:
+            continue
+        if header[5] != _ELF_LITTLE_ENDIAN:
+            found.append((rel, -1))  # big-endian: wrong by definition here
+            continue
+        found.append((rel, int.from_bytes(header[18:20], "little")))
+    return sorted(found)
+
+
+_PLUGIN_ELF_BINARIES = _plugin_elf_binaries()
+
+
+def test_committed_plugin_binaries_are_x86_64() -> None:
+    offenders = [
+        f"{rel} ({_ELF_MACHINE_NAMES.get(machine, hex(machine))})"
+        for rel, machine in _PLUGIN_ELF_BINARIES
+        if machine != _ELF_MACHINE_X86_64
+    ]
+    assert not offenders, (
+        "committed plugin binaries must be x86-64 - the guest VM runs nothing "
+        "else, and a foreign build fails only at exec time. Rebuild with "
+        "./build.sh, which pins linux/amd64. Offenders:\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_binary_arch_guard_actually_found_binaries() -> None:
+    # Without this, moving bin/ or dropping the artifacts turns the check above
+    # into a test that passes because it inspects nothing.
+    assert _PLUGIN_ELF_BINARIES, "no ELF binaries found under plugins/ - guard is looking in the wrong place"

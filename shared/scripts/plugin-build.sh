@@ -21,22 +21,20 @@
 #   source "$SCRIPT_DIR/../../../shared/scripts/plugin-build.sh"
 #   build_plugin_crate "$SCRIPT_DIR/<crate-dir>" "<bin-name>"
 #
+# Runs on any host with docker - the toolchain lives in the image, not on the
+# machine.
+#
 # Override before `source` when needed:
-#   RUST_IMAGE        Docker image (default: pinned rust:1.86 slim, by digest)
-#   CARGO_BUILD_ARGS  cargo flags (default: --release --locked)
+#   RUST_IMAGE           Docker image (default: pinned rust:1.86 slim, by digest)
+#   CARGO_BUILD_ARGS     cargo flags (default: --release --locked)
+#   CDX_DOCKER_PLATFORM  build platform (default: linux/amd64, what the guest runs)
 
 set -euo pipefail
 
-if [[ "$(uname -s)" != "Linux" ]]; then
-  echo "ERROR: Linux-only build script." >&2
+if ! command -v docker >/dev/null 2>&1; then
+  echo "ERROR: docker is required to build the plugin binaries." >&2
   exit 1
 fi
-
-case "$(uname -m)" in
-  x86_64|amd64) _CDX_DOCKER_ARCH="amd64" ;;
-  aarch64|arm64) _CDX_DOCKER_ARCH="arm64" ;;
-  *) echo "ERROR: Unsupported CPU architecture: $(uname -m)" >&2; exit 1 ;;
-esac
 
 # Repo root, derived from this file's own location (shared/scripts/ -> ../..).
 _CDX_BUILD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -44,7 +42,15 @@ REPO_ROOT="$(cd "$_CDX_BUILD_DIR/../.." && pwd)"
 
 RUST_IMAGE="${RUST_IMAGE:-rust:1.86.0-slim-bookworm@sha256:57d415bbd61ce11e2d5f73de068103c7bd9f3188dc132c97cef4a8f62989e944}"
 CARGO_BUILD_ARGS="${CARGO_BUILD_ARGS:---release --locked}"
-_CDX_DOCKER_PLATFORM="linux/${_CDX_DOCKER_ARCH}"
+
+# The target platform is a property of where the binaries RUN (the guest VM,
+# x86-64), not of the machine that happens to compile them. It used to be
+# derived from `uname -m`, which meant an arm64 host silently produced arm64
+# binaries: the build succeeded, the artifacts were committed like any other,
+# and the failure only surfaced when the daemon tried to run them. Pin it.
+# On an arm64 host this emulates, which is slow but correct - and the reason
+# the release build belongs in CI rather than on a laptop.
+_CDX_DOCKER_PLATFORM="${CDX_DOCKER_PLATFORM:-linux/amd64}"
 
 # Install one already-built binary from the shared workspace target/ into a
 # destination dir (Linux).
