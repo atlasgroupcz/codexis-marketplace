@@ -67,3 +67,25 @@ describe('ConnectionSection', () => {
     expect(await screen.findByText('API klíč je neplatný')).toBeInTheDocument()
   })
 })
+
+describe('loading', () => {
+  // Rendering the real section first shows an empty field, then swaps it for the
+  // stored key a frame later - and a placeholder measured by hand in a consumer
+  // drifts the moment this component's padding changes.
+  it('shows neither the field nor the actions until the answer arrives', () => {
+    setup({ loading: true })
+    expect(screen.queryByPlaceholderText('Vložte klíč')).toBeNull()
+    expect(screen.queryByText('Uložit')).toBeNull()
+    expect(screen.queryByText('Získat klíč')).toBeNull()
+  })
+
+  it('marks the placeholder as busy for assistive tech', () => {
+    const { container } = setup({ loading: true })
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
+  })
+
+  it('renders normally once loading is over', () => {
+    setup({ loading: false })
+    expect(screen.getByPlaceholderText('Vložte klíč')).toBeTruthy()
+  })
+})
