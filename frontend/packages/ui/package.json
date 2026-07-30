@@ -136,6 +136,7 @@
     "./components/command": "./src/components/command.tsx",
     "./components/config-gate": "./src/components/config-gate.tsx",
     "./components/connection-section": "./src/components/connection-section.tsx",
+    "./components/connection-status": "./src/components/connection-status.tsx",
     "./components/connection-settings": "./src/components/connection-settings.tsx",
     "./components/context-menu": "./src/components/context-menu.tsx",
     "./components/conversation-hint": "./src/components/conversation-hint.tsx",

@@ -31,7 +31,9 @@ export function App() {
   const [savingNotify, setSavingNotify] = useState(false)
   const [filter, setFilter] = useQueryState('filter', filterParser)
 
-  const apiKeyConfigured = data?.api_key_configured ?? false
+  // null until the overview answers - the dialog renders it as neither
+  // connected nor not, rather than asserting red on open.
+  const apiKeyConfigured = data?.api_key_configured ?? null
   const hasProceedings = (data?.proceedings.length ?? 0) > 0
   const detailOpen = view === 'detail' && cisloRizeni !== null
   const notifyValues = notifyData?.settings ?? { email: false, inApp: true, recipients: [] }

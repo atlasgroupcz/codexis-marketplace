@@ -115,6 +115,7 @@ export function App() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold">{t('app.connectionSection')}</h2>
         <ConnectionSection
+          loading={status === null}
           configured={status?.configured ?? false}
           maskedKey={status?.start ? `${status.start}…` : ''}
           fields={[
