@@ -10,8 +10,8 @@ import json
 
 import pytest
 
-import _arbitration as arb
-from assertions import TOOL_CALLS_SENTINEL, TOOL_CALLS_END
+from tests.promptfoo import _arbitration as arb
+from tests.promptfoo.assertions import TOOL_CALLS_SENTINEL, TOOL_CALLS_END
 
 
 # --------------------------------------------------------------------------- #

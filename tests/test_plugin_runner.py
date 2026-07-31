@@ -13,10 +13,8 @@ import threading
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from _output import Results
-from _plugin_runner import run_plugins
+from tests._output import Results
+from tests._plugin_runner import run_plugins
 
 
 class TestSerial:

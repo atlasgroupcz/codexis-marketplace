@@ -32,7 +32,7 @@ from typing import Callable, Mapping, Optional
 
 # Reuse the single source of truth for how the provider smuggles tool calls
 # through promptfoo's output string (sentinel-bracketed JSON suffix).
-from assertions import TOOL_CALLS_SENTINEL, _extract_tool_calls
+from tests.promptfoo.assertions import TOOL_CALLS_SENTINEL, _extract_tool_calls
 
 DEFAULT_CONFIDENCE = 0.6
 DEFAULT_MODEL = "gpt-5.4-mini"  # matches cdx-daemon codexis-eval-ops default

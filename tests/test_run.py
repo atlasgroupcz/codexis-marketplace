@@ -2,18 +2,11 @@
 
 from __future__ import annotations
 
-import importlib.util
 import sys
-from pathlib import Path
 
 import pytest
 
-RUN_PY = Path(__file__).resolve().parent / "run.py"
-spec = importlib.util.spec_from_file_location("_run", RUN_PY)
-assert spec is not None and spec.loader is not None
-run = importlib.util.module_from_spec(spec)
-sys.modules["_run"] = run
-spec.loader.exec_module(run)
+from tests import run
 
 
 class TestDispatchTable:

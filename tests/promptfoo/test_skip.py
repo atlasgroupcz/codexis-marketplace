@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import run
+from tests.promptfoo import run
 
 
 class TestConfigSkipReason:

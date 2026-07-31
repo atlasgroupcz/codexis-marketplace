@@ -53,9 +53,10 @@ import yaml
 
 THIS = Path(__file__).resolve()
 REPO_ROOT = THIS.parent.parent.parent
-sys.path.insert(0, str(THIS.parent.parent))  # tests/ - _daemon_client
-sys.path.insert(0, str(THIS.parent))         # tests/promptfoo - _arbitration, assertions
-from _daemon_client import DaemonClient  # noqa: E402
+# Run as a script, so the repo root has to be put on sys.path before the
+# `tests` package can be imported.
+sys.path.insert(0, str(REPO_ROOT))
+from tests._daemon_client import DaemonClient  # noqa: E402
 
 # Filename → plugin name override. Empty by default - most config files are
 # named after their plugin (cdx-at.config.yaml → cdx-at). Use a YAML-level
@@ -444,7 +445,7 @@ def _build_arb_ctx(args) -> ArbCtx | None:
     arbitration module or its config. Returns None on configuration error
     (already reported to stderr).
     """
-    import _arbitration as arb  # noqa: E402  (lazy)
+    from tests.promptfoo import _arbitration as arb  # (lazy)
 
     try:
         base, key, model = arb.resolve_endpoint(os.environ)

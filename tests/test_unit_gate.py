@@ -7,10 +7,8 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-import _unit_gate
-from _unit_gate import (
+from tests import _unit_gate
+from tests._unit_gate import (
     SUITE_GROUPS,
     Suite,
     UnavailableToolchain,

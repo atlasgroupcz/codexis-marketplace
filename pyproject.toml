@@ -26,10 +26,7 @@ package = false
 testpaths = ["plugins", "tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --import-mode=importlib"
-
-[tool.pyright]
-# The test suites import each other by bare module name (tests/_daemon_client.py,
-# tests/_skills.py, …) after inserting their own directory onto sys.path at
-# import time. Pyright doesn't execute that, so tell it where those modules live
-# - otherwise every such import is flagged reportMissingImports.
-extraPaths = ["tests", "tests/promptfoo"]
+# The repo root, so the suites reach their helpers by package name
+# (`tests._daemon_client`, `tests.promptfoo.assertions`). Declared once here
+# rather than inserted onto sys.path by each test file at import time.
+pythonpath = ["."]
