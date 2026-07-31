@@ -43,27 +43,41 @@ pub fn lookup_prefix(
     Err(format!("Unknown search prefix: {code}"))
 }
 
-/// Runs a source search: POST the payload to the source's `/search` endpoint.
-pub fn execute_search_request(
-    api: &impl SearchApi,
-    base_url: &str,
-    auth_header: Option<&str>,
-    source_code: &str,
-    payload: &str,
-    dry_run: bool,
-    sort: Option<&str>,
-    order: Option<&str>,
-) -> Result<(), CliError> {
-    let curl_args =
-        build_search_curl_args(api, base_url, auth_header, source_code, payload, sort, order)?;
+/// One source search, as the caller describes it. A struct rather than a
+/// parameter list because there were eight of them, and the borrow of every
+/// field lives only for the call.
+pub struct SearchRequest<'a> {
+    pub base_url: &'a str,
+    pub auth_header: Option<&'a str>,
+    /// Source code from the plugin's prefix table, e.g. `"ATBR"`.
+    pub source_code: &'a str,
+    /// The JSON body POSTed to `/search`.
+    pub payload: &'a str,
+    /// Print the curl command instead of running it.
+    pub dry_run: bool,
+    pub sort: Option<&'a str>,
+    pub order: Option<&'a str>,
+}
 
-    if dry_run {
+/// Runs a source search: POST the payload to the source's `/search` endpoint.
+pub fn execute_search_request(api: &impl SearchApi, req: SearchRequest<'_>) -> Result<(), CliError> {
+    let curl_args = build_search_curl_args(
+        api,
+        req.base_url,
+        req.auth_header,
+        req.source_code,
+        req.payload,
+        req.sort,
+        req.order,
+    )?;
+
+    if req.dry_run {
         println!("{}", format_command("curl", &redact_curl_args(&curl_args)));
         return Ok(());
     }
 
     let output = execute_curl(&curl_args)?;
-    handle_curl_output(&output, |body| handle_api_response(api, body, base_url))
+    handle_curl_output(&output, |body| handle_api_response(api, body, req.base_url))
 }
 
 /// Fetches a `cdx://` resource: resolve it to an HTTP URL and GET it.
@@ -212,8 +226,19 @@ mod tests {
 
     #[test]
     fn search_request_unknown_source_errors_instead_of_panicking() {
-        let err = execute_search_request(&MockApi, BASE, None, "XXX", "{}", true, None, None)
-            .unwrap_err();
+        let err = execute_search_request(
+            &MockApi,
+            SearchRequest {
+                base_url: BASE,
+                auth_header: None,
+                source_code: "XXX",
+                payload: "{}",
+                dry_run: true,
+                sort: None,
+                order: None,
+            },
+        )
+        .unwrap_err();
         assert!(matches!(err, CliError::InvalidSearchArgument(_)), "got: {err}");
     }
 

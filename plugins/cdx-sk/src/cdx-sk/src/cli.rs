@@ -231,7 +231,7 @@ enum SearchSource {
         after_help = SEARCH_SKEZ_HELP,
         arg_required_else_help = true
     )]
-    Skez(SearchSkezArgs),
+    Skez(Box<SearchSkezArgs>),
 
     #[command(
         name = "SKVS",
@@ -240,7 +240,7 @@ enum SearchSource {
         after_help = SEARCH_SKVS_HELP,
         arg_required_else_help = true
     )]
-    Skvs(SearchSkvsArgs),
+    Skvs(Box<SearchSkvsArgs>),
 
     #[command(
         name = "SKNUS",
@@ -249,7 +249,7 @@ enum SearchSource {
         after_help = SEARCH_SKNUS_HELP,
         arg_required_else_help = true
     )]
-    Sknus(SearchSknusArgs),
+    Sknus(Box<SearchSknusArgs>),
 
     #[command(
         name = "SKNSS",
@@ -258,7 +258,7 @@ enum SearchSource {
         after_help = SEARCH_SKNSS_HELP,
         arg_required_else_help = true
     )]
-    Sknss(SearchSknssArgs),
+    Sknss(Box<SearchSknssArgs>),
 
     #[command(
         name = "SKUS",
@@ -267,7 +267,7 @@ enum SearchSource {
         after_help = SEARCH_SKUS_HELP,
         arg_required_else_help = true
     )]
-    Skus(SearchSkusArgs),
+    Skus(Box<SearchSkusArgs>),
 
     #[command(
         name = "SKNS",
@@ -276,7 +276,7 @@ enum SearchSource {
         after_help = SEARCH_SKNS_HELP,
         arg_required_else_help = true
     )]
-    Skns(SearchSknsArgs),
+    Skns(Box<SearchSknsArgs>),
 }
 
 impl SearchSource {
@@ -296,12 +296,12 @@ impl SearchSource {
     /// `source_code` needs its own per-variant match.
     fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Skez(args) => args,
-            Self::Skvs(args) => args,
-            Self::Sknus(args) => args,
-            Self::Sknss(args) => args,
-            Self::Skus(args) => args,
-            Self::Skns(args) => args,
+            Self::Skez(args) => args.as_ref(),
+            Self::Skvs(args) => args.as_ref(),
+            Self::Sknus(args) => args.as_ref(),
+            Self::Sknss(args) => args.as_ref(),
+            Self::Skus(args) => args.as_ref(),
+            Self::Skns(args) => args.as_ref(),
         }
     }
 }

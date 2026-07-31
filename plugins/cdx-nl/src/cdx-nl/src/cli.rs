@@ -267,15 +267,15 @@ impl SchemaSourceCommand {
 pub(crate) enum SearchSource {
     /// Search Dutch national legislation (Basiswettenbestand).
     #[command(name = "NLBWB", alias = "nlbwb", after_help = SEARCH_NLBWB_HELP)]
-    Nlbwb(SearchNlbwbArgs),
+    Nlbwb(Box<SearchNlbwbArgs>),
 
     /// Search Dutch case law (Rechtspraak.nl).
     #[command(name = "NLUIT", alias = "nluit", after_help = SEARCH_NLUIT_HELP)]
-    Nluit(SearchNluitArgs),
+    Nluit(Box<SearchNluitArgs>),
 
     /// Search Dutch decentralized regulations (CVDR).
     #[command(name = "NLCVDR", alias = "nlcvdr", after_help = SEARCH_NLCVDR_HELP)]
-    Nlcvdr(SearchNlcvdrArgs),
+    Nlcvdr(Box<SearchNlcvdrArgs>),
 }
 
 impl SearchSource {
@@ -292,9 +292,9 @@ impl SearchSource {
     /// `source_code` needs its own per-variant match.
     fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Nlbwb(args) => args,
-            Self::Nluit(args) => args,
-            Self::Nlcvdr(args) => args,
+            Self::Nlbwb(args) => args.as_ref(),
+            Self::Nluit(args) => args.as_ref(),
+            Self::Nlcvdr(args) => args.as_ref(),
         }
     }
 }

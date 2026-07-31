@@ -187,7 +187,7 @@ enum SearchSource {
         after_help = SEARCH_CZSB_HELP,
         arg_required_else_help = true
     )]
-    Czsb(SearchCzsbArgs),
+    Czsb(Box<SearchCzsbArgs>),
 }
 
 impl SearchSource {
