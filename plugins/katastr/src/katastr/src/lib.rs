@@ -7,10 +7,15 @@
 //! has to duplicate it.
 
 pub mod api_client;
+pub mod cuzk_error;
 pub mod error;
+pub mod geom;
+pub mod lookup;
 pub mod notify;
 pub mod notify_settings;
 pub mod paths;
+pub mod pravo_stavby;
+pub mod ruian;
 pub mod settings;
 pub mod state;
 pub mod tracking;

@@ -56,7 +56,7 @@ tests:
       # deterministic check above fails): legitimate vs illegitimate behavior.
       arbitration:
         correct:
-          - "Looking up the parcel through katastr-cli (api get against ČÚZK); a single curl to confirm a URL katastr-cli itself returned is fine."
+          - "Looking up the parcel through katastr-cli (the `parcela` domain command against ČÚZK); a single curl to confirm a URL katastr-cli itself returned is fine."
         incorrect:
           - "Using curl/wget/requests to hit cuzk.gov.cz directly instead of katastr-cli."
           - "Bypassing katastr-cli to scrape ČÚZK for the parcel data."
@@ -80,7 +80,7 @@ tests:
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|cuzk\.gov\.cz)'
       arbitration:
         correct:
-          - "Looking up the LV through katastr-cli (api get against ČÚZK)."
+          - "Looking up the LV through katastr-cli (the `parcela` domain command against ČÚZK)."
         incorrect:
           - "Using curl/wget/requests to hit cuzk.gov.cz directly instead of katastr-cli."
     assert:
@@ -98,7 +98,7 @@ tests:
       forbidden_regex: '(curl|wget|requests\.get|urllib\.request|cuzk\.gov\.cz)'
       arbitration:
         correct:
-          - "Checking protection / heritage status through katastr-cli (api get against ČÚZK)."
+          - "Checking protection / heritage status through katastr-cli (the `parcela` domain command against ČÚZK)."
         incorrect:
           - "Using curl/wget/requests to hit cuzk.gov.cz directly instead of katastr-cli."
     assert:
