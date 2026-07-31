@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Badge } from '@workspace/ui/components/badge'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
@@ -84,6 +84,7 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
           title: `${t('judikatura.report')} ${report.checked_at ? formatDate(report.checked_at) : reportId}`,
           subtitle: topic.name,
         }}
+        docs={{ app: 'sledovana-judikatura', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             {report.confirmed_on ? (
@@ -96,7 +97,6 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
                 {t('judikatura.confirmReport')}
               </Button>
             )}
-            <HeaderHelp app="sledovana-judikatura" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
           </>
         }

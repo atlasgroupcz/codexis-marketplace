@@ -4,7 +4,7 @@ import { FileText, FolderClock, FolderPlus, Loader2, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { SectionSwitch } from './section-switch'
 import { FolderPicker } from './folder-picker'
 import { FeedSkeleton } from './loading-skeleton'
@@ -49,6 +49,7 @@ export function FoldersHome({
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="folders-root">
       <AppHeader
         brand={{ icon: FolderClock, title: t('folders.title'), subtitle: t('folders.subtitle') }}
+        docs={{ app: 'sledovane-dokumenty', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             <SectionSwitch section={section} onChange={onChangeSection} />
@@ -56,7 +57,6 @@ export function FoldersHome({
               <FolderPlus className="size-4" />
               <span className="hidden sm:inline">{t('folders.add')}</span>
             </Button>
-            <HeaderHelp app="sledovane-dokumenty" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />
           </>
         }

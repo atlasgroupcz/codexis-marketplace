@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "NRPZS - poskytovatelé zdravotních služeb"
     summary: "Vyhledávání poskytovatelů zdravotní péče (NRPZS/ÚZIS) podle IČO, názvu nebo oboru péče."
+    examplePrompts:
+      - "Najdi poskytovatele zdravotních služeb s IČO 27085031 a vypiš jeho místa péče."
+      - "Které urologické ordinace jsou ve Středočeském kraji?"
+      - "Jaká je ordinační doba Nemocnice Příbram a jaká má oddělení?"
   en:
     displayName: "NRPZS - Healthcare Providers"
     summary: "Look up Czech healthcare providers (NRPZS/ÚZIS) by ICO, name or specialty."
+    examplePrompts:
+      - "Find the healthcare provider with company number 27085031 and list its places of care."
+      - "Which urology practices are in the Central Bohemian Region?"
+      - "What are the opening hours and departments of Nemocnice Příbram?"
   sk:
     displayName: "NRPZS - poskytovatelia zdravotných služieb"
     summary: "Vyhľadávanie poskytovateľov zdravotnej starostlivosti (NRPZS/ÚZIS) podľa IČO, názvu alebo odboru."
+    examplePrompts:
+      - "Nájdi poskytovateľa zdravotných služieb s IČO 27085031 a vypíš jeho miesta starostlivosti."
+      - "Ktoré urologické ambulancie sú v Stredočeskom kraji?"
+      - "Aké sú ordinačné hodiny Nemocnice Příbram a aké má oddelenia?"
 ---
 
 # NRPZS - registr poskytovatelů zdravotních služeb

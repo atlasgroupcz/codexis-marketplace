@@ -1,0 +1,26 @@
+{
+  "app": {
+    "loadFailed": "Could not load the settings.",
+    "saveFailed": "Saving failed.",
+    "leadConnected": "The agent can read and edit your collections, datasets and records.",
+    "leadIdle": "Paste a token and the agent can reach your data in Datify.",
+    "saved": "Token saved.",
+    "deleted": "Token deleted.",
+    "overridden": "The token comes from {{source}} and overrides the stored one.",
+    "connectionSection": "Connection"
+  },
+  "connection": {
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "remove": "Remove",
+    "confirmRemove": "Really remove?",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "settings": {
+    "placeholder": "Datify token",
+    "getKey": "Where do I get a token?",
+    "getKeyHint": "Generate one in Datify's token management.",
+    "label": "Paste your Datify token"
+  }
+}

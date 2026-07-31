@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "SID - Interní dokumenty"
     summary: "Vyhledávání a čtení řízených dokumentů, přehled potvrzení, hlídání novinek."
+    examplePrompts:
+      - "Najdi v interních dokumentech, co u nás platí pro cestovní náhrady."
+      - "Které interní dokumenty mi zbývá potvrdit ke čtení?"
+      - "Stáhni mi aktuální znění naší směrnice o ochraně osobních údajů."
   en:
     displayName: "SID - Internal Documents"
     summary: "Search and read managed documents, see what needs confirming, watch for updates."
+    examplePrompts:
+      - "Find what our internal documents say about travel expense reimbursement."
+      - "Which internal documents am I still required to confirm as read?"
+      - "Download the current version of our internal data protection directive."
   sk:
     displayName: "SID - Interné dokumenty"
     summary: "Vyhľadávanie a čítanie riadených dokumentov, prehľad potvrdení, stráženie noviniek."
+    examplePrompts:
+      - "Nájdi vo vnútorných dokumentoch, čo u nás platí pre cestovné náhrady."
+      - "Ktoré vnútorné dokumenty mi zostáva potvrdiť na prečítanie?"
+      - "Stiahni mi aktuálne znenie našej smernice o ochrane osobných údajov."
 ---
 
 # SID - Interní dokumenty

@@ -90,7 +90,7 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         if endpoint.is_empty() {
             return Err(format!("Empty endpoint after doc/{id}/"));
         }
-        let api_path = lookup_display_id_prefix(id)?;
+        let api_path = cdx_common::http::lookup_display_id_prefix(id, ID_PREFIXES)?;
         Ok(format!(
             "{base}/{api_path}/doc/{id}/{endpoint}{encoded_query}"
         ))
@@ -199,15 +199,6 @@ fn lookup_search_prefix(source: &str) -> Result<&'static str, String> {
         "NLCVDR" => Ok("NL/lokaleregelgeving/cvdr"),
         other => Err(format!("Unknown source code: {other}")),
     }
-}
-
-fn lookup_display_id_prefix(id: &str) -> Result<&'static str, String> {
-    for &(prefix, api_path) in ID_PREFIXES {
-        if id.starts_with(prefix) {
-            return Ok(api_path);
-        }
-    }
-    Err(format!("Unknown display ID prefix in: {id}"))
 }
 
 #[cfg(test)]

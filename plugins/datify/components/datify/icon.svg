@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Datify">
+  <rect width="96" height="96" rx="20" fill="#E8F0FE"/>
+  <g transform="translate(19 27.18) scale(0.4319)">
+    <rect width="19.88" height="96.39" fill="#508BF8"/>
+    <path d="M134.28,18.07v60.25c0,9.98-8.09,18.07-18.07,18.07H39.79l-19.87-19.88h87.6c3.8,0,6.88-3.08,6.88-6.88V26.77c0-3.8-3.08-6.88-6.88-6.88h-32.67L55.11.14V0h61.11c9.98,0,18.07,8.09,18.07,18.07Z" fill="#508BF8"/>
+  </g>
+</svg>

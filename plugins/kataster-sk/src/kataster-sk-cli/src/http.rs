@@ -20,8 +20,8 @@ pub struct KatasterClient {
 
 impl KatasterClient {
     pub fn new() -> Result<Self> {
-        let zbgis_base_url = base_url_from_env("ZBGIS_BASE_URL", DEFAULT_ZBGIS_BASE_URL);
-        let eskn_base_url = base_url_from_env("ESKN_BASE_URL", DEFAULT_ESKN_BASE_URL);
+        let zbgis_base_url = cdx_common::http::base_url_from_env("ZBGIS_BASE_URL", DEFAULT_ZBGIS_BASE_URL);
+        let eskn_base_url = cdx_common::http::base_url_from_env("ESKN_BASE_URL", DEFAULT_ESKN_BASE_URL);
         // ureq keeps a connection pool on the Agent -> repeated requests to the
         // same cadastre host reuse the TCP+TLS connection.
         let agent = ureq::AgentBuilder::new()
@@ -36,11 +36,11 @@ impl KatasterClient {
     }
 
     pub fn zbgis_get(&self, path: &str, query: &[(&str, &str)]) -> Result<String> {
-        self.get_json(&join_url(&self.zbgis_base_url, path), query)
+        self.get_json(&cdx_common::http::join_url(&self.zbgis_base_url, path), query)
     }
 
     pub fn eskn_get(&self, path: &str, query: &[(&str, &str)]) -> Result<String> {
-        self.get_json(&join_url(&self.eskn_base_url, path), query)
+        self.get_json(&cdx_common::http::join_url(&self.eskn_base_url, path), query)
     }
 
     fn get_json(&self, url: &str, query: &[(&str, &str)]) -> Result<String> {
@@ -65,15 +65,15 @@ impl KatasterClient {
                     return Ok(body);
                 }
                 Err(ureq::Error::Status(code, resp)) => {
-                    if retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     let reason = resp.status_text().to_string();
                     let body = resp.into_string().unwrap_or_default();
                     return Err(anyhow!(
                         "HTTP {status} on GET {url}\n{body}",
-                        status = format_status(code, &reason),
+                        status = cdx_common::http::format_status(code, &reason),
                         url = url,
                         body = body.trim()
                     ));
@@ -81,7 +81,7 @@ impl KatasterClient {
                 Err(error) => {
                     // Transport / network error.
                     if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     return Err(anyhow!("GET {url} failed: {error}"));
@@ -92,42 +92,3 @@ impl KatasterClient {
     }
 }
 
-/// `"<code> <reason>"`, or just the code when there is no reason phrase.
-/// (was cdx_common::http::format_status, adapted to ureq's numeric status)
-fn format_status(code: u16, reason: &str) -> String {
-    if reason.is_empty() {
-        code.to_string()
-    } else {
-        format!("{code} {reason}")
-    }
-}
-
-/// Reads an env var (trimmed of a trailing slash), falling back to `default`.
-/// (was cdx_common::http::base_url_from_env)
-fn base_url_from_env(var: &str, default: &str) -> String {
-    std::env::var(var)
-        .unwrap_or_else(|_| default.to_string())
-        .trim_end_matches('/')
-        .to_string()
-}
-
-/// Joins a base URL and a path; an empty path yields the base unchanged.
-/// (was cdx_common::http::join_url)
-fn join_url(base: &str, path: &str) -> String {
-    if path.is_empty() {
-        return base.to_string();
-    }
-    format!("{base}/{}", path.trim_start_matches('/'))
-}
-
-/// Whether a status is worth retrying (429 or any 5xx).
-/// (was cdx_common::http::retryable_status)
-fn retryable_status(code: u16) -> bool {
-    code == 429 || (500..=599).contains(&code)
-}
-
-/// Exponential backoff: 250ms · 2^attempt.
-/// (was cdx_common::http::backoff)
-fn backoff(attempt: usize) -> Duration {
-    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
-}

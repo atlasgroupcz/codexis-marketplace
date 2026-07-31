@@ -48,7 +48,7 @@ impl ZrsrClient {
     }
 
     fn url_for(&self, path: &str) -> String {
-        resolve_url(&self.base_url, path)
+        cdx_common::http::resolve_url(&self.base_url, path)
     }
 }
 
@@ -65,14 +65,3 @@ fn send(req: ureq::Request, url: &str) -> Result<String> {
     }
 }
 
-/// Resolves a request path against a base URL (was cdx_common::http::resolve_url).
-fn resolve_url(base_url: &str, path: &str) -> String {
-    if path.starts_with("http://") || path.starts_with("https://") {
-        return path.to_string();
-    }
-    if path.starts_with('/') {
-        format!("{base_url}{path}")
-    } else {
-        format!("{base_url}/{path}")
-    }
-}

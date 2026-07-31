@@ -5,6 +5,7 @@ pub const EXIT_NETWORK: i32 = 2;
 pub const EXIT_GRAPHQL: i32 = 3;
 pub const EXIT_PARSE: i32 = 4;
 pub const EXIT_REFUSED: i32 = 5;
+pub const EXIT_UNSUPPORTED: i32 = 6;
 
 #[derive(Debug)]
 pub enum CdxctlError {
@@ -12,6 +13,8 @@ pub enum CdxctlError {
     GraphQL(Vec<String>),
     Parse(String),
     Refused(String),
+    /// The daemon answered, but does not have the endpoint this command needs.
+    Unsupported(String),
 }
 
 impl CdxctlError {
@@ -21,6 +24,7 @@ impl CdxctlError {
             CdxctlError::GraphQL(_) => EXIT_GRAPHQL,
             CdxctlError::Parse(_) => EXIT_PARSE,
             CdxctlError::Refused(_) => EXIT_REFUSED,
+            CdxctlError::Unsupported(_) => EXIT_UNSUPPORTED,
         }
     }
 }
@@ -34,6 +38,7 @@ impl fmt::Display for CdxctlError {
             }
             CdxctlError::Parse(msg) => write!(f, "Parse error: {msg}"),
             CdxctlError::Refused(msg) => write!(f, "Refused: {msg}"),
+            CdxctlError::Unsupported(msg) => write!(f, "Not supported: {msg}"),
         }
     }
 }

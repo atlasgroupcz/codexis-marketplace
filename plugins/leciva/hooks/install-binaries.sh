@@ -4,6 +4,7 @@ set -euo pipefail
 PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
+source "${PLUGIN_DIR}/../../plugin-runtime/install-executable.sh"
 
 cleanup_own_temps() {
   rm -f "${TARGET_BIN_DIR}"/.*.tmp.$$ 2>/dev/null || true
@@ -19,18 +20,7 @@ install_binary() {
     echo "ERROR: Missing executable ${source_path}" >&2
     exit 1
   fi
-  local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"
-  if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
-    install -m 0755 "${source_path}" "${tmp_path}"
-    sync "${tmp_path}" 2>/dev/null || sync
-    mv -f "${tmp_path}" "${target_path}"
-  else
-    sudo install -d "${TARGET_BIN_DIR}"
-    sudo install -m 0755 "${source_path}" "${tmp_path}"
-    sudo sync "${tmp_path}" 2>/dev/null || sudo sync
-    sudo mv -f "${tmp_path}" "${target_path}"
-  fi
-  echo "Installed ${target_name} -> ${target_path}"
+  install_executable "${source_path}" "${target_path}" "${target_name}"
 }
 
 

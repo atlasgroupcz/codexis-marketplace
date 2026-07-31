@@ -28,7 +28,7 @@ impl NrpzsClient {
     }
 
     pub fn get_raw(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
-        let url = resolve_url(&self.base_url, path);
+        let url = cdx_common::http::resolve_url(&self.base_url, path);
         let mut req = self
             .agent
             .get(&url)
@@ -48,7 +48,7 @@ impl NrpzsClient {
     }
 
     pub fn get_raw_allow_empty(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
-        let url = resolve_url(&self.base_url, path);
+        let url = cdx_common::http::resolve_url(&self.base_url, path);
         let mut req = self
             .agent
             .get(&url)
@@ -99,14 +99,3 @@ impl NrpzsClient {
     }
 }
 
-/// Resolves a request path against a base URL (was cdx_common::http::resolve_url).
-fn resolve_url(base_url: &str, path: &str) -> String {
-    if path.starts_with("http://") || path.starts_with("https://") {
-        return path.to_string();
-    }
-    if path.starts_with('/') {
-        format!("{base_url}{path}")
-    } else {
-        format!("{base_url}/{path}")
-    }
-}

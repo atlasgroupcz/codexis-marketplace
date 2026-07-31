@@ -1,6 +1,7 @@
 ---
 uuid: 2b229bd1-c3ed-4aed-aea8-1a1d9a5b953c
 name: onepost
+icon: icon.svg
 description: 'ONEPOST - datové schránky (ISDS) přes ONEPOST API. Use for ONEPOST / ISDS Czech data box work: list datové schránky, folders, messages, attachments, search messages, download attachments, upload attachments, create/update/send concepts, receive new ISDS messages, ZFO, datové zprávy. Triggers on "ONEPOST", "datová schránka", "datové schránky", "ISDS", "ZFO", "zprávy", "příloha", "koncept", "odeslat koncept", "vyhledej zprávu", "stáhni zprávy", "přijmi zprávy".'
 version: 0.4.0
 jurisdictions: [CZ]
@@ -8,12 +9,24 @@ i18n:
   cs:
     displayName: "ONEPOST - datové schránky"
     summary: "Práce s ONEPOST API - schránky, zprávy, přílohy, koncepty, odesílání a stažení zpráv z ISDS."
+    examplePrompts:
+      - "Ukaž mi nepřečtené zprávy v datové schránce."
+      - "Najdi v datové schránce zprávy od finančního úřadu a stáhni přílohy."
+      - "Připrav v datové schránce zprávu k odeslání."
   en:
     displayName: "ONEPOST - Data Boxes"
     summary: "Use the ONEPOST API for mailboxes, messages, attachments, concepts, sending, search, and receiving ISDS messages."
+    examplePrompts:
+      - "Show me the unread messages in my data box."
+      - "Find data box messages from the tax office and download their attachments."
+      - "Draft a data box message ready to send."
   sk:
     displayName: "ONEPOST - dátové schránky"
     summary: "Práca s ONEPOST API - schránky, správy, prílohy, koncepty, odosielanie a stiahnutie správ z ISDS."
+    examplePrompts:
+      - "Ukáž mi neprečítané správy v dátovej schránke."
+      - "Nájdi v dátovej schránke správy z finančného úradu a stiahni prílohy."
+      - "Priprav v dátovej schránke správu na odoslanie."
 ---
 
 # ONEPOST

@@ -18,6 +18,8 @@ pub struct SkillFields {
     pub display_name: Vec<String>,
     /// Localized summaries as raw `lang:text` entries, one per language.
     pub summary: Vec<String>,
+    /// Localized example prompts as raw `lang:text` entries, repeated per prompt and language.
+    pub example_prompts: Vec<String>,
     pub jurisdictions: Option<Vec<String>>,
     pub jurisdiction_required: Option<bool>,
     pub allowed_tools: Option<Vec<String>>,
@@ -30,6 +32,7 @@ impl SkillFields {
             && self.instructions.is_none()
             && self.display_name.is_empty()
             && self.summary.is_empty()
+            && self.example_prompts.is_empty()
             && self.jurisdictions.is_none()
             && self.jurisdiction_required.is_none()
             && self.allowed_tools.is_none()
@@ -144,6 +147,12 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &SkillFields) -> Result<
     if !fields.summary.is_empty() {
         input.insert("summary".into(), json!(parse_localized(&fields.summary, "summary")?));
     }
+    if !fields.example_prompts.is_empty() {
+        input.insert(
+            "examplePrompts".into(),
+            json!(parse_localized(&fields.example_prompts, "example-prompt")?),
+        );
+    }
     Ok(())
 }
 
@@ -255,6 +264,7 @@ mod tests {
             instructions: Some("Posuď výpověď.".into()),
             display_name: vec!["cs:Kontrola výpovědi".into(), "en:Dismissal review".into()],
             summary: vec!["cs:Posoudí výpověď.".into()],
+            example_prompts: vec![],
             jurisdictions: Some(vec!["CZ".into()]),
             jurisdiction_required: Some(true),
             allowed_tools: Some(vec!["shell".into(), "readFile".into()]),
@@ -272,6 +282,40 @@ mod tests {
             json!([{ "language": "cs", "text": "Kontrola výpovědi" }, { "language": "en", "text": "Dismissal review" }])
         );
         assert_eq!(input["summary"], json!([{ "language": "cs", "text": "Posoudí výpověď." }]));
+        assert!(!input.contains_key("examplePrompts"));
+    }
+
+    #[test]
+    fn apply_fields_builds_localized_example_prompts_in_the_order_given() {
+        let fields = SkillFields {
+            example_prompts: vec![
+                "cs:Zkontroluj výpověď z pracovního poměru.".into(),
+                "cs:Shrň důvody výpovědi.".into(),
+                "en:Review a dismissal notice.".into(),
+            ],
+            ..SkillFields::default()
+        };
+        let mut input = Map::new();
+
+        apply_fields(&mut input, &fields).unwrap();
+
+        assert_eq!(
+            input["examplePrompts"],
+            json!([
+                { "language": "cs", "text": "Zkontroluj výpověď z pracovního poměru." },
+                { "language": "cs", "text": "Shrň důvody výpovědi." },
+                { "language": "en", "text": "Review a dismissal notice." }
+            ])
+        );
+    }
+
+    #[test]
+    fn example_prompts_alone_are_enough_to_update() {
+        assert!(!SkillFields {
+            example_prompts: vec!["cs:Zkontroluj výpověď.".into()],
+            ..SkillFields::default()
+        }
+        .is_empty());
     }
 
     #[test]

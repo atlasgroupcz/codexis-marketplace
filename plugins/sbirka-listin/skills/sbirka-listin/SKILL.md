@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Sbírka listin ČR"
     summary: "Dokumenty subjektu ze Sbírky listin podle IČO - účetní závěrky, stanovy a další listiny, stažení a hlídání přírůstků."
+    examplePrompts:
+      - "Vypiš, jaké listiny má firma s IČO 27082440 založené ve sbírce listin."
+      - "Stáhni poslední účetní závěrku firmy s IČO 45274649."
+      - "Hlídej, jestli firma s IČO 00177041 založí do sbírky listin novou listinu."
   en:
     displayName: "Czech Collection of Deeds"
     summary: "A subject's filed documents by IČO - financial statements, articles and other deeds, with download and new-filing watching."
+    examplePrompts:
+      - "List the documents company 27082440 has filed in the Collection of Deeds."
+      - "Download the latest financial statements of company 45274649."
+      - "Watch company 00177041 and tell me when it files a new document."
   sk:
     displayName: "Zbierka listín ČR"
     summary: "Dokumenty subjektu zo Zbierky listín podľa IČO - účtovné závierky, stanovy a ďalšie listiny, so stiahnutím a strážením prírastkov."
+    examplePrompts:
+      - "Vypíš, aké listiny má firma s IČO 27082440 založené v zbierke listín."
+      - "Stiahni poslednú účtovnú závierku firmy s IČO 45274649."
+      - "Sleduj, či firma s IČO 00177041 založí do zbierky listín novú listinu."
 ---
 
 # Sbírka listin - Czech Collection of Deeds

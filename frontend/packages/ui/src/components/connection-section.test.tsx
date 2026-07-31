@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { ConnectionSection } from './connection-section'
 import type { ConnectionSectionLabels } from './connection-section'
 
@@ -30,14 +30,19 @@ function setup(props: Partial<React.ComponentProps<typeof ConnectionSection>> = 
 }
 
 describe('ConnectionSection', () => {
-  it('not configured: Uložit is disabled until a value is typed, then saves it', () => {
+  it('not configured: Uložit is disabled until a value is typed, then saves it', async () => {
     const onSave = vi.fn()
     setup({ onSave })
     expect(screen.getByRole('button', { name: 'Uložit' })).toBeDisabled()
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ABC123' } })
     const save = screen.getByRole('button', { name: 'Uložit' })
     expect(save).toBeEnabled()
-    fireEvent.click(save)
+    // Saving ends in `.finally(() => setSaving(false))`, a microtask that lands
+    // after a synchronous click - drain it inside act() so the state update is
+    // not reported as happening outside one.
+    await act(async () => {
+      fireEvent.click(save)
+    })
     expect(onSave).toHaveBeenCalledWith({ apiKey: 'ABC123' })
   })
 
@@ -60,5 +65,27 @@ describe('ConnectionSection', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'BAD' } })
     fireEvent.click(screen.getByRole('button', { name: 'Uložit' }))
     expect(await screen.findByText('API klíč je neplatný')).toBeInTheDocument()
+  })
+})
+
+describe('loading', () => {
+  // Rendering the real section first shows an empty field, then swaps it for the
+  // stored key a frame later - and a placeholder measured by hand in a consumer
+  // drifts the moment this component's padding changes.
+  it('shows neither the field nor the actions until the answer arrives', () => {
+    setup({ loading: true })
+    expect(screen.queryByPlaceholderText('Vložte klíč')).toBeNull()
+    expect(screen.queryByText('Uložit')).toBeNull()
+    expect(screen.queryByText('Získat klíč')).toBeNull()
+  })
+
+  it('marks the placeholder as busy for assistive tech', () => {
+    const { container } = setup({ loading: true })
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
+  })
+
+  it('renders normally once loading is over', () => {
+    setup({ loading: false })
+    expect(screen.getByPlaceholderText('Vložte klíč')).toBeTruthy()
   })
 })

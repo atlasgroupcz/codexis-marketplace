@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "Hlídač insolvencí ČR"
     summary: "Lustrace firem a osob v insolvenčním rejstříku (ISIR) a sledování změn insolvenčních řízení."
+    examplePrompts:
+      - "Zjisti, jestli je firma s IČO 04863313 v insolvenci."
+      - "Prověř, jestli je na fyzickou osobu vedeno insolvenční řízení."
+      - "Hlídej insolvenci našeho dodavatele a dej vědět, když přibude nové řízení."
   en:
     displayName: "Czech Insolvency Watchdog"
     summary: "Look up companies and people in the Czech Insolvency Register (ISIR) and track changes to proceedings."
+    examplePrompts:
+      - "Check whether company 04863313 is in insolvency proceedings."
+      - "Check whether insolvency proceedings are recorded against an individual."
+      - "Watch our supplier for insolvency and tell me when a new proceeding appears."
   sk:
     displayName: "Hliadač insolvencií ČR"
     summary: "Lustrácia firiem a osôb v insolvenčnom registri (ISIR) a sledovanie zmien insolvenčných konaní."
+    examplePrompts:
+      - "Zisti, či je firma s IČO 04863313 v insolvencii."
+      - "Prever, či je na fyzickú osobu vedené insolvenčné konanie."
+      - "Sleduj insolvenciu nášho dodávateľa a daj vedieť, keď pribudne nové konanie."
 ---
 
 # Hlídač insolvencí ČR (ISIR)

@@ -4,7 +4,7 @@ import { ArrowRight, Plus, RefreshCw, Scale } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { TopicRail } from './topic-rail'
 import { ReportsFeed } from './reports-feed'
 import { EmptyTopics } from './empty-state'
@@ -31,6 +31,7 @@ export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: 
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
         brand={{ icon: Scale, title: t('judikatura.title'), subtitle: t('judikatura.subtitle') }}
+        docs={{ app: 'sledovana-judikatura', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             {topics.length > 0 && (
@@ -55,7 +56,6 @@ export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: 
                 </Button>
               </>
             )}
-            <HeaderHelp app="sledovana-judikatura" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
           </>
         }

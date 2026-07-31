@@ -7,7 +7,7 @@ import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { Card, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card'
 import { ItemGroup } from '@workspace/ui/components/item'
-import { AppHeader, HeaderGear, HeaderHelp } from '@workspace/ui/components/app-header'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
 import { FeedItem } from './feed-item'
 import { NoReports } from './empty-state'
@@ -85,6 +85,7 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
             ? `${t('judikatura.lastCheck')}: ${formatDate(topic.last_check_at)}`
             : t('judikatura.areasCount', { count: topic.areas.length }),
         }}
+        docs={{ app: 'sledovana-judikatura', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
             <Button
@@ -99,7 +100,6 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
                 {remove.confirming ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
               </span>
             </Button>
-            <HeaderHelp app="sledovana-judikatura" lang={i18n.language} title={t('help.docs')} />
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
           </>
         }

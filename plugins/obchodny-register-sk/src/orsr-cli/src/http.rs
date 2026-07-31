@@ -24,8 +24,8 @@ pub struct RegistryClient {
 
 impl RegistryClient {
     pub fn new(cache_enabled: bool) -> Result<Self> {
-        let rpo_base_url = base_url_from_env("RPO_BASE_URL", DEFAULT_RPO_BASE_URL);
-        let ruz_base_url = base_url_from_env("RUZ_BASE_URL", DEFAULT_RUZ_BASE_URL);
+        let rpo_base_url = cdx_common::http::base_url_from_env("RPO_BASE_URL", DEFAULT_RPO_BASE_URL);
+        let ruz_base_url = cdx_common::http::base_url_from_env("RUZ_BASE_URL", DEFAULT_RUZ_BASE_URL);
         // ureq keeps a connection pool on the Agent -> the retry loops reuse the
         // TCP+TLS connection to the same host.
         let agent = ureq::AgentBuilder::new()
@@ -59,18 +59,18 @@ impl RegistryClient {
             {
                 Ok(resp) => resp,
                 Err(ureq::Error::Status(code, resp)) => {
-                    if retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     return Err(anyhow!(
                         "HTTP {} on GET {url}",
-                        format_status(code, resp.status_text())
+                        cdx_common::http::format_status(code, resp.status_text())
                     ));
                 }
                 Err(error) => {
                     if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     return Err(anyhow!("GET {url} failed: {error}"));
@@ -104,12 +104,12 @@ impl RegistryClient {
             {
                 Ok(resp) => resp,
                 Err(ureq::Error::Status(code, resp)) => {
-                    if retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     let final_url = resp.get_url().to_string();
-                    let status = format_status(code, resp.status_text());
+                    let status = cdx_common::http::format_status(code, resp.status_text());
                     let body = resp.into_string().unwrap_or_default();
                     return Err(anyhow!(
                         "HTTP {status} on GET {final_url}\n{body}",
@@ -119,7 +119,7 @@ impl RegistryClient {
                 }
                 Err(error) => {
                     if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
                     return Err(anyhow!("GET {url} failed: {error}"));
@@ -168,7 +168,7 @@ impl RegistryClient {
 }
 
 fn build_url(base: &str, path: &str, query: &[(&str, &str)]) -> Result<String> {
-    let mut url = join_url(base, path);
+    let mut url = cdx_common::http::join_url(base, path);
     if !query.is_empty() {
         url.push('?');
         for (i, (key, value)) in query.iter().enumerate() {
@@ -208,46 +208,6 @@ fn form_urlencode_into(out: &mut String, value: &str) {
             }
         }
     }
-}
-
-/// Reads an env var (trimmed of a trailing slash), falling back to `default`.
-/// (Was `cdx_common::http::base_url_from_env`.)
-fn base_url_from_env(var: &str, default: &str) -> String {
-    env::var(var)
-        .unwrap_or_else(|_| default.to_string())
-        .trim_end_matches('/')
-        .to_string()
-}
-
-/// Joins a base URL and a path; an empty path yields the base unchanged.
-/// (Was `cdx_common::http::join_url`.)
-fn join_url(base: &str, path: &str) -> String {
-    if path.is_empty() {
-        return base.to_string();
-    }
-    format!("{base}/{}", path.trim_start_matches('/'))
-}
-
-/// `"<code> <reason>"`, or just the code when the reason phrase is empty.
-/// (Was `cdx_common::http::format_status`, adapted to ureq's `u16` status.)
-fn format_status(code: u16, reason: &str) -> String {
-    if reason.is_empty() {
-        code.to_string()
-    } else {
-        format!("{code} {reason}")
-    }
-}
-
-/// Whether a status is worth retrying (429 or any 5xx).
-/// (Was `cdx_common::http::retryable_status`, adapted to ureq's `u16` status.)
-fn retryable_status(code: u16) -> bool {
-    code == 429 || (500..600).contains(&code)
-}
-
-/// Exponential backoff: 250ms . 2^attempt.
-/// (Was `cdx_common::http::backoff`.)
-fn backoff(attempt: usize) -> Duration {
-    Duration::from_millis(250 * 2_u64.pow(attempt as u32))
 }
 
 fn configured_cache_ttl() -> Duration {

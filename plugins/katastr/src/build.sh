@@ -13,10 +13,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # plugins/katastr/s
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"                    # plugins/katastr
 source "$SCRIPT_DIR/../../../shared/scripts/plugin-build.sh"
 
-# build_plugin_crate ensures the katastr-cli crate is built (the standalone
+# build_plugin_crate ensures the katastr crate is built (the standalone
 # fallback, when run without the one-pass workspace build) and installs the CLI;
 # katastr-cgi comes from that same crate build, so it just installs.
-build_plugin_crate "$SCRIPT_DIR/katastr-cli" "katastr-cli"
+build_plugin_crate "$SCRIPT_DIR/katastr" "katastr-cli"
 install_workspace_binary katastr-cgi "$PLUGIN_DIR/components/katastr"
 
 echo "Completed plugin build: $(basename "$PLUGIN_DIR")"

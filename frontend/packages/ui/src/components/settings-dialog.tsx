@@ -4,6 +4,7 @@ import { ConnectionSection } from '@workspace/ui/components/connection-section'
 import { NotifySettingsBody } from '@workspace/ui/components/notify-settings-body'
 import { Separator } from '@workspace/ui/components/separator'
 import { SettingsDialogShell } from '@workspace/ui/components/settings-dialog-shell'
+import { ConnectionStatus, connStateOf } from '@workspace/ui/components/connection-status'
 import type { ConnField, ConnGetKeyLink } from '@workspace/ui/components/connection-settings'
 import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
 import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
@@ -19,7 +20,11 @@ export interface SettingsDialogNotifyProps {
   onSave: (values: NotifyValues) => void
 }
 export interface SettingsDialogConnectionProps {
-  configured: boolean
+  /**
+   * `null` while the first fetch is in flight. Passing `?? false` instead makes
+   * the badge assert "not connected" in red before anything has been checked.
+   */
+  configured: boolean | null
   maskedKey: string
   fields: Array<ConnField>
   getKey: ConnGetKeyLink
@@ -29,17 +34,27 @@ export interface SettingsDialogConnectionProps {
   onDelete: () => void
 }
 
-function GroupLabel({
+/**
+ * Section heading inside the dialog: an icon, a label, and an optional trailing
+ * slot (the connection badge). Exported because a panel that *is* a settings
+ * page rather than a dialog needs the same heading and would otherwise copy the
+ * class string; `className` lets it drop the dialog's own padding.
+ */
+export function GroupLabel({
   icon: Icon,
   children,
   trailing,
+  className = 'px-3 pt-3 pb-1',
 }: {
   icon: ComponentType<{ className?: string }>
   children: string
   trailing?: ReactNode
+  className?: string
 }) {
   return (
-    <div className="text-muted-foreground flex items-center justify-between gap-2 px-3 pt-3 pb-1 text-[10.5px] font-semibold tracking-[0.08em] uppercase leading-none">
+    <div
+      className={`text-muted-foreground flex items-center justify-between gap-2 text-[10.5px] font-semibold tracking-[0.08em] uppercase leading-none ${className}`}
+    >
       <span className="flex items-center gap-1.5">
         <Icon className="size-3 shrink-0" />
         {children}
@@ -106,23 +121,18 @@ export function SettingsDialog({ open, onOpenChange, notify, connection }: Setti
             <GroupLabel
               icon={KeyRound}
               trailing={
-                <span
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-normal normal-case ${
-                    connection.configured ? 'text-primary' : 'text-destructive'
-                  }`}
-                >
-                  <span
-                    className={`size-2 rounded-full ${connection.configured ? 'bg-primary' : 'bg-destructive'}`}
-                  />
-                  {connection.configured ? connection.labels.connected : connection.labels.notConnected}
-                </span>
+                <ConnectionStatus
+                  state={connStateOf(connection.configured)}
+                  labels={connection.labels}
+                />
               }
             >
               {connection.sectionLabel}
             </GroupLabel>
           )}
           <ConnectionSection
-            configured={connection.configured}
+            loading={connection.configured === null}
+            configured={connection.configured ?? false}
             maskedKey={connection.maskedKey}
             fields={connection.fields}
             getKey={connection.getKey}

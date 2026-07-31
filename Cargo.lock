@@ -182,7 +182,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "reqwest",
  "serde",
  "serde_json",
  "tempfile",
@@ -373,6 +372,21 @@ name = "crossbeam-utils"
 version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17"
+
+[[package]]
+name = "datify"
+version = "1.0.0"
+dependencies = [
+ "cdx-cgi",
+ "cdx-common",
+ "clap",
+ "datify",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
 
 [[package]]
 name = "derive_arbitrary"
@@ -808,7 +822,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "katastr-cli"
+name = "katastr"
 version = "0.1.0"
 dependencies = [
  "cdx-cgi",
@@ -1282,7 +1296,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sbirka-listin-cli"
+name = "sbirka-listin"
 version = "1.0.0"
 dependencies = [
  "anyhow",

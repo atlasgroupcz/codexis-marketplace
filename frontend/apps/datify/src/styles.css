@@ -1,0 +1,93 @@
+@import '@workspace/ui/globals.css';
+
+/* ── Datify brand - scoped to this app ─────────────────────────────────────
+   Unlike the other component apps, this panel belongs to a third-party
+   product, so it carries Datify's blue rather than the CODEXIS green. The
+   ramp is derived from the #508BF8 in their own logo.svg. Typography stays on
+   the host's stack: the panel sits inside CODEXIS chrome, and a second type
+   voice would read as a broken embed rather than as branding. */
+
+@theme {
+  --color-brand-50: #f4f8ff;
+  --color-brand-100: #e5eefe;
+  --color-brand-200: #cadcfd;
+  --color-brand-500: #508bf8;
+  --color-brand-600: #4476d3;
+  --color-brand-700: #365fa9;
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --background: #ffffff;
+  --foreground: #0b1b33;
+
+  --card: #ffffff;
+  --card-foreground: #0b1b33;
+  --popover: #ffffff;
+  --popover-foreground: #0b1b33;
+
+  /* Datify blue as the primary action colour */
+  --primary: #508bf8;
+  --primary-foreground: #ffffff;
+
+  /* soft blue tint for quiet surfaces */
+  --secondary: #f4f8ff;
+  --secondary-foreground: #365fa9;
+  --accent: #f4f8ff;
+  --accent-foreground: #365fa9;
+
+  --muted: #f6f7f9;
+  --muted-foreground: #6b7689;
+
+  --destructive: #b4231f;
+
+  /* Connection state is a host semantic, not Datify's brand: every component
+     app shows "connected" in this green, so it reads the same everywhere.
+     Datify blue stays on the actions. The theme has no --success of its own. */
+  --success: #5ea500;
+
+  --border: #e4e9f2;
+  --input: #dce4f2;
+  --ring: #508bf8;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* ── the mark as the connection indicator ──────────────────────────────────
+   Datify's logo is a bar and a bracket separated by a gap. That gap is this
+   page's whole question, so the mark answers it: apart and grey while no
+   token is stored, closed and blue once one is. */
+.datify-mark [data-part] {
+  transition:
+    fill 240ms ease,
+    transform 240ms ease;
+  fill: var(--muted-foreground);
+}
+
+/* Only a real answer opens the gap: while the state is unknown the mark
+   stays closed and grey, so it does not flick open on first paint. */
+.datify-mark[data-state='disconnected'] [data-part='bar'] {
+  transform: translateX(-16px);
+}
+
+.datify-mark[data-state='connected'] [data-part] {
+  fill: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .datify-mark [data-part] {
+    transition: none;
+  }
+}

@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Register zmlúv SR"
     summary: "Vyhledávání slovenských veřejných smluv v Centrálním registru zmlúv (crz.gov.sk) - podle předmětu, stran, IČO, hodnoty a data uzavření."
+    examplePrompts:
+      - "Najdi ve slovenském Centrálním registru zmlúv smlouvy na poskytování služeb."
+      - "Jaké smlouvy uzavřelo Ministerstvo vnitra SR na bezpečnostní služby?"
+      - "Za jakou celkovou částku byly uzavřeny smlouvy na stavební práce?"
   en:
     displayName: "Slovak Register of Contracts"
     summary: "Search public-sector contracts in the Slovak Central Register of Contracts (crz.gov.sk) - by subject, parties, IČO, value, and contract date."
+    examplePrompts:
+      - "Find service contracts in the Slovak Central Register of Contracts."
+      - "Which contracts has the Slovak Ministry of Interior signed for security services?"
+      - "What is the total value of contracts signed for construction work?"
   sk:
     displayName: "Centrálny register zmlúv"
     summary: "Vyhľadávanie verejných zmlúv v Centrálnom registri zmlúv (crz.gov.sk) - podľa predmetu, strán, IČO, hodnoty a dátumu uzavretia."
+    examplePrompts:
+      - "Nájdi v Centrálnom registri zmlúv zmluvy na poskytovanie služieb."
+      - "Aké zmluvy uzavrelo Ministerstvo vnútra SR na bezpečnostné služby?"
+      - "Za akú celkovú sumu boli uzavreté zmluvy na stavebné práce?"
 ---
 
 # Slovak Register of Contracts (register-zmluv)

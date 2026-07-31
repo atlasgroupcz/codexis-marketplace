@@ -46,6 +46,7 @@ function main() {
             exit 1
         }
     fi
+    source "${plugin_dir}/../../plugin-runtime/install-executable.sh"
 
     exit_on_missing_tools "${DEPENDENCIES[@]}"
 
@@ -67,11 +68,7 @@ function install_script() {
         echo "Error: missing ${source}" >&2
         return 1
     fi
-    if ! install -m 0755 "$source" "$dest"; then
-        echo "Error: cannot install ${dest}" >&2
-        return 1
-    fi
-    echo "installed ${dest}"
+    install_executable "$source" "$dest"
 }
 
 # The plugin is useless without a renderer; say so at install time rather than

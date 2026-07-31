@@ -39,8 +39,11 @@ the shared machinery (`provider.py`, `assertions.py`, `run.py`) stays central in
 keeps them in `plugins/<name>/tests/fixtures/`, referenced by a relative `source:`.
 
 Every marketplace plugin must own an install contract
-(`tests/install/expected.json`) - `tests/test_conformance.py` fails the build
-otherwise. A behavioral (promptfoo) config is recommended but not enforced: the
+(`tests/install/expected.json`) naming **exactly** the skills under `skills/` -
+`tests/test_conformance.py` fails the build otherwise. The contract is consumed
+as an allowlist by the marketplace tier: a skill it omits is never install- or
+uninstall-tested, and nothing else notices, so the two must not drift apart.
+A behavioral (promptfoo) config is recommended but not enforced: the
 eval tier is opt-in in CI, so requiring a config that does not routinely run adds
 friction without a signal. Add one when a plugin's behavior is worth an
 LLM-driven check; the requirement can return once the eval tier becomes a
@@ -138,8 +141,100 @@ plugins/plugin-name/
 │       ├── SKILL.md      # Skill definition
 │       └── references/   # Type-specific implementations
 ├── workflow-templates/   # Workflow scripts the chat can fetch and adapt (*.js)
+├── README.md             # User-facing overview (required, Czech)
 └── shared/               # Shared resources
 ```
+
+## Plugin README
+
+Every plugin needs a `README.md`; `tests/test_conformance.py` fails the build
+without one. It is the only text that tells a user what they just installed, and
+it ships publicly (`dist-exclusions.txt` anchors `/README.md` to the repo root,
+so `plugins/*/README.md` reaches the dist).
+
+**Start at `## Co to je?` - no `# Title`, no tagline.** The daemon renders the
+README on the plugin page underneath a header it builds from the manifest
+(`i18n.<lang>.displayName` as the heading, `i18n.<lang>.description` as the
+subtitle). A README that opens with its own title and one-liner prints the plugin
+name twice and says the same thing twice. `##` is therefore the top level a
+README may use.
+
+Write it for the person using the plugin, not the person building it. Follow
+`plugins/codexis/README.md`: `## Co to je?`, what the source contains,
+`## K čemu se to hodí v praxi?`, and the official source. Add
+`## Nastavení` when the user must supply a key themselves, `## Součásti pluginu`
+when the plugin ships an app, and `## Doporučená kombinace` to point at plugins
+that pair with it.
+
+Two rules learned the hard way:
+
+- **Never describe a capability you have not read in the plugin's own
+  `SKILL.md` / `references/`.** The first draft claimed the Czech cadastre
+  returns owner names; `references/api.md` says *"this API has no owners"*.
+  A confident wrong claim reads as a broken plugin.
+- **Keep out anything that ages on its own** - our libraries and models, exact
+  counts ("seven courts"), schedules ("every morning at 7"). Name the capability,
+  not the implementation. Defaults that only change by a deliberate edit (an
+  e-mail toggle) are fine and worth stating.
+
+The conformance test checks only that the file exists. Contents are a review
+concern - pinning prose to manifests constrains how the README may be written
+and catches only cosmetic drift.
+
+## Example prompts
+
+A skill's `SKILL.md` frontmatter holds ready-made prompts the daemon renders on
+the plugin page, under the `i18n` block it already carries. They are **optional** -
+`ocr`, `video-analyze` and `visualization` ship none on purpose, because nobody
+addresses them directly; they run as part of another request.
+
+```yaml
+i18n:
+  cs:
+    displayName: "..."
+    summary: "..."
+    examplePrompts:
+      - "Ověř v ARES firmu s IČO 27082440 - sídlo, aktivitu a jestli je plátcem DPH."
+  en:
+    ...
+```
+
+Prompts sit next to the `displayName` and `summary` they belong to, so a skill
+carries its own user-facing text in one place. They are an ordered list of plain
+strings - no `id` and no `title`. The whole prompt renders, so a separate label
+would say the same thing twice and would let the chip advertise something other
+than what it sends; ordering carries whatever a key used to. All three languages
+are mandatory once any of them lists a prompt, and every language must list the
+same number.
+
+At most three prompts per language, and three is the target. They must cover
+different capabilities rather than one question reworded. The two README rules
+apply unchanged:
+
+- **Never write a prompt for a capability you have not read in the plugin's own
+  `SKILL.md` / `references/`.** Both cadastre plugins document that their API
+  returns no owners; a "who owns this parcel" prompt would look like a broken
+  plugin on the first click.
+- **Keep out anything that ages on its own** - counts, deadlines, model names.
+
+Two rules specific to prompts:
+
+- **The whole text renders**, so keep it to one sentence of roughly 100
+  characters.
+- **A concrete value is only allowed when that record exists for everyone.**
+  A real IČO is fine; an invented one returns nothing and reads as broken. Where
+  the subject is inherently the user's own - their parcel, their proceeding,
+  their data box, their internal directives - name the capability and let the
+  assistant ask for the identifier. That still runs; a `«fill this in»`
+  placeholder does not.
+
+Put each prompt on the skill that actually serves it, and only on user-facing
+skills: `codexis` also ships `cdxctl`, which administers platform objects and is
+not something a user asks about.
+
+`tests/test_conformance.py` validates the block when it exists and never requires
+it. Em-dashes are not checked there - `tests/test_repo_hygiene.py` already sweeps
+every tracked source file.
 
 ## Workflow templates
 
@@ -183,6 +278,13 @@ Skill authoring best practices) for every SKILL.md in this repo:
   workflows give numbered steps or a checklist; for quality-critical steps add a
   validation loop (run the check, fix, re-run).
 - **Consistent terminology**: pick one term per concept and use it everywhere.
+- **Write the behaviour, not its provenance.** State how the system behaves and what
+  to do about it. How that was discovered, what the vendor's own docs claim, and why
+  our code enforces it where it does are invisible to the reader and cost it tokens -
+  they belong in the commit message and code comments, where a maintainer looks for
+  them. A skill is not a changelog. Same rule bans describing the CLI's own leniency
+  ("a lone condition is wrapped for you"): it is true, and the only thing it tells
+  the reader is that it may be sloppy. State the required form instead.
 - **No time-sensitive content.** No "before/after <date>" branches; keep legacy behavior
   in a clearly marked deprecated/old-patterns note.
 - **Match specificity to fragility**: exact commands for fragile one-way operations,
@@ -302,6 +404,77 @@ A plugin can render an in-chat HTML preview for the sources it publishes. Publis
 ```
 
 The binary path is resolved relative to `previews/` and may point into the plugin's `bin/` (it must stay inside the plugin directory). The daemon executes it CGI-style in the user's VM with the resource path in `PATH_INFO` (+ `QUERY_STRING`); the handler prints a CGI response (`Status`/`Content-Type` headers, blank line, HTML body). Static assets placed next to the descriptor (e.g. `previews/preview.css`) are served as-is, so the page can reference them relatively (`<link rel="stylesheet" href="./preview.css">`). The rendered HTML drives the chat panel: `<title>` becomes the panel title and an optional `<link rel="canonical" href="…">` becomes the "open in new tab" target. See the `codexis` plugin (`cdx-cli preview`) for the reference implementation.
+
+A handler that writes preview files to disk must never derive the target path itself. The daemon owns the filesystem layout and passes it in the CGI environment:
+
+| ENV | Meaning |
+| --- | --- |
+| `PREVIEW_DIR` | absolute directory the handler writes generated preview files into (already scoped to the chat) |
+| `PREVIEW_ASSET_BASE_URL` | URL prefix the daemon serves the plugin's `previews/` assets from, e.g. `<PREVIEW_ASSET_BASE_URL>/preview.css` |
+
+A file-writing handler must fail (`Status: 5xx`) when either is missing rather than falling back to a hardcoded path. `PREVIEW_ASSET_BASE_URL` is needed because such a page is opened through the file preview renderer, not from the plugin endpoint, so a relative `./preview.css` would not resolve.
+
+### Frontend changes need a component rebuild
+
+`frontend/apps/<app>/` is **source**. The daemon never runs it. What the daemon
+serves is the built copy committed under `plugins/<plugin>/components/<app>/`
+(hashed JS/CSS in `assets/`, plus its own `locales/`). Change the source without
+rebuilding and the dev server shows your change while the daemon keeps serving
+the old bundle - the change looks done and is not.
+
+After touching anything under `frontend/`, rebuild the affected plugins and
+commit the result. The builder is `plugins/<plugin>/components/build.sh`; it
+needs docker, builds the app in a pinned `oven/bun` image and syncs `dist/`
+into the component directory.
+
+Which plugin ships which app is not a fixed list - one plugin can ship several
+apps, and the set changes. Ask the repo instead of remembering:
+
+```bash
+# which plugin ships app <app>
+grep -l "apps/<app>" plugins/*/components/build.sh
+```
+
+A change under `frontend/packages/` reaches **every** app, so rebuild all of
+them:
+
+```bash
+for b in plugins/*/components/build.sh; do "$b"; done
+```
+
+When in doubt, rebuild everything - it is cheap and a stale bundle is silent.
+
+The generated filenames carry a content hash and therefore change on every
+rebuild - that is the point, see the caching rules above. Expect the diff to
+delete the old `index-<hash>.js` and add a new one.
+
+## Display names and versions
+
+### `displayName`: add a qualifier only when the name needs one
+
+Two shapes are in use, and which one applies follows from the name itself:
+
+- **Opaque name → `Brand - what it is`.** A brand or acronym a user cannot
+  decode: `CODEXIS - Právní databáze`, `ARES - registr ekonomických subjektů`,
+  `ONEPOST - datové schránky`, `SÚKL - registr léčiv`.
+- **Self-describing name → leave it alone.** Adding a qualifier would only
+  repeat it: `Katastr nemovitostí ČR`, `Hlídač insolvencí ČR`, `Vizualizace dat`.
+
+**Take the qualifier from how the product describes itself**, not from what its
+API happens to expose. Datify's API is collections and datasets, which reads
+like a "data platform" - but Datify calls itself a *digitální AI kancelář*, and
+that is what belongs in the name. Check the vendor's own site before inventing
+a label; a wrong one ships to every user and is awkward to change later.
+
+Keep `displayName` in step across all three places that carry it:
+`marketplace.json`, `plugin.json` and the skill's `SKILL.md` frontmatter.
+
+### Versions start at 1.0.0
+
+A plugin that ships is `1.0.0`, not `0.1.0` - the marketplace has no pre-release
+channel, so anything installable is released. Bump `version` in `plugin.json`
+and, for Rust plugins, the crate's `Cargo.toml` in the same commit: the CLI
+reports it (`--version`) and it usually reaches the API as the `User-Agent`.
 
 ## Localization (i18n)
 

@@ -93,7 +93,6 @@
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10",
     "@tanstack/eslint-config": "^0.4.0"
   },
@@ -137,6 +136,7 @@
     "./components/command": "./src/components/command.tsx",
     "./components/config-gate": "./src/components/config-gate.tsx",
     "./components/connection-section": "./src/components/connection-section.tsx",
+    "./components/connection-status": "./src/components/connection-status.tsx",
     "./components/connection-settings": "./src/components/connection-settings.tsx",
     "./components/context-menu": "./src/components/context-menu.tsx",
     "./components/conversation-hint": "./src/components/conversation-hint.tsx",
