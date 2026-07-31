@@ -9,7 +9,6 @@
 const SEARCH_MODEL = "GPT_5_6_LUNA"
 const SOL_MODEL = "GPT_5_6_SOL"
 const TERRA_MODEL = "GPT_5_6_TERRA"
-const MAX_MATERIAL_ASKS = 5
 
 export const meta = {
   name: "legal-research",
@@ -43,8 +42,7 @@ const FRAMEWORK = { type: "object", required: ["criteria", "provisions", "requir
   provisions: { type: "array", items: { type: "object", required: ["provision", "source"], properties: {
     provision: { type: "string" }, source: { type: "string" }, relevance: { type: "string" } } } },
   requiredMaterials: { type: "array", items: { type: "object", required: ["material", "why"], properties: {
-    material: { type: "string" }, why: { type: "string" },
-    importance: { enum: ["rozhodující", "podpůrný"] } } } } } }
+    material: { type: "string" }, why: { type: "string" } } } } } }
 
 const INVENTORY = { type: "object", required: ["present", "missing"], properties: {
   present: { type: "array", items: { type: "object", required: ["materialId", "path"], properties: {
@@ -213,7 +211,7 @@ Jurisdikce: ${frame.jurisdiction || JURISDICTION}${frame.asOf ? `\nPosuzuje se k
 Rychlá rekognoskace, ne plná rešerše. Zjisti, PODLE ČEHO se tato věc rozhoduje:
 1. Která ustanovení se na ni aplikují (zdroje CR, u unijního přesahu EU).
 2. Podle jakých kritérií soudy takové věci posuzují - projdi judikaturu (JD, u unijního práva ES) a vytáhni test nebo znaky, které soudy fakticky používají.
-3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého napiš, co se z něj prokazuje, a označ, jestli je rozhodující, nebo jen podpůrný.
+3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého napiš, co se z něj prokazuje.
 
 Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci.`,
     { label: "rozhodovací rámec", schema: FRAMEWORK, model: SOL_MODEL })
@@ -222,12 +220,12 @@ Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj
 
   phase("Podklady")
   const materials = framework.requiredMaterials
-    .map((m, i) => `- [M${i}] ${m.material} (${m.importance || "podpůrný"}): ${m.why}`)
+    .map((m, i) => `- [M${i}] ${m.material}: ${m.why}`)
     .join("\n")
   const inventory = await agent(
     `${BRIEF}
 
-Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing' přesně tak, jak je to pojmenované níže; v 'materialId' vrať jeho značku [M0], [M1], … beze změny.
+Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing'; do 'material' dej holý název dokumentu tak, jak je uvedený níže, bez značky [M0] a bez jakýchkoli poznámek v závorce - ten text uvidí uživatel v dotazu. V 'materialId' vrať jeho značku [M0], [M1], … beze změny.
 
 Potřebné podklady:
 ${materials}`,
@@ -240,15 +238,11 @@ ${materials}`,
     const idx = /(\d+)/.exec(String(item.materialId || ""))
     return (idx && framework.requiredMaterials[Number(idx[1])]) || {}
   }
-  const decisive = stillMissing.filter(m => specOf(m).importance === "rozhodující")
-  const asked = (decisive.length > 0 ? decisive : stillMissing).slice(0, MAX_MATERIAL_ASKS)
-  const bundled = stillMissing.filter(m => !asked.includes(m))
-
   const covered = new Set()
   const loose = []
   const notes = []
 
-  for (const item of asked) {
+  for (const item of stillMissing) {
     const why = specOf(item).why
     const reply = await ask(
       `Máte k dispozici tento podklad: ${item.material}?${why ? `\n\nK čemu ho potřebuji: ${why}` : ""}`,
@@ -265,18 +259,6 @@ ${materials}`,
     }
     if (reply.text && reply.text.trim()) {
       notes.push(`K podkladu "${item.material}": ${reply.text.trim()}`)
-    }
-  }
-
-  if (bundled.length > 0) {
-    const rest = await ask(
-      `Máte ještě něco z podkladů, které mi zbývají?\n\n${bundled.map(m => `• ${m.material}`).join("\n")}`,
-      { options: ["Nahrávám, co z toho mám", "Nic z toho nemám"] })
-    if (rest.answered && rest.files.length > 0) {
-      loose.push(...rest.files)
-    }
-    if (rest.answered && rest.text && rest.text.trim()) {
-      notes.push(rest.text.trim())
     }
   }
 
