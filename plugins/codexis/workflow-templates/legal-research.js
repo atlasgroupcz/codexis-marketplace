@@ -5,30 +5,16 @@
 // @jurisdictions CZ SK EU
 // @args question (required) - the legal question, in the user's own words
 // @args jurisdiction - CZ, SK or EU; defaults to CZ
-//
-// Eight phases, in the order a lawyer actually works: frame the question, find out from case law and
-// statutes WHAT DECIDES IT and which documents that requires, take stock of what the client already
-// gave us, ask the client for the rest, pull the decisive passages out of the documents, research each
-// sub-question in source order, check the sources still hold today, and only then write.
-// Dožádání is the one phase that talks to a human, and it is reached unconditionally: the recognition
-// phase has just derived from case law what the courts actually look at, and that is the only moment
-// where we know enough to ask for the right papers and the right facts.
-// Every agent gets BRIEF - it sees nothing else - and every finding travels on with its citation and
-// its verbatim quote.
-// Tune the sub-question count, the verification depth and the schemas to the task.
 
-// Extrakce and Rešerše are read/search work, not legal judgment - they run cheaper than the rest.
 const SEARCH_MODEL = "GPT_5_6_LUNA"
 
 export const meta = {
   name: "legal-research",
-  description: "Právní rešerše: rámec → rekognoskace → podklady → dožádání → extrakce → rešerše → ověření → syntéza.",
+  description: "Právní rešerše: rámec → rekognoskace → podklady → rešerše → ověření → syntéza.",
   phases: [
     { title: "Rámec", detail: "Určit právní obor, jurisdikci, časový řez a sporné otázky" },
     { title: "Rekognoskace", detail: "Zjistit z judikatury a předpisů, podle čeho se rozhoduje a co je třeba doložit" },
-    { title: "Podklady", detail: "Inventura dokumentů klienta, které už jsou v pracovním adresáři" },
-    { title: "Dožádání", detail: "Vyžádat od uživatele chybějící dokumenty a skutečnosti, které z nich neplynou" },
-    { title: "Extrakce", detail: "Vytěžení rozhodných skutečností z dokumentů klienta" },
+    { title: "Podklady", detail: "Inventura dokumentů klienta, dožádání chybějících podkladů a vytěžení rozhodných skutečností" },
     { title: "Rešerše", detail: "Vyhledání předpisů, komentářů, judikatury a literatury po dílčích otázkách" },
     { title: "Ověření", detail: "Platnost, účinnost a překonanost každého nosného zdroje" },
     { title: "Syntéza", detail: "Aplikace ověřených závěrů na podklady klienta" }
@@ -59,21 +45,17 @@ const INVENTORY = { type: "object", required: ["present", "missing"], properties
 const FINDINGS = { type: "object", required: ["findings"], properties: { findings: { type: "array", items: {
   type: "object", required: ["proposition", "source", "docId", "quote", "sourceKind"], properties: {
     proposition: { type: "string" }, source: { type: "string" },
-    // The id the agent actually fetched, so the quote can be checked against the document itself
-    // instead of against another model's recollection of it.
     docId: { type: "string" }, part: { type: "string" },
     quote: { type: "string" },
     sourceKind: { enum: ["předpis", "komentář", "judikatura", "literatura"] },
     weight: { enum: ["nosný", "podpůrný"] } } } } } }
 
-// What the client's own documents actually say, pulled out before anyone reasons about them.
 const FACTS = { type: "object", required: ["facts"], properties: {
   facts: { type: "array", items: { type: "object", required: ["fact", "path", "quote"], properties: {
     fact: { type: "string" }, path: { type: "string" }, locator: { type: "string" },
     quote: { type: "string" } } } },
   notCovered: { type: "array", items: { type: "string" } } } }
 
-// Four states, never a boolean: "could not check" must never be able to masquerade as "checked".
 const CURRENCY = { type: "object", required: ["status", "evidence"], properties: {
   status: { enum: ["supported", "refuted", "unverified", "source_unreachable"] },
   evidence: { type: "string" }, supersededBy: { type: "string" },
@@ -111,8 +93,6 @@ Jurisdikce: ${frame.jurisdiction || JURISDICTION}${frame.asOf ? `\nPosuzuje se k
   log(`Dílčí otázky: ${frame.issues.map(i => i.label).join(", ")}`)
 
   phase("Rekognoskace")
-  // Before asking the user for anything, find out what actually decides cases like this - that is what
-  // tells us which documents are worth asking for.
   const framework = await agent(
     `${BRIEF}
 
@@ -141,11 +121,6 @@ ${materials}
 Structured output only.`,
     { label: "inventura podkladů", schema: INVENTORY })
 
-  phase("Dožádání")
-  // The card goes up whether or not the inventory found gaps. The inventory agent can only see files,
-  // so "nothing is missing" still leaves untouched every fact that exists nowhere but in the client's
-  // head - what was agreed orally, how it actually ran, when it happened - and the recognition phase
-  // has just told us which of those facts the courts weigh.
   let supplied = inventory.present
   let stillMissing = inventory.missing
 
@@ -171,8 +146,6 @@ Nahrajte prosím dokumenty, které k tomu máte - smlouvy, obchodní podmínky, 
   }
   if (answer.answered && answer.files.length > 0) {
     log(`Uživatel nahrál ${answer.files.length} soubor(ů) - přiřazuji je k požadovaným podkladům`)
-    // Which upload covers which requested material is a judgement call, so ask an agent - counting
-    // files would silently declare everything supplied after a single upload.
     const wanted = stillMissing.length > 0
       ? stillMissing.map(m => `- [${m.materialId}] ${m.material}`)
       : framework.requiredMaterials.map((m, i) => `- [M${i}] ${m.material}`)
@@ -198,10 +171,6 @@ Structured output only.`,
 
   const missingAfterAsk = stillMissing.map(m => m.material)
 
-  phase("Extrakce")
-  // The synthesizer has no research tools, so a file path in its prompt is a fact it can never read.
-  // Pull the decisive passages out of the client's documents here, while an agent that CAN open them
-  // is still running, and carry the quotes forward instead of the paths.
   const criteriaList = framework.criteria.map(c => `- ${c.criterion}`).join("\n")
   const extracted = await parallel(supplied.map(doc => () =>
     agent(
@@ -222,8 +191,6 @@ Ke každému kritériu, které dokument zmiňuje, vrať jednu skutečnost: co z 
   log(`Skutečnosti z podkladů klienta: ${clientFacts.length}`)
 
   phase("Rešerše")
-  // One researcher per sub-question, each working the sources in the order that matters: the rule
-  // first, then how it is read, then how it is decided, then what the literature says.
   const perIssue = await parallel(frame.issues.map(issue => () =>
     agent(
       `${BRIEF}
@@ -274,12 +241,9 @@ Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo;
       { label: `ověření: ${finding.proposition.slice(0, 40)}`, agentType: "codexis:verifier",
         schema: CURRENCY })
       .then(verdict => ({ finding, verdict }))
-      // A verifier that crashed has verified nothing. Failing open here would let a rate limit
-      // promote an unchecked claim into the opinion.
       .catch(() => ({ finding, verdict: { status: "unverified",
         evidence: "ověření se nepodařilo provést (chyba běhu)" } }))))
 
-  // parallel() keeps failed positions as null, so drop those before reading a verdict off them.
   const checked = verified.filter(Boolean)
   const holding = checked.filter(v => v.verdict.status === "supported")
   const refuted = checked.filter(v => v.verdict.status === "refuted")
@@ -287,8 +251,6 @@ Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo;
   log(`Obstálo ${holding.length} z ${checked.length} zjištění, ${refuted.length} vyvráceno, ${unverified.length} neověřeno`)
 
   phase("Syntéza")
-  // The synthesizer has no research tools at all, so everything it may rely on has to be here:
-  // the proposition, its citation, the quote, and what the verifier found.
   const block = holding.map((v, i) =>
     `[${i}] ${v.finding.proposition}
     zdroj (${v.finding.sourceKind}): ${v.finding.source}
@@ -301,8 +263,6 @@ Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo;
     znění: "${f.quote}"`).join("\n")
     : "(z podkladů klienta se nepodařilo vytěžit žádné skutečnosti)"
 
-  // Kept apart from the extracted facts on purpose: these carry no document and no quote, so the
-  // opinion may rest on them only as the client's assertion, never as something proven.
   const opinion = await agent(
     `${BRIEF}
 
