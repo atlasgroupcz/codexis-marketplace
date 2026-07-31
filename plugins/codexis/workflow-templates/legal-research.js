@@ -163,7 +163,7 @@ Z toho, co zjistíš, odvoď dílčí právní otázky, které je kvůli TVÉMU 
 
 Tvůj úhel: ${a.label}
 
-${a.task}`, { label: `rámec: ${a.label}`, schema: ANGLE, model: TERRA_MODEL })))
+${a.task}`, { label: a.label, schema: ANGLE, model: TERRA_MODEL })))
 
   const scoped = FRAME_ANGLES.map((a, i) => ({ angle: a, result: angles[i] })).filter(s => s.result)
   if (scoped.length === 0) {
@@ -191,7 +191,7 @@ Vrať právní obor ('area'), rozhodnou jurisdikci ('jurisdiction'), den, ke kte
 Otázky sluč napříč úhly: co se opakuje, spoj do jedné; co se překrývá, rozděl tak, aby si dvě nešlapaly do zelí; co je pro odpověď nepodstatné, zahoď. Rozhodující dej první. Formulaci, kterou nespojuješ, ponech tak, jak ji úhel napsal - přeformulováním se ztrácí to, co rešeršista viděl v podkladech.
 
 Do 'constraints' vypiš jednou větou každé omezení rámce, které musí znát další rešeršisté: povahu úpravy (kogentní, dispozitivní, ochrana slabší strany), rozhodné znění a přechodná ustanovení, mezinárodní nebo unijní přesah, rozložení důkazního břemene. Nic si nedomýšlej - ber jen to, co některý z úhlů skutečně zjistil.`,
-    { label: "složení rámce", agentType: "codexis:synthesizer", schema: FRAME, model: TERRA_MODEL })
+    { label: "sloučení dílčích otázek", agentType: "codexis:synthesizer", schema: FRAME, model: TERRA_MODEL })
 
   const constraints = frame.constraints && frame.constraints.length > 0
     ? `\nRámcová omezení:\n${frame.constraints.map(c => `- ${c}`).join("\n")}`
@@ -217,7 +217,7 @@ Rychlá rekognoskace, ne plná rešerše. Zjisti, PODLE ČEHO se tato věc rozho
 - 'why': proč ten dokument potřebuješ, souvislými větami, jak bys to řekl klientovi: "Potřebuji ho k identifikaci konkrétního psa a chovatele. § 4 veterinárního zákona vyžaduje, aby identifikační číslo psa bylo zaznamenáno v dokladu o očkování." Zobrazí se to pod otázkou, takže zase bez nálepky typu "K čemu ho potřebuji:".
 
 Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci.`,
-    { label: "rozhodovací rámec", schema: FRAMEWORK, model: SOL_MODEL })
+    { label: "podle čeho se rozhoduje", schema: FRAMEWORK, model: SOL_MODEL })
 
   log(`Rozhodovací kritéria: ${framework.criteria.map(c => c.criterion).join(" | ")}`)
 
@@ -232,7 +232,7 @@ Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkl
 
 Potřebné podklady:
 ${materials}`,
-    { label: "inventura podkladů", schema: INVENTORY, model: TERRA_MODEL })
+    { label: "inventura dokumentů klienta", schema: INVENTORY, model: TERRA_MODEL })
 
   let supplied = inventory.present
   let stillMissing = inventory.missing
@@ -297,7 +297,7 @@ Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému 
 
 Požadované podklady:
 ${stillMissing.map(m => `- ${m.materialId} ${m.material}`).join("\n")}`,
-      { label: "přiřazení nahraných podkladů", schema: INVENTORY, model: TERRA_MODEL })
+      { label: "přiřazení nahraných souborů", schema: INVENTORY, model: TERRA_MODEL })
       .catch(() => null)
     if (matched) {
       supplied = supplied.concat(matched.present)
@@ -341,7 +341,7 @@ ${clientFacts.map(f => `- ${f.fact}\n    dokument: ${f.path}${f.locator ? `, ${f
 ${extractionGaps.length > 0 ? `Co při vytěžení nebylo v dokumentech pokryto (nezodpovězená kritéria, chybějící data, vady dokumentů):\n${extractionGaps.map(g => `- ${g}`).join("\n")}\n\n` : ""}Do 'conflicts' dej dvojice, které spolu nesedí: různá data téže události, různá znění téhož ujednání, plnění, které podle jednoho dokumentu proběhlo a podle druhého ne, dodatek měnící to, co smlouva stanoví jinak. U každého uveď rozcházející se dokumenty a jednou větou, proč na tom záleží.
 
 Do 'gaps' dej neuzavřené řetězce: úkon bez dokladu o doručení, odkaz na přílohu, která mezi podklady není, předpokládaná změna bez dodatku.`,
-        { label: "rozpory a mezery mezi podklady", agentType: "codexis:synthesizer", schema: CONFLICTS })
+        { label: "rozpory a mezery", agentType: "codexis:synthesizer", schema: CONFLICTS })
         .catch(() => null)
     : null
 
@@ -397,7 +397,7 @@ Doslovná citace: ${finding.quote}
 U předpisu ověř účinné znění ke dni posouzení: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že rozhodnutí je stále dobrou autoritou: nebylo překonáno velkým senátem, zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující formulaci - cituje se do závěrečného stanoviska.
 
 Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo; 'refuted' když jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení.`,
-      { label: `ověření: ${finding.proposition}`, agentType: "codexis:verifier",
+      { label: finding.proposition, agentType: "codexis:verifier",
         schema: CURRENCY, model: TERRA_MODEL })
       .then(verdict => ({ finding, verdict }))
       .catch(() => ({ finding, verdict: { status: "unverified",
