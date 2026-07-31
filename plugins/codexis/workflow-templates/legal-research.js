@@ -82,7 +82,7 @@ export default async function (args) {
 Otázka: ${QUESTION}
 Jurisdikce: ${JURISDICTION}
 
-Každá dílčí otázka musí být samostatně zodpověditelná a nesmí se s ostatními překrývat - každá z nich dostane vlastního rešeršistu, který neuvidí nic než její zadání. Structured output only.`,
+Každá dílčí otázka musí být samostatně zodpověditelná a nesmí se s ostatními překrývat - každá z nich dostane vlastního rešeršistu, který neuvidí nic než její zadání.`,
     { label: "rámec", schema: FRAME })
 
   const BRIEF = `Právní otázka: ${QUESTION}
@@ -101,7 +101,7 @@ Rychlá rekognoskace, ne plná rešerše. Zjisti, PODLE ČEHO se tato věc rozho
 2. Podle jakých kritérií soudy takové věci posuzují - projdi judikaturu (JD, u unijního práva ES) a vytáhni test nebo znaky, které soudy fakticky používají.
 3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého napiš, co se z něj prokazuje, a označ, jestli je rozhodující, nebo jen podpůrný.
 
-Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci. Structured output only.`,
+Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci.`,
     { label: "rozhodovací rámec", schema: FRAMEWORK })
 
   log(`Rozhodovací kritéria: ${framework.criteria.map(c => c.criterion).join(" | ")}`)
@@ -116,9 +116,7 @@ Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj
 Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing' přesně tak, jak je to pojmenované níže; v 'materialId' vrať jeho značku [M0], [M1], … beze změny.
 
 Potřebné podklady:
-${materials}
-
-Structured output only.`,
+${materials}`,
     { label: "inventura podkladů", schema: INVENTORY })
 
   let supplied = inventory.present
@@ -158,9 +156,7 @@ ${answer.files.map(p => `- ${p}`).join("\n")}
 Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému podkladu níže. Do 'present' dej jen ty, které jsi opravdu pokryl, s jejich materialId a cestou; soubor, který k žádnému z nich nepatří, ale pro věc je relevantní, dej do 'present' také a do 'materialId' mu napiš [X]. Do 'missing' vrať ty požadované podklady, které ani po nahrání nemáš.
 
 Požadované podklady:
-${wanted.join("\n")}
-
-Structured output only.`,
+${wanted.join("\n")}`,
       { label: "přiřazení nahraných podkladů", schema: INVENTORY })
       .catch(() => null)
     if (matched) {
@@ -183,7 +179,7 @@ Soubor: ${doc.path}${doc.note ? `\nPoznámka z inventury: ${doc.note}` : ""}
 Posuzuje se podle těchto kritérií:
 ${criteriaList}
 
-Ke každému kritériu, které dokument zmiňuje, vrať jednu skutečnost: co z dokumentu plyne, kde přesně to je (článek, odstavec, strana) a DOSLOVNÝ výňatek. Nevykládej právo a nedomýšlej - jen popiš, co v dokumentu stojí. Kritéria, ke kterým dokument nic neříká, vypiš do 'notCovered'. Structured output only.`,
+Ke každému kritériu, které dokument zmiňuje, vrať jednu skutečnost: co z dokumentu plyne, kde přesně to je (článek, odstavec, strana) a DOSLOVNÝ výňatek. Nevykládej právo a nedomýšlej - jen popiš, co v dokumentu stojí. Kritéria, ke kterým dokument nic neříká, vypiš do 'notCovered'.`,
       { label: `vytěžení: ${doc.path.split("/").pop()}`, schema: FACTS, model: SEARCH_MODEL })
       .catch(() => null)))
 
@@ -208,7 +204,7 @@ Postupuj v tomto pořadí zdrojů a v každém kroku vytěž, co k otázce skute
 3. JUDIKATURA (JD, ES) - jak se podle nich fakticky rozhoduje; přednostně vyšší soudy.
 4. LITERATURA (LT) - jen pokud po předchozích krocích zbývá sporná otázka.
 
-Tvá zjištění půjdou na ověření a pak do syntézy, takže u každého uveď přesnou citaci (číslo předpisu a ustanovení, spisovou značku) a doslovný výňatek. Do 'docId' vrať identifikátor dokumentu, který jsi SKUTEČNĚ otevřel (to, co jsi předal do 'cdx-cli get cdx://doc/<docId>/text'), a pokud jsi četl konkrétní část, i 'part'. Citace musí být doslovná - ověřovatel ji porovná s otevřeným zdrojem, takže přepsaná nebo zpaměti rekonstruovaná citace zjištění vyřadí. Označ, které je nosné a které jen podpůrné. Structured output only.`,
+Tvá zjištění půjdou na ověření a pak do syntézy, takže u každého uveď přesnou citaci (číslo předpisu a ustanovení, spisovou značku) a doslovný výňatek. Do 'docId' vrať identifikátor dokumentu, který jsi SKUTEČNĚ otevřel (to, co jsi předal do 'cdx-cli get cdx://doc/<docId>/text'), a pokud jsi četl konkrétní část, i 'part'. Citace musí být doslovná - ověřovatel ji porovná s otevřeným zdrojem, takže přepsaná nebo zpaměti rekonstruovaná citace zjištění vyřadí. Označ, které je nosné a které jen podpůrné.`,
       { label: issue.label, schema: FINDINGS, model: SEARCH_MODEL })
       .catch(() => ({ findings: [] }))))
 
@@ -237,7 +233,7 @@ Doslovná citace: ${finding.quote}
 
 U předpisu ověř účinné znění ke dni posouzení: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že rozhodnutí je stále dobrou autoritou: nebylo překonáno velkým senátem, zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující formulaci - cituje se do závěrečného stanoviska.
 
-Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo; 'refuted' když jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení. Structured output only.`,
+Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo; 'refuted' když jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení.`,
       { label: `ověření: ${finding.proposition.slice(0, 40)}`, agentType: "codexis:verifier",
         schema: CURRENCY })
       .then(verdict => ({ finding, verdict }))
@@ -274,7 +270,7 @@ ${block}
 Podklady klienta, na které se závěry aplikují:
 ${clientDocuments}
 
-${statedFacts ? `Skutečnosti, které klient uvedl sám a NEJSOU ničím doloženy - ber je jako jeho tvrzení, u závěru, který na nich stojí, to výslovně napiš a dej to do caveats:\n${statedFacts}\n\n` : ""}${refuted.length > 0 ? `Tato zjištění byla VYVRÁCENA a nesmíš o ně opřít závěr: ${refuted.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${unverified.length > 0 ? `Tato zjištění se NEPODAŘILO OVĚŘIT. Nesmíš o ně opřít závěr ani je citovat jako platná; pokud jsou pro otázku podstatná, uveď v caveats, že v tomto rozsahu je stanovisko předběžné: ${unverified.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${missingAfterAsk.length > 0 ? `Tyto podklady chybí a závěr je v jejich rozsahu předběžný: ${missingAfterAsk.join(", ")} - uveď to v caveats.\n\n` : ""}Přečti celý materiál výše, než začneš psát. Vše, o co se smíš opřít, je v něm - nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. Nejdřív odpověz na otázku přímo, pak rozveď argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní podklad klienta se aplikuje. Přiřaď míru jistoty. Kde materiál otázku neuzavírá, řekni to a dej to do caveats nebo otevřených otázek. Structured output only.`,
+${statedFacts ? `Skutečnosti, které klient uvedl sám a NEJSOU ničím doloženy - ber je jako jeho tvrzení, u závěru, který na nich stojí, to výslovně napiš a dej to do caveats:\n${statedFacts}\n\n` : ""}${refuted.length > 0 ? `Tato zjištění byla VYVRÁCENA a nesmíš o ně opřít závěr: ${refuted.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${unverified.length > 0 ? `Tato zjištění se NEPODAŘILO OVĚŘIT. Nesmíš o ně opřít závěr ani je citovat jako platná; pokud jsou pro otázku podstatná, uveď v caveats, že v tomto rozsahu je stanovisko předběžné: ${unverified.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${missingAfterAsk.length > 0 ? `Tyto podklady chybí a závěr je v jejich rozsahu předběžný: ${missingAfterAsk.join(", ")} - uveď to v caveats.\n\n` : ""}Přečti celý materiál výše, než začneš psát. Vše, o co se smíš opřít, je v něm - nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. Nejdřív odpověz na otázku přímo, pak rozveď argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní podklad klienta se aplikuje. Přiřaď míru jistoty. Kde materiál otázku neuzavírá, řekni to a dej to do caveats nebo otevřených otázek.`,
     { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION })
 
   return {
