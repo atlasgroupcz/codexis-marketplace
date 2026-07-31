@@ -7,6 +7,8 @@
 // @args jurisdiction - CZ, SK or EU; defaults to CZ
 
 const SEARCH_MODEL = "GPT_5_6_LUNA"
+const SOL_MODEL = "GPT_5_6_SOL"
+const TERRA_MODEL = "GPT_5_6_TERRA"
 const MAX_MATERIAL_ASKS = 5
 
 export const meta = {
@@ -163,7 +165,7 @@ Z toho, co zjistíš, odvoď dílčí právní otázky, které je kvůli TVÉMU 
 
 Tvůj úhel: ${a.label}
 
-${a.task}`, { label: `rámec: ${a.label}`, schema: ANGLE })))
+${a.task}`, { label: `rámec: ${a.label}`, schema: ANGLE, model: SOL_MODEL })))
 
   const scoped = FRAME_ANGLES.map((a, i) => ({ angle: a, result: angles[i] })).filter(s => s.result)
   if (scoped.length === 0) {
@@ -191,7 +193,7 @@ Vrať právní obor ('area'), rozhodnou jurisdikci ('jurisdiction'), den, ke kte
 Otázky sluč napříč úhly: co se opakuje, spoj do jedné; co se překrývá, rozděl tak, aby si dvě nešlapaly do zelí; co je pro odpověď nepodstatné, zahoď. Rozhodující dej první. Formulaci, kterou nespojuješ, ponech tak, jak ji úhel napsal - přeformulováním se ztrácí to, co rešeršista viděl v podkladech.
 
 Do 'constraints' vypiš jednou větou každé omezení rámce, které musí znát další rešeršisté: povahu úpravy (kogentní, dispozitivní, ochrana slabší strany), rozhodné znění a přechodná ustanovení, mezinárodní nebo unijní přesah, rozložení důkazního břemene. Nic si nedomýšlej - ber jen to, co některý z úhlů skutečně zjistil.`,
-    { label: "složení rámce", agentType: "codexis:synthesizer", schema: FRAME })
+    { label: "složení rámce", agentType: "codexis:synthesizer", schema: FRAME, model: SOL_MODEL })
 
   const constraints = frame.constraints && frame.constraints.length > 0
     ? `\nRámcová omezení:\n${frame.constraints.map(c => `- ${c}`).join("\n")}`
@@ -214,7 +216,7 @@ Rychlá rekognoskace, ne plná rešerše. Zjisti, PODLE ČEHO se tato věc rozho
 3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého napiš, co se z něj prokazuje, a označ, jestli je rozhodující, nebo jen podpůrný.
 
 Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci.`,
-    { label: "rozhodovací rámec", schema: FRAMEWORK })
+    { label: "rozhodovací rámec", schema: FRAMEWORK, model: SOL_MODEL })
 
   log(`Rozhodovací kritéria: ${framework.criteria.map(c => c.criterion).join(" | ")}`)
 
@@ -229,7 +231,7 @@ Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkl
 
 Potřebné podklady:
 ${materials}`,
-    { label: "inventura podkladů", schema: INVENTORY })
+    { label: "inventura podkladů", schema: INVENTORY, model: TERRA_MODEL })
 
   let supplied = inventory.present
   let stillMissing = inventory.missing
@@ -310,7 +312,7 @@ Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému 
 
 Požadované podklady:
 ${stillMissing.map(m => `- ${m.materialId} ${m.material}`).join("\n")}`,
-      { label: "přiřazení nahraných podkladů", schema: INVENTORY })
+      { label: "přiřazení nahraných podkladů", schema: INVENTORY, model: TERRA_MODEL })
       .catch(() => null)
     if (matched) {
       supplied = supplied.concat(matched.present)
@@ -410,8 +412,8 @@ Doslovná citace: ${finding.quote}
 U předpisu ověř účinné znění ke dni posouzení: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že rozhodnutí je stále dobrou autoritou: nebylo překonáno velkým senátem, zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující formulaci - cituje se do závěrečného stanoviska.
 
 Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo; 'refuted' když jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení.`,
-      { label: `ověření: ${finding.proposition.slice(0, 40)}`, agentType: "codexis:verifier",
-        schema: CURRENCY })
+      { label: `ověření: ${finding.proposition}`, agentType: "codexis:verifier",
+        schema: CURRENCY, model: TERRA_MODEL })
       .then(verdict => ({ finding, verdict }))
       .catch(() => ({ finding, verdict: { status: "unverified",
         evidence: "ověření se nepodařilo provést (chyba běhu)" } }))))
@@ -447,7 +449,7 @@ Podklady klienta, na které se závěry aplikují:
 ${clientDocuments}
 
 ${crossCheck && crossCheck.conflicts.length > 0 ? `Podklady si v těchto bodech ODPORUJÍ - závěr, který na některém z nich stojí, o tom musí mluvit a patří to do caveats:\n${crossCheck.conflicts.map(c => `- ${c.issue} (${c.sources.join(" vs. ")})${c.impact ? `: ${c.impact}` : ""}`).join("\n")}\n\n` : ""}${crossCheck && crossCheck.gaps && crossCheck.gaps.length > 0 ? `Tyto řetězce nejsou v podkladech uzavřené: ${crossCheck.gaps.join("; ")}\n\n` : ""}${statedFacts ? `Skutečnosti, které klient uvedl sám a NEJSOU ničím doloženy - ber je jako jeho tvrzení, u závěru, který na nich stojí, to výslovně napiš a dej to do caveats:\n${statedFacts}\n\n` : ""}${refuted.length > 0 ? `Tato zjištění byla VYVRÁCENA a nesmíš o ně opřít závěr: ${refuted.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${unverified.length > 0 ? `Tato zjištění se NEPODAŘILO OVĚŘIT. Nesmíš o ně opřít závěr ani je citovat jako platná; pokud jsou pro otázku podstatná, uveď v caveats, že v tomto rozsahu je stanovisko předběžné: ${unverified.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${missingAfterAsk.length > 0 ? `Tyto podklady chybí a závěr je v jejich rozsahu předběžný: ${missingAfterAsk.join(", ")} - uveď to v caveats.\n\n` : ""}Přečti celý materiál výše, než začneš psát. Vše, o co se smíš opřít, je v něm - nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. Nejdřív odpověz na otázku přímo, pak rozveď argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní podklad klienta se aplikuje. Přiřaď míru jistoty. Kde materiál otázku neuzavírá, řekni to a dej to do caveats nebo otevřených otázek.`,
-    { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION })
+    { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION, model: SOL_MODEL })
 
   return {
     question: QUESTION,
