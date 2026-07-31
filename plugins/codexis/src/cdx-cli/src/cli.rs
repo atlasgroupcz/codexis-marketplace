@@ -227,7 +227,7 @@ enum SearchSource {
         after_help = SEARCH_ALL_HELP,
         arg_required_else_help = true
     )]
-    All(SearchAllArgs),
+    All(Box<SearchAllArgs>),
 
     #[command(
         name = "COMMENT",
@@ -236,7 +236,7 @@ enum SearchSource {
         after_help = SEARCH_COMMENT_HELP,
         arg_required_else_help = true
     )]
-    Comment(SearchCommentArgs),
+    Comment(Box<SearchCommentArgs>),
 
     #[command(
         name = "CR",
@@ -245,7 +245,7 @@ enum SearchSource {
         after_help = SEARCH_CR_HELP,
         arg_required_else_help = true
     )]
-    Cr(SearchCrArgs),
+    Cr(Box<SearchCrArgs>),
 
     #[command(
         name = "ES",
@@ -254,7 +254,7 @@ enum SearchSource {
         after_help = SEARCH_ES_HELP,
         arg_required_else_help = true
     )]
-    Es(SearchEsArgs),
+    Es(Box<SearchEsArgs>),
 
     #[command(
         name = "EU",
@@ -263,7 +263,7 @@ enum SearchSource {
         after_help = SEARCH_EU_HELP,
         arg_required_else_help = true
     )]
-    Eu(SearchEuArgs),
+    Eu(Box<SearchEuArgs>),
 
     #[command(
         name = "JD",
@@ -272,7 +272,7 @@ enum SearchSource {
         after_help = SEARCH_JD_HELP,
         arg_required_else_help = true
     )]
-    Jd(SearchJdArgs),
+    Jd(Box<SearchJdArgs>),
 
     #[command(
         name = "LT",
@@ -281,7 +281,7 @@ enum SearchSource {
         after_help = SEARCH_LT_HELP,
         arg_required_else_help = true
     )]
-    Lt(SearchLtArgs),
+    Lt(Box<SearchLtArgs>),
 
     #[command(
         name = "SK",
@@ -290,7 +290,7 @@ enum SearchSource {
         after_help = SEARCH_SK_HELP,
         arg_required_else_help = true
     )]
-    Sk(SearchSkArgs),
+    Sk(Box<SearchSkArgs>),
 
     #[command(
         name = "VS",
@@ -299,7 +299,7 @@ enum SearchSource {
         after_help = SEARCH_VS_HELP,
         arg_required_else_help = true
     )]
-    Vs(SearchVsArgs),
+    Vs(Box<SearchVsArgs>),
 }
 
 impl SearchSource {

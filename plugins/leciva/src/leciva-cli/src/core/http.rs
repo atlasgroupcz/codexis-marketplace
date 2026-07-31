@@ -39,7 +39,16 @@ pub(crate) fn execute_search_request(
     order: Option<&str>,
 ) -> Result<(), CliError> {
     cdx_common::search_engine::execute_search_request(
-        &LecivaApi, base_url, auth_header, source_code, payload, dry_run, sort, order,
+        &LecivaApi,
+        cdx_common::search_engine::SearchRequest {
+            base_url,
+            auth_header,
+            source_code,
+            payload,
+            dry_run,
+            sort,
+            order,
+        },
     )
 }
 

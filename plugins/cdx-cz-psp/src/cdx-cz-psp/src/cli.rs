@@ -193,7 +193,7 @@ enum SearchSource {
         after_help = SEARCH_CZPSPDOK_HELP,
         arg_required_else_help = true
     )]
-    Czpspdok(SearchCzpspdokArgs),
+    Czpspdok(Box<SearchCzpspdokArgs>),
 
     #[command(
         name = "CZPSPPRE",
@@ -202,7 +202,7 @@ enum SearchSource {
         after_help = SEARCH_CZPSPPRE_HELP,
         arg_required_else_help = true
     )]
-    Czpsppre(SearchCzpsppreArgs),
+    Czpsppre(Box<SearchCzpsppreArgs>),
 }
 
 impl SearchSource {
@@ -218,8 +218,8 @@ impl SearchSource {
     /// `source_code` needs its own per-variant match.
     fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Czpspdok(args) => args,
-            Self::Czpsppre(args) => args,
+            Self::Czpspdok(args) => args.as_ref(),
+            Self::Czpsppre(args) => args.as_ref(),
         }
     }
 }

@@ -154,7 +154,7 @@ enum SearchSource {
         after_help = SEARCH_ATBR_HELP,
         arg_required_else_help = true
     )]
-    Atbr(SearchAtbrArgs),
+    Atbr(Box<SearchAtbrArgs>),
 
     #[command(
         name = "ATJD",
@@ -163,7 +163,7 @@ enum SearchSource {
         after_help = SEARCH_ATJD_HELP,
         arg_required_else_help = true
     )]
-    Atjd(SearchAtjdArgs),
+    Atjd(Box<SearchAtjdArgs>),
 
     #[command(
         name = "ATLR",
@@ -172,7 +172,7 @@ enum SearchSource {
         after_help = SEARCH_ATLR_HELP,
         arg_required_else_help = true
     )]
-    Atlr(SearchAtlrArgs),
+    Atlr(Box<SearchAtlrArgs>),
 
     #[command(
         name = "ATSO",
@@ -181,7 +181,7 @@ enum SearchSource {
         after_help = SEARCH_ATSO_HELP,
         arg_required_else_help = true
     )]
-    Atso(SearchAtsoArgs),
+    Atso(Box<SearchAtsoArgs>),
 
     #[command(
         name = "ATHI",
@@ -190,7 +190,7 @@ enum SearchSource {
         after_help = SEARCH_ATHI_HELP,
         arg_required_else_help = true
     )]
-    Athi(SearchAthiArgs),
+    Athi(Box<SearchAthiArgs>),
 }
 
 impl SearchSource {
@@ -209,11 +209,11 @@ impl SearchSource {
     /// `source_code` needs its own per-variant match.
     fn args(&self) -> &dyn SearchPayloadArgs {
         match self {
-            Self::Atbr(args) => args,
-            Self::Atjd(args) => args,
-            Self::Atlr(args) => args,
-            Self::Atso(args) => args,
-            Self::Athi(args) => args,
+            Self::Atbr(args) => args.as_ref(),
+            Self::Atjd(args) => args.as_ref(),
+            Self::Atlr(args) => args.as_ref(),
+            Self::Atso(args) => args.as_ref(),
+            Self::Athi(args) => args.as_ref(),
         }
     }
 }

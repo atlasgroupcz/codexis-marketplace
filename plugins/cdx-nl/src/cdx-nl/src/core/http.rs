@@ -41,7 +41,16 @@ pub(crate) fn execute_search_request(
     order: Option<&str>,
 ) -> Result<(), CliError> {
     cdx_common::search_engine::execute_search_request(
-        &CdxNlApi, base_url, auth_header, source_code, payload, dry_run, sort, order,
+        &CdxNlApi,
+        cdx_common::search_engine::SearchRequest {
+            base_url,
+            auth_header,
+            source_code,
+            payload,
+            dry_run,
+            sort,
+            order,
+        },
     )
 }
 
