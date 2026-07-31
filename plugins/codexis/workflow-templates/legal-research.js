@@ -41,8 +41,8 @@ const FRAMEWORK = { type: "object", required: ["criteria", "provisions", "requir
     criterion: { type: "string" }, source: { type: "string" }, quote: { type: "string" } } } },
   provisions: { type: "array", items: { type: "object", required: ["provision", "source"], properties: {
     provision: { type: "string" }, source: { type: "string" }, relevance: { type: "string" } } } },
-  requiredMaterials: { type: "array", items: { type: "object", required: ["material", "why"], properties: {
-    material: { type: "string" }, why: { type: "string" } } } } } }
+  requiredMaterials: { type: "array", items: { type: "object", required: ["material", "question", "why"], properties: {
+    material: { type: "string" }, question: { type: "string" }, why: { type: "string" } } } } } }
 
 const INVENTORY = { type: "object", required: ["present", "missing"], properties: {
   present: { type: "array", items: { type: "object", required: ["materialId", "path"], properties: {
@@ -211,7 +211,10 @@ Jurisdikce: ${frame.jurisdiction || JURISDICTION}${frame.asOf ? `\nPosuzuje se k
 Rychlá rekognoskace, ne plná rešerše. Zjisti, PODLE ČEHO se tato věc rozhoduje:
 1. Která ustanovení se na ni aplikují (zdroje CR, u unijního přesahu EU).
 2. Podle jakých kritérií soudy takové věci posuzují - projdi judikaturu (JD, u unijního práva ES) a vytáhni test nebo znaky, které soudy fakticky používají.
-3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého napiš, co se z něj prokazuje.
+3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého vyplň tři pole:
+- 'material': název dokumentu v prvním pádě ("Očkovací průkaz", "Kupní smlouva"). Slouží k vyhledání dokumentu v souborech klienta, klient ho nevidí.
+- 'question': celá otázka na klienta, jednou větou ve druhé osobě, začínající slovesem: "Máte očkovací průkaz nebo pas zvířete s číslem čipu a výpis z registru čipu?" Klient uvidí přesně to, co sem napíšeš, takže žádná uvozovací nálepka ("Máte k dispozici tento podklad:"), žádná dvojtečka a název dokumentu skloňuj do věty, nelep ho tam v prvním pádě.
+- 'why': proč ten dokument potřebuješ, souvislými větami, jak bys to řekl klientovi: "Potřebuji ho k identifikaci konkrétního psa a chovatele. § 4 veterinárního zákona vyžaduje, aby identifikační číslo psa bylo zaznamenáno v dokladu o očkování." Zobrazí se to pod otázkou, takže zase bez nálepky typu "K čemu ho potřebuji:".
 
 Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci.`,
     { label: "rozhodovací rámec", schema: FRAMEWORK, model: SOL_MODEL })
@@ -225,7 +228,7 @@ Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj
   const inventory = await agent(
     `${BRIEF}
 
-Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing'; do 'material' dej holý název dokumentu tak, jak je uvedený níže, bez značky [M0] a bez jakýchkoli poznámek v závorce - ten text uvidí uživatel v dotazu. V 'materialId' vrať jeho značku [M0], [M1], … beze změny.
+Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing'; do 'material' dej název dokumentu tak, jak je uvedený níže, bez značky [M0]. V 'materialId' vrať jeho značku [M0], [M1], … beze změny.
 
 Potřebné podklady:
 ${materials}`,
@@ -243,9 +246,9 @@ ${materials}`,
   const notes = []
 
   for (const item of stillMissing) {
-    const why = specOf(item).why
+    const spec = specOf(item)
     const reply = await ask(
-      `Máte k dispozici tento podklad: ${item.material}?${why ? `\n\nK čemu ho potřebuji: ${why}` : ""}`,
+      `${spec.question || `${item.material}?`}${spec.why ? `\n\n${spec.why}` : ""}`,
       { options: ["Nahrávám ho teď", "Nemám ho"] })
     if (!reply.answered) {
       log(`Bez odpovědi: ${item.material}`)
