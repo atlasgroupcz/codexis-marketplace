@@ -165,7 +165,7 @@ Z toho, co zjistíš, odvoď dílčí právní otázky, které je kvůli TVÉMU 
 
 Tvůj úhel: ${a.label}
 
-${a.task}`, { label: `rámec: ${a.label}`, schema: ANGLE, model: SOL_MODEL })))
+${a.task}`, { label: `rámec: ${a.label}`, schema: ANGLE, model: TERRA_MODEL })))
 
   const scoped = FRAME_ANGLES.map((a, i) => ({ angle: a, result: angles[i] })).filter(s => s.result)
   if (scoped.length === 0) {
@@ -193,7 +193,7 @@ Vrať právní obor ('area'), rozhodnou jurisdikci ('jurisdiction'), den, ke kte
 Otázky sluč napříč úhly: co se opakuje, spoj do jedné; co se překrývá, rozděl tak, aby si dvě nešlapaly do zelí; co je pro odpověď nepodstatné, zahoď. Rozhodující dej první. Formulaci, kterou nespojuješ, ponech tak, jak ji úhel napsal - přeformulováním se ztrácí to, co rešeršista viděl v podkladech.
 
 Do 'constraints' vypiš jednou větou každé omezení rámce, které musí znát další rešeršisté: povahu úpravy (kogentní, dispozitivní, ochrana slabší strany), rozhodné znění a přechodná ustanovení, mezinárodní nebo unijní přesah, rozložení důkazního břemene. Nic si nedomýšlej - ber jen to, co některý z úhlů skutečně zjistil.`,
-    { label: "složení rámce", agentType: "codexis:synthesizer", schema: FRAME, model: SOL_MODEL })
+    { label: "složení rámce", agentType: "codexis:synthesizer", schema: FRAME, model: TERRA_MODEL })
 
   const constraints = frame.constraints && frame.constraints.length > 0
     ? `\nRámcová omezení:\n${frame.constraints.map(c => `- ${c}`).join("\n")}`
