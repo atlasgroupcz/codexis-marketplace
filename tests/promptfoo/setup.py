@@ -31,8 +31,10 @@ from pathlib import Path
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _daemon_client import DaemonClient  # noqa: E402
+# Run as a script, so the repo root has to be put on sys.path before the
+# `tests` package can be imported.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tests._daemon_client import DaemonClient  # noqa: E402
 
 _VAR = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 

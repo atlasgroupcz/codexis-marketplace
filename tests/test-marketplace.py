@@ -23,13 +23,16 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Run as a script, so the repo root is not on sys.path yet and the `tests`
+# package cannot be imported without it. pytest gets the same root from
+# pythonpath in pyproject.toml.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _daemon_client import DaemonClient
-from _output import Results
-from _plugin_runner import run_plugins
-from _skills import skills_of_plugin
-from _unit_gate import run_default_gate
+from tests._daemon_client import DaemonClient  # noqa: E402
+from tests._output import Results  # noqa: E402
+from tests._plugin_runner import run_plugins  # noqa: E402
+from tests._skills import skills_of_plugin  # noqa: E402
+from tests._unit_gate import run_default_gate  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +233,7 @@ def main() -> int:
             return gate
     refresher = None
     if args.cookie:
-        from _daemon_client import make_oauth2_proxy_refresher
+        from tests._daemon_client import make_oauth2_proxy_refresher
         refresher = make_oauth2_proxy_refresher(args.cookie, args.oauth2_proxy)
     client = DaemonClient(args.daemon, args.token, token_refresher=refresher)
     r = Results()

@@ -28,11 +28,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Loaded by promptfoo from its file path, not imported as part of the `tests`
+# package, so the repo root has to go on sys.path before that package resolves.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # Reuse the legacy runner's tested daemon abstractions. They already
 # speak the latest schema (Chat / AiChatMessage / typed *ToolMessagePart).
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _daemon_client import DaemonClient  # noqa: E402
-from _chat_runner import ChatRunner  # noqa: E402
+from tests._daemon_client import DaemonClient  # noqa: E402
+from tests._chat_runner import ChatRunner  # noqa: E402
 
 
 # Sentinel markers used to smuggle structured data from provider to

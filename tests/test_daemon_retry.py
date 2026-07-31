@@ -16,10 +16,8 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-import _daemon_client
-from _daemon_client import _MAX_ATTEMPTS, _TRANSIENT_STATUS, DaemonClient
+from tests import _daemon_client
+from tests._daemon_client import _MAX_ATTEMPTS, _TRANSIENT_STATUS, DaemonClient
 
 
 def _http_error(code: int) -> urllib.error.HTTPError:

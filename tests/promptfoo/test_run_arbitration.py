@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import _arbitration as arb
-import run
-from assertions import TOOL_CALLS_SENTINEL, TOOL_CALLS_END
+from tests.promptfoo import _arbitration as arb
+from tests.promptfoo import run
+from tests.promptfoo.assertions import TOOL_CALLS_SENTINEL, TOOL_CALLS_END
 
 
 def _result_json():

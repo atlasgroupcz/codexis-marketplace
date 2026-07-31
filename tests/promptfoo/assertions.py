@@ -16,6 +16,13 @@ from __future__ import annotations
 import base64
 import json
 import re
+import sys
+from pathlib import Path
+
+# Loaded by promptfoo from its file path, not imported as part of the `tests`
+# package, so the repo root has to go on sys.path before that package resolves.
+# The state assertions below need it; the tool-call ones are pure.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 # Must match the constants in provider.py.
 TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
@@ -248,8 +255,6 @@ def assert_state_file(output: str, context: dict) -> dict:
         type:   "file" | "dir" | "absent" (default: "file").
     """
     import os
-    import sys
-    from pathlib import Path
 
     vars_ = (context or {}).get("vars") or {}
     path = vars_.get("file")
@@ -258,8 +263,7 @@ def assert_state_file(output: str, context: dict) -> dict:
                 "reason": "assert_state_file: missing 'file' var"}
     kind = vars_.get("type", "file")
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from _daemon_client import DaemonClient  # noqa
+    from tests._daemon_client import DaemonClient
     graphql_url = os.environ.get(
         "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql")
     base = (graphql_url[: -len("/graphql")] if graphql_url.endswith("/graphql")
@@ -315,8 +319,6 @@ def assert_state_graphql(output: str, context: dict) -> dict:
     """
     import os
     import re as _re
-    import sys
-    from pathlib import Path
 
     vars_ = (context or {}).get("vars") or {}
     query = vars_.get("graphql")
@@ -324,8 +326,7 @@ def assert_state_graphql(output: str, context: dict) -> dict:
         return {"pass": False, "score": 0.0,
                 "reason": "assert_state_graphql: missing 'graphql' var"}
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from _daemon_client import DaemonClient  # noqa
+    from tests._daemon_client import DaemonClient
     graphql_url = os.environ.get(
         "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql")
     base = (graphql_url[: -len("/graphql")] if graphql_url.endswith("/graphql")

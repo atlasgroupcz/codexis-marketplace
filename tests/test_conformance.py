@@ -15,8 +15,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 REPO = Path(__file__).resolve().parent.parent
 PLUGINS = REPO / "plugins"
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"

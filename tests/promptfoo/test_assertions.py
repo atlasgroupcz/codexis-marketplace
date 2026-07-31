@@ -1,7 +1,7 @@
 """Behavior: assert_sources checks the chat sources attached to a turn."""
 import json
 
-from assertions import TOOL_CALLS_END, TOOL_CALLS_SENTINEL, assert_sources
+from tests.promptfoo.assertions import TOOL_CALLS_END, TOOL_CALLS_SENTINEL, assert_sources
 
 
 def _output(tool_calls: list[dict], text: str = "answer") -> str:
