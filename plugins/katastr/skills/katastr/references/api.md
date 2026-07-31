@@ -482,12 +482,12 @@ no named command wraps them:
 
 | Path | Returns |
 | --- | --- |
-| `CiselnikyUzemnichJednotek/Kraje` | List of all kraje (`kod`, `nazev`, `nutS3`). |
-| `CiselnikyUzemnichJednotek/Kraje/{kod}` | One kraj by its code. |
-| `CiselnikyUzemnichJednotek/Okresy` | List of all okresy (`kod`, `nazev`, `kodKraje`, `nutS4`). |
-| `CiselnikyUzemnichJednotek/Okresy/{kod}` | One okres by its code. |
-| `CiselnikyISKN/ZpusobyUrceniVymery` | Code list of ways a parcel's `vymera` (area) was determined. |
-| `AplikacniSluzby/CiselnikZprav` | Catalog of `zpravy` message codes/templates (see [Response envelope](#response-envelope)) - a bare JSON array, not the usual `data` envelope. |
+| `/api/v1/CiselnikyUzemnichJednotek/Kraje` | List of all kraje (`kod`, `nazev`, `nutS3`). |
+| `/api/v1/CiselnikyUzemnichJednotek/Kraje/{kod}` | One kraj by its code. |
+| `/api/v1/CiselnikyUzemnichJednotek/Okresy` | List of all okresy (`kod`, `nazev`, `kodKraje`, `nutS4`). |
+| `/api/v1/CiselnikyUzemnichJednotek/Okresy/{kod}` | One okres by its code. |
+| `/api/v1/CiselnikyISKN/ZpusobyUrceniVymery` | Code list of ways a parcel's `vymera` (area) was determined. |
+| `/api/v1/AplikacniSluzby/CiselnikZprav` | Catalog of `zpravy` message codes/templates (see [Response envelope](#response-envelope)) - a bare JSON array, not the usual `data` envelope. |
 
 For the territorial code lists (kraje, okresy), `search` covers the same
 ground better in normal use - it filters server-side and does not count

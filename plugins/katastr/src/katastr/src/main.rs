@@ -635,10 +635,15 @@ fn cmd_okoli(
             // The address resolves to a code first, the code to a building,
             // whose definition point becomes the centre.
             let nalez = ruian::search(text, Some("AdresniMisto"))?;
-            let Some(kod) = nalez.get("kod").and_then(|k| k.as_u64()) else {
+            let Some(kod) = ruian::jediny_kod(&nalez) else {
+                let pocet = nalez
+                    .get("nalezy")
+                    .and_then(|n| n.as_array())
+                    .map_or(0, Vec::len);
                 return Err(CliError::Usage(format!(
-                    "Adresu {text} se nepodařilo jednoznačně přeložit. \
-                     Zkus `katastr-cli search` a použij --stavba s konkrétním ID."
+                    "Adresa {text} neurčuje jedno místo ({pocet} nálezů). \
+                     Vyber jedno přes `katastr-cli search {text} --typ AdresniMisto` \
+                     a použij --stavba s jeho ID."
                 )));
             };
             api_client::get(&lookup::stavba_adresni_misto(kod as u32))?
