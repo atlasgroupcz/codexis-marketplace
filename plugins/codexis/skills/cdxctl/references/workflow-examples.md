@@ -28,10 +28,11 @@ cdxctl workflow create --file /home/codexis/vypoved-reserse.js
 ```bash
 cdxctl workflow start /home/codexis/vypoved-reserse.js \
   --args '{"question":"Je výpověď z organizačních důvodů platná?","jurisdiction":"CZ"}' \
-  --wait --timeout-secs 5400
+  --wait
 ```
 
 ```
+workflowRunId: CFdvcmtmbG93JDkxYzcyN2Nl
 waiting for approval...
 running
 phase "Rámec" running
@@ -52,10 +53,11 @@ what came out, not that a CLI printed JSON.
 The proposal card has a "request changes" action. Taking it ends the run before any phase starts.
 
 ```bash
-cdxctl workflow start /home/codexis/vypoved-reserse.js --wait --timeout-secs 5400
+cdxctl workflow start /home/codexis/vypoved-reserse.js --wait
 ```
 
 ```
+workflowRunId: CFdvcmtmbG93JDkxYzcyN2Nl
 waiting for approval...
 ```
 

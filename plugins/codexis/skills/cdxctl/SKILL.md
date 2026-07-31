@@ -296,7 +296,7 @@ start it.
 cdxctl workflow create --file /home/codexis/analyza.js
 
 # 2. Propose it to the user and block until the run finishes
-cdxctl workflow start /home/codexis/analyza.js --args '{"question":"Je výpověď platná?"}' --wait --timeout-secs 5400
+cdxctl workflow start /home/codexis/analyza.js --args '{"question":"Je výpověď platná?"}' --wait
 
 # Start without blocking, then read the state later
 cdxctl workflow start /home/codexis/analyza.js
@@ -305,12 +305,17 @@ cdxctl workflow status <workflowRunId>
 
 **Call `start --wait` with the shell tool's `timeoutSeconds: 5400`.** The shell tool caps every
 other command at 600 seconds and lifts the cap only for this one, and a workflow with an approval
-gate and questions needs the full 90 minutes.
+gate and questions needs the full 90 minutes. Leave `--timeout-secs` alone: its default stops the
+wait just before the shell would kill it, so the run id still reaches you.
 
-**The user approves the run.** While the proposal card is on screen `start --wait` prints
-`waiting for approval...`, then `running`, then one line per phase
-(`phase "Rešerše" running`, `phase "Rešerše" complete`), so the progress stays visible for the whole
-blocked call. Do not hand-roll a polling loop around `status`.
+**The user approves the run.** `start --wait` prints `workflowRunId: <id>` first, then
+`waiting for approval...` while the proposal card is on screen, `running` once approved, and one
+line per phase (`phase "Rešerše" running`, `phase "Rešerše" complete`), so the progress stays
+visible for the whole blocked call. Do not hand-roll a polling loop around `status`.
+
+**A failed poll does not end the wait.** The run lives on the server, so a dropped connection or a
+restarting daemon is retried; only a run of consecutive failures gives up, and it says so with the
+run id.
 
 **Exit codes:**
 
@@ -318,7 +323,7 @@ blocked call. Do not hand-roll a polling loop around `status`.
 |---|---|
 | `0` | The run finished; the last line of the output is the workflow result as JSON |
 | `7` | The user requested changes; the message carries their feedback - revise the script and start it again |
-| other | The run did not finish: the script failed, the user pressed Stop (`workflow was interrupted`), or the wait timed out with the run still going |
+| other | The run did not finish: the script failed, the user pressed Stop (`workflow was interrupted`), the wait timed out, or the run could not be read. The message names the run id - `cdxctl workflow status <id>` shows where it got to |
 
 **Stop cancels the run.** Pressing Stop in the chat aborts the workflow the same way it aborts the
 turn, and `start --wait` exits non-zero.

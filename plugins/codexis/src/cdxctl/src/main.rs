@@ -639,8 +639,9 @@ enum WorkflowCommands {
         /// Block until the run finishes, printing every state and phase change as it happens
         #[arg(long, default_value = "false")]
         wait: bool,
-        /// How long --wait keeps polling before giving up, in seconds
-        #[arg(long, default_value = "5400")]
+        /// How long --wait keeps polling before giving up, in seconds. Stays under the
+        /// shell tool's 5400s ceiling so the hint about the still-running run gets out
+        #[arg(long, default_value = "5280")]
         timeout_secs: u64,
     },
     /// Show the current state of a workflow run
@@ -1454,7 +1455,7 @@ mod tests {
                     Some("{\"question\":\"Je výpověď platná?\"}")
                 );
                 assert!(wait);
-                assert_eq!(timeout_secs, 5400);
+                assert_eq!(timeout_secs, 5280);
             }
             _ => panic!("expected workflow start command"),
         }

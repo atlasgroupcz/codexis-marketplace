@@ -10,6 +10,7 @@ const SESSION_ENV: &str = "CODEXIS_PUBLIC_SESSION_ID";
 const FAST_POLL: Duration = Duration::from_secs(3);
 const SLOW_POLL: Duration = Duration::from_secs(10);
 const FAST_POLL_WINDOW: Duration = Duration::from_secs(120);
+const MAX_POLL_FAILURES: u32 = 10;
 
 pub struct StartArgs<'a> {
     pub script_path: &'a str,
@@ -40,6 +41,13 @@ pub struct Step {
     pub state: RunState,
 }
 
+#[derive(Debug)]
+pub enum Ending {
+    Keep,
+    Done(String),
+    Stop(CdxctlError),
+}
+
 pub fn create(client: &GraphQLClient, file: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let input = json!({ "chatId": chat_node_id()?, "scriptPath": file });
     let data = client.execute(graphql::VALIDATE_WORKFLOW, json!({ "input": input }))?;
@@ -62,6 +70,7 @@ pub fn start(
         print_output(&json!({ "workflowRunId": run_id }), format);
         return Ok(());
     }
+    println!("workflowRunId: {run_id}");
     wait_for_run(client, &run_id, Duration::from_secs(args.timeout_secs))
 }
 
@@ -81,6 +90,8 @@ fn fetch_run(client: &GraphQLClient, id: &str) -> Result<Value, CdxctlError> {
 
 /// Poll until the run reaches a terminal state, printing every state and phase
 /// change as it happens so the caller sees progress while the shell call blocks.
+/// A failed poll does not end the wait: the run keeps going on the server, so the
+/// last known state is held and the read is retried until the failures run out.
 fn wait_for_run(
     client: &GraphQLClient,
     run_id: &str,
@@ -88,32 +99,27 @@ fn wait_for_run(
 ) -> Result<(), CdxctlError> {
     let started = Instant::now();
     let mut state = RunState::default();
+    let mut failures: u32 = 0;
     loop {
-        let step = poll_step(&fetch_run(client, run_id)?, &state)?;
-        for line in &step.lines {
-            println!("{line}");
-        }
-        state = step.state;
-        match step.terminal {
-            Terminal::Pending => {}
-            Terminal::Complete(result) => {
-                if !result.is_empty() {
-                    println!("{result}");
+        match fetch_run(client, run_id).and_then(|data| poll_step(&data, &state)) {
+            Ok(step) => {
+                failures = 0;
+                for line in &step.lines {
+                    println!("{line}");
                 }
-                return Ok(());
+                state = step.state;
+                match ending(run_id, step.terminal) {
+                    Ending::Keep => {}
+                    Ending::Done(result) => {
+                        println!("{result}");
+                        return Ok(());
+                    }
+                    Ending::Stop(error) => return Err(error),
+                }
             }
-            Terminal::ChangesRequested(feedback) => {
-                return Err(CdxctlError::ChangesRequested(feedback))
-            }
-            Terminal::Failed(error) => {
-                return Err(CdxctlError::GraphQL(vec![format!(
-                    "workflow failed: {error}"
-                )]))
-            }
-            Terminal::Interrupted => {
-                return Err(CdxctlError::GraphQL(vec![
-                    "workflow was interrupted".to_string()
-                ]))
+            Err(error) => {
+                failures += 1;
+                println!("{}", poll_failure(run_id, &state, &error, failures)?);
             }
         }
         let elapsed = started.elapsed();
@@ -125,6 +131,45 @@ fn wait_for_run(
         }
         std::thread::sleep(poll_interval(elapsed).min(timeout - elapsed));
     }
+}
+
+/// What one polled state means for the wait. Terminal messages name the run so an
+/// aborted wait can still be resumed with `cdxctl workflow status <id>`.
+fn ending(run_id: &str, terminal: Terminal) -> Ending {
+    match terminal {
+        Terminal::Pending => Ending::Keep,
+        Terminal::Complete(result) => Ending::Done(result),
+        Terminal::ChangesRequested(feedback) => {
+            Ending::Stop(CdxctlError::ChangesRequested(feedback))
+        }
+        Terminal::Failed(error) => Ending::Stop(CdxctlError::GraphQL(vec![format!(
+            "workflow {run_id} failed: {error}"
+        )])),
+        Terminal::Interrupted => Ending::Stop(CdxctlError::GraphQL(vec![format!(
+            "workflow {run_id} was interrupted"
+        )])),
+    }
+}
+
+/// One failed read of the run: a line to print while there is budget left, or the
+/// error that ends the wait once the reads have failed too many times in a row.
+fn poll_failure(
+    run_id: &str,
+    state: &RunState,
+    error: &CdxctlError,
+    failures: u32,
+) -> Result<String, CdxctlError> {
+    if failures < MAX_POLL_FAILURES {
+        return Ok(format!(
+            "poll {failures}/{MAX_POLL_FAILURES} failed, retrying: {error}"
+        ));
+    }
+    let last = state.status.as_deref().unwrap_or("unknown");
+    Err(CdxctlError::GraphQL(vec![format!(
+        "gave up reading workflow {run_id} after {MAX_POLL_FAILURES} failed polls ({error}); \
+         it was last seen {last} and may still be running, so check it with \
+         `cdxctl workflow status {run_id}`"
+    )]))
 }
 
 fn poll_step(data: &Value, previous: &RunState) -> Result<Step, CdxctlError> {
@@ -167,11 +212,10 @@ fn transitions(previous: &RunState, current: &RunState) -> Vec<String> {
             lines.push(status_line(status));
         }
     }
-    for (title, status) in &current.phases {
+    for (index, (title, status)) in current.phases.iter().enumerate() {
         let before = previous
             .phases
-            .iter()
-            .find(|(known, _)| known == title)
+            .get(index)
             .map(|(_, status)| status.as_str());
         if before == Some(status.as_str()) {
             continue;
@@ -405,6 +449,29 @@ mod tests {
         assert_eq!(
             third.lines,
             vec!["phase \"Research\" complete", "phase \"Draft\" running"]
+        );
+    }
+
+    #[test]
+    fn phases_that_share_a_title_are_tracked_apart() {
+        let step = poll_step(
+            &running(json!([
+                { "title": "Rešerše", "status": "COMPLETE" },
+                { "title": "Rešerše", "status": "RUNNING" },
+            ])),
+            &RunState {
+                status: Some("RUNNING".to_string()),
+                phases: vec![
+                    ("Rešerše".to_string(), "RUNNING".to_string()),
+                    ("Rešerše".to_string(), "PLANNED".to_string()),
+                ],
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            step.lines,
+            vec!["phase \"Rešerše\" complete", "phase \"Rešerše\" running"]
         );
     }
 
@@ -839,7 +906,10 @@ mod tests {
 
         match error {
             CdxctlError::GraphQL(messages) => {
-                assert_eq!(messages, vec!["workflow failed: script threw TypeError"])
+                assert_eq!(
+                    messages,
+                    vec!["workflow Workflow:7 failed: script threw TypeError"]
+                )
             }
             other => panic!("expected a GraphQL error, got {other:?}"),
         }
@@ -856,7 +926,7 @@ mod tests {
 
         match error {
             CdxctlError::GraphQL(messages) => {
-                assert_eq!(messages, vec!["workflow was interrupted"])
+                assert_eq!(messages, vec!["workflow Workflow:7 was interrupted"])
             }
             other => panic!("expected a GraphQL error, got {other:?}"),
         }
@@ -875,6 +945,88 @@ mod tests {
         requests.recv().unwrap();
     }
 
+    #[test]
+    fn a_transient_poll_failure_does_not_end_the_wait() {
+        let (address, requests) = stub_daemon_with(vec![
+            ("HTTP/1.1 502 Bad Gateway", "{}"),
+            (
+                "HTTP/1.1 200 OK",
+                r#"{"data":{"workflowRun":{"__typename":"WorkflowRun","id":"Workflow:7","status":"COMPLETE","phases":[],"resultJson":"{\"answer\":\"42\"}"}}}"#,
+            ),
+        ]);
+
+        wait_for_run(&client(&address), "Workflow:7", Duration::from_secs(1)).unwrap();
+
+        requests.recv().unwrap();
+        requests.recv().unwrap();
+    }
+
+    #[test]
+    fn a_failed_poll_is_retried_until_the_budget_is_spent() {
+        let state = RunState {
+            status: Some("RUNNING".to_string()),
+            phases: Vec::new(),
+        };
+        let error = CdxctlError::Network("connection reset".to_string());
+
+        let retry = poll_failure("Workflow:7", &state, &error, MAX_POLL_FAILURES - 1).unwrap();
+        assert!(retry.contains("9/10 failed, retrying"));
+        assert!(retry.contains("connection reset"));
+
+        let gave_up = poll_failure("Workflow:7", &state, &error, MAX_POLL_FAILURES).unwrap_err();
+        let message = gave_up.to_string();
+        assert!(message.contains("gave up reading workflow Workflow:7"));
+        assert!(message.contains("last seen RUNNING"));
+        assert!(message.contains("cdxctl workflow status Workflow:7"));
+    }
+
+    #[test]
+    fn giving_up_before_the_first_reading_still_names_the_run() {
+        let error = CdxctlError::GraphQL(vec!["The workflow run could not be read.".to_string()]);
+
+        let message = poll_failure(
+            "Workflow:7",
+            &RunState::default(),
+            &error,
+            MAX_POLL_FAILURES,
+        )
+        .unwrap_err()
+        .to_string();
+
+        assert!(message.contains("last seen unknown"));
+        assert!(message.contains("Workflow:7"));
+    }
+
+    #[test]
+    fn every_terminal_message_names_the_run_so_the_wait_can_be_resumed() {
+        assert!(matches!(
+            ending("Workflow:7", Terminal::Pending),
+            Ending::Keep
+        ));
+        assert!(matches!(
+            ending("Workflow:7", Terminal::Complete("{}".to_string())),
+            Ending::Done(result) if result == "{}"
+        ));
+
+        for terminal in [Terminal::Failed("boom".to_string()), Terminal::Interrupted] {
+            match ending("Workflow:7", terminal) {
+                Ending::Stop(error) => assert!(error.to_string().contains("Workflow:7")),
+                other => panic!("expected the wait to stop, got {other:?}"),
+            }
+        }
+
+        match ending(
+            "Workflow:7",
+            Terminal::ChangesRequested("split it".to_string()),
+        ) {
+            Ending::Stop(error) => {
+                assert_eq!(error.exit_code(), crate::error::EXIT_CHANGES_REQUESTED);
+                assert!(error.to_string().contains("split it"));
+            }
+            other => panic!("expected the wait to stop, got {other:?}"),
+        }
+    }
+
     fn in_chat(session: &str) {
         std::env::set_var(SESSION_ENV, session);
     }
@@ -890,14 +1042,25 @@ mod tests {
         serde_json::from_str(request.split("\r\n\r\n").nth(1).unwrap()).unwrap()
     }
 
+    fn stub_daemon(responses: Vec<&'static str>) -> (String, std::sync::mpsc::Receiver<String>) {
+        stub_daemon_with(
+            responses
+                .into_iter()
+                .map(|body| ("HTTP/1.1 200 OK", body))
+                .collect(),
+        )
+    }
+
     /// Answers each request from its own connection (`connection: close`), so the
     /// scripted responses stay in order however the client pools sockets.
-    fn stub_daemon(responses: Vec<&'static str>) -> (String, std::sync::mpsc::Receiver<String>) {
+    fn stub_daemon_with(
+        responses: Vec<(&'static str, &'static str)>,
+    ) -> (String, std::sync::mpsc::Receiver<String>) {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap().to_string();
         let (sender, receiver) = std::sync::mpsc::channel();
         std::thread::spawn(move || {
-            for body in responses {
+            for (status_line, body) in responses {
                 let Ok((mut stream, _)) = listener.accept() else {
                     return;
                 };
@@ -906,7 +1069,7 @@ mod tests {
                     return;
                 }
                 let response = format!(
-                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\nconnection: close\r\ncontent-length: {}\r\n\r\n{body}",
+                    "{status_line}\r\ncontent-type: application/json\r\nconnection: close\r\ncontent-length: {}\r\n\r\n{body}",
                     body.len()
                 );
                 let _ = stream.write_all(response.as_bytes());
