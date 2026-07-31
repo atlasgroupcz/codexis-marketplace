@@ -2,8 +2,8 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.6.0
+description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, runs multi-phase workflow scripts in the current chat, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, when a task should run as a workflow (spusť jako workflow, run this as a workflow), or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+version: 2.7.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -283,6 +283,53 @@ cdxctl tabular results ~/invoices
 **Tag/tags types** require `--option` flags in `value:COLOR` format. Available colors: RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, PINK, CYAN, TEAL, AMBER, EMERALD, INDIGO, VIOLET, FUCHSIA, ROSE, SKY, LIME, SLATE, GRAY, ZINC, NEUTRAL, STONE.
 
 **Workflow:** add columns → `start --wait` (blocks until DONE) → results.
+
+## Workflows
+
+A workflow is a multi-phase run driven by a `.js` script in the workspace. The script declares its
+phases, the user approves the proposal in the chat, then the phases run one by one and the run ends
+with a JSON result. Write or adapt the script with the file tools first, then validate it, then
+start it.
+
+```bash
+# 1. Validate the script and print the phases it proposes (nothing runs)
+cdxctl workflow create --file /home/codexis/analyza.js
+
+# 2. Propose it to the user and block until the run finishes
+cdxctl workflow start /home/codexis/analyza.js --args '{"question":"Je výpověď platná?"}' --wait --timeout-secs 5400
+
+# Start without blocking, then read the state later
+cdxctl workflow start /home/codexis/analyza.js
+cdxctl workflow status <workflowRunId>
+```
+
+**Call `start --wait` with the shell tool's `timeoutSeconds: 5400`.** The shell tool caps every
+other command at 600 seconds and lifts the cap only for this one, and a workflow with an approval
+gate and questions needs the full 90 minutes.
+
+**The user approves the run.** While the proposal card is on screen `start --wait` prints
+`waiting for approval...`, then `running`, then one line per phase
+(`phase "Rešerše" running`, `phase "Rešerše" complete`), so the progress stays visible for the whole
+blocked call. Do not hand-roll a polling loop around `status`.
+
+**Exit codes:**
+
+| Code | Meaning |
+|---|---|
+| `0` | The run finished; the last line of the output is the workflow result as JSON |
+| `7` | The user requested changes; the message carries their feedback - revise the script and start it again |
+| other | The run did not finish: the script failed, the user pressed Stop (`workflow was interrupted`), or the wait timed out with the run still going |
+
+**Stop cancels the run.** Pressing Stop in the chat aborts the workflow the same way it aborts the
+turn, and `start --wait` exits non-zero.
+
+`--args` takes a JSON object; the script receives it as `args`. Invalid JSON is rejected before the
+user sees a proposal.
+
+`workflow start` is refused inside an automation run - an unattended run has nobody to approve it
+or answer its questions.
+
+More worked calls: `references/workflow-examples.md`.
 
 ## Notifications
 

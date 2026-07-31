@@ -69,6 +69,11 @@ enum Commands {
         #[command(subcommand)]
         command: BugCommands,
     },
+    /// Validate and run multi-phase workflow scripts in this chat
+    Workflow {
+        #[command(subcommand)]
+        command: WorkflowCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -616,6 +621,35 @@ enum BugCommands {
     },
 }
 
+#[derive(Subcommand)]
+enum WorkflowCommands {
+    /// Validate a workflow script and print the phases it proposes, without running it
+    Create {
+        /// Path to the workflow script (.js) in this workspace
+        #[arg(long)]
+        file: String,
+    },
+    /// Propose the workflow to the user and run it once they approve
+    Start {
+        /// Path to the workflow script (.js) in this workspace
+        script_path: String,
+        /// Arguments for the script as a JSON object, e.g. '{"question":"..."}'
+        #[arg(long)]
+        args: Option<String>,
+        /// Block until the run finishes, printing every state and phase change as it happens
+        #[arg(long, default_value = "false")]
+        wait: bool,
+        /// How long --wait keeps polling before giving up, in seconds
+        #[arg(long, default_value = "5400")]
+        timeout_secs: u64,
+    },
+    /// Show the current state of a workflow run
+    Status {
+        /// Workflow run ID from `workflow start`
+        id: String,
+    },
+}
+
 fn parse_key_value(s: &str) -> Result<(String, String), String> {
     let pos = s
         .find('=')
@@ -900,7 +934,11 @@ fn main() {
                     summary,
                     example_prompts,
                     jurisdictions: none_if_empty(jurisdictions),
-                    jurisdiction_required: if jurisdiction_required { Some(true) } else { None },
+                    jurisdiction_required: if jurisdiction_required {
+                        Some(true)
+                    } else {
+                        None
+                    },
                     allowed_tools: none_if_empty(allowed_tools),
                 },
                 format,
@@ -1019,6 +1057,25 @@ fn main() {
                 severity,
             } => commands::bug::report(&client, &title, &description, &severity, format),
         },
+        Commands::Workflow { command } => match command {
+            WorkflowCommands::Create { file } => commands::workflow::create(&client, &file, format),
+            WorkflowCommands::Start {
+                script_path,
+                args,
+                wait,
+                timeout_secs,
+            } => commands::workflow::start(
+                &client,
+                commands::workflow::StartArgs {
+                    script_path: &script_path,
+                    args_json: args.as_deref(),
+                    wait,
+                    timeout_secs,
+                },
+                format,
+            ),
+            WorkflowCommands::Status { id } => commands::workflow::status(&client, &id, format),
+        },
     };
 
     if let Err(e) = result {
@@ -1029,15 +1086,28 @@ fn main() {
 
 /// Refuse recursive/invalid operations before any network or auth setup runs.
 fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
-    if let Commands::Automation { command } = command {
-        let action = match command {
-            AutomationCommands::Create { .. } => Some("automation create"),
-            AutomationCommands::CreateCommand { .. } => Some("automation create-command"),
-            _ => None,
-        };
-        if let Some(action) = action {
-            guard::refuse_if_in_automation(action)?;
+    match command {
+        Commands::Automation { command } => {
+            let action = match command {
+                AutomationCommands::Create { .. } => Some("automation create"),
+                AutomationCommands::CreateCommand { .. } => Some("automation create-command"),
+                _ => None,
+            };
+            if let Some(action) = action {
+                guard::refuse_if_in_automation(
+                    action,
+                    "An automation must not create more automations.",
+                )?;
+            }
         }
+        Commands::Workflow {
+            command: WorkflowCommands::Start { .. },
+        } => guard::refuse_if_in_automation(
+            "workflow start",
+            "A workflow is proposed to the user for approval and may ask questions mid-run, \
+             and an unattended run has nobody to answer.",
+        )?,
+        _ => {}
     }
     Ok(())
 }
@@ -1075,9 +1145,10 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Update {
-                    id, description, ..
-                },
+                command:
+                    AgentCommands::Update {
+                        id, description, ..
+                    },
             } => {
                 assert_eq!(id, "local-agent");
                 assert_eq!(description.as_deref(), Some("New description"));
@@ -1107,7 +1178,10 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Create { example_prompts, .. },
+                command:
+                    AgentCommands::Create {
+                        example_prompts, ..
+                    },
             } => assert_eq!(
                 example_prompts,
                 vec![
@@ -1131,8 +1205,14 @@ mod tests {
 
         match cli.command {
             Commands::Skill {
-                command: SkillCommands::Update { example_prompts, .. },
-            } => assert_eq!(example_prompts, vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]),
+                command:
+                    SkillCommands::Update {
+                        example_prompts, ..
+                    },
+            } => assert_eq!(
+                example_prompts,
+                vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]
+            ),
             _ => panic!("expected skill update command"),
         }
     }
@@ -1346,17 +1426,146 @@ mod tests {
     }
 
     #[test]
+    fn parses_workflow_start_with_args_and_wait() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "workflow",
+            "start",
+            "/home/codexis/legal-research.js",
+            "--args",
+            "{\"question\":\"Je výpověď platná?\"}",
+            "--wait",
+        ])
+        .expect("workflow start should parse");
+
+        match cli.command {
+            Commands::Workflow {
+                command:
+                    WorkflowCommands::Start {
+                        script_path,
+                        args,
+                        wait,
+                        timeout_secs,
+                    },
+            } => {
+                assert_eq!(script_path, "/home/codexis/legal-research.js");
+                assert_eq!(
+                    args.as_deref(),
+                    Some("{\"question\":\"Je výpověď platná?\"}")
+                );
+                assert!(wait);
+                assert_eq!(timeout_secs, 5400);
+            }
+            _ => panic!("expected workflow start command"),
+        }
+    }
+
+    #[test]
+    fn workflow_start_waits_only_when_asked_and_honours_an_explicit_timeout() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "workflow",
+            "start",
+            "/home/codexis/wf.js",
+            "--timeout-secs",
+            "600",
+        ])
+        .expect("workflow start should parse");
+
+        match cli.command {
+            Commands::Workflow {
+                command:
+                    WorkflowCommands::Start {
+                        wait, timeout_secs, ..
+                    },
+            } => {
+                assert!(!wait);
+                assert_eq!(timeout_secs, 600);
+            }
+            _ => panic!("expected workflow start command"),
+        }
+    }
+
+    #[test]
+    fn parses_workflow_create_and_status() {
+        let create = Cli::try_parse_from(["cdxctl", "workflow", "create", "--file", "/tmp/wf.js"])
+            .expect("workflow create should parse");
+        match create.command {
+            Commands::Workflow {
+                command: WorkflowCommands::Create { file },
+            } => assert_eq!(file, "/tmp/wf.js"),
+            _ => panic!("expected workflow create command"),
+        }
+
+        let status = Cli::try_parse_from(["cdxctl", "workflow", "status", "Workflow:7"])
+            .expect("workflow status should parse");
+        match status.command {
+            Commands::Workflow {
+                command: WorkflowCommands::Status { id },
+            } => assert_eq!(id, "Workflow:7"),
+            _ => panic!("expected workflow status command"),
+        }
+    }
+
+    #[test]
+    fn workflow_create_requires_the_script_file() {
+        assert!(Cli::try_parse_from(["cdxctl", "workflow", "create"]).is_err());
+        assert!(Cli::try_parse_from(["cdxctl", "workflow", "start"]).is_err());
+    }
+
+    #[test]
+    fn only_workflow_start_is_refused_inside_an_automation() {
+        let start = Cli::try_parse_from(["cdxctl", "workflow", "start", "/tmp/wf.js"]).unwrap();
+        let create =
+            Cli::try_parse_from(["cdxctl", "workflow", "create", "--file", "/tmp/wf.js"]).unwrap();
+        let status = Cli::try_parse_from(["cdxctl", "workflow", "status", "Workflow:7"]).unwrap();
+
+        std::env::set_var("CODEXIS_PUBLIC_AUTOMATION", "true");
+        let refused = preflight_guard(&start.command);
+        let allowed_create = preflight_guard(&create.command);
+        let allowed_status = preflight_guard(&status.command);
+        std::env::remove_var("CODEXIS_PUBLIC_AUTOMATION");
+
+        match refused {
+            Err(error::CdxctlError::Refused(message)) => {
+                assert!(message.contains("workflow start"))
+            }
+            other => panic!("expected workflow start to be refused, got {other:?}"),
+        }
+        assert!(allowed_create.is_ok());
+        assert!(allowed_status.is_ok());
+    }
+
+    #[test]
     fn requires_every_bug_report_field() {
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--description", "d", "--severity", "LOW"
+            "cdxctl",
+            "bug",
+            "report",
+            "--description",
+            "d",
+            "--severity",
+            "LOW"
         ])
         .is_err());
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--title", "t", "--severity", "LOW"
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "t",
+            "--severity",
+            "LOW"
         ])
         .is_err());
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--title", "t", "--description", "d"
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "t",
+            "--description",
+            "d"
         ])
         .is_err());
     }
