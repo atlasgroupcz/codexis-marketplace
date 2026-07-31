@@ -14,6 +14,9 @@
 // its verbatim quote.
 // Tune the sub-question count, the verification depth and the schemas to the task.
 
+// Extrakce and Rešerše are read/search work, not legal judgment - they run cheaper than the rest.
+const SEARCH_MODEL = "GPT_5_6_LUNA"
+
 export const meta = {
   name: "legal-research",
   description: "Právní rešerše: rámec → rekognoskace → podklady → extrakce → rešerše → ověření → syntéza.",
@@ -154,7 +157,7 @@ export default async function (args) {
       "kde přesně to je (článek, odstavec, strana) a DOSLOVNÝ výňatek. Nevykládej právo a nedomýšlej " +
       "- jen popiš, co v dokumentu stojí. Kritéria, ke kterým dokument nic neříká, vypiš do " +
       "'notCovered'. Structured output only.",
-      { label: "vytěžení: " + doc.path.split("/").pop(), schema: FACTS })
+      { label: "vytěžení: " + doc.path.split("/").pop(), schema: FACTS, model: SEARCH_MODEL })
       .catch(() => null)))
 
   const clientFacts = extracted.filter(Boolean).flatMap(r => r.facts)
@@ -182,7 +185,7 @@ export default async function (args) {
       "doslovná - ověřovatel ji porovná s otevřeným zdrojem, takže přepsaná nebo zpaměti " +
       "rekonstruovaná citace zjištění vyřadí. Označ, které je nosné a které jen podpůrné. " +
       "Structured output only.",
-      { label: issue.label, schema: FINDINGS })
+      { label: issue.label, schema: FINDINGS, model: SEARCH_MODEL })
       .catch(() => ({ findings: [] }))))
 
   const allFindings = perIssue.filter(Boolean).flatMap(r => r.findings)
