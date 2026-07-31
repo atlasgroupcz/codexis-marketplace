@@ -4,15 +4,24 @@
 //! `API_KEY=<value>\n`, mode 0600. Shared with the legacy `kn` CLI tool -
 //! either runtime can read what the other wrote.
 
-use std::time::Duration;
-
 use cdx_common::env_file;
 
 use crate::error::{KatastrError, Result};
 use crate::paths;
 
-pub const CUZK_BASE: &str = "https://api-kn.cuzk.gov.cz";
-const HEALTH_CHECK_PATH: &str = "/api/v1/AplikacniSluzby/StavUctu";
+const CUZK_BASE_DEFAULT: &str = "https://api-kn.cuzk.gov.cz";
+const RUIAN_BASE_DEFAULT: &str = "https://ags.cuzk.gov.cz/arcgis/rest/services/RUIAN/MapServer";
+
+/// Base URL of the cadastre REST API. Overridable by an env var so the host
+/// can change without rebuilding the binary.
+pub fn cuzk_base() -> String {
+    cdx_common::http::base_url_from_env("CODEXIS_PLUGIN_KATASTR_API_URL", CUZK_BASE_DEFAULT)
+}
+
+/// Base URL of the RÚIAN MapServer on ags. This is where `search` goes.
+pub fn ruian_base() -> String {
+    cdx_common::http::base_url_from_env("CODEXIS_PLUGIN_KATASTR_RUIAN_URL", RUIAN_BASE_DEFAULT)
+}
 
 /// Read the stored API key. Returns the empty string when the file is
 /// missing or the `API_KEY=` line can't be found - same permissive contract
@@ -76,30 +85,38 @@ pub fn key_status() -> KeyStatus {
 /// - 401/403 → [`KatastrError::ApiKeyInvalid`]
 /// - other HTTP → [`KatastrError::ApiHttp`]
 /// - connection failure → [`KatastrError::ApiNetwork`]
+///
+/// Goes through `call_with_retry` like everything else: `settings set` and
+/// `settings test` used to fail on the first network blip, being the only
+/// calls that bypassed retrying.
 pub fn validate_key(key: &str) -> Result<()> {
-    let url = format!("{CUZK_BASE}{HEALTH_CHECK_PATH}");
-    let agent = ureq::AgentBuilder::new()
-        .timeout_connect(Duration::from_secs(5))
-        .timeout_read(Duration::from_secs(10))
-        .build();
+    use crate::api_client::{agent, call_with_retry, Outcome};
 
-    match agent
-        .get(&url)
-        .set("ApiKey", key)
-        .set("Accept", "application/json")
-        .call()
-    {
-        Ok(_) => Ok(()),
-        Err(ureq::Error::Status(code, _)) if code == 401 || code == 403 => {
+    let base = cuzk_base();
+    let url = cdx_common::http::resolve_url(&base, crate::lookup::STAV_UCTU);
+
+    match call_with_retry(|| {
+        agent()
+            .get(&url)
+            .set("ApiKey", key)
+            .set("Accept", "application/json")
+    }) {
+        // Read the body so the connection returns to the pool - `settings
+        // test` makes further calls right after this one.
+        Outcome::Ok(resp) => {
+            let _ = resp.into_string();
+            Ok(())
+        }
+        Outcome::Status(code, _) if code == 401 || code == 403 => {
             Err(KatastrError::ApiKeyInvalid(format!(
                 "API klíč je neplatný (HTTP {code})."
             )))
         }
-        Err(ureq::Error::Status(code, _)) => Err(KatastrError::ApiHttp {
+        Outcome::Status(code, _) => Err(KatastrError::ApiHttp {
             status: code,
             message: format!("ČÚZK API vrátilo HTTP {code}"),
         }),
-        Err(ureq::Error::Transport(t)) => Err(KatastrError::ApiNetwork(format!(
+        Outcome::Transport(t) => Err(KatastrError::ApiNetwork(format!(
             "Nepodařilo se kontaktovat ČÚZK API: {t}"
         ))),
     }
@@ -162,5 +179,20 @@ mod tests {
         write_api_key("SECRET").unwrap();
         let perms = std::fs::metadata(paths::env_file()).unwrap().permissions();
         assert_eq!(perms.mode() & 0o777, 0o600);
+    }
+
+    #[test]
+    fn cuzk_base_defaults_to_official_host() {
+        std::env::remove_var("CODEXIS_PLUGIN_KATASTR_API_URL");
+        assert_eq!(cuzk_base(), "https://api-kn.cuzk.gov.cz");
+    }
+
+    #[test]
+    fn ruian_base_defaults_to_ags_mapserver() {
+        std::env::remove_var("CODEXIS_PLUGIN_KATASTR_RUIAN_URL");
+        assert_eq!(
+            ruian_base(),
+            "https://ags.cuzk.gov.cz/arcgis/rest/services/RUIAN/MapServer"
+        );
     }
 }

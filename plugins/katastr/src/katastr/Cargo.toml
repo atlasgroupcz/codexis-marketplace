@@ -1,6 +1,6 @@
 [package]
 name = "katastr"
-version = "0.1.0"
+version = "1.5.0"
 edition = "2021"
 license = "PROPRIETARY"
 
@@ -29,12 +29,18 @@ thiserror = "2"
 # ČÚZK REST calls and the daemon notify transport (e-mail + in-app).
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
 clap = { version = "4", features = ["derive"] }
+# RFC 3986 percent-encoding for query values. Zero transitive dependencies, and
+# already in the build anyway - ureq depends on url, which depends on this.
+# Neither ureq nor reqwest exposes an encoder: they only re-export `url`, whose
+# query_pairs_mut() is form encoding (a space becomes `+`, not `%20`), which is
+# not what a plain REST query wants.
+percent-encoding = "2"
 # Shared marketplace capability crates. cdx-common: std-only building blocks
 # (atomic fs, per-item store, UTC time, env-file credential storage). cdx-watch:
 # the watcher domain (check loop + change-log confirm). cdx-notify: notify
 # transport + layered settings. cdx-cgi: the CGI runtime (query parsing, body
 # reading, JSON/error emission).
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["fs", "store", "time", "env-file"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["fs", "store", "time", "env-file", "http"] }
 cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
 cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }

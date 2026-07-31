@@ -229,9 +229,11 @@ pub fn list_overview() -> Vec<OverviewEntry> {
 /// Fetch a proceeding via the search endpoint. Returns `Ok(None)` when the API
 /// replied successfully but with an empty `data` array - treat as "not found".
 pub fn fetch_from_cuzk(parsed: &ProceedingNumber) -> Result<Option<serde_json::Value>> {
-    let path = format!(
-        "/api/v1/Rizeni/Vyhledani?TypRizeni={}&Cislo={}&Rok={}&KodPracoviste={}",
-        parsed.typ_rizeni, parsed.poradove_cislo, parsed.rok, parsed.kod_pracoviste
+    let path = crate::lookup::rizeni_search(
+        &parsed.typ_rizeni,
+        parsed.poradove_cislo,
+        parsed.rok,
+        parsed.kod_pracoviste,
     );
     let result = crate::api_client::get(&path)?;
     let data = result.get("data").and_then(|d| d.as_array());
@@ -244,7 +246,7 @@ pub fn fetch_from_cuzk(parsed: &ProceedingNumber) -> Result<Option<serde_json::V
 /// `api_id` has been learned. Port of Python's `fetch_by_id`.
 pub fn fetch_by_id(api_id: &serde_json::Value) -> Result<Option<serde_json::Value>> {
     let segment = api_id_segment(api_id);
-    let result = crate::api_client::get(&format!("/api/v1/Rizeni/{segment}"))?;
+    let result = crate::api_client::get(&crate::lookup::rizeni_detail(&segment))?;
     match result.get("data") {
         Some(v) if !v.is_null() => Ok(Some(v.clone())),
         _ => Ok(None),

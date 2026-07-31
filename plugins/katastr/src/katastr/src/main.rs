@@ -7,17 +7,18 @@
 
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use clap::{ArgGroup, Parser, Subcommand};
 use katastr_core::state::ProceedingState;
 use katastr_core::tracking::CheckResult;
 use katastr_core::{
-    api_client, notify, notify_settings, settings, tracking, KatastrError,
+    api_client, geom, lookup, notify, notify_settings, pravo_stavby, ruian, settings, tracking,
+    KatastrError,
 };
 
 #[derive(Parser)]
 #[command(
     name = "katastr-cli",
-    about = "ČÚZK lookups, tracking, settings and notifications.",
+    about = "Katastr nemovitostí: dotazy do ČÚZK, sledování řízení, nastavení a notifikace.",
     version
 )]
 struct Cli {
@@ -25,109 +26,320 @@ struct Cli {
     namespace: Namespace,
 }
 
+// Doc komentáře na clap typech nejsou komentáře pro programátora - clap je
+// vypisuje jako text `--help`. Proto jsou česky, stejně jako chybové hlášky:
+// čte je uživatel. Všechno ostatní v této crate je anglicky.
 #[derive(Subcommand)]
 enum Namespace {
-    /// Track cadastral proceedings
+    /// Sledování katastrálních řízení
     Tracking {
         #[command(subcommand)]
         cmd: TrackingCmd,
     },
-    /// Raw ČÚZK API access
+    /// Přímé volání API ČÚZK
     Api {
         #[command(subcommand)]
         cmd: ApiCmd,
     },
-    /// Manage ČÚZK API key
+    /// Správa API klíče k ČÚZK
     Settings {
         #[command(subcommand)]
         cmd: SettingsCmd,
     },
-    /// Manage notification settings
+    /// Nastavení notifikací
     Notify {
         #[command(subcommand)]
         cmd: NotifyCmd,
     },
+    /// Přeloží adresu nebo název území na kód RÚIAN
+    #[command(group(ArgGroup::new("search_vstup").required(true).args(["text", "klic"])))]
+    Search {
+        /// Adresa, obec, katastrální území, okres, kraj nebo ulice
+        text: Option<String>,
+        /// Druh hledané věci, např. Obec nebo KatastralniUzemi. S ním se
+        /// hledá přímo v příslušném rejstříku a vrátí se všechny nálezy;
+        /// bez něj se vrátí návrhy i s druhem, ze kterých se dá vybrat.
+        #[arg(long)]
+        typ: Option<String>,
+        /// Klíč z návrhu (pole `klic`). Dohledá přesně ten jeden záznam.
+        #[arg(long, conflicts_with_all = ["text", "typ"])]
+        klic: Option<String>,
+    },
+    /// Parcela podle katastrálního území a čísla, nebo podle ID
+    #[command(group(ArgGroup::new("parcela_vstup").required(true).args(["id", "ku"])))]
+    Parcela {
+        #[arg(long, requires = "cislo", conflicts_with = "id",
+              value_parser = clap::value_parser!(u32).range(meze::KOD_KU))]
+        ku: Option<u32>,
+        #[arg(long, requires = "ku", conflicts_with = "id",
+              value_parser = clap::value_parser!(u32).range(meze::CISLO_PARCELY))]
+        cislo: Option<u32>,
+        #[arg(long, requires = "cislo", conflicts_with = "id",
+              value_parser = clap::value_parser!(u32).range(meze::PODDELENI))]
+        poddeleni: Option<u32>,
+        /// 1 = stavební, 2 = pozemková
+        #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u8).range(1..=2))]
+        druh: u8,
+        #[arg(long, value_enum, default_value_t = TypParcely::Pkn)]
+        typ: TypParcely,
+        /// Původ parcely ZE. Povinný u --typ PZE.
+        #[arg(long = "puvod-ze", value_enum, required_if_eq("typ", "PZE"))]
+        puvod_ze: Option<PuvodZe>,
+        #[arg(long)]
+        id: Option<String>,
+    },
+    /// Co je kolem parcely, stavby nebo adresy
+    #[command(group(ArgGroup::new("okoli_stred").required(true).args(["parcela", "stavba", "adresa"])))]
+    Okoli {
+        #[arg(long)]
+        parcela: Option<String>,
+        #[arg(long)]
+        stavba: Option<String>,
+        #[arg(long)]
+        adresa: Option<String>,
+        /// Poloměr v metrech. ČÚZK omezuje plochu polygonu na 5000 m2,
+        /// takže prakticky nejvýš zhruba 35.
+        #[arg(long, value_parser = kladny_polomer)]
+        metru: f64,
+    },
+    /// Stavba podle adresního místa, části obce a čísla, nebo podle ID
+    #[command(group(ArgGroup::new("stavba_vstup").required(true).args(["id", "adresni_misto", "cast_obce"])))]
+    #[command(group(ArgGroup::new("stavba_cislo").args(["cp", "ce"]).requires("cast_obce")))]
+    Stavba {
+        #[arg(long = "adresni-misto")]
+        adresni_misto: Option<u32>,
+        #[arg(long = "cast-obce", requires = "stavba_cislo",
+              value_parser = clap::value_parser!(u32).range(meze::KOD_CASTI_OBCE))]
+        cast_obce: Option<u32>,
+        /// Číslo popisné
+        #[arg(long, value_parser = clap::value_parser!(u32).range(meze::CISLO_DOMOVNI))]
+        cp: Option<u32>,
+        /// Číslo evidenční
+        #[arg(long, value_parser = clap::value_parser!(u32).range(meze::CISLO_DOMOVNI))]
+        ce: Option<u32>,
+        #[arg(long)]
+        id: Option<String>,
+    },
+    /// Jednotka (byt nebo nebytový prostor)
+    #[command(group(ArgGroup::new("jednotka_vstup").required(true).args(["id", "cast_obce"])))]
+    Jednotka {
+        #[arg(long = "cast-obce", requires_all = ["cp", "cj"],
+              value_parser = clap::value_parser!(u32).range(meze::KOD_CASTI_OBCE))]
+        cast_obce: Option<u32>,
+        #[arg(long, conflicts_with = "id",
+              value_parser = clap::value_parser!(u32).range(meze::CISLO_DOMOVNI))]
+        cp: Option<u32>,
+        #[arg(long, conflicts_with = "id",
+              value_parser = clap::value_parser!(u32).range(meze::CISLO_JEDNOTKY))]
+        cj: Option<u32>,
+        #[arg(long)]
+        id: Option<String>,
+    },
+    /// Řízení podle čísla, ID, nebo seznam přijatých za den
+    #[command(group(ArgGroup::new("rizeni_vstup").required(true).args(["cislo", "id", "prijate_dne"])))]
+    Rizeni {
+        /// Číslo řízení, např. V-123/2026-701
+        cislo: Option<String>,
+        #[arg(long)]
+        id: Option<String>,
+        #[arg(long = "prijate-dne", requires_all = ["pracoviste", "typ"])]
+        prijate_dne: Option<String>,
+        #[arg(long, requires = "prijate_dne",
+              value_parser = clap::value_parser!(u32).range(meze::KOD_PRACOVISTE))]
+        pracoviste: Option<u32>,
+        #[arg(long, value_enum, requires = "prijate_dne")]
+        typ: Option<TypRizeni>,
+    },
+    /// Právo stavby podle ID, nebo podle parcely či stavby
+    #[command(group(ArgGroup::new("pravo_vstup").required(true).args(["id", "parcela", "stavba"])))]
+    PravoStavby {
+        id: Option<String>,
+        #[arg(long)]
+        parcela: Option<String>,
+        #[arg(long)]
+        stavba: Option<String>,
+    },
+    /// Sousední parcely
+    Sousedni { id: String },
+    /// Katastrální pracoviště: adresář nebo jedno podle kódu
+    Pracoviste {
+        #[arg(long, value_parser = clap::value_parser!(u32).range(meze::KOD_PRACOVISTE))]
+        kod: Option<u32>,
+    },
+}
+
+/// `TypParcely` as the swagger declares it - exactly these two.
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+enum TypParcely {
+    #[value(name = "PKN")]
+    Pkn,
+    #[value(name = "PZE")]
+    Pze,
+}
+
+impl TypParcely {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Pkn => "PKN",
+            Self::Pze => "PZE",
+        }
+    }
+}
+
+/// Ranges the swagger declares for these query parameters. Enforcing them at
+/// parse time means a value that ČÚZK would reject never costs a call from the
+/// 500-per-period quota.
+mod meze {
+    pub const KOD_KU: std::ops::RangeInclusive<i64> = 1..=999_999;
+    pub const CISLO_PARCELY: std::ops::RangeInclusive<i64> = 1..=99_999;
+    pub const PODDELENI: std::ops::RangeInclusive<i64> = 1..=999;
+    pub const KOD_CASTI_OBCE: std::ops::RangeInclusive<i64> = 1..=999_999;
+    pub const CISLO_DOMOVNI: std::ops::RangeInclusive<i64> = 1..=99_999;
+    pub const CISLO_JEDNOTKY: std::ops::RangeInclusive<i64> = 0..=99_999_999;
+    pub const KOD_PRACOVISTE: std::ops::RangeInclusive<i64> = 1..=999;
+}
+
+/// Source of record for a ZE parcel. The swagger marks the parameter optional,
+/// but the server rejects `TypParcely=PZE` without it - verified live, which is
+/// why `--typ PZE` never worked before this flag existed.
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+enum PuvodZe {
+    /// 3 = evidence nemovitostí
+    #[value(name = "3")]
+    EvidenceNemovitosti,
+    /// 4 = pozemkový katastr
+    #[value(name = "4")]
+    PozemkovyKatastr,
+    /// 6 = přídělový plán nebo jiný podklad
+    #[value(name = "6")]
+    PridelovyPlan,
+}
+
+impl PuvodZe {
+    fn as_u8(self) -> u8 {
+        match self {
+            Self::EvidenceNemovitosti => 3,
+            Self::PozemkovyKatastr => 4,
+            Self::PridelovyPlan => 6,
+        }
+    }
+}
+
+/// The proceeding types `Rizeni/PrijateDne` actually accepts. Its swagger
+/// declares all five, but the server rejects `PD` and `ZPV` with a 400 and
+/// "Must be one of [V,Z,PGP]" - verified live. Only `--prijate-dne` takes this
+/// flag, so the narrow set is the right one; a number like `PD-1/2026-701`
+/// still parses fine as a proceeding number.
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+enum TypRizeni {
+    #[value(name = "V")]
+    V,
+    #[value(name = "Z")]
+    Z,
+    #[value(name = "PGP")]
+    Pgp,
+}
+
+impl TypRizeni {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::V => "V",
+            Self::Z => "Z",
+            Self::Pgp => "PGP",
+        }
+    }
+}
+
+/// Rejects a radius clap's own numeric parsing would accept. Infinity and NaN
+/// have no JSON spelling, so they would reach ČÚZK as `null` coordinates and
+/// come back as an opaque error.
+fn kladny_polomer(s: &str) -> Result<f64, String> {
+    let v: f64 = s.parse().map_err(|_| format!("{s} není číslo"))?;
+    if !v.is_finite() || v <= 0.0 {
+        return Err(String::from("musí být kladné konečné číslo v metrech"));
+    }
+    Ok(v)
 }
 
 #[derive(Subcommand)]
 enum TrackingCmd {
-    /// Start tracking a proceeding
+    /// Začne sledovat řízení
     Add {
-        /// Proceeding number, e.g. V-123/2026-701
+        /// Číslo řízení, např. V-123/2026-701
         cislo: String,
-        /// Optional user-friendly label
+        /// Volitelné vlastní označení
         #[arg(long, default_value = "")]
         label: String,
     },
-    /// List all tracked proceedings
+    /// Vypíše všechna sledovaná řízení
     List,
-    /// Show full state of a tracked proceeding
+    /// Úplný stav jednoho sledovaného řízení
     Show { cislo: String },
-    /// Check tracked proceedings for changes
+    /// Zkontroluje sledovaná řízení, jestli se něco změnilo
     Check {
-        /// Specific proceeding (default: all)
+        /// Konkrétní řízení (výchozí: všechna)
         cislo: Option<String>,
     },
-    /// Mark changes as read
+    /// Označí změny jako přečtené
     Confirm {
         cislo: String,
-        /// Mark all unconfirmed changes (default if --change is not given)
+        /// Označí všechny nepotvrzené změny (výchozí, když není --change)
         #[arg(long)]
         all: bool,
-        /// Mark only this specific change (0-based index)
+        /// Označí jen tuhle jednu změnu (index od nuly)
         #[arg(long, value_name = "INDEX")]
         change: Option<usize>,
     },
-    /// Stop tracking a proceeding
+    /// Přestane řízení sledovat
     Remove { cislo: String },
-    /// Set or change the user-friendly label of a tracked proceeding
+    /// Nastaví nebo změní vlastní označení sledovaného řízení
     #[command(name = "set-label")]
     SetLabel {
         cislo: String,
-        /// New label string (use "" to clear)
+        /// Nové označení (prázdný řetězec ho smaže)
         label: String,
     },
 }
 
 #[derive(Subcommand)]
 enum ApiCmd {
-    /// GET request to ČÚZK
+    /// GET dotaz na ČÚZK
     Get {
-        /// ČÚZK API path, e.g. "/api/v1/Parcely/12345"
+        /// Cesta v API ČÚZK, např. "/api/v1/Parcely/12345"
         path: String,
     },
 }
 
 #[derive(Subcommand)]
 enum SettingsCmd {
-    /// Show masked API key status
+    /// Stav API klíče, kvóta a platnost
     Show,
-    /// Validate and store API key
+    /// Ověří API klíč u ČÚZK a uloží ho
     Set { key: String },
-    /// Test current API key against ČÚZK
+    /// Vyzkouší uložený API klíč proti ČÚZK
     Test,
 }
 
 #[derive(Subcommand)]
 enum NotifyCmd {
-    /// Show current notification settings
+    /// Aktuální nastavení notifikací
     Show,
-    /// Change notification settings
+    /// Změní nastavení notifikací
     Set {
-        /// Turn e-mail on
+        /// Zapne e-mail
         #[arg(long, conflicts_with = "no_email")]
         email: bool,
-        /// Turn e-mail off
+        /// Vypne e-mail
         #[arg(long = "no-email")]
         no_email: bool,
-        /// Turn the in-app bell on
+        /// Zapne zvoneček v aplikaci
         #[arg(long, conflicts_with = "no_inapp")]
         inapp: bool,
-        /// Turn the in-app bell off
+        /// Vypne zvoneček v aplikaci
         #[arg(long = "no-inapp")]
         no_inapp: bool,
     },
-    /// Manage e-mail recipients
+    /// Správa příjemců e-mailů
     Recipients {
         #[command(subcommand)]
         cmd: RecipientsCmd,
@@ -136,13 +348,13 @@ enum NotifyCmd {
 
 #[derive(Subcommand)]
 enum RecipientsCmd {
-    /// Add a recipient e-mail
+    /// Přidá e-mail příjemce
     Add { email: String },
-    /// Remove a recipient e-mail (case-insensitive)
+    /// Odebere e-mail příjemce (nezáleží na velikosti písmen)
     Remove { email: String },
-    /// Replace the whole recipient list
+    /// Nahradí celý seznam příjemců
     Set { emails: Vec<String> },
-    /// Remove all recipients
+    /// Smaže všechny příjemce
     Clear,
 }
 
@@ -157,6 +369,26 @@ fn main() -> ExitCode {
         Namespace::Api { cmd } => run_api(cmd),
         Namespace::Settings { cmd } => run_settings(cmd),
         Namespace::Notify { cmd } => run_notify(cmd),
+        Namespace::Search { text, typ, klic } => cmd_search(text, typ, klic),
+        Namespace::Parcela { ku, cislo, poddeleni, druh, typ, puvod_ze, id } => {
+            cmd_parcela(ku, cislo, poddeleni, druh, typ, puvod_ze, id)
+        }
+        Namespace::Okoli { parcela, stavba, adresa, metru } => {
+            cmd_okoli(parcela, stavba, adresa, metru)
+        }
+        Namespace::Stavba { adresni_misto, cast_obce, cp, ce, id } => {
+            cmd_stavba(adresni_misto, cast_obce, cp, ce, id)
+        }
+        Namespace::Jednotka { cast_obce, cp, cj, id } => cmd_jednotka(cast_obce, cp, cj, id),
+        Namespace::Rizeni { cislo, id, prijate_dne, pracoviste, typ } => {
+            cmd_rizeni(cislo, id, prijate_dne, pracoviste, typ)
+        }
+        Namespace::PravoStavby { id, parcela, stavba } => cmd_pravo_stavby(id, parcela, stavba),
+        Namespace::Sousedni { id } => print_get(&lookup::sousedni_parcely(&id)),
+        Namespace::Pracoviste { kod } => match kod {
+            Some(k) => print_get(&lookup::pracoviste_detail(k)),
+            None => print_get(&lookup::pracoviste_list()),
+        },
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -330,16 +562,251 @@ fn cmd_set_label(cislo: &str, label: &str) -> CliResult {
 
 fn run_api(cmd: ApiCmd) -> CliResult {
     match cmd {
-        ApiCmd::Get { path } => {
-            let result = api_client::get(&path)?;
-            let json = serde_json::to_string_pretty(&result).map_err(KatastrError::from)?;
-            println!("{json}");
-            Ok(())
+        ApiCmd::Get { path } => print_json(&api_client::get(&path)?),
+    }
+}
+
+// ── domain lookup commands ───────────────────────────────────────────────────
+// Named subcommands over `lookup`, `ruian`, `geom` and `pravo_stavby` -
+// `api get` stays the escape hatch for whatever did not get its own command.
+
+/// The one place a response is serialized, so output has the same shape across
+/// every command.
+fn print_json(v: &serde_json::Value) -> CliResult {
+    let json = serde_json::to_string_pretty(v).map_err(KatastrError::from)?;
+    println!("{json}");
+    Ok(())
+}
+
+/// Calls a path and prints the response verbatim, as the rest of the repo does.
+fn print_get(path: &str) -> CliResult {
+    print_json(&api_client::get(path)?)
+}
+
+fn cmd_search(text: Option<String>, typ: Option<String>, klic: Option<String>) -> CliResult {
+    // clap's `search_vstup` group guarantees exactly one of the two.
+    match (klic.as_deref(), text.as_deref()) {
+        (Some(k), _) => print_json(&ruian::by_key(k)?),
+        (None, Some(t)) => print_json(&ruian::search(t, typ.as_deref())?),
+        _ => unreachable!("clap group search_vstup"),
+    }
+}
+
+fn cmd_parcela(
+    ku: Option<u32>,
+    cislo: Option<u32>,
+    poddeleni: Option<u32>,
+    druh: u8,
+    typ: TypParcely,
+    puvod_ze: Option<PuvodZe>,
+    id: Option<String>,
+) -> CliResult {
+    // clap's `parcela_vstup` group guarantees exactly one of these shapes.
+    let path = match (id.as_deref(), ku, cislo) {
+        (Some(i), _, _) => lookup::parcela_detail(i),
+        (None, Some(k), Some(c)) => lookup::parcela_search(k, c, poddeleni, druh, typ.as_str(), puvod_ze.map(PuvodZe::as_u8)),
+        _ => unreachable!("clap group parcela_vstup"),
+    };
+    print_get(&path)
+}
+
+/// The property's definition point, however it was reached.
+///
+/// `Vyhledani` returns `data` as an array, a detail lookup as an object, so
+/// both are tried.
+fn definicni_bod(data: &serde_json::Value) -> Option<(f64, f64)> {
+    let bod = data
+        .pointer("/data/definicniBod")
+        .or_else(|| data.pointer("/data/0/definicniBod"))?;
+    Some((bod.get("x")?.as_f64()?, bod.get("y")?.as_f64()?))
+}
+
+fn cmd_okoli(
+    parcela: Option<String>,
+    stavba: Option<String>,
+    adresa: Option<String>,
+    metru: f64,
+) -> CliResult {
+    // clap's `okoli_stred` group guarantees exactly one centre.
+    let zdroj = match (parcela.as_deref(), stavba.as_deref(), adresa.as_deref()) {
+        (Some(id), None, None) => api_client::get(&lookup::parcela_detail(id))?,
+        (None, Some(id), None) => api_client::get(&lookup::stavba_detail(id))?,
+        (None, None, Some(text)) => {
+            // The address resolves to a code first, the code to a building,
+            // whose definition point becomes the centre.
+            let nalez = ruian::search(text, Some("AdresniMisto"))?;
+            let Some(kod) = nalez.get("kod").and_then(|k| k.as_u64()) else {
+                return Err(CliError::Usage(format!(
+                    "Adresu {text} se nepodařilo jednoznačně přeložit. \
+                     Zkus `katastr-cli search` a použij --stavba s konkrétním ID."
+                )));
+            };
+            api_client::get(&lookup::stavba_adresni_misto(kod as u32))?
         }
+        _ => unreachable!("clap group okoli_stred"),
+    };
+
+    let Some((x, y)) = definicni_bod(&zdroj) else {
+        return Err(CliError::Usage(
+            "Odpověď neobsahuje definiční bod, okolí nelze spočítat.".into(),
+        ));
+    };
+
+    let coords = geom::square_around(x, y, metru);
+    let parcely = api_client::get(&lookup::parcely_polygon(&coords))?;
+    let stavby = api_client::get(&lookup::stavby_polygon(&coords))?;
+    print_json(&serde_json::json!({
+        "stred": { "x": x, "y": y },
+        "metru": metru,
+        "parcely": parcely,
+        "stavby": stavby,
+    }))
+}
+
+fn cmd_stavba(
+    adresni_misto: Option<u32>,
+    cast_obce: Option<u32>,
+    cp: Option<u32>,
+    ce: Option<u32>,
+    id: Option<String>,
+) -> CliResult {
+    // clap's `stavba_vstup` and `stavba_cislo` groups guarantee exactly one
+    // entry point, and exactly one of --cp/--ce alongside --cast-obce.
+    let path = match (id.as_deref(), adresni_misto, cast_obce, cp, ce) {
+        (Some(i), ..) => lookup::stavba_detail(i),
+        (None, Some(kod), ..) => lookup::stavba_adresni_misto(kod),
+        (None, None, Some(co), Some(n), None) => lookup::stavba_search(co, 1, n),
+        (None, None, Some(co), None, Some(n)) => lookup::stavba_search(co, 2, n),
+        _ => unreachable!("clap groups stavba_vstup + stavba_cislo"),
+    };
+    print_get(&path)
+}
+
+fn cmd_jednotka(
+    cast_obce: Option<u32>,
+    cp: Option<u32>,
+    cj: Option<u32>,
+    id: Option<String>,
+) -> CliResult {
+    // clap's `jednotka_vstup` group guarantees exactly one of these shapes.
+    let path = match (id.as_deref(), cast_obce, cp, cj) {
+        (Some(i), ..) => lookup::jednotka_detail(i),
+        (None, Some(co), Some(n), Some(j)) => lookup::jednotka_search(co, 1, n, j),
+        _ => unreachable!("clap group jednotka_vstup"),
+    };
+    print_get(&path)
+}
+
+fn cmd_rizeni(
+    cislo: Option<String>,
+    id: Option<String>,
+    prijate_dne: Option<String>,
+    pracoviste: Option<u32>,
+    typ: Option<TypRizeni>,
+) -> CliResult {
+    // clap's `rizeni_vstup` group guarantees exactly one entry point, and
+    // --prijate-dne requires both --pracoviste and --typ.
+    if let Some(datum) = prijate_dne {
+        let (Some(kp), Some(t)) = (pracoviste, typ) else {
+            unreachable!("clap requires_all on prijate_dne");
+        };
+        return print_get(&lookup::rizeni_prijate_dne(t.as_str(), kp, &datum));
+    }
+    if let Some(i) = id.as_deref() {
+        return print_get(&lookup::rizeni_detail(i));
+    }
+    let Some(c) = cislo else {
+        unreachable!("clap group rizeni_vstup");
+    };
+    let parsed = tracking::parse_proceeding_number(&c)?;
+    print_get(&lookup::rizeni_search(
+        &parsed.typ_rizeni,
+        parsed.poradove_cislo,
+        parsed.rok,
+        parsed.kod_pracoviste,
+    ))
+}
+
+fn cmd_pravo_stavby(
+    id: Option<String>,
+    parcela: Option<String>,
+    stavba: Option<String>,
+) -> CliResult {
+    // `dotaz` remembers which identifier was actually checked, so a
+    // "no right" answer can name it instead of coming back as a bare null
+    // nobody can trace back to a parcel or building.
+    let (path, dotaz) = match (id.as_deref(), parcela.as_deref(), stavba.as_deref()) {
+        (Some(i), None, None) => (lookup::pravo_stavby_detail(i), serde_json::json!({ "id": i })),
+        (None, Some(p), None) => {
+            (lookup::pravo_stavby_parcela(p), serde_json::json!({ "parcela": p }))
+        }
+        (None, None, Some(s)) => {
+            (lookup::pravo_stavby_stavba(s), serde_json::json!({ "stavba": s }))
+        }
+        // clap's `pravo_vstup` group guarantees exactly one of the three.
+        _ => unreachable!("clap group pravo_vstup"),
+    };
+    match api_client::get(&path) {
+        Ok(data) => print_json(&data),
+        // A 404 means two things here, and only one of them is an error.
+        Err(KatastrError::ApiHttp { status: 404, message }) => {
+            match pravo_stavby::interpret_404(&message) {
+                pravo_stavby::Missing::NoRight => print_json(&serde_json::json!({
+                    "pravoStavby": null,
+                    "dotaz": dotaz,
+                })),
+                pravo_stavby::Missing::NotFound => {
+                    Err(KatastrError::ApiHttp { status: 404, message }.into())
+                }
+            }
+        }
+        Err(e) => Err(e.into()),
     }
 }
 
 // ── settings commands ────────────────────────────────────────────────────────
+
+/// Prints ČÚZK's operational messages. Among other things they carry an
+/// approaching key expiry, so they must not be swallowed.
+///
+/// Its own call, even though `zpravy` rides along elsewhere: the endpoints
+/// under `AplikacniSluzby` carry no ordinary envelope. Neither `StavUctu` nor
+/// `AktualnostDat` nor `Health` returns `zpravy` - verified live - so it cannot
+/// be read off a response already in hand.
+///
+/// Best-effort: with no network, whatever is known locally still gets printed.
+fn print_provozni_informace() {
+    let Ok(v) = api_client::get(lookup::PROVOZNI_INFORMACE) else {
+        return;
+    };
+    for z in v.get("zpravy").and_then(|z| z.as_array()).into_iter().flatten() {
+        if let Some(text) = z.get("text").and_then(|t| t.as_str()) {
+            println!("ČÚZK hlásí: {text}");
+        }
+    }
+}
+
+/// ČÚZK's `status` is an undocumented integer, so printing it raw told nobody
+/// anything. Every entry carries its own `description` in plain words - print
+/// those instead of guessing what the number means. Falls back to the raw
+/// status rather than printing nothing at all.
+fn print_health(v: &serde_json::Value) {
+    let mut printed = false;
+    for e in v.get("entries").and_then(|e| e.as_array()).into_iter().flatten() {
+        if let (Some(check), Some(desc)) = (
+            e.get("check").and_then(serde_json::Value::as_str),
+            e.get("description").and_then(serde_json::Value::as_str),
+        ) {
+            println!("{check}: {desc}");
+            printed = true;
+        }
+    }
+    if !printed {
+        if let Some(s) = v.get("status") {
+            println!("Health: {s}");
+        }
+    }
+}
 
 fn run_settings(cmd: SettingsCmd) -> CliResult {
     match cmd {
@@ -347,9 +814,29 @@ fn run_settings(cmd: SettingsCmd) -> CliResult {
             let status = settings::key_status();
             if !status.configured {
                 println!("API klíč není nastaven.");
-            } else {
-                println!("API klíč: {} (configured)", status.masked);
+                return Ok(());
             }
+            println!("API klíč: {} (configured)", status.masked);
+
+            // Account status is a supplement, not a precondition: with no
+            // network, whatever is known locally still gets printed.
+            match api_client::get(lookup::STAV_UCTU) {
+                Ok(v) => {
+                    if let (Some(pouzito), Some(limit)) = (
+                        v.get("provedenoVolani").and_then(|x| x.as_u64()),
+                        v.get("limitVolani").and_then(|x| x.as_u64()),
+                    ) {
+                        println!("Volání: {pouzito} / {limit} za období {}",
+                            v.get("aktualniObdobi").and_then(|x| x.as_str()).unwrap_or("?"));
+                    }
+                    if let Some(exp) = v.get("expiraceApiKey").and_then(|x| x.as_str()) {
+                        println!("Platnost klíče do: {exp}");
+                    }
+                }
+                Err(e) => eprintln!("Stav účtu se nepodařilo zjistit: {e}"),
+            }
+
+            print_provozni_informace();
             Ok(())
         }
         SettingsCmd::Set { key } => {
@@ -368,6 +855,16 @@ fn run_settings(cmd: SettingsCmd) -> CliResult {
             }
             settings::validate_key(&settings::read_api_key())?;
             eprintln!("OK: API klíč funguje (ČÚZK odpovědělo).");
+
+            if let Ok(v) = api_client::get(lookup::AKTUALNOST_DAT) {
+                if let Some(k) = v.get("aktualnostDatK").and_then(|x| x.as_str()) {
+                    println!("Data aktuální k: {k}");
+                }
+            }
+            if let Ok(v) = api_client::get(lookup::HEALTH) {
+                print_health(&v);
+            }
+            print_provozni_informace();
             Ok(())
         }
     }

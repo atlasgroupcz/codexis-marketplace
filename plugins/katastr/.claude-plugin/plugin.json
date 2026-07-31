@@ -1,7 +1,7 @@
 {
   "name": "katastr",
   "iconPath": "icon.svg",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Katastr nemovitostí ČR",
   "author": {
     "name": "ATLAS GROUP",
@@ -36,5 +36,9 @@
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
-  "components": "./components"
+  "components": "./components",
+  "env": {
+    "CODEXIS_PLUGIN_KATASTR_API_URL": "https://api-kn.cuzk.gov.cz",
+    "CODEXIS_PLUGIN_KATASTR_RUIAN_URL": "https://ags.cuzk.gov.cz/arcgis/rest/services/RUIAN/MapServer"
+  }
 }
