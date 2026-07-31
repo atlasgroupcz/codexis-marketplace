@@ -7,6 +7,7 @@
 // @args jurisdiction - CZ, SK or EU; defaults to CZ
 
 const SEARCH_MODEL = "GPT_5_6_LUNA"
+const MAX_MATERIAL_ASKS = 5
 
 export const meta = {
   name: "legal-research",
@@ -86,34 +87,34 @@ const FRAME_ANGLES = [
   { label: "kvalifikace a povaha úpravy",
     task: `Urči, ČÍM se ta věc vůbec řídí po hmotné stránce.
 
-1. Do jakého právního oboru a k jakému právnímu institutu věc patří a jak zní její právní kvalifikace - o jaký typ právního vztahu nebo jednání jde (a jestli nepřipadá v úvahu víc kvalifikací současně, třeba souběh nároku ze smlouvy a z bezdůvodného obohacení).
-2. Jestli jde o vztah soukromoprávní, nebo veřejnoprávní, a jestli do něj zasahuje veřejnoprávní regulace, která ho omezuje.
-3. Jestli je rozhodná úprava dispozitivní, nebo kogentní - a u kogentní, jestli je absolutní, nebo relativní (chrání jen jednu stranu a odchylka v její prospěch je přípustná).
-4. Jestli je některá strana zákonem chráněná (spotřebitel, zaměstnanec, nájemce bytu, slabší strana podnikatelského vztahu) a co z toho pro posouzení plyne.`
+1. Do jakého oboru a k jakému institutu věc patří a jak zní její právní kvalifikace - i to, jestli nepřipadá v úvahu souběh (nárok ze smlouvy vedle bezdůvodného obohacení).
+2. Jestli je vztah soukromoprávní, nebo veřejnoprávní, a jestli ho omezuje veřejnoprávní regulace.
+3. Jestli je úprava dispozitivní, nebo kogentní - a u kogentní, jestli připouští odchylku ve prospěch chráněné strany.
+4. Jestli je některá strana zákonem chráněná (spotřebitel, zaměstnanec, nájemce bytu, slabší strana) a co z toho plyne.`
   },
   { label: "časový řez a intertemporalita",
     task: `Urči, KE KTERÉMU DNI a PODLE JAKÉHO ZNĚNÍ se věc posuzuje.
 
-1. Kdy nastaly rozhodné skutečnosti (uzavření smlouvy, vznik škody, doručení, jednání orgánu) - vyčti data z otázky a z podkladů v pracovním adresáři.
-2. Které znění rozhodných předpisů na ně dopadá: byla úprava mezi tím novelizována nebo nahrazena a co říkají přechodná (intertemporální) ustanovení novely.
-3. Jestli neběží nebo neuplynula promlčecí či prekluzivní lhůta a od jaké události se počítá.
-4. Den, ke kterému se má věc posoudit, vrať v 'asOf' ve tvaru RRRR-MM-DD; když ho z podkladů nelze určit, vrať dnešní datum a napiš to do zjištění.`
+1. Kdy nastaly rozhodné skutečnosti (uzavření smlouvy, vznik škody, doručení) - vyčti data z otázky a z podkladů.
+2. Které znění předpisů na ně dopadá: byla úprava novelizována nebo nahrazena a co říkají přechodná (intertemporální) ustanovení.
+3. Jestli běží nebo uplynula promlčecí či prekluzivní lhůta a od jaké události se počítá.
+4. Den posouzení vrať v 'asOf' jako RRRR-MM-DD; když ho z podkladů nelze určit, vrať dnešní a napiš to do zjištění.`
   },
   { label: "mezinárodní a unijní přesah",
     task: `Urči, jestli věc zůstává čistě vnitrostátní.
 
-1. Má věc mezinárodní prvek (zahraniční strana, plnění nebo majetek v cizině, volba práva nebo soudu ve smlouvě, přeshraniční doprava)?
-2. Pokud ano: podle čeho se určuje pravomoc soudu a rozhodné právo (nařízení Brusel I bis, Řím I, Řím II, ZMPS, mezinárodní smlouva) a k jakému výsledku to vede.
-3. Dopadá na věc přímo použitelné nařízení EU, nebo transponovaná směrnice, u které je nutný eurokonformní výklad?
-4. Jestli má věc čistě vnitrostátní povahu, řekni to výslovně a stručně odůvodni - to je plnohodnotný výsledek.`
+1. Má věc mezinárodní prvek (zahraniční strana, plnění či majetek v cizině, volba práva nebo soudu)?
+2. Pokud ano: podle čeho se určuje pravomoc a rozhodné právo (Brusel I bis, Řím I, Řím II, ZMPS, mezinárodní smlouva) a k jakému výsledku to vede.
+3. Dopadá na věc přímo použitelné nařízení EU, nebo transponovaná směrnice s eurokonformním výkladem?
+4. Vnitrostátní povahu řekni výslovně a stručně odůvodni - je to plnohodnotný výsledek.`
   },
   { label: "procesní rámec a důkazní břemeno",
     task: `Urči, JAK se taková věc prosazuje a co je vůbec nutné prokázat.
 
-1. V jakém řízení a před kým se rozhoduje (obecný soud, správní orgán a poté správní soud, rozhodce) a kdo v něm stojí na které straně.
-2. Které skutečnosti musí tvrdit a prokázat kdo - u každé sporné skutečnosti napiš, koho tíží břemeno tvrzení a důkazní břemeno, a jestli se neuplatní domněnka nebo obrácené břemeno.
-3. Jaké podmínky a lhůty musí být splněny, než se lze nároku domoci (předžalobní výzva, vytknutí vady, odvolání ve správním řízení, propadné lhůty).
-4. Co z toho plyne pro rozsah rešerše: která otázka je rozhodující proto, že na ní stojí unesení břemene.`
+1. V jakém řízení a před kým se rozhoduje (soud, správní orgán a poté správní soud, rozhodce) a kdo stojí na které straně.
+2. Koho u každé sporné skutečnosti tíží břemeno tvrzení a důkazní břemeno a jestli se neuplatní domněnka nebo obrácené břemeno.
+3. Jaké podmínky a lhůty musí být splněny dřív, než se lze nároku domoci (předžalobní výzva, vytknutí vady, odvolání, propadné lhůty).
+4. Která otázka je rozhodující proto, že na ní stojí unesení břemene.`
   }
 ]
 
@@ -127,16 +128,16 @@ ${criteria}`
   { label: "chronologie a lhůty",
     task: () => `Vytěž z dokumentu ČASOVOU OSU a nic jiného. Ke každému datu, které v dokumentu je, vrať jednu položku: co se toho dne stalo nebo mělo stát, kde to v dokumentu je a DOSLOVNÝ výňatek.
 
-Zajímá tě zejména: den podpisu a den účinnosti, sjednané termíny plnění a splatnosti, výpovědní a jiné lhůty a způsob jejich počítání, data odeslání a doručení, den vytknutí vady či výzvy, den odstoupení nebo výpovědi, doby, po které něco trvalo.
+Zajímá tě: den podpisu a účinnosti, termíny plnění a splatnosti, lhůty a způsob jejich počítání, odeslání a doručení, vytknutí vady či výzva, odstoupení nebo výpověď, doby, po které něco trvalo.
 
-Datum, které v dokumentu chybí, ale mělo by tam být (nepodepsáno, nedatováno, chybí doklad o doručení), vypiš do 'notCovered'. Nedopočítávej lhůty sám a neposuzuj promlčení - jen sesbírej, co je v dokumentu napsáno.`
+Chybějící datum, které tam mělo být (nedatováno, chybí doklad o doručení), vypiš do 'notCovered'. Lhůty sám nedopočítávej a promlčení neposuzuj.`
   },
   { label: "ujednání, forma a slabá místa",
     task: () => `Vytěž z dokumentu, CO SI STRANY UJEDNALY a jak je dokument sešitý. Ke každé položce vrať, co z dokumentu plyne, kde přesně to je a DOSLOVNÝ výňatek.
 
-Zajímá tě: kdo jsou strany a v jaké roli, kdo dokument podepsal a v jakém postavení (zástupce, prokurista, statutární orgán), jestli je dokument podepsán a datován, jestli odkazuje na jiný dokument, který se tím stává jeho součástí (obchodní podmínky, ceník, příloha, rámcová smlouva), a ujednání, která mění zákonný režim: volba práva a soudu, rozhodčí doložka, omezení nebo vyloučení náhrady škody, smluvní pokuta, výhrada vlastnictví, ujednání o formě změn.
+Zajímá tě: kdo jsou strany a v jaké roli, kdo a v jakém postavení podepsal (zástupce, prokurista, statutární orgán), odkaz na dokument, který se tím stává součástí (obchodní podmínky, ceník, příloha, rámcová smlouva), a ujednání měnící zákonný režim: volba práva a soudu, rozhodčí doložka, limitace náhrady škody, smluvní pokuta, výhrada vlastnictví, forma změn.
 
-Do 'notCovered' vypiš slabá místa dokumentu: chybějící podpis nebo datum, odkaz na přílohu, která u dokumentu není, ručně dopsané nebo škrtnuté pasáže, nečitelná či chybějící strana, rozpor uvnitř samotného dokumentu. Neposuzuj platnost - jen popiš, co vidíš.`
+Do 'notCovered' vypiš slabá místa: chybějící podpis nebo datum, odkaz na chybějící přílohu, ručně dopsané či škrtnuté pasáže, nečitelnou nebo chybějící stranu, rozpor uvnitř dokumentu. Platnost neposuzuj - popiš, co vidíš.`
   }
 ]
 
@@ -233,47 +234,90 @@ ${materials}`,
   let supplied = inventory.present
   let stillMissing = inventory.missing
 
-  const inventoryLine = stillMissing.length > 0
-    ? `Pro posouzení mi chybí tyto podklady:\n${stillMissing.map(m => `• ${m.material}`).join("\n")}`
-    : `V pracovním adresáři jsem našel všechny podklady, které jsem hledal:\n${supplied.map(d => `• ${d.material || d.path}`).join("\n")}`
+  const specOf = item => {
+    const idx = /(\d+)/.exec(String(item.materialId || ""))
+    return (idx && framework.requiredMaterials[Number(idx[1])]) || {}
+  }
+  const decisive = stillMissing.filter(m => specOf(m).importance === "rozhodující")
+  const asked = (decisive.length > 0 ? decisive : stillMissing).slice(0, MAX_MATERIAL_ASKS)
+  const bundled = stillMissing.filter(m => !asked.includes(m))
+
+  const covered = new Set()
+  const loose = []
+  const notes = []
+
+  for (const item of asked) {
+    const why = specOf(item).why
+    const reply = await ask(
+      `Máte k dispozici tento podklad: ${item.material}?${why ? `\n\nK čemu ho potřebuji: ${why}` : ""}`,
+      { options: ["Nahrávám ho teď", "Nemám ho"] })
+    if (!reply.answered) {
+      log(`Bez odpovědi: ${item.material}`)
+      continue
+    }
+    if (reply.files.length > 0) {
+      supplied = supplied.concat(reply.files.map(path =>
+        ({ materialId: item.materialId, material: item.material, path })))
+      covered.add(item.materialId)
+      log(`${item.material}: ${reply.files.length} soubor(ů)`)
+    }
+    if (reply.text && reply.text.trim()) {
+      notes.push(`K podkladu "${item.material}": ${reply.text.trim()}`)
+    }
+  }
+
+  if (bundled.length > 0) {
+    const rest = await ask(
+      `Máte ještě něco z podkladů, které mi zbývají?\n\n${bundled.map(m => `• ${m.material}`).join("\n")}`,
+      { options: ["Nahrávám, co z toho mám", "Nic z toho nemám"] })
+    if (rest.answered && rest.files.length > 0) {
+      loose.push(...rest.files)
+    }
+    if (rest.answered && rest.text && rest.text.trim()) {
+      notes.push(rest.text.trim())
+    }
+  }
 
   const answer = await ask(
-    `${inventoryLine}
-
-Soudy v takových věcech posuzují:
-${framework.criteria.map(c => `• ${c.criterion}`).join("\n")}
-
-Nahrajte prosím dokumenty, které k tomu máte - smlouvy, obchodní podmínky, výzvy, korespondenci, faktury, protokoly - a do textu napište skutečnosti, které z dokumentů neplynou, ale pro posouzení jsou rozhodné: co bylo ujednáno ústně, jak to fakticky probíhalo, kdy se co stalo. Pokud nic dalšího nemáte, řekněte to a já budu pokračovat s tím, co je, a v závěru to uvedu.`,
-    { options: ["Nahrál jsem, co mám", "Nic dalšího nemám, pokračuj"] })
-
-  const statedFacts = answer.answered && answer.text ? answer.text.trim() : ""
+    `Které skutečnosti jsou pro posouzení rozhodné, ale z dokumentů neplynou - co bylo ujednáno ústně, jak to fakticky probíhalo a kdy se co stalo?`,
+    { options: ["Nic dalšího už nemám, pokračuj"] })
   if (!answer.answered) {
     log("Dožádání zůstalo bez odpovědi - pokračuji s tím, co je k dispozici")
   }
+  if (answer.answered && answer.text && answer.text.trim()) {
+    notes.push(answer.text.trim())
+  }
+  if (answer.answered && answer.files.length > 0) {
+    loose.push(...answer.files)
+  }
+
+  const statedFacts = notes.join("\n")
   if (statedFacts) {
     log("Uživatel doplnil skutečnosti, které v dokumentech nejsou")
   }
-  if (answer.answered && answer.files.length > 0) {
-    log(`Uživatel nahrál ${answer.files.length} soubor(ů) - přiřazuji je k požadovaným podkladům`)
-    const wanted = stillMissing.length > 0
-      ? stillMissing.map(m => `- [${m.materialId}] ${m.material}`)
-      : framework.requiredMaterials.map((m, i) => `- [M${i}] ${m.material}`)
+
+  stillMissing = stillMissing.filter(m => !covered.has(m.materialId))
+
+  if (loose.length > 0 && stillMissing.length > 0) {
+    log(`Přiřazuji ${loose.length} soubor(ů) nahraných mimo konkrétní podklad`)
     const matched = await agent(
       `${BRIEF}
 
 Uživatel právě nahrál tyto soubory:
-${answer.files.map(p => `- ${p}`).join("\n")}
+${loose.map(p => `- ${p}`).join("\n")}
 
 Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému podkladu níže. Do 'present' dej jen ty, které jsi opravdu pokryl, s jejich materialId a cestou; soubor, který k žádnému z nich nepatří, ale pro věc je relevantní, dej do 'present' také a do 'materialId' mu napiš [X]. Do 'missing' vrať ty požadované podklady, které ani po nahrání nemáš.
 
 Požadované podklady:
-${wanted.join("\n")}`,
+${stillMissing.map(m => `- ${m.materialId} ${m.material}`).join("\n")}`,
       { label: "přiřazení nahraných podkladů", schema: INVENTORY })
       .catch(() => null)
     if (matched) {
       supplied = supplied.concat(matched.present)
       stillMissing = matched.missing
     }
+  } else if (loose.length > 0) {
+    supplied = supplied.concat(loose.map(path => ({ materialId: "[X]", path })))
   }
 
   const missingAfterAsk = stillMissing.map(m => m.material)
@@ -307,9 +351,9 @@ Podklady klienta byly vytěženy po dokumentech, každý zvlášť. Tvým úkole
 Vytěžené skutečnosti:
 ${clientFacts.map(f => `- ${f.fact}\n    dokument: ${f.path}${f.locator ? `, ${f.locator}` : ""}\n    znění: "${f.quote}"`).join("\n")}
 
-${extractionGaps.length > 0 ? `Co při vytěžení nebylo v dokumentech pokryto (nezodpovězená kritéria, chybějící data, vady dokumentů):\n${extractionGaps.map(g => `- ${g}`).join("\n")}\n\n` : ""}Do 'conflicts' dej dvojice, které spolu nesedí: různá data téže události, různá znění téhož ujednání, plnění, které podle jednoho dokumentu proběhlo a podle druhého ne, dodatek měnící to, co původní smlouva stanoví jinak. U každého uveď, které dokumenty se rozcházejí, a jednou větou, proč na tom pro posouzení záleží.
+${extractionGaps.length > 0 ? `Co při vytěžení nebylo v dokumentech pokryto (nezodpovězená kritéria, chybějící data, vady dokumentů):\n${extractionGaps.map(g => `- ${g}`).join("\n")}\n\n` : ""}Do 'conflicts' dej dvojice, které spolu nesedí: různá data téže události, různá znění téhož ujednání, plnění, které podle jednoho dokumentu proběhlo a podle druhého ne, dodatek měnící to, co smlouva stanoví jinak. U každého uveď rozcházející se dokumenty a jednou větou, proč na tom záleží.
 
-Do 'gaps' dej řetězce, které nejsou uzavřené: úkon, u kterého chybí doklad o doručení, odkaz na přílohu, která mezi podklady není, ujednání, jehož změna se předpokládá, ale dodatek chybí.`,
+Do 'gaps' dej neuzavřené řetězce: úkon bez dokladu o doručení, odkaz na přílohu, která mezi podklady není, předpokládaná změna bez dodatku.`,
         { label: "rozpory a mezery mezi podklady", agentType: "codexis:synthesizer", schema: CONFLICTS })
         .catch(() => null)
     : null
