@@ -111,6 +111,21 @@ pub fn matches_type(candidate_typ: &str, want: Option<&str>) -> bool {
     want.is_none_or(|w| candidate_typ == w)
 }
 
+/// The one code a `search` answer resolves to, or `None` when it does not name
+/// exactly one place.
+///
+/// Lives here, next to the function that builds that answer: `cmd_okoli` reads
+/// it, and when the answer's shape changed this reader kept looking for a field
+/// that no longer existed - a break no unit test could see, because the
+/// producer and the consumer sat in different modules with nothing tying them
+/// together. This is that tie.
+pub fn jediny_kod(odpoved: &serde_json::Value) -> Option<i64> {
+    match odpoved.get("nalezy")?.as_array()?.as_slice() {
+        [jediny] => jediny.get("kod")?.as_i64(),
+        _ => None,
+    }
+}
+
 /// Splits a suggester `magicKey` into the layer and the record it points at.
 /// The suggester renders them as `<layer>_<objectid>` - verified: `12_10108`
 /// is layer 12, objectid 10108, which is Nová Ves in the Žďár nad Sázavou
@@ -413,6 +428,34 @@ mod tests {
         assert_eq!(split_magic_key("obec_10108"), None);
         assert_eq!(split_magic_key("12_x"), None);
         assert_eq!(split_magic_key(""), None);
+    }
+
+    #[test]
+    fn a_single_match_yields_its_code() {
+        // Exactly the shape `found()` builds, so this breaks if that changes.
+        let odpoved = found(
+            "AdresniMisto",
+            1,
+            "hladke zivotice 66",
+            vec![Row {
+                kod: 8_189_986,
+                nazev: "Malá Strana 66, 74247 Hladké Životice".into(),
+                kontext: None,
+            }],
+        );
+        assert_eq!(jediny_kod(&odpoved), Some(8_189_986));
+    }
+
+    #[test]
+    fn an_ambiguous_or_empty_answer_yields_no_code() {
+        let row = |kod| Row { kod, nazev: "Nová Ves".into(), kontext: None };
+        assert_eq!(jediny_kod(&found("Obec", 12, "Nová Ves", vec![])), None);
+        assert_eq!(
+            jediny_kod(&found("Obec", 12, "Nová Ves", vec![row(1), row(2)])),
+            None
+        );
+        // A suggestion list carries no codes at all.
+        assert_eq!(jediny_kod(&serde_json::json!({ "navrhy": [] })), None);
     }
 
     #[test]
