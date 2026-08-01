@@ -6,7 +6,6 @@ pub const EXIT_GRAPHQL: i32 = 3;
 pub const EXIT_PARSE: i32 = 4;
 pub const EXIT_REFUSED: i32 = 5;
 pub const EXIT_UNSUPPORTED: i32 = 6;
-pub const EXIT_CHANGES_REQUESTED: i32 = 7;
 
 #[derive(Debug)]
 pub enum CdxctlError {
@@ -16,8 +15,6 @@ pub enum CdxctlError {
     Refused(String),
     /// The daemon answered, but does not have the endpoint this command needs.
     Unsupported(String),
-    /// The user declined a proposed workflow and asked for changes instead.
-    ChangesRequested(String),
 }
 
 impl CdxctlError {
@@ -28,7 +25,6 @@ impl CdxctlError {
             CdxctlError::Parse(_) => EXIT_PARSE,
             CdxctlError::Refused(_) => EXIT_REFUSED,
             CdxctlError::Unsupported(_) => EXIT_UNSUPPORTED,
-            CdxctlError::ChangesRequested(_) => EXIT_CHANGES_REQUESTED,
         }
     }
 }
@@ -43,7 +39,6 @@ impl fmt::Display for CdxctlError {
             CdxctlError::Parse(msg) => write!(f, "Parse error: {msg}"),
             CdxctlError::Refused(msg) => write!(f, "Refused: {msg}"),
             CdxctlError::Unsupported(msg) => write!(f, "Not supported: {msg}"),
-            CdxctlError::ChangesRequested(msg) => write!(f, "user requested changes: {msg}"),
         }
     }
 }
