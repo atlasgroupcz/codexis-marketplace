@@ -555,53 +555,11 @@ mutation StartTabularExtraction($id: ID!) {
 }
 "#;
 
-pub const VALIDATE_WORKFLOW: &str = r#"
-mutation ValidateWorkflow($input: ValidateWorkflowInput!) {
-    validateWorkflow(input: $input) {
-        __typename
-        ... on WorkflowMetaResult {
-            name
-            description
-            phases { title detail }
-        }
-        ... on WorkflowCommandError { message }
-    }
-}
-"#;
-
-pub const START_WORKFLOW: &str = r#"
-mutation StartWorkflow($input: StartWorkflowInput!) {
-    startWorkflow(input: $input) {
-        __typename
-        ... on StartWorkflowSuccess { workflowRunId }
-        ... on WorkflowCommandError { message }
-    }
-}
-"#;
-
-pub const GET_WORKFLOW_RUN: &str = r#"
-query GetWorkflowRun($id: ID!) {
-    workflowRun(id: $id) {
-        __typename
-        ... on WorkflowRun {
-            id
-            status
-            phases { title status }
-            feedback
-            error
-            resultJson
-        }
-        ... on WorkflowCommandError { message }
-    }
-}
-"#;
-
 #[cfg(test)]
 mod tests {
     use super::{
-        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_SKILLS, GET_WORKFLOW_RUN,
-        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SET_AUTOMATION_ENABLED, START_WORKFLOW,
-        VALIDATE_WORKFLOW,
+        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_SKILLS,
+        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SET_AUTOMATION_ENABLED,
     };
 
     #[test]
@@ -674,32 +632,6 @@ mod tests {
         assert!(SAVE_AUTOMATION.contains("$id: ID, $input: AutomationInput!"));
         assert!(SAVE_AUTOMATION.contains("automation {"));
         assert!(SAVE_AUTOMATION.contains("errors { field message allowedValues }"));
-    }
-
-    #[test]
-    fn workflow_operations_discriminate_the_result_union_by_typename() {
-        for document in [VALIDATE_WORKFLOW, START_WORKFLOW, GET_WORKFLOW_RUN] {
-            assert!(document.contains("__typename"));
-            assert!(document.contains("... on WorkflowCommandError { message }"));
-        }
-        assert!(VALIDATE_WORKFLOW.contains("validateWorkflow(input: $input)"));
-        assert!(VALIDATE_WORKFLOW.contains("phases { title detail }"));
-        assert!(START_WORKFLOW.contains("startWorkflow(input: $input)"));
-        assert!(START_WORKFLOW.contains("workflowRunId"));
-        assert!(GET_WORKFLOW_RUN.contains("workflowRun(id: $id)"));
-    }
-
-    #[test]
-    fn the_workflow_run_query_selects_every_field_the_poll_loop_reads() {
-        for field in [
-            "status",
-            "phases { title status }",
-            "feedback",
-            "error",
-            "resultJson",
-        ] {
-            assert!(GET_WORKFLOW_RUN.contains(field), "missing {field}");
-        }
     }
 
     #[test]
