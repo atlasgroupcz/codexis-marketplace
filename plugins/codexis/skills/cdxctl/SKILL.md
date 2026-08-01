@@ -328,6 +328,11 @@ run id.
 **Stop cancels the run.** Pressing Stop in the chat aborts the workflow the same way it aborts the
 turn, and `start --wait` exits non-zero.
 
+**Starting an interrupted workflow again resumes it.** When the same script with the same `--args`
+was interrupted earlier in this chat, `workflow start` proposes that run again instead of starting
+from scratch: after approval the phases that already completed replay from the server-side journal
+and only the unfinished ones run again. No flag needed - just run the same `start` command again.
+
 `--args` takes a JSON object; the script receives it as `args`. Invalid JSON is rejected before the
 user sees a proposal.
 
