@@ -1,7 +1,7 @@
 // @template legal-research
 // @use-when A legal question that has to be answered from the law itself and applied to the client's
-//   own documents: find the governing rules, learn what the courts actually decide on, collect the
-//   papers that decide it, check nothing is repealed or overruled, then write the opinion.
+//   own case: read the file first, find out who the other side is and what is on record about them,
+//   then find the governing rules, check nothing is repealed or overruled, and write the opinion.
 // @jurisdictions CZ SK EU
 // @args question (required) - the legal question, in the user's own words
 // @args jurisdiction - CZ, SK or EU; defaults to CZ
@@ -10,136 +10,79 @@ const SEARCH_MODEL = "GPT_5_6_LUNA"
 const SOL_MODEL = "GPT_5_6_SOL"
 const TERRA_MODEL = "GPT_5_6_TERRA"
 
+const MAX_COUNTERPARTIES = 3
+const VERIFY_BUDGET = 24
+
+const RULES = `Odpovídej česky. Každé právní tvrzení musí nést přesnou citaci zdroje a doslovný výňatek z něj. Zdroj si nikdy nevymýšlej - když ho nemáš, řekni to.`
+
 export const meta = {
   name: "legal-research",
-  description: "Právní rešerše: rámec → rekognoskace → podklady → rešerše → ověření → syntéza.",
+  description: "Právní rešerše: rekognoskace případu → plán → rešerše → ověření → stanovisko.",
   phases: [
-    { title: "Rámec", detail: "Kvalifikace, časový řez, mezinárodní přesah a procesní rámec, z nich sporné otázky" },
-    { title: "Rekognoskace", detail: "Zjistit z judikatury a předpisů, podle čeho se rozhoduje a co je třeba doložit" },
-    { title: "Podklady", detail: "Inventura dokumentů klienta, dožádání chybějících podkladů a vytěžení rozhodných skutečností" },
-    { title: "Rešerše", detail: "Vyhledání předpisů, komentářů, judikatury a literatury po dílčích otázkách" },
-    { title: "Ověření", detail: "Platnost, účinnost a překonanost každého nosného zdroje" },
-    { title: "Syntéza", detail: "Aplikace ověřených závěrů na podklady klienta" }
+    { title: "Rekognoskace", detail: "Cíl klienta, dokumenty, chronologie, entity a prověření protistrany" },
+    { title: "Plán", detail: "Rozhodný právní režim a dílčí otázky, na kterých stojí výsledek" },
+    { title: "Rešerše", detail: "Odpověď na každou dílčí otázku v podobě ověřitelných právních propozic" },
+    { title: "Ověření", detail: "Sloučení propozic a kontrola, že nosné zdroje platí a sedí na věc" },
+    { title: "Stanovisko", detail: "Odpověď, důkazní situace, rizika a doporučený postup" }
   ]
 }
 
-const ANGLE = { type: "object", required: ["findings", "issues"], properties: {
-  findings: { type: "array", items: { type: "object", required: ["point"], properties: {
-    point: { type: "string" }, source: { type: "string" }, why: { type: "string" } } } },
-  asOf: { type: "string" },
-  issues: { type: "array", items: { type: "object", required: ["label", "question"], properties: {
-    label: { type: "string" }, question: { type: "string" }, why: { type: "string" } } } } } }
+const CASE = { type: "object", required: ["goal", "documents", "timeline", "facts"], properties: {
+  goal: { type: "string", description: "Čeho chce klient dosáhnout a jaké rozhodnutí na stanovisku závisí. Rozliš prevenci, vyjednávání, podání, obranu a transakci - 'má klient nárok' a 'má teď podat žalobu' jsou různá zadání." },
+  documents: { type: "string", description: "Mapa dokumentů v markdownu, jeden řádek na dokument: cesta k souboru, typ, datum, strany, právní význam a vztah k ostatním. Označ, co je originál, návrh, příloha nebo pozdější změna, a co je nečitelné či neúplné." },
+  timeline: { type: "string", description: "Chronologie v markdownu: datum, událost, odkud to víš, a jestli je událost prokázaná dokumentem, jen tvrzená, nebo odvozená. Lhůty sám nedopočítávej." },
+  facts: { type: "string", description: "Skutkový stav v markdownu ve třech oddílech: jisté skutečnosti, sporné skutečnosti, chybějící rozhodné skutečnosti. U procesního stavu uveď, jestli už běží řízení nebo lhůta." },
+  counterparties: { type: "array", description: "Subjekty, jejichž prověření může změnit právní kvalifikaci, důkazy, procesní postup nebo vymahatelnost. Klienta sem nedávej. Když ve věci žádná zjistitelná protistrana není, vrať prázdný seznam - nevymýšlej si ji do počtu.", items: { type: "object", required: ["name", "why"], properties: {
+    name: { type: "string", description: "Název nebo jméno tak, jak je uvedeno v podkladech." },
+    identifier: { type: "string", description: "IČO, datum narození nebo jiný jednoznačný identifikátor, pokud je v podkladech." },
+    why: { type: "string", description: "Co konkrétně na tomto subjektu potřebuješ vědět a proč to může ovlivnit posouzení." } } } },
+  blockingQuestions: { type: "array", description: "Jen otázky, jejichž odpověď změní směr práce: použitelný právní režim, jurisdikci, rozhodné znění, běh lhůty, existenci nároku, procesní cestu, identitu protistrany nebo výběr posuzovaného dokumentu. Na dokument, který v adresáři už je, se neptej. Když nic takového nechybí, vrať prázdný seznam.", items: { type: "object", required: ["question", "why"], properties: {
+    question: { type: "string", description: "Celá otázka na klienta, jednou větou ve druhé osobě, začínající slovesem. Klient uvidí přesně to, co sem napíšeš, takže žádná uvozovací nálepka. Odkaž se na to, co v podkladech vidíš: 'Ve složce je smlouva ze 4. května 2022 a dodatek č. 2, ale dodatek č. 1, na který oba odkazují, chybí - máte ho?'" },
+    why: { type: "string", description: "Proč to potřebuješ, souvislými větami, jak bys to řekl klientovi. Zobrazí se pod otázkou, takže zase bez nálepky." } } } } } }
 
-const FRAME = { type: "object", required: ["area", "issues"], properties: {
-  area: { type: "string" }, jurisdiction: { type: "string" }, asOf: { type: "string" },
-  constraints: { type: "array", items: { type: "string" } },
-  issues: { type: "array", items: { type: "object", required: ["label", "question"], properties: {
-    label: { type: "string" }, question: { type: "string" }, why: { type: "string" } } } } } }
+const PARTY = { type: "object", required: ["subject", "report"], properties: {
+  subject: { type: "string", description: "Jednoznačně určený subjekt: název, IČO a stav ke dni kontroly." },
+  report: { type: "string", description: "Zjištění v markdownu. U každého uveď zdroj a datum kontroly, samotnou skutečnost, proč může být pro tuto věc významná, a jestli jde o ověřený údaj, indicii nebo neúplný výsledek." } } }
 
-const FRAMEWORK = { type: "object", required: ["criteria", "provisions", "requiredMaterials"], properties: {
-  criteria: { type: "array", items: { type: "object", required: ["criterion", "source"], properties: {
-    criterion: { type: "string" }, source: { type: "string" }, quote: { type: "string" } } } },
-  provisions: { type: "array", items: { type: "object", required: ["provision", "source"], properties: {
-    provision: { type: "string" }, source: { type: "string" }, relevance: { type: "string" } } } },
-  requiredMaterials: { type: "array", items: { type: "object", required: ["material", "question", "why"], properties: {
-    material: { type: "string" }, question: { type: "string" }, why: { type: "string" } } } } } }
+const PLAN = { type: "object", required: ["context", "issues"], properties: {
+  context: { type: "string", description: "Hlavička, kterou dostane každý rešeršista doslova, v markdownu a maximálně na dvacet řádků. Patří do ní: otázka klienta a rozhodnutí, které na ní závisí; právní obor a rozhodná jurisdikce; den, ke kterému se věc posuzuje, a rozhodné znění předpisů; povaha úpravy (kogentní, dispozitivní, ochrana slabší strany); unijní nebo mezinárodní přesah; procesní cesta a rozložení důkazního břemene; a co podstatného plyne z prověření protistrany. Piš to jako zadání pro kolegu, ne jako výčet polí." },
+  issues: { type: "array", description: "Tři až osm dílčích otázek, rozhodující první. Každá musí být samostatně zodpověditelná, nesmí se překrývat s ostatními a musí být tak konkrétní, aby rešeršista poznal, co by byla negativní odpověď. Žádnou si nevymýšlej do počtu.", items: { type: "object", required: ["label", "question", "why"], properties: {
+    label: { type: "string", description: "Krátký název otázky, slouží jako popisek běhu." },
+    question: { type: "string", description: "Celá otázka, včetně rozhodného data a rozhodných skutkových okolností. Ne 'odpovědnost za škodu', ale 'může objednatel podle práva účinného k 15. 3. 2023 požadovat náhradu nákladů na odstranění vady, přestože zhotoviteli neposkytl dodatečnou lhůtu'." },
+    why: { type: "string", description: "Jak odpověď ovlivní výsledek: co by znamenalo ano a co ne." },
+    needs: { type: "string", description: "Které skutečnosti nebo dokumenty klienta tato otázka potřebuje. Uveď cesty k souborům, pokud je má rešeršista otevřít." } } } } } }
 
-const INVENTORY = { type: "object", required: ["present", "missing"], properties: {
-  present: { type: "array", items: { type: "object", required: ["materialId", "path"], properties: {
-    materialId: { type: "string" }, material: { type: "string" }, path: { type: "string" },
-    note: { type: "string" } } } },
-  missing: { type: "array", items: { type: "object", required: ["materialId", "material"], properties: {
-    materialId: { type: "string" }, material: { type: "string" } } } } } }
+const PROPOSITIONS = { type: "object", required: ["propositions"], properties: {
+  propositions: { type: "array", description: "Omezený počet právních tvrzení, ne seznam nálezů. Pět citací k jedné právní větě je JEDNA propozice s pěti zdroji. Nepřidávej propozici, která jen opakuje už podloženou.", items: { type: "object", required: ["claim", "impact", "sources", "analysis"], properties: {
+    claim: { type: "string", description: "Jedno právní tvrzení, jednou větou, formulované tak, aby šlo ověřit proti zdroji." },
+    impact: { enum: ["rozhodující", "významná", "podpůrná"], description: "Rozhodující, když se bez ní změní odpověď na dílčí otázku nebo doporučení klientovi. Významná, když nese argumentaci. Podpůrná, když jen dokresluje." },
+    contested: { type: "boolean", description: "True, když existuje protichůdná judikaturní linie nebo doktrinální spor, nebo když to je bod, který protistrana pravděpodobně napadne." },
+    temporalRisk: { type: "boolean", description: "True, když tvrzení stojí na nedávno změněném ustanovení, na přechodných ustanoveních, na historickém znění, nebo na rozhodnutí vydaném podle staršího znění." },
+    sources: { type: "array", description: "Zdroje, které tvrzení podpírají. Alespoň jeden musí mít primary: true - ten se bude znovu otevírat při ověření.", items: { type: "object", required: ["citation", "quote"], properties: {
+      citation: { type: "string", description: "Přesná citace: číslo předpisu a ustanovení, nebo soud a spisová značka." },
+      docId: { type: "string", description: "Identifikátor dokumentu, který jsi SKUTEČNĚ otevřel, tedy to, co jsi předal do 'cdx-cli get cdx://doc/<docId>/text'." },
+      quote: { type: "string", description: "Doslovný výňatek. Ověřovatel ho porovná s otevřeným zdrojem, takže přepsaná nebo zpaměti rekonstruovaná citace propozici vyřadí." },
+      primary: { type: "boolean", description: "True u zdroje, na kterém tvrzení skutečně stojí." } } } },
+    analysis: { type: "string", description: "V markdownu: jak se tvrzení aplikuje na konkrétní skutečnosti klienta, v čem se jeho případ od citovaného rozhodnutí liší, jaký je nejsilnější protiargument nebo skutkový rozdíl proti tomuto závěru, a co by závěr změnilo." } } } },
+  gaps: { type: "array", description: "Skutečnosti, které pro zodpovězení této otázky chybí.", items: { type: "string" } } } }
 
-const FINDINGS = { type: "object", required: ["findings"], properties: { findings: { type: "array", items: {
-  type: "object", required: ["proposition", "source", "docId", "quote", "sourceKind"], properties: {
-    proposition: { type: "string" }, source: { type: "string" },
-    docId: { type: "string" }, part: { type: "string" },
-    quote: { type: "string" },
-    sourceKind: { enum: ["předpis", "komentář", "judikatura", "literatura"] },
-    weight: { enum: ["nosný", "podpůrný"] } } } } } }
+const GROUPS = { type: "object", required: ["groups"], properties: {
+  groups: { type: "array", description: "Skupiny propozic, které tvrdí totéž. Propozici, která nemá dvojníka, do skupin nedávej.", items: { type: "object", required: ["members", "keep"], properties: {
+    members: { type: "array", description: "Čísla propozic v této skupině.", items: { type: "integer" } },
+    keep: { type: "integer", description: "Číslo té propozice, jejíž formulace je nejpřesnější. Musí být mezi members." } } } },
+  conflicts: { type: "array", description: "Dvojice nebo skupiny propozic, které si navzájem odporují.", items: { type: "object", required: ["members", "note"], properties: {
+    members: { type: "array", items: { type: "integer" } },
+    note: { type: "string", description: "V čem se rozcházejí a proč na tom pro tuto věc záleží." } } } } } }
 
-const FACTS = { type: "object", required: ["facts"], properties: {
-  facts: { type: "array", items: { type: "object", required: ["fact", "path", "quote"], properties: {
-    fact: { type: "string" }, path: { type: "string" }, locator: { type: "string" },
-    quote: { type: "string" } } } },
-  notCovered: { type: "array", items: { type: "string" } } } }
+const VERDICT = { type: "object", required: ["status", "note"], properties: {
+  status: { enum: ["supported", "refuted", "unverified", "source_unreachable"], description: "Supported jen když jsi zdroj otevřel a tvrzení obstálo. Refuted když jsi našel konkrétní důvod, proč neplatí. Source_unreachable když se ti zdroj nepodařilo otevřít. Unverified když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení." },
+  note: { type: "string", description: "Rozhodující formulace ze zdroje a co z ní plyne, včetně účinného znění nebo pozdější judikatury. Cituje se do závěrečného stanoviska." } } }
 
-const CURRENCY = { type: "object", required: ["status", "evidence"], properties: {
-  status: { enum: ["supported", "refuted", "unverified", "source_unreachable"] },
-  evidence: { type: "string" }, supersededBy: { type: "string" },
-  effectiveAt: { type: "string" } } }
+const OPINION = { type: "object", required: ["answer", "opinion"], properties: {
+  answer: { type: "string", description: "Přímá odpověď na otázku klienta, nejvýše několik vět." },
+  opinion: { type: "string", description: "Celé stanovisko v markdownu." } } }
 
-const CONFLICTS = { type: "object", required: ["conflicts"], properties: {
-  conflicts: { type: "array", items: { type: "object", required: ["issue", "sources"], properties: {
-    issue: { type: "string" }, sources: { type: "array", items: { type: "string" } },
-    impact: { type: "string" } } } },
-  gaps: { type: "array", items: { type: "string" } } } }
-
-const OPINION = { type: "object", required: ["answer", "reasoning", "caveats"], properties: {
-  answer: { type: "string" },
-  reasoning: { type: "array", items: { type: "object", required: ["point", "sources"], properties: {
-    point: { type: "string" }, sources: { type: "array", items: { type: "string" } },
-    appliesTo: { type: "string" }, confidence: { enum: ["vysoká", "střední", "nízká"] } } } },
-  caveats: { type: "string" }, openQuestions: { type: "array", items: { type: "string" } } } }
-
-const FRAME_ANGLES = [
-  { label: "kvalifikace a povaha úpravy",
-    task: `Urči, ČÍM se ta věc vůbec řídí po hmotné stránce.
-
-1. Do jakého oboru a k jakému institutu věc patří a jak zní její právní kvalifikace - i to, jestli nepřipadá v úvahu souběh (nárok ze smlouvy vedle bezdůvodného obohacení).
-2. Jestli je vztah soukromoprávní, nebo veřejnoprávní, a jestli ho omezuje veřejnoprávní regulace.
-3. Jestli je úprava dispozitivní, nebo kogentní - a u kogentní, jestli připouští odchylku ve prospěch chráněné strany.
-4. Jestli je některá strana zákonem chráněná (spotřebitel, zaměstnanec, nájemce bytu, slabší strana) a co z toho plyne.`
-  },
-  { label: "časový řez a intertemporalita",
-    task: `Urči, KE KTERÉMU DNI a PODLE JAKÉHO ZNĚNÍ se věc posuzuje.
-
-1. Kdy nastaly rozhodné skutečnosti (uzavření smlouvy, vznik škody, doručení) - vyčti data z otázky a z podkladů.
-2. Které znění předpisů na ně dopadá: byla úprava novelizována nebo nahrazena a co říkají přechodná (intertemporální) ustanovení.
-3. Jestli běží nebo uplynula promlčecí či prekluzivní lhůta a od jaké události se počítá.
-4. Den posouzení vrať v 'asOf' jako RRRR-MM-DD; když ho z podkladů nelze určit, vrať dnešní a napiš to do zjištění.`
-  },
-  { label: "mezinárodní a unijní přesah",
-    task: `Urči, jestli věc zůstává čistě vnitrostátní.
-
-1. Má věc mezinárodní prvek (zahraniční strana, plnění či majetek v cizině, volba práva nebo soudu)?
-2. Pokud ano: podle čeho se určuje pravomoc a rozhodné právo (Brusel I bis, Řím I, Řím II, ZMPS, mezinárodní smlouva) a k jakému výsledku to vede.
-3. Dopadá na věc přímo použitelné nařízení EU, nebo transponovaná směrnice s eurokonformním výkladem?
-4. Vnitrostátní povahu řekni výslovně a stručně odůvodni - je to plnohodnotný výsledek.`
-  },
-  { label: "procesní rámec a důkazní břemeno",
-    task: `Urči, JAK se taková věc prosazuje a co je vůbec nutné prokázat.
-
-1. V jakém řízení a před kým se rozhoduje (soud, správní orgán a poté správní soud, rozhodce) a kdo stojí na které straně.
-2. Koho u každé sporné skutečnosti tíží břemeno tvrzení a důkazní břemeno a jestli se neuplatní domněnka nebo obrácené břemeno.
-3. Jaké podmínky a lhůty musí být splněny dřív, než se lze nároku domoci (předžalobní výzva, vytknutí vady, odvolání, propadné lhůty).
-4. Která otázka je rozhodující proto, že na ní stojí unesení břemene.`
-  }
-]
-
-const EXTRACTION_ANGLES = [
-  { label: "rozhodné skutečnosti",
-    task: criteria => `Ke každému kritériu, které dokument zmiňuje, vrať jednu skutečnost: co z dokumentu plyne, kde přesně to je (článek, odstavec, strana) a DOSLOVNÝ výňatek. Nevykládej právo a nedomýšlej - jen popiš, co v dokumentu stojí. Kritéria, ke kterým dokument nic neříká, vypiš do 'notCovered'.
-
-Posuzuje se podle těchto kritérií:
-${criteria}`
-  },
-  { label: "chronologie a lhůty",
-    task: () => `Vytěž z dokumentu ČASOVOU OSU a nic jiného. Ke každému datu, které v dokumentu je, vrať jednu položku: co se toho dne stalo nebo mělo stát, kde to v dokumentu je a DOSLOVNÝ výňatek.
-
-Zajímá tě: den podpisu a účinnosti, termíny plnění a splatnosti, lhůty a způsob jejich počítání, odeslání a doručení, vytknutí vady či výzva, odstoupení nebo výpověď, doby, po které něco trvalo.
-
-Chybějící datum, které tam mělo být (nedatováno, chybí doklad o doručení), vypiš do 'notCovered'. Lhůty sám nedopočítávej a promlčení neposuzuj.`
-  },
-  { label: "ujednání, forma a slabá místa",
-    task: () => `Vytěž z dokumentu, CO SI STRANY UJEDNALY a jak je dokument sešitý. Ke každé položce vrať, co z dokumentu plyne, kde přesně to je a DOSLOVNÝ výňatek.
-
-Zajímá tě: kdo jsou strany a v jaké roli, kdo a v jakém postavení podepsal (zástupce, prokurista, statutární orgán), odkaz na dokument, který se tím stává součástí (obchodní podmínky, ceník, příloha, rámcová smlouva), a ujednání měnící zákonný režim: volba práva a soudu, rozhodčí doložka, limitace náhrady škody, smluvní pokuta, výhrada vlastnictví, forma změn.
-
-Do 'notCovered' vypiš slabá místa: chybějící podpis nebo datum, odkaz na chybějící přílohu, ručně dopsané či škrtnuté pasáže, nečitelnou nebo chybějící stranu, rozpor uvnitř dokumentu. Platnost neposuzuj - popiš, co vidíš.`
-  }
-]
+const bullets = items => items.map(i => `- ${i}`).join("\n")
 
 export default async function (args) {
   const QUESTION = (typeof args === "object" && args && typeof args.question === "string" && args.question.trim()) || ""
@@ -148,309 +91,287 @@ export default async function (args) {
   }
   const JURISDICTION = (args && args.jurisdiction) || "CZ"
 
-  phase("Rámec")
-  const SCOPE_BRIEF = `Jsi na začátku právní rešerše a máš na starost JEDEN úhel jejího rámce. Rámec z těchto úhlů se pak skládá dohromady, takže drž se toho svého a cizí neřeš.
+  phase("Rekognoskace")
+  const dossier = await agent(
+    `Přebíráš právní věc. Tvým úkolem NENÍ ji vyřešit ani hledat právo - je jím zjistit, o co jde, dřív než se rozhodne, co se bude rešeršovat.
 
 Otázka klienta: ${QUESTION}
 Předpokládaná jurisdikce: ${JURISDICTION}
 
-Nejde o rešerši do hloubky ani o odpověď na otázku, jen o zařazení věci. V pracovním adresáři jsou podklady; otevři je jen natolik, abys z nich vytěžil to, co potřebuje tvůj úhel. Odpovídej česky. U zjištění, které stojí na předpisu nebo judikatuře, uveď zdroj; nikdy si ho nevymýšlej - když ho nemáš, řekni to.
+Projdi pracovní adresář. Dokumenty neotevírej celé a nevytěžuj z nich všechno; otevři je jen natolik, abys u každého poznal, co to je, z kdy to je, kdo jsou strany a jestli může ovlivnit právní kvalifikaci, běh lhůt, vznik nebo zánik práva, důkazní situaci či procesní postup. Detailní rozbor udělá později ten, kdo bude dokument potřebovat pro konkrétní otázku.
 
-Z toho, co zjistíš, odvoď dílčí právní otázky, které je kvůli TVÉMU úhlu nutné zodpovědět. Každá musí být samostatně zodpověditelná a nesmí se překrývat s ostatními - dostane vlastního rešeršistu, který neuvidí nic než její zadání. Žádnou si nevymýšlej do počtu; když z tvého úhlu žádná neplyne, vrať prázdný seznam.`
+Z otázky a z podkladů sestav mapu případu: čeho chce klient dosáhnout, co se stalo a kdy, co je prokázané a co jen tvrzené, kdo jsou zúčastněné osoby a v jakém postavení.
 
-  const angles = await parallel(FRAME_ANGLES.map(a => () =>
-    agent(`${SCOPE_BRIEF}
+${RULES}`,
+    { label: "mapa případu", schema: CASE, model: TERRA_MODEL })
 
-Tvůj úhel: ${a.label}
-
-${a.task}`, { label: a.label, schema: ANGLE, model: TERRA_MODEL })))
-
-  const scoped = FRAME_ANGLES.map((a, i) => ({ angle: a, result: angles[i] })).filter(s => s.result)
-  if (scoped.length === 0) {
-    return { error: "Nepodařilo se určit rámec věci - žádný z úhlů se nevrátil." }
+  if (!dossier) {
+    return { error: "Nepodařilo se sestavit mapu případu." }
   }
-  log(`Rámec z úhlů: ${scoped.map(s => s.angle.label).join(", ")}`)
 
-  const angleReports = scoped.map(s =>
-    `## ${s.angle.label}
-Zjištění:
-${s.result.findings.map(f => `- ${f.point}${f.source ? ` [${f.source}]` : ""}${f.why ? ` (${f.why})` : ""}`).join("\n") || "- (žádné)"}${s.result.asOf ? `\nDen posouzení podle tohoto úhlu: ${s.result.asOf}` : ""}
-Navržené dílčí otázky:
-${s.result.issues.map(i => `- ${i.label}: ${i.question}${i.why ? ` (proč: ${i.why})` : ""}`).join("\n") || "- (žádné)"}`).join("\n\n")
+  const blocking = dossier.blockingQuestions || []
+  const prompt = blocking.length > 0
+    ? `Než pustím rešerši, potřebuju od vás doplnit tohle:\n\n${blocking.map((q, i) => `${i + 1}. ${q.question}\n${q.why}`).join("\n\n")}`
+    : `Které skutečnosti jsou pro posouzení rozhodné, ale z dokumentů neplynou - co bylo ujednáno ústně, jak to fakticky probíhalo a kdy se co stalo?`
 
-  const frame = await agent(
-    `Rešeršisté nezávisle na sobě ohledali rámec jedné právní věci, každý z jiného úhlu. Slož z toho jeden rámec, ze kterého poběží zbytek rešerše.
+  const reply = await ask(prompt, { options: ["Nic z toho nemám, pokračuj"] })
+  const stated = reply.answered && reply.text && reply.text.trim() ? reply.text.trim() : ""
+  const uploaded = reply.answered ? reply.files : []
+  if (!reply.answered) {
+    log("Dotaz zůstal bez odpovědi - pokračuji s tím, co je k dispozici")
+  }
+  if (uploaded.length > 0) {
+    log(`Klient nahrál ${uploaded.length} soubor(ů)`)
+  }
 
-Otázka klienta: ${QUESTION}
-Předpokládaná jurisdikce: ${JURISDICTION}
+  const targets = (dossier.counterparties || []).slice(0, MAX_COUNTERPARTIES)
+  let parties = []
+  if (targets.length > 0) {
+    log(`Prověřuji: ${targets.map(t => t.name).join(", ")}`)
+    parties = (await parallel(targets.map(t => () =>
+      agent(
+        `Prověř tento subjekt ve vztahu k popsané věci. Nedělej obecný profil společnosti - vrať jen to, co může ovlivnit právní kvalifikaci, důkazy, procesní postup, vymahatelnost nebo vyjednávací strategii.
 
-${angleReports}
+Subjekt: ${t.name}${t.identifier ? `\nIdentifikátor: ${t.identifier}` : ""}
+Co je na něm potřeba zjistit: ${t.why}
 
-Vrať právní obor ('area'), rozhodnou jurisdikci ('jurisdiction'), den, ke kterému se věc posuzuje ('asOf'), a 3-8 dílčích otázek ('issues').
+Věc, ve které vystupuje:
+${QUESTION}
 
-Otázky sluč napříč úhly: co se opakuje, spoj do jedné; co se překrývá, rozděl tak, aby si dvě nešlapaly do zelí; co je pro odpověď nepodstatné, zahoď. Rozhodující dej první. Formulaci, kterou nespojuješ, ponech tak, jak ji úhel napsal - přeformulováním se ztrácí to, co rešeršista viděl v podkladech.
+Nejdřív jednoznačně ověř identitu. Hlavním klíčem je IČO, ne název; název používej ve všech historických a pravopisných variantách. Pak projdi:
+1. veřejný rejstřík - aktuální i historické údaje, změny názvu, sídla a právní formy, přeměny, likvidaci, právní nástupnictví,
+2. současné a bývalé statutární orgány a prokuristy, způsob jednání a jejich angažmá v jiných společnostech,
+3. sbírku listin - zejména dokumenty rozhodné pro oprávnění jednat a pro majetkovou situaci,
+4. insolvenční rejstřík, včetně spřízněných dlužníků,
+5. registr smluv, pokud subjekt obchoduje s veřejným sektorem,
+6. judikaturu a veřejně dostupná řízení - hledej podle současného i historických názvů, podle statutárních osob, spřízněných společností a právních nástupců,
+7. další registry podle předmětu věci (katastr, ochranné známky, oborové evidence).
 
-Do 'constraints' vypiš jednou větou každé omezení rámce, které musí znát další rešeršisté: povahu úpravy (kogentní, dispozitivní, ochrana slabší strany), rozhodné znění a přechodná ustanovení, mezinárodní nebo unijní přesah, rozložení důkazního břemene. Nic si nedomýšlej - ber jen to, co některý z úhlů skutečně zjistil.`,
-    { label: "sloučení dílčích otázek", agentType: "codexis:synthesizer", schema: FRAME, model: TERRA_MODEL })
+Použij nástroje a dovednosti, které na to v prostředí máš; co není dostupné, přeskoč a napiš to.
 
-  const constraints = frame.constraints && frame.constraints.length > 0
-    ? `\nRámcová omezení:\n${frame.constraints.map(c => `- ${c}`).join("\n")}`
+Prázdný výsledek fulltextového hledání NENÍ důkaz, že spor, smlouva nebo skutečnost neexistuje - rozhodnutí bývají anonymizovaná nebo nezveřejněná. Takový výsledek označ jako neúplný, ne jako negativní zjištění.
+
+${RULES}`,
+        { label: `prověření: ${t.name}`, schema: PARTY, model: SEARCH_MODEL })
+        .catch(() => null))))
+      .filter(Boolean)
+  }
+
+  const partyBlock = parties.length > 0
+    ? `\n\nPrověření protistrany:\n${parties.map(p => `### ${p.subject}\n${p.report}`).join("\n\n")}`
+    : ""
+  const uploadedBlock = uploaded.length > 0
+    ? `\n\nSoubory, které klient právě nahrál:\n${bullets(uploaded)}`
+    : ""
+  const statedBlock = stated
+    ? `\n\nCo klient uvedl sám a NENÍ to ničím doloženo (jeho tvrzení):\n${stated}`
     : ""
 
-  const BRIEF = `Právní otázka: ${QUESTION}
-Obor: ${frame.area}
-Jurisdikce: ${frame.jurisdiction || JURISDICTION}${frame.asOf ? `\nPosuzuje se ke dni: ${frame.asOf}` : ""}${constraints}
-(Odpovídej česky. Každé tvrzení musí nést přesnou citaci zdroje a doslovný výňatek z něj. Nikdy si zdroj nevymýšlej - když ho nemáš, řekni to.)`
+  const casePacket = `Otázka klienta: ${QUESTION}
+Předpokládaná jurisdikce: ${JURISDICTION}
 
-  log(`Dílčí otázky: ${frame.issues.map(i => i.label).join(", ")}`)
+## Cíl klienta
+${dossier.goal}
 
-  phase("Rekognoskace")
-  const framework = await agent(
-    `${BRIEF}
+## Dokumenty
+${dossier.documents}
 
-Rychlá rekognoskace, ne plná rešerše. Zjisti, PODLE ČEHO se tato věc rozhoduje:
-1. Která ustanovení se na ni aplikují (zdroje CR, u unijního přesahu EU).
-2. Podle jakých kritérií soudy takové věci posuzují - projdi judikaturu (JD, u unijního práva ES) a vytáhni test nebo znaky, které soudy fakticky používají.
-3. Z toho odvoď, JAKÉ PODKLADY je nutné mít, aby šlo věc posoudit - konkrétní dokumenty (smlouva, obchodní podmínky, korespondence, faktury, protokoly), ne obecné kategorie. U každého vyplň tři pole:
-- 'material': název dokumentu v prvním pádě ("Očkovací průkaz", "Kupní smlouva"). Slouží k vyhledání dokumentu v souborech klienta, klient ho nevidí.
-- 'question': celá otázka na klienta, jednou větou ve druhé osobě, začínající slovesem: "Máte očkovací průkaz nebo pas zvířete s číslem čipu a výpis z registru čipu?" Klient uvidí přesně to, co sem napíšeš, takže žádná uvozovací nálepka ("Máte k dispozici tento podklad:"), žádná dvojtečka a název dokumentu skloňuj do věty, nelep ho tam v prvním pádě.
-- 'why': proč ten dokument potřebuješ, souvislými větami, jak bys to řekl klientovi: "Potřebuji ho k identifikaci konkrétního psa a chovatele. § 4 veterinárního zákona vyžaduje, aby identifikační číslo psa bylo zaznamenáno v dokladu o očkování." Zobrazí se to pod otázkou, takže zase bez nálepky typu "K čemu ho potřebuji:".
+## Chronologie
+${dossier.timeline}
 
-Tvůj výstup řídí zbytek rešerše, takže u každého kritéria uveď zdroj a doslovnou citaci.`,
-    { label: "podle čeho se rozhoduje", schema: FRAMEWORK, model: SOL_MODEL })
+## Skutkový stav
+${dossier.facts}${statedBlock}${uploadedBlock}${partyBlock}`
 
-  log(`Rozhodovací kritéria: ${framework.criteria.map(c => c.criterion).join(" | ")}`)
+  phase("Plán")
+  const plan = await agent(
+    `Máš hotovou rekognoskaci případu. Převeď ji na omezený počet otázek, jejichž zodpovězení vede k praktickému závěru.
 
-  phase("Podklady")
-  const materials = framework.requiredMaterials
-    .map((m, i) => `- [M${i}] ${m.material}: ${m.why}`)
-    .join("\n")
-  const inventory = await agent(
-    `${BRIEF}
+${casePacket}
 
-Projdi pracovní adresář uživatele a zjisti, které z níže uvedených podkladů už tam jsou. Pro každý nalezený uveď přesnou cestu k souboru a jednou větou, co v něm je; nečti je celé, stačí ověřit, že jde opravdu o ten dokument. Co nenajdeš, vypiš do 'missing'; do 'material' dej název dokumentu tak, jak je uvedený níže, bez značky [M0]. V 'materialId' vrať jeho značku [M0], [M1], … beze změny.
+Projdi věc ve čtyřech rovinách a to, co z nich plyne, promítni do hlavičky i do otázek:
+1. Kvalifikace a povaha úpravy - do jakého institutu věc patří, jestli nepřipadá v úvahu souběh nároků, jestli je úprava kogentní nebo dispozitivní a jestli je některá strana zákonem chráněná.
+2. Časový řez - kdy nastaly rozhodné skutečnosti, které znění předpisů na ně dopadá, co říkají přechodná ustanovení a jestli běží nebo uplynula promlčecí či prekluzivní lhůta.
+3. Unijní a mezinárodní přesah - jestli má věc mezinárodní prvek, podle čeho se určuje pravomoc a rozhodné právo, jestli dopadá přímo použitelné nařízení nebo transponovaná směrnice. Čistě vnitrostátní povahu řekni výslovně.
+4. Procesní rámec - v jakém řízení a před kým se rozhoduje, koho u které skutečnosti tíží důkazní břemeno, jaké podmínky a lhůty musí být splněny dřív, než se lze nároku domoci.
 
-Potřebné podklady:
-${materials}`,
-    { label: "inventura dokumentů klienta", schema: INVENTORY, model: TERRA_MODEL })
+Nejde ještě o rešerši. Kde si nejsi jistý, která kvalifikace platí, uveď obě a udělej z rozhodnutí mezi nimi dílčí otázku.
 
-  let supplied = inventory.present
-  let stillMissing = inventory.missing
+${RULES}`,
+    { label: "rozhodné otázky", agentType: "codexis:synthesizer", schema: PLAN, model: SOL_MODEL })
 
-  const specOf = item => {
-    const idx = /(\d+)/.exec(String(item.materialId || ""))
-    return (idx && framework.requiredMaterials[Number(idx[1])]) || {}
+  if (!plan || !plan.issues || plan.issues.length === 0) {
+    return { error: "Nepodařilo se sestavit rešeršní plán.", casePacket }
   }
-  const covered = new Set()
-  const loose = []
-  const notes = []
-
-  for (const item of stillMissing) {
-    const spec = specOf(item)
-    const reply = await ask(
-      `${spec.question || `${item.material}?`}${spec.why ? `\n\n${spec.why}` : ""}`,
-      { options: ["Nahrávám ho teď", "Nemám ho"] })
-    if (!reply.answered) {
-      log(`Bez odpovědi: ${item.material}`)
-      continue
-    }
-    if (reply.files.length > 0) {
-      supplied = supplied.concat(reply.files.map(path =>
-        ({ materialId: item.materialId, material: item.material, path })))
-      covered.add(item.materialId)
-      log(`${item.material}: ${reply.files.length} soubor(ů)`)
-    }
-    if (reply.text && reply.text.trim()) {
-      notes.push(`K podkladu "${item.material}": ${reply.text.trim()}`)
-    }
-  }
-
-  const answer = await ask(
-    `Které skutečnosti jsou pro posouzení rozhodné, ale z dokumentů neplynou - co bylo ujednáno ústně, jak to fakticky probíhalo a kdy se co stalo?`,
-    { options: ["Nic dalšího už nemám, pokračuj"] })
-  if (!answer.answered) {
-    log("Dožádání zůstalo bez odpovědi - pokračuji s tím, co je k dispozici")
-  }
-  if (answer.answered && answer.text && answer.text.trim()) {
-    notes.push(answer.text.trim())
-  }
-  if (answer.answered && answer.files.length > 0) {
-    loose.push(...answer.files)
-  }
-
-  const statedFacts = notes.join("\n")
-  if (statedFacts) {
-    log("Uživatel doplnil skutečnosti, které v dokumentech nejsou")
-  }
-
-  stillMissing = stillMissing.filter(m => !covered.has(m.materialId))
-
-  if (loose.length > 0 && stillMissing.length > 0) {
-    log(`Přiřazuji ${loose.length} soubor(ů) nahraných mimo konkrétní podklad`)
-    const matched = await agent(
-      `${BRIEF}
-
-Uživatel právě nahrál tyto soubory:
-${loose.map(p => `- ${p}`).join("\n")}
-
-Otevři každý natolik, abys poznal, co to je, a přiřaď ho k požadovanému podkladu níže. Do 'present' dej jen ty, které jsi opravdu pokryl, s jejich materialId a cestou; soubor, který k žádnému z nich nepatří, ale pro věc je relevantní, dej do 'present' také a do 'materialId' mu napiš [X]. Do 'missing' vrať ty požadované podklady, které ani po nahrání nemáš.
-
-Požadované podklady:
-${stillMissing.map(m => `- ${m.materialId} ${m.material}`).join("\n")}`,
-      { label: "přiřazení nahraných souborů", schema: INVENTORY, model: TERRA_MODEL })
-      .catch(() => null)
-    if (matched) {
-      supplied = supplied.concat(matched.present)
-      stillMissing = matched.missing
-    }
-  } else if (loose.length > 0) {
-    supplied = supplied.concat(loose.map(path => ({ materialId: "[X]", path })))
-  }
-
-  const missingAfterAsk = stillMissing.map(m => m.material)
-
-  const criteriaList = framework.criteria.map(c => `- ${c.criterion}`).join("\n")
-  const extractionJobs = supplied.flatMap(doc => EXTRACTION_ANGLES.map(angle => ({ doc, angle })))
-  const extracted = await parallel(extractionJobs.map(({ doc, angle }) => () =>
-    agent(
-      `${BRIEF}
-
-Otevři dokument klienta a vytěž z něj to, co patří do TVÉHO úhlu. Stejný dokument souběžně čtou i další rešeršisté z jiných úhlů, takže cizí úhel neřeš a nesnaž se dokument pokrýt celý.
-
-Soubor: ${doc.path}${doc.note ? `\nPoznámka z inventury: ${doc.note}` : ""}
-Tvůj úhel: ${angle.label}
-
-${angle.task(criteriaList)}
-
-Ke každé položce vždy uveď cestu k souboru, přesné místo v něm a doslovné znění - tvůj výstup se porovnává se zdrojem a přepsaná citace ho vyřadí.`,
-      { label: `${angle.label}: ${doc.path.split("/").pop()}`, schema: FACTS, model: SEARCH_MODEL })))
-
-  const clientFacts = extracted.filter(Boolean).flatMap(r => r.facts)
-  const extractionGaps = extracted.filter(Boolean).flatMap(r => r.notCovered || [])
-  log(`Skutečnosti z podkladů klienta: ${clientFacts.length} (${extracted.filter(Boolean).length} z ${extractionJobs.length} vytěžení)`)
-
-  const crossCheck = supplied.length > 1 && clientFacts.length > 1
-    ? await agent(
-        `${BRIEF}
-
-Podklady klienta byly vytěženy po dokumentech, každý zvlášť. Tvým úkolem je najít, kde si NAVZÁJEM ODPORUJÍ nebo kde mezi nimi zeje díra. Nic nedohledávej a nevykládej právo - pracuj jen s tím, co je níže.
-
-Vytěžené skutečnosti:
-${clientFacts.map(f => `- ${f.fact}\n    dokument: ${f.path}${f.locator ? `, ${f.locator}` : ""}\n    znění: "${f.quote}"`).join("\n")}
-
-${extractionGaps.length > 0 ? `Co při vytěžení nebylo v dokumentech pokryto (nezodpovězená kritéria, chybějící data, vady dokumentů):\n${extractionGaps.map(g => `- ${g}`).join("\n")}\n\n` : ""}Do 'conflicts' dej dvojice, které spolu nesedí: různá data téže události, různá znění téhož ujednání, plnění, které podle jednoho dokumentu proběhlo a podle druhého ne, dodatek měnící to, co smlouva stanoví jinak. U každého uveď rozcházející se dokumenty a jednou větou, proč na tom záleží.
-
-Do 'gaps' dej neuzavřené řetězce: úkon bez dokladu o doručení, odkaz na přílohu, která mezi podklady není, předpokládaná změna bez dodatku.`,
-        { label: "rozpory a mezery", agentType: "codexis:synthesizer", schema: CONFLICTS })
-        .catch(() => null)
-    : null
-
-  if (crossCheck) {
-    log(`Rozpory mezi podklady: ${crossCheck.conflicts.length}, otevřené řetězce: ${(crossCheck.gaps || []).length}`)
-  }
+  const context = plan.context || casePacket
+  log(`Dílčí otázky: ${plan.issues.map(i => i.label).join(", ")}`)
 
   phase("Rešerše")
-  const perIssue = await parallel(frame.issues.map(issue => () =>
+  const researched = await parallel(plan.issues.map((issue, idx) => () =>
     agent(
-      `${BRIEF}
+      `${context}
 
-Zodpověz TUTO dílčí otázku a nic jiného.
+Zodpověz TUTO dílčí otázku a nic jiného. Nesnaž se pokrýt celou věc - ostatní otázky souběžně řeší jiní rešeršisté.
 
-Dílčí otázka: ${issue.label} - ${issue.question}${issue.why ? `\nProč je podstatná: ${issue.why}` : ""}
+Tvoje otázka: ${issue.question}
+Jak odpověď ovlivní výsledek: ${issue.why}${issue.needs ? `\nCo k tomu potřebuješ z podkladů klienta: ${issue.needs}` : ""}
 
-Rozhodovací rámec zjištěný v rekognoskaci (drž se ho, ale ověř si ho vlastní rešerší):
-${framework.criteria.map(c => `- ${c.criterion} [${c.source}]`).join("\n")}
+Souběžně se řeší tyto otázky, do kterých nezasahuj:
+${bullets(plan.issues.filter((_, i) => i !== idx).map(i => i.label)) || "- (žádné)"}
 
-Postupuj v tomto pořadí zdrojů a v každém kroku vytěž, co k otázce skutečně patří:
-1. PŘEDPISY (CR, u unijního přesahu EU) - znění rozhodných ustanovení.
-2. KOMENTÁŘE (COMMENT) - jak se ta ustanovení vykládají.
-3. JUDIKATURA (JD, ES) - jak se podle nich fakticky rozhoduje; přednostně vyšší soudy.
-4. LITERATURA (LT) - jen pokud po předchozích krocích zbývá sporná otázka.
+Postupuj takto:
+1. Zorientuj se v komentáři (COMMENT) nebo přehledové literatuře - slouží ti jako mapa a jako cesta k dalším rozhodnutím, ne jako důkaz.
+2. Otevři rozhodné znění předpisu (CR, u unijního přesahu EU) včetně přechodných ustanovení.
+3. Projdi judikaturu (JD, ES). Hledej víc způsoby: podle ustanovení, podle institutu, podle rozhodné skutkové okolnosti, podle formulace právní věty, a podle rozhodnutí, která nalezený názor později citují nebo se od něj odchylují. Přednostně vyšší soudy.
+4. Literaturu (LT) použij jen na spornou otázku, která po předchozích krocích zbývá.
+5. Závěr převzatý z komentáře nebo článku ověř zpátky v textu předpisu nebo v citovaném rozhodnutí.
 
-Tvá zjištění půjdou na ověření a pak do syntézy, takže u každého uveď přesnou citaci (číslo předpisu a ustanovení, spisovou značku) a doslovný výňatek. Do 'docId' vrať identifikátor dokumentu, který jsi SKUTEČNĚ otevřel (to, co jsi předal do 'cdx-cli get cdx://doc/<docId>/text'), a pokud jsi četl konkrétní část, i 'part'. Citace musí být doslovná - ověřovatel ji porovná s otevřeným zdrojem, takže přepsaná nebo zpaměti rekonstruovaná citace zjištění vyřadí. Označ, které je nosné a které jen podpůrné.`,
-      { label: issue.label, schema: FINDINGS, model: SEARCH_MODEL })
-      .catch(() => ({ findings: [] }))))
+Když tvoje otázka potřebuje dokument klienta, otevři si ho sám a vytěž z něj jen to, co k ní patří.
 
-  const allFindings = perIssue.filter(Boolean).flatMap(r => r.findings)
-  const load = { nosný: 0, podpůrný: 1 }
-  const loadBearing = [...allFindings]
-    .sort((a, b) => (load[a.weight] ?? 1) - (load[b.weight] ?? 1))
-    .slice(0, 14)
-  log(`Zjištění: ${allFindings.length}, ověřuji ${loadBearing.length} nosných`)
-  if (loadBearing.length === 0) {
-    return { question: QUESTION, answer: "Rešerše nepřinesla použitelná zjištění.",
-      caveats: "Zdroje se nepodařilo dohledat.", missingMaterials: missingAfterAsk }
+Dvě věci jsou povinné. Za prvé hledej i PROTI vlastnímu předběžnému závěru: jaký je nejsilnější zdroj nebo skutkový rozdíl, který ho vyvrací. Za druhé u citovaného rozhodnutí posuď, jestli vůbec sedí na tvůj případ - jiné znění zákona, jiná smluvní konstrukce, jiná procesní situace nebo věta, která nebyla nosným důvodem rozhodnutí, ho činí nepoužitelným.
+
+Skonči, jakmile je otázka zodpovězená a podložená. Další nález, který jen znovu podpírá už podloženou propozici, nepřidávej - přidej ho jako zdroj k té propozici.`,
+      { label: issue.label, schema: PROPOSITIONS, model: SEARCH_MODEL })
+      .catch(() => null)))
+
+  const all = researched.filter(Boolean).flatMap(r => r.propositions || [])
+  const gaps = researched.filter(Boolean).flatMap(r => r.gaps || [])
+  log(`Propozice: ${all.length} z ${researched.filter(Boolean).length} zodpovězených otázek`)
+  if (all.length === 0) {
+    return { question: QUESTION, answer: "Rešerše nepřinesla použitelné právní závěry.",
+      opinion: "Zdroje se nepodařilo dohledat.", casePacket }
   }
 
   phase("Ověření")
-  const verified = await parallel(loadBearing.map(finding => () =>
+  const grouping = await agent(
+    `Rešeršisté pracovali na dílčích otázkách nezávisle, takže některé propozice tvrdí totéž a některé si odporují. Najdi obojí.
+
+Nic nepřeformulovávej a nic nedohledávej - vracíš POUZE čísla propozic.
+
+${all.map((p, i) => `[${i}] (${p.impact}) ${p.claim}\n    zdroje: ${(p.sources || []).map(s => s.citation).join("; ") || "(žádné)"}`).join("\n\n")}
+
+Do 'groups' dej skupiny propozic, které tvrdí totéž, a u každé urči, kterou formulaci nechat. Dvě propozice o stejném ustanovení, které ale tvrdí něco jiného, NEJSOU duplicita.
+
+Do 'conflicts' dej propozice, které se navzájem vylučují: opačný závěr o téže otázce, různé rozhodné znění, neslučitelný skutkový předpoklad, konkurenční judikaturní linie.`,
+    { label: "sloučení propozic", agentType: "codexis:synthesizer", schema: GROUPS, model: TERRA_MODEL })
+    .catch(() => null)
+
+  const rank = { "rozhodující": 0, "významná": 1, "podpůrná": 2 }
+  const weight = p => rank[p.impact] ?? 2
+  const risky = p => p.contested === true || p.temporalRisk === true
+  const valid = i => Number.isInteger(i) && i >= 0 && i < all.length
+
+  const dropped = new Set()
+  for (const group of (grouping && grouping.groups) || []) {
+    const members = (group.members || []).filter(valid)
+    const keep = valid(group.keep) && members.includes(group.keep) ? group.keep : members[0]
+    if (members.length < 2 || keep === undefined || dropped.has(keep)) {
+      continue
+    }
+    const winner = all[keep]
+    for (const member of members) {
+      if (member === keep) {
+        continue
+      }
+      const loser = all[member]
+      const seen = new Set((winner.sources || []).map(s => s.citation))
+      winner.sources = (winner.sources || []).concat((loser.sources || []).filter(s => !seen.has(s.citation)))
+      winner.contested = winner.contested || loser.contested
+      winner.temporalRisk = winner.temporalRisk || loser.temporalRisk
+      if (weight(loser) < weight(winner)) {
+        winner.impact = loser.impact
+      }
+      dropped.add(member)
+    }
+  }
+
+  const conflicts = ((grouping && grouping.conflicts) || [])
+    .map(c => ({ note: c.note, claims: (c.members || []).filter(valid).map(i => all[i].claim) }))
+    .filter(c => c.claims.length > 1)
+
+  const merged = all.filter((_, i) => !dropped.has(i))
+  const must = merged.filter(p => weight(p) === 0 || (weight(p) === 1 && risky(p)))
+  const mustSet = new Set(must)
+  const optional = merged.filter(p => !mustSet.has(p))
+    .sort((a, b) => weight(a) - weight(b) || (risky(b) ? 1 : 0) - (risky(a) ? 1 : 0))
+  const selected = must.concat(optional.slice(0, Math.max(0, VERIFY_BUDGET - must.length)))
+  const skipped = merged.filter(p => !selected.includes(p))
+  log(`Slučuji ${all.length} propozic na ${merged.length}, ověřuji ${selected.length}${conflicts.length > 0 ? `, rozporů: ${conflicts.length}` : ""}`)
+
+  const verified = await parallel(selected.map(p => () =>
     agent(
-      `${BRIEF}
+      `${context}
 
-Ověř, jestli tohle zjištění platí i DNES. Jsi skeptik: hledej důvod, proč neplatí.
+Ověř tuto propozici. Jsi skeptik: hledej důvod, proč neplatí nebo proč na tuhle věc nesedí.
 
-Tvrzení: ${finding.proposition}
-Zdroj: ${finding.source}
-Druh zdroje: ${finding.sourceKind}
-Doslovná citace: ${finding.quote}
+Tvrzení: ${p.claim}
 
-U předpisu ověř účinné znění ke dni posouzení: nebyl zrušen, novelizován ani nahrazen? U judikatury ověř, že rozhodnutí je stále dobrou autoritou: nebylo překonáno velkým senátem, zrušeno Ústavním soudem ani opuštěno pozdější praxí? U komentáře a literatury ověř, že vychází z účinného znění. Otevři zdroj celý, nesuď podle úryvku. Do 'evidence' napiš rozhodující formulaci - cituje se do závěrečného stanoviska.
+Zdroje:
+${(p.sources || []).map(s => `- ${s.citation}${s.primary ? " [nosný]" : ""}${s.docId ? ` (docId ${s.docId})` : ""}\n    "${s.quote}"`).join("\n")}
 
-Status voli takto: 'supported' jen když jsi zdroj otevřel a tvrzení obstálo; 'refuted' když jsi našel konkrétní důvod, proč neplatí; 'source_unreachable' když se ti zdroj nepodařilo otevřít; 'unverified' když jsi ho otevřel, ale nedokázal jsi tvrzení potvrdit ani vyvrátit. Nedostatek důkazu NENÍ vyvrácení a chybějící přístup NENÍ potvrzení.`,
-      { label: finding.proposition, agentType: "codexis:verifier",
-        schema: CURRENCY, model: TERRA_MODEL })
-      .then(verdict => ({ finding, verdict }))
-      .catch(() => ({ finding, verdict: { status: "unverified",
-        evidence: "ověření se nepodařilo provést (chyba běhu)" } }))))
+Otevři nosný zdroj CELÝ, nesuď podle předaného výňatku, a zkontroluj:
+1. dokument existuje a citace v něm doslova je,
+2. výňatek není vytržený z kontextu a nepatří jen do rekapitulace tvrzení účastníků nebo do odlišného stanoviska,
+3. rozhodnutí řešilo stejnou právní otázku a vycházelo ze stejného znění předpisu,
+4. u předpisu: účinné znění ke dni posouzení, nebyl zrušen, novelizován ani nahrazen,
+5. u judikatury: nebylo překonáno velkým senátem, zrušeno Ústavním soudem ani opuštěno pozdější praxí, a nejde jen o obiter dictum,
+6. tvrzení není širší, než co zdroj skutečně říká,
+7. neexistuje protichůdná linie.
+
+Selže-li kterýkoli z bodů 2, 3 nebo 6, je to 'refuted' - i když dokument existuje a citace sedí.`,
+      { label: p.claim, agentType: "codexis:verifier", schema: VERDICT, model: TERRA_MODEL })
+      .then(verdict => ({ p, verdict }))
+      .catch(() => ({ p, verdict: { status: "unverified", note: "ověření se nepodařilo provést (chyba běhu)" } }))))
 
   const checked = verified.filter(Boolean)
   const holding = checked.filter(v => v.verdict.status === "supported")
   const refuted = checked.filter(v => v.verdict.status === "refuted")
   const unverified = checked.filter(v => v.verdict.status !== "supported" && v.verdict.status !== "refuted")
-  log(`Obstálo ${holding.length} z ${checked.length} zjištění, ${refuted.length} vyvráceno, ${unverified.length} neověřeno`)
+  log(`Obstálo ${holding.length} z ${checked.length}, vyvráceno ${refuted.length}, neověřeno ${unverified.length}`)
 
-  phase("Syntéza")
-  const block = holding.map((v, i) =>
-    `[${i}] ${v.finding.proposition}
-    zdroj (${v.finding.sourceKind}): ${v.finding.source}
-    citace: "${v.finding.quote}"${v.verdict.effectiveAt ? `\n    účinné znění k: ${v.verdict.effectiveAt}` : ""}${v.verdict.evidence ? `\n    ověření: ${v.verdict.evidence}` : ""}`).join("\n\n")
+  phase("Stanovisko")
+  const held = holding.map(v =>
+    `### ${v.p.claim}
+Váha: ${v.p.impact}
+Zdroje: ${(v.p.sources || []).map(s => `${s.citation} - "${s.quote}"`).join(" | ")}
+Ověření: ${v.verdict.note}
 
-  const clientDocuments = clientFacts.length > 0
-    ? clientFacts.map(f =>
-        `- ${f.fact}
-    dokument: ${f.path}${f.locator ? `, ${f.locator}` : ""}
-    znění: "${f.quote}"`).join("\n")
-    : "(z podkladů klienta se nepodařilo vytěžit žádné skutečnosti)"
+${v.p.analysis}`).join("\n\n")
 
   const opinion = await agent(
-    `${BRIEF}
+    `Napiš právní stanovisko. Všechno, o co se smíš opřít, je níže - nedoplňuj nic z paměti a nedohledávej nové zdroje.
 
-Napiš právní stanovisko k otázce výše.
+${context}
 
-Ověřená zjištění (každé se zdrojem, doslovnou citací a poznámkou z ověření):
-${block}
+${casePacket}
 
-Podklady klienta, na které se závěry aplikují:
-${clientDocuments}
+## Ověřené propozice
+${held || "(žádná propozice neobstála)"}
+${conflicts.length > 0 ? `\n## Propozice, které si odporují\n${conflicts.map(c => `- ${c.claims.join(" VS. ")}: ${c.note}`).join("\n")}\n` : ""}${refuted.length > 0 ? `\n## VYVRÁCENO - nesmíš o to opřít závěr ani to citovat jako platné\n${refuted.map(v => `- ${v.p.claim} (${v.verdict.note})`).join("\n")}\n` : ""}${unverified.length > 0 ? `\n## NEOVĚŘENO - nesmíš o to opřít závěr; je-li to pro věc podstatné, napiš, že stanovisko je v tom rozsahu předběžné\n${unverified.map(v => `- ${v.p.claim} (${v.verdict.note})`).join("\n")}\n` : ""}${skipped.length > 0 ? `\n## Podpůrné, neprošlo ověřením - použij nanejvýš jako dokreslení a označ to\n${bullets(skipped.map(p => p.claim))}\n` : ""}${gaps.length > 0 ? `\n## Skutečnosti, které při rešerši chyběly\n${bullets(gaps)}\n` : ""}
+Do 'opinion' napiš celé stanovisko v tomto pořadí: zadání a praktický cíl; krátká odpověď; rozhodné skutečnosti a předpoklady, ze kterých vycházíš; použitelné právo a rozhodné znění; rozbor po jednotlivých otázkách; argumenty ve prospěch klienta; nejsilnější argumenty protistrany; důkazní situace, tedy co je čím doloženo a co by bylo třeba prokázat; procesní, časová a vymahatelnostní rizika; varianty podle skutečností, které zůstaly neznámé; doporučený další postup; a co je třeba ještě získat nebo ověřit.
 
-${crossCheck && crossCheck.conflicts.length > 0 ? `Podklady si v těchto bodech ODPORUJÍ - závěr, který na některém z nich stojí, o tom musí mluvit a patří to do caveats:\n${crossCheck.conflicts.map(c => `- ${c.issue} (${c.sources.join(" vs. ")})${c.impact ? `: ${c.impact}` : ""}`).join("\n")}\n\n` : ""}${crossCheck && crossCheck.gaps && crossCheck.gaps.length > 0 ? `Tyto řetězce nejsou v podkladech uzavřené: ${crossCheck.gaps.join("; ")}\n\n` : ""}${statedFacts ? `Skutečnosti, které klient uvedl sám a NEJSOU ničím doloženy - ber je jako jeho tvrzení, u závěru, který na nich stojí, to výslovně napiš a dej to do caveats:\n${statedFacts}\n\n` : ""}${refuted.length > 0 ? `Tato zjištění byla VYVRÁCENA a nesmíš o ně opřít závěr: ${refuted.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${unverified.length > 0 ? `Tato zjištění se NEPODAŘILO OVĚŘIT. Nesmíš o ně opřít závěr ani je citovat jako platná; pokud jsou pro otázku podstatná, uveď v caveats, že v tomto rozsahu je stanovisko předběžné: ${unverified.map(v => `${v.finding.source} (${v.verdict.evidence})`).join("; ")}\n\n` : ""}${missingAfterAsk.length > 0 ? `Tyto podklady chybí a závěr je v jejich rozsahu předběžný: ${missingAfterAsk.join(", ")} - uveď to v caveats.\n\n` : ""}Přečti celý materiál výše, než začneš psát. Vše, o co se smíš opřít, je v něm - nedoplňuj nic z vlastní paměti a nedohledávej nové zdroje. Nejdřív odpověz na otázku přímo, pak rozveď argumentaci po bodech; u každého bodu uveď přesné zdroje z materiálu a napiš, na který konkrétní podklad klienta se aplikuje. Přiřaď míru jistoty. Kde materiál otázku neuzavírá, řekni to a dej to do caveats nebo otevřených otázek.`,
+Než to odevzdáš, projdi si: Odpovídáš na praktickou otázku klienta, nebo jen na tu právní? Nezaměnil jsi právní možnost za pravděpodobný výsledek? Je každé klíčové tvrzení doložené? Vysvětlil jsi skutkové rozdíly oproti citované judikatuře? Uvedl jsi nejsilnější protiargument? Je jasné, které závěry stojí na neprokázané skutečnosti? Je doporučení uskutečnitelné vzhledem k protistraně, lhůtám a vymahatelnosti?
+
+Kde materiál otázku neuzavírá, řekni to. Skutečnost, kterou nikdo neprokázal, se nesmí stát mlčky předpokladem.
+
+${RULES}`,
     { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION, model: SOL_MODEL })
+
+  if (!opinion) {
+    return { error: "Nepodařilo se sepsat stanovisko.", casePacket,
+      propositions: merged.map(p => p.claim) }
+  }
 
   return {
     question: QUESTION,
     ...opinion,
-    framework: framework.criteria,
-    refutedSources: refuted.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
-    unverifiedSources: unverified.map(v => ({ source: v.finding.source, why: v.verdict.evidence })),
-    missingMaterials: missingAfterAsk,
-    clientStatedFacts: statedFacts,
-    frameConstraints: frame.constraints || [],
-    documentConflicts: crossCheck ? crossCheck.conflicts : [],
-    documentGaps: crossCheck ? crossCheck.gaps || [] : [],
-    stats: { frameAngles: scoped.length, issues: frame.issues.length,
-      extractions: extracted.filter(Boolean).length, clientFacts: clientFacts.length,
-      findings: allFindings.length, checked: checked.length,
-      holding: holding.length, refuted: refuted.length,
-      unverified: unverified.length }
+    counterparties: parties.map(p => ({ subject: p.subject, report: p.report })),
+    conflicts,
+    refutedPropositions: refuted.map(v => ({ claim: v.p.claim, why: v.verdict.note })),
+    unverifiedPropositions: unverified.map(v => ({ claim: v.p.claim, why: v.verdict.note })),
+    openFacts: gaps,
+    clientStatedFacts: stated,
+    stats: { issues: plan.issues.length, propositions: all.length, merged: merged.length,
+      verified: checked.length, holding: holding.length, refuted: refuted.length,
+      unverified: unverified.length, counterparties: parties.length }
   }
 }
