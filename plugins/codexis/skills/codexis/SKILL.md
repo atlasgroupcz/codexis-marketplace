@@ -152,6 +152,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
 - For broad domain sweeps, use a curated statute list plus `/versions`; do not diff every law in the set.
 - Never issue the same kind of `cdx-cli` call three or more times in a row from the chat. That is a `script` program: it runs them in parallel, deduplicates, and returns only the passages. Reading the raw hits yourself spends the context the answer needs.
+- This covers opening documents, not just searching. Once you have several `docId`s worth reading, fetch all of their `/text` in one `script` run and return the matching passages - a decision is long, and pulling four of them into the chat one `get` at a time is the single most expensive thing you can do with the context.
 - Do not run broad fallback searches after a decisive `/versions` sweep unless ambiguity remains.
 - Do not jump to the web when CODEXIS already answers the legal question.
 - Treat `ALL` as source-selection help, not as a final citation target.
