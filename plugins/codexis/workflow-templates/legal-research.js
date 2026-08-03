@@ -6,9 +6,7 @@
 // @args question (required) - the legal question, in the user's own words
 // @args jurisdiction - CZ, SK or EU; defaults to CZ
 
-const SEARCH_MODEL = "GPT_5_6_LUNA"
-const SOL_MODEL = "GPT_5_6_SOL"
-const TERRA_MODEL = "GPT_5_6_TERRA"
+const MODEL = "GPT_5_6_LUNA"
 
 const MAX_COUNTERPARTIES = 3
 const VERIFY_BUDGET = 24
@@ -106,7 +104,7 @@ Projdi pracovní adresář. Dokumenty neotevírej celé a nevytěžuj z nich vš
 Z otázky a z podkladů sestav mapu případu: čeho chce klient dosáhnout, co se stalo a kdy, co je prokázané a co jen tvrzené, kdo jsou zúčastněné osoby a v jakém postavení.
 
 ${RULES}`,
-    { label: "mapa případu", schema: CASE, model: TERRA_MODEL })
+    { label: "mapa případu", schema: CASE, model: MODEL })
 
   if (!dossier) {
     return { error: "Nepodařilo se sestavit mapu případu." }
@@ -155,7 +153,7 @@ U KAŽDÉ kontroly napiš, jak dopadla, i když nedopadla: "k datu X podle IČO 
 Prázdný fulltext NENÍ důkaz, že spor neexistuje - rozhodnutí bývají anonymizovaná nebo nezveřejněná. Označ ho jako neúplný, ne jako negativní zjištění.
 
 ${RULES}`,
-        { label: `prověření: ${t.name}`, schema: PARTY, model: SEARCH_MODEL })
+        { label: `prověření: ${t.name}`, schema: PARTY, model: MODEL })
         .catch(() => null))))
       .filter(Boolean)
   }
@@ -204,7 +202,7 @@ Nejde ještě o rešerši. Kde si nejsi jistý, která kvalifikace platí, uveď
 Podklady klienta mohou chybět, a tebe to nesmí zastavit. Neodkládej otázky s tím, že se nejdřív musí něco doložit - formuluj je tak, aby na ně šlo odpovědět z práva pod výslovným předpokladem, a ten předpoklad napiš do hlavičky. Rešeršista musí vědět, co má zjistit, i když spis není k dispozici.
 
 ${RULES}`,
-    { label: "rozhodné otázky", agentType: "codexis:synthesizer", schema: PLAN, model: SOL_MODEL })
+    { label: "rozhodné otázky", agentType: "codexis:synthesizer", schema: PLAN, model: MODEL })
 
   if (!plan || !plan.issues || plan.issues.length === 0) {
     return { error: "Nepodařilo se sestavit rešeršní plán.", casePacket }
@@ -237,7 +235,7 @@ Když tvoje otázka potřebuje dokument klienta, otevři si ho sám a vytěž z 
 Povinně hledej i PROTI vlastnímu závěru: jaký je nejsilnější zdroj nebo skutkový rozdíl, který ho vyvrací. A u každého rozhodnutí posuď, jestli vůbec sedí na tvůj případ - jiné znění zákona, jiná konstrukce, jiná procesní situace nebo věta, která nebyla nosným důvodem, ho činí nepoužitelným.
 
 Skonči, jakmile je otázka zodpovězená a podložená. Další nález, který jen znovu podpírá už podloženou propozici, nepřidávej - přidej ho jako zdroj k té propozici.`,
-      { label: issue.label, schema: PROPOSITIONS, model: SEARCH_MODEL })
+      { label: issue.label, schema: PROPOSITIONS, model: MODEL })
       .catch(() => null)))
 
   const all = researched.flatMap((r, i) => ((r && r.propositions) || [])
@@ -260,7 +258,7 @@ ${all.map((p, i) => `[${i}] (${p.impact}) ${p.claim}\n    zdroje: ${(p.sources |
 Do 'groups' dej skupiny propozic, které tvrdí totéž, a u každé urči, kterou formulaci nechat. Dvě propozice o stejném ustanovení, které ale tvrdí něco jiného, NEJSOU duplicita.
 
 Do 'conflicts' dej propozice, které se navzájem vylučují: opačný závěr o téže otázce, různé rozhodné znění, neslučitelný skutkový předpoklad, konkurenční judikaturní linie.`,
-    { label: "sloučení propozic", agentType: "codexis:synthesizer", schema: GROUPS, model: TERRA_MODEL })
+    { label: "sloučení propozic", agentType: "codexis:synthesizer", schema: GROUPS, model: MODEL })
     .catch(() => null)
 
   const rank = { "rozhodující": 0, "významná": 1, "podpůrná": 2 }
@@ -326,7 +324,7 @@ Otevři nosný zdroj CELÝ, nesuď podle předaného výňatku, a zkontroluj:
 7. neexistuje protichůdná linie.
 
 Zakopnutí na bodech 2, 3 nebo 6 skoro nikdy neznamená 'refuted' - tvrzení je jen širší, než co zdroj unese, a užší verze platí. Vrať 'narrowed' a napiš ji. Zahodit doložitelný závěr kvůli nepřesné formulaci je horší chyba než ho zúžit.`,
-      { label: p.claim, agentType: "codexis:verifier", schema: VERDICT, model: TERRA_MODEL })
+      { label: p.claim, agentType: "codexis:verifier", schema: VERDICT, model: MODEL })
       .then(verdict => ({ p, verdict }))
       .catch(() => ({ p, verdict: { status: "run_error", note: "ověření se nepodařilo provést (chyba běhu)" } }))))
 
@@ -373,7 +371,7 @@ U každého zdroje, o který se opřeš, uveď i to, odkud je - je to v materiá
 Kde materiál otázku neuzavírá, řekni to. Skutečnost, kterou nikdo neprokázal, se nesmí stát mlčky předpokladem.
 
 ${RULES}`,
-    { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION, model: SOL_MODEL })
+    { label: "stanovisko", agentType: "codexis:synthesizer", schema: OPINION, model: MODEL })
 
   if (!opinion) {
     return { error: "Nepodařilo se sepsat stanovisko.", casePacket,
