@@ -3,7 +3,7 @@ uuid: 272cbab6-4deb-4b1b-8595-279b6c6923d9
 name: codexis
 icon: icon.svg
 description: This skill should be invoked whenever user needs Czech or European legal research - legislation changes, case law / judikatura lookup, legal commentaries, professional literature, contract templates, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
-version: 2.2.2
+version: 2.3.0
 jurisdictions: [CZ, EU]
 jurisdiction-required: true
 i18n:
@@ -59,6 +59,42 @@ Use CODEXIS first for Czech and EU legal work. Route fast with `cdx-cli`.
 
 Use external sources only for official institutional material, current operational info, or original-language / multilingual EU text. Use only official institutional sources. Do not use blogs, law firms, commercial explainers, forums, or generic search hits when CODEXIS can answer.
 
+### Broad retrieval goes through `script`
+
+Run wide retrieval as ONE `script` call, not as a sequence of `shell` calls and not as one
+subagent per query. The program fans the searches out, merges and dedupes them, opens only the
+best candidates, and returns an evidence package; the raw hits never reach the context.
+
+Reach for `script` when any of these holds:
+
+- three or more queries are needed (reworded phrasings, or several of CR/JD/ES/EU/COMMENT/LT),
+- results from several queries must be merged and deduped by `docId`,
+- full text is needed for a handful of candidates out of many,
+- relations must be chased across several documents (`/related`),
+- a provision's wording at a date must be checked across several acts (`/versions`).
+
+One query, one `get`, one check stays a plain `shell` call.
+
+Rules for a retrieval script:
+
+1. Searches under `parallel`, document opening under `pipeline` - one failure then costs one
+   branch, not the run.
+2. `--limit` at most 50 (the CLI rejects more). No `ALL`: send more queries into specific sources.
+3. Dedupe by `docId`; rank by how many queries found the same document.
+4. Take only `docId` from a search hit. Every citation field comes from `/meta`.
+5. Open full text only for the top candidates, write it to a file and read it with `node:fs` - a
+   decision easily exceeds the shell tool's output cap.
+6. Return per document: `docId`, court, case number, date, one to three verbatim passages, and
+   the query that found it. Never return whole texts or whole API responses.
+7. The script does no legal assessment. Attribution - what the court held versus what a party
+   argued, see `references/judikatura.md` - is judged by you or by a verifying subagent, over the
+   passages the script returned.
+
+Worked programs for all five shapes: `references/script-research.md`.
+
+Build user-facing links from the `【src_xxx】 url: https://…` blocks attached to the tool call,
+never from `docId`.
+
 ## Data Sources
 
 Brief source glossary, aligned with `cdx-cli --help`:
@@ -87,6 +123,7 @@ All CODEXIS documents are in Czech.
 ## Common workflows
 - deep-dive Czech LAW change assessment workflow: `references/czech-law-change-assessment.md`
 - for caselaw/judikatura research see `references/judikatura.md`
+- for retrieval programs driving `cdx-cli` see `references/script-research.md`
 
 ## Governing Regime First
 
@@ -131,3 +168,4 @@ Whenever legal references appear in user text, tool output, or extracts, resolve
 - Filter early with `--current`, `--valid-at`, `--type`, source-specific date flags, `--with-facets` when discovery is needed, and low `--limit` values.
 - Fetch large text once, extract locally, and validate the heading before relying on it.
 - Use `jq` to filter and shape responses instead of extra requests.
+- Retrieval spanning three or more queries goes through `script`, not a chain of `shell` calls.

@@ -226,7 +226,7 @@ ${bullets(plan.issues.filter((_, i) => i !== idx).map(i => i.label)) || "- (žá
 Postupuj takto:
 1. Zorientuj se v komentáři nebo přehledové literatuře - slouží ti jako mapa a jako cesta k dalším rozhodnutím, ne jako důkaz.
 2. Otevři rozhodné znění předpisu včetně přechodných ustanovení; u unijního přesahu i příslušný unijní předpis.
-3. Projdi judikaturu, u unijního přesahu i evropskou. Hledej víc způsoby: podle ustanovení, podle institutu, podle rozhodné skutkové okolnosti, podle formulace právní věty, a podle rozhodnutí, která nalezený názor později citují nebo se od něj odchylují. Přednostně vyšší soudy.
+3. Projdi judikaturu, u unijního přesahu i evropskou. Na tenhle sweep použij nástroj `script`: rozešli víc dotazů najednou - podle ustanovení, podle institutu, podle rozhodné skutkové okolnosti, podle formulace právní věty, a podle rozhodnutí, která nalezený názor později citují nebo se od něj odchylují - nech program výsledky odduplikovat a vrátit jen kandidáty s pasážemi. Pak čti jen to, co ti vrátil. Přednostně vyšší soudy.
 4. Odbornou literaturu použij jen na spornou otázku, která po předchozích krocích zbývá.
 5. Závěr převzatý z komentáře nebo článku ověř zpátky v textu předpisu nebo v citovaném rozhodnutí.
 
@@ -248,6 +248,32 @@ Skonči, jakmile je otázka zodpovězená a podložená. Další nález, který 
   }
 
   phase("Ověření")
+
+  // Exact restatements cost the grouping agent context without needing its judgement. Only
+  // literally identical claims are collapsed - two propositions about the same provision that
+  // assert different things are not duplicates, which is what the agent is actually for.
+  const claimKey = p => (p.claim || "").toLowerCase().replace(/\s+/g, " ").trim()
+  const merged = []
+  const seenClaims = new Map()
+  for (const proposition of all) {
+    const key = claimKey(proposition)
+    const at = seenClaims.get(key)
+    if (key && at !== undefined) {
+      const kept = merged[at]
+      const citations = new Set((kept.sources || []).map(s => s.citation))
+      kept.sources = [...(kept.sources || []),
+        ...(proposition.sources || []).filter(s => !citations.has(s.citation))]
+      continue
+    }
+    if (key) seenClaims.set(key, merged.length)
+    merged.push({ ...proposition, sources: [...(proposition.sources || [])] })
+  }
+  if (merged.length < all.length) {
+    log(`sloučeno ${all.length - merged.length} doslovných duplicit před seskupením`)
+  }
+  all.length = 0
+  all.push(...merged)
+
   const grouping = await agent(
     `Rešeršisté pracovali na dílčích otázkách nezávisle, takže některé propozice tvrdí totéž a některé si odporují. Najdi obojí.
 
