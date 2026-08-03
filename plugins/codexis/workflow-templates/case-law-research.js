@@ -95,7 +95,7 @@ Dílčí otázka: ${question}
 
 ${DEPTH}
 
-Na vyhledání kandidátů použij nástroj `script`: rozešli víc přeformulovaných dotazů najednou, nech je odduplikovat podle docId a vrátit jen dokumenty s doslovnými pasážemi. Celý text otevírej až u toho, co ti program vrátí - projít stovky zásahů takhle nestojí kontext.
+Na vyhledání kandidátů použij nástroj script: rozešli víc přeformulovaných dotazů najednou, nech je odduplikovat podle docId a vrátit jen dokumenty s doslovnými pasážemi. Celý text otevírej až u toho, co ti program vrátí - projít stovky zásahů takhle nestojí kontext.
 
 Ověř u každého rozhodnutí, podle jakého znění předpisu soud rozhodoval a jestli to znění platí i k ${asOf}. Když najdeš pozdější rozhodnutí, které dřívější závěr mění, uveď ho a napiš, jak ho mění.
 
