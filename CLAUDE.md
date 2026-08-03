@@ -254,7 +254,7 @@ advertised:
 write it as the selection hint, not as a summary. `@template` defaults to the file name and
 `@jurisdictions` ranks the template for chats in that jurisdiction. A file without `@use-when`
 is skipped. Templates are never run as they are: the model fetches the source, adapts it, and
-submits the adapted script, so keep them well under the 32 000-character script limit.
+submits the adapted script, so keep them well under the 64 000-character script limit.
 
 ## Writing skills - Anthropic conventions
 
