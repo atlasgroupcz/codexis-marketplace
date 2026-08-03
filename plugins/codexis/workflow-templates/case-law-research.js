@@ -23,17 +23,17 @@ const MODEL = "GPT_5_6_LUNA"
 const [PHASE_SCOPE, PHASE_SEARCH, PHASE_REPORT] = meta.phases.map(p => p.title)
 
 const LABEL_SCOPE = "rámec a dílčí otázky"
-const LABEL_SUMMARY = "shrnutí"
 const LABEL_VERIFY = issue => `ověření: ${issue}`
 
 const REPORT_PREFIX = "resherse-judikatura"
-const SUMMARY_HEADING = "## Shrnutí"
 
-const RELAY = `Tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
+const RELAY = path => `---
+
+Pokyn pro asistenta: tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
 
 Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl. Nepřidávej k ní vlastní právní závěry.
 
-Celá zpráva je uložena i jako soubor; cestu k němu uveď na konci, ale odpověď nenahrazuj odkazem na soubor.`
+Tenhle pokyn ani tuhle patičku do chatu nevypisuj. Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.`
 
 const RULES = `Odpovídej česky. Piš jen to, co jsi otevřel a přečetl. Zdroj si nikdy nevymýšlej - když ho nemáš, řekni to.
 
@@ -129,18 +129,6 @@ Oddíl k ověření:
 
 ${draft}`
 
-const PROMPT_SUMMARY = (question, material) => `${RULES}
-
-Otázka: ${question}
-
-Níže je hotová rešerše judikatury. Nepřepisuj ji ani z ní nic nevybírej - potřebuju od tebe jen shrnutí.
-
-Napiš dvě až tři věty: jaká je odpověď na položenou otázku podle judikatury a co na ní zůstává nejisté. Tohle uvidí uživatel v chatu jako jediné, takže to musí dávat smysl samo o sobě, i bez zbytku rešerše.
-
-Vrať jen ty dvě až tři věty, žádný nadpis, žádný úvod.
-
-${material}`
-
 const REPORT_HEADER = (question, jurisdiction, asOf) => `# Rešerše judikatury
 
 Otázka: ${question}
@@ -204,16 +192,21 @@ export default async function (args) {
     .map(({ issue, draft }, i) => section(issue.label, issue.question, draft, reviews[i]))
     .join("\n\n---\n\n")
 
-  const summary = await agent(PROMPT_SUMMARY(question, body),
-    { label: LABEL_SUMMARY, agentType: "codexis:synthesizer", model: MODEL })
+  const unresearchedLabels = scope.issues.filter((_, i) => !drafts[i]).map(i => i.label)
+  const unverifiedLabels = researched.filter((_, i) => !reviews[i]).map(x => x.issue.label)
+
+  const gaps = [
+    unresearchedLabels.length ? `Nezpracované dílčí otázky: ${unresearchedLabels.join(", ")}` : "",
+    unverifiedLabels.length ? `Neověřené oddíly: ${unverifiedLabels.join(", ")}` : ""
+  ].filter(Boolean)
+
+  const missing = gaps.length
+    ? "\n## Co v rešerši chybí\n\n" + gaps.join("\n") + "\n"
+    : ""
 
   const report = `${REPORT_HEADER(question, jurisdiction, asOf)}
-${SUMMARY_HEADING}
-
-${summary}
-
 ${body}
-`
+${missing}`
 
   const { writeFile } = await import("node:fs/promises")
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")
@@ -223,15 +216,7 @@ ${body}
 
   log(`zpráva zapsána: ${path}, ${report.length} znaků`)
 
-  return {
-    instructionsForAssistant: RELAY,
-    report,
-    question,
-    summary,
-    reportPath: path,
-    reportChars: report.length,
-    issues: scope.issues.map(i => i.label),
-    unresearched: scope.issues.filter((_, i) => !drafts[i]).map(i => i.label),
-    unverified: researched.filter((_, i) => !reviews[i]).map(x => x.issue.label)
-  }
+  return `${report}
+
+${RELAY(path)}`
 }
