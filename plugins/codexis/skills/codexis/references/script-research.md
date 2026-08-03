@@ -1,6 +1,6 @@
 # Retrieval scripts for CODEXIS
 
-Five programs for the `script` tool. Each one is complete: fan out, dedupe, open only what
+Six programs for the `script` tool. Each one is complete: fan out, dedupe, open only what
 survives, and return an evidence package instead of the haystack.
 
 ## Ground rules these examples follow
@@ -9,11 +9,11 @@ survives, and return an evidence package instead of the haystack.
   `{docId, …}` inside `{totalResults, results, availableFilters?}`; `court`, `spZns`,
   `cislaJednaci`, `releaseDate`, `ecli`, `sbirkoveCislo` and `derogated` are guaranteed on
   `cdx://doc/<id>/meta` under the source key (`jd`, `cr`, …). Never invent a citation from a hit.
-- **`2>/dev/null` on every command.** The shell tool merges stdout and stderr, so one warning
-  line from the CLI breaks `JSON.parse`.
-- **Full text goes to a file first.** `cdx://doc/<id>/text` is `text/plain` and a decision easily
-  exceeds the shell tool's output cap, which would hand the program a silently truncated string.
-  Write it out, read it with `node:fs`.
+- **Values go in `args`, not into a command string.** No shell means no quoting, no word
+  splitting, and no `2>/dev/null` — stderr is not merged into what you parse.
+- **A decision text is long.** Fetching four of them one `get` at a time from the chat is the most
+  expensive thing you can do with the context; fetch them inside one program and return only the
+  passages. If a single text is too big to hold, write it out with `node:fs` and grep it there.
 - **`--limit` is 1..50.** The CLI rejects more. Send more queries instead of a bigger one.
 - **Filters differ per source.** JD has `--court`, `--city`, `--type` (all repeatable). ES has
   `--type` and `--issued-from/--issued-to` but **no `--court`**. CR has `--type`, `--author`,
@@ -21,30 +21,40 @@ survives, and return an evidence package instead of the haystack.
 - **Report the misses.** A candidate whose text carries no matching passage is a fact about the
   query, not something to hide.
 
+**Pass values as `args`, never as a quoted command string.** `shell` takes an optional `args`
+array; when it is present the program is run directly, with no shell in between, so a query with
+spaces, apostrophes, `$` or a semicolon arrives exactly as written and there is nothing to escape.
+Interpolating a Czech legal phrase into a command string is the usual way these programs break.
+
 A shared preamble, assumed by every example below:
 
-    const sh = async (command) => (await shell({ command, timeoutSeconds: 180 })).trim()
-    const json = async (command) => JSON.parse(await sh(`${command} 2>/dev/null`))
-    const quote = (value) => `'${String(value).replace(/'/g, `'\\''`)}'`
+    const cdx = async (...args) => {
+      const out = await shell({ command: 'cdx-cli', args, timeoutSeconds: 180 })
+      return out.trim()
+    }
+    const json = async (...args) => JSON.parse(await cdx(...args))
+
+Only reach for a command string when you genuinely need the shell — a pipe, a redirect, `&&`.
+Those are the only places `2>/dev/null` belongs; with `args` there is no shell to merge streams.
 
 ## 1. Parallel multi-source sweep
 
 The workhorse: many phrasings, merged, ranked by agreement, opened only at the top.
 
     export default async function () {
+      const NS = ['--court', 'Nejvyšší soud']
       const QUERIES = [
-        ["JD", "moderační právo soudu náhrada škody zaměstnance", `--court ${quote("Nejvyšší soud")}`],
-        ["JD", "snížení náhrady škody zaměstnancem zákoník práce", ""],
-        ["JD", "odpovědnost zaměstnance za schodek na svěřených hodnotách", `--court ${quote("Nejvyšší soud")}`],
-        ["JD", "přiměřené snížení náhrady škody pracovněprávní vztah", "--type Rozsudek"],
-        ["ES", "odpovědnost zaměstnance za škodu způsobenou zaměstnavateli", ""]
+        ["JD", "moderační právo soudu náhrada škody zaměstnance", NS],
+        ["JD", "snížení náhrady škody zaměstnancem zákoník práce", []],
+        ["JD", "odpovědnost zaměstnance za schodek na svěřených hodnotách", NS],
+        ["JD", "přiměřené snížení náhrady škody pracovněprávní vztah", ['--type', 'Rozsudek']],
+        ["ES", "odpovědnost zaměstnance za škodu způsobenou zaměstnavateli", []]
       ]
       const PASSAGE = /moderac|moderač|snížen[íi] náhrady|přiměřen[éeě] snížen/i
       const TOP = 20
 
       const found = await parallel(QUERIES.map(([source, query, filters]) => async () => {
-        const body = await json(
-          `cdx-cli search ${source} --query ${quote(query)} ${filters} --limit 50`)
+        const body = await json('search', source, '--query', query, ...filters, '--limit', '50')
         return { source, query, results: body.results || [] }
       }))
 
@@ -61,11 +71,9 @@ The workhorse: many phrasings, merged, ranked by agreement, opened only at the t
         .sort((a, b) => b.queries.length - a.queries.length)
         .slice(0, TOP)
 
-      const { readFile } = await import("node:fs/promises")
-
       const documents = await pipeline(candidates,
         async (candidate) => {
-          const meta = await json(`cdx-cli get cdx://doc/${candidate.docId}/meta`)
+          const meta = await json('get', `cdx://doc/${candidate.docId}/meta`)
           const facts = meta.jd ?? meta.es ?? {}
           return {
             ...candidate,
@@ -78,9 +86,7 @@ The workhorse: many phrasings, merged, ranked by agreement, opened only at the t
           }
         },
         async (doc) => {
-          const file = `.tmp/${doc.docId}.txt`
-          await sh(`mkdir -p .tmp && cdx-cli get cdx://doc/${doc.docId}/text > ${file} 2>/dev/null`)
-          const text = await readFile(file, "utf8")
+          const text = await cdx('get', `cdx://doc/${doc.docId}/text`)
           const passages = text.split(/\n\s*\n/)
             .filter((block) => PASSAGE.test(block))
             .slice(0, 3)
@@ -114,8 +120,7 @@ Walk the relation graph out from decisions you already trust, and keep only what
       const RELATION = "SOUVISEJICI_JUDIKATURA"
 
       const rings = await parallel(SEEDS.map((docId) => async () => {
-        const body = await json(
-          `cdx-cli get ${quote(`cdx://doc/${docId}/related?type=${RELATION}&limit=50`)}`)
+        const body = await json('get', `cdx://doc/${docId}/related?type=${RELATION}&limit=50`)
         return { seed: docId, related: body.results ?? [] }
       }))
 
@@ -133,7 +138,7 @@ Walk the relation graph out from decisions you already trust, and keep only what
 
       const shared = [...byId.values()].sort((a, b) => b.citedBy.length - a.citedBy.length).slice(0, 25)
       const enriched = await pipeline(shared, async (candidate) => {
-        const meta = await json(`cdx-cli get cdx://doc/${candidate.docId}/meta`)
+        const meta = await json('get', `cdx://doc/${candidate.docId}/meta`)
         const facts = meta.jd ?? meta.es ?? {}
         return {
           ...candidate,
@@ -158,7 +163,7 @@ Which of these statutes actually changed around the day that matters.
       const ACTS = [["89", "2012"], ["262", "2006"], ["90", "2012"]]
 
       const checked = await parallel(ACTS.map(([num, year]) => async () => {
-        const versions = await json(`cdx-cli get cdx://cz_law/${num}/${year}/versions`)
+        const versions = await json('get', `cdx://cz_law/${num}/${year}/versions`)
         const inForce = versions.find((v) =>
           v.validFrom <= EVENT_DATE && (!v.validTo || v.validTo >= EVENT_DATE))
         const later = versions.filter((v) => v.validFrom > EVENT_DATE)
@@ -197,8 +202,7 @@ Two query sets, two buckets. Never hand the synthesis only the confirming half.
       ]
 
       const sweep = (queries) => parallel(queries.map((query) => async () => {
-        const body = await json(
-          `cdx-cli search JD --query ${quote(query)} --court ${quote("Nejvyšší soud")} --limit 50`)
+        const body = await json('search', 'JD', '--query', query, '--court', 'Nejvyšší soud', '--limit', '50')
         return { query, ids: (body.results ?? []).map((r) => r.docId).filter(Boolean) }
       }))
 
@@ -227,7 +231,48 @@ Two query sets, two buckets. Never hand the synthesis only the confirming half.
 A decision that answers both query sets is usually the one that draws the line — read it first.
 Finding no opposing authority is not proof there is none; say so in the opinion.
 
-## 5. Commentary sweep
+## 5. One statute, everything about it at once
+
+Versions, table of contents and the provisions you care about are four independent fetches. Doing
+them in sequence from the chat costs four turns and pulls every byte into the context; one program
+issues them together and returns the wording plus where it sits.
+
+    export default async function () {
+      const ACT = { num: "89", year: "2012" }
+      const SECTIONS = ["paragraf159", "paragraf2909", "paragraf2913"]
+      const base = `cdx://cz_law/${ACT.num}/${ACT.year}`
+
+      const [meta, versions, toc] = await parallel([
+        () => json('get', `${base}/meta`),
+        () => json('get', `${base}/versions`),
+        () => json('get', `${base}/toc`)
+      ])
+      if (!meta || !versions) {
+        return { error: `${ACT.num}/${ACT.year} Sb. se nepodařilo načíst.` }
+      }
+
+      const current = versions.find((v) => !v.validTo) ?? versions[versions.length - 1]
+      const texts = await parallel(SECTIONS.map((part) => async () => ({
+        part,
+        text: (await cdx('get', `${base}/text?part=${part}`)).slice(0, 4000)
+      })))
+
+      const headings = (toc?.items ?? toc ?? [])
+      return {
+        act: `${ACT.num}/${ACT.year} Sb.`,
+        versionId: meta.docId,
+        inForceFrom: current?.validFrom ?? null,
+        laterBoundaries: versions.filter((v) => current && v.validFrom > current.validFrom)
+          .map((v) => v.validFrom),
+        provisions: texts.filter(Boolean),
+        tocEntries: Array.isArray(headings) ? headings.length : null
+      }
+    }
+
+The same shape works across acts: put several `base` values in the outer `parallel` and you have the
+whole regime — wording, dates and structure — in one call instead of a dozen.
+
+## 6. Commentary sweep
 
 Commentary tied to the provisions an earlier phase actually identified.
 
@@ -238,9 +283,8 @@ Commentary tied to the provisions an earlier phase actually identified.
       ]
 
       const swept = await parallel(PROVISIONS.map((provision) => async () => {
-        const body = await json(
-          `cdx-cli search COMMENT --query ${quote(provision.query)}`
-          + ` --related-doc ${quote(provision.docId)} --limit 20`)
+        const body = await json('search', 'COMMENT', '--query', provision.query,
+          '--related-doc', provision.docId, '--limit', '20')
         return {
           provision: provision.label,
           relatedTo: provision.docId,
