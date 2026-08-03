@@ -30,6 +30,12 @@ const LABEL_VERIFY = issue => `ověření: ${issue}`
 const REPORT_PREFIX = "resherse-judikatura"
 const SUMMARY_HEADING = "## Shrnutí"
 
+const RELAY = `Tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
+
+Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl. Nepřidávej k ní vlastní právní závěry.
+
+Celá zpráva je uložena i jako soubor; cestu k němu uveď na konci, ale odpověď nenahrazuj odkazem na soubor.`
+
 const RULES = `Odpovídej česky. Piš jen to, co jsi otevřel a přečetl. Zdroj si nikdy nevymýšlej - když ho nemáš, řekni to.
 
 Právní větu ber jen jako vodítko, kde hledat, nikdy jako význam rozhodnutí. Právní věty se píšou zkratkovitě, často zobecňují víc, než soud řekl, a mlčí o skutku, na kterém závěr stojí. Každé rozhodnutí, o které se chceš opřít, proto otevři celé a přečti odůvodnění. Když jsi ho neotevřel, nesmíš se o něj opřít.
@@ -228,6 +234,8 @@ ${body}
   log(`zpráva zapsána: ${path}, ${report.length} znaků`)
 
   return {
+    instructionsForAssistant: RELAY,
+    report,
     question,
     summary,
     reportPath: path,
