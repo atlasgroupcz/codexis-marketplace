@@ -19,6 +19,8 @@ export const meta = {
 
 const MODEL = "GPT_5_6_LUNA"
 
+const CONCURRENCY = 4
+
 const [PHASE_SCOPE, PHASE_SEARCH, PHASE_REPORT] = meta.phases.map(p => p.title)
 
 const LABEL_SCOPE = "rámec a dílčí otázky"
@@ -149,6 +151,15 @@ const SCOPE = { type: "object", required: ["framing", "issues"], properties: {
 
 const NOT_VERIFIED = "Ověření se nepodařilo provést, tenhle oddíl prošel bez kontroly."
 
+const inBatches = async (items, run) => {
+  const done = []
+  for (let i = 0; i < items.length; i += CONCURRENCY) {
+    const batch = items.slice(i, i + CONCURRENCY)
+    done.push(...await parallel(batch.map(item => () => run(item))))
+  }
+  return done
+}
+
 const section = (label, question, draft, review) => `# ${label}
 
 Dílčí otázka: ${question}
@@ -173,13 +184,13 @@ export default async function (args) {
   const scope = await agent(PROMPT_SCOPE(question, jurisdiction, asOf),
     { label: LABEL_SCOPE, agentType: "codexis:synthesizer", schema: SCOPE, model: MODEL })
 
-  log(`dílčích otázek: ${scope.issues.length}`)
+  log(`dílčích otázek: ${scope.issues.length}, souběžně po ${CONCURRENCY}`)
 
   phase(PHASE_SEARCH)
 
-  const drafts = await parallel(scope.issues.map(issue => () =>
+  const drafts = await inBatches(scope.issues, issue =>
     agent(PROMPT_SEARCH(scope.framing, issue.label, issue.question, asOf),
-      { label: issue.label, model: MODEL })))
+      { label: issue.label, model: MODEL }))
 
   const researched = scope.issues
     .map((issue, i) => ({ issue, draft: drafts[i] }))
@@ -189,9 +200,9 @@ export default async function (args) {
 
   phase(PHASE_REPORT)
 
-  const reviews = await parallel(researched.map(({ issue, draft }) => () =>
+  const reviews = await inBatches(researched, ({ issue, draft }) =>
     agent(PROMPT_VERIFY(scope.framing, issue.question, draft),
-      { label: LABEL_VERIFY(issue.label), agentType: "codexis:verifier", model: MODEL })))
+      { label: LABEL_VERIFY(issue.label), agentType: "codexis:verifier", model: MODEL }))
 
   const body = researched
     .map(({ issue, draft }, i) => section(issue.label, issue.question, draft, reviews[i]))
