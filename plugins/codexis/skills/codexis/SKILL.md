@@ -53,7 +53,14 @@ Use CODEXIS first for Czech and EU legal work. Route fast with `cdx-cli`.
 1. Start in CODEXIS.
 2. Prefer source-specific search (`CR`, `EU`, `JD`, `ES`, `COMMENT`, `LT`, `VS`) over `ALL` whenever the likely source is known.
 3. Use `ALL` only to orient source selection, then rerun in the specific source before citing or extracting.
-4. Add non-CODEXIS sources for targeted official context.
+4. Decide HOW to run the retrieval before you run it. A real legal question is almost never one
+   query: the same rule hides behind several formulations, and the answer needs the best few
+   documents out of dozens. Whenever the honest plan is three or more searches, or the same fetch
+   repeated over a list of documents, run it as ONE `script` program - not as a chain of `shell`
+   calls. Do this even when the user asked a plain question and said nothing about how to search;
+   deciding the retrieval shape is your job, not theirs. See "Broad retrieval goes through
+   `script`" below.
+5. Add non-CODEXIS sources for targeted official context.
 
 ### External Sources
 
@@ -144,6 +151,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 - Stop early if `/versions` shows no boundary at the target date. Answer that directly.
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
 - For broad domain sweeps, use a curated statute list plus `/versions`; do not diff every law in the set.
+- Never issue the same kind of `cdx-cli` call three or more times in a row from the chat. That is a `script` program: it runs them in parallel, deduplicates, and returns only the passages. Reading the raw hits yourself spends the context the answer needs.
 - Do not run broad fallback searches after a decisive `/versions` sweep unless ambiguity remains.
 - Do not jump to the web when CODEXIS already answers the legal question.
 - Treat `ALL` as source-selection help, not as a final citation target.
