@@ -11,6 +11,7 @@ pub const CODEXIS_PUBLIC_USER_HOME_ENV: &str = "CODEXIS_PUBLIC_USER_HOME";
 pub const CODEXIS_PUBLIC_SESSION_ID_ENV: &str = "CODEXIS_PUBLIC_SESSION_ID";
 pub const CODEXIS_PUBLIC_TOOL_CALL_ID_ENV: &str = "CODEXIS_PUBLIC_TOOL_CALL_ID";
 pub const CODEXIS_PUBLIC_SUBAGENT_RUN_ID_ENV: &str = "CODEXIS_PUBLIC_SUBAGENT_RUN_ID";
+pub const CODEXIS_PUBLIC_WORKING_DIR_ENV: &str = "CODEXIS_PUBLIC_WORKING_DIR";
 
 const DAEMON_SECRET_RELATIVE_PATH: &str = ".cdx/env/secret";
 
@@ -61,6 +62,7 @@ pub struct DaemonConfig {
     chat_id: String,
     tool_call_id: String,
     subagent_run_id: Option<String>,
+    working_directory: Option<String>,
     daemon_url: String,
 }
 
@@ -73,12 +75,14 @@ impl DaemonConfig {
         let chat_id = read_env(CODEXIS_PUBLIC_SESSION_ID_ENV)?;
         let tool_call_id = read_env(CODEXIS_PUBLIC_TOOL_CALL_ID_ENV)?;
         let subagent_run_id = read_env(CODEXIS_PUBLIC_SUBAGENT_RUN_ID_ENV);
+        let working_directory = read_env(CODEXIS_PUBLIC_WORKING_DIR_ENV);
         Some(Self {
             daemon_url,
             auth_header: to_authorization_header(&token),
             chat_id,
             tool_call_id,
             subagent_run_id,
+            working_directory,
         })
     }
 
@@ -97,7 +101,13 @@ impl DaemonConfig {
             chat_id,
             tool_call_id,
             subagent_run_id: None,
+            working_directory: None,
         }
+    }
+
+    /// Working directory of the tool call, when the daemon injected it.
+    pub fn working_directory(&self) -> Option<&str> {
+        self.working_directory.as_deref()
     }
 
     pub fn auth_header(&self) -> &str {
