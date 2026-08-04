@@ -345,10 +345,10 @@ const pluginDirectory = async () => {
 
 const standardPath = async () => {
   const { access } = await import("node:fs/promises")
-  const { join } = await import("node:path")
-  const own = process.env.CODEXIS_WORKFLOW_DIR
-  if (!own) { return null }
-  const candidate = join(own, "references", "reserse-judikatury-standard.md")
+  const { dirname, join } = await import("node:path")
+  const { fileURLToPath } = await import("node:url")
+  const here = dirname(fileURLToPath(import.meta.url))
+  const candidate = join(here, "references", "reserse-judikatury-standard.md")
   return access(candidate).then(() => candidate, () => null)
 }
 
