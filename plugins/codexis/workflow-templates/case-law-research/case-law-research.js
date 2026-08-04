@@ -376,7 +376,7 @@ const titlePage = (d, logo, question, jurisdiction, asOf) => {
     ...(logo ? [new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
       spacing: { before: 1200, after: 240 },
-      children: [new d.ImageRun({ data: logo, transformation: { width: 96, height: 96 } })]
+      children: [new d.ImageRun({ type: "png", data: logo, transformation: { width: 96, height: 96 } })]
     })] : []),
     new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
