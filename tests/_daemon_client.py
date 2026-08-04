@@ -93,6 +93,21 @@ _Q_SKILLS = """
 { skills { fullName plugin { id name } sourceKind } }
 """
 
+# The VM lifecycle. Both go to the gateway endpoint, not the daemon one.
+_Q_START_VM = """
+mutation StartVirtualMachine {
+    startVirtualMachine {
+        __typename
+        ... on VirtualMachine { status }
+        ... on ActionError { message }
+    }
+}
+"""
+
+_Q_VM_STATUS = """
+{ me { virtualMachine { status } } }
+"""
+
 _Q_GET_ENTRY = """
 query GetEntry($path: String!) {
     getEntry(path: $path) {
@@ -191,6 +206,10 @@ _TRANSIENT_STATUS = frozenset({405, 408, 429, 500, 502, 503, 504})
 _MAX_ATTEMPTS = 5
 
 
+def _discard(_message: str) -> None:
+    """Default sink for ensure_vm_running's progress log."""
+
+
 class DaemonClient:
     def __init__(self, base_url: str, token: str,
                  token_refresher: "Callable[[], str | None] | None" = None) -> None:
@@ -201,6 +220,10 @@ class DaemonClient:
         """
         self.base_url = base_url.rstrip("/")
         self.graphql_url = f"{self.base_url}/graphql"
+        # The VM lifecycle lives on the gateway, not the daemon: the daemon runs
+        # inside the VM this endpoint starts, so it cannot be the one asked to
+        # start it.
+        self.gateway_graphql_url = f"{self.base_url}/gateway/graphql"
         self.health_url = f"{self.base_url}/actuator/health"
         self.auth_header = f"Bearer {token}"
         self._token_refresher = token_refresher
@@ -228,6 +251,77 @@ class DaemonClient:
                 return True
             if now() >= deadline:
                 return False
+            sleep(interval_s)
+
+    # -------------------------------------------------- virtual machine
+    def start_vm(self) -> dict:
+        """Ask the gateway to start this user's VM.
+
+        Returns the union member it answered with - `{"__typename":
+        "VirtualMachine", "status": ...}` on success, `{"__typename":
+        "ActionError", "message": ...}` when it declined.
+        """
+        data = self.gql_data(_Q_START_VM, url=self.gateway_graphql_url)
+        return data.get("startVirtualMachine") or {}
+
+    def vm_status(self) -> str:
+        """This user's VM status, or "UNKNOWN" when the gateway reports none."""
+        data = self.gql_data(_Q_VM_STATUS, url=self.gateway_graphql_url)
+        vm = (data.get("me") or {}).get("virtualMachine") or {}
+        return vm.get("status") or "UNKNOWN"
+
+    def ensure_vm_running(self, start_attempts: int = 5, timeout_s: float = 600,
+                          interval_s: float = 5,
+                          sleep: "Callable[[float], None]" = time.sleep,
+                          now: "Callable[[], float]" = time.monotonic,
+                          log: "Callable[[str], None] | None" = None) -> None:
+        """Start this user's VM if needed and block until it reports RUNNING.
+
+        Installing a plugin writes into the VM, so a suite that runs against a
+        stopped account has nowhere to install to. Raises RuntimeError if the VM
+        cannot be started, reaches a terminal STOPPED, or does not come up in
+        time. sleep/now are injectable for tests.
+
+        The start is retried with a short exponential backoff: the VM service
+        answers a "temporarily unavailable" ActionError or a 5xx while it
+        redeploys, which is a blip rather than a refusal. Poll failures are
+        tolerated for the same reason - only a terminal state or the deadline
+        ends the wait.
+        """
+        say = log if log is not None else _discard
+
+        for attempt in range(1, start_attempts + 1):
+            try:
+                started = self.start_vm()
+            except RuntimeError as exc:
+                started = {"__typename": "ActionError", "message": str(exc)}
+            if started.get("__typename") == "VirtualMachine":
+                break
+            if attempt == start_attempts:
+                raise RuntimeError(
+                    f"startVirtualMachine did not succeed after {start_attempts} "
+                    f"attempts: {started.get('message') or started!r}"
+                )
+            backoff = 2 ** (attempt - 1)
+            say(f"  VM start not accepted (attempt {attempt}/{start_attempts}), "
+                f"retrying in {backoff}s: {started.get('message') or started!r}")
+            sleep(backoff)
+
+        deadline = now() + timeout_s
+        while True:
+            try:
+                state = self.vm_status()
+            except RuntimeError:
+                state = "REQUEST_FAILED"
+            say(f"  VM state: {state}")
+            if state == "RUNNING":
+                return
+            if state == "STOPPED":
+                raise RuntimeError("VM entered terminal state STOPPED while waiting for RUNNING")
+            if now() >= deadline:
+                raise RuntimeError(
+                    f"VM did not reach RUNNING within {timeout_s}s (last state: {state})"
+                )
             sleep(interval_s)
 
     def _refresh_token(self) -> bool:
@@ -270,10 +364,11 @@ class DaemonClient:
                 time.sleep(min(2 ** attempt, 8))
         raise last_exc if last_exc is not None else RuntimeError("no request attempted")
 
-    def gql(self, query: str, variables: dict | None = None) -> dict[str, Any]:
+    def gql(self, query: str, variables: dict | None = None,
+            url: str | None = None) -> dict[str, Any]:
         payload = json.dumps({"query": query, "variables": variables or {}}).encode()
         req = urllib.request.Request(
-            self.graphql_url,
+            url or self.graphql_url,
             data=payload,
             headers={
                 "Content-Type": "application/json",
@@ -283,8 +378,9 @@ class DaemonClient:
         with self._open(req, timeout=120) as resp:
             return json.loads(resp.read())
 
-    def gql_data(self, query: str, variables: dict | None = None) -> dict[str, Any]:
-        result = self.gql(query, variables)
+    def gql_data(self, query: str, variables: dict | None = None,
+                 url: str | None = None) -> dict[str, Any]:
+        result = self.gql(query, variables, url=url)
         if result.get("errors"):
             msg = result["errors"][0].get("message", str(result["errors"][0]))
             raise RuntimeError(msg)

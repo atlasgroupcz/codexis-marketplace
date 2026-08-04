@@ -57,6 +57,17 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
         sys.exit(1)
     r.ok("Marketplace manifest found")
 
+    # Before the health check, not after: the daemon runs inside this VM, so on a
+    # stopped account it never reports UP and the wait would time out reporting an
+    # unreachable daemon - true, but not the reason.
+    r.log("Ensuring the VM is running...")
+    try:
+        client.ensure_vm_running(log=r.log)
+    except RuntimeError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    r.ok("VM is running")
+
     if not client.wait_healthy():
         print("ERROR: Daemon not reachable or healthy within the startup window",
               file=sys.stderr)
