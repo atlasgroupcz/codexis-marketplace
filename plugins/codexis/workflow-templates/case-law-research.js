@@ -166,19 +166,55 @@ const plain = text => String(text == null ? "" : text)
   .replace(/[\s\S]*?/g, "")
   .replace(/【src_[0-9a-f]+】/g, "")
 
-const runsOf = (d, text, options) => plain(text).split("**").map((piece, i) =>
+const LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g
+
+const emphasised = (d, text, options) => text.split("**").map((piece, i) =>
   new d.TextRun({ ...(options || {}), text: piece, bold: (options && options.bold) || i % 2 === 1 }))
+
+const runsOf = (d, text, options) => {
+  const source = plain(text)
+  const out = []
+  let last = 0
+  for (const match of source.matchAll(LINK)) {
+    if (match.index > last) { out.push(...emphasised(d, source.slice(last, match.index), options)) }
+    out.push(new d.ExternalHyperlink({
+      link: match[2] || match[3],
+      children: [new d.TextRun({
+        ...(options || {}),
+        text: match[1] || match[3],
+        color: BRAND_GREEN,
+        underline: {}
+      })]
+    }))
+    last = match.index + match[0].length
+  }
+  if (last < source.length) { out.push(...emphasised(d, source.slice(last), options)) }
+  return out.length ? out : emphasised(d, "", options)
+}
+
+const TEXT_WIDTH = 9638
 
 const tableOf = (d, rows) => {
   const cells = rows.map(row => row.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(c => c.trim()))
   const width = Math.max(...cells.map(r => r.length))
+  const weights = Array.from({ length: width }, (_, i) =>
+    Math.min(40, Math.max(7, ...cells.map(row => (row[i] || "").length))))
+  const total = weights.reduce((sum, weight) => sum + weight, 0)
+  const columnWidths = weights.map(weight => Math.round(TEXT_WIDTH * weight / total))
   return new d.Table({
-    width: { size: 100, type: d.WidthType.PERCENTAGE },
+    width: { size: TEXT_WIDTH, type: d.WidthType.DXA },
+    columnWidths,
     rows: cells.map((row, index) => new d.TableRow({
       tableHeader: index === 0,
       children: Array.from({ length: width }, (_, i) => new d.TableCell({
-        shading: index === 0 ? { fill: "F2F7E6" } : undefined,
-        children: [new d.Paragraph({ children: runsOf(d, row[i] || "", { bold: index === 0 }) })]
+        shading: { fill: index === 0 ? BRAND_GREEN : (index % 2 ? "FFFFFF" : "F7FBEE") },
+        margins: { top: 60, bottom: 60, left: 100, right: 100 },
+        children: [new d.Paragraph({
+          spacing: { after: 0 },
+          children: runsOf(d, row[i] || "", index === 0
+            ? { bold: true, color: "FFFFFF" }
+            : { size: 20 })
+        })]
       }))
     }))
   })
@@ -325,18 +361,18 @@ const titlePage = (d, logo, question, jurisdiction, asOf) => {
     }),
     new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
-      spacing: { after: 240 },
+      spacing: { after: 120 },
+      border: { bottom: { style: d.BorderStyle.SINGLE, size: 12, space: 10, color: BRAND_GREEN } },
       children: [new d.TextRun({ text: "Rešerše judikatury", bold: true, size: 44 })]
     }),
     new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
-      spacing: { after: 960 },
-      children: [new d.TextRun({ text: plain(question), size: 24, italics: true })]
+      spacing: { before: 240, after: 960 },
+      children: [new d.TextRun({ text: plain(question), size: 24, italics: true, color: "555555" })]
     }),
     line("Jurisdikce:", jurisdiction),
     line("Rozhodné datum:", asOf),
-    line("Zpracováno:", new Date().toLocaleDateString("cs-CZ")),
-    new d.Paragraph({ children: [new d.PageBreak()] })
+    line("Zpracováno:", new Date().toLocaleDateString("cs-CZ"))
   ]
 }
 
@@ -345,12 +381,14 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
   const d = module.Document ? module : module.default
   const logo = await logoPng().catch(() => null)
   const parsed = sections.map(entry => ({ ...entry, parts: splitSections(entry.draft) }))
-  const heading1 = text => new d.Paragraph({
-    heading: d.HeadingLevel.HEADING_1, children: [new d.TextRun(text)]
+  const heading1 = (text, newPage) => new d.Paragraph({
+    heading: d.HeadingLevel.HEADING_1,
+    pageBreakBefore: newPage === true,
+    children: [new d.TextRun(text)]
   })
   const children = [...titlePage(d, logo, question, jurisdiction, asOf)]
 
-  children.push(heading1("Stručná odpověď"))
+  children.push(heading1("Stručná odpověď", true))
   parsed.forEach(({ issue, parts }, index) => {
     children.push(new d.Paragraph({
       spacing: { before: 200, after: 60 },
@@ -358,10 +396,8 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
     }))
     children.push(...bodyOf(d, parts[SECTION_ANSWER] || "Na tuhle dílčí otázku se odpověď nepodařilo sestavit."))
   })
-  children.push(new d.Paragraph({ children: [new d.PageBreak()] }))
-
   parsed.forEach(({ issue, parts }, index) => {
-    children.push(heading1(`${index + 1}. ${plain(issue.label)}`))
+    children.push(heading1(`${index + 1}. ${plain(issue.label)}`, index === 0))
     children.push(new d.Paragraph({
       spacing: { after: 160 },
       children: [new d.TextRun({ text: plain(issue.question), italics: true, color: "555555" })]
@@ -384,8 +420,7 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
 
   const statutes = parsed.filter(({ parts }) => parts[SECTION_LAW])
   if (statutes.length) {
-    children.push(new d.Paragraph({ children: [new d.PageBreak()] }))
-    children.push(heading1("Příloha: dotčená ustanovení"))
+    children.push(heading1("Příloha: dotčená ustanovení", true))
     statutes.forEach(({ issue, parts }) => {
       children.push(new d.Paragraph({
         spacing: { before: 200, after: 60 },
@@ -395,8 +430,14 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
     })
   }
   const styles = level => ({
-    run: { font: FONT, size: level === 1 ? 32 : 28, bold: true, color: "000000" },
-    paragraph: { spacing: { before: 240, after: 120, line: 276, lineRule: d.LineRuleType.AUTO }, outlineLevel: level }
+    run: { font: FONT, size: level === 1 ? 32 : 26, bold: true, color: level === 1 ? BRAND_GREEN : "2F3A1B" },
+    paragraph: {
+      spacing: { before: level === 1 ? 360 : 240, after: 120, line: 276, lineRule: d.LineRuleType.AUTO },
+      outlineLevel: level,
+      border: level === 1
+        ? { bottom: { style: d.BorderStyle.SINGLE, size: 8, space: 6, color: BRAND_GREEN } }
+        : undefined
+    }
   })
   const document = new d.Document({
     styles: {
