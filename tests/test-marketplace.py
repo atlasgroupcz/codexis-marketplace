@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -216,7 +217,10 @@ def remove_marketplace(client: DaemonClient, mkt_node_id: str, mkt_name: str, r:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Codexis Marketplace Acceptance Test")
     parser.add_argument("--daemon", required=True, help="Daemon URL (e.g. http://localhost:8086)")
-    parser.add_argument("--token", required=True, help="JWT token")
+    parser.add_argument("--token", default=os.environ.get("CDX_DAEMON_TOKEN", ""),
+                        help="JWT token. Defaults to $CDX_DAEMON_TOKEN, which is how CI "
+                             "should pass it: an argument is visible in the process "
+                             "list and in any shell trace.")
     parser.add_argument("--git-url", required=True, help="Git repository URL")
     parser.add_argument("--git-ref", required=True, help="Git branch or tag")
     parser.add_argument("--cookie", default="",
@@ -232,6 +236,8 @@ def main() -> int:
                              "phase when the daemon serves plugins in parallel; the "
                              "log stays in manifest order regardless.")
     args = parser.parse_args()
+    if not args.token:
+        parser.error("a token is required: pass --token or set CDX_DAEMON_TOKEN")
 
     marketplace_path = Path(__file__).resolve().parent.parent
 
