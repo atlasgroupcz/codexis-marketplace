@@ -17,10 +17,11 @@ from .exceptions import (
     ApiNetworkError,
     ApiPermissionError,
     ApiRateLimitError,
+    OnepostError,
 )
 
 API_PREFIX = "/rest/api/v1"
-USER_AGENT = "onepost-cli/0.4.0"
+USER_AGENT = "onepost-cli/0.5.0"
 
 
 class OnepostClient:
@@ -77,7 +78,31 @@ class OnepostClient:
         )
 
     def get_attachments(self, message_id: str) -> Any:
-        return self.request("GET", f"/messages/{message_id}/attachments")
+        return self._with_resolved_message_id(
+            message_id,
+            lambda resolved: self.request("GET", f"/messages/{resolved}/attachments"),
+        )
+
+    def _with_resolved_message_id(self, message_id: str, call) -> Any:
+        try:
+            return call(message_id)
+        except ApiHttpError as e:
+            if e.status != 404:
+                raise
+            internal_id = self._internal_message_id(message_id)
+            if not internal_id or internal_id == message_id:
+                raise
+            return call(internal_id)
+
+    def _internal_message_id(self, message_id: str) -> str | None:
+        try:
+            message = self.get_message(message_id, include_attachments=False)
+        except OnepostError:
+            return None
+        if not isinstance(message, dict):
+            return None
+        internal_id = message.get("id")
+        return internal_id if isinstance(internal_id, str) and internal_id else None
 
     def receive_messages(self, mailbox_id: str, only_headers: bool = False) -> Any:
         return self.request("POST", f"/mailboxes/{mailbox_id}/receive", {"onlyHeaders": only_headers})
