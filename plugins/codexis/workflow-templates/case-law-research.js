@@ -163,7 +163,7 @@ const BRAND_GREEN = "7CB302"
 const BRAND_DARK = "3F5A0B"
 const RULE_GREY = "C8CEC9"
 const INK = "222222"
-const FONT = "Arial"
+const FONT = "Times New Roman"
 
 const plain = text => String(text == null ? "" : text)
   .replace(/[\s\S]*?/g, "")
@@ -172,7 +172,7 @@ const plain = text => String(text == null ? "" : text)
 const LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g
 
 const emphasised = (d, text, options) => text.split("**").map((piece, i) =>
-  new d.TextRun({ font: FONT, size: 20, color: INK, ...(options || {}), text: piece, bold: (options && options.bold) || i % 2 === 1 }))
+  new d.TextRun({ font: FONT, size: 24, color: INK, ...(options || {}), text: piece, bold: (options && options.bold) || i % 2 === 1 }))
 
 const runsOf = (d, text, options) => {
   const source = plain(text)
@@ -219,7 +219,7 @@ const tableOf = (d, rows) => {
           spacing: { after: 0 },
           children: runsOf(d, row[i] || "", index === 0
             ? { bold: true, color: "FFFFFF" }
-            : { size: 20 })
+            : { size: 22 })
         })]
       }))
     }))
@@ -378,7 +378,7 @@ const titlePage = (d, logo, question, jurisdiction, asOf) => {
       alignment: d.AlignmentType.CENTER,
       spacing: { after: 120 },
       border: { bottom: { style: d.BorderStyle.SINGLE, size: 12, space: 10, color: BRAND_GREEN } },
-      children: [new d.TextRun({ font: FONT, text: "Rešerše judikatury", bold: true, size: 34, color: BRAND_DARK })]
+      children: [new d.TextRun({ font: FONT, text: "Rešerše judikatury", bold: true, size: 40, color: BRAND_DARK })]
     }),
     new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
@@ -445,7 +445,7 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
     })
   }
   const styles = level => ({
-    run: { font: FONT, size: level === 1 ? 28 : 22, bold: true, color: BRAND_DARK },
+    run: { font: FONT, size: level === 1 ? 32 : 26, bold: true, color: BRAND_DARK },
     paragraph: {
       spacing: { before: level === 1 ? 360 : 240, after: 120, line: 276, lineRule: d.LineRuleType.AUTO },
       outlineLevel: level,
@@ -458,7 +458,7 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
     styles: {
       default: {
         document: {
-          run: { font: FONT, size: 20, color: INK },
+          run: { font: FONT, size: 24, color: INK },
           paragraph: {
             alignment: d.AlignmentType.JUSTIFIED,
             spacing: { after: 140, line: 264, lineRule: d.LineRuleType.AUTO }
@@ -466,7 +466,7 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
         },
         heading1: styles(1),
         heading2: styles(2),
-        heading3: { ...styles(3), run: { font: FONT, size: 20, bold: true, color: BRAND_DARK } }
+        heading3: { ...styles(3), run: { font: FONT, size: 24, bold: true, color: BRAND_DARK } }
       }
     },
     sections: [{
