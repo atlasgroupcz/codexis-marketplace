@@ -48,6 +48,12 @@ U rozhodnutí vždycky napiš, čeho se ta věc týkala. Právní věta bez skut
 
 Každý dokument, o který se opřeš, označ citačním markerem podle oddílu "## Citations" ve svých instrukcích - u tvrzení, které z něj plyne, i za doslovným výňatkem. Napsat slovy, odkud to je, nestačí: marker je jediné, co se přenese dál. Co markerem neoznačíš, se k zadavateli nedostane a v rešerši ten dokument nebude.`
 
+const STANDARD = path => path
+  ? `
+
+Podobu, kterou má rešerše mít, popisuje ${path}. Přečti si ji nástrojem readFile dřív, než začneš psát, a drž se jí.`
+  : ""
+
 const DEPTH = `Hledej vyčerpávajícně, piš úsporně. To jsou dvě různé věci a nesmíš je zaměnit.
 
 Projdi co nejvíc relevantních dokumentů a nespokoj se s několika rozhodnutími - vynechané rozhodnutí je chyba. Ale do výstupu dej jen to, co nese závěr: nosná rozhodnutí, nosné věty, skutek. Co jsi přečetl a neopíráš se o to, do rešerše nepatří. Delší text není lepší rešerše; čtenář je právník, který má málo času, a rozvláčnost čte jako nedodělanou práci.
@@ -98,7 +104,7 @@ Každá dílčí otázka se musí dát zodpovědět samostatně a smí se ptát 
 
 Dílčích otázek udělej nejvýše ${MAX_ISSUES}, seřazených od nejdůležitější. Vyber ty, na kterých odpověď doopravdy stojí - raději ${MAX_ISSUES} pořádně zodpovězených než dvakrát tolik odbytých. Když jich věc snese míň, udělej míň; ani jednu do počtu.`
 
-const PROMPT_SEARCH = (framing, label, question, asOf) => `${RULES}
+const PROMPT_SEARCH = (framing, label, question, asOf, standard) => `${RULES}${STANDARD(standard)}
 
 ${framing}
 
@@ -116,7 +122,7 @@ ${OUTPUT_SHAPE}
 
 Tvůj výstup se použije doslova jako oddíl "${label}" ve výsledné rešerši.`
 
-const PROMPT_VERIFY = (framing, question, draft) => `${RULES}
+const PROMPT_VERIFY = (framing, question, draft, standard) => `${RULES}${STANDARD(standard)}
 
 ${framing}
 
@@ -326,17 +332,32 @@ const renderPages = async docx => {
   return (stdout.match(/\S+\.png/g) || [])
 }
 
+const pluginDirectory = async () => {
+  const { readdir, access } = await import("node:fs/promises")
+  const { join } = await import("node:path")
+  const root = join(process.env.HOME || "/home/codexis", ".cdx", "marketplaces")
+  for (const entry of await readdir(root).catch(() => [])) {
+    const candidate = join(root, entry, "plugins", "codexis")
+    if (await access(join(candidate, "icon.svg")).then(() => true, () => false)) { return candidate }
+  }
+  return null
+}
+
+const standardPath = async () => {
+  const { join } = await import("node:path")
+  const plugin = await pluginDirectory().catch(() => null)
+  return plugin
+    ? join(plugin, "workflow-templates", "references", "reserse-judikatury-standard.md")
+    : null
+}
+
 const logoPng = async () => {
-  const { readdir, access, mkdir, readFile } = await import("node:fs/promises")
+  const { mkdir, readFile } = await import("node:fs/promises")
   const { join } = await import("node:path")
   const { execFile } = await import("node:child_process")
   const { promisify } = await import("node:util")
-  const root = join(process.env.HOME || "/home/codexis", ".cdx", "marketplaces")
-  let svg = null
-  for (const entry of await readdir(root).catch(() => [])) {
-    const candidate = join(root, entry, "plugins", "codexis", "icon.svg")
-    if (await access(candidate).then(() => true, () => false)) { svg = candidate; break }
-  }
+  const plugin = await pluginDirectory()
+  const svg = plugin ? join(plugin, "icon.svg") : null
   if (!svg) { return null }
   await mkdir(".tmp", { recursive: true })
   await promisify(execFile)("soffice",
@@ -505,6 +526,9 @@ export default async function (args) {
     throw new Error("case-law-research potřebuje otázku v args.question")
   }
 
+  const standard = await standardPath().catch(() => null)
+  if (standard) { log(`standard rešerše: ${standard}`) }
+
   phase(PHASE_SCOPE)
 
   const scope = await agent(PROMPT_SCOPE(question, jurisdiction, asOf),
@@ -517,7 +541,7 @@ export default async function (args) {
   phase(PHASE_SEARCH)
 
   const drafts = await parallel(issues.map(issue => () =>
-    agent(PROMPT_SEARCH(scope.framing, issue.label, issue.question, asOf),
+    agent(PROMPT_SEARCH(scope.framing, issue.label, issue.question, asOf, standard),
       { label: issue.label, model: MODEL })))
 
   const researched = issues
@@ -533,7 +557,7 @@ export default async function (args) {
   log(`ověřuje se oddílů: ${verified.length}`)
 
   const reviews = await parallel(verified.map(({ issue, draft }) => () =>
-    agent(PROMPT_VERIFY(scope.framing, issue.question, draft),
+    agent(PROMPT_VERIFY(scope.framing, issue.question, draft, standard),
       { label: LABEL_VERIFY(issue.label), agentType: "codexis:verifier", model: MODEL })))
 
   const body = researched
