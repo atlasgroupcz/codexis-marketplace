@@ -19,7 +19,6 @@ import os
 import re
 import shutil
 import uuid as uuid_mod
-from typing import Optional
 
 from . import image_similarity, scoring, sources
 from .exceptions import (
@@ -44,7 +43,7 @@ IMAGE_FETCH_CAP = 25  # max candidate logos downloaded+hashed per check
 
 def now_utc() -> str:
     return (
-        datetime.datetime.now(datetime.timezone.utc)
+        datetime.datetime.now(datetime.UTC)
         .isoformat(timespec="seconds")
         .replace("+00:00", "Z")
     )
@@ -69,7 +68,9 @@ def parse_nice_classes(value) -> list:
         if not s:
             continue
         if not s.isdigit() or not (1 <= int(s) <= 45):
-            raise InvalidMarkError(f"Neplatná třída výrobků/služeb (Nice): {p!r}. Očekává se 1-45.")
+            raise InvalidMarkError(
+                f"Neplatná třída výrobků/služeb (Nice): {p!r}. Očekává se 1-45."
+            )
         out.append(int(s))
     return sorted(set(out))
 
@@ -101,12 +102,12 @@ def _state_path(mark_uuid: str) -> str:
     return os.path.join(_mark_dir(mark_uuid), "state.json")
 
 
-def _load_state_dir(dir_name: str) -> Optional[dict]:
+def _load_state_dir(dir_name: str) -> dict | None:
     path = os.path.join(APP_DIR, dir_name, "state.json")
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, dict) else None
     except (json.JSONDecodeError, OSError):
@@ -144,7 +145,7 @@ def list_all() -> list:
     return results
 
 
-def find_by_uuid(target_uuid: str) -> Optional[dict]:
+def find_by_uuid(target_uuid: str) -> dict | None:
     if not target_uuid or not os.path.isdir(APP_DIR):
         return None
     state = _load_state_dir(target_uuid)
@@ -234,8 +235,7 @@ def _score_candidates(state: dict, candidates: list) -> list:
         prelim.sort(key=lambda pr: pr[1]["scores"]["overall"], reverse=True)
 
     return [
-        {"candidate": c, "scores": r["scores"], "tier": r["tier"]}
-        for c, r in prelim
+        {"candidate": c, "scores": r["scores"], "tier": r["tier"]} for c, r in prelim
     ]
 
 
@@ -316,7 +316,11 @@ def _baseline_collisions(state: dict) -> dict:
     state["collisions"] = collisions
     state["known_collision_ids"] = ["|".join(k) for k in known]
     state["last_check_at"] = now_utc()
-    return {"ok": not search["errors"], "errors": search["errors"], "found": len(collisions)}
+    return {
+        "ok": not search["errors"],
+        "errors": search["errors"],
+        "found": len(collisions),
+    }
 
 
 def _find_word_mark(text, nice_classes, territories):
@@ -328,14 +332,18 @@ def _find_word_mark(text, nice_classes, territories):
     for m in list_all():
         if m.get("kind") != "word":
             continue
-        if (m.get("text", ""),
-                tuple(sorted(m.get("nice_classes", []))),
-                tuple(sorted(m.get("territories", [])))) == key:
+        if (
+            m.get("text", ""),
+            tuple(sorted(m.get("nice_classes", []))),
+            tuple(sorted(m.get("territories", []))),
+        ) == key:
             return m
     return None
 
 
-def add_text(text, nice_classes=None, territories=None, owner_name="", label="", threshold=None) -> dict:
+def add_text(
+    text, nice_classes=None, territories=None, owner_name="", label="", threshold=None
+) -> dict:
     """Watch a word mark by its verbal element."""
     verbal = normalize_text(text)
     if len(verbal) < 1:
@@ -358,8 +366,17 @@ def add_text(text, nice_classes=None, territories=None, owner_name="", label="",
     return state
 
 
-def add_logo(logo_bytes, mime="image/png", text="", nice_classes=None, territories=None,
-             vienna_codes=None, owner_name="", label="", threshold=None) -> dict:
+def add_logo(
+    logo_bytes,
+    mime="image/png",
+    text="",
+    nice_classes=None,
+    territories=None,
+    vienna_codes=None,
+    owner_name="",
+    label="",
+    threshold=None,
+) -> dict:
     """Watch a figurative (or combined, if text given) mark by its logo image."""
     if not logo_bytes:
         raise InvalidMarkError("Obrázek loga je povinný u obrazové známky.")
@@ -369,7 +386,9 @@ def add_logo(logo_bytes, mime="image/png", text="", nice_classes=None, territori
     state["text"] = verbal
     state["nice_classes"] = parse_nice_classes(nice_classes)
     state["territories"] = parse_territories(territories)
-    state["vienna_codes"] = [str(c).strip() for c in (vienna_codes or []) if str(c).strip()]
+    state["vienna_codes"] = [
+        str(c).strip() for c in (vienna_codes or []) if str(c).strip()
+    ]
     state["owner_name"] = normalize_text(owner_name)
     if threshold is not None:
         state["threshold"] = float(threshold)
@@ -393,8 +412,13 @@ def check_one(mark_uuid: str) -> dict:
     try:
         search = _run_search(state)
     except ZnamkyError as exc:
-        return {"uuid": mark_uuid, "display_name": display_name(state),
-                "ok": False, "new_collisions": [], "error": str(exc)}
+        return {
+            "uuid": mark_uuid,
+            "display_name": display_name(state),
+            "ok": False,
+            "new_collisions": [],
+            "error": str(exc),
+        }
 
     scored = _score_candidates(state, search["candidates"])
     threshold = state.get("threshold", DEFAULT_THRESHOLD)
@@ -416,8 +440,13 @@ def check_one(mark_uuid: str) -> dict:
     _save_state(state)
 
     error = "; ".join(e["error"] for e in search["errors"]) or None
-    return {"uuid": mark_uuid, "display_name": display_name(state),
-            "ok": True, "new_collisions": new_collisions, "error": error}
+    return {
+        "uuid": mark_uuid,
+        "display_name": display_name(state),
+        "ok": True,
+        "new_collisions": new_collisions,
+        "error": error,
+    }
 
 
 def check_all() -> list:
@@ -426,12 +455,19 @@ def check_all() -> list:
         try:
             results.append(check_one(state["uuid"]))
         except ZnamkyError as exc:
-            results.append({"uuid": state.get("uuid", "?"), "display_name": display_name(state),
-                            "ok": False, "new_collisions": [], "error": str(exc)})
+            results.append(
+                {
+                    "uuid": state.get("uuid", "?"),
+                    "display_name": display_name(state),
+                    "ok": False,
+                    "new_collisions": [],
+                    "error": str(exc),
+                }
+            )
     return results
 
 
-def confirm(mark_uuid: str, change_index: Optional[int] = None) -> int:
+def confirm(mark_uuid: str, change_index: int | None = None) -> int:
     """Mark collisions as reviewed. Returns the number marked."""
     state = find_by_uuid(mark_uuid)
     if state is None:
@@ -441,7 +477,9 @@ def confirm(mark_uuid: str, change_index: Optional[int] = None) -> int:
     marked = 0
     if change_index is not None:
         if not (0 <= change_index < len(collisions)):
-            raise IndexError(f"Index {change_index} je mimo rozsah (0..{len(collisions) - 1}).")
+            raise IndexError(
+                f"Index {change_index} je mimo rozsah (0..{len(collisions) - 1})."
+            )
         if not collisions[change_index].get("confirmed_on"):
             collisions[change_index]["confirmed_on"] = timestamp
             marked = 1
@@ -462,7 +500,9 @@ def set_assessment(mark_uuid: str, change_index: int, assessment: dict) -> dict:
         raise MarkNotTrackedError("Známka není sledována.")
     collisions = state.get("collisions", [])
     if not (0 <= change_index < len(collisions)):
-        raise IndexError(f"Index {change_index} je mimo rozsah (0..{len(collisions) - 1}).")
+        raise IndexError(
+            f"Index {change_index} je mimo rozsah (0..{len(collisions) - 1})."
+        )
     risk = (assessment.get("risk") or "").lower()
     if risk not in ("high", "medium", "low", "none"):
         raise InvalidMarkError("AI posouzení: 'risk' musí být high/medium/low/none.")
@@ -488,8 +528,15 @@ def set_label(mark_uuid: str, label: str) -> dict:
     return state
 
 
-def update_mark(mark_uuid: str, text=None, nice_classes=None, territories=None,
-                owner_name=None, label=None, threshold=None) -> dict:
+def update_mark(
+    mark_uuid: str,
+    text=None,
+    nice_classes=None,
+    territories=None,
+    owner_name=None,
+    label=None,
+    threshold=None,
+) -> dict:
     """Update editable fields of a watched mark. Only non-None fields change.
 
     Does not change the mark's kind or stored logo. A new threshold/classes/
@@ -553,13 +600,22 @@ def lookup_text(text, nice_classes=None, territories=None, limit=80) -> dict:
     }
     if not state["text"]:
         raise InvalidMarkError("Text pro lustraci je povinný.")
-    search = sources.search_all(state["text"], state["nice_classes"], state["territories"], limit)
+    search = sources.search_all(
+        state["text"], state["nice_classes"], state["territories"], limit
+    )
     scored = _score_candidates(state, search["candidates"])
     return {"query": state["text"], "candidates": scored, "errors": search["errors"]}
 
 
-def lookup_logo(logo_bytes, mime="image/png", text="", nice_classes=None,
-                territories=None, vienna_codes=None, limit=80) -> dict:
+def lookup_logo(
+    logo_bytes,
+    mime="image/png",
+    text="",
+    nice_classes=None,
+    territories=None,
+    vienna_codes=None,
+    limit=80,
+) -> dict:
     """Ad-hoc figurative similarity search; returns scored candidates, saves nothing."""
     if not logo_bytes:
         raise InvalidMarkError("Obrázek loga je povinný pro obrazovou lustraci.")
@@ -569,7 +625,9 @@ def lookup_logo(logo_bytes, mime="image/png", text="", nice_classes=None,
     state["text"] = verbal
     state["nice_classes"] = parse_nice_classes(nice_classes)
     state["territories"] = parse_territories(territories)
-    state["vienna_codes"] = [str(c).strip() for c in (vienna_codes or []) if str(c).strip()]
+    state["vienna_codes"] = [
+        str(c).strip() for c in (vienna_codes or []) if str(c).strip()
+    ]
     try:
         path = store_logo(state["uuid"], logo_bytes, mime)
         hashed = _hash_logo(path)
@@ -587,12 +645,16 @@ def lookup_logo(logo_bytes, mime="image/png", text="", nice_classes=None,
 
 
 _MIME_BY_EXT = {
-    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-    ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
 }
 
 
-def logo_data_url(path) -> Optional[str]:
+def logo_data_url(path) -> str | None:
     """Read a stored image and return a base64 data: URL, or None.
 
     Logos are delivered inline (data URL in the JSON payload) rather than as a
@@ -618,7 +680,7 @@ def display_name(state: dict) -> str:
     return "(obrazová známka)"
 
 
-def _worst_tier(collisions: list) -> Optional[str]:
+def _worst_tier(collisions: list) -> str | None:
     order = {"high": 3, "medium": 2, "low": 1}
     best = 0
     label = None

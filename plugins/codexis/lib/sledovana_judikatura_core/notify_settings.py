@@ -58,7 +58,12 @@ def defaults_path():
     # from the same home the installer wrote it to.
     return os.path.join(
         os.path.expanduser("~"),
-        ".local", "share", "codexis", "settings", APP_ID, "defaults.json",
+        ".local",
+        "share",
+        "codexis",
+        "settings",
+        APP_ID,
+        "defaults.json",
     )
 
 
@@ -68,7 +73,7 @@ def user_path():
 
 def _read_json(path):
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, dict) else None
     except (OSError, ValueError):

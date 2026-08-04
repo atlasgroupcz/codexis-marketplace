@@ -4,7 +4,6 @@ import io
 import json
 
 import pytest
-
 from sledovana_judikatura_core import state, tracking
 from sledovana_judikatura_core.exceptions import (
     AreaAlreadyExistsError,
@@ -14,7 +13,6 @@ from sledovana_judikatura_core.exceptions import (
     ReportSourceError,
     TopicNotFoundError,
 )
-
 
 # ── topic lifecycle ──────────────────────────────────────────────────────────
 
@@ -69,30 +67,20 @@ class TestDelete:
         self, judikatura_app_dir, monkeypatch
     ):
         calls = []
-        monkeypatch.setattr(
-            "subprocess.run", lambda *a, **k: calls.append(a[0])
-        )
+        monkeypatch.setattr("subprocess.run", lambda *a, **k: calls.append(a[0]))
         topic_uuid, _ = tracking.init("With auto")
         tracking.set_automation(topic_uuid, "auto-42")
         tracking.delete(topic_uuid)
-        assert any(
-            "automation" in str(c) and "auto-42" in str(c) for c in calls
-        )
+        assert any("automation" in str(c) and "auto-42" in str(c) for c in calls)
 
-    def test_skips_cdxctl_without_automation_id(
-        self, judikatura_app_dir, monkeypatch
-    ):
+    def test_skips_cdxctl_without_automation_id(self, judikatura_app_dir, monkeypatch):
         calls = []
-        monkeypatch.setattr(
-            "subprocess.run", lambda *a, **k: calls.append(a[0])
-        )
+        monkeypatch.setattr("subprocess.run", lambda *a, **k: calls.append(a[0]))
         topic_uuid, _ = tracking.init("No auto")
         tracking.delete(topic_uuid)
         assert calls == []
 
-    def test_subprocess_failure_does_not_raise(
-        self, judikatura_app_dir, monkeypatch
-    ):
+    def test_subprocess_failure_does_not_raise(self, judikatura_app_dir, monkeypatch):
         def boom(*a, **k):
             raise RuntimeError("cdxctl not reachable")
 
@@ -138,30 +126,50 @@ class TestListAll:
 
     def test_unconfirmed_beats_confirmed_beats_idle(self, judikatura_app_dir):
         # idle topic - no reports
-        state.save_topic("idle", {
-            "name": "Idle", "uuid": "idle",
-            "created_at": "2026-03-01T00:00:00Z",
-        })
+        state.save_topic(
+            "idle",
+            {
+                "name": "Idle",
+                "uuid": "idle",
+                "created_at": "2026-03-01T00:00:00Z",
+            },
+        )
         # topic with all confirmed reports
-        state.save_topic("confirmed-only", {
-            "name": "Confirmed", "uuid": "confirmed-only",
-            "created_at": "2026-03-15T00:00:00Z",
-        })
-        state.save_report("confirmed-only", "2026-04-10", {
-            "checked_at": "2026-04-10T00:00:00Z",
-            "confirmed_on": "2026-04-11T00:00:00Z",
-            "found_count": 1,
-        })
+        state.save_topic(
+            "confirmed-only",
+            {
+                "name": "Confirmed",
+                "uuid": "confirmed-only",
+                "created_at": "2026-03-15T00:00:00Z",
+            },
+        )
+        state.save_report(
+            "confirmed-only",
+            "2026-04-10",
+            {
+                "checked_at": "2026-04-10T00:00:00Z",
+                "confirmed_on": "2026-04-11T00:00:00Z",
+                "found_count": 1,
+            },
+        )
         # topic with unconfirmed report
-        state.save_topic("pending", {
-            "name": "Pending", "uuid": "pending",
-            "created_at": "2026-03-20T00:00:00Z",
-        })
-        state.save_report("pending", "2026-04-15", {
-            "checked_at": "2026-04-15T00:00:00Z",
-            "confirmed_on": None,
-            "found_count": 2,
-        })
+        state.save_topic(
+            "pending",
+            {
+                "name": "Pending",
+                "uuid": "pending",
+                "created_at": "2026-03-20T00:00:00Z",
+            },
+        )
+        state.save_report(
+            "pending",
+            "2026-04-15",
+            {
+                "checked_at": "2026-04-15T00:00:00Z",
+                "confirmed_on": None,
+                "found_count": 2,
+            },
+        )
 
         result = tracking.list_all()
         order = [t["uuid"] for t in result]
@@ -274,10 +282,14 @@ class TestSaveReport:
     def test_from_file(self, judikatura_app_dir, tmp_path):
         topic_uuid, _ = tracking.init("T")
         report_path = tmp_path / "report.json"
-        report_path.write_text(json.dumps({
-            "report_id": "2026-04-20",
-            "found_count": 7,
-        }))
+        report_path.write_text(
+            json.dumps(
+                {
+                    "report_id": "2026-04-20",
+                    "found_count": 7,
+                }
+            )
+        )
         rid = tracking.save_report(topic_uuid, file_path=str(report_path))
         assert rid == "2026-04-20"
         loaded = state.load_report(topic_uuid, "2026-04-20")
@@ -300,10 +312,14 @@ class TestSaveReport:
 
     def test_updates_last_check_at(self, judikatura_app_dir):
         topic_uuid, _ = tracking.init("T")
-        stream = io.StringIO(json.dumps({
-            "report_id": "r1",
-            "checked_at": "2026-04-20T10:00:00Z",
-        }))
+        stream = io.StringIO(
+            json.dumps(
+                {
+                    "report_id": "r1",
+                    "checked_at": "2026-04-20T10:00:00Z",
+                }
+            )
+        )
         tracking.save_report(topic_uuid, stream=stream)
         data = state.load_topic(topic_uuid)
         assert data["last_check_at"] == "2026-04-20T10:00:00Z"
@@ -377,6 +393,6 @@ class TestFindTopic:
 class TestInitDedup:
     def test_init_same_name_returns_existing(self, judikatura_app_dir):
         u1, _ = tracking.init("Náhrada škody")
-        u2, _ = tracking.init("náhrada škody")   # case-insensitive match
+        u2, _ = tracking.init("náhrada škody")  # case-insensitive match
         assert u2 == u1
         assert len(state.all_topics()) == 1

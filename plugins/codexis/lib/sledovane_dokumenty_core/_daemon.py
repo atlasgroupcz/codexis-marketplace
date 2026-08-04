@@ -22,7 +22,7 @@ def load_auth():
     if not token:
         return None
     if token.lower().startswith("authorization:"):
-        token = token[len("Authorization:"):].strip()
+        token = token[len("Authorization:") :].strip()
     if token[:7].lower() == "bearer ":
         return token
     return f"Bearer {token}"

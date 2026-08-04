@@ -49,6 +49,7 @@ def _seed_legislation(tracking, ref):
 
 def check_folder(root, printer=None):
     """Check one folder. Returns {root, name, changes:[...], errors:[...]}."""
+
     def _log(msg):
         if printer:
             printer(msg)
@@ -103,12 +104,14 @@ def check_folder(root, printer=None):
             "confirmed_on": None,
         }
         leg.setdefault("changes", []).append(change)
-        new_changes.append({
-            "codexisId": codexis_id,
-            "uri": leg.get("uri"),
-            "text": leg.get("text"),
-            **change,
-        })
+        new_changes.append(
+            {
+                "codexisId": codexis_id,
+                "uri": leg.get("uri"),
+                "text": leg.get("text"),
+                **change,
+            }
+        )
 
     tracking["lastCheckAt"] = now_utc()
     folders.write_tracking(abs_root, tracking)
@@ -167,7 +170,9 @@ def confirm_folder(root, codexis_id=None):
             change["confirmed_on"] = now
             marked += 1
         if unconfirmed:
-            leg["baselineVersionId"] = leg.get("lastKnownVersionId", leg.get("baselineVersionId"))
+            leg["baselineVersionId"] = leg.get(
+                "lastKnownVersionId", leg.get("baselineVersionId")
+            )
     if marked:
         folders.write_tracking(abs_root, tracking)
     return marked

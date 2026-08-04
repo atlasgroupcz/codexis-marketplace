@@ -16,38 +16,40 @@ import re
 from . import clients, folders
 
 # Object root (strict structured output needs an object, not a bare array).
-HARVEST_SCHEMA = json.dumps({
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "references": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "text": {
-                        "type": "string",
-                        "description": "Human-friendly title incl. the relevant part, e.g. "
-                                       "'Zákon č. 89/2012 Sb., občanský zákoník - § 2079 a násl.'",
+HARVEST_SCHEMA = json.dumps(
+    {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "references": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "Human-friendly title incl. the relevant part, e.g. "
+                            "'Zákon č. 89/2012 Sb., občanský zákoník - § 2079 a násl.'",
+                        },
+                        "citation": {
+                            "type": "string",
+                            "description": "Canonical citation if identifiable, e.g. '89/2012 Sb.' "
+                            "or 'Nařízení (EU) 2016/679'. Empty string if unknown.",
+                        },
+                        "uri": {
+                            "type": "string",
+                            "description": "Canonical public URL of the legislation if known, else "
+                            "empty string.",
+                        },
                     },
-                    "citation": {
-                        "type": "string",
-                        "description": "Canonical citation if identifiable, e.g. '89/2012 Sb.' "
-                                       "or 'Nařízení (EU) 2016/679'. Empty string if unknown.",
-                    },
-                    "uri": {
-                        "type": "string",
-                        "description": "Canonical public URL of the legislation if known, else "
-                                       "empty string.",
-                    },
+                    "required": ["text", "citation", "uri"],
                 },
-                "required": ["text", "citation", "uri"],
             },
         },
-    },
-    "required": ["references"],
-})
+        "required": ["references"],
+    }
+)
 
 HARVEST_QUERY = (
     "Projdi tento dokument a vypiš VŠECHNY odkazy na právní předpisy "
@@ -71,7 +73,7 @@ _YEAR_RE = re.compile(rf"^{_YEAR}$")
 # here teaches both sides at once.
 _EU_TYPE_LETTERS = {"nařízení": "R", "směrnice": "L", "rozhodnutí": "D"}
 # An EU act may also be cited by treaty abbreviation alone, with no type word.
-_EU_MARKERS = tuple(_EU_TYPE_LETTERS) + ("eu", "es", "ehs")
+_EU_MARKERS = (*_EU_TYPE_LETTERS, "eu", "es", "ehs")
 # Either NUMBER/YEAR (pre-2015 acts) or YEAR/NUMBER (2015 on).
 _EU_NUMBER_RE = re.compile(r"(\d{1,4})\s*/\s*(\d{1,4})")
 
@@ -190,7 +192,10 @@ def harvest_document(root, rel_path, printer=None):
     on extract failure (document left pending)."""
     abs_path = folders.to_abs(root, rel_path)
     response = clients.llm_extract_file(
-        abs_path, HARVEST_QUERY, schema=HARVEST_SCHEMA, schema_name="legislation_references"
+        abs_path,
+        HARVEST_QUERY,
+        schema=HARVEST_SCHEMA,
+        schema_name="legislation_references",
     )
     refs = _parse_references(response)
     if refs is None:

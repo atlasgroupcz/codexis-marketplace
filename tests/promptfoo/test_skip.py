@@ -34,7 +34,8 @@ class TestPartitionSkipped:
     def test_splits_runnable_from_skipped(self, tmp_path):
         runnable_cfg = self._write(tmp_path, "runs.config.yaml", "description: runs\n")
         skipped_cfg = self._write(
-            tmp_path, "blocked.config.yaml",
+            tmp_path,
+            "blocked.config.yaml",
             "skip: waiting for a CI key\ndescription: blocked\n",
         )
         runnable, skipped = run.partition_skipped([runnable_cfg, skipped_cfg])

@@ -51,7 +51,7 @@ class TestFindGroup:
             {"name": "Second"},
             {"name": "Third"},
         ]
-        idx, g = state.find_group(groups, "Second")
+        idx, _ = state.find_group(groups, "Second")
         assert idx == 1
 
 

@@ -26,9 +26,9 @@ import os
 import re
 import urllib.error
 import urllib.request
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping, Optional
 
 # Reuse the single source of truth for how the provider smuggles tool calls
 # through promptfoo's output string (sentinel-bracketed JSON suffix).
@@ -71,7 +71,7 @@ class FailedCase:
     response_text: str
     tool_calls: list
     failed_assertions: list  # [{"type", "value", "reason"}]
-    criteria: Optional[dict]  # {"correct": [...], "incorrect": [...]} or None
+    criteria: dict | None  # {"correct": [...], "incorrect": [...]} or None
 
 
 @dataclass
@@ -83,16 +83,17 @@ class Verdict:
 
 @dataclass
 class ArbitrationResult:
-    passed: bool       # should the failing row flip to PASS?
+    passed: bool  # should the failing row flip to PASS?
     verdict: str
     confidence: float
     rationale: str
-    flag: str = ""     # "" | "LOW_CONFIDENCE" | "JUDGE_ERROR"
+    flag: str = ""  # "" | "LOW_CONFIDENCE" | "JUDGE_ERROR"
 
 
 # --------------------------------------------------------------------------- #
 # Parse promptfoo --output JSON into failing cases.
 # --------------------------------------------------------------------------- #
+
 
 def split_output(output: str) -> tuple[str, list]:
     """Separate the AI's text from the sentinel-wrapped tool_calls suffix."""
@@ -123,24 +124,32 @@ def parse_failures(result_json: dict, config: str) -> list[FailedCase]:
             if c.get("pass"):
                 continue
             a = c.get("assertion") or {}
-            failed.append({"type": a.get("type"), "value": a.get("value"),
-                           "reason": c.get("reason") or ""})
-        cases.append(FailedCase(
-            config=config,
-            test_idx=row.get("testIdx", 0),
-            description=description,
-            prompt=prompt,
-            response_text=text,
-            tool_calls=tool_calls,
-            failed_assertions=failed,
-            criteria=vars_.get("arbitration"),
-        ))
+            failed.append(
+                {
+                    "type": a.get("type"),
+                    "value": a.get("value"),
+                    "reason": c.get("reason") or "",
+                }
+            )
+        cases.append(
+            FailedCase(
+                config=config,
+                test_idx=row.get("testIdx", 0),
+                description=description,
+                prompt=prompt,
+                response_text=text,
+                tool_calls=tool_calls,
+                failed_assertions=failed,
+                criteria=vars_.get("arbitration"),
+            )
+        )
     return cases
 
 
 # --------------------------------------------------------------------------- #
 # Judge prompt assembly.
 # --------------------------------------------------------------------------- #
+
 
 def build_judge_messages(case: FailedCase) -> list[dict]:
     parts = [
@@ -152,14 +161,19 @@ def build_judge_messages(case: FailedCase) -> list[dict]:
         tc = "\n".join(
             f"  {i + 1}. {t.get('name')}: "
             f"{json.dumps(t.get('input') or {}, ensure_ascii=False)}"
-            for i, t in enumerate(case.tool_calls))
+            for i, t in enumerate(case.tool_calls)
+        )
     else:
         tc = "  (none)"
     parts.append("AI'S TOOL-CALL SEQUENCE:\n" + tc)
 
-    fa = "\n".join(
-        f"  - type={a.get('type')} value={a.get('value')}\n    reason: {a.get('reason')}"
-        for a in case.failed_assertions) or "  (none)"
+    fa = (
+        "\n".join(
+            f"  - type={a.get('type')} value={a.get('value')}\n    reason: {a.get('reason')}"
+            for a in case.failed_assertions
+        )
+        or "  (none)"
+    )
     parts.append("DETERMINISTIC ASSERTION(S) THAT FAILED:\n" + fa)
 
     if case.criteria:
@@ -173,8 +187,9 @@ def build_judge_messages(case: FailedCase) -> list[dict]:
 
     parts.append(
         "DECIDE whether the AI's actual tool usage was CORRECT or INCORRECT. "
-        'Reply ONLY with JSON: '
-        '{"verdict":"CORRECT"|"INCORRECT","confidence":0.0,"rationale":"<=300 chars"}')
+        "Reply ONLY with JSON: "
+        '{"verdict":"CORRECT"|"INCORRECT","confidence":0.0,"rationale":"<=300 chars"}'
+    )
 
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -185,6 +200,7 @@ def build_judge_messages(case: FailedCase) -> list[dict]:
 # --------------------------------------------------------------------------- #
 # Verdict parsing.
 # --------------------------------------------------------------------------- #
+
 
 def parse_verdict(raw: str) -> Verdict:
     """Parse the judge's JSON reply, tolerating ```json fences. Raises ValueError."""
@@ -204,26 +220,32 @@ def parse_verdict(raw: str) -> Verdict:
         confidence = float(data.get("confidence", 0.0))
     except (TypeError, ValueError):
         confidence = 0.0
-    return Verdict(verdict=str(data["verdict"]).strip().upper(),
-                   confidence=confidence,
-                   rationale=str(data.get("rationale", "")).strip())
+    return Verdict(
+        verdict=str(data["verdict"]).strip().upper(),
+        confidence=confidence,
+        rationale=str(data.get("rationale", "")).strip(),
+    )
 
 
 # --------------------------------------------------------------------------- #
 # Cache key.
 # --------------------------------------------------------------------------- #
 
+
 def assertion_signature(failed_assertions: list) -> str:
     """Stable signature of the failed assertions (type+value only; reason excluded)."""
-    sig = [{"type": a.get("type"), "value": a.get("value")}
-           for a in (failed_assertions or [])]
+    sig = [
+        {"type": a.get("type"), "value": a.get("value")}
+        for a in (failed_assertions or [])
+    ]
     return json.dumps(sig, sort_keys=True, ensure_ascii=False)
 
 
-def cache_key(model: str, pf_version: str, prompt: str, response: str,
-              assertion_sig: str) -> str:
+def cache_key(
+    model: str, pf_version: str, prompt: str, response: str, assertion_sig: str
+) -> str:
     h = hashlib.sha256()
-    h.update(f"{model}|{pf_version}|{prompt}|{response}|{assertion_sig}".encode("utf-8"))
+    h.update(f"{model}|{pf_version}|{prompt}|{response}|{assertion_sig}".encode())
     return h.hexdigest()
 
 
@@ -231,38 +253,63 @@ def cache_key(model: str, pf_version: str, prompt: str, response: str,
 # Arbitration: verdict -> pass/fail, with cache + error handling.
 # --------------------------------------------------------------------------- #
 
-def arbitrate(case: FailedCase, *,
-              call: Callable[[list], str],
-              model: str,
-              pf_version: str,
-              floor: float = DEFAULT_CONFIDENCE,
-              cache: Optional[dict] = None) -> ArbitrationResult:
+
+def arbitrate(
+    case: FailedCase,
+    *,
+    call: Callable[[list], str],
+    model: str,
+    pf_version: str,
+    floor: float = DEFAULT_CONFIDENCE,
+    cache: dict | None = None,
+) -> ArbitrationResult:
     """Re-grade one failing case. `call(messages) -> raw_json_str` is the judge."""
-    key = cache_key(model, pf_version, case.prompt, case.response_text,
-                    assertion_signature(case.failed_assertions))
+    key = cache_key(
+        model,
+        pf_version,
+        case.prompt,
+        case.response_text,
+        assertion_signature(case.failed_assertions),
+    )
     if cache is not None and key in cache:
         return ArbitrationResult(**cache[key])
 
     try:
         verdict = parse_verdict(call(build_judge_messages(case)))
     except Exception as e:  # HTTP failure or malformed reply → keep FAIL, flag it
-        return ArbitrationResult(passed=False, verdict="ERROR", confidence=0.0,
-                                 rationale=str(e)[:300], flag="JUDGE_ERROR")
+        return ArbitrationResult(
+            passed=False,
+            verdict="ERROR",
+            confidence=0.0,
+            rationale=str(e)[:300],
+            flag="JUDGE_ERROR",
+        )
 
     if verdict.verdict == "CORRECT" and verdict.confidence >= floor:
-        result = ArbitrationResult(True, verdict.verdict, verdict.confidence,
-                                   verdict.rationale, "")
+        result = ArbitrationResult(
+            True, verdict.verdict, verdict.confidence, verdict.rationale, ""
+        )
     elif verdict.verdict == "CORRECT":
-        result = ArbitrationResult(False, verdict.verdict, verdict.confidence,
-                                   verdict.rationale, "LOW_CONFIDENCE")
+        result = ArbitrationResult(
+            False,
+            verdict.verdict,
+            verdict.confidence,
+            verdict.rationale,
+            "LOW_CONFIDENCE",
+        )
     else:
-        result = ArbitrationResult(False, verdict.verdict, verdict.confidence,
-                                   verdict.rationale, "")
+        result = ArbitrationResult(
+            False, verdict.verdict, verdict.confidence, verdict.rationale, ""
+        )
 
     if cache is not None:  # only real verdicts are cached, never JUDGE_ERROR
-        cache[key] = {"passed": result.passed, "verdict": result.verdict,
-                      "confidence": result.confidence, "rationale": result.rationale,
-                      "flag": result.flag}
+        cache[key] = {
+            "passed": result.passed,
+            "verdict": result.verdict,
+            "confidence": result.confidence,
+            "rationale": result.rationale,
+            "flag": result.flag,
+        }
     return result
 
 
@@ -271,7 +318,8 @@ def arbitrate(case: FailedCase, *,
 # Not unit-tested (network) - kept thin so `arbitrate`'s `call` can be stubbed.
 # --------------------------------------------------------------------------- #
 
-def resolve_endpoint(env: Optional[Mapping[str, str]] = None) -> tuple[str, str, str]:
+
+def resolve_endpoint(env: Mapping[str, str] | None = None) -> tuple[str, str, str]:
     """Return (base_url, api_key, model) for the judge, or raise ArbitrationConfigError.
 
     Prefers the cdx-daemon eval-ops names (OPENAI_BASE_URL / OPENAI_API_KEY /
@@ -285,26 +333,35 @@ def resolve_endpoint(env: Optional[Mapping[str, str]] = None) -> tuple[str, str,
         raise ArbitrationConfigError(
             "arbitration requires an OpenAI-compatible judge endpoint: set "
             "OPENAI_BASE_URL + OPENAI_API_KEY (or CODEXIS_PUBLIC_LITELLM_BASE_URL + "
-            "CODEXIS_USER_LITELLM_API_KEY)")
+            "CODEXIS_USER_LITELLM_API_KEY)"
+        )
     return base, key, model
 
 
-def make_judge_caller(base_url: str, api_key: str, model: str,
-                      timeout: float = DEFAULT_TIMEOUT_S) -> Callable[[list], str]:
+def make_judge_caller(
+    base_url: str, api_key: str, model: str, timeout: float = DEFAULT_TIMEOUT_S
+) -> Callable[[list], str]:
     """Build a `call(messages) -> content_str` against an OpenAI-compatible endpoint."""
     url = base_url.rstrip("/") + "/chat/completions"
 
     def call(messages: list) -> str:
-        body = json.dumps({
-            "model": model,
-            "messages": messages,
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-        }).encode("utf-8")
-        req = urllib.request.Request(url, data=body, method="POST", headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        })
+        body = json.dumps(
+            {
+                "model": model,
+                "messages": messages,
+                "response_format": {"type": "json_object"},
+                "temperature": 0,
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+        )
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
@@ -314,27 +371,43 @@ def make_judge_caller(base_url: str, api_key: str, model: str,
         try:
             return payload["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as e:
-            raise RuntimeError(f"judge reply missing content: {str(payload)[:300]}") from e
+            raise RuntimeError(
+                f"judge reply missing content: {str(payload)[:300]}"
+            ) from e
 
     return call
 
 
-def arbitrate_failures(result_json: dict, config: str, *,
-                       call: Callable[[list], str],
-                       model: str,
-                       pf_version: str,
-                       floor: float = DEFAULT_CONFIDENCE,
-                       cache: Optional[dict] = None) -> list[tuple[FailedCase, ArbitrationResult]]:
+def arbitrate_failures(
+    result_json: dict,
+    config: str,
+    *,
+    call: Callable[[list], str],
+    model: str,
+    pf_version: str,
+    floor: float = DEFAULT_CONFIDENCE,
+    cache: dict | None = None,
+) -> list[tuple[FailedCase, ArbitrationResult]]:
     """Re-grade every failing row in one config's promptfoo --output JSON."""
     return [
-        (case, arbitrate(case, call=call, model=model, pf_version=pf_version,
-                         floor=floor, cache=cache))
+        (
+            case,
+            arbitrate(
+                case,
+                call=call,
+                model=model,
+                pf_version=pf_version,
+                floor=floor,
+                cache=cache,
+            ),
+        )
         for case in parse_failures(result_json, config)
     ]
 
 
-def recompute_pass(original_ok: bool,
-                   outcomes: list[tuple[FailedCase, ArbitrationResult]]) -> bool:
+def recompute_pass(
+    original_ok: bool, outcomes: list[tuple[FailedCase, ArbitrationResult]]
+) -> bool:
     """Config-level pass after arbitration.
 
     A config that promptfoo already passed stays passed. A failed config passes
@@ -354,8 +427,9 @@ def transcript_slug(config: str, test_idx: int) -> str:
     return re.sub(r"[^a-zA-Z0-9._-]", "_", f"{config}__{test_idx}")[:200]
 
 
-def format_transcript(case: FailedCase, result: ArbitrationResult,
-                      final_pass: bool) -> str:
+def format_transcript(
+    case: FailedCase, result: ArbitrationResult, final_pass: bool
+) -> str:
     """Human-readable audit record for one arbitrated failure."""
     lines = [
         f"config:       {case.config}",
@@ -376,8 +450,10 @@ def format_transcript(case: FailedCase, result: ArbitrationResult,
         lines.append(f"    reason: {a.get('reason')}")
     lines += ["", "TOOL CALLS:"]
     for i, t in enumerate(case.tool_calls):
-        lines.append(f"  {i + 1}. {t.get('name')}: "
-                     f"{json.dumps(t.get('input') or {}, ensure_ascii=False)}")
+        lines.append(
+            f"  {i + 1}. {t.get('name')}: "
+            f"{json.dumps(t.get('input') or {}, ensure_ascii=False)}"
+        )
     lines += ["", "AI RESPONSE (text):", case.response_text, ""]
     return "\n".join(lines)
 
@@ -386,7 +462,7 @@ def default_cache_path() -> Path:
     return Path(os.path.expanduser("~/.cache/cdx-promptfoo/arbitration-cache.json"))
 
 
-def load_cache(path: Optional[Path] = None) -> dict:
+def load_cache(path: Path | None = None) -> dict:
     path = path or default_cache_path()
     try:
         return json.loads(path.read_text())
@@ -394,7 +470,7 @@ def load_cache(path: Optional[Path] = None) -> dict:
         return {}
 
 
-def save_cache(cache: dict, path: Optional[Path] = None) -> None:
+def save_cache(cache: dict, path: Path | None = None) -> None:
     path = path or default_cache_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(cache, ensure_ascii=False))

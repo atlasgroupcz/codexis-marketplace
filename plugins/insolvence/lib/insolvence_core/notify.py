@@ -40,7 +40,7 @@ def _load_auth() -> str | None:
     if not token:
         return None
     if token.lower().startswith("authorization:"):
-        token = token[len("Authorization:"):].strip()
+        token = token[len("Authorization:") :].strip()
     if token[:7].lower() == "bearer ":
         return token
     return f"Bearer {token}"
@@ -123,7 +123,9 @@ def _rest_base(daemon_url: str) -> str:
     return base
 
 
-def _send_email(subject: str, body_text: str, body_html: str | None = None, to: list | None = None) -> None:
+def _send_email(
+    subject: str, body_text: str, body_html: str | None = None, to: list | None = None
+) -> None:
     daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
     auth = _load_auth()
     if not daemon_url or not auth:
@@ -146,7 +148,7 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
         "Content-Type: application/json; charset=utf-8\r\n\r\n"
         f"{json.dumps(payload, ensure_ascii=False)}\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     req = urllib.request.Request(
         _rest_base(daemon_url) + _EMAIL_ENDPOINT,
@@ -161,7 +163,9 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
         urllib.request.urlopen(req, timeout=30).close()
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")[:300]
-        raise InsolvenceError(f"E-mail se nepodařilo odeslat (HTTP {exc.code}): {detail}")
+        raise InsolvenceError(
+            f"E-mail se nepodařilo odeslat (HTTP {exc.code}): {detail}"
+        )
     except urllib.error.URLError as exc:
         raise InsolvenceError(f"E-mail se nepodařilo odeslat: {exc.reason}")
     except OSError as exc:
@@ -181,7 +185,9 @@ def build_summary(results: list) -> tuple[str, str, str] | None:
     if len(changed) == 1 and total == 1:
         subject = f"Insolvence: nová změna - {changed[0]['display_name']}"
     else:
-        subject = f"Insolvence: {total} nových změn u {len(changed)} sledovaných subjektů"
+        subject = (
+            f"Insolvence: {total} nových změn u {len(changed)} sledovaných subjektů"
+        )
 
     text_lines = ["Hlídač insolvencí zaznamenal nové změny:", ""]
     html_rows = []
@@ -270,7 +276,10 @@ def _pick_application(applications, plugin_name, component_id):
         content_url = app.get("contentUrl")
         if not isinstance(app_id, str) or plugin.get("name") != plugin_name:
             continue
-        if isinstance(content_url, str) and _component_id_of(content_url) == component_id:
+        if (
+            isinstance(content_url, str)
+            and _component_id_of(content_url) == component_id
+        ):
             return app_id
     return None
 
@@ -284,7 +293,9 @@ def _resolve_app_link():
     return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
-def _send_inapp(message: str, *, action: str | None = None, link: str | None = None) -> bool:
+def _send_inapp(
+    message: str, *, action: str | None = None, link: str | None = None
+) -> bool:
     """Create an in-app (notification-center bell) notification via the daemon's
     GraphQL createNotification. Best-effort: returns False on missing config or a
     transport error, never raises (a notification must not fail the check)."""

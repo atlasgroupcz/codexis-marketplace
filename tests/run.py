@@ -64,8 +64,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if command not in COMMANDS:
-        print(f"tests/run.py: unknown command {command!r}; "
-              f"known: {', '.join(sorted(COMMANDS))}, all", file=sys.stderr)
+        print(
+            f"tests/run.py: unknown command {command!r}; "
+            f"known: {', '.join(sorted(COMMANDS))}, all",
+            file=sys.stderr,
+        )
         return 2
 
     return _run_one(command, passthrough)

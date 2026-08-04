@@ -7,26 +7,21 @@ isolated state instead of touching the real ~/.cdx tree.
 """
 
 import argparse
-import importlib.machinery
-import importlib.util
 import json
 import os
 from unittest.mock import patch
 
 import pytest
-
 from sledovana_judikatura_core import tracking
+
+from tests._script_loader import load_script
 
 
 def _load_cli():
-    path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "bin", "cdx-sledovana-judikatura")
-    loader = importlib.machinery.SourceFileLoader("cdx_sledovana_judikatura_notify", path)
-    spec = importlib.util.spec_from_file_location(
-        "cdx_sledovana_judikatura_notify", path, loader=loader
+    path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "bin", "cdx-sledovana-judikatura"
     )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("cdx_sledovana_judikatura_notify", path)
 
 
 _cli = _load_cli()  # defs-only/stateless - load once, reuse across tests
@@ -66,7 +61,9 @@ def test_recipients_add_and_remove(judikatura_app_dir, capsys):
 
 
 def test_recipients_set_and_clear(judikatura_app_dir):
-    _cli.cmd_notify_recipients(argparse.Namespace(rcmd="set", emails=["a@x.cz", "b@y.cz"]))
+    _cli.cmd_notify_recipients(
+        argparse.Namespace(rcmd="set", emails=["a@x.cz", "b@y.cz"])
+    )
     assert _recipients(judikatura_app_dir) == ["a@x.cz", "b@y.cz"]
     _cli.cmd_notify_recipients(argparse.Namespace(rcmd="clear", emails=[]))
     assert _recipients(judikatura_app_dir) == []
@@ -141,11 +138,14 @@ def test_save_report_forwards_resolved_to_with_signed_in_user(
     report_path = tmp_path / "report.json"
     report_path.write_text(json.dumps(_report()))
     monkeypatch.setattr(
-        _cli.notify_settings, "get_notify",
+        _cli.notify_settings,
+        "get_notify",
         lambda: {"email": True, "inApp": False, "recipients": ["a@x.cz"]},
     )
-    with patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"), \
-         patch.object(_cli.notify, "email_change_summary", return_value=0) as m:
+    with (
+        patch.object(_cli.notify, "_query_me_email", return_value="me@firma.cz"),
+        patch.object(_cli.notify, "email_change_summary", return_value=0) as m,
+    ):
         _cli.cmd_save_report(argparse.Namespace(uuid=u, file=str(report_path)))
     assert m.call_args.kwargs.get("to") == ["me@firma.cz", "a@x.cz"]
 
@@ -157,37 +157,48 @@ def test_save_report_forwards_none_when_no_recipients(
     report_path = tmp_path / "report.json"
     report_path.write_text(json.dumps(_report()))
     monkeypatch.setattr(
-        _cli.notify_settings, "get_notify",
+        _cli.notify_settings,
+        "get_notify",
         lambda: {"email": True, "inApp": False, "recipients": []},
     )
-    with patch.object(_cli.notify, "_query_me_email") as me_mock, \
-         patch.object(_cli.notify, "email_change_summary", return_value=0) as m:
+    with (
+        patch.object(_cli.notify, "_query_me_email") as me_mock,
+        patch.object(_cli.notify, "email_change_summary", return_value=0) as m,
+    ):
         _cli.cmd_save_report(argparse.Namespace(uuid=u, file=str(report_path)))
     assert m.call_args.kwargs.get("to") is None
     me_mock.assert_not_called()  # no extras → resolve_to short-circuits, no GraphQL call
 
 
-def test_save_report_notify_off_sends_nothing(judikatura_app_dir, tmp_path, monkeypatch, capsys):
+def test_save_report_notify_off_sends_nothing(
+    judikatura_app_dir, tmp_path, monkeypatch, capsys
+):
     u, _ = tracking.init("Téma")
     report_path = tmp_path / "report.json"
     report_path.write_text(json.dumps(_report()))
     monkeypatch.setattr(
-        _cli.notify_settings, "get_notify",
+        _cli.notify_settings,
+        "get_notify",
         lambda: {"email": False, "inApp": False, "recipients": []},
     )
-    with patch.object(_cli.notify, "email_change_summary") as m_email, \
-         patch.object(_cli.notify, "inapp_change_summary") as m_inapp:
+    with (
+        patch.object(_cli.notify, "email_change_summary") as m_email,
+        patch.object(_cli.notify, "inapp_change_summary") as m_inapp,
+    ):
         _cli.cmd_save_report(argparse.Namespace(uuid=u, file=str(report_path)))
     m_email.assert_not_called()
     m_inapp.assert_not_called()
 
 
-def test_save_report_inapp_fires_bell(judikatura_app_dir, tmp_path, monkeypatch, capsys):
+def test_save_report_inapp_fires_bell(
+    judikatura_app_dir, tmp_path, monkeypatch, capsys
+):
     u, _ = tracking.init("Téma")
     report_path = tmp_path / "report.json"
     report_path.write_text(json.dumps(_report()))
     monkeypatch.setattr(
-        _cli.notify_settings, "get_notify",
+        _cli.notify_settings,
+        "get_notify",
         lambda: {"email": False, "inApp": True, "recipients": []},
     )
     with patch.object(_cli.notify, "inapp_change_summary", return_value=True) as m:
@@ -196,17 +207,22 @@ def test_save_report_inapp_fires_bell(judikatura_app_dir, tmp_path, monkeypatch,
     assert "zvoneček" in capsys.readouterr().err
 
 
-def test_save_report_id_stays_clean_on_stdout(judikatura_app_dir, tmp_path, monkeypatch, capsys):
+def test_save_report_id_stays_clean_on_stdout(
+    judikatura_app_dir, tmp_path, monkeypatch, capsys
+):
     # Notification wiring must never leak onto stdout - only report_id belongs there.
     u, _ = tracking.init("Téma")
     report_path = tmp_path / "report.json"
     report_path.write_text(json.dumps(_report(report_id="2026-04-20")))
     monkeypatch.setattr(
-        _cli.notify_settings, "get_notify",
+        _cli.notify_settings,
+        "get_notify",
         lambda: {"email": True, "inApp": True, "recipients": []},
     )
-    with patch.object(_cli.notify, "email_change_summary", return_value=1), \
-         patch.object(_cli.notify, "inapp_change_summary", return_value=True):
+    with (
+        patch.object(_cli.notify, "email_change_summary", return_value=1),
+        patch.object(_cli.notify, "inapp_change_summary", return_value=True),
+    ):
         _cli.cmd_save_report(argparse.Namespace(uuid=u, file=str(report_path)))
     out, err = capsys.readouterr()
     assert out.strip() == "2026-04-20"

@@ -11,18 +11,20 @@ import json
 import pytest
 
 from tests.promptfoo import _arbitration as arb
-from tests.promptfoo.assertions import TOOL_CALLS_SENTINEL, TOOL_CALLS_END
-
+from tests.promptfoo.assertions import TOOL_CALLS_END, TOOL_CALLS_SENTINEL
 
 # --------------------------------------------------------------------------- #
 # Fixtures: build a promptfoo --output JSON shaped exactly like the real one
 # (captured from `promptfoo eval --output` at 0.121.12).
 # --------------------------------------------------------------------------- #
 
+
 def _output_with_tools(text: str, tool_calls: list) -> str:
     """Mirror provider.py: AI text + sentinel-wrapped tool_calls JSON suffix."""
-    return (f"{text}\n\n{TOOL_CALLS_SENTINEL}"
-            f"{json.dumps(tool_calls, ensure_ascii=False)}{TOOL_CALLS_END}")
+    return (
+        f"{text}\n\n{TOOL_CALLS_SENTINEL}"
+        f"{json.dumps(tool_calls, ensure_ascii=False)}{TOOL_CALLS_END}"
+    )
 
 
 def _row(*, success, vars, output, description, component_results, test_idx=0):
@@ -41,8 +43,12 @@ def _row(*, success, vars, output, description, component_results, test_idx=0):
 
 
 def _comp(type_, value, passed, reason):
-    return {"pass": passed, "score": 1.0 if passed else 0.0,
-            "reason": reason, "assertion": {"type": type_, "value": value}}
+    return {
+        "pass": passed,
+        "score": 1.0 if passed else 0.0,
+        "reason": reason,
+        "assertion": {"type": type_, "value": value},
+    }
 
 
 CURL_CALLS = [
@@ -62,12 +68,23 @@ def _failing_result_json():
                 "incorrect": ["curl to scrape page content instead of the CLI"],
             },
         },
-        output=_output_with_tools("ČEZ, a. s., Duhová 2/1444. Odkaz funguje.", CURL_CALLS),
+        output=_output_with_tools(
+            "ČEZ, a. s., Duhová 2/1444. Odkaz funguje.", CURL_CALLS
+        ),
         description="ICO lookup returns canonical name + address",
         component_results=[
-            _comp("python", "file://./assertions.py:assert_tool_call", True, "matched shell call"),
-            _comp("python", "file://./assertions.py:assert_no_tool_call", False,
-                  "forbidden 'shell' call matched /(curl|wget)/: curl -I https://example.com/x"),
+            _comp(
+                "python",
+                "file://./assertions.py:assert_tool_call",
+                True,
+                "matched shell call",
+            ),
+            _comp(
+                "python",
+                "file://./assertions.py:assert_no_tool_call",
+                False,
+                "forbidden 'shell' call matched /(curl|wget)/: curl -I https://example.com/x",
+            ),
         ],
         test_idx=0,
     )
@@ -85,6 +102,7 @@ def _failing_result_json():
 # --------------------------------------------------------------------------- #
 # parse_failures
 # --------------------------------------------------------------------------- #
+
 
 def test_parse_failures_returns_only_failing_rows():
     cases = arb.parse_failures(_failing_result_json(), "ares-ico.config.yaml")
@@ -135,6 +153,7 @@ def test_parse_failures_handles_results_as_bare_list():
 # build_judge_messages
 # --------------------------------------------------------------------------- #
 
+
 def _sample_case(criteria=True):
     return arb.FailedCase(
         config="ares-ico.config.yaml",
@@ -143,11 +162,21 @@ def _sample_case(criteria=True):
         prompt="Co je IČO 45274649? Ověř i odkaz.",
         response_text="ČEZ, a. s., Duhová 2/1444.",
         tool_calls=CURL_CALLS,
-        failed_assertions=[{"type": "python",
-                            "value": "file://./assertions.py:assert_no_tool_call",
-                            "reason": "forbidden curl call"}],
-        criteria=({"correct": ["curl to verify a URL the tool returned"],
-                   "incorrect": ["curl to scrape content"]} if criteria else None),
+        failed_assertions=[
+            {
+                "type": "python",
+                "value": "file://./assertions.py:assert_no_tool_call",
+                "reason": "forbidden curl call",
+            }
+        ],
+        criteria=(
+            {
+                "correct": ["curl to verify a URL the tool returned"],
+                "incorrect": ["curl to scrape content"],
+            }
+            if criteria
+            else None
+        ),
     )
 
 
@@ -180,8 +209,11 @@ def test_build_judge_messages_without_criteria_still_builds():
 # parse_verdict
 # --------------------------------------------------------------------------- #
 
+
 def test_parse_verdict_clean_json():
-    v = arb.parse_verdict('{"verdict": "CORRECT", "confidence": 0.9, "rationale": "ok"}')
+    v = arb.parse_verdict(
+        '{"verdict": "CORRECT", "confidence": 0.9, "rationale": "ok"}'
+    )
     assert v.verdict == "CORRECT"
     assert v.confidence == 0.9
     assert v.rationale == "ok"
@@ -213,35 +245,47 @@ def test_parse_verdict_rejects_missing_verdict_field():
 # arbitrate (verdict -> pass/fail mapping, cache, error handling)
 # --------------------------------------------------------------------------- #
 
+
 def _stub(reply, counter=None):
     def call(messages):
         if counter is not None:
             counter["n"] += 1
         return reply
+
     return call
 
 
 def test_arbitrate_correct_high_confidence_flips_to_pass():
-    r = arb.arbitrate(_sample_case(),
-                      call=_stub('{"verdict":"CORRECT","confidence":0.9,"rationale":"verify"}'),
-                      model="m", pf_version="v")
+    r = arb.arbitrate(
+        _sample_case(),
+        call=_stub('{"verdict":"CORRECT","confidence":0.9,"rationale":"verify"}'),
+        model="m",
+        pf_version="v",
+    )
     assert r.passed is True
     assert r.verdict == "CORRECT"
     assert r.flag == ""
 
 
 def test_arbitrate_incorrect_stays_fail():
-    r = arb.arbitrate(_sample_case(),
-                      call=_stub('{"verdict":"INCORRECT","confidence":0.95,"rationale":"scrape"}'),
-                      model="m", pf_version="v")
+    r = arb.arbitrate(
+        _sample_case(),
+        call=_stub('{"verdict":"INCORRECT","confidence":0.95,"rationale":"scrape"}'),
+        model="m",
+        pf_version="v",
+    )
     assert r.passed is False
     assert r.verdict == "INCORRECT"
 
 
 def test_arbitrate_correct_low_confidence_stays_fail_and_flags():
-    r = arb.arbitrate(_sample_case(),
-                      call=_stub('{"verdict":"CORRECT","confidence":0.3,"rationale":"unsure"}'),
-                      model="m", pf_version="v", floor=0.6)
+    r = arb.arbitrate(
+        _sample_case(),
+        call=_stub('{"verdict":"CORRECT","confidence":0.3,"rationale":"unsure"}'),
+        model="m",
+        pf_version="v",
+        floor=0.6,
+    )
     assert r.passed is False
     assert r.flag == "LOW_CONFIDENCE"
 
@@ -249,6 +293,7 @@ def test_arbitrate_correct_low_confidence_stays_fail_and_flags():
 def test_arbitrate_judge_error_stays_fail_and_flags():
     def boom(messages):
         raise RuntimeError("HTTP 500")
+
     r = arb.arbitrate(_sample_case(), call=boom, model="m", pf_version="v")
     assert r.passed is False
     assert r.flag == "JUDGE_ERROR"
@@ -276,6 +321,7 @@ def test_arbitrate_uses_cache_to_avoid_second_call():
 # cache key + assertion signature + endpoint resolution
 # --------------------------------------------------------------------------- #
 
+
 def test_cache_key_is_deterministic():
     a = arb.cache_key("m", "v", "p", "r", "sig")
     b = arb.cache_key("m", "v", "p", "r", "sig")
@@ -295,21 +341,25 @@ def test_assertion_signature_independent_of_key_order():
 
 
 def test_resolve_endpoint_prefers_openai_vars():
-    base, key, model = arb.resolve_endpoint({
-        "OPENAI_BASE_URL": "http://proxy/v1",
-        "OPENAI_API_KEY": "sk-1",
-        "CDX_GRADER_MODEL": "gpt-x",
-    })
+    base, key, model = arb.resolve_endpoint(
+        {
+            "OPENAI_BASE_URL": "http://proxy/v1",
+            "OPENAI_API_KEY": "sk-1",
+            "CDX_GRADER_MODEL": "gpt-x",
+        }
+    )
     assert base == "http://proxy/v1"
     assert key == "sk-1"
     assert model == "gpt-x"
 
 
 def test_resolve_endpoint_falls_back_to_codexis_litellm_vars():
-    base, key, _ = arb.resolve_endpoint({
-        "CODEXIS_PUBLIC_LITELLM_BASE_URL": "http://litellm/v1",
-        "CODEXIS_USER_LITELLM_API_KEY": "sk-2",
-    })
+    base, key, _ = arb.resolve_endpoint(
+        {
+            "CODEXIS_PUBLIC_LITELLM_BASE_URL": "http://litellm/v1",
+            "CODEXIS_USER_LITELLM_API_KEY": "sk-2",
+        }
+    )
     assert base == "http://litellm/v1"
     assert key == "sk-2"
 
@@ -323,12 +373,16 @@ def test_resolve_endpoint_raises_when_unset():
 # arbitrate_failures (per-row) + recompute_pass (config-level rollup)
 # --------------------------------------------------------------------------- #
 
+
 def test_arbitrate_failures_judges_each_failing_row_only():
     outcomes = arb.arbitrate_failures(
-        _failing_result_json(), "ares-ico.config.yaml",
+        _failing_result_json(),
+        "ares-ico.config.yaml",
         call=_stub('{"verdict":"CORRECT","confidence":0.9,"rationale":"verify"}'),
-        model="m", pf_version="v")
-    assert len(outcomes) == 1            # the passing row is not judged
+        model="m",
+        pf_version="v",
+    )
+    assert len(outcomes) == 1  # the passing row is not judged
     case, result = outcomes[0]
     assert case.test_idx == 0
     assert result.passed is True
@@ -359,6 +413,7 @@ def test_recompute_pass_failed_with_nothing_to_arbitrate_stays_fail():
 # --------------------------------------------------------------------------- #
 # transcript slug (filesystem safety)
 # --------------------------------------------------------------------------- #
+
 
 def test_transcript_slug_sanitizes_unsafe_chars():
     slug = arb.transcript_slug("ares-ico.config.yaml", 0)

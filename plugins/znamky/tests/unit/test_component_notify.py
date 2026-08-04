@@ -9,24 +9,21 @@ emit_json output written to stdout. Isolates settings I/O to a tmp HOME, same
 as test_notify_settings.py's `home` fixture.
 """
 
-import importlib.machinery
-import importlib.util
 import json
 from pathlib import Path
 
 import pytest
-
 from znamky_core import notify_settings as ns
 
-_COMPONENT_PATH = Path(__file__).resolve().parents[2] / "components" / "znamky" / "znamky-cgi"
+from tests._script_loader import load_script
+
+_COMPONENT_PATH = (
+    Path(__file__).resolve().parents[2] / "components" / "znamky" / "znamky-cgi"
+)
 
 
 def _load_component():
-    loader = importlib.machinery.SourceFileLoader("znamky_component", str(_COMPONENT_PATH))
-    spec = importlib.util.spec_from_file_location("znamky_component", _COMPONENT_PATH, loader=loader)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("znamky_component", str(_COMPONENT_PATH))
 
 
 def _payload(capsys):
@@ -53,19 +50,23 @@ def test_get_view_notify_returns_settings_and_email(component, capsys, monkeypat
     assert payload["userEmail"] == "me@firma.cz"
 
 
-def test_get_view_notify_empty_string_when_email_unresolved(component, capsys, monkeypatch):
+def test_get_view_notify_empty_string_when_email_unresolved(
+    component, capsys, monkeypatch
+):
     monkeypatch.setattr(component.notify, "_query_me_email", lambda: None)
     component.handle_get("view=notify")
     assert _payload(capsys)["userEmail"] == ""
 
 
 def test_post_save_notify_settings_persists(component, capsys):
-    component.handle_post({
-        "action": "save_notify_settings",
-        "email": True,
-        "inApp": False,
-        "recipients": ["a@b.cz"],
-    })
+    component.handle_post(
+        {
+            "action": "save_notify_settings",
+            "email": True,
+            "inApp": False,
+            "recipients": ["a@b.cz"],
+        }
+    )
     payload = _payload(capsys)
     expected = {"email": True, "inApp": False, "recipients": ["a@b.cz"]}
     assert payload == {"ok": True, "settings": expected}
@@ -77,18 +78,22 @@ def test_post_save_notify_settings_drops_signed_in_user(component, capsys, monke
     # store it. The handler must strip it so it isn't persisted (and legacy dupes
     # self-heal on the next save).
     monkeypatch.setattr(component.notify, "_query_me_email", lambda: "me@firma.cz")
-    component.handle_post({
-        "action": "save_notify_settings",
-        "email": True,
-        "inApp": False,
-        "recipients": ["ME@firma.cz", "a@x.cz"],
-    })
+    component.handle_post(
+        {
+            "action": "save_notify_settings",
+            "email": True,
+            "inApp": False,
+            "recipients": ["ME@firma.cz", "a@x.cz"],
+        }
+    )
     payload = _payload(capsys)
     assert payload["settings"]["recipients"] == ["a@x.cz"]
     assert component.notify_settings.get_notify()["recipients"] == ["a@x.cz"]
 
 
-def test_post_save_notify_settings_absent_recipients_left_untouched(component, capsys, monkeypatch):
+def test_post_save_notify_settings_absent_recipients_left_untouched(
+    component, capsys, monkeypatch
+):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
     # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(component.notify, "_query_me_email", lambda: "me@firma.cz")
@@ -100,12 +105,14 @@ def test_post_save_notify_settings_absent_recipients_left_untouched(component, c
 
 
 def test_post_save_notify_settings_invalid_recipient_is_400(component, capsys):
-    component.handle_post({
-        "action": "save_notify_settings",
-        "email": True,
-        "inApp": True,
-        "recipients": ["not-an-email"],
-    })
+    component.handle_post(
+        {
+            "action": "save_notify_settings",
+            "email": True,
+            "inApp": True,
+            "recipients": ["not-an-email"],
+        }
+    )
     out = capsys.readouterr().out
     assert out.startswith("Status: 400 Bad Request")
     payload = json.loads(out.split("\r\n\r\n", 1)[1])

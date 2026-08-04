@@ -17,10 +17,6 @@ from .exceptions import (
 )
 
 __all__ = [
-    "notify",
-    "notify_settings",
-    "state",
-    "tracking",
     "AmbiguousTopicPrefixError",
     "AreaAlreadyExistsError",
     "AreaIndexError",
@@ -29,4 +25,8 @@ __all__ = [
     "ReportSourceError",
     "TopicError",
     "TopicNotFoundError",
+    "notify",
+    "notify_settings",
+    "state",
+    "tracking",
 ]

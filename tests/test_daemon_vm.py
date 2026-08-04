@@ -43,6 +43,7 @@ def _client(monkeypatch, starts=None, states=None):
             if isinstance(value, Exception):
                 raise value
             return value
+
         monkeypatch.setattr(client, name, _call)
 
     if starts is not None:
@@ -62,13 +63,17 @@ def _busy(message="temporarily unavailable"):
 # --------------------------------------------------------------- start_vm
 def test_start_vm_returns_the_union_member(monkeypatch):
     client = DaemonClient("http://x", "tok")
-    monkeypatch.setattr(client, "gql_data", lambda *a, **k: {"startVirtualMachine": VM_OK})
+    monkeypatch.setattr(
+        client, "gql_data", lambda *a, **k: {"startVirtualMachine": VM_OK}
+    )
     assert client.start_vm() == VM_OK
 
 
 def test_start_vm_survives_a_null_payload(monkeypatch):
     client = DaemonClient("http://x", "tok")
-    monkeypatch.setattr(client, "gql_data", lambda *a, **k: {"startVirtualMachine": None})
+    monkeypatch.setattr(
+        client, "gql_data", lambda *a, **k: {"startVirtualMachine": None}
+    )
     assert client.start_vm() == {}
 
 
@@ -88,16 +93,22 @@ def test_start_vm_asks_the_gateway_not_the_daemon(monkeypatch):
 # -------------------------------------------------------------- vm_status
 def test_vm_status_reads_the_status(monkeypatch):
     client = DaemonClient("http://x", "tok")
-    monkeypatch.setattr(client, "gql_data",
-                        lambda *a, **k: {"me": {"virtualMachine": {"status": "RUNNING"}}})
+    monkeypatch.setattr(
+        client,
+        "gql_data",
+        lambda *a, **k: {"me": {"virtualMachine": {"status": "RUNNING"}}},
+    )
     assert client.vm_status() == "RUNNING"
 
 
-@pytest.mark.parametrize("payload", [
-    {"me": None},
-    {"me": {"virtualMachine": None}},
-    {"me": {"virtualMachine": {"status": None}}},
-])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"me": None},
+        {"me": {"virtualMachine": None}},
+        {"me": {"virtualMachine": {"status": None}}},
+    ],
+)
 def test_vm_status_is_unknown_when_the_gateway_reports_none(monkeypatch, payload):
     client = DaemonClient("http://x", "tok")
     monkeypatch.setattr(client, "gql_data", lambda *a, **k: payload)
@@ -114,8 +125,9 @@ def test_returns_as_soon_as_the_vm_is_running(monkeypatch):
 
 def test_waits_through_provisioning(monkeypatch):
     clock = FakeClock()
-    client = _client(monkeypatch, starts=[VM_OK],
-                     states=["PROVISIONING", "PROVISIONING", "RUNNING"])
+    client = _client(
+        monkeypatch, starts=[VM_OK], states=["PROVISIONING", "PROVISIONING", "RUNNING"]
+    )
     client.ensure_vm_running(interval_s=5, sleep=clock.sleep, now=clock.now)
     assert clock.sleeps == [5, 5]
 
@@ -129,7 +141,9 @@ def test_retries_the_start_with_backoff_while_the_service_is_busy(monkeypatch):
 
 def test_a_raising_start_counts_as_a_failed_attempt(monkeypatch):
     clock = FakeClock()
-    client = _client(monkeypatch, starts=[RuntimeError("502"), VM_OK], states=["RUNNING"])
+    client = _client(
+        monkeypatch, starts=[RuntimeError("502"), VM_OK], states=["RUNNING"]
+    )
     client.ensure_vm_running(sleep=clock.sleep, now=clock.now)
     assert clock.sleeps == [1]
 
@@ -157,8 +171,9 @@ def test_aborts_on_a_terminal_stopped(monkeypatch):
 
 def test_keeps_polling_through_a_transient_status_failure(monkeypatch):
     clock = FakeClock()
-    client = _client(monkeypatch, starts=[VM_OK],
-                     states=[RuntimeError("503"), "RUNNING"])
+    client = _client(
+        monkeypatch, starts=[VM_OK], states=[RuntimeError("503"), "RUNNING"]
+    )
     client.ensure_vm_running(sleep=clock.sleep, now=clock.now)
     assert clock.sleeps == [5]
 
@@ -167,14 +182,16 @@ def test_gives_up_when_the_vm_never_comes_up(monkeypatch):
     clock = FakeClock()
     client = _client(monkeypatch, starts=[VM_OK], states=["PROVISIONING"] * 100)
     with pytest.raises(RuntimeError, match="did not reach RUNNING within 12s"):
-        client.ensure_vm_running(timeout_s=12, interval_s=5,
-                                 sleep=clock.sleep, now=clock.now)
+        client.ensure_vm_running(
+            timeout_s=12, interval_s=5, sleep=clock.sleep, now=clock.now
+        )
 
 
 def test_reports_progress_through_the_log_hook(monkeypatch):
     clock = FakeClock()
-    client = _client(monkeypatch, starts=[_busy(), VM_OK],
-                     states=["PROVISIONING", "RUNNING"])
+    client = _client(
+        monkeypatch, starts=[_busy(), VM_OK], states=["PROVISIONING", "RUNNING"]
+    )
     lines: list[str] = []
     client.ensure_vm_running(sleep=clock.sleep, now=clock.now, log=lines.append)
     assert any("retrying" in line for line in lines)

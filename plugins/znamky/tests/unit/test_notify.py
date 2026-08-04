@@ -4,7 +4,6 @@ import json
 from unittest.mock import patch
 
 import pytest
-
 from znamky_core import notify
 
 
@@ -51,7 +50,9 @@ def test_secret_bearer_prefix_preserved(monkeypatch, tmp_path):
 
 
 def test_missing_secret_raises(monkeypatch, tmp_path):
-    monkeypatch.setenv("CODEXIS_USER_API_TOKEN", "codexis-token")  # present, still must fail
+    monkeypatch.setenv(
+        "CODEXIS_USER_API_TOKEN", "codexis-token"
+    )  # present, still must fail
     _stub_daemon(monkeypatch, tmp_path, secret=None)
     with pytest.raises(notify.ZnamkyError):
         notify._send_email("subj", "body")
@@ -132,7 +133,10 @@ class TestWithoutSelf:
 
     def test_keeps_all_when_me_unavailable(self):
         with patch.object(notify, "_query_me_email", return_value=None):
-            assert notify.without_self(["me@firma.cz", "a@x.cz"]) == ["me@firma.cz", "a@x.cz"]
+            assert notify.without_self(["me@firma.cz", "a@x.cz"]) == [
+                "me@firma.cz",
+                "a@x.cz",
+            ]
 
     def test_empty_returns_empty_without_querying_me(self):
         # No extras → nothing to filter, so it must not make the GraphQL `me` call.
@@ -167,7 +171,9 @@ def test_query_me_email_parses_email_from_graphql_response(monkeypatch, tmp_path
 
     class _Resp:
         def read(self):
-            return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode("utf-8")
+            return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode(
+                "utf-8"
+            )
 
         def __enter__(self):
             return self
@@ -272,7 +278,6 @@ def test_inapp_change_summary_no_changes_does_not_send(monkeypatch):
     assert calls == []
 
 
-
 _EXPECTED_LINK_QUERY = ""
 # ── app deep link ─────────────────────────────────────────────────────────────
 
@@ -286,7 +291,9 @@ _REAL_APP_ID = (
 
 def _content_url(component_id):
     """The shape the daemon builds: prefix, plugin node id, component id, slash."""
-    return f"/rest/plugin-components/BlBsdWdpbkttYXJrZXRwbGFjZS1wbHVnaW4/{component_id}/"
+    return (
+        f"/rest/plugin-components/BlBsdWdpbkttYXJrZXRwbGFjZS1wbHVnaW4/{component_id}/"
+    )
 
 
 def _app(plugin=None, component=None, app_id=_REAL_APP_ID):
@@ -323,16 +330,24 @@ def test_ignores_an_application_of_another_plugin():
     # Same component id, different owning plugin - the plugin name is what keeps
     # two marketplaces' same-named components apart.
     apps = [_app(plugin="other-plugin")]
-    assert notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        is None
+    )
 
 
 def test_ignores_a_sibling_component_of_the_same_plugin():
     apps = [_app(component="some-other-component")]
-    assert notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        is None
+    )
 
 
 def test_returns_none_when_no_application_is_installed():
-    assert notify._pick_application([], notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    assert (
+        notify._pick_application([], notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    )
 
 
 def test_skips_malformed_entries_instead_of_failing():
@@ -363,7 +378,9 @@ def _stub_applications_query(monkeypatch, tmp_path, payload):
         def __exit__(self, *exc):
             return False
 
-    monkeypatch.setattr(notify.urllib.request, "urlopen", lambda req, timeout=0: _Resp())
+    monkeypatch.setattr(
+        notify.urllib.request, "urlopen", lambda req, timeout=0: _Resp()
+    )
 
 
 def test_resolve_app_link_builds_the_apps_route(monkeypatch, tmp_path):

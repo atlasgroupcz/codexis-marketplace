@@ -23,7 +23,7 @@ def enabled() -> bool:
 
 def _load() -> list:
     try:
-        with open(_PATH, "r", encoding="utf-8") as f:
+        with open(_PATH, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, list) else []
     except (OSError, json.JSONDecodeError):

@@ -10,7 +10,9 @@ from insolvence_core.tracking import (
 )
 
 
-def _rizeni(sp, stav="Konkurs", druh="konkurs", aktivni=True, udalosti=None, datum="2026-01-01"):
+def _rizeni(
+    sp, stav="Konkurs", druh="konkurs", aktivni=True, udalosti=None, datum="2026-01-01"
+):
     return {
         "spisova_znacka": sp,
         "soud": "Městský soud v Praze",
@@ -70,7 +72,11 @@ class TestDetectChanges:
         assert changes[0]["new_stav"] == "Konkurs"
 
     def test_new_event(self):
-        old = [_rizeni("MSPH 78 INS 1/2026", udalosti=[{"datum": "2026-01-02", "popis": "A"}])]
+        old = [
+            _rizeni(
+                "MSPH 78 INS 1/2026", udalosti=[{"datum": "2026-01-02", "popis": "A"}]
+            )
+        ]
         new = [
             _rizeni(
                 "MSPH 78 INS 1/2026",
@@ -166,7 +172,12 @@ class TestListAllSort:
             "active",
             ma_aktivni_insolvenci=True,
             rizeni=[_rizeni("X")],
-            changes=[{"detected_on": "2026-04-10T00:00:00Z", "confirmed_on": "2026-04-11T00:00:00Z"}],
+            changes=[
+                {
+                    "detected_on": "2026-04-10T00:00:00Z",
+                    "confirmed_on": "2026-04-11T00:00:00Z",
+                }
+            ],
         )
         _seed_subject(
             app_dir,

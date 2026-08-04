@@ -60,7 +60,7 @@ def user_path():
 
 def _read_json(path):
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, dict) else None
     except (OSError, ValueError):

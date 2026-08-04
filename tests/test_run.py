@@ -13,11 +13,14 @@ class TestDispatchTable:
     def test_every_tier_has_a_command(self):
         assert set(run.COMMANDS) == {"unit", "marketplace", "eval"}
 
-    @pytest.mark.parametrize("tier,script", [
-        ("unit", "_unit_gate.py"),
-        ("marketplace", "test-marketplace.py"),
-        ("eval", "promptfoo/run.py"),
-    ])
+    @pytest.mark.parametrize(
+        "tier,script",
+        [
+            ("unit", "_unit_gate.py"),
+            ("marketplace", "test-marketplace.py"),
+            ("eval", "promptfoo/run.py"),
+        ],
+    )
     def test_tier_maps_to_its_script(self, tier, script):
         assert run.COMMANDS[tier] == script
 

@@ -8,8 +8,15 @@ DOC_KEYS = {"path", "sha256", "discoveredAt", "extractedAt", "updatedAt", "legis
 def test_watched_json_matches_documented_contract(watched_root):
     folders.add_watch(watched_root)
     folders.set_references(
-        watched_root, "./dogs/buy-dog.docx",
-        [{"uri": "https://www.zakonyprolidi.cz/cs/2012-89", "text": "OZ", "codexisId": "CR26785"}],
+        watched_root,
+        "./dogs/buy-dog.docx",
+        [
+            {
+                "uri": "https://www.zakonyprolidi.cz/cs/2012-89",
+                "text": "OZ",
+                "codexisId": "CR26785",
+            }
+        ],
     )
     data = folders.read_watched(watched_root)
 

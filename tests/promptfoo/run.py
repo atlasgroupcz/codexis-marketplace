@@ -126,10 +126,13 @@ def build_client() -> DaemonClient:
     if not token:
         raise SystemExit("CDX_EVAL_AUTH_TOKEN not set (Keycloak access token)")
     graphql_url = os.environ.get(
-        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql")
-    base = (graphql_url[: -len("/graphql")]
-            if graphql_url.endswith("/graphql")
-            else graphql_url.rstrip("/"))
+        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
+    )
+    base = (
+        graphql_url[: -len("/graphql")]
+        if graphql_url.endswith("/graphql")
+        else graphql_url.rstrip("/")
+    )
     return DaemonClient(base, token)
 
 
@@ -164,8 +167,11 @@ def isolate_batch(client: DaemonClient, target_names: list[str]) -> None:
                 client.uninstall_plugin(p["id"])
                 print(f"  - uninstalled {p['name']}", flush=True)
             except Exception as e:
-                print(f"  ! uninstall {p['name']} failed: {e}",
-                      file=sys.stderr, flush=True)
+                print(
+                    f"  ! uninstall {p['name']} failed: {e}",
+                    file=sys.stderr,
+                    flush=True,
+                )
     current_names = {p["name"] for p in installed_plugins(client)}
     for name in target_names:
         if name in current_names:
@@ -175,8 +181,7 @@ def isolate_batch(client: DaemonClient, target_names: list[str]) -> None:
             client.install_plugin(mp_id)
             print(f"  + installed {name}", flush=True)
         except Exception as e:
-            print(f"  ! install {name} failed: {e}",
-                  file=sys.stderr, flush=True)
+            print(f"  ! install {name} failed: {e}", file=sys.stderr, flush=True)
 
 
 def run_setup(cfg_path: Path) -> tuple[bool, str]:
@@ -200,8 +205,9 @@ def run_setup(cfg_path: Path) -> tuple[bool, str]:
     if rc != 0:
         return False, ""
     sidecar = cfg_path.with_suffix(".run_id")
-    return True, (sidecar.read_text().strip() if sidecar.exists()
-                  else secrets.token_hex(2))
+    return True, (
+        sidecar.read_text().strip() if sidecar.exists() else secrets.token_hex(2)
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -209,10 +215,11 @@ def run_setup(cfg_path: Path) -> tuple[bool, str]:
 # Only active under --arbitrate; otherwise the runner behaves exactly as before.
 # --------------------------------------------------------------------------- #
 
+
 @dataclass
 class ArbCtx:
-    arb: Any                       # the _arbitration module
-    call: Any                      # call(messages) -> raw judge JSON string
+    arb: Any  # the _arbitration module
+    call: Any  # call(messages) -> raw judge JSON string
     model: str
     pf_version: str
     floor: float
@@ -240,13 +247,22 @@ def _arbitrate_config(cfg: Path, json_path: Path, ctx: ArbCtx) -> tuple[bool, st
     try:
         result_json = json.loads(json_path.read_text())
     except (OSError, json.JSONDecodeError) as e:
-        print(f"  ! arbitration: cannot read {cfg.name} output: {e}",
-              file=sys.stderr, flush=True)
+        print(
+            f"  ! arbitration: cannot read {cfg.name} output: {e}",
+            file=sys.stderr,
+            flush=True,
+        )
         return False, "arbitration: unreadable output"
 
     outcomes = ctx.arb.arbitrate_failures(
-        result_json, cfg.name, call=ctx.call, model=ctx.model,
-        pf_version=ctx.pf_version, floor=ctx.floor, cache=ctx.cache)
+        result_json,
+        cfg.name,
+        call=ctx.call,
+        model=ctx.model,
+        pf_version=ctx.pf_version,
+        floor=ctx.floor,
+        cache=ctx.cache,
+    )
     if not outcomes:
         return False, "arbitration: no parseable failures"
 
@@ -259,22 +275,30 @@ def _arbitrate_config(cfg: Path, json_path: Path, ctx: ArbCtx) -> tuple[bool, st
         if result.flag == "JUDGE_ERROR":
             errored += 1
         (tdir / f"{ctx.arb.transcript_slug(cfg.name, case.test_idx)}.txt").write_text(
-            ctx.arb.format_transcript(case, result, result.passed))
-        ctx.records.append({
-            "config": cfg.name,
-            "test_idx": case.test_idx,
-            "description": case.description,
-            "verdict": result.verdict,
-            "confidence": result.confidence,
-            "flag": result.flag,
-            "passed": result.passed,
-            "rationale": result.rationale,
-            "failed_assertions": [{"type": a.get("type"), "value": a.get("value")}
-                                  for a in case.failed_assertions],
-        })
-        print(f"    ⚖ {cfg.name} test {case.test_idx}: {result.verdict} "
-              f"({result.confidence}) → {'PASS' if result.passed else 'FAIL'}"
-              f"{' [' + result.flag + ']' if result.flag else ''}", flush=True)
+            ctx.arb.format_transcript(case, result, result.passed)
+        )
+        ctx.records.append(
+            {
+                "config": cfg.name,
+                "test_idx": case.test_idx,
+                "description": case.description,
+                "verdict": result.verdict,
+                "confidence": result.confidence,
+                "flag": result.flag,
+                "passed": result.passed,
+                "rationale": result.rationale,
+                "failed_assertions": [
+                    {"type": a.get("type"), "value": a.get("value")}
+                    for a in case.failed_assertions
+                ],
+            }
+        )
+        print(
+            f"    ⚖ {cfg.name} test {case.test_idx}: {result.verdict} "
+            f"({result.confidence}) → {'PASS' if result.passed else 'FAIL'}"
+            f"{' [' + result.flag + ']' if result.flag else ''}",
+            flush=True,
+        )
 
     final_ok = ctx.arb.recompute_pass(False, outcomes)
     note = f"{len(outcomes)} failure(s), {flipped} overruled→PASS"
@@ -283,13 +307,16 @@ def _arbitrate_config(cfg: Path, json_path: Path, ctx: ArbCtx) -> tuple[bool, st
     return final_ok, note
 
 
-def run_batch(client: DaemonClient,
-              batch_cfgs: list[Path],
-              config_concurrency: int,
-              arb_ctx: ArbCtx | None = None) -> list[tuple[str, bool, str]]:
+def run_batch(
+    client: DaemonClient,
+    batch_cfgs: list[Path],
+    config_concurrency: int,
+    arb_ctx: ArbCtx | None = None,
+) -> list[tuple[str, bool, str]]:
     """Install batch's plugins, run configs with bounded parallelism."""
-    plugin_names = [plugin_name_for(c, yaml.safe_load(c.read_text()))
-                    for c in batch_cfgs]
+    plugin_names = [
+        plugin_name_for(c, yaml.safe_load(c.read_text())) for c in batch_cfgs
+    ]
     label = ", ".join(c.name for c in batch_cfgs)
     print(f"\n=== batch ({len(batch_cfgs)}): {label} ===", flush=True)
 
@@ -301,8 +328,7 @@ def run_batch(client: DaemonClient,
     for cfg in batch_cfgs:
         setup_status[cfg.name] = run_setup(cfg)
         if not setup_status[cfg.name][0]:
-            print(f"  ! setup failed for {cfg.name}",
-                  file=sys.stderr, flush=True)
+            print(f"  ! setup failed for {cfg.name}", file=sys.stderr, flush=True)
 
     # The chat poll deadline is the only hard limit on a single test: promptfoo's
     # python provider imposes no per-call timeout (only HTTP fetches honor
@@ -310,14 +336,25 @@ def run_batch(client: DaemonClient,
     # slow plugins room to finish - notably video-analyze, whose transcription /
     # cold model load can exceed the old 270s cap - while the provider still
     # returns a clean error result if the deadline is hit. Override via env.
-    env = {**os.environ, "CDX_EVAL_POLL_TIMEOUT_S": os.environ.get(
-        "CDX_EVAL_POLL_TIMEOUT_S", "600")}
+    env = {
+        **os.environ,
+        "CDX_EVAL_POLL_TIMEOUT_S": os.environ.get("CDX_EVAL_POLL_TIMEOUT_S", "600"),
+    }
 
     def _run_one(cfg: Path) -> tuple[Path, str, bool, Path | None]:
         ok, run_id = setup_status[cfg.name]
         if not ok:
             return cfg, "(setup failed - skipped)\n", False, None
-        cmd = ["npx", "promptfoo", "eval", "-c", str(cfg), "--no-cache", "--max-concurrency", "1"]
+        cmd = [
+            "npx",
+            "promptfoo",
+            "eval",
+            "-c",
+            str(cfg),
+            "--no-cache",
+            "--max-concurrency",
+            "1",
+        ]
         if run_id:
             cmd += ["--var", f"run_id={run_id}"]
         # Under --arbitrate we need structured results to find failing rows and
@@ -328,18 +365,23 @@ def run_batch(client: DaemonClient,
             os.close(fd)
             json_path = Path(name)
             cmd += ["--output", str(json_path)]
-        proc = subprocess.Popen(cmd, cwd=str(cfg.parent),
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                env=env,
-                                text=True)
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(cfg.parent),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+            text=True,
+        )
         out, _ = proc.communicate()
         return cfg, out, proc.returncode == 0, json_path
 
     n_eligible = sum(1 for c in batch_cfgs if setup_status[c.name][0])
     workers = max(1, min(config_concurrency, n_eligible)) if n_eligible else 1
-    print(f"  > running {n_eligible} config(s) with config-concurrency={workers}...",
-          flush=True)
+    print(
+        f"  > running {n_eligible} config(s) with config-concurrency={workers}...",
+        flush=True,
+    )
 
     # Phase A - bounded parallel run. Up to `workers` Popen children alive at
     # any time - the rest queue up. Mitigates VM fs shell-gate lock contention
@@ -361,7 +403,12 @@ def run_batch(client: DaemonClient,
     results: list[tuple[str, bool, str]] = []
     for cfg, ok_rc, json_path in raw:
         ok, note = ok_rc, ""
-        if arb_ctx is not None and not ok_rc and json_path is not None and json_path.exists():
+        if (
+            arb_ctx is not None
+            and not ok_rc
+            and json_path is not None
+            and json_path.exists()
+        ):
             ok, note = _arbitrate_config(cfg, json_path, arb_ctx)
         if json_path is not None:
             json_path.unlink(missing_ok=True)
@@ -421,8 +468,7 @@ def add_marketplace(client: DaemonClient, git_url: str, git_ref: str) -> dict:
     """
     manifest_path = REPO_ROOT / ".claude-plugin" / "marketplace.json"
     manifest = json.loads(manifest_path.read_text())
-    print(f"marketplace: {git_url} @ {git_ref} (name: {manifest['name']})",
-          flush=True)
+    print(f"marketplace: {git_url} @ {git_ref} (name: {manifest['name']})", flush=True)
     return client.add_marketplace_idempotent(git_url, git_ref, manifest)
 
 
@@ -431,8 +477,7 @@ def remove_marketplace(client: DaemonClient, marketplace_node_id: str) -> None:
         client.remove_marketplace(marketplace_node_id)
         print("marketplace removed", flush=True)
     except Exception as e:
-        print(f"  ! remove_marketplace failed: {e}",
-              file=sys.stderr, flush=True)
+        print(f"  ! remove_marketplace failed: {e}", file=sys.stderr, flush=True)
 
 
 _ARB_DEFAULT_FLOOR = 0.6
@@ -456,10 +501,15 @@ def _build_arb_ctx(args) -> ArbCtx | None:
     cache_path = arb.default_cache_path()
     if args.arbitration_cache_clear:
         cache_path.unlink(missing_ok=True)
-    floor = (args.arbitration_confidence if args.arbitration_confidence is not None
-             else _ARB_DEFAULT_FLOOR)
-    print(f"arbitration: judge={model} floor={floor} "
-          f"endpoint={base.rstrip('/')}", flush=True)
+    floor = (
+        args.arbitration_confidence
+        if args.arbitration_confidence is not None
+        else _ARB_DEFAULT_FLOOR
+    )
+    print(
+        f"arbitration: judge={model} floor={floor} endpoint={base.rstrip('/')}",
+        flush=True,
+    )
     return ArbCtx(
         arb=arb,
         call=arb.make_judge_caller(base, key, model),
@@ -473,37 +523,62 @@ def _build_arb_ctx(args) -> ArbCtx | None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--git-url", required=True,
-                        help="Marketplace git repository URL")
-    parser.add_argument("--git-ref", required=True,
-                        help="Marketplace git branch or tag")
-    parser.add_argument("--plugin", "--plugins", dest="plugins",
-                        nargs="+", default=[],
-                        help="Plugin name(s) - runs every config whose "
-                             "target_plugin matches. E.g. `--plugin ares` "
-                             "runs ares-ico + ares-dph.")
-    parser.add_argument("configs", nargs="*",
-                        help="Specific config files (default: all "
-                             "*.config.yaml). Combines with --plugin.")
-    parser.add_argument("--config-concurrency", type=int, default=3,
-                        help="Max parallel config subprocesses per batch "
-                             "(default: 3). The per-user VM serializes "
-                             "chats on a shell-gate lock; setting this too "
-                             "high causes 30s lock-timeout failures.")
-    parser.add_argument("--arbitrate", action="store_true",
-                        help="Second phase: re-grade each deterministically-"
-                             "failing row with an LLM judge against the test's "
-                             "vars.arbitration criteria. CORRECT (false positive) "
-                             "flips the row to PASS; INCORRECT stays FAIL. Requires "
-                             "an OpenAI-compatible judge endpoint (OPENAI_BASE_URL "
-                             "+ OPENAI_API_KEY, or CODEXIS_*_LITELLM_* fallback).")
-    parser.add_argument("--arbitration-confidence", type=float, default=None,
-                        help=f"Confidence floor for honoring a CORRECT verdict "
-                             f"(default: {_ARB_DEFAULT_FLOOR}).")
-    parser.add_argument("--arbitration-cache-clear", action="store_true",
-                        help="Wipe the arbitration verdict cache before running.")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--git-url", required=True, help="Marketplace git repository URL"
+    )
+    parser.add_argument(
+        "--git-ref", required=True, help="Marketplace git branch or tag"
+    )
+    parser.add_argument(
+        "--plugin",
+        "--plugins",
+        dest="plugins",
+        nargs="+",
+        default=[],
+        help="Plugin name(s) - runs every config whose "
+        "target_plugin matches. E.g. `--plugin ares` "
+        "runs ares-ico + ares-dph.",
+    )
+    parser.add_argument(
+        "configs",
+        nargs="*",
+        help="Specific config files (default: all "
+        "*.config.yaml). Combines with --plugin.",
+    )
+    parser.add_argument(
+        "--config-concurrency",
+        type=int,
+        default=3,
+        help="Max parallel config subprocesses per batch "
+        "(default: 3). The per-user VM serializes "
+        "chats on a shell-gate lock; setting this too "
+        "high causes 30s lock-timeout failures.",
+    )
+    parser.add_argument(
+        "--arbitrate",
+        action="store_true",
+        help="Second phase: re-grade each deterministically-"
+        "failing row with an LLM judge against the test's "
+        "vars.arbitration criteria. CORRECT (false positive) "
+        "flips the row to PASS; INCORRECT stays FAIL. Requires "
+        "an OpenAI-compatible judge endpoint (OPENAI_BASE_URL "
+        "+ OPENAI_API_KEY, or CODEXIS_*_LITELLM_* fallback).",
+    )
+    parser.add_argument(
+        "--arbitration-confidence",
+        type=float,
+        default=None,
+        help=f"Confidence floor for honoring a CORRECT verdict "
+        f"(default: {_ARB_DEFAULT_FLOOR}).",
+    )
+    parser.add_argument(
+        "--arbitration-cache-clear",
+        action="store_true",
+        help="Wipe the arbitration verdict cache before running.",
+    )
     args = parser.parse_args()
     if args.config_concurrency < 1:
         print("--config-concurrency must be >= 1", file=sys.stderr)
@@ -540,7 +615,8 @@ def main() -> int:
                 print(f"no such config file: {arg!r}", file=sys.stderr)
                 return 2
             if p not in seen:
-                seen.add(p); cfgs.append(p)
+                seen.add(p)
+                cfgs.append(p)
         if args.plugins:
             cfgs_by_plugin: dict[str, list[Path]] = {}
             for c in all_cfgs:
@@ -549,13 +625,16 @@ def main() -> int:
             for name in args.plugins:
                 matched = cfgs_by_plugin.get(name, [])
                 if not matched:
-                    print(f"no configs target plugin {name!r} "
-                          f"(known: {sorted(cfgs_by_plugin)})",
-                          file=sys.stderr)
+                    print(
+                        f"no configs target plugin {name!r} "
+                        f"(known: {sorted(cfgs_by_plugin)})",
+                        file=sys.stderr,
+                    )
                     return 2
                 for c in matched:
                     if c not in seen:
-                        seen.add(c); cfgs.append(c)
+                        seen.add(c)
+                        cfgs.append(c)
     if not cfgs:
         print("no *.config.yaml found", file=sys.stderr)
         return 2
@@ -575,10 +654,14 @@ def main() -> int:
     if arb_ctx is not None:
         arb_ctx.results_dir.mkdir(parents=True, exist_ok=True)
         (arb_ctx.results_dir / "arbitration.json").write_text(
-            json.dumps(arb_ctx.records, ensure_ascii=False, indent=2))
+            json.dumps(arb_ctx.records, ensure_ascii=False, indent=2)
+        )
         arb_ctx.arb.save_cache(arb_ctx.cache, arb_ctx.cache_path)
-        print(f"\narbitration: {len(arb_ctx.records)} verdict(s) → "
-              f"{arb_ctx.results_dir}/arbitration.json", flush=True)
+        print(
+            f"\narbitration: {len(arb_ctx.records)} verdict(s) → "
+            f"{arb_ctx.results_dir}/arbitration.json",
+            flush=True,
+        )
 
     passed = sum(1 for _, ok, _ in results if ok)
     print("\n=== SUMMARY ===")
