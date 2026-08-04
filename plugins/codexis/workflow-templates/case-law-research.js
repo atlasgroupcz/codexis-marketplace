@@ -30,13 +30,15 @@ const LABEL_VERIFY = issue => `ověření: ${issue}`
 
 const REPORT_PREFIX = "resherse-judikatura"
 
-const RELAY = path => `---
+const RELAY = (path, docx) => `---
 
 Pokyn pro asistenta: tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
 
 Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl. Nepřidávej k ní vlastní právní závěry.
 
-Tenhle pokyn ani tuhle patičku do chatu nevypisuj. Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.`
+Tenhle pokyn ani tuhle patičku do chatu nevypisuj. Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.${docx ? `
+
+Rešerše je vysázená i ve Wordu jako ${docx} - hotový dokument s titulní stranou, obsahem a hlavičkou CODEXIS. Nabídni ho odkazem na konci odpovědi a znovu ho nevyráběj.` : ""}`
 
 const RULES = `Odpovídej česky. Piš jen to, co jsi otevřel a přečetl. Zdroj si nikdy nevymýšlej - když ho nemáš, řekni to.
 
@@ -151,6 +153,212 @@ const SCOPE = { type: "object", required: ["framing", "issues"], properties: {
 
 const NOT_VERIFIED = "Ověření se nepodařilo provést, tenhle oddíl prošel bez kontroly."
 
+const DOCX_PREFIX = "reserse-judikatury"
+const BRAND = "CODEXIS"
+const BRAND_GREEN = "7CB302"
+const FONT = "Times New Roman"
+
+const plain = text => String(text == null ? "" : text)
+  .replace(/[\s\S]*?/g, "")
+  .replace(/【src_[0-9a-f]+】/g, "")
+
+const runsOf = (d, text, options) => plain(text).split("**").map((piece, i) =>
+  new d.TextRun({ ...(options || {}), text: piece, bold: (options && options.bold) || i % 2 === 1 }))
+
+const tableOf = (d, rows) => {
+  const cells = rows.map(row => row.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(c => c.trim()))
+  const width = Math.max(...cells.map(r => r.length))
+  return new d.Table({
+    width: { size: 100, type: d.WidthType.PERCENTAGE },
+    rows: cells.map((row, index) => new d.TableRow({
+      tableHeader: index === 0,
+      children: Array.from({ length: width }, (_, i) => new d.TableCell({
+        shading: index === 0 ? { fill: "F2F7E6" } : undefined,
+        children: [new d.Paragraph({ children: runsOf(d, row[i] || "", { bold: index === 0 }) })]
+      }))
+    }))
+  })
+}
+
+const bodyOf = (d, markdown) => {
+  const lines = plain(markdown).split("\n")
+  const out = []
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    if (!line.trim() || /^\s*---+\s*$/.test(line)) { i++; continue }
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line)
+    if (heading) {
+      out.push(new d.Paragraph({
+        heading: heading[1].length <= 2 ? d.HeadingLevel.HEADING_2 : d.HeadingLevel.HEADING_3,
+        children: runsOf(d, heading[2])
+      }))
+      i++
+      continue
+    }
+    if (/^\s*\|/.test(line)) {
+      const rows = []
+      while (i < lines.length && /^\s*\|/.test(lines[i])) {
+        if (!/^\s*\|[\s|:-]*\|?\s*$/.test(lines[i])) { rows.push(lines[i]) }
+        i++
+      }
+      if (rows.length) { out.push(tableOf(d, rows)) }
+      continue
+    }
+    if (/^\s*>/.test(line)) {
+      const quote = []
+      while (i < lines.length && /^\s*>/.test(lines[i])) {
+        quote.push(lines[i].replace(/^\s*>\s?/, ""))
+        i++
+      }
+      out.push(new d.Paragraph({
+        indent: { left: 567 },
+        border: { left: { style: d.BorderStyle.SINGLE, size: 12, space: 12, color: BRAND_GREEN } },
+        children: runsOf(d, quote.join(" "), { italics: true })
+      }))
+      continue
+    }
+    const paragraph = []
+    while (i < lines.length && lines[i].trim() && !/^\s*[|>#]/.test(lines[i])) {
+      paragraph.push(lines[i].replace(/^\s*[-*]\s+/, "• "))
+      i++
+    }
+    out.push(new d.Paragraph({ children: runsOf(d, paragraph.join(" ")) }))
+  }
+  return out
+}
+
+const logoPng = async () => {
+  const { readdir, access, mkdir, readFile } = await import("node:fs/promises")
+  const { join } = await import("node:path")
+  const { execFile } = await import("node:child_process")
+  const { promisify } = await import("node:util")
+  const root = join(process.env.HOME || "/home/codexis", ".cdx", "marketplaces")
+  let svg = null
+  for (const entry of await readdir(root).catch(() => [])) {
+    const candidate = join(root, entry, "plugins", "codexis", "icon.svg")
+    if (await access(candidate).then(() => true, () => false)) { svg = candidate; break }
+  }
+  if (!svg) { return null }
+  await mkdir(".tmp", { recursive: true })
+  await promisify(execFile)("soffice",
+    ["--headless", "--convert-to", "png", "--outdir", ".tmp", svg], { timeout: 120000 })
+  return readFile(join(".tmp", "icon.png"))
+}
+
+const titlePage = (d, logo, question, jurisdiction, asOf) => {
+  const line = (label, value) => new d.Paragraph({
+    spacing: { before: 60 },
+    children: [new d.TextRun({ text: `${label}\t`, bold: true }), new d.TextRun(plain(value))]
+  })
+  return [
+    ...(logo ? [new d.Paragraph({
+      alignment: d.AlignmentType.CENTER,
+      spacing: { before: 1200, after: 240 },
+      children: [new d.ImageRun({ data: logo, transformation: { width: 96, height: 96 } })]
+    })] : []),
+    new d.Paragraph({
+      alignment: d.AlignmentType.CENTER,
+      spacing: { after: 480 },
+      children: [new d.TextRun({ text: BRAND, bold: true, size: 28, color: BRAND_GREEN, characterSpacing: 60 })]
+    }),
+    new d.Paragraph({
+      alignment: d.AlignmentType.CENTER,
+      spacing: { after: 240 },
+      children: [new d.TextRun({ text: "REŠERŠE JUDIKATURY", bold: true, size: 44 })]
+    }),
+    new d.Paragraph({
+      alignment: d.AlignmentType.CENTER,
+      spacing: { after: 960 },
+      children: [new d.TextRun({ text: plain(question), size: 24, italics: true })]
+    }),
+    line("Jurisdikce:", jurisdiction),
+    line("Rozhodné datum:", asOf),
+    line("Zpracováno:", new Date().toLocaleDateString("cs-CZ")),
+    new d.Paragraph({ children: [new d.PageBreak()] })
+  ]
+}
+
+const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) => {
+  const module = await import("docx")
+  const d = module.Document ? module : module.default
+  const logo = await logoPng().catch(() => null)
+  const children = [
+    ...titlePage(d, logo, question, jurisdiction, asOf),
+    new d.TableOfContents("Obsah", { hyperlink: true, headingStyleRange: "1-3" }),
+    new d.Paragraph({ children: [new d.PageBreak()] })
+  ]
+  sections.forEach(({ issue, draft, review }, index) => {
+    children.push(new d.Paragraph({
+      heading: d.HeadingLevel.HEADING_1,
+      children: [new d.TextRun(`${index + 1}. ${plain(issue.label)}`)]
+    }))
+    children.push(new d.Paragraph({
+      spacing: { after: 120 },
+      children: [new d.TextRun({ text: plain(issue.question), italics: true, color: "555555" })]
+    }))
+    children.push(...bodyOf(d, draft))
+    children.push(new d.Paragraph({
+      heading: d.HeadingLevel.HEADING_2,
+      children: [new d.TextRun("Výsledek ověření")]
+    }))
+    children.push(...bodyOf(d, review || NOT_VERIFIED))
+  })
+  if (gaps.length) {
+    children.push(new d.Paragraph({
+      heading: d.HeadingLevel.HEADING_1,
+      children: [new d.TextRun("Co v rešerši chybí")]
+    }))
+    children.push(...bodyOf(d, gaps.join("\n\n")))
+  }
+  const styles = level => ({
+    run: { font: FONT, size: level === 1 ? 32 : 28, bold: true, color: "000000" },
+    paragraph: { spacing: { before: 240, after: 120, line: 276, lineRule: d.LineRuleType.AUTO }, outlineLevel: level }
+  })
+  const document = new d.Document({
+    styles: {
+      default: {
+        document: {
+          run: { font: FONT, size: 24 },
+          paragraph: { spacing: { after: 120, line: 276, lineRule: d.LineRuleType.AUTO } }
+        },
+        heading1: styles(1),
+        heading2: styles(2),
+        heading3: { ...styles(3), run: { font: FONT, size: 24, bold: true, color: "000000" } }
+      }
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 },
+          margin: { top: 1440, right: 1134, bottom: 1440, left: 1134 }
+        }
+      },
+      headers: {
+        default: new d.Header({
+          children: [new d.Paragraph({
+            alignment: d.AlignmentType.RIGHT,
+            border: { bottom: { style: d.BorderStyle.SINGLE, size: 6, space: 4, color: BRAND_GREEN } },
+            children: [new d.TextRun({ text: `${BRAND} · Rešerše judikatury`, size: 18, color: "666666" })]
+          })]
+        })
+      },
+      footers: {
+        default: new d.Footer({
+          children: [new d.Paragraph({
+            alignment: d.AlignmentType.CENTER,
+            children: [new d.TextRun({ children: ["str. ", d.PageNumber.CURRENT], size: 18, color: "666666" })]
+          })]
+        })
+      },
+      children
+    }]
+  })
+  const { writeFile } = await import("node:fs/promises")
+  await writeFile(target, await d.Packer.toBuffer(document))
+  return target
+}
+
 const section = (label, question, draft, review) => `# ${label}
 
 Dílčí otázka: ${question}
@@ -229,7 +437,16 @@ ${missing}`
 
   log(`zpráva zapsána: ${path}, ${report.length} znaků`)
 
+  const sections = researched.map(({ issue, draft }, i) => ({ issue, draft, review: reviews[i] }))
+  let docx = null
+  try {
+    docx = await buildDocx(`${DOCX_PREFIX}-${stamp}.docx`, question, jurisdiction, asOf, sections, gaps)
+    log(`dokument zapsán: ${docx}`)
+  } catch (failure) {
+    log(`dokument se nepodařilo vysázet: ${failure.message}`)
+  }
+
   return `${report}
 
-${RELAY(path)}`
+${RELAY(path, docx)}`
 }
