@@ -150,3 +150,10 @@ docs/superpowers/
 # Raw coverage profiles. cargo llvm-cov writes these next to the crate when a
 # test spawns the binary under test; they are build output, never sources.
 *.profraw
+
+# pytest --cov leaves this database in the working directory. dist-exclusions
+# is a deny-list over tracked files, so anything committed here reaches the
+# public dist by default - a build artifact must not become tracked at all.
+.coverage
+.coverage.*
+htmlcov/

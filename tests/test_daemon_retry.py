@@ -12,7 +12,6 @@ import email.message
 import sys
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 import pytest
 
@@ -21,8 +20,9 @@ from tests._daemon_client import _MAX_ATTEMPTS, _TRANSIENT_STATUS, DaemonClient
 
 
 def _http_error(code: int) -> urllib.error.HTTPError:
-    return urllib.error.HTTPError("http://x/graphql", code, "err",
-                                  email.message.Message(), None)
+    return urllib.error.HTTPError(
+        "http://x/graphql", code, "err", email.message.Message(), None
+    )
 
 
 @pytest.fixture(autouse=True)

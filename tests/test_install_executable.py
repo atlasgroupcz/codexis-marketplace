@@ -146,5 +146,9 @@ def test_codexis_installer_repairs_cdx_cli_and_cdxctl(tmp_path: Path) -> None:
     )
 
     assert second.returncode == 0, second.stderr
-    assert (target_dir / "cdx-cli").read_bytes() == (plugin_dir / "bin" / "cdx-cli").read_bytes()
-    assert (target_dir / "cdxctl").read_bytes() == (plugin_dir / "bin" / "cdxctl").read_bytes()
+    assert (target_dir / "cdx-cli").read_bytes() == (
+        plugin_dir / "bin" / "cdx-cli"
+    ).read_bytes()
+    assert (target_dir / "cdxctl").read_bytes() == (
+        plugin_dir / "bin" / "cdxctl"
+    ).read_bytes()

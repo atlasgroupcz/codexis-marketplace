@@ -18,12 +18,12 @@ import re
 import unicodedata
 
 __all__ = [
-    "normalize",
+    "czech_phonetic_key",
     "jaro_winkler",
     "levenshtein_ratio",
-    "trigram_jaccard",
-    "czech_phonetic_key",
+    "normalize",
     "score",
+    "trigram_jaccard",
 ]
 
 
@@ -77,9 +77,7 @@ def jaro(a: str, b: str) -> float:
             k += 1
     transpositions //= 2
     return (
-        matches / len(a)
-        + matches / len(b)
-        + (matches - transpositions) / matches
+        matches / len(a) + matches / len(b) + (matches - transpositions) / matches
     ) / 3.0
 
 

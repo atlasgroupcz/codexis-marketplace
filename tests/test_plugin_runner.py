@@ -11,7 +11,6 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from pathlib import Path
 
 from tests._output import Results
 from tests._plugin_runner import run_plugins
@@ -21,7 +20,9 @@ class TestSerial:
     def test_workers_one_runs_every_plugin_once_in_order(self):
         plugins = [{"name": n} for n in ("a", "b", "c")]
         seen = []
-        run_plugins(plugins, lambda p, res: seen.append(p["name"]), Results(), workers=1)
+        run_plugins(
+            plugins, lambda p, res: seen.append(p["name"]), Results(), workers=1
+        )
         assert seen == ["a", "b", "c"]
 
     def test_counts_aggregate_into_the_parent(self):

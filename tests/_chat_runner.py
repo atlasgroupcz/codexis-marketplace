@@ -9,11 +9,9 @@ stay tool-agnostic and match `input` as a JSON blob.
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass
 from typing import Any
-
 
 # Typed args the daemon exposes per concrete ToolMessagePart subtype. We pull
 # these field names off the part and pack them into a synthetic input dict
@@ -76,13 +74,15 @@ def parse_assistant_message(msg: dict) -> dict:
         if typ == "TextMessagePart":
             text_parts.append(part.get("content") or "")
         elif typ.endswith("ToolMessagePart"):
-            tool_calls.append({
-                "id": part.get("toolCallId"),
-                "name": part.get("toolName"),
-                "input": _extract_tool_input(part),
-                "output": _flatten_tool_output(part.get("output")),
-                "sources": part.get("sources") or [],
-            })
+            tool_calls.append(
+                {
+                    "id": part.get("toolCallId"),
+                    "name": part.get("toolName"),
+                    "input": _extract_tool_input(part),
+                    "output": _flatten_tool_output(part.get("output")),
+                    "sources": part.get("sources") or [],
+                }
+            )
         # ReasoningMessagePart, unknown types: ignored
     return {"text": "".join(text_parts), "tool_calls": tool_calls}
 
@@ -94,6 +94,7 @@ class ChatError(RuntimeError):
 @dataclass
 class ChatRunner:
     """One instance = one chat session. Call start(), then step(prompt) per turn."""
+
     client: Any  # duck-typed: needs new_chat, send_message, get_chat
     poll_interval_s: float = 2.0
     poll_timeout_s: float = 600.0

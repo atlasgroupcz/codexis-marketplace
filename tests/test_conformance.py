@@ -9,7 +9,6 @@ without a signal (see CLAUDE.md)."""
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest
@@ -215,7 +214,9 @@ def _example_prompt_errors(i18n: object) -> list[str]:
 
     if len(set(counts.values())) > 1:
         listed = ", ".join(f"{lang}={n}" for lang, n in sorted(counts.items()))
-        errors.append(f"i18n: every language must list the same number of prompts - {listed}")
+        errors.append(
+            f"i18n: every language must list the same number of prompts - {listed}"
+        )
 
     return errors
 

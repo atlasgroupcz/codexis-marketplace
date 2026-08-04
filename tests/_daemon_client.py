@@ -8,11 +8,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
-def make_oauth2_proxy_refresher(cookie: str,
-                                oauth2_proxy_url: str = "http://localhost:4182"):
+def make_oauth2_proxy_refresher(
+    cookie: str, oauth2_proxy_url: str = "http://localhost:4182"
+):
     """Return a zero-arg callable that mints a fresh bearer via oauth2-proxy.
 
     Sends the user's `_oauth2_proxy` session cookie to /oauth2/auth and reads
@@ -28,6 +30,7 @@ def make_oauth2_proxy_refresher(cookie: str,
                 return resp.headers.get("X-Auth-Request-Access-Token")
         except Exception:
             return None
+
     return _refresh
 
 
@@ -166,7 +169,8 @@ __typename partId
 ... on ExtractToolMessagePart { path query schemaName }
 """
 
-_Q_GET_CHAT = """
+_Q_GET_CHAT = (
+    """
 query GetChat($id: ID!) {
     node(id: $id) {
         ... on Chat {
@@ -180,9 +184,12 @@ query GetChat($id: ID!) {
         }
     }
 }
-""" % _PART_FIELDS
+"""
+    % _PART_FIELDS
+)
 
-_Q_GET_TOOL_CHAIN = """
+_Q_GET_TOOL_CHAIN = (
+    """
 query GetToolChain($id: ID!) {
     node(id: $id) {
         ... on ToolChain {
@@ -196,7 +203,9 @@ query GetToolChain($id: ID!) {
         }
     }
 }
-""" % _PART_FIELDS
+"""
+    % _PART_FIELDS
+)
 
 
 # HTTP statuses worth retrying. The shared dev daemon redeploys under long runs,
@@ -211,8 +220,12 @@ def _discard(_message: str) -> None:
 
 
 class DaemonClient:
-    def __init__(self, base_url: str, token: str,
-                 token_refresher: "Callable[[], str | None] | None" = None) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        token: str,
+        token_refresher: Callable[[], str | None] | None = None,
+    ) -> None:
         """`token_refresher` is an optional zero-arg callable that returns a
         fresh bearer token. When set, the client transparently refreshes on
         HTTP 401 once per failed request - keeps long suites alive past the
@@ -231,15 +244,21 @@ class DaemonClient:
     # -------------------------------------------------- transport
     def health_check(self) -> bool:
         try:
-            req = urllib.request.Request(self.health_url, headers={"Authorization": self.auth_header})
+            req = urllib.request.Request(
+                self.health_url, headers={"Authorization": self.auth_header}
+            )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 return json.loads(resp.read()).get("status") == "UP"
         except Exception:
             return False
 
-    def wait_healthy(self, timeout_s: float = 90, interval_s: float = 3,
-                     sleep: "Callable[[float], None]" = time.sleep,
-                     now: "Callable[[], float]" = time.monotonic) -> bool:
+    def wait_healthy(
+        self,
+        timeout_s: float = 90,
+        interval_s: float = 3,
+        sleep: Callable[[float], None] = time.sleep,
+        now: Callable[[], float] = time.monotonic,
+    ) -> bool:
         """Poll the health endpoint until the daemon reports UP or the deadline
         passes. The shared dev daemon redeploys under long runs and can be
         briefly down exactly when the suite starts, so wait it out instead of
@@ -270,11 +289,15 @@ class DaemonClient:
         vm = (data.get("me") or {}).get("virtualMachine") or {}
         return vm.get("status") or "UNKNOWN"
 
-    def ensure_vm_running(self, start_attempts: int = 5, timeout_s: float = 600,
-                          interval_s: float = 5,
-                          sleep: "Callable[[float], None]" = time.sleep,
-                          now: "Callable[[], float]" = time.monotonic,
-                          log: "Callable[[str], None] | None" = None) -> None:
+    def ensure_vm_running(
+        self,
+        start_attempts: int = 5,
+        timeout_s: float = 600,
+        interval_s: float = 5,
+        sleep: Callable[[float], None] = time.sleep,
+        now: Callable[[], float] = time.monotonic,
+        log: Callable[[str], None] | None = None,
+    ) -> None:
         """Start this user's VM if needed and block until it reports RUNNING.
 
         Installing a plugin writes into the VM, so a suite that runs against a
@@ -303,8 +326,10 @@ class DaemonClient:
                     f"attempts: {started.get('message') or started!r}"
                 )
             backoff = 2 ** (attempt - 1)
-            say(f"  VM start not accepted (attempt {attempt}/{start_attempts}), "
-                f"retrying in {backoff}s: {started.get('message') or started!r}")
+            say(
+                f"  VM start not accepted (attempt {attempt}/{start_attempts}), "
+                f"retrying in {backoff}s: {started.get('message') or started!r}"
+            )
             sleep(backoff)
 
         deadline = now() + timeout_s
@@ -317,7 +342,9 @@ class DaemonClient:
             if state == "RUNNING":
                 return
             if state == "STOPPED":
-                raise RuntimeError("VM entered terminal state STOPPED while waiting for RUNNING")
+                raise RuntimeError(
+                    "VM entered terminal state STOPPED while waiting for RUNNING"
+                )
             if now() >= deadline:
                 raise RuntimeError(
                     f"VM did not reach RUNNING within {timeout_s}s (last state: {state})"
@@ -361,11 +388,12 @@ class DaemonClient:
             except urllib.error.URLError as exc:
                 last_exc = exc  # connection reset/refused while the daemon reloads
             if attempt < _MAX_ATTEMPTS - 1:
-                time.sleep(min(2 ** attempt, 8))
+                time.sleep(min(2**attempt, 8))
         raise last_exc if last_exc is not None else RuntimeError("no request attempted")
 
-    def gql(self, query: str, variables: dict | None = None,
-            url: str | None = None) -> dict[str, Any]:
+    def gql(
+        self, query: str, variables: dict | None = None, url: str | None = None
+    ) -> dict[str, Any]:
         payload = json.dumps({"query": query, "variables": variables or {}}).encode()
         req = urllib.request.Request(
             url or self.graphql_url,
@@ -378,8 +406,9 @@ class DaemonClient:
         with self._open(req, timeout=120) as resp:
             return json.loads(resp.read())
 
-    def gql_data(self, query: str, variables: dict | None = None,
-                 url: str | None = None) -> dict[str, Any]:
+    def gql_data(
+        self, query: str, variables: dict | None = None, url: str | None = None
+    ) -> dict[str, Any]:
         result = self.gql(query, variables, url=url)
         if result.get("errors"):
             msg = result["errors"][0].get("message", str(result["errors"][0]))
@@ -421,8 +450,9 @@ class DaemonClient:
         )
         return data["addMarketplace"]
 
-    def add_marketplace_idempotent(self, git_url: str, git_ref: str,
-                                   manifest: dict) -> dict:
+    def add_marketplace_idempotent(
+        self, git_url: str, git_ref: str, manifest: dict
+    ) -> dict:
         """Add the marketplace from a clean slate: remove any existing copy of
         the same git URL first, then add it fresh. This guarantees a fresh
         checkout every run and side-steps a stale daemon record whose on-disk
@@ -514,8 +544,9 @@ class DaemonClient:
         return data["node"] or {}
 
     # -------------------------------------------------- file upload
-    def upload_folder(self, destination: str,
-                      files: list[tuple[str, bytes | str]]) -> dict:
+    def upload_folder(
+        self, destination: str, files: list[tuple[str, bytes | str]]
+    ) -> dict:
         """POST /rest/files/upload-folder - places files preserving folder structure.
 
         `destination` is a path inside the VM (e.g. '/home/codexis/ee-mkt-xyz').
@@ -575,9 +606,13 @@ class DaemonClient:
         with self._open(req, timeout=30) as resp:
             return resp.read()
 
-    def run_single_shot_chat(self, prompt: str, model: str | None = None,
-                             poll_interval_s: float = 2.0,
-                             poll_timeout_s: float = 120.0) -> str:
+    def run_single_shot_chat(
+        self,
+        prompt: str,
+        model: str | None = None,
+        poll_interval_s: float = 2.0,
+        poll_timeout_s: float = 120.0,
+    ) -> str:
         """Start a fresh chat, send one prompt, return the assistant's final text."""
         info = self.new_chat(model)
         self.send_message(info["id"], prompt)
@@ -591,7 +626,8 @@ class DaemonClient:
                 msg = chat["messages"][-1]
                 parts = msg.get("parts") or []
                 return "".join(
-                    p.get("content") or "" for p in parts
+                    p.get("content") or ""
+                    for p in parts
                     if p.get("__typename") == "TextMessagePart"
                 )
             if time.monotonic() >= deadline:

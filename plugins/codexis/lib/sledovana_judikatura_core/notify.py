@@ -52,7 +52,7 @@ def _load_auth() -> str | None:
     if not token:
         return None
     if token.lower().startswith("authorization:"):
-        token = token[len("Authorization:"):].strip()
+        token = token[len("Authorization:") :].strip()
     if token[:7].lower() == "bearer ":
         return token
     return f"Bearer {token}"
@@ -135,7 +135,9 @@ def _rest_base(daemon_url: str) -> str:
     return base
 
 
-def _send_email(subject: str, body_text: str, body_html: str | None = None, to: list | None = None) -> None:
+def _send_email(
+    subject: str, body_text: str, body_html: str | None = None, to: list | None = None
+) -> None:
     daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
     auth = _load_auth()
     if not daemon_url or not auth:
@@ -158,7 +160,7 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
         "Content-Type: application/json; charset=utf-8\r\n\r\n"
         f"{json.dumps(payload, ensure_ascii=False)}\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     req = urllib.request.Request(
         _rest_base(daemon_url) + _EMAIL_ENDPOINT,
@@ -186,7 +188,8 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
 def _changed(results: list) -> list:
     """Results that completed OK and whose report found new case law."""
     return [
-        r for r in results
+        r
+        for r in results
         if r.get("ok") and (r.get("report") or {}).get("found_count", 0) > 0
     ]
 
@@ -215,14 +218,18 @@ def _report_lines(report: dict) -> list:
     found = report.get("found_count", 0)
     period_from = report.get("period_from") or "?"
     period_to = report.get("period_to") or "?"
-    lines = [f"Nalezeno {found} nových rozhodnutí (období {period_from} → {period_to})."]
+    lines = [
+        f"Nalezeno {found} nových rozhodnutí (období {period_from} → {period_to})."
+    ]
     for area in report.get("areas", []):
         docs = area.get("documents", [])
         if not docs:
             continue
         lines.append(f"{area.get('name', '')}:")
         for d in docs:
-            suffix = " (mění dosavadní výklad)" if d.get("changes_established_view") else ""
+            suffix = (
+                " (mění dosavadní výklad)" if d.get("changes_established_view") else ""
+            )
             lines.append(f"  • {_doc_title(d)}{suffix}")
     overall = report.get("overall_summary")
     if overall:
@@ -241,23 +248,27 @@ def _report_html(report: dict) -> str:
         for d in area.get("documents", []):
             suffix = (
                 ' <span style="color:#777">(mění dosavadní výklad)</span>'
-                if d.get("changes_established_view") else ""
+                if d.get("changes_established_view")
+                else ""
             )
-            items.append(f'<li style="margin:2px 0">{escape(_doc_title(d))}{suffix}</li>')
+            items.append(
+                f'<li style="margin:2px 0">{escape(_doc_title(d))}{suffix}</li>'
+            )
     ul = (
         f'<ul style="margin:0;padding-left:18px;font:14px/1.5 sans-serif;color:#333">'
-        f'{"".join(items)}</ul>'
-        if items else ""
+        f"{''.join(items)}</ul>"
+        if items
+        else ""
     )
-    return (
-        f'<p style="margin:0 0 6px;font:14px sans-serif;color:#555">{escape(lead)}</p>{ul}'
-    )
+    return f'<p style="margin:0 0 6px;font:14px sans-serif;color:#555">{escape(lead)}</p>{ul}'
 
 
 def _change_summary(changed: list):
     """(subject, body_text, body_html) for topics that found new case law."""
     if len(changed) == 1:
-        subject = f"Sledovaná judikatura: nová judikatura u tématu {changed[0]['topic_name']}"
+        subject = (
+            f"Sledovaná judikatura: nová judikatura u tématu {changed[0]['topic_name']}"
+        )
     else:
         subject = f"Sledovaná judikatura: nová judikatura u {len(changed)} témat"
 
@@ -269,13 +280,14 @@ def _change_summary(changed: list):
         text_lines.append("")
         html_blocks.append(
             f'<h3 style="margin:18px 0 6px;font:600 15px sans-serif;color:#0a0a0a">'
-            f"{escape(r['topic_name'])}</h3>"
-            + _report_html(r["report"])
+            f"{escape(r['topic_name'])}</h3>" + _report_html(r["report"])
         )
     text_lines.append(_FOOTER)
 
-    return subject, "\n".join(text_lines), _email_shell(
-        "Nová judikatura u sledovaných témat", "".join(html_blocks)
+    return (
+        subject,
+        "\n".join(text_lines),
+        _email_shell("Nová judikatura u sledovaných témat", "".join(html_blocks)),
     )
 
 
@@ -342,7 +354,10 @@ def _pick_application(applications, plugin_name, component_id):
         content_url = app.get("contentUrl")
         if not isinstance(app_id, str) or plugin.get("name") != plugin_name:
             continue
-        if isinstance(content_url, str) and _component_id_of(content_url) == component_id:
+        if (
+            isinstance(content_url, str)
+            and _component_id_of(content_url) == component_id
+        ):
             return app_id
     return None
 
@@ -356,7 +371,9 @@ def _resolve_app_link():
     return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
-def _send_inapp(message: str, *, action: str | None = None, link: str | None = None) -> bool:
+def _send_inapp(
+    message: str, *, action: str | None = None, link: str | None = None
+) -> bool:
     """Create an in-app (notification-center bell) notification via the daemon's
     GraphQL createNotification. Best-effort: returns False on missing config or a
     transport error, never raises (a notification must not fail the check)."""

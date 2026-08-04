@@ -85,7 +85,9 @@ def delete(partial_uuid):
         try:
             subprocess.run(
                 [CDXCTL_BIN, "automation", "delete", automation_id],
-                capture_output=True, text=True, timeout=15,
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
         except Exception:
             pass  # non-fatal - automation may already be gone
@@ -125,18 +127,20 @@ def list_all():
     for t_uuid, data in state.all_topics():
         summaries = state.report_summaries(t_uuid)
         unconfirmed = sum(1 for s in summaries if not s.get("confirmed_on"))
-        out.append({
-            "uuid": t_uuid,
-            "name": data.get("name", ""),
-            "notes": data.get("notes", []),
-            "areas": data.get("areas", []),
-            "created_at": data.get("created_at"),
-            "last_check_at": data.get("last_check_at"),
-            "automation_id": data.get("automation_id"),
-            "total_reports": len(summaries),
-            "unconfirmed_reports": unconfirmed,
-            "_report_summaries": summaries,  # stripped before returning
-        })
+        out.append(
+            {
+                "uuid": t_uuid,
+                "name": data.get("name", ""),
+                "notes": data.get("notes", []),
+                "areas": data.get("areas", []),
+                "created_at": data.get("created_at"),
+                "last_check_at": data.get("last_check_at"),
+                "automation_id": data.get("automation_id"),
+                "total_reports": len(summaries),
+                "unconfirmed_reports": unconfirmed,
+                "_report_summaries": summaries,  # stripped before returning
+            }
+        )
 
     def sort_key(t):
         summaries = t["_report_summaries"]
@@ -150,8 +154,10 @@ def list_all():
             default="",
         )
         tier = 1 if unconfirmed else 0
-        activity = latest_unconfirmed if unconfirmed else max(
-            latest_report, t.get("created_at") or ""
+        activity = (
+            latest_unconfirmed
+            if unconfirmed
+            else max(latest_report, t.get("created_at") or "")
         )
         return (tier, activity)
 
@@ -182,9 +188,7 @@ def note_remove(partial_uuid, index):
     full_uuid, data = _require_topic(partial_uuid)
     notes = data.get("notes", [])
     if index < 0 or index >= len(notes):
-        raise NoteIndexError(
-            f"Index {index} mimo rozsah (0..{len(notes) - 1})."
-        )
+        raise NoteIndexError(f"Index {index} mimo rozsah (0..{len(notes) - 1}).")
     removed = notes.pop(index)
     data["notes"] = notes
     state.save_topic(full_uuid, data)
@@ -199,11 +203,13 @@ def area_add(partial_uuid, name):
     areas = data.get("areas", [])
     if any(a.get("name", "").lower() == name.lower() for a in areas):
         raise AreaAlreadyExistsError(f"Oblast '{name}' již existuje.")
-    areas.append({
-        "name": name,
-        "baseline_summary": None,
-        "added_at": now_utc(),
-    })
+    areas.append(
+        {
+            "name": name,
+            "baseline_summary": None,
+            "added_at": now_utc(),
+        }
+    )
     data["areas"] = areas
     state.save_topic(full_uuid, data)
     return len(areas) - 1
@@ -218,9 +224,7 @@ def area_remove(partial_uuid, index):
     full_uuid, data = _require_topic(partial_uuid)
     areas = data.get("areas", [])
     if index < 0 or index >= len(areas):
-        raise AreaIndexError(
-            f"Index {index} mimo rozsah (0..{len(areas) - 1})."
-        )
+        raise AreaIndexError(f"Index {index} mimo rozsah (0..{len(areas) - 1}).")
     removed = areas.pop(index)
     data["areas"] = areas
     state.save_topic(full_uuid, data)
@@ -231,9 +235,7 @@ def area_set_baseline(partial_uuid, index, summary):
     full_uuid, data = _require_topic(partial_uuid)
     areas = data.get("areas", [])
     if index < 0 or index >= len(areas):
-        raise AreaIndexError(
-            f"Index {index} mimo rozsah (0..{len(areas) - 1})."
-        )
+        raise AreaIndexError(f"Index {index} mimo rozsah (0..{len(areas) - 1}).")
     areas[index]["baseline_summary"] = summary
     areas[index]["baseline_set_at"] = now_utc()
     data["areas"] = areas
@@ -256,7 +258,7 @@ def save_report(partial_uuid, file_path=None, stream=None):
 
     try:
         if file_path:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 report = json.load(f)
         else:
             report = json.load(stream if stream is not None else sys.stdin)

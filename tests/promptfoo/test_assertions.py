@@ -1,7 +1,12 @@
 """Behavior: assert_sources checks the chat sources attached to a turn."""
+
 import json
 
-from tests.promptfoo.assertions import TOOL_CALLS_END, TOOL_CALLS_SENTINEL, assert_sources
+from tests.promptfoo.assertions import (
+    TOOL_CALLS_END,
+    TOOL_CALLS_SENTINEL,
+    assert_sources,
+)
 
 
 def _output(tool_calls: list[dict], text: str = "answer") -> str:
@@ -26,21 +31,33 @@ def test_no_sources_fails_default_min():
 
 
 def test_regex_matches_a_source():
-    out = _output([{"name": "shell",
-                    "sources": [{"url": "https://ares.gov.cz/ekonomicke-subjekty/x"}]}])
-    result = assert_sources(out, _ctx(sources_regex=r"ares\.gov\.cz/ekonomicke-subjekty"))
+    out = _output(
+        [
+            {
+                "name": "shell",
+                "sources": [{"url": "https://ares.gov.cz/ekonomicke-subjekty/x"}],
+            }
+        ]
+    )
+    result = assert_sources(
+        out, _ctx(sources_regex=r"ares\.gov\.cz/ekonomicke-subjekty")
+    )
     assert result["pass"] is True
 
 
 def test_regex_no_match_fails():
-    out = _output([{"name": "shell", "sources": [{"url": "https://evil.example/scrape"}]}])
+    out = _output(
+        [{"name": "shell", "sources": [{"url": "https://evil.example/scrape"}]}]
+    )
     result = assert_sources(out, _ctx(sources_regex=r"ares\.gov\.cz"))
     assert result["pass"] is False
 
 
 def test_sources_flattened_across_tool_calls():
-    out = _output([
-        {"name": "shell", "sources": [{"url": "https://ares.gov.cz/a"}]},
-        {"name": "shell", "sources": [{"url": "https://ares.gov.cz/b"}]},
-    ])
+    out = _output(
+        [
+            {"name": "shell", "sources": [{"url": "https://ares.gov.cz/a"}]},
+            {"name": "shell", "sources": [{"url": "https://ares.gov.cz/b"}]},
+        ]
+    )
     assert assert_sources(out, _ctx(sources_min=2))["pass"] is True

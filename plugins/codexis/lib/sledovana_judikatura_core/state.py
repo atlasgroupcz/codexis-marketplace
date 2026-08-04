@@ -19,9 +19,11 @@ APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "sledovana-judikatura")
 
 def now_utc():
     """Current UTC timestamp in ISO 8601 'Z' form."""
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
+    return (
+        datetime.datetime.now(datetime.UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
 
 
 # ── atomic writes ────────────────────────────────────────────────────────────
@@ -73,7 +75,7 @@ def load_topic(topic_uuid):
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -118,8 +120,7 @@ def resolve_uuid(partial):
         return matches[0]
     if len(matches) > 1:
         raise AmbiguousTopicPrefixError(
-            f"Nejednoznačný UUID prefix '{partial}', "
-            f"nalezeno {len(matches)} shod"
+            f"Nejednoznačný UUID prefix '{partial}', nalezeno {len(matches)} shod"
         )
     return None
 
@@ -133,7 +134,7 @@ def load_report(topic_uuid, report_id):
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -153,7 +154,7 @@ def all_reports(topic_uuid):
         if not rf.endswith(".json"):
             continue
         try:
-            with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
+            with open(os.path.join(rd, rf), encoding="utf-8") as f:
                 reports.append(json.load(f))
         except (json.JSONDecodeError, OSError):
             continue
@@ -170,16 +171,18 @@ def report_summaries(topic_uuid):
         if not rf.endswith(".json"):
             continue
         try:
-            with open(os.path.join(rd, rf), "r", encoding="utf-8") as f:
+            with open(os.path.join(rd, rf), encoding="utf-8") as f:
                 r = json.load(f)
         except (json.JSONDecodeError, OSError):
             continue
-        summaries.append({
-            "report_id": rf.replace(".json", ""),
-            "checked_at": r.get("checked_at"),
-            "period_from": r.get("period_from"),
-            "period_to": r.get("period_to"),
-            "found_count": r.get("found_count", 0),
-            "confirmed_on": r.get("confirmed_on"),
-        })
+        summaries.append(
+            {
+                "report_id": rf.replace(".json", ""),
+                "checked_at": r.get("checked_at"),
+                "period_from": r.get("period_from"),
+                "period_to": r.get("period_to"),
+                "found_count": r.get("found_count", 0),
+                "confirmed_on": r.get("confirmed_on"),
+            }
+        )
     return summaries

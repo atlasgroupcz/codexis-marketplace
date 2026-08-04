@@ -50,7 +50,11 @@ def _flatten(node: dict, prefix: str = "") -> set[str]:
 
 def _catalog(app: str, language: str) -> set[str]:
     path = APPS_DIR / app / "public" / "locales" / language / "translation.json"
-    return _flatten(json.loads(path.read_text(encoding="utf-8"))) if path.is_file() else set()
+    return (
+        _flatten(json.loads(path.read_text(encoding="utf-8")))
+        if path.is_file()
+        else set()
+    )
 
 
 def _keys_used(app: str) -> set[str]:

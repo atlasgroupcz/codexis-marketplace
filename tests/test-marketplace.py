@@ -29,11 +29,11 @@ from pathlib import Path
 # pythonpath in pyproject.toml.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tests._daemon_client import DaemonClient  # noqa: E402
-from tests._output import Results  # noqa: E402
-from tests._plugin_runner import run_plugins  # noqa: E402
-from tests._skills import skills_of_plugin  # noqa: E402
-from tests._unit_gate import run_default_gate  # noqa: E402
+from tests._daemon_client import DaemonClient
+from tests._output import Results
+from tests._plugin_runner import run_plugins
+from tests._skills import skills_of_plugin
+from tests._unit_gate import run_default_gate
 
 
 # ---------------------------------------------------------------------------
@@ -70,8 +70,10 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
     r.ok("VM is running")
 
     if not client.wait_healthy():
-        print("ERROR: Daemon not reachable or healthy within the startup window",
-              file=sys.stderr)
+        print(
+            "ERROR: Daemon not reachable or healthy within the startup window",
+            file=sys.stderr,
+        )
         sys.exit(1)
     r.ok("Daemon is healthy")
 
@@ -82,8 +84,9 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
     return manifest
 
 
-def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
-                    manifest: dict, r: Results) -> dict:
+def add_marketplace(
+    client: DaemonClient, git_url: str, git_ref: str, manifest: dict, r: Results
+) -> dict:
     r.section("Add marketplace (GIT)")
     mkt_name = manifest["name"]
     r.log(f"Git URL: {git_url}  ref: {git_ref}")
@@ -106,7 +109,9 @@ def add_marketplace(client: DaemonClient, git_url: str, git_ref: str,
     return our_mkt
 
 
-def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Results) -> None:
+def validate_listing(
+    client: DaemonClient, manifest: dict, our_mkt: dict, r: Results
+) -> None:
     r.section("Validate marketplace listing")
 
     mkt_name = manifest["name"]
@@ -125,8 +130,9 @@ def validate_listing(client: DaemonClient, manifest: dict, our_mkt: dict, r: Res
             r.fail(f"Plugin '{name}' missing from marketplace (check source path)")
 
 
-def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
-                r: Results) -> None:
+def test_plugin(
+    client: DaemonClient, plugin: dict, marketplace_path: Path, r: Results
+) -> None:
     name = plugin["name"]
     plugin_id = plugin["id"]
     skills = plugin.get("skills", [])
@@ -151,10 +157,14 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
         return
     r.ok("Install succeeded")
 
-    r.log(f"  Version: {installed.get('version', '?')}, at: {installed.get('installation', {}).get('installedAt', '?')}")
+    r.log(
+        f"  Version: {installed.get('version', '?')}, at: {installed.get('installation', {}).get('installedAt', '?')}"
+    )
 
     # --- Skill validation (GraphQL proof the plugin installed and registered) ---
-    expected_skills = (expected or {}).get("skills", []) or [s["fullName"] for s in skills]
+    expected_skills = (expected or {}).get("skills", []) or [
+        s["fullName"] for s in skills
+    ]
     if expected_skills:
         try:
             # Scope to skills provided by THIS marketplace's plugin instance
@@ -188,7 +198,9 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
     # the VM filesystem and made the suite flaky (transient server errors).
     if expected_skills:
         try:
-            still = skills_of_plugin(client.list_skills(), plugin_id) & set(expected_skills)
+            still = skills_of_plugin(client.list_skills(), plugin_id) & set(
+                expected_skills
+            )
             if still:
                 r.fail(f"Skills still available after uninstall: {sorted(still)}")
             else:
@@ -197,7 +209,9 @@ def test_plugin(client: DaemonClient, plugin: dict, marketplace_path: Path,
             r.fail(f"Failed to query skills after uninstall: {e}")
 
 
-def remove_marketplace(client: DaemonClient, mkt_node_id: str, mkt_name: str, r: Results) -> None:
+def remove_marketplace(
+    client: DaemonClient, mkt_node_id: str, mkt_name: str, r: Results
+) -> None:
     r.section("Remove marketplace")
     try:
         client.remove_marketplace(mkt_node_id)
@@ -216,25 +230,43 @@ def remove_marketplace(client: DaemonClient, mkt_node_id: str, mkt_name: str, r:
 # ---------------------------------------------------------------------------
 def main() -> int:
     parser = argparse.ArgumentParser(description="Codexis Marketplace Acceptance Test")
-    parser.add_argument("--daemon", required=True, help="Daemon URL (e.g. http://localhost:8086)")
-    parser.add_argument("--token", default=os.environ.get("CDX_DAEMON_TOKEN", ""),
-                        help="JWT token. Defaults to $CDX_DAEMON_TOKEN, which is how CI "
-                             "should pass it: an argument is visible in the process "
-                             "list and in any shell trace.")
+    parser.add_argument(
+        "--daemon", required=True, help="Daemon URL (e.g. http://localhost:8086)"
+    )
+    parser.add_argument(
+        "--token",
+        default=os.environ.get("CDX_DAEMON_TOKEN", ""),
+        help="JWT token. Defaults to $CDX_DAEMON_TOKEN, which is how CI "
+        "should pass it: an argument is visible in the process "
+        "list and in any shell trace.",
+    )
     parser.add_argument("--git-url", required=True, help="Git repository URL")
     parser.add_argument("--git-ref", required=True, help="Git branch or tag")
-    parser.add_argument("--cookie", default="",
-                        help="Optional _oauth2_proxy cookie value used to "
-                             "auto-refresh the bearer token on 401.")
-    parser.add_argument("--oauth2-proxy", default="http://localhost:4182",
-                        help="oauth2-proxy URL (default: http://localhost:4182)")
-    parser.add_argument("--skip-unit-tests", action="store_true",
-                        help="Skip the local unit-test gate and go straight to the daemon.")
-    parser.add_argument("--workers", type=int, default=1,
-                        help="Number of plugins to install/uninstall concurrently "
-                             "(default: 1, serial). Raise it to shorten the daemon "
-                             "phase when the daemon serves plugins in parallel; the "
-                             "log stays in manifest order regardless.")
+    parser.add_argument(
+        "--cookie",
+        default="",
+        help="Optional _oauth2_proxy cookie value used to "
+        "auto-refresh the bearer token on 401.",
+    )
+    parser.add_argument(
+        "--oauth2-proxy",
+        default="http://localhost:4182",
+        help="oauth2-proxy URL (default: http://localhost:4182)",
+    )
+    parser.add_argument(
+        "--skip-unit-tests",
+        action="store_true",
+        help="Skip the local unit-test gate and go straight to the daemon.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of plugins to install/uninstall concurrently "
+        "(default: 1, serial). Raise it to shorten the daemon "
+        "phase when the daemon serves plugins in parallel; the "
+        "log stays in manifest order regardless.",
+    )
     args = parser.parse_args()
     if not args.token:
         parser.error("a token is required: pass --token or set CDX_DAEMON_TOKEN")
@@ -246,11 +278,15 @@ def main() -> int:
     if not args.skip_unit_tests:
         gate = run_default_gate(marketplace_path)
         if gate != 0:
-            print("Unit tests failed - not proceeding to the daemon test.", file=sys.stderr)
+            print(
+                "Unit tests failed - not proceeding to the daemon test.",
+                file=sys.stderr,
+            )
             return gate
     refresher = None
     if args.cookie:
         from tests._daemon_client import make_oauth2_proxy_refresher
+
         refresher = make_oauth2_proxy_refresher(args.cookie, args.oauth2_proxy)
     client = DaemonClient(args.daemon, args.token, token_refresher=refresher)
     r = Results()

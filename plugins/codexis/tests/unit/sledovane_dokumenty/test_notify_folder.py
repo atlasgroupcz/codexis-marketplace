@@ -3,8 +3,8 @@
 import json
 
 import pytest
-
-from sledovane_dokumenty_core import notify, settings as settings_mod
+from sledovane_dokumenty_core import notify
+from sledovane_dokumenty_core import settings as settings_mod
 
 
 def _results(changes):
@@ -18,7 +18,15 @@ def test_build_summary_none_without_changes():
 
 def test_build_summary_lists_changes():
     summary = notify.build_summary(
-        _results([{"codexisId": "CR1", "text": "Občanský zákoník", "effective_on": "2026-07-01"}])
+        _results(
+            [
+                {
+                    "codexisId": "CR1",
+                    "text": "Občanský zákoník",
+                    "effective_on": "2026-07-01",
+                }
+            ]
+        )
     )
     assert summary is not None
     subject, text, html = summary
@@ -30,15 +38,20 @@ def test_build_summary_lists_changes():
 def test_notify_changes_respects_settings(dokumenty_app_dir, monkeypatch):
     calls = {"email": 0, "inapp": 0}
     monkeypatch.setattr(
-        notify, "_send_email",
+        notify,
+        "_send_email",
         lambda *a, **k: calls.__setitem__("email", calls["email"] + 1) or True,
     )
     monkeypatch.setattr(
-        notify, "_send_inapp",
+        notify,
+        "_send_inapp",
         lambda *a, **k: calls.__setitem__("inapp", calls["inapp"] + 1) or True,
     )
-    monkeypatch.setattr(settings_mod, "get_notify",
-                        lambda: {"email": True, "inApp": False, "recipients": []})
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": True, "inApp": False, "recipients": []},
+    )
 
     res = notify.notify_changes(_results([{"codexisId": "CR1", "text": "OZ"}]))
     assert calls == {"email": 1, "inapp": 0}
@@ -95,7 +108,9 @@ def test_inapp_auth_uses_secret_not_env(monkeypatch, tmp_path):
 
 
 def test_email_returns_false_without_secret(monkeypatch, tmp_path):
-    monkeypatch.setenv("CODEXIS_USER_API_TOKEN", "codexis-token")  # present, still must fail
+    monkeypatch.setenv(
+        "CODEXIS_USER_API_TOKEN", "codexis-token"
+    )  # present, still must fail
     _stub_daemon(monkeypatch, tmp_path, secret=None)
     assert notify._send_email("subj", "body", None) is False
 
@@ -103,22 +118,43 @@ def test_email_returns_false_without_secret(monkeypatch, tmp_path):
 # Folder results shape that build_summary/_changed_folders already consume
 # (see the existing _results() helper at the top of this test file).
 def _folder_results():
-    return [{
-        "root": "/r", "name": "Smlouvy", "errors": [],
-        "changes": [{"codexisId": "CR1", "text": "Občanský zákoník", "effective_on": "2026-07-01"}],
-    }]
+    return [
+        {
+            "root": "/r",
+            "name": "Smlouvy",
+            "errors": [],
+            "changes": [
+                {
+                    "codexisId": "CR1",
+                    "text": "Občanský zákoník",
+                    "effective_on": "2026-07-01",
+                }
+            ],
+        }
+    ]
 
 
 def test_notify_changes_reads_unified_setting(dokumenty_app_dir, monkeypatch):
     calls = {"email": 0, "inapp": 0}
-    monkeypatch.setattr(notify, "_send_email",
-                        lambda *a, **k: calls.__setitem__("email", calls["email"] + 1) or True)
-    monkeypatch.setattr(notify, "_send_inapp",
-                        lambda *a, **k: calls.__setitem__("inapp", calls["inapp"] + 1) or True)
-    monkeypatch.setattr(settings_mod, "get_notify",
-                        lambda: {"email": True, "inApp": False, "recipients": []})
+    monkeypatch.setattr(
+        notify,
+        "_send_email",
+        lambda *a, **k: calls.__setitem__("email", calls["email"] + 1) or True,
+    )
+    monkeypatch.setattr(
+        notify,
+        "_send_inapp",
+        lambda *a, **k: calls.__setitem__("inapp", calls["inapp"] + 1) or True,
+    )
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": True, "inApp": False, "recipients": []},
+    )
 
-    notify.notify_changes(_folder_results())   # settings=None -> reads the unified setting
+    notify.notify_changes(
+        _folder_results()
+    )  # settings=None -> reads the unified setting
 
     assert calls["email"] == 1
     assert calls["inapp"] == 0
@@ -126,12 +162,21 @@ def test_notify_changes_reads_unified_setting(dokumenty_app_dir, monkeypatch):
 
 def test_notify_document_changes_respects_setting(dokumenty_app_dir, monkeypatch):
     calls = {"email": 0, "inapp": 0}
-    monkeypatch.setattr(notify, "_send_email",
-                        lambda *a, **k: calls.__setitem__("email", calls["email"] + 1) or True)
-    monkeypatch.setattr(notify, "_send_inapp",
-                        lambda *a, **k: calls.__setitem__("inapp", calls["inapp"] + 1) or True)
-    monkeypatch.setattr(settings_mod, "get_notify",
-                        lambda: {"email": True, "inApp": True, "recipients": []})
+    monkeypatch.setattr(
+        notify,
+        "_send_email",
+        lambda *a, **k: calls.__setitem__("email", calls["email"] + 1) or True,
+    )
+    monkeypatch.setattr(
+        notify,
+        "_send_inapp",
+        lambda *a, **k: calls.__setitem__("inapp", calls["inapp"] + 1) or True,
+    )
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": True, "inApp": True, "recipients": []},
+    )
 
     changed = [{"codexisId": "CR1", "name": "Zákoník práce"}]
     out = notify.notify_document_changes(changed)
@@ -141,8 +186,11 @@ def test_notify_document_changes_respects_setting(dokumenty_app_dir, monkeypatch
 
 
 def test_notify_document_changes_noop_when_empty(dokumenty_app_dir, monkeypatch):
-    monkeypatch.setattr(settings_mod, "get_notify",
-                        lambda: {"email": True, "inApp": True, "recipients": []})
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": True, "inApp": True, "recipients": []},
+    )
     assert notify.notify_document_changes([])["changes"] == 0
     assert notify.build_document_summary([]) is None
 
@@ -182,7 +230,10 @@ class TestWithoutSelf:
 
     def test_keeps_all_when_me_unavailable(self, monkeypatch):
         monkeypatch.setattr(notify, "_query_me_email", lambda: None)
-        assert notify.without_self(["me@firma.cz", "a@x.cz"]) == ["me@firma.cz", "a@x.cz"]
+        assert notify.without_self(["me@firma.cz", "a@x.cz"]) == [
+            "me@firma.cz",
+            "a@x.cz",
+        ]
 
     def test_empty_returns_empty_without_querying_me(self, monkeypatch):
         # No extras → nothing to filter, so it must not make the GraphQL `me` call.
@@ -214,7 +265,9 @@ class TestQueryMeEmail:
 
         class _Resp:
             def read(self):
-                return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode("utf-8")
+                return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode(
+                    "utf-8"
+                )
 
             def __enter__(self):
                 return self
@@ -271,29 +324,40 @@ class TestQueryMeEmail:
 
 def test_notify_changes_forwards_resolved_recipients(dokumenty_app_dir, monkeypatch):
     captured = {}
-    monkeypatch.setattr(notify, "_send_email", lambda *a, **k: captured.update(k) or True)
+    monkeypatch.setattr(
+        notify, "_send_email", lambda *a, **k: captured.update(k) or True
+    )
     monkeypatch.setattr(notify, "_send_inapp", lambda *a, **k: True)
     monkeypatch.setattr(notify, "resolve_to", lambda recipients: ["resolved@x.cz"])
-    monkeypatch.setattr(settings_mod, "get_notify",
-                        lambda: {"email": True, "inApp": False, "recipients": ["a@x.cz"]})
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": True, "inApp": False, "recipients": ["a@x.cz"]},
+    )
 
     notify.notify_changes(_folder_results())
 
     assert captured.get("recipients") == ["resolved@x.cz"]
 
 
-def test_notify_document_changes_forwards_resolved_recipients(dokumenty_app_dir, monkeypatch):
+def test_notify_document_changes_forwards_resolved_recipients(
+    dokumenty_app_dir, monkeypatch
+):
     captured = {}
-    monkeypatch.setattr(notify, "_send_email", lambda *a, **k: captured.update(k) or True)
+    monkeypatch.setattr(
+        notify, "_send_email", lambda *a, **k: captured.update(k) or True
+    )
     monkeypatch.setattr(notify, "_send_inapp", lambda *a, **k: True)
     monkeypatch.setattr(notify, "resolve_to", lambda recipients: ["resolved@x.cz"])
-    monkeypatch.setattr(settings_mod, "get_notify",
-                        lambda: {"email": True, "inApp": False, "recipients": ["a@x.cz"]})
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": True, "inApp": False, "recipients": ["a@x.cz"]},
+    )
 
     notify.notify_document_changes([{"codexisId": "CR1", "name": "Zákoník práce"}])
 
     assert captured.get("recipients") == ["resolved@x.cz"]
-
 
 
 _EXPECTED_LINK_QUERY = "?tab=folders"
@@ -309,7 +373,9 @@ _REAL_APP_ID = (
 
 def _content_url(component_id):
     """The shape the daemon builds: prefix, plugin node id, component id, slash."""
-    return f"/rest/plugin-components/BlBsdWdpbkttYXJrZXRwbGFjZS1wbHVnaW4/{component_id}/"
+    return (
+        f"/rest/plugin-components/BlBsdWdpbkttYXJrZXRwbGFjZS1wbHVnaW4/{component_id}/"
+    )
 
 
 def _app(plugin=None, component=None, app_id=_REAL_APP_ID):
@@ -346,16 +412,24 @@ def test_ignores_an_application_of_another_plugin():
     # Same component id, different owning plugin - the plugin name is what keeps
     # two marketplaces' same-named components apart.
     apps = [_app(plugin="other-plugin")]
-    assert notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        is None
+    )
 
 
 def test_ignores_a_sibling_component_of_the_same_plugin():
     apps = [_app(component="some-other-component")]
-    assert notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        is None
+    )
 
 
 def test_returns_none_when_no_application_is_installed():
-    assert notify._pick_application([], notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    assert (
+        notify._pick_application([], notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    )
 
 
 def test_skips_malformed_entries_instead_of_failing():
@@ -386,7 +460,9 @@ def _stub_applications_query(monkeypatch, tmp_path, payload):
         def __exit__(self, *exc):
             return False
 
-    monkeypatch.setattr(notify.urllib.request, "urlopen", lambda req, timeout=0: _Resp())
+    monkeypatch.setattr(
+        notify.urllib.request, "urlopen", lambda req, timeout=0: _Resp()
+    )
 
 
 def test_resolve_app_link_builds_the_apps_route(monkeypatch, tmp_path):

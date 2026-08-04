@@ -1,5 +1,7 @@
 """Source adapters: canonical normalisation, TMview response parsing, dispatch."""
 
+from typing import ClassVar
+
 from znamky_core import sources
 from znamky_core.sources import base, tmview
 
@@ -26,7 +28,7 @@ class TestBaseNormalisation:
 
 
 class TestTmviewParse:
-    PAYLOAD = {
+    PAYLOAD: ClassVar[dict] = {
         "fullResultCount": 1,
         "tradeMarks": [
             {
@@ -61,7 +63,9 @@ class TestTmviewParse:
         assert c["url_detail"].endswith("CZ500000001")
 
     def test_handles_alias_fields(self):
-        cands = tmview.parse_results({"results": [{"stableId": "EM1", "name": "ACME", "officeCode": "EM"}]})
+        cands = tmview.parse_results(
+            {"results": [{"stableId": "EM1", "name": "ACME", "officeCode": "EM"}]}
+        )
         assert cands[0]["source_id"] == "EM1"
         assert cands[0]["mark_text"] == "ACME"
         assert cands[0]["territory"] == "EU"

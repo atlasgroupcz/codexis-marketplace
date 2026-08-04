@@ -29,15 +29,6 @@ from .exceptions import (
 from .folders import WatchedFolderError
 
 __all__ = [
-    "clients",
-    "diff",
-    "folder_check",
-    "folders",
-    "harvest",
-    "notify",
-    "related",
-    "state",
-    "tracking",
     "CdxClientError",
     "DocumentAlreadyTrackedError",
     "DocumentError",
@@ -47,4 +38,13 @@ __all__ = [
     "LlmDaemonError",
     "RelatedTypeNotTrackedError",
     "WatchedFolderError",
+    "clients",
+    "diff",
+    "folder_check",
+    "folders",
+    "harvest",
+    "notify",
+    "related",
+    "state",
+    "tracking",
 ]

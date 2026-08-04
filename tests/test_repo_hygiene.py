@@ -25,7 +25,7 @@ def _in_nested_worktree(rel: Path) -> bool:
     # unrelated dir like .claude/worktreesnapshot). rel is relative to REPO_ROOT,
     # which may itself be such a checkout.
     parts = rel.parts
-    return any(parts[i:i + 2] == (".claude", "worktrees") for i in range(len(parts)))
+    return any(parts[i : i + 2] == (".claude", "worktrees") for i in range(len(parts)))
 
 
 def _guarded_scripts() -> list[Path]:
@@ -40,7 +40,9 @@ def _guarded_scripts() -> list[Path]:
 _GUARDED_SCRIPTS = _guarded_scripts()
 
 
-@pytest.mark.parametrize("script", _GUARDED_SCRIPTS, ids=lambda p: str(p.relative_to(REPO_ROOT)))
+@pytest.mark.parametrize(
+    "script", _GUARDED_SCRIPTS, ids=lambda p: str(p.relative_to(REPO_ROOT))
+)
 def test_build_scripts_are_executable(script: Path) -> None:
     mode = script.stat().st_mode
     assert mode & stat.S_IXUSR, (
@@ -61,8 +63,7 @@ def test_no_plugin_keeps_a_legacy_acceptance_dir() -> None:
     """Data specs live under tests/{install,e2e}/ now; a top-level
     plugins/<name>/acceptance/ means a plugin was added on the old layout."""
     offenders = sorted(
-        p.parent.name for p in PLUGINS_DIR.glob("*/acceptance")
-        if p.is_dir()
+        p.parent.name for p in PLUGINS_DIR.glob("*/acceptance") if p.is_dir()
     )
     assert not offenders, (
         f"plugins still using the legacy acceptance/ layout: {offenders}. "
@@ -76,8 +77,20 @@ def test_no_plugin_keeps_a_legacy_acceptance_dir() -> None:
 _DASH_CHARS = (chr(0x2014), chr(0x2013))  # em-dash, en-dash
 # Hand-editable text where the rule applies.
 _DASH_SUFFIXES = {
-    ".rs", ".ts", ".tsx", ".js", ".jsx", ".md", ".json", ".yaml", ".yml",
-    ".sh", ".py", ".css", ".html", ".toml",
+    ".rs",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".md",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".sh",
+    ".py",
+    ".css",
+    ".html",
+    ".toml",
 }
 # Compiled FE bundles (under `assets/`) and captured external fixtures (under
 # `testdata/`) are committed but not hand-edited, so they are exempt.
@@ -185,4 +198,6 @@ def test_committed_plugin_binaries_are_x86_64() -> None:
 def test_binary_arch_guard_actually_found_binaries() -> None:
     # Without this, moving bin/ or dropping the artifacts turns the check above
     # into a test that passes because it inspects nothing.
-    assert _PLUGIN_ELF_BINARIES, "no ELF binaries found under plugins/ - guard is looking in the wrong place"
+    assert _PLUGIN_ELF_BINARIES, (
+        "no ELF binaries found under plugins/ - guard is looking in the wrong place"
+    )

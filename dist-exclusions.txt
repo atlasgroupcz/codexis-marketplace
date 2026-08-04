@@ -13,6 +13,7 @@ build.sh
 /dist-exclusions.txt
 /dist-content/
 /dist/
+/.git-blame-ignore-revs
 /README.md
 /CLAUDE.md
 .gitignore

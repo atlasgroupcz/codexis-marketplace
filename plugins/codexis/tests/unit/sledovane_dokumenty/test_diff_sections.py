@@ -9,22 +9,11 @@ from sledovane_dokumenty_core.diff import (
 
 class TestExtractSection:
     def test_returns_content_between_markers(self):
-        text = (
-            "[?part=intro]\n"
-            "This is the intro.\n"
-            "[?part=body]\n"
-            "This is the body."
-        )
+        text = "[?part=intro]\nThis is the intro.\n[?part=body]\nThis is the body."
         assert extract_section(text, "intro") == "This is the intro."
 
     def test_returns_last_section_until_end(self):
-        text = (
-            "[?part=intro]\n"
-            "Intro text.\n"
-            "[?part=body]\n"
-            "Body line 1.\n"
-            "Body line 2."
-        )
+        text = "[?part=intro]\nIntro text.\n[?part=body]\nBody line 1.\nBody line 2."
         result = extract_section(text, "body")
         assert "Body line 1." in result
         assert "Body line 2." in result
@@ -78,18 +67,8 @@ class TestPerSectionChanges:
         assert per_section_changes(text, text) is None
 
     def test_returns_sections_that_differ(self):
-        old = (
-            "[?part=intro]\n"
-            "Old intro.\n"
-            "[?part=body]\n"
-            "Same body."
-        )
-        new = (
-            "[?part=intro]\n"
-            "New intro.\n"
-            "[?part=body]\n"
-            "Same body."
-        )
+        old = "[?part=intro]\nOld intro.\n[?part=body]\nSame body."
+        new = "[?part=intro]\nNew intro.\n[?part=body]\nSame body."
         result = per_section_changes(old, new)
         assert result is not None
         assert "### intro" in result

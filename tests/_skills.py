@@ -11,7 +11,7 @@ on `plugin.id` keeps only the copy from the marketplace we are testing.
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def skills_of_plugin(skills: Iterable[dict], plugin_id: str) -> set[str]:

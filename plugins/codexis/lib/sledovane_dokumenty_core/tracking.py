@@ -17,7 +17,6 @@ from .exceptions import (
 )
 from .state import now_utc
 
-
 # ── add / remove / list / show ───────────────────────────────────────────────
 
 
@@ -32,16 +31,12 @@ def add(codexis_id, parts=None):
     meta = clients.get_meta(codexis_id)
     name = clients.get_doc_name(meta)
     if not name:
-        raise DocumentNotFoundError(
-            f"Dokument {codexis_id} nebyl nalezen v CODEXIS."
-        )
+        raise DocumentNotFoundError(f"Dokument {codexis_id} nebyl nalezen v CODEXIS.")
 
     versions = clients.get_versions(codexis_id)
     latest_vid = clients.get_latest_version_id(versions)
     if not latest_vid:
-        raise DocumentNotFoundError(
-            f"Nepodařilo se získat verze pro {codexis_id}."
-        )
+        raise DocumentNotFoundError(f"Nepodařilo se získat verze pro {codexis_id}.")
 
     s = {
         "uuid": str(uuid_mod.uuid4()),
@@ -92,7 +87,8 @@ def list_all():
     confirmation timestamp.
     """
     docs = [
-        s for s in (state.load_state(cid) for cid in state.all_tracked_ids())
+        s
+        for s in (state.load_state(cid) for cid in state.all_tracked_ids())
         if s is not None
     ]
 
@@ -102,12 +98,12 @@ def list_all():
         latest_unconfirmed = max(
             (c.get("detected_on", "") for c in unconfirmed), default=""
         )
-        latest_change = max(
-            (c.get("detected_on", "") for c in changes), default=""
-        )
+        latest_change = max((c.get("detected_on", "") for c in changes), default="")
         tier = 1 if unconfirmed else 0
-        activity = latest_unconfirmed if unconfirmed else max(
-            latest_change, s.get("added_on", "")
+        activity = (
+            latest_unconfirmed
+            if unconfirmed
+            else max(latest_change, s.get("added_on", ""))
         )
         return (tier, activity)
 
@@ -135,6 +131,7 @@ def check(codexis_id=None, printer=None):
     surface progress (e.g. print). Never raises on per-doc failures - those
     go into `errors`.
     """
+
     def _log(msg):
         if printer:
             printer(msg)
@@ -194,20 +191,22 @@ def check(codexis_id=None, printer=None):
         changes_found += 1
 
         version_info = clients.find_version_info(versions, latest_vid)
-        changes.append({
-            "detected_on": now_utc(),
-            "effective_on": version_info.get("validFrom") if version_info else None,
-            "new_version_id": latest_vid,
-            "old_version_id": baseline_vid,
-            "amendments": clients.resolve_amendments(versions, latest_vid),
-            "description_md": "",
-            "compare_url": diff.build_compare_url(baseline_vid, latest_vid),
-            "diffs": diff.compute_version_diff(
-                baseline_vid, latest_vid, s.get("parts", []), printer=printer
-            ),
-            "confirmed_on": None,
-            "summary_pending": True,
-        })
+        changes.append(
+            {
+                "detected_on": now_utc(),
+                "effective_on": version_info.get("validFrom") if version_info else None,
+                "new_version_id": latest_vid,
+                "old_version_id": baseline_vid,
+                "amendments": clients.resolve_amendments(versions, latest_vid),
+                "description_md": "",
+                "compare_url": diff.build_compare_url(baseline_vid, latest_vid),
+                "diffs": diff.compute_version_diff(
+                    baseline_vid, latest_vid, s.get("parts", []), printer=printer
+                ),
+                "confirmed_on": None,
+                "summary_pending": True,
+            }
+        )
         s["changes"] = changes
         state.save_state(cid, s)
         if cid not in seen:
@@ -291,7 +290,9 @@ def confirm(codexis_id, change_index=None):
         return 0
     for c in unconfirmed:
         c["confirmed_on"] = timestamp
-    s["baseline_version_id"] = s.get("last_known_version_id", s.get("baseline_version_id"))
+    s["baseline_version_id"] = s.get(
+        "last_known_version_id", s.get("baseline_version_id")
+    )
     s["changes"] = changes
     state.save_state(codexis_id, s)
     return len(unconfirmed)
@@ -302,6 +303,7 @@ def confirm(codexis_id, change_index=None):
 
 def summarize_pending(printer=None):
     """For every change with summary_pending=True, attempt to generate the summary."""
+
     def _log(msg):
         if printer:
             printer(msg)
@@ -366,9 +368,7 @@ def group_remove(codexis_id, group_name):
         raise GroupNotFoundError(f"Skupina '{group_name}' neexistuje.")
     members = group.get("members", [])
     if codexis_id not in members:
-        raise DocumentNotTrackedError(
-            f"{codexis_id} není ve skupině '{group_name}'."
-        )
+        raise DocumentNotTrackedError(f"{codexis_id} není ve skupině '{group_name}'.")
     members.remove(codexis_id)
     group["members"] = members
     groups[idx] = group
@@ -456,9 +456,7 @@ def note_remove(codexis_id, index):
         raise DocumentNotTrackedError(f"{codexis_id} není sledován.")
     notes = s.get("user_notes", [])
     if index < 0 or index >= len(notes):
-        raise IndexError(
-            f"Index {index} mimo rozsah (0..{len(notes) - 1})."
-        )
+        raise IndexError(f"Index {index} mimo rozsah (0..{len(notes) - 1}).")
     removed = notes.pop(index)
     s["user_notes"] = notes
     state.save_state(codexis_id, s)

@@ -7,7 +7,6 @@ each plugin's checks as one contiguous, in-order block instead of interleaved.
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from tests._output import Results
 

@@ -8,7 +8,6 @@ aborting on the first probe.
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from tests._daemon_client import DaemonClient
 
@@ -43,18 +42,25 @@ def test_returns_true_immediately_when_already_healthy(monkeypatch):
 def test_waits_until_the_daemon_comes_up(monkeypatch):
     clock = FakeClock()
     client = _client(monkeypatch, [False, False, True])
-    assert client.wait_healthy(timeout_s=100, interval_s=3,
-                               sleep=clock.sleep, now=clock.now) is True
+    assert (
+        client.wait_healthy(
+            timeout_s=100, interval_s=3, sleep=clock.sleep, now=clock.now
+        )
+        is True
+    )
     assert clock.sleeps == [3, 3]
 
 
 def test_returns_false_when_it_never_comes_up(monkeypatch):
     clock = FakeClock()
     client = _client(monkeypatch, [False] * 100)
-    assert client.wait_healthy(timeout_s=6, interval_s=3,
-                               sleep=clock.sleep, now=clock.now) is False
+    assert (
+        client.wait_healthy(timeout_s=6, interval_s=3, sleep=clock.sleep, now=clock.now)
+        is False
+    )
 
 
 if __name__ == "__main__":
     import pytest
+
     sys.exit(pytest.main([__file__]))

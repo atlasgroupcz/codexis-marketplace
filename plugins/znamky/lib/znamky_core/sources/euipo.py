@@ -10,8 +10,8 @@ schema differences don't break the watcher (confirm against live API + a key).
 import os
 import urllib.parse
 
-from . import base
 from .. import settings
+from . import base
 
 SOURCE = "EUIPO"
 API_URL = (
@@ -65,7 +65,9 @@ def parse_results(payload: dict) -> list:
     for rec in records:
         if not isinstance(rec, dict):
             continue
-        number = str(_first(rec, "applicationNumber", "applicationNumberFormatted", "ST13"))
+        number = str(
+            _first(rec, "applicationNumber", "applicationNumberFormatted", "ST13")
+        )
         out.append(
             base.make_candidate(
                 source=SOURCE,

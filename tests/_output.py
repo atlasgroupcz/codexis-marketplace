@@ -52,7 +52,7 @@ class Results:
     def log(self, msg: str) -> None:
         self._emit(f"{C.B}[TEST]{C.N} {msg}")
 
-    def merge(self, other: "Results") -> None:
+    def merge(self, other: Results) -> None:
         """Fold a recorded sub-result into this one: counts, errors, and its
         buffered lines replayed in order. Called single-threaded after the
         parallel workers finish, so nothing here needs its own lock."""

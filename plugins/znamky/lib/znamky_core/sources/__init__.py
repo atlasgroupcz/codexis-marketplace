@@ -5,10 +5,10 @@ is an optional enrichment. Results are merged and de-duplicated into one
 canonical candidate list for scoring.
 """
 
-from . import base, demo, euipo, tmview, upv
 from ..exceptions import ZnamkyError
+from . import base, demo, euipo, tmview, upv
 
-__all__ = ["base", "demo", "euipo", "tmview", "upv", "territory_offices", "search_all"]
+__all__ = ["base", "demo", "euipo", "search_all", "territory_offices", "tmview", "upv"]
 
 
 def territory_offices(territories) -> list:
@@ -24,7 +24,9 @@ def territory_offices(territories) -> list:
     return offices or ["CZ", "EM", "WO"]
 
 
-def search_all(query_text: str, nice_classes=None, territories=None, limit: int = 50) -> dict:
+def search_all(
+    query_text: str, nice_classes=None, territories=None, limit: int = 50
+) -> dict:
     """Query all enabled sources. Returns {'candidates': [...], 'errors': [...]}.
 
     A source failure is captured (not raised) so one register being down still

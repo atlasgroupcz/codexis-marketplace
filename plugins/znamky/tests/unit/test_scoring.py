@@ -6,8 +6,12 @@ from znamky_core.sources import base
 
 def _candidate(text, classes=None, **kw):
     return base.make_candidate(
-        source="TMVIEW", source_id="x", mark_text=text,
-        mark_kind="word", nice_classes=classes or [], **kw
+        source="TMVIEW",
+        source_id="x",
+        mark_text=text,
+        mark_kind="word",
+        nice_classes=classes or [],
+        **kw,
     )
 
 

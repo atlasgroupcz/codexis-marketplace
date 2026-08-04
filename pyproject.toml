@@ -15,12 +15,57 @@ dev = [
     "pyyaml>=6",
     # … and addresses into their results with JSONPath expressions.
     "jsonpath-ng>=1.6",
+    # Lint + format. Pinned to a minor: the default rule set widens between
+    # releases, and `select` below only holds if the rule names it lists exist.
+    "ruff>=0.16,<0.17",
+    # Type checker. Pinned exactly: it is pre-1.0 and its authors state that
+    # diagnostics may change between any two versions, which for a gate means a
+    # bump can turn a green run red without a line of our code changing.
+    "ty==0.0.65",
 ]
 
 [tool.uv]
 # This repo is a plugin marketplace, not an installable Python package - there is
 # no module to build. Without this uv tries to build/install it on every sync.
 package = false
+
+[tool.ruff]
+# The repo is written to roughly this width already: 95% of lines fit in 82
+# columns and 99% in 99, so the formatter reflows very little.
+line-length = 88
+
+[tool.ruff.lint]
+# Named explicitly rather than left to the default. Ruff's default set widens
+# between releases - 0.16 enables several hundred more findings here than the
+# E4/E7/E9/F it used to - so an unpinned default turns a version bump into a
+# pile of new errors nobody asked for.
+#
+# Left out on purpose:
+#   E501  fights the formatter over the lines it cannot break (URLs, long
+#         string literals), 322 hits and nothing to do about most of them.
+#   BLE   this code catches broadly on purpose at the process boundaries.
+#   PLW1510  wants `check=` on every subprocess.run; ours read `.returncode`
+#         and raise their own error, which the rule cannot see.
+select = ["E4", "E7", "E9", "F", "I", "UP", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# The GraphQL queries here inject a shared fragment into a brace-heavy template,
+# which is what percent formatting is good at - str.format would need every
+# brace in the query doubled. The marker cannot go per-line either: ruff reports
+# the expression on the line that opens the triple-quoted string, where a
+# trailing comment would land inside the string.
+"tests/_daemon_client.py" = ["UP031"]
+
+[tool.ty.environment]
+# Each plugin ships its library under lib/ and its entry point puts that
+# directory on sys.path at startup - see plugins/znamky/bin/znamky-cli. ty does
+# not execute that, so the same directories are named here.
+extra-paths = [
+    "plugins/codexis/lib",
+    "plugins/insolvence/lib",
+    "plugins/onepost/lib",
+    "plugins/znamky/lib",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["plugins", "tests"]
