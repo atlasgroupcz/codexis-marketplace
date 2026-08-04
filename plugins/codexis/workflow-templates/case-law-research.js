@@ -19,6 +19,9 @@ export const meta = {
 
 const MODEL = "GPT_5_6_LUNA"
 
+const MAX_ISSUES = 4
+const MAX_VERIFY = 4
+
 
 const [PHASE_SCOPE, PHASE_SEARCH, PHASE_REPORT] = meta.phases.map(p => p.title)
 
@@ -87,7 +90,7 @@ Otevři si ustanovení, kterých se věc týká, ať víš, o čem mluvíš, a z
 
 Každá dílčí otázka se musí dát zodpovědět samostatně a smí se ptát jen na jednu věc. Jedna věta, jeden otazník. Když v otázce potřebuješ "a jaké", "případně" nebo středník, slepuješ dvě otázky do jedné - udělej z nich dvě.
 
-Kolik dílčích otázek věc potřebuje, tolik jich udělej. Žádný strop. Ale ani jednu do počtu.`
+Dílčích otázek udělej nejvýše ${MAX_ISSUES}, seřazených od nejdůležitější. Vyber ty, na kterých odpověď doopravdy stojí - raději ${MAX_ISSUES} pořádně zodpovězených než deset odbytých. Když jich věc snese míň, udělej míň; ani jednu do počtu.`
 
 const PROMPT_SEARCH = (framing, label, question, asOf) => `${RULES}
 
@@ -142,7 +145,7 @@ Rozhodné datum: ${asOf}
 
 const SCOPE = { type: "object", required: ["framing", "issues"], properties: {
   framing: { type: "string", description: "Hlavička, kterou dostane každý vyhledávač doslova, v markdownu, do patnácti řádků: právní obor, jurisdikce, rozhodné datum a znění předpisu, ustanovení, o která se věc opírá, a co v otázce zůstává nejisté. Piš to jako zadání pro kolegu." },
-  issues: { type: "array", description: "Dílčí otázky, rozhodující první.", items: { type: "object", required: ["label", "question"], properties: {
+  issues: { type: "array", maxItems: MAX_ISSUES, description: `Dílčí otázky, rozhodující první, nejvýše ${MAX_ISSUES}.`, items: { type: "object", required: ["label", "question"], properties: {
     label: { type: "string", description: "Krátký název otázky. Slouží jako popisek běhu a jako nadpis oddílu ve výsledné rešerši." },
     question: { type: "string", description: "Celá otázka, jedna věta, jeden otazník, jeden právní problém." } } } } } }
 
@@ -172,23 +175,29 @@ export default async function (args) {
   const scope = await agent(PROMPT_SCOPE(question, jurisdiction, asOf),
     { label: LABEL_SCOPE, agentType: "codexis:synthesizer", schema: SCOPE, model: MODEL })
 
-  log(`dílčích otázek: ${scope.issues.length}, všechny souběžně`)
+  const issues = scope.issues.slice(0, MAX_ISSUES)
+
+  log(`dílčích otázek: ${issues.length}, všechny souběžně`)
 
   phase(PHASE_SEARCH)
 
-  const drafts = await parallel(scope.issues.map(issue => () =>
+  const drafts = await parallel(issues.map(issue => () =>
     agent(PROMPT_SEARCH(scope.framing, issue.label, issue.question, asOf),
       { label: issue.label, model: MODEL })))
 
-  const researched = scope.issues
+  const researched = issues
     .map((issue, i) => ({ issue, draft: drafts[i] }))
     .filter(x => x.draft)
 
-  log(`zpracováno oddílů: ${researched.length} z ${scope.issues.length}`)
+  log(`zpracováno oddílů: ${researched.length} z ${issues.length}`)
 
   phase(PHASE_REPORT)
 
-  const reviews = await parallel(researched.map(({ issue, draft }) => () =>
+  const verified = researched.slice(0, MAX_VERIFY)
+
+  log(`ověřuje se oddílů: ${verified.length}`)
+
+  const reviews = await parallel(verified.map(({ issue, draft }) => () =>
     agent(PROMPT_VERIFY(scope.framing, issue.question, draft),
       { label: LABEL_VERIFY(issue.label), agentType: "codexis:verifier", model: MODEL })))
 
@@ -196,7 +205,7 @@ export default async function (args) {
     .map(({ issue, draft }, i) => section(issue.label, issue.question, draft, reviews[i]))
     .join("\n\n---\n\n")
 
-  const unresearchedLabels = scope.issues.filter((_, i) => !drafts[i]).map(i => i.label)
+  const unresearchedLabels = issues.filter((_, i) => !drafts[i]).map(i => i.label)
   const unverifiedLabels = researched.filter((_, i) => !reviews[i]).map(x => x.issue.label)
 
   const gaps = [
