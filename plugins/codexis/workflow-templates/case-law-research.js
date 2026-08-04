@@ -19,8 +19,8 @@ export const meta = {
 
 const MODEL = "GPT_5_6_LUNA"
 
-const MAX_ISSUES = 4
-const MAX_VERIFY = 4
+const MAX_ISSUES = 8
+const MAX_VERIFY = 8
 
 
 const [PHASE_SCOPE, PHASE_SEARCH, PHASE_REPORT] = meta.phases.map(p => p.title)
@@ -90,7 +90,7 @@ Otevři si ustanovení, kterých se věc týká, ať víš, o čem mluvíš, a z
 
 Každá dílčí otázka se musí dát zodpovědět samostatně a smí se ptát jen na jednu věc. Jedna věta, jeden otazník. Když v otázce potřebuješ "a jaké", "případně" nebo středník, slepuješ dvě otázky do jedné - udělej z nich dvě.
 
-Dílčích otázek udělej nejvýše ${MAX_ISSUES}, seřazených od nejdůležitější. Vyber ty, na kterých odpověď doopravdy stojí - raději ${MAX_ISSUES} pořádně zodpovězených než deset odbytých. Když jich věc snese míň, udělej míň; ani jednu do počtu.`
+Dílčích otázek udělej nejvýše ${MAX_ISSUES}, seřazených od nejdůležitější. Vyber ty, na kterých odpověď doopravdy stojí - raději ${MAX_ISSUES} pořádně zodpovězených než dvakrát tolik odbytých. Když jich věc snese míň, udělej míň; ani jednu do počtu.`
 
 const PROMPT_SEARCH = (framing, label, question, asOf) => `${RULES}
 
