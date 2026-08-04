@@ -39,7 +39,9 @@ const RULES = `Odpovídej česky. Piš jen to, co jsi otevřel a přečetl. Zdro
 
 Právní větu ber jen jako vodítko, kde hledat, nikdy jako význam rozhodnutí. Právní věty se píšou zkratkovitě, často zobecňují víc, než soud řekl, a mlčí o skutku, na kterém závěr stojí. Každé rozhodnutí, o které se chceš opřít, proto otevři celé a přečti odůvodnění. Když jsi ho neotevřel, nesmíš se o něj opřít.
 
-U rozhodnutí vždycky napiš, čeho se ta věc týkala. Právní věta bez skutku je past - podle skutku se pozná, jestli rozhodnutí na naši otázku vůbec sedí.`
+U rozhodnutí vždycky napiš, čeho se ta věc týkala. Právní věta bez skutku je past - podle skutku se pozná, jestli rozhodnutí na naši otázku vůbec sedí.
+
+Každý dokument, o který se opřeš, označ citačním markerem podle oddílu "## Citations" ve svých instrukcích - u tvrzení, které z něj plyne, i za doslovným výňatkem. Napsat slovy, odkud to je, nestačí: marker je jediné, co se přenese dál. Co markerem neoznačíš, se k zadavateli nedostane a v rešerši ten dokument nebude.`
 
 const DEPTH = `Projdi co nejvíce relevantních dokumentů a buď maximálně detailní. Nespokoj se s několika rozhodnutími - chci vyčerpávající přehled. Raději delší výstup než vynechané rozhodnutí.
 
@@ -65,7 +67,7 @@ Ke každému nosnému rozhodnutí odstavec: co soud řešil, jak to odůvodnil a
 
 > Obecně závazná vyhláška nesmí upravovat věci, které jsou vyhrazeny zákonu, ani zákonnou úpravu opakovat či parafrázovat.
 
-Za výňatkem uveď, odkud je.
+Za výňatkem uveď, odkud je, a připoj citační marker toho rozhodnutí.
 
 ## Kde se praxe rozchází
 Rozhodnutí, která si odporují, a v čem. Když se praxe nerozchází, napiš to.
