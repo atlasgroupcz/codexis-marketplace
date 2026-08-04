@@ -344,11 +344,12 @@ const pluginDirectory = async () => {
 }
 
 const standardPath = async () => {
+  const { access } = await import("node:fs/promises")
   const { join } = await import("node:path")
-  const plugin = await pluginDirectory().catch(() => null)
-  return plugin
-    ? join(plugin, "workflow-templates", "references", "reserse-judikatury-standard.md")
-    : null
+  const own = process.env.CODEXIS_WORKFLOW_DIR
+  if (!own) { return null }
+  const candidate = join(own, "references", "reserse-judikatury-standard.md")
+  return access(candidate).then(() => candidate, () => null)
 }
 
 const logoPng = async () => {
