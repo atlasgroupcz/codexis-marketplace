@@ -310,19 +310,6 @@ const splitSections = markdown => {
   return trimmed
 }
 
-const callout = (d, title, text) => new d.Paragraph({
-  spacing: { before: 200, after: 200 },
-  shading: { fill: "FBFDF4" },
-  border: {
-    left: { style: d.BorderStyle.SINGLE, size: 18, space: 12, color: BRAND_GREEN },
-    top: { style: d.BorderStyle.SINGLE, size: 2, space: 8, color: "DDE7C4" },
-    bottom: { style: d.BorderStyle.SINGLE, size: 2, space: 8, color: "DDE7C4" },
-    right: { style: d.BorderStyle.SINGLE, size: 2, space: 8, color: "DDE7C4" }
-  },
-  indent: { left: 170, right: 170 },
-  children: [new d.TextRun({ font: FONT, text: `${title}  `, bold: true }), ...runsOf(d, text)]
-})
-
 const PROMPT_DOCX_QA = pages => `Prohlédni si stránky hotového dokumentu. Předpokládej, že chyby tam jsou, a najdi je.
 
 Otevři si každou stránku nástrojem readFile, jednu po druhé:
@@ -419,8 +406,6 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
     }))
     for (const [title, text] of Object.entries(parts)) {
       if (title === SECTION_ANSWER || title === SECTION_LAW || !text) { continue }
-      if (title === SECTION_CONFLICT) { children.push(callout(d, "Kde se praxe rozchází:", text)); continue }
-      if (title === SECTION_OPEN) { children.push(callout(d, "Nezodpovězeno:", text)); continue }
       children.push(new d.Paragraph({
         heading: d.HeadingLevel.HEADING_2, children: [new d.TextRun({ font: FONT, text: title })]
       }))
@@ -430,7 +415,7 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
 
   if (gaps.length) {
     children.push(heading1("Co v rešerši chybí"))
-    children.push(callout(d, "Rozsah:", gaps.join(" ")))
+    children.push(...bodyOf(d, gaps.join(" ")))
   }
 
   const statutes = parsed.filter(({ parts }) => parts[SECTION_LAW])
