@@ -48,37 +48,41 @@ U rozhodnutí vždycky napiš, čeho se ta věc týkala. Právní věta bez skut
 
 Každý dokument, o který se opřeš, označ citačním markerem podle oddílu "## Citations" ve svých instrukcích - u tvrzení, které z něj plyne, i za doslovným výňatkem. Napsat slovy, odkud to je, nestačí: marker je jediné, co se přenese dál. Co markerem neoznačíš, se k zadavateli nedostane a v rešerši ten dokument nebude.`
 
-const DEPTH = `Projdi co nejvíce relevantních dokumentů a buď maximálně detailní. Nespokoj se s několika rozhodnutími - chci vyčerpávající přehled. Raději delší výstup než vynechané rozhodnutí.
+const DEPTH = `Hledej vyčerpávajícně, piš úsporně. To jsou dvě různé věci a nesmíš je zaměnit.
+
+Projdi co nejvíc relevantních dokumentů a nespokoj se s několika rozhodnutími - vynechané rozhodnutí je chyba. Ale do výstupu dej jen to, co nese závěr: nosná rozhodnutí, nosné věty, skutek. Co jsi přečetl a neopíráš se o to, do rešerše nepatří. Delší text není lepší rešerše; čtenář je právník, který má málo času, a rozvláčnost čte jako nedodělanou práci.
 
 Postupuj odshora dolů: sjednocující stanoviska a rozhodnutí velkého senátu nebo pléna dřív než jednotlivá, vyšší soudy dřív než nižší. U každého ustanovení, o které se opíráš, uveď jeho číslo a znění, které platí k rozhodnému datu.`
 
 const OUTPUT_SHAPE = `Piš markdown. Struktura, kterou drž:
 
 ## Odpověď
-Přímá odpověď na dílčí otázku, v několika větách. Když je odpověď podmíněná, napiš čím.
+Dvě až pět vět, nic víc. Začni slovem Ano, Ne, Spíše ano, Spíše ne nebo Nelze určit, pak pravidlo a pak skutečnost, na které to stojí. Když je odpověď podmíněná, napiš čím. Neopakuj otázku, nezačínej "Otázka se ptá, zda" a nehedguj víc, než kolik je skutečné právní nejistoty. Tenhle oddíl čte i ten, kdo dál nedočte.
 
 ## Právní úprava
-Ustanovení, o která se to opírá, s citací znění a s uvedením, od kdy to znění platí.
+Jen ta věta ustanovení, o kterou skutečně jde, ne celý paragraf. K ní číslo ustanovení a znění platné k rozhodnému datu. Celá znění nikam neopisuj - kdo je potřebuje, otevře si předpis.
 
 ## Nosná rozhodnutí
-Tabulka, řádek na rozhodnutí:
+Tabulka, řádek na rozhodnutí. Poslední sloupec je jednoslovný: přiléhá, odlišné nebo proti.
 
-| soud | značka | datum | co z něj plyne | skutek |
-| --- | --- | --- | --- | --- |
-| Ústavní soud | Pl. ÚS 45/06 | 11. 6. 2007 | Obec smí vyhláškou regulovat jen místní záležitosti veřejného pořádku, ne opakovat zákonnou úpravu | Vyhláška města Jirkov o zabezpečení místních záležitostí veřejného pořádku |
+| soud | značka | datum | co z něj plyne | skutek | vztah |
+| --- | --- | --- | --- | --- | --- |
+| Ústavní soud | Pl. ÚS 45/06 | 11. 6. 2007 | Obec smí vyhláškou regulovat jen místní záležitosti veřejného pořádku, ne opakovat zákonnou úpravu | Vyhláška města Jirkov o zabezpečení místních záležitostí veřejného pořádku | přiléhá |
 
 ## Rozbor
-Ke každému nosnému rozhodnutí odstavec: co soud řešil, jak to odůvodnil a co z toho pro naši otázku plyne. Doslovný výňatek z odůvodnění dej do citace:
+Ke každému nosnému rozhodnutí odstavec o třech až šesti větách: co soud řešil, jak to odůvodnil a co z toho pro naši otázku plyne.
+
+Doslovně cituj jen nosnou větu - tu, na které závěr stojí. Nikdy ne celý odstavec odůvodnění; zbytek převyprávěj vlastními slovy. Před každým výňatkem musí být věta, která říká, proč ho čtenář má číst. Výňatek delší než dvě věty zkrať:
 
 > Obecně závazná vyhláška nesmí upravovat věci, které jsou vyhrazeny zákonu, ani zákonnou úpravu opakovat či parafrázovat.
 
 Za výňatkem uveď, odkud je, a připoj citační marker toho rozhodnutí.
 
 ## Kde se praxe rozchází
-Rozhodnutí, která si odporují, a v čem. Když se praxe nerozchází, napiš to.
+Rozhodnutí, která si odporují, a v čem. Nezamlčuj rozhodnutí, které jde proti závěru - kdo se o rešerši opře a narazí na ně až u soudu, je na tom hůř než ten, komu jsi rovnou napsal, že praxe není jednotná. Když se praxe nerozchází, napiš to jednou větou.
 
 ## Co zůstává nezodpovězeno
-Co na tuhle otázku judikatura neřeší, nebo co se nepodařilo ověřit.`
+Co na tuhle otázku judikatura neřeší, nebo co se nepodařilo ověřit. Piš to natvrdo: "K X nebylo nalezeno žádné rozhodnutí." Nevyplňuj mezeru něčím příbuzným.`
 
 const PROMPT_SCOPE = (question, jurisdiction, asOf) => `${RULES}
 
@@ -211,11 +215,15 @@ const bodyOf = (d, markdown) => {
         quote.push(lines[i].replace(/^\s*>\s?/, ""))
         i++
       }
-      out.push(new d.Paragraph({
-        indent: { left: 567 },
-        border: { left: { style: d.BorderStyle.SINGLE, size: 12, space: 12, color: BRAND_GREEN } },
-        children: runsOf(d, quote.join(" "), { italics: true })
-      }))
+      const text = quote.join(" ").trim()
+      out.push(text.split(/\s+/).length < 50
+        ? new d.Paragraph({ children: runsOf(d, `„${text}“`, { italics: true }) })
+        : new d.Paragraph({
+          indent: { left: 567, right: 340 },
+          spacing: { before: 120, after: 120 },
+          border: { left: { style: d.BorderStyle.SINGLE, size: 12, space: 12, color: BRAND_GREEN } },
+          children: runsOf(d, text, { italics: true })
+        }))
       continue
     }
     const paragraph = []
@@ -226,6 +234,59 @@ const bodyOf = (d, markdown) => {
     out.push(new d.Paragraph({ children: runsOf(d, paragraph.join(" ")) }))
   }
   return out
+}
+
+const SECTION_ANSWER = "Odpověď"
+const SECTION_LAW = "Právní úprava"
+const SECTION_CONFLICT = "Kde se praxe rozchází"
+const SECTION_OPEN = "Co zůstává nezodpovězeno"
+
+const splitSections = markdown => {
+  const found = {}
+  let current = null
+  for (const line of plain(markdown).split("\n")) {
+    const heading = /^#{1,6}\s+(.*)$/.exec(line)
+    if (heading) {
+      current = heading[1].trim()
+      found[current] = found[current] || []
+      continue
+    }
+    if (current) { found[current].push(line) }
+  }
+  const trimmed = {}
+  for (const [key, lines] of Object.entries(found)) {
+    trimmed[key] = lines.join("\n").trim()
+  }
+  return trimmed
+}
+
+const callout = (d, title, text) => new d.Paragraph({
+  spacing: { before: 200, after: 200 },
+  shading: { fill: "FBFDF4" },
+  border: {
+    left: { style: d.BorderStyle.SINGLE, size: 18, space: 12, color: BRAND_GREEN },
+    top: { style: d.BorderStyle.SINGLE, size: 2, space: 8, color: "DDE7C4" },
+    bottom: { style: d.BorderStyle.SINGLE, size: 2, space: 8, color: "DDE7C4" },
+    right: { style: d.BorderStyle.SINGLE, size: 2, space: 8, color: "DDE7C4" }
+  },
+  indent: { left: 170, right: 170 },
+  children: [new d.TextRun({ text: `${title}  `, bold: true }), ...runsOf(d, text)]
+})
+
+const PROMPT_DOCX_QA = pages => `Prohlédni si stránky hotového dokumentu. Předpokládej, že chyby tam jsou, a najdi je.
+
+Otevři si každou stránku nástrojem readFile, jednu po druhé:
+${pages.map(p => `- ${p}`).join("\n")}
+
+U každé hledej: text uříznutý na okraji nebo přetékající ze stránky, překrývající se prvky, rozbitou nebo přes okraj přetékající tabulku, chybějící či zmrzačenou diakritiku (ě š č ř ž ů), nejednotné velikosti nadpisů, nadpis osamocený na konci stránky, zbylý zástupný text, prázdnou stránku, logo v nesmyslné velikosti.
+
+Vrať krátký seznam po stránkách: číslo stránky a co je na ní špatně. Stránku, která je v pořádku, odbyj jednou větou. Nic nepřikrášluj - tenhle dokument jde klientovi.`
+
+const renderPages = async docx => {
+  const { execFile } = await import("node:child_process")
+  const { promisify } = await import("node:util")
+  const { stdout } = await promisify(execFile)("cdx-render", ["-i", docx], { timeout: 300000 })
+  return (stdout.match(/\S+\.png/g) || [])
 }
 
 const logoPng = async () => {
@@ -265,7 +326,7 @@ const titlePage = (d, logo, question, jurisdiction, asOf) => {
     new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
       spacing: { after: 240 },
-      children: [new d.TextRun({ text: "REŠERŠE JUDIKATURY", bold: true, size: 44 })]
+      children: [new d.TextRun({ text: "Rešerše judikatury", bold: true, size: 44 })]
     }),
     new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
@@ -283,33 +344,55 @@ const buildDocx = async (target, question, jurisdiction, asOf, sections, gaps) =
   const module = await import("docx")
   const d = module.Document ? module : module.default
   const logo = await logoPng().catch(() => null)
-  const children = [
-    ...titlePage(d, logo, question, jurisdiction, asOf),
-    new d.TableOfContents("Obsah", { hyperlink: true, headingStyleRange: "1-3" }),
-    new d.Paragraph({ children: [new d.PageBreak()] })
-  ]
-  sections.forEach(({ issue, draft, review }, index) => {
+  const parsed = sections.map(entry => ({ ...entry, parts: splitSections(entry.draft) }))
+  const heading1 = text => new d.Paragraph({
+    heading: d.HeadingLevel.HEADING_1, children: [new d.TextRun(text)]
+  })
+  const children = [...titlePage(d, logo, question, jurisdiction, asOf)]
+
+  children.push(heading1("Stručná odpověď"))
+  parsed.forEach(({ issue, parts }, index) => {
     children.push(new d.Paragraph({
-      heading: d.HeadingLevel.HEADING_1,
-      children: [new d.TextRun(`${index + 1}. ${plain(issue.label)}`)]
+      spacing: { before: 200, after: 60 },
+      children: [new d.TextRun({ text: `${index + 1}. ${plain(issue.question)}`, bold: true })]
     }))
+    children.push(...bodyOf(d, parts[SECTION_ANSWER] || "Na tuhle dílčí otázku se odpověď nepodařilo sestavit."))
+  })
+  children.push(new d.Paragraph({ children: [new d.PageBreak()] }))
+
+  parsed.forEach(({ issue, parts }, index) => {
+    children.push(heading1(`${index + 1}. ${plain(issue.label)}`))
     children.push(new d.Paragraph({
-      spacing: { after: 120 },
+      spacing: { after: 160 },
       children: [new d.TextRun({ text: plain(issue.question), italics: true, color: "555555" })]
     }))
-    children.push(...bodyOf(d, draft))
-    children.push(new d.Paragraph({
-      heading: d.HeadingLevel.HEADING_2,
-      children: [new d.TextRun("Výsledek ověření")]
-    }))
-    children.push(...bodyOf(d, review || NOT_VERIFIED))
+    for (const [title, text] of Object.entries(parts)) {
+      if (title === SECTION_ANSWER || title === SECTION_LAW || !text) { continue }
+      if (title === SECTION_CONFLICT) { children.push(callout(d, "Kde se praxe rozchází:", text)); continue }
+      if (title === SECTION_OPEN) { children.push(callout(d, "Nezodpovězeno:", text)); continue }
+      children.push(new d.Paragraph({
+        heading: d.HeadingLevel.HEADING_2, children: [new d.TextRun(title)]
+      }))
+      children.push(...bodyOf(d, text))
+    }
   })
+
   if (gaps.length) {
-    children.push(new d.Paragraph({
-      heading: d.HeadingLevel.HEADING_1,
-      children: [new d.TextRun("Co v rešerši chybí")]
-    }))
-    children.push(...bodyOf(d, gaps.join("\n\n")))
+    children.push(heading1("Co v rešerši chybí"))
+    children.push(callout(d, "Rozsah:", gaps.join(" ")))
+  }
+
+  const statutes = parsed.filter(({ parts }) => parts[SECTION_LAW])
+  if (statutes.length) {
+    children.push(new d.Paragraph({ children: [new d.PageBreak()] }))
+    children.push(heading1("Příloha: dotčená ustanovení"))
+    statutes.forEach(({ issue, parts }) => {
+      children.push(new d.Paragraph({
+        spacing: { before: 200, after: 60 },
+        children: [new d.TextRun({ text: plain(issue.label), bold: true })]
+      }))
+      children.push(...bodyOf(d, parts[SECTION_LAW]))
+    })
   }
   const styles = level => ({
     run: { font: FONT, size: level === 1 ? 32 : 28, bold: true, color: "000000" },
