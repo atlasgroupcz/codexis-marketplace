@@ -36,14 +36,8 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
     // same target: two links to two different pages for one digest is a
     // discrepancy the reader only discovers by clicking both.
     const link = digest.pendingConfirmations > 0 ? confirmationsUrl(role) : homeUrl()
-    const subject = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`
-    const lines = [
-      `Nepřečtené notifikace: ${digest.unreadNotifications}`,
-      `Čekající potvrzení: ${digest.pendingConfirmations}`,
-      "",
-      `Otevřete v SID: ${link}`,
-    ]
-    digest.notified = await sendDigest(subject, lines.join("\n"), f, { link, action: "Otevřít v SID" })
+    const message = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`
+    digest.notified = await sendDigest(message, f, { link, action: "Otevřít v SID" })
   }
 
   return digest

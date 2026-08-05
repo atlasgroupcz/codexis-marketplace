@@ -85,35 +85,43 @@ describe("renderCgi", () => {
 describe("cgi — notifikace", () => {
   it("get_status vrací aktuální nastavení kanálů", async () => {
     const out = (await handle({ action: "get_status" }, okMe)) as { notify: unknown }
-    expect(out.notify).toEqual({ email: false, inApp: true, recipients: [] })
+    expect(out.notify).toEqual({ inApp: true })
   })
 
-  it("save_notify_settings uloží přepínače", async () => {
-    const out = (await handle({ action: "save_notify_settings", email: true }, okMe)) as {
+  it("save_notify_settings uloží přepínač zvonku", async () => {
+    const out = (await handle({ action: "save_notify_settings", inApp: false }, okMe)) as {
       ok: boolean
-      notify: { email: boolean }
+      notify: { inApp: boolean }
     }
     expect(out.ok).toBe(true)
-    expect(out.notify.email).toBe(true)
+    expect(out.notify.inApp).toBe(false)
   })
 
-  it("save_notify_settings odmítne neplatnou adresu a nic neuloží", async () => {
-    const out = (await handle(
-      { action: "save_notify_settings", recipients: ["tohle-neni-email"] },
-      okMe,
-    )) as { ok: boolean; error?: string }
-    expect(out.ok).toBe(false)
-    expect(out.error).toMatch(/Neplatná/i)
-    const st = (await handle({ action: "get_status" }, okMe)) as { notify: { recipients: string[] } }
-    expect(st.notify.recipients).toEqual([])
+  it("panel se daemona neptá na adresu uživatele — status ji nenabízí", async () => {
+    // The plugin sends no mail, so there is no address to show and no
+    // reason to spend a daemon round trip resolving one.
+    let called = false
+    const f = (async (u: unknown) => {
+      if (String(u).includes("daemon")) called = true
+      return new Response(JSON.stringify({ id: "u1" }), { status: 200 })
+    }) as unknown as typeof fetch
+    const out = (await handle({ action: "get_status" }, f)) as Record<string, unknown>
+    expect(out).not.toHaveProperty("userEmail")
+    expect(called).toBe(false)
   })
 
-  it("save_notify_settings přijme platné adresáty", async () => {
-    const out = (await handle(
-      { action: "save_notify_settings", recipients: ["sef@firma.cz"] },
-      okMe,
-    )) as { ok: boolean; notify: { recipients: string[] } }
+  it("zděděná e-mailová pole ze staré verze panelu se neuloží", async () => {
+    // `email` / `recipients` are no longer part of the request type — an
+    // installed older panel build can still post them, which is exactly
+    // what this asserts is harmless.
+    const legacyBody = {
+      action: "save_notify_settings",
+      email: true,
+      recipients: ["sef@firma.cz"],
+      inApp: true,
+    } as Parameters<typeof handle>[0]
+    const out = (await handle(legacyBody, okMe)) as { ok: boolean; notify: Record<string, unknown> }
     expect(out.ok).toBe(true)
-    expect(out.notify.recipients).toEqual(["sef@firma.cz"])
+    expect(out.notify).toEqual({ inApp: true })
   })
 })

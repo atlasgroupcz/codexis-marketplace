@@ -24,18 +24,8 @@
     "placeholder": "sid_…"
   },
   "notify": {
-    "emailLabel": "E-mail on updates",
-    "emailDescription": "The daily digest arrives by e-mail.",
-    "yourAddressLabel": "Your address",
-    "copyToLabel": "Copy to",
-    "addRecipient": "Add recipient",
-    "removeRecipient": "Remove",
-    "addPlaceholder": "name@company.com",
-    "invalidEmail": "Invalid e-mail address.",
     "inAppLabel": "Notification centre alert",
-    "inAppDescription": "",
-    "ownAddress": "This is your own address — you always receive the e-mail.",
-    "duplicate": "This address is already listed.",
+    "inAppDescription": "A daily digest of updates and pending confirmations. E-mail is sent by SID itself.",
     "save": "Save notifications"
   }
 }

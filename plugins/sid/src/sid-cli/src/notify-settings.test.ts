@@ -24,89 +24,67 @@ function writeUser(obj: unknown): void {
 }
 
 describe("getNotifySettings", () => {
-  it("bez jakýchkoli souborů: e-mail vypnutý, bell zapnutý (vzor ostatních pluginů)", () => {
-    expect(getNotifySettings()).toEqual({ email: false, inApp: true, recipients: [] })
+  it("bez jakýchkoli souborů je bell zapnutý", () => {
+    expect(getNotifySettings()).toEqual({ inApp: true })
   })
 
   it("čte shipped defaults", () => {
-    writeDefaults({ version: 1, notify: { email: true, inApp: false } })
-    expect(getNotifySettings()).toEqual({ email: true, inApp: false, recipients: [] })
+    writeDefaults({ version: 1, notify: { inApp: false } })
+    expect(getNotifySettings()).toEqual({ inApp: false })
   })
 
-  it("uživatelský override přebije defaults, a to jen v uvedených klíčích", () => {
-    writeDefaults({ version: 1, notify: { email: false, inApp: true } })
-    writeUser({ notify: { email: true } })
-    expect(getNotifySettings()).toEqual({ email: true, inApp: true, recipients: [] })
+  it("uživatelský override přebije defaults", () => {
+    writeDefaults({ version: 1, notify: { inApp: true } })
+    writeUser({ notify: { inApp: false } })
+    expect(getNotifySettings()).toEqual({ inApp: false })
   })
 
   it("poškozený JSON nespadne, použije vestavěné hodnoty", () => {
     writeFileSync(process.env.SID_DEFAULTS_FILE!, "{ tohle není json")
-    expect(getNotifySettings()).toEqual({ email: false, inApp: true, recipients: [] })
+    expect(getNotifySettings()).toEqual({ inApp: true })
   })
 
   it("nesmyslné typy ignoruje", () => {
-    writeDefaults({ notify: { email: "ano", inApp: 1 } })
-    expect(getNotifySettings()).toEqual({ email: false, inApp: true, recipients: [] })
+    writeDefaults({ notify: { inApp: 1 } })
+    expect(getNotifySettings()).toEqual({ inApp: true })
   })
 })
 
-describe("recipients", () => {
-  it("bez konfigurace je seznam prázdný", () => {
-    expect(getNotifySettings().recipients).toEqual([])
+describe("pozůstatky po e-mailovém kanálu", () => {
+  // The plugin used to offer e-mail + extra recipients. SID sends its own
+  // mail, so that channel is gone; a settings file written by the old
+  // version must not resurrect it or leak into the effective config.
+  it("zděděné `email: true` v defaults se ignoruje", () => {
+    writeDefaults({ version: 1, notify: { email: true, inApp: true } })
+    expect(getNotifySettings()).toEqual({ inApp: true })
   })
 
-  it("uživatel může přidat další adresáty", () => {
-    writeUser({ notify: { recipients: ["sef@firma.cz", "kolega@firma.cz"] } })
-    expect(getNotifySettings().recipients).toEqual(["sef@firma.cz", "kolega@firma.cz"])
-  })
-
-  it("nesmyslné hodnoty vyfiltruje (jen neprázdné řetězce)", () => {
-    writeUser({ notify: { recipients: ["a@b.cz", "", 42, null, "  c@d.cz  "] } })
-    expect(getNotifySettings().recipients).toEqual(["a@b.cz", "c@d.cz"])
-  })
-
-  it("recipients, které není pole, ignoruje", () => {
-    writeUser({ notify: { recipients: "sef@firma.cz" } })
-    expect(getNotifySettings().recipients).toEqual([])
-  })
-
-  it("zdvojené adresy deduplikuje case-insensitive, zachová první zápis", () => {
-    writeUser({ notify: { recipients: ["Sef@firma.cz", "sef@firma.cz", "  SEF@FIRMA.CZ "] } })
-    expect(getNotifySettings().recipients).toEqual(["Sef@firma.cz"])
+  it("zděděné `recipients` v uživatelském souboru se ignorují", () => {
+    writeUser({ notify: { email: true, inApp: true, recipients: ["sef@firma.cz"] } })
+    expect(getNotifySettings()).toEqual({ inApp: true })
   })
 })
 
 describe("writeNotifyOverride", () => {
   it("zapíše sparse override a nedotkne se shipped defaults", async () => {
     const { writeNotifyOverride } = await import("./notify-settings")
-    writeDefaults({ version: 1, notify: { email: false, inApp: true, recipients: [] } })
-    writeNotifyOverride({ email: true })
-    expect(getNotifySettings()).toEqual({ email: true, inApp: true, recipients: [] })
+    writeDefaults({ version: 1, notify: { inApp: true } })
+    writeNotifyOverride({ inApp: false })
+    expect(getNotifySettings()).toEqual({ inApp: false })
     // shipped defaults untouched
-    expect(JSON.parse(readFileSync(process.env.SID_DEFAULTS_FILE!, "utf8")).notify.email).toBe(false)
+    expect(JSON.parse(readFileSync(process.env.SID_DEFAULTS_FILE!, "utf8")).notify.inApp).toBe(true)
   })
 
   it("opakovaný zápis slučuje, nepřepisuje celý blok", async () => {
     const { writeNotifyOverride } = await import("./notify-settings")
-    writeNotifyOverride({ email: true })
-    writeNotifyOverride({ recipients: ["a@b.cz"] })
-    expect(getNotifySettings()).toMatchObject({ email: true, recipients: ["a@b.cz"] })
+    writeNotifyOverride({ inApp: false })
+    writeNotifyOverride({ neznamy: 1 })
+    expect(getNotifySettings()).toEqual({ inApp: false })
   })
 
   it("soubor s override má práva 0600", async () => {
     const { writeNotifyOverride, userSettingsPath } = await import("./notify-settings")
-    writeNotifyOverride({ email: true })
+    writeNotifyOverride({ inApp: false })
     expect(statSync(userSettingsPath()).mode & 0o777).toBe(0o600)
-  })
-})
-
-describe("isEmail", () => {
-  it("rozliší platnou a neplatnou adresu", async () => {
-    const { isEmail } = await import("./notify-settings")
-    expect(isEmail("sef@firma.cz")).toBe(true)
-    expect(isEmail("a.b+c@sub.domena.co.uk")).toBe(true)
-    expect(isEmail("bez-zavinace")).toBe(false)
-    expect(isEmail("dve@@zavinace.cz")).toBe(false)
-    expect(isEmail("mezera v@adrese.cz")).toBe(false)
   })
 })

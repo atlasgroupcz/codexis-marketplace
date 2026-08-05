@@ -103,27 +103,9 @@ describe("odkaz ve zvonku", () => {
     expect(input.link).toBe("http://s")
   })
 
-  it("e-mail míří na totéž místo jako zvonek — bez potvrzení tedy na SID", async () => {
-    // Both channels report the same digest; sending them to different pages
-    // would be a bug the reader discovers only by clicking both.
-    writeFileSync(join(home, "defaults.json"), JSON.stringify({ notify: { email: true, inApp: false } }))
-    writeSecret()
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      const url = String(u)
-      if (url.includes("/rest/")) {
-        body = String(init.body)
-        return new Response("{}", { status: 200 })
-      }
-      if (url.includes("/api/notifications")) return new Response(JSON.stringify([{ id: "n1" }]))
-      if (url.includes("/api/v1/confirmations")) return new Response("[]")
-      return new Response("{}")
-    }) as unknown as typeof fetch
-    await run(["--notify"], f)
-    expect(body).toContain("Otevřete v SID: http://s")
-    // The guard that makes the line above mean something: `http://s` is a
-    // prefix of `http://s/confirmations`.
-    expect(body).not.toContain("/confirmations")
+  it("hlásí počty ve zprávě — zvonek je jediný kanál, musí nést celou informaci", async () => {
+    const input = await bellInput([{ id: "n1" }], [{ id: "c1" }, { id: "c2" }])
+    expect(input.message).toBe("SID: 1 nových notifikací, 2 čekajících potvrzení")
   })
 
   it("odkaz respektuje roli — admin nesmí skončit na uživatelské routě", async () => {

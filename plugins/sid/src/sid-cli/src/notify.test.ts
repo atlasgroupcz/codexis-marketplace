@@ -1,20 +1,18 @@
 import { describe, it, expect, beforeEach } from "bun:test"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { sendDigest, restBase, graphqlUrl } from "./notify"
+import { sendDigest, graphqlUrl } from "./notify"
 
 let home: string
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "sid-home-"))
   process.env.CODEXIS_PUBLIC_USER_HOME = home
-  // CODEXIS_PUBLIC_DAEMON_URL is the GraphQL URL; the REST base derives from it.
+  // CODEXIS_PUBLIC_DAEMON_URL is the GraphQL URL.
   process.env.CODEXIS_PUBLIC_DAEMON_URL = "http://daemon.local/graphql"
-  // E-mail is OFF by default (matching the peers), so tests of the e-mail
-  // path have to enable it through the shipped defaults.
   process.env.SID_ENV_FILE = join(home, ".env")
   const defaults = join(home, "defaults.json")
-  writeFileSync(defaults, JSON.stringify({ notify: { email: true, inApp: true } }))
+  writeFileSync(defaults, JSON.stringify({ notify: { inApp: true } }))
   process.env.SID_DEFAULTS_FILE = defaults
 })
 
@@ -24,12 +22,6 @@ function writeSecret(value: string): void {
 }
 
 describe("URL odvození", () => {
-  it("restBase odřízne /graphql", () => {
-    expect(restBase("http://d/graphql")).toBe("http://d")
-    expect(restBase("http://d/graphql/")).toBe("http://d")
-    expect(restBase("http://d")).toBe("http://d")
-  })
-
   it("graphqlUrl /graphql nezdvojuje", () => {
     expect(graphqlUrl("http://d/graphql")).toBe("http://d/graphql")
     expect(graphqlUrl("http://d")).toBe("http://d/graphql")
@@ -43,90 +35,54 @@ describe("sendDigest", () => {
       called = true
       return new Response("{}")
     }) as unknown as typeof fetch
-    expect(await sendDigest("s", "b", f)).toBe(false)
+    expect(await sendDigest("s", f)).toBe(false)
     expect(called).toBe(false)
   })
 
-  it("posílá multipart na /rest/v1/plugin/email/send s Bearer tokenem", async () => {
+  it("posílá bell přes GraphQL createNotification s Bearer tokenem", async () => {
     writeSecret("vmtoken\n")
-    const seen: { url?: string; auth?: string; ctype?: string; body?: string } = {}
+    const seen: { url?: string; auth?: string; body?: string } = {}
     const f = (async (u: unknown, init: RequestInit) => {
-      const h = new Headers(init.headers)
-      // the bell (GraphQL) is called too; only the e-mail matters here
-      if (String(u).includes("/rest/")) {
-        seen.url = String(u)
-        seen.auth = h.get("authorization") ?? ""
-        seen.ctype = h.get("content-type") ?? ""
-        seen.body = String(init.body)
-      }
+      seen.url = String(u)
+      seen.auth = new Headers(init.headers).get("authorization") ?? ""
+      seen.body = String(init.body)
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
 
-    expect(await sendDigest("Předmět", "Tělo", f)).toBe(true)
-    expect(seen.url).toBe("http://daemon.local/rest/v1/plugin/email/send")
+    expect(await sendDigest("Předmět", f)).toBe(true)
+    expect(seen.url).toBe("http://daemon.local/graphql")
     expect(seen.auth).toBe("Bearer vmtoken")
-    expect(seen.ctype).toContain("multipart/form-data; boundary=")
-    // the payload part carries JSON with subject + bodyText
-    expect(seen.body).toContain('name="payload"')
-    expect(seen.body).toContain('"subject":"Předmět"')
-    expect(seen.body).toContain('"bodyText":"Tělo"')
+    expect(seen.body).toContain("createNotification")
+    expect(JSON.parse(seen.body!).variables.input.message).toBe("Předmět")
   })
 
   it("normalizuje 'Authorization:' i holý token na Bearer", async () => {
     writeSecret("Authorization: Bearer abc\n")
     let auth = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).includes("/rest/")) auth = new Headers(init.headers).get("authorization") ?? ""
+    const f = (async (_u: unknown, init: RequestInit) => {
+      auth = new Headers(init.headers).get("authorization") ?? ""
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
+    await sendDigest("s", f)
     expect(auth).toBe("Bearer abc")
   })
 
-  it("posílá i in-app bell přes GraphQL createNotification", async () => {
+  it("vypnutý bell → nic se nevolá", async () => {
     writeSecret("t")
-    let gqlBody = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).endsWith("/graphql")) gqlBody = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("Předmět", "Tělo", f)
-    expect(gqlBody).toContain("createNotification")
-    expect(JSON.parse(gqlBody).variables.input.message).toBe("Předmět")
-  })
-
-  it("respektuje vypnuté kanály — vypnutý e-mail se neposílá", async () => {
-    writeSecret("t")
-    writeFileSync(process.env.SID_DEFAULTS_FILE!, JSON.stringify({ notify: { email: false, inApp: true } }))
-    const hit = { rest: false, gql: false }
-    const f = (async (u: unknown) => {
-      if (String(u).includes("/rest/")) hit.rest = true
-      if (String(u).endsWith("/graphql")) hit.gql = true
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    // True because the bell succeeded; keying the result to e-mail alone
-    // would report failure on a working notification.
-    expect(await sendDigest("s", "b", f)).toBe(true)
-    expect(hit.rest).toBe(false)
-    expect(hit.gql).toBe(true)
-  })
-
-  it("oba kanály vypnuté → nic se nevolá", async () => {
-    writeSecret("t")
-    writeFileSync(process.env.SID_DEFAULTS_FILE!, JSON.stringify({ notify: { email: false, inApp: false } }))
+    writeFileSync(process.env.SID_DEFAULTS_FILE!, JSON.stringify({ notify: { inApp: false } }))
     let called = false
     const f = (async () => {
       called = true
       return new Response("{}")
     }) as unknown as typeof fetch
-    expect(await sendDigest("s", "b", f)).toBe(false)
+    expect(await sendDigest("s", f)).toBe(false)
     expect(called).toBe(false)
   })
 
-  it("HTTP chyba e-mailu → false, nikdy nehází", async () => {
+  it("HTTP chyba → false, nikdy nehází", async () => {
     writeSecret("t")
     const f = (async () => new Response("x", { status: 500 })) as unknown as typeof fetch
-    expect(await sendDigest("s", "b", f)).toBe(false)
+    expect(await sendDigest("s", f)).toBe(false)
   })
 
   it("výjimka transportu → false, nikdy nehází", async () => {
@@ -134,7 +90,43 @@ describe("sendDigest", () => {
     const f = (async () => {
       throw new Error("ECONNREFUSED")
     }) as unknown as typeof fetch
-    expect(await sendDigest("s", "b", f)).toBe(false)
+    expect(await sendDigest("s", f)).toBe(false)
+  })
+})
+
+describe("žádný e-mail", () => {
+  /**
+   * SID posílá vlastní e-maily (šablony, odkaz na konkrétní dokument,
+   * license gating). Plugin proto mail neposílá vůbec — ani když v
+   * nastavení po starší verzi zůstalo `email: true` a seznam adresátů.
+   */
+  it("nesahá na REST endpoint daemona ani se zděděným `email: true`", async () => {
+    writeSecret("t")
+    writeFileSync(
+      process.env.SID_DEFAULTS_FILE!,
+      JSON.stringify({ notify: { email: true, inApp: true, recipients: ["sef@firma.cz"] } }),
+    )
+    const urls: string[] = []
+    const f = (async (u: unknown) => {
+      urls.push(String(u))
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+
+    await sendDigest("s", f)
+    expect(urls).toEqual(["http://daemon.local/graphql"])
+    expect(urls.some((u) => u.includes("/rest/"))).toBe(false)
+  })
+
+  it("neptá se daemona na adresu přihlášeného uživatele", async () => {
+    writeSecret("t")
+    let calls = 0
+    const f = (async (_u: unknown, init: RequestInit) => {
+      calls += 1
+      expect(String(init.body)).not.toContain("me {")
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("s", f)
+    expect(calls).toBe(1)
   })
 })
 
@@ -146,14 +138,12 @@ describe("cíl zvonku", () => {
       if (String(u).endsWith("/graphql")) gqlBody = String(init.body)
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
-    await sendDigest("Předmět", "Tělo", f, target)
+    await sendDigest("Předmět", f, target)
     return JSON.parse(gqlBody).variables.input
   }
 
   it("předá odkaz i popisek akce do createNotification", async () => {
-    // Without this the bell is a dead end: a count with nothing to click,
-    // while the e-mail body (off by default) is the only channel carrying
-    // the way back into SID.
+    // Without this the bell is a dead end: a count with nothing to click.
     const input = await bellInput({ link: "https://sid.test/confirmations", action: "Otevřít v SID" })
     expect(input.link).toBe("https://sid.test/confirmations")
     expect(input.action).toBe("Otevřít v SID")
@@ -166,118 +156,15 @@ describe("cíl zvonku", () => {
   })
 })
 
-describe("recipients v e-mailu", () => {
-  it("bez adresátů neposílá pole 'to' (daemon doručí přihlášenému)", async () => {
-    writeSecret("t")
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).includes("/rest/")) body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    expect(body).not.toContain('"to"')
-  })
-
-  it("s adresáty je přiloží do payloadu", async () => {
-    writeSecret("t")
-    writeFileSync(
-      process.env.SID_DEFAULTS_FILE!,
-      JSON.stringify({ notify: { email: true, inApp: true, recipients: ["sef@firma.cz"] } }),
-    )
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).includes("/rest/")) body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    expect(body).toContain('"to":["sef@firma.cz"]')
-  })
-})
-
-describe("resolve_to — přihlášený uživatel nesmí vypadnout", () => {
-  function withRecipients(list: string[]): void {
-    writeFileSync(
-      process.env.SID_DEFAULTS_FILE!,
-      JSON.stringify({ notify: { email: true, inApp: false, recipients: list } }),
-    )
-  }
-
-  it("k adresátům navíc přidá adresu přihlášeného uživatele", async () => {
-    writeSecret("t")
-    withRecipients(["sef@firma.cz"])
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).endsWith("/graphql")) {
-        return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
-      }
-      body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    // Without this, adding a colleague would switch off the user's own mail:
-    // the daemon delivers EXCLUSIVELY to `to` when it is present.
-    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual([
-      "ja@firma.cz",
-      "sef@firma.cz",
-    ])
-  })
-
-  it("nezdvojí adresu, když si ji uživatel přidal sám", async () => {
-    writeSecret("t")
-    withRecipients(["JA@firma.cz", "sef@firma.cz"])
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).endsWith("/graphql")) {
-        return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
-      }
-      body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual([
-      "ja@firma.cz",
-      "sef@firma.cz",
-    ])
-  })
-
-  it("když se `me` nepodaří zjistit, pošle aspoň extras (nezahodí je)", async () => {
-    writeSecret("t")
-    withRecipients(["sef@firma.cz"])
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).endsWith("/graphql")) return new Response("{}", { status: 500 })
-      body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual(["sef@firma.cz"])
-  })
-
-  it("zdvojené adresáty mezi sebou deduplikuje (case-insensitive)", async () => {
-    writeSecret("t")
-    withRecipients(["sef@firma.cz", "SEF@firma.cz"])
-    let body = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).endsWith("/graphql")) {
-        return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
-      }
-      body = String(init.body)
-      return new Response("{}", { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    expect(JSON.parse(body.split("\r\n\r\n")[1]!.split("\r\n")[0]!).to).toEqual(["ja@firma.cz", "sef@firma.cz"])
-  })
-})
-
 describe("daemon token — žádná header injection", () => {
   it("token s vnitřním newlinem se očistí, do Authorization se nedostane konec řádku", async () => {
     writeSecret("Bearer abc\nX-Injected: 1")
     let auth = ""
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).includes("/rest/")) auth = new Headers(init.headers).get("authorization") ?? ""
+    const f = (async (_u: unknown, init: RequestInit) => {
+      auth = new Headers(init.headers).get("authorization") ?? ""
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
+    await sendDigest("s", f)
     expect(auth).not.toContain("\n")
     expect(auth).not.toContain("\r")
     expect(auth.startsWith("Bearer ")).toBe(true)
@@ -285,31 +172,16 @@ describe("daemon token — žádná header injection", () => {
 })
 
 describe("timeouty na volání daemona", () => {
-  it("e-mail i bell nesou AbortSignal (zaseknutý daemon nesmí zablokovat cron)", async () => {
+  it("bell nese AbortSignal (zaseknutý daemon nesmí zablokovat cron)", async () => {
     writeSecret("t")
     const signals: unknown[] = []
     const f = (async (_u: unknown, init: RequestInit) => {
       signals.push(init.signal)
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
+    await sendDigest("s", f)
     expect(signals.length).toBeGreaterThan(0)
     for (const s of signals) expect(s).toBeInstanceOf(AbortSignal)
-  })
-
-  it("dotaz na `me` nese AbortSignal taky", async () => {
-    writeSecret("t")
-    writeFileSync(
-      process.env.SID_DEFAULTS_FILE!,
-      JSON.stringify({ notify: { email: true, inApp: false, recipients: ["sef@firma.cz"] } }),
-    )
-    let meSignal: unknown = "nevolano"
-    const f = (async (u: unknown, init: RequestInit) => {
-      if (String(u).endsWith("/graphql")) meSignal = init.signal
-      return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
-    }) as unknown as typeof fetch
-    await sendDigest("s", "b", f)
-    expect(meSignal).toBeInstanceOf(AbortSignal)
   })
 
   it("timeout daemona shodí jen notifikaci, ne celý běh", async () => {
@@ -320,46 +192,6 @@ describe("timeouty na volání daemona", () => {
       throw e
     }) as unknown as typeof fetch
     // sendDigest is best-effort: it must return false, not throw.
-    expect(await sendDigest("s", "b", f)).toBe(false)
-  })
-})
-
-describe("currentUserEmail", () => {
-  it("uses the cached address without touching the daemon", async () => {
-    const { currentUserEmail } = await import("./notify")
-    writeSecret("t")
-    writeFileSync(process.env.SID_ENV_FILE!, "SID_USER_EMAIL=ja@firma.cz\n", { mode: 0o600 })
-    let called = false
-    const f = (async () => {
-      called = true
-      return new Response("{}")
-    }) as unknown as typeof fetch
-    expect(await currentUserEmail(f)).toBe("ja@firma.cz")
-    expect(called).toBe(false)
-  })
-
-  it("queries once and caches, so opening the panel again is free", async () => {
-    const { currentUserEmail } = await import("./notify")
-    writeSecret("t")
-    let calls = 0
-    const f = (async () => {
-      calls += 1
-      return new Response(JSON.stringify({ data: { me: { email: "ja@firma.cz" } } }), { status: 200 })
-    }) as unknown as typeof fetch
-    expect(await currentUserEmail(f)).toBe("ja@firma.cz")
-    expect(await currentUserEmail(f)).toBe("ja@firma.cz")
-    expect(calls).toBe(1)
-  })
-
-  it("returns an empty string when the daemon is unreachable and caches nothing", async () => {
-    const { currentUserEmail } = await import("./notify")
-    writeSecret("t")
-    const f = (async () => new Response("x", { status: 500 })) as unknown as typeof fetch
-    expect(await currentUserEmail(f)).toBe("")
-    // Nothing cached — the file may not even exist, which is also "not cached".
-    const envFile = existsSync(process.env.SID_ENV_FILE!)
-      ? readFileSync(process.env.SID_ENV_FILE!, "utf8")
-      : ""
-    expect(envFile).not.toContain("SID_USER_EMAIL")
+    expect(await sendDigest("s", f)).toBe(false)
   })
 })

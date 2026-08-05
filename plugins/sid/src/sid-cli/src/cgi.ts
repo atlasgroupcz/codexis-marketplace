@@ -14,37 +14,27 @@
  */
 import { apiGet, type CliError, type FetchLike } from "./http"
 import { EXIT, getApiKey, getBaseUrl, isPlausibleApiKey, writeApiKey, writeEnvValue, deleteApiKey } from "./config"
-import { currentUserEmail } from "./notify"
-import {
-  getNotifySettings,
-  isEmail,
-  writeNotifyOverride,
-  type NotifySettings,
-} from "./notify-settings"
+import { getNotifySettings, writeNotifyOverride, type NotifySettings } from "./notify-settings"
 
 type Body = {
   action?: string
   api_key?: string
-  email?: boolean
   inApp?: boolean
-  recipients?: unknown[]
 }
 
-async function status(f?: FetchLike): Promise<{
+function status(): {
   ok: true
   configured: boolean
   baseUrl: string
   start?: string
-  userEmail: string
   notify: NotifySettings
-}> {
+} {
   const key = getApiKey()
   return {
     ok: true,
     configured: key !== "",
     baseUrl: getBaseUrl(),
     ...(key ? { start: key.slice(0, 7) } : {}),
-    userEmail: await currentUserEmail(f),
     notify: getNotifySettings(),
   }
 }
@@ -52,7 +42,7 @@ async function status(f?: FetchLike): Promise<{
 export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown> {
   switch (body.action) {
     case "get_status":
-      return status(f)
+      return status()
 
     case "save_config": {
       const key = (body.api_key ?? "").trim()
@@ -81,24 +71,12 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
     }
 
     case "save_notify_settings": {
-      // Only what was actually sent is stored; the file stays a sparse override.
+      // Only what was actually sent is stored; the file stays a sparse
+      // override. The bell is the only channel — anything else a panel sends
+      // (an older build still posting `email` / `recipients`) is dropped
+      // here rather than written to a file that nothing reads.
       const patch: Record<string, unknown> = {}
-      if (typeof body.email === "boolean") patch.email = body.email
       if (typeof body.inApp === "boolean") patch.inApp = body.inApp
-      if (Array.isArray(body.recipients)) {
-        // Reject rather than silently drop — otherwise a UI typo would read
-        // as "saved" with a recipient missing.
-        const invalid = body.recipients.filter(
-          (r) => typeof r !== "string" || (r.trim() !== "" && !isEmail(r)),
-        )
-        if (invalid.length > 0) {
-          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.map(String).join(", ")}` }
-        }
-        patch.recipients = body.recipients
-          .filter((r): r is string => typeof r === "string")
-          .map((r) => r.trim())
-          .filter(Boolean)
-      }
       writeNotifyOverride(patch)
       return { ok: true, notify: getNotifySettings() }
     }
@@ -138,7 +116,7 @@ export async function serve(f: FetchLike = fetch): Promise<string> {
   const method = (process.env.REQUEST_METHOD ?? "GET").toUpperCase()
   try {
     // GET returns the configuration state for the panel's initial render.
-    if (method !== "POST") return renderCgi(await status(f))
+    if (method !== "POST") return renderCgi(status())
 
     const raw = await readStdin()
     let body: Body

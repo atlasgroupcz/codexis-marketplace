@@ -136,23 +136,16 @@ async function apiGet(path, f = fetch, keyOverride) {
   return parseJson(await request(path, {}, f, keyOverride));
 }
 
-// src/notify.ts
-var import_node_fs3 = require("node:fs");
-var import_node_path3 = require("node:path");
-
 // src/notify-settings.ts
 var import_node_fs2 = require("node:fs");
 var import_node_path2 = require("node:path");
 var import_node_os2 = require("node:os");
-var BUILTIN = { email: false, inApp: true, recipients: [] };
+var BUILTIN = { inApp: true };
 function defaultsPath() {
   return process.env.SID_DEFAULTS_FILE || import_node_path2.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
 }
 function userSettingsPath() {
   return import_node_path2.join(userHome(), ".cdx", "apps", "sid", "settings.json");
-}
-function isEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
 }
 function writeNotifyOverride(patch) {
   const path = userSettingsPath();
@@ -173,39 +166,12 @@ function readJson(path) {
     return null;
   }
 }
-function cleanRecipients(raw) {
-  if (!Array.isArray(raw))
-    return;
-  const seen = new Set;
-  const out = [];
-  for (const v of raw) {
-    if (typeof v !== "string")
-      continue;
-    const t = v.trim();
-    if (!t)
-      continue;
-    const k = t.toLowerCase();
-    if (seen.has(k))
-      continue;
-    seen.add(k);
-    out.push(t);
-  }
-  return out;
-}
 function notifyBlock(source) {
   const raw = source?.notify;
   if (!raw || typeof raw !== "object")
     return {};
-  const out = {};
-  const { email, inApp, recipients } = raw;
-  if (typeof email === "boolean")
-    out.email = email;
-  if (typeof inApp === "boolean")
-    out.inApp = inApp;
-  const cleaned = cleanRecipients(recipients);
-  if (cleaned)
-    out.recipients = cleaned;
-  return out;
+  const { inApp } = raw;
+  return typeof inApp === "boolean" ? { inApp } : {};
 }
 function getNotifySettings() {
   return {
@@ -215,76 +181,21 @@ function getNotifySettings() {
   };
 }
 
-// src/notify.ts
-var GRAPHQL_PATH = "/graphql";
-var ME_QUERY_TIMEOUT_MS = 1e4;
-function graphqlUrl(daemonUrl) {
-  const base = (daemonUrl || "").replace(/\/+$/, "");
-  return base.endsWith(GRAPHQL_PATH) ? base : base + GRAPHQL_PATH;
-}
-function daemonAuth() {
-  try {
-    let t = import_node_fs3.readFileSync(import_node_path3.join(userHome(), ".cdx", "env", "secret"), "utf8").trim();
-    if (!t)
-      return null;
-    if (t.toLowerCase().startsWith("authorization:"))
-      t = t.slice("authorization:".length).trim();
-    t = t.replace(/[\r\n]/g, "");
-    if (!t)
-      return null;
-    return t.toLowerCase().startsWith("bearer ") ? t : `Bearer ${t}`;
-  } catch {
-    return null;
-  }
-}
-async function queryMeEmail(auth, daemonUrl, f) {
-  try {
-    const res = await f(graphqlUrl(daemonUrl), {
-      method: "POST",
-      signal: AbortSignal.timeout(ME_QUERY_TIMEOUT_MS),
-      headers: { authorization: auth, "content-type": "application/json" },
-      body: JSON.stringify({ query: "query { me { email } }" })
-    });
-    if (!res.ok)
-      return null;
-    const data = await res.json();
-    const email = data?.data?.me?.email;
-    return typeof email === "string" && email ? email : null;
-  } catch {
-    return null;
-  }
-}
-async function currentUserEmail(f = fetch) {
-  const cached = readEnvFile().SID_USER_EMAIL;
-  if (cached)
-    return cached;
-  const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL;
-  const auth = daemonAuth();
-  if (!daemonUrl || !auth)
-    return "";
-  const email = await queryMeEmail(auth, daemonUrl, f);
-  if (!email)
-    return "";
-  writeEnvValue("SID_USER_EMAIL", email);
-  return email;
-}
-
 // src/cgi.ts
-async function status(f) {
+function status() {
   const key = getApiKey();
   return {
     ok: true,
     configured: key !== "",
     baseUrl: getBaseUrl(),
     ...key ? { start: key.slice(0, 7) } : {},
-    userEmail: await currentUserEmail(f),
     notify: getNotifySettings()
   };
 }
 async function handle(body, f = fetch) {
   switch (body.action) {
     case "get_status":
-      return status(f);
+      return status();
     case "save_config": {
       const key = (body.api_key ?? "").trim();
       if (!key)
@@ -308,17 +219,8 @@ async function handle(body, f = fetch) {
     }
     case "save_notify_settings": {
       const patch = {};
-      if (typeof body.email === "boolean")
-        patch.email = body.email;
       if (typeof body.inApp === "boolean")
         patch.inApp = body.inApp;
-      if (Array.isArray(body.recipients)) {
-        const invalid = body.recipients.filter((r) => typeof r !== "string" || r.trim() !== "" && !isEmail(r));
-        if (invalid.length > 0) {
-          return { ok: false, error: `Neplatná e-mailová adresa: ${invalid.map(String).join(", ")}` };
-        }
-        patch.recipients = body.recipients.filter((r) => typeof r === "string").map((r) => r.trim()).filter(Boolean);
-      }
       writeNotifyOverride(patch);
       return { ok: true, notify: getNotifySettings() };
     }
@@ -350,7 +252,7 @@ async function serve(f = fetch) {
   const method = (process.env.REQUEST_METHOD ?? "GET").toUpperCase();
   try {
     if (method !== "POST")
-      return renderCgi(await status(f));
+      return renderCgi(status());
     const raw = await readStdin();
     let body;
     try {
