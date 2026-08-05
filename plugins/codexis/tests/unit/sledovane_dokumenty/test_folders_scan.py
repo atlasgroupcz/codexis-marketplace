@@ -3,7 +3,6 @@
 import os
 
 import pytest
-
 from sledovane_dokumenty_core import folders
 from sledovane_dokumenty_core.folders import WatchedFolderError
 
@@ -31,7 +30,10 @@ def test_add_watch_writes_contract(watched_root):
     assert data["version"] == folders.CONTRACT_VERSION
     assert data["watchedRoot"] == "."
     assert data["generatedAt"]
-    assert {d["path"] for d in data["documents"]} == {"./dogs/buy-dog.docx", "./readme.txt"}
+    assert {d["path"] for d in data["documents"]} == {
+        "./dogs/buy-dog.docx",
+        "./readme.txt",
+    }
 
     doc = next(d for d in data["documents"] if d["path"] == "./readme.txt")
     assert doc["extractedAt"] is None
@@ -82,7 +84,9 @@ def test_changed_checksum_resets_extraction(watched_root):
 def test_set_references_stamps_timestamps(watched_root):
     folders.add_watch(watched_root)
     doc = folders.set_references(
-        watched_root, "./dogs/buy-dog.docx", [{"uri": "https://x", "text": "Zákon", "codexisId": "CR1"}]
+        watched_root,
+        "./dogs/buy-dog.docx",
+        [{"uri": "https://x", "text": "Zákon", "codexisId": "CR1"}],
     )
     assert doc["extractedAt"] is not None
     assert doc["legislation"][0]["codexisId"] == "CR1"
@@ -90,8 +94,16 @@ def test_set_references_stamps_timestamps(watched_root):
 
 def test_unique_legislation_dedupes(watched_root):
     folders.add_watch(watched_root)
-    folders.set_references(watched_root, "./dogs/buy-dog.docx", [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}])
-    folders.set_references(watched_root, "./readme.txt", [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}])
+    folders.set_references(
+        watched_root,
+        "./dogs/buy-dog.docx",
+        [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}],
+    )
+    folders.set_references(
+        watched_root,
+        "./readme.txt",
+        [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}],
+    )
     uniq = folders.unique_legislation(watched_root)
     assert len(uniq) == 1 and uniq[0]["codexisId"] == "CR26785"
 
@@ -101,7 +113,10 @@ def test_mark_all_for_reharvest(watched_root):
     folders.set_references(watched_root, "./readme.txt", [{"uri": "u", "text": "t"}])
     count = folders.mark_all_for_reharvest(watched_root)
     assert count == 1
-    assert sorted(folders.docs_needing_harvest(watched_root)) == ["./dogs/buy-dog.docx", "./readme.txt"]
+    assert sorted(folders.docs_needing_harvest(watched_root)) == [
+        "./dogs/buy-dog.docx",
+        "./readme.txt",
+    ]
 
 
 def test_remove_watch(watched_root):
@@ -132,4 +147,4 @@ def test_browse_lists_subdirs_and_refuses_escape(tmp_path, monkeypatch):
     assert result["parent"] is None  # at home root
 
     # escaping above home falls back to home
-    assert folders.browse(str(tmp_path)) ["path"] == str(home)
+    assert folders.browse(str(tmp_path))["path"] == str(home)

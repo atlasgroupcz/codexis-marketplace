@@ -1,8 +1,6 @@
 """CLI-layer notify recipients management for cdx-sledovane-dokumenty."""
 
 import argparse
-import importlib.machinery
-import importlib.util
 import json
 import os
 import subprocess
@@ -11,6 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
+from tests._script_loader import load_script
 
 BIN = Path(__file__).resolve().parents[3] / "bin" / "cdx-sledovane-dokumenty"
 LIB = Path(__file__).resolve().parents[3] / "lib"
@@ -63,13 +63,7 @@ def test_recipients_add_invalid_errors(tmp_path):
 
 
 def _load_cli():
-    loader = importlib.machinery.SourceFileLoader("cdx_sledovane_dokumenty_notify", str(BIN))
-    spec = importlib.util.spec_from_file_location(
-        "cdx_sledovane_dokumenty_notify", str(BIN), loader=loader
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("cdx_sledovane_dokumenty_notify", str(BIN))
 
 
 _cli = _load_cli()  # defs-only/stateless - load once, reuse across tests

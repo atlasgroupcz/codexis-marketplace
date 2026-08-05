@@ -45,6 +45,7 @@ logs/
 /out/
 **/target/
 target/
+.cargo-home/
 
 # Eclipse
 **/.settings/
@@ -150,3 +151,16 @@ docs/superpowers/
 # Raw coverage profiles. cargo llvm-cov writes these next to the crate when a
 # test spawns the binary under test; they are build output, never sources.
 *.profraw
+
+# pytest --cov leaves this database in the working directory. dist-exclusions
+# is a deny-list over tracked files, so anything committed here reaches the
+# public dist by default - a build artifact must not become tracked at all.
+.coverage
+.coverage.*
+htmlcov/
+
+# Claude Code: git worktrees created inside the repo, and per-developer
+# settings. The rest of .claude/ is shared project configuration and is
+# tracked.
+.claude/worktrees/
+.claude/settings.local.json

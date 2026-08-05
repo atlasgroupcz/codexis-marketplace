@@ -27,7 +27,9 @@ def test_headers_include_default_daemon_origin(monkeypatch):
 
 
 def test_headers_normalize_configured_daemon_origin(monkeypatch):
-    monkeypatch.setenv("ONEPOST_API_ORIGIN", "https://vm.dev.internal.codexis.ai/apps/onepost")
+    monkeypatch.setenv(
+        "ONEPOST_API_ORIGIN", "https://vm.dev.internal.codexis.ai/apps/onepost"
+    )
     monkeypatch.setattr(settings, "_read_env_file", lambda: {})
 
     client = OnepostClient(api_url="https://onepost.example", api_key="secret")
@@ -66,7 +68,15 @@ def test_concept_helpers_use_expected_paths(monkeypatch):
     client = OnepostClient(api_url="https://onepost.example", api_key="secret")
 
     def fake_request(method, path, query=None, body=None, timeout=45):
-        calls.append({"method": method, "path": path, "query": query, "body": body, "timeout": timeout})
+        calls.append(
+            {
+                "method": method,
+                "path": path,
+                "query": query,
+                "body": body,
+                "timeout": timeout,
+            }
+        )
         return {"ok": True}
 
     monkeypatch.setattr(client, "request", fake_request)
@@ -77,7 +87,13 @@ def test_concept_helpers_use_expected_paths(monkeypatch):
     assert save_response == {"ok": True}
     assert send_response == {"ok": True}
     assert calls == [
-        {"method": "POST", "path": "/concepts", "query": None, "body": {"mailboxId": "abc1234"}, "timeout": 45},
+        {
+            "method": "POST",
+            "path": "/concepts",
+            "query": None,
+            "body": {"mailboxId": "abc1234"},
+            "timeout": 45,
+        },
         {
             "method": "POST",
             "path": "/concepts/CONCEPT-00000000-0000-0000-0000-000000000000/send",

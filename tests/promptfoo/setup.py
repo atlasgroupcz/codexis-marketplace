@@ -34,7 +34,7 @@ import yaml
 # Run as a script, so the repo root has to be put on sys.path before the
 # `tests` package can be imported.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tests._daemon_client import DaemonClient  # noqa: E402
+from tests._daemon_client import DaemonClient
 
 _VAR = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 
@@ -61,8 +61,11 @@ def main() -> int:
     graphql_url = os.environ.get(
         "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
     )
-    base = (graphql_url[: -len("/graphql")] if graphql_url.endswith("/graphql")
-            else graphql_url.rstrip("/"))
+    base = (
+        graphql_url[: -len("/graphql")]
+        if graphql_url.endswith("/graphql")
+        else graphql_url.rstrip("/")
+    )
     client = DaemonClient(base, token)
 
     # Stable run_id per invocation - same convention as the legacy runner,
@@ -86,7 +89,9 @@ def main() -> int:
                 src = (cfg_path.parent / _substitute(f["source"], vars_)).resolve()
                 content = src.read_bytes()
             else:
-                print(f"[setup.py] action[{i}] file {rel!r}: needs `content` or `source`")
+                print(
+                    f"[setup.py] action[{i}] file {rel!r}: needs `content` or `source`"
+                )
                 return 1
             files.append((rel, content))
         client.upload_folder(destination, files)

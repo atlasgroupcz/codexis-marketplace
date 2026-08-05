@@ -35,7 +35,7 @@ RETRIES = 2
 # Office code → coarse territory bucket used for relevance/labelling.
 _OFFICE_TERRITORY = {
     "CZ": "CZ",
-    "EM": "EU",   # EUIPO (EU trademark)
+    "EM": "EU",  # EUIPO (EU trademark)
     "WO": "INT",  # WIPO international registration
 }
 
@@ -79,7 +79,9 @@ def make_candidate(**fields) -> dict:
         "status": (fields.get("status") or "").strip(),
         "filing_date": (fields.get("filing_date") or "").strip(),
         "nice_classes": normalize_classes(fields.get("nice_classes")),
-        "vienna_codes": [str(c).strip() for c in (fields.get("vienna_codes") or []) if str(c).strip()],
+        "vienna_codes": [
+            str(c).strip() for c in (fields.get("vienna_codes") or []) if str(c).strip()
+        ],
         "office": office,
         "territory": fields.get("territory") or office_to_territory(office),
         "url_detail": (fields.get("url_detail") or "").strip(),
@@ -118,7 +120,9 @@ def _request(req: urllib.request.Request, source_name: str) -> bytes:
                 time.sleep(1 + attempt)
                 continue
             body = exc.read().decode("utf-8", "replace")[:300]
-            raise ApiHttpError(exc.code, f"{source_name} vrátilo HTTP {exc.code}: {body}")
+            raise ApiHttpError(
+                exc.code, f"{source_name} vrátilo HTTP {exc.code}: {body}"
+            )
         except (urllib.error.URLError, http.client.HTTPException, OSError) as exc:
             # URLError, connection resets ([Errno 104]), broken TLS, DNS, timeouts -
             # all "source unreachable". Retry, then degrade to ApiNetworkError so the
@@ -132,7 +136,9 @@ def _request(req: urllib.request.Request, source_name: str) -> bytes:
     raise ApiNetworkError(f"{source_name} nedostupné: {last_err}")
 
 
-def post_json(url: str, payload: dict, source_name: str, headers: dict = None) -> dict:
+def post_json(
+    url: str, payload: dict, source_name: str, headers: dict | None = None
+) -> dict:
     data = json.dumps(payload).encode("utf-8")
     base_headers = {
         "Content-Type": "application/json",
@@ -153,7 +159,7 @@ def get_bytes(url: str, source_name: str) -> bytes:
     return _request(req, source_name)
 
 
-def get_json(url: str, source_name: str, headers: dict = None) -> dict:
+def get_json(url: str, source_name: str, headers: dict | None = None) -> dict:
     base_headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
     base_headers.update(headers or {})
     req = urllib.request.Request(url, headers=base_headers, method="GET")

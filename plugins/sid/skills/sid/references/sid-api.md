@@ -165,11 +165,14 @@ The digest the automation runs (`automations/check-sid.md`, daily at 07:00):
 ```
 
 With `--notify` it also pushes to the daemon - but only when there is
-something to report. `notified: false` means nothing was sent (no news, both
-channels disabled, or the daemon was unreachable); it is never an error that
+something to report. `notified: false` means nothing was sent (no news, the
+bell switched off, or the daemon was unreachable); it is never an error that
 would fail the run.
 
-Channels follow the same settings convention as the znamky/katastr plugins:
+The notification carries a `link` back into SID - the pending-confirmations
+list when there is something to confirm, otherwise SID itself.
+
+Settings follow the same convention as the znamky/katastr plugins:
 
 | File | Role |
 |------|------|
@@ -177,13 +180,14 @@ Channels follow the same settings convention as the znamky/katastr plugins:
 | `~/.cdx/apps/sid/settings.json` | user override, only the changed keys |
 
 ```json
-{ "version": 1, "notify": { "email": false, "inApp": true, "recipients": [] } }
+{ "version": 1, "notify": { "inApp": true } }
 ```
 
-**E-mail is off by default** - a daily automation should not reach someone's
-inbox unasked. Both toggles and the extra-recipient list are editable in the
-plugin's settings panel; `recipients` are appended to the e-mail's `to` list,
-and the signed-in user always receives it regardless.
+**The bell is the only channel - this plugin sends no e-mail.** SID mails its
+own users (per-event templates, a link to the document, per-tenant gating), so
+a mailer here would duplicate it with a worse message. An `email` /
+`recipients` block left in a settings file by an older version is read and
+dropped.
 
 ## Limits
 

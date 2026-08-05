@@ -24,18 +24,8 @@
     "placeholder": "sid_…"
   },
   "notify": {
-    "emailLabel": "E-mail při novinkách",
-    "emailDescription": "Denní souhrn přijde e-mailem.",
-    "yourAddressLabel": "Vaše adresa",
-    "copyToLabel": "Kopie na",
-    "addRecipient": "Přidat příjemce",
-    "removeRecipient": "Odebrat",
-    "addPlaceholder": "jmeno@firma.cz",
-    "invalidEmail": "Neplatná e-mailová adresa.",
     "inAppLabel": "Oznámení v centru notifikací",
-    "inAppDescription": "",
-    "ownAddress": "Tato adresa je vaše - e-mail vám chodí vždy.",
-    "duplicate": "Tato adresa už je v seznamu.",
+    "inAppDescription": "Denní souhrn novinek a čekajících potvrzení. E-maily posílá samotné SID.",
     "save": "Uložit upozornění"
   },
   "help": {

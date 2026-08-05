@@ -23,12 +23,12 @@ def cdx_get(path):
     """
     result = subprocess.run(
         [CDX_CLI_BIN, "get", path],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if result.returncode != 0:
-        raise CdxClientError(
-            f"cdx-cli get failed for {path}: {result.stderr.strip()}"
-        )
+        raise CdxClientError(f"cdx-cli get failed for {path}: {result.stderr.strip()}")
     stdout = result.stdout.strip()
     try:
         data = json.loads(stdout)
@@ -46,20 +46,18 @@ def cdx_get_text(path):
     """
     result = subprocess.run(
         [CDX_CLI_BIN, "get", path],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if result.returncode != 0:
-        raise CdxClientError(
-            f"cdx-cli get failed for {path}: {result.stderr.strip()}"
-        )
+        raise CdxClientError(f"cdx-cli get failed for {path}: {result.stderr.strip()}")
     stdout = result.stdout.strip()
     if stdout.startswith("{"):
         try:
             data = json.loads(stdout)
             if isinstance(data, dict) and "error" in data:
-                raise CdxClientError(
-                    f"CODEXIS API error for {path}: {data['error']}"
-                )
+                raise CdxClientError(f"CODEXIS API error for {path}: {data['error']}")
         except json.JSONDecodeError:
             pass
     return result.stdout
@@ -165,11 +163,15 @@ def fetch_related_counts(codexis_id):
         counts = data.get("counts", [])
         result = []
         for item in counts:
-            result.append({
-                "type": item.get("type"),
-                "typeName": item.get("name", item.get("typeName", item.get("type"))),
-                "count": item.get("count", 0),
-            })
+            result.append(
+                {
+                    "type": item.get("type"),
+                    "typeName": item.get(
+                        "name", item.get("typeName", item.get("type"))
+                    ),
+                    "count": item.get("count", 0),
+                }
+            )
         return result
     if isinstance(data, list):
         return data
@@ -191,17 +193,25 @@ def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
     supplied, otherwise a string), or None on any failure - callers degrade
     gracefully rather than crash a scheduled run.
     """
-    daemon_url = rest_base(os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL))
+    daemon_url = rest_base(
+        os.environ.get("CODEXIS_PUBLIC_DAEMON_URL", DEFAULT_DAEMON_URL)
+    )
     auth = load_auth()
     if not auth:
         return None
 
     cmd = [
-        "curl", "-sS", "-X", "POST",
+        "curl",
+        "-sS",
+        "-X",
+        "POST",
         f"{daemon_url}{EXTRACT_PATH}",
-        "-H", f"Authorization: {auth}",
-        "-F", f"path={file_path}",
-        "-F", f"query={query}",
+        "-H",
+        f"Authorization: {auth}",
+        "-F",
+        f"path={file_path}",
+        "-F",
+        f"query={query}",
     ]
     if schema:
         cmd.extend(["-F", f"schema={schema}"])
@@ -283,7 +293,7 @@ def _base_doc_id(doc_id):
 # document and across documents of a folder - and each miss costs a subprocess.
 # Both entry points are one-shot processes, so a per-process cache cannot go
 # stale; caching the misses matters just as much as the hits.
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def resolve_eu_law(type_letter, year, number):
     """Resolve an EU act's citation coordinates to ``(doc_id, celex)``, or None.
 
@@ -301,7 +311,7 @@ def resolve_eu_law(type_letter, year, number):
     return doc_id, (meta.get("eu") or {}).get("celex")
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def resolve_cz_law(num, year):
     """Resolve a Czech act ``num/year`` to its base CODEXIS document id, or None.
 

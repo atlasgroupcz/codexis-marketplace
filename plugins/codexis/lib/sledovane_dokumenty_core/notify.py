@@ -56,7 +56,7 @@ def _send_email(subject, body_text, body_html, recipients=None):
         "Content-Type: application/json; charset=utf-8\r\n\r\n"
         f"{json.dumps(payload, ensure_ascii=False)}\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
     req = urllib.request.Request(
         rest_base(daemon_url) + _EMAIL_ENDPOINT,
         data=body,
@@ -190,7 +190,10 @@ def _pick_application(applications, plugin_name, component_id):
         content_url = app.get("contentUrl")
         if not isinstance(app_id, str) or plugin.get("name") != plugin_name:
             continue
-        if isinstance(content_url, str) and _component_id_of(content_url) == component_id:
+        if (
+            isinstance(content_url, str)
+            and _component_id_of(content_url) == component_id
+        ):
             return app_id
     return None
 
@@ -267,8 +270,11 @@ def build_summary(results):
         text_lines.append("")
         items = "".join(
             f'<li style="margin:2px 0">{escape(c.get("text") or c.get("codexisId") or "")}'
-            + (f' <span style="color:#777">(účinné od {escape(c["effective_on"])})</span>'
-               if c.get("effective_on") else "")
+            + (
+                f' <span style="color:#777">(účinné od {escape(c["effective_on"])})</span>'
+                if c.get("effective_on")
+                else ""
+            )
             + "</li>"
             for c in r["changes"]
         )
@@ -305,13 +311,17 @@ def notify_changes(results, settings=None):
 
     if settings is None:
         from . import settings as _settings
+
         settings = _settings.get_notify()
     subject, body_text, body_html = summary
 
     email_sent = inapp_sent = False
     if settings.get("email"):
         email_sent = _send_email(
-            subject, body_text, body_html, recipients=resolve_to(settings.get("recipients"))
+            subject,
+            body_text,
+            body_html,
+            recipients=resolve_to(settings.get("recipients")),
         )
     if settings.get("inApp"):
         inapp_sent = _send_inapp(
@@ -344,9 +354,13 @@ def build_document_summary(changed):
     if not changed:
         return None
     n = len(changed)
-    subject = f"Sledované dokumenty - {n} změn" if n != 1 else "Sledované dokumenty - 1 změna"
+    subject = (
+        f"Sledované dokumenty - {n} změn" if n != 1 else "Sledované dokumenty - 1 změna"
+    )
     names = [c.get("name") or c.get("codexisId") or "?" for c in changed]
-    body_text = "Změny ve sledovaných dokumentech:\n" + "\n".join(f"- {x}" for x in names)
+    body_text = "Změny ve sledovaných dokumentech:\n" + "\n".join(
+        f"- {x}" for x in names
+    )
     inner = "".join(f"<li>{escape(x)}</li>" for x in names)
     body_html = _email_shell("Změny ve sledovaných dokumentech", f"<ul>{inner}</ul>")
     return subject, body_text, body_html
@@ -363,13 +377,19 @@ def notify_document_changes(changed, settings=None):
         return {"email": False, "inApp": False, "changes": 0}
     if settings is None:
         from . import settings as _settings
+
         settings = _settings.get_notify()
     subject, body_text, body_html = summary
     email_sent = inapp_sent = False
     if settings.get("email"):
         email_sent = _send_email(
-            subject, body_text, body_html, recipients=resolve_to(settings.get("recipients"))
+            subject,
+            body_text,
+            body_html,
+            recipients=resolve_to(settings.get("recipients")),
         )
     if settings.get("inApp"):
-        inapp_sent = _send_inapp(subject, action="Zobrazit změny", link=_resolve_app_link())
+        inapp_sent = _send_inapp(
+            subject, action="Zobrazit změny", link=_resolve_app_link()
+        )
     return {"email": email_sent, "inApp": inapp_sent, "changes": len(changed)}

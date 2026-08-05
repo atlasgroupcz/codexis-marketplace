@@ -13,13 +13,14 @@ source "$ROOT_DIR/shared/scripts/plugin-build.sh"
 # `cargo build --workspace`, so each shared dependency (serde, ureq, reqwest, ...)
 # is compiled once instead of once per plugin. Each plugin's src/build.sh then
 # just installs its binary from the shared target/ - no per-plugin compile. The
-# produced binaries are unchanged: static, self-contained.
+# produced binaries are unchanged: one self-contained executable per plugin,
+# dynamically linked against the guest VM's glibc.
 build_rust_workspace() {
   echo "==> Building the entire Rust workspace for $_CDX_DOCKER_PLATFORM (one pass)"
   docker run --rm \
     --platform "$_CDX_DOCKER_PLATFORM" \
     -u "$(id -u):$(id -g)" \
-    -e CARGO_HOME=/tmp/cargo \
+    -e CARGO_HOME=/workspace/.cargo-home \
     -v "$ROOT_DIR:/workspace" \
     -w /workspace \
     "$RUST_IMAGE" \

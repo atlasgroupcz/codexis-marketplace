@@ -1,21 +1,19 @@
 """CLI-layer idempotency: dup area-add, out-of-range area-remove, missing delete → OK."""
 
 import argparse
-import importlib.machinery
-import importlib.util
 import json
 import os
 
 from sledovana_judikatura_core import tracking
 
+from tests._script_loader import load_script
+
 
 def _load_cli():
-    path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "bin", "cdx-sledovana-judikatura")
-    loader = importlib.machinery.SourceFileLoader("cdx_sledovana_judikatura", path)
-    spec = importlib.util.spec_from_file_location("cdx_sledovana_judikatura", path, loader=loader)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "bin", "cdx-sledovana-judikatura"
+    )
+    return load_script("cdx_sledovana_judikatura", path)
 
 
 _cli = _load_cli()

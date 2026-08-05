@@ -185,11 +185,17 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 
 The plugin already ships a daily watchdog (`automations/check-sid.md`, 07:00,
 `sid-cli check --notify`) - **do not create another automation for this**. If
-the user wants a different schedule or channel, point them at the plugin
-settings panel (in-app / e-mail toggles, extra recipients) or at the existing
-automation rather than adding a duplicate.
+the user wants a different schedule, point them at the existing automation
+rather than adding a duplicate; the bell can be switched off in the plugin
+settings panel.
 
-E-mail is off by default; the in-app bell is on.
+**The plugin sends no e-mail, and must not be made to.** SID mails its users
+itself - about an assigned document, a new version, changed legislation and
+an effectiveness date coming up - with the document linked. If a user asks
+why they get no mail from the plugin, or asks to have one set up, the answer
+is that SID owns that channel: what reaches their inbox is configured in SID,
+not here. The watchdog's job is the notification-centre bell, which carries a
+link back into SID.
 
 ## Reference Files
 

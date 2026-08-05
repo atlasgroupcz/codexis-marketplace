@@ -1,5 +1,5 @@
 import { actionResponseSchema, statusResponseSchema } from './schemas'
-import type { ActionResponse, StatusResponse } from './schemas'
+import type { ActionResponse, NotifySettings, StatusResponse } from './schemas'
 import type { z } from 'zod'
 
 /**
@@ -40,10 +40,6 @@ export function deleteApiKey(): Promise<ActionResponse> {
   return request(actionResponseSchema, { action: 'delete_config' })
 }
 
-export function saveNotifySettings(values: {
-  email: boolean
-  inApp: boolean
-  recipients: Array<string>
-}): Promise<ActionResponse> {
+export function saveNotifySettings(values: NotifySettings): Promise<ActionResponse> {
   return request(actionResponseSchema, { action: 'save_notify_settings', ...values })
 }

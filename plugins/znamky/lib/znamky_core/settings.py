@@ -79,6 +79,7 @@ def fetch_token(client_id: str, client_secret: str) -> str:
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             import json
+
             payload = json.loads(resp.read())
         token = payload.get("access_token")
         if not token:
@@ -86,10 +87,14 @@ def fetch_token(client_id: str, client_secret: str) -> str:
         return token
     except urllib.error.HTTPError as exc:
         if exc.code in (400, 401, 403):
-            raise CredentialsInvalidError(f"EUIPO credentials odmítnuty (HTTP {exc.code}).")
+            raise CredentialsInvalidError(
+                f"EUIPO credentials odmítnuty (HTTP {exc.code})."
+            )
         raise ApiHttpError(exc.code, f"EUIPO auth vrátilo HTTP {exc.code}")
     except (urllib.error.URLError, OSError) as exc:
-        raise ApiNetworkError(f"Nepodařilo se kontaktovat EUIPO auth: {getattr(exc, 'reason', exc)}")
+        raise ApiNetworkError(
+            f"Nepodařilo se kontaktovat EUIPO auth: {getattr(exc, 'reason', exc)}"
+        )
 
 
 def set_credentials(client_id: str, client_secret: str) -> dict:

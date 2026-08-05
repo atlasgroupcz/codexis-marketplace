@@ -1,9 +1,12 @@
 import { z } from 'zod'
 
+/**
+ * The bell is the only channel. SID mails its own users (per-event
+ * templates, a link to the document, per-tenant gating), so the plugin
+ * deliberately has no e-mail switch to offer.
+ */
 export const notifySettingsSchema = z.object({
-  email: z.boolean(),
   inApp: z.boolean(),
-  recipients: z.array(z.string()),
 })
 
 export const statusResponseSchema = z.object({
@@ -11,8 +14,6 @@ export const statusResponseSchema = z.object({
   configured: z.boolean(),
   baseUrl: z.string(),
   start: z.string().optional(),
-  /** Signed-in user's address, used by the recipients editor. */
-  userEmail: z.string().optional(),
   notify: notifySettingsSchema,
 })
 

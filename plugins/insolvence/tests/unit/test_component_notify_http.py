@@ -6,14 +6,14 @@ already-merged notify_settings/notify recipients backend:
 - POST save_notify_settings -> {ok, settings} / {ok:false, error} on ValueError
 """
 
-import importlib.machinery
-import importlib.util
 import io
 import json
 from contextlib import redirect_stdout
 from pathlib import Path
 
 import pytest
+
+from tests._script_loader import load_script
 
 COMPONENT_PATH = (
     Path(__file__).resolve().parents[2] / "components" / "insolvence" / "insolvence-cgi"
@@ -22,11 +22,7 @@ COMPONENT_PATH = (
 
 def _load_component():
     """Import insolvence-cgi fresh (it's a script, not a package)."""
-    loader = importlib.machinery.SourceFileLoader("insolvence_component", str(COMPONENT_PATH))
-    spec = importlib.util.spec_from_file_location("insolvence_component", COMPONENT_PATH, loader=loader)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("insolvence_component", str(COMPONENT_PATH))
 
 
 def _capture(fn, *args, **kwargs):
@@ -116,8 +112,12 @@ def test_post_save_notify_settings_absent_recipients_left_untouched(cgi, monkeyp
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
     # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(cgi.notify, "_query_me_email", lambda: "me@firma.cz")
-    _capture(cgi.handle_post, {"action": "save_notify_settings", "recipients": ["a@x.cz"]})
-    _, body = _capture(cgi.handle_post, {"action": "save_notify_settings", "email": True})
+    _capture(
+        cgi.handle_post, {"action": "save_notify_settings", "recipients": ["a@x.cz"]}
+    )
+    _, body = _capture(
+        cgi.handle_post, {"action": "save_notify_settings", "email": True}
+    )
     assert body["settings"]["recipients"] == ["a@x.cz"]
 
 

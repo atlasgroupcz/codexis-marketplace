@@ -49,8 +49,16 @@ class TestWordLevelChanges:
 
     def test_context_words_limit_respected(self):
         # 20 words before, change, 20 words after; ctx=3 limits each side
-        old = " ".join(f"w{i}" for i in range(20)) + " OLD " + " ".join(f"x{i}" for i in range(20))
-        new = " ".join(f"w{i}" for i in range(20)) + " NEW " + " ".join(f"x{i}" for i in range(20))
+        old = (
+            " ".join(f"w{i}" for i in range(20))
+            + " OLD "
+            + " ".join(f"x{i}" for i in range(20))
+        )
+        new = (
+            " ".join(f"w{i}" for i in range(20))
+            + " NEW "
+            + " ".join(f"x{i}" for i in range(20))
+        )
         result = word_level_changes(old, new, context_words=3)
         # Context has 3 words on each side
         assert "w17 w18 w19" in result

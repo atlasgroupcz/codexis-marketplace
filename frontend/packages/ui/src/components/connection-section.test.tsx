@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ConnectionSection } from './connection-section'
 import type { ConnectionSectionLabels } from './connection-section'
 
@@ -37,12 +37,12 @@ describe('ConnectionSection', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ABC123' } })
     const save = screen.getByRole('button', { name: 'Uložit' })
     expect(save).toBeEnabled()
-    // Saving ends in `.finally(() => setSaving(false))`, a microtask that lands
-    // after a synchronous click - drain it inside act() so the state update is
-    // not reported as happening outside one.
-    await act(async () => {
-      fireEvent.click(save)
-    })
+    // Saving ends in `.finally(() => setSaving(false))`, which lands after the
+    // click returns. Waiting on the label rather than on a number of promise
+    // ticks: waitFor retries until the condition holds, so it still works if
+    // the save path ever grows a step that is not a microtask.
+    fireEvent.click(save)
+    await waitFor(() => expect(save).toHaveTextContent(labels.save))
     expect(onSave).toHaveBeenCalledWith({ apiKey: 'ABC123' })
   })
 

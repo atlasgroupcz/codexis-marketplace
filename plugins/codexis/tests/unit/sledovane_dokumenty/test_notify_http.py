@@ -6,22 +6,24 @@ functions directly, capturing what would be emitted instead of going through
 CGI stdout.
 """
 
-import importlib.machinery
-import importlib.util
 import os
 
 import pytest
 
+from tests._script_loader import load_script
+
 
 def _load_http():
     path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "components", "sledovane-dokumenty", "sledovane-cgi",
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "..",
+        "components",
+        "sledovane-dokumenty",
+        "sledovane-cgi",
     )
-    loader = importlib.machinery.SourceFileLoader("sledovane_http", path)
-    spec = importlib.util.spec_from_file_location("sledovane_http", path, loader=loader)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("sledovane_http", path)
 
 
 _http = _load_http()
@@ -69,7 +71,9 @@ def test_get_notify_user_email_empty_when_unresolved(_isolated_home, monkeypatch
     assert captured["payload"]["userEmail"] == ""
 
 
-def test_save_notify_settings_invalid_recipient_returns_400(_isolated_home, monkeypatch):
+def test_save_notify_settings_invalid_recipient_returns_400(
+    _isolated_home, monkeypatch
+):
     captured = _capture(monkeypatch)
 
     _http.handle_folder_action("save_notify_settings", {"recipients": ["not-an-email"]})
@@ -109,7 +113,9 @@ def test_save_notify_settings_drops_signed_in_user(_isolated_home, monkeypatch):
     assert captured["payload"]["settings"]["recipients"] == ["a@x.cz"]
 
 
-def test_save_notify_settings_absent_recipients_left_untouched(_isolated_home, monkeypatch):
+def test_save_notify_settings_absent_recipients_left_untouched(
+    _isolated_home, monkeypatch
+):
     # A save that omits `recipients` (e.g. toggling only the e-mail switch) must
     # not clear the stored list - self-stripping must not turn None into [].
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: "me@firma.cz")

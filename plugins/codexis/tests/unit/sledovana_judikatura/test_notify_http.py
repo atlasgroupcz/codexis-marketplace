@@ -6,28 +6,26 @@ run directly against the `judikatura_app_dir` fixture's isolated state, and so
 module-level `notify`/`notify_settings` references can be monkeypatched.
 """
 
-import importlib.machinery
-import importlib.util
 import json
 import os
 
 import pytest
-
 from sledovana_judikatura_core import notify_settings
+
+from tests._script_loader import load_script
 
 
 def _load_component():
     path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..",
-        "components", "sledovana-judikatura", "judikatura-cgi",
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "..",
+        "components",
+        "sledovana-judikatura",
+        "judikatura-cgi",
     )
-    loader = importlib.machinery.SourceFileLoader("cdx_sledovana_judikatura_http", path)
-    spec = importlib.util.spec_from_file_location(
-        "cdx_sledovana_judikatura_http", path, loader=loader
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("cdx_sledovana_judikatura_http", path)
 
 
 _http = _load_component()  # defs-only/stateless - load once, reuse across tests
@@ -68,7 +66,9 @@ def test_get_view_notify_shape_with_signed_in_user(defaults, monkeypatch, capsys
     }
 
 
-def test_get_view_notify_user_email_blank_when_unavailable(defaults, monkeypatch, capsys):
+def test_get_view_notify_user_email_blank_when_unavailable(
+    defaults, monkeypatch, capsys
+):
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: None)
     _http.handle_get("view=notify")
     _, body = _parse(capsys)
@@ -87,12 +87,14 @@ def test_get_view_notify_reflects_saved_settings(defaults, monkeypatch, capsys):
 
 
 def test_post_save_notify_settings_persists(defaults, judikatura_app_dir, capsys):
-    _http.handle_post({
-        "action": "save_notify_settings",
-        "email": True,
-        "inApp": False,
-        "recipients": ["a@x.cz", "A@X.CZ"],
-    })
+    _http.handle_post(
+        {
+            "action": "save_notify_settings",
+            "email": True,
+            "inApp": False,
+            "recipients": ["a@x.cz", "A@X.CZ"],
+        }
+    )
     status, body = _parse(capsys)
     assert status is None
     assert body == {
@@ -100,7 +102,11 @@ def test_post_save_notify_settings_persists(defaults, judikatura_app_dir, capsys
         "settings": {"email": True, "inApp": False, "recipients": ["a@x.cz"]},
     }
     on_disk = json.loads((judikatura_app_dir / "settings.json").read_text())
-    assert on_disk["notify"] == {"email": True, "inApp": False, "recipients": ["a@x.cz"]}
+    assert on_disk["notify"] == {
+        "email": True,
+        "inApp": False,
+        "recipients": ["a@x.cz"],
+    }
 
 
 def test_post_save_notify_settings_drops_signed_in_user(defaults, monkeypatch, capsys):
@@ -108,12 +114,14 @@ def test_post_save_notify_settings_drops_signed_in_user(defaults, monkeypatch, c
     # store it. The handler must strip it so it isn't persisted (and legacy dupes
     # self-heal on the next save).
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: "me@firma.cz")
-    _http.handle_post({
-        "action": "save_notify_settings",
-        "email": True,
-        "inApp": False,
-        "recipients": ["ME@firma.cz", "a@x.cz"],
-    })
+    _http.handle_post(
+        {
+            "action": "save_notify_settings",
+            "email": True,
+            "inApp": False,
+            "recipients": ["ME@firma.cz", "a@x.cz"],
+        }
+    )
     _, body = _parse(capsys)
     assert body["settings"]["recipients"] == ["a@x.cz"]
 
@@ -131,10 +139,12 @@ def test_post_save_notify_settings_absent_recipients_left_untouched(
 
 
 def test_post_save_notify_settings_invalid_recipient_400(defaults, capsys):
-    _http.handle_post({
-        "action": "save_notify_settings",
-        "recipients": ["nope"],
-    })
+    _http.handle_post(
+        {
+            "action": "save_notify_settings",
+            "recipients": ["nope"],
+        }
+    )
     status, body = _parse(capsys)
     assert status == "400 Bad Request"
     assert body["ok"] is False

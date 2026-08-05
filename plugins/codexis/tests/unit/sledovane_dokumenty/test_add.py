@@ -1,7 +1,8 @@
 """sledovane-dokumenty tracking.add() - registration orchestration with mocked clients."""
 
-import pytest
+from typing import Any
 
+import pytest
 from sledovane_dokumenty_core import clients, state, tracking
 from sledovane_dokumenty_core.exceptions import (
     DocumentAlreadyTrackedError,
@@ -19,7 +20,7 @@ def mock_clients(monkeypatch):
       - raise_meta:    exception to raise from get_meta (instead of returning)
       - raise_versions: exception to raise from get_versions
     """
-    config = {
+    config: dict[str, Any] = {
         "meta_by_id": {},
         "versions_by_id": {},
         "raise_meta": None,
@@ -135,9 +136,7 @@ class TestAddErrors:
         with pytest.raises(clients.CdxClientError):
             tracking.add("ZAK1")
 
-    def test_failed_add_does_not_persist_state(
-        self, dokumenty_app_dir, mock_clients
-    ):
+    def test_failed_add_does_not_persist_state(self, dokumenty_app_dir, mock_clients):
         mock_clients["meta_by_id"]["ZAK1"] = _meta("Test")
         mock_clients["versions_by_id"]["ZAK1"] = []  # will trigger NotFound
         with pytest.raises(DocumentNotFoundError):

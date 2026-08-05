@@ -1,7 +1,6 @@
 """Subject input validation: IČO checksum/padding, date of birth, names."""
 
 import pytest
-
 from insolvence_core.exceptions import InvalidSubjectError
 from insolvence_core.tracking import (
     normalize_birthdate,

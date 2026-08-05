@@ -15,9 +15,9 @@ import importlib.util
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable
 
 
 @dataclass(frozen=True)
@@ -33,8 +33,9 @@ class Suite:
 # language: the plugin cores are being migrated from Python to Rust, so a split
 # along toolchain lines would have to be renamed as that migration progresses.
 SUITE_GROUPS: dict[str, tuple[str, ...]] = {
-    # Plugin cores (pytest) and the CLI binaries plus shared crates (cargo).
-    "backend": ("pytest", "cargo"),
+    # Plugin cores (pytest), their lint and format (ruff), and the CLI binaries
+    # plus shared crates (cargo).
+    "backend": ("ruff", "ruff-format", "ty", "pytest", "cargo"),
     # The plugin component UIs.
     "frontend": ("frontend",),
 }
@@ -65,6 +66,46 @@ def missing_pytest_message() -> str:
     )
 
 
+def _tool(repo_root: Path, name: str) -> str | None:
+    """Locate a Python dev tool, preferring the project's own copy.
+
+    ruff and ty ship as binaries with no `python -m` entry point, so the trick
+    that finds pytest through the running interpreter does not work for them.
+
+    The project's venv comes first because the versions in pyproject are the
+    point: ty is pinned exactly, since it is pre-1.0 and its diagnostics may
+    change between any two versions. A different copy on PATH would decide the
+    gate's verdict instead.
+    """
+    in_venv = repo_root / ".venv" / "bin" / name
+    if in_venv.is_file():
+        return str(in_venv)
+    return shutil.which(name)
+
+
+def _require_tool(repo_root: Path, name: str) -> str:
+    """The tool's path, or raise.
+
+    `_build_suite` is only reached once availability has been confirmed, so a
+    miss here is the caller skipping that check - a bug, not a machine without
+    the toolchain.
+    """
+    path = _tool(repo_root, name)
+    if path is None:
+        raise UnavailableToolchain(f"unit gate: {name} was not found")
+    return path
+
+
+def ruff_available(repo_root: Path) -> bool:
+    """Whether ruff can be found for this repo."""
+    return _tool(repo_root, "ruff") is not None
+
+
+def ty_available(repo_root: Path) -> bool:
+    """Whether ty can be found for this repo."""
+    return _tool(repo_root, "ty") is not None
+
+
 def cargo_available() -> bool:
     """Whether a Rust toolchain is on PATH. CI agents may not have one."""
     return shutil.which("cargo") is not None
@@ -84,26 +125,52 @@ def _build_suite(repo_root: Path, name: str) -> Suite:
     """One suite by name, independent of whether its toolchain is present."""
     if name == "pytest":
         return Suite("pytest", [sys.executable, "-m", "pytest", "-q"], repo_root)
+    if name == "ruff":
+        return Suite("ruff", [_require_tool(repo_root, "ruff"), "check"], repo_root)
+    if name == "ruff-format":
+        # Separate from `ruff check`: the two answer different questions, and
+        # run as one suite the first failure would hide the second.
+        return Suite(
+            "ruff-format",
+            [_require_tool(repo_root, "ruff"), "format", "--check"],
+            repo_root,
+        )
+    if name == "ty":
+        return Suite("ty", [_require_tool(repo_root, "ty"), "check"], repo_root)
     if name == "cargo":
         # shared/rust is one workspace, so this covers every shared crate. The
         # plugin crates sit outside it on purpose: each is its own project and
         # compiling all 22 from cold would cost more than the daemon test this
         # gate front-runs.
-        return Suite("cargo", ["cargo", "test", "--all-features", "-q"],
-                     repo_root / "shared" / "rust")
+        return Suite(
+            "cargo",
+            ["cargo", "test", "--all-features", "-q"],
+            repo_root / "shared" / "rust",
+        )
     if name == "frontend":
         runner = "bun" if shutil.which("bun") else "npx"
         return Suite("frontend", [runner, "turbo", "test"], repo_root / "frontend")
     raise ValueError(f"unknown suite: {name}")
 
 
-def select_suites(repo_root: Path, cargo: bool, frontend: bool) -> list[Suite]:
+def select_suites(
+    repo_root: Path,
+    cargo: bool,
+    frontend: bool,
+    ruff: bool = True,
+    ty: bool = True,
+) -> list[Suite]:
     """The suites runnable in this environment, in the order they should run.
 
-    pytest first: it is the broadest suite and the only one that needs no
-    compile or install step, so it surfaces the most breakage soonest.
+    ruff first: it takes a fraction of a second and reads every file, so a
+    syntax-level break shows up as itself rather than as a pytest collection
+    error. ty next, then pytest - the broadest suite, and the only remaining
+    one that needs no compile or install step.
     """
-    names = ["pytest"]
+    names = ["ruff", "ruff-format"] if ruff else []
+    if ty:
+        names.append("ty")
+    names.append("pytest")
     if cargo:
         names.append("cargo")
     if frontend:
@@ -117,9 +184,14 @@ def _default_runner(suite: Suite) -> int:
 
 def _default_availability(repo_root: Path) -> Callable[[str], bool]:
     """Probe the real environment for a suite's toolchain."""
+
     def probe(name: str) -> bool:
         if name == "pytest":
             return pytest_available()
+        if name in ("ruff", "ruff-format"):
+            return ruff_available(repo_root)
+        if name == "ty":
+            return ty_available(repo_root)
         if name == "cargo":
             return cargo_available()
         if name == "frontend":
@@ -193,6 +265,8 @@ def run_default_gate(repo_root: Path) -> int:
 
     has_cargo = cargo_available()
     has_frontend = frontend_available(repo_root)
+    has_ruff = ruff_available(repo_root)
+    has_ty = ty_available(repo_root)
     if not has_cargo:
         print("unit gate: no cargo on PATH - skipping Rust suites", flush=True)
     if not has_frontend:
@@ -200,7 +274,19 @@ def run_default_gate(repo_root: Path) -> int:
             "unit gate: no bun/npx or frontend/node_modules - skipping frontend suite",
             flush=True,
         )
-    return run_gate(select_suites(repo_root, cargo=has_cargo, frontend=has_frontend))
+    if not has_ruff:
+        print("unit gate: no ruff - skipping lint and format", flush=True)
+    if not has_ty:
+        print("unit gate: no ty - skipping the type check", flush=True)
+    return run_gate(
+        select_suites(
+            repo_root,
+            cargo=has_cargo,
+            frontend=has_frontend,
+            ruff=has_ruff,
+            ty=has_ty,
+        )
+    )
 
 
 def main(argv: list[str] | None = None) -> int:

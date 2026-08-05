@@ -18,7 +18,11 @@ from .exceptions import ZnamkyError
 
 _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 _SECRET_FILE = os.path.join(".cdx", "env", "secret")
-_TIER_LABEL = {"high": "vysoké riziko", "medium": "střední riziko", "low": "nízké riziko"}
+_TIER_LABEL = {
+    "high": "vysoké riziko",
+    "medium": "střední riziko",
+    "low": "nízké riziko",
+}
 
 # Deep link into the plugin's app + notification type tag for the bell.
 # Identifies this plugin's app so the bell's deep link can be resolved to the
@@ -40,7 +44,7 @@ def _load_auth():
     if not token:
         return None
     if token.lower().startswith("authorization:"):
-        token = token[len("Authorization:"):].strip()
+        token = token[len("Authorization:") :].strip()
     if token[:7].lower() == "bearer ":
         return token
     return f"Bearer {token}"
@@ -123,7 +127,9 @@ def without_self(recipients: list | None) -> list:
     return [r for r in items if str(r).strip().lower() != me_key]
 
 
-def _send_email(subject: str, body_text: str, body_html: str = None, to: list | None = None) -> None:
+def _send_email(
+    subject: str, body_text: str, body_html: str | None = None, to: list | None = None
+) -> None:
     daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
     auth = _load_auth()
     if not daemon_url or not auth:
@@ -146,7 +152,7 @@ def _send_email(subject: str, body_text: str, body_html: str = None, to: list | 
         "Content-Type: application/json; charset=utf-8\r\n\r\n"
         f"{json.dumps(payload, ensure_ascii=False)}\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     req = urllib.request.Request(
         _rest_base(daemon_url) + _EMAIL_ENDPOINT,
@@ -211,7 +217,9 @@ def build_summary(results: list):
             f"{escape(r['display_name'])}</h3>"
             f'<ul style="margin:0;padding-left:18px;font:14px/1.5 sans-serif;color:#333">{items}</ul>'
         )
-    text_lines.append("Otevřete aplikaci Hlídač ochranných známek v CODEXIS pro detail a posouzení.")
+    text_lines.append(
+        "Otevřete aplikaci Hlídač ochranných známek v CODEXIS pro detail a posouzení."
+    )
 
     body_html = (
         '<div style="max-width:560px;font:14px sans-serif;color:#0a0a0a">'
@@ -237,7 +245,11 @@ def email_change_summary(results: list, to: list | None = None) -> int:
         return 0
     subject, body_text, body_html = summary
     _send_email(subject, body_text, body_html, to=to)
-    return sum(len(r["new_collisions"]) for r in results if r.get("ok") and r.get("new_collisions"))
+    return sum(
+        len(r["new_collisions"])
+        for r in results
+        if r.get("ok") and r.get("new_collisions")
+    )
 
 
 # ── app deep link ─────────────────────────────────────────────────────────────
@@ -282,7 +294,10 @@ def _pick_application(applications, plugin_name, component_id):
         content_url = app.get("contentUrl")
         if not isinstance(app_id, str) or plugin.get("name") != plugin_name:
             continue
-        if isinstance(content_url, str) and _component_id_of(content_url) == component_id:
+        if (
+            isinstance(content_url, str)
+            and _component_id_of(content_url) == component_id
+        ):
             return app_id
     return None
 
@@ -296,7 +311,9 @@ def _resolve_app_link():
     return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
-def _send_inapp(message: str, *, action: str | None = None, link: str | None = None) -> bool:
+def _send_inapp(
+    message: str, *, action: str | None = None, link: str | None = None
+) -> bool:
     """Create an in-app (notification-center bell) notification via the daemon's
     GraphQL createNotification. Best-effort: returns False on missing config or a
     transport error, never raises (a notification must not fail the check)."""
