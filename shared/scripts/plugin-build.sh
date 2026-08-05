@@ -9,7 +9,8 @@
 # build.sh. Each plugin's src/build.sh then just installs its already-built
 # binary from the shared target/ via `build_plugin_crate` /
 # `install_workspace_binary` - no per-plugin compile. The produced binaries are
-# unchanged: static, self-contained.
+# unchanged: one self-contained executable per plugin, dynamically linked
+# against the guest VM's glibc.
 #
 # This file holds the shared build CONFIG (pinned image, arch, target dir) and
 # the per-plugin INSTALL helpers. The one-time whole-workspace compile lives in
@@ -101,7 +102,7 @@ _build_one_crate() {
   docker run --rm \
     --platform "$_CDX_DOCKER_PLATFORM" \
     -u "$(id -u):$(id -g)" \
-    -e CARGO_HOME=/tmp/cargo \
+    -e CARGO_HOME=/workspace/.cargo-home \
     -v "$REPO_ROOT:/workspace" \
     -w /workspace \
     "$RUST_IMAGE" \
