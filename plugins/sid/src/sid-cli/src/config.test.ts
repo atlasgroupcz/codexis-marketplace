@@ -64,7 +64,7 @@ describe("config", () => {
     expect(isPlausibleApiKey("sid_a\nSID_API_URL=http://evil")).toBe(false)
   })
 
-  it("writeApiKey odmítne klíč s newlinem — žádná .env injection", () => {
+  it("writeApiKey odmítne klíč s newlinem - žádná .env injection", () => {
     expect(() => writeApiKey("sid_a\nSID_API_URL=http://evil")).toThrow()
     // Nothing was written.
     expect(getApiKey()).toBe("")
@@ -84,7 +84,7 @@ describe("config", () => {
   })
 })
 
-describe("getBaseUrl — normalizace", () => {
+describe("getBaseUrl - normalizace", () => {
   it("odřízne koncové lomítko (jinak vznikne //api/... na drátě)", () => {
     process.env.CODEXIS_PLUGIN_SID_API_URL = "https://sid.onprem.agrp.dev/"
     expect(getBaseUrl()).toBe("https://sid.onprem.agrp.dev")

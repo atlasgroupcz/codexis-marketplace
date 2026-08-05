@@ -1,0 +1,88 @@
+# Regression oracle for the two ways the agent used to fail a user who names a
+# message the way ISDS names it (ONEPOST-6108, ONEPOST-6111).
+#
+# No `setup:` block: the ONEPOST API key is a per-user secret the host injects
+# as CODEXIS_USER_ONEPOST_API_KEY, so the eval user must already have a key
+# configured - the same state a real user is in. Point the test at a message
+# that exists in that user's mailbox AND carries at least one attachment:
+#
+#   npx promptfoo eval -c plugins/onepost/tests/promptfoo/onepost-isds-message-id.config.yaml \
+#     --var onepost_isds_message_id=<ISDS number of a message with an attachment>
+
+description: onepost - message and attachment lookup by ISDS message ID
+target_plugin: onepost
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  # ONEPOST-6108: the user pastes the ISDS number without saying it is one. The
+  # agent used to send it as an internal id, get a 404, and report the message
+  # as missing until told which kind of identifier it was.
+  - description: message found by ISDS id without being told it is an ISDS id
+    vars:
+      prompt: "Najdi mi zprávu {{ onepost_isds_message_id }}. Kdo ji poslal a co má za předmět?"
+      tool_name: shell
+      input_regex: 'onepost-cli[\s"\\]+message.*{{ onepost_isds_message_id }}(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|app\.onepost\.cz/rest)'
+      arbitration:
+        correct:
+          - "Passing the identifier the user gave straight to `onepost-cli message`, which accepts both the internal and the ISDS id."
+          - "Falling back to `search` after a genuine miss, as long as the message is found and reported in this turn."
+        incorrect:
+          - "Reporting the message as non-existent, or asking the user whether the number is an ISDS id, instead of just looking it up."
+          - "Bypassing onepost-cli to call the ONEPOST REST API directly."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # The bug's signature: the message declared missing, or the user asked to
+      # confirm which kind of identifier the number is. JS regex - character
+      # classes stand in for (?i).
+      - type: not-regex
+        value: '[Nn]eexistuje|[Nn]epodařilo se .{0,20}naj|[Nn]enašel|404'
+      - type: not-regex
+        value: '[Jj]e to ISDS|ISDS ID nebo|interní ID nebo|jaké ID'
+
+  # ONEPOST-6111: same identifier, now for the attachment. /messages/{id} takes
+  # an ISDS id but /messages/{id}/attachments did not, so the agent reported "no
+  # attachment" and only downloaded it after a second prompt.
+  - description: attachment listed and downloaded on the first prompt
+    vars:
+      prompt: "Stáhni mi přílohu ze zprávy {{ onepost_isds_message_id }}."
+      tool_name: shell
+      input_regex: 'onepost-cli[\s"\\]+download-attachment(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|app\.onepost\.cz/rest)'
+      arbitration:
+        correct:
+          - "Listing the attachments and downloading in the same turn, whichever identifier form the CLI needed internally."
+        incorrect:
+          - "Reporting that the message has no attachment when attachmentCount says otherwise."
+          - "Stopping after listing and waiting for another prompt before downloading."
+          - "Bypassing onepost-cli to call the ONEPOST REST API directly."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # The bug's signature: "no attachment here", or a promise to do it next.
+      - type: not-regex
+        value: '[Žž]ádn\w* příloh|[Nn]eobsahuje .{0,15}příloh|[Bb]ez příloh|[Nn]emá .{0,15}příloh'

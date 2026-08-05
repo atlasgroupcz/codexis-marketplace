@@ -4,7 +4,6 @@ import json
 import os
 
 import pytest
-
 from sledovana_judikatura_core import notify_settings as ns
 
 
@@ -62,7 +61,9 @@ def test_ensure_does_not_write_when_nothing_changed(defaults, judikatura_app_dir
 
 def test_migrate_coerces_non_numeric_version(defaults, judikatura_app_dir):
     p = judikatura_app_dir / "settings.json"
-    p.write_text(json.dumps({"version": "oops", "notify": {"email": True}}), encoding="utf-8")
+    p.write_text(
+        json.dumps({"version": "oops", "notify": {"email": True}}), encoding="utf-8"
+    )
     ns.ensure_settings()
     assert json.loads(p.read_text())["version"] == 1
 

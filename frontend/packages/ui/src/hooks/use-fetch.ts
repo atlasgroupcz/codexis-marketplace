@@ -31,7 +31,9 @@ export function useFetch<T>(
       .then((result) => setData(result))
       .catch((e: unknown) => setError(e instanceof Error ? e : new Error(String(e))))
       .finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // The dependency list is the caller's, so it cannot be a literal here and
+    // the linter cannot check it - that is the point of the hook.
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
   }, deps)
 
   useEffect(() => {

@@ -18,9 +18,11 @@ GROUPS_PATH = os.path.join(APP_DIR, "groups.json")
 
 def now_utc():
     """Current UTC timestamp in ISO 8601 'Z' form."""
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
+    return (
+        datetime.datetime.now(datetime.UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
 
 
 # ── atomic writes ────────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ def load_state(codexis_id):
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -99,7 +101,7 @@ def load_groups():
     if not os.path.isfile(GROUPS_PATH):
         return []
     try:
-        with open(GROUPS_PATH, "r", encoding="utf-8") as f:
+        with open(GROUPS_PATH, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, list) else []
     except (json.JSONDecodeError, OSError):
@@ -131,7 +133,7 @@ def load_related_baseline(codexis_id, relation_type):
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None

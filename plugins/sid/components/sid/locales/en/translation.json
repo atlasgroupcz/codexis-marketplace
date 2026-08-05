@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "SID — Internal Documents",
-    "lead": "The key links this plugin to your SID account. It carries the same permissions you have — treat it like a password.",
+    "title": "SID - Internal Documents",
+    "lead": "The key links this plugin to your SID account. It carries the same permissions you have - treat it like a password.",
     "connectionSection": "SID connection",
     "notifySection": "Notifications",
     "loadFailed": "Could not load status.",
@@ -27,5 +27,8 @@
     "inAppLabel": "Notification centre alert",
     "inAppDescription": "A daily digest of updates and pending confirmations. E-mail is sent by SID itself.",
     "save": "Save notifications"
+  },
+  "help": {
+    "docs": "How does it work?"
   }
 }

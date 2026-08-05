@@ -1,7 +1,8 @@
 """related.py - related-document tracking: baseline, enable/disable, detect_changes."""
 
-import pytest
+from typing import Any
 
+import pytest
 from sledovane_dokumenty_core import clients, related, state
 from sledovane_dokumenty_core.exceptions import DocumentNotTrackedError
 
@@ -15,7 +16,7 @@ def mock_clients(monkeypatch):
       - titles: {doc_id: title}
       - raise_on_fetch: bool (default False) - make fetch_all_related_ids raise
     """
-    config = {
+    config: dict[str, Any] = {
         "related_ids_by_type": {},
         "titles": {},
         "raise_on_fetch": False,
@@ -35,12 +36,15 @@ def mock_clients(monkeypatch):
 
 
 def _seed(codexis_id):
-    state.save_state(codexis_id, {
-        "codexisId": codexis_id,
-        "name": f"Zákon {codexis_id}",
-        "added_on": "2026-03-01T00:00:00Z",
-        "changes": [],
-    })
+    state.save_state(
+        codexis_id,
+        {
+            "codexisId": codexis_id,
+            "name": f"Zákon {codexis_id}",
+            "added_on": "2026-03-01T00:00:00Z",
+            "changes": [],
+        },
+    )
 
 
 # ── get_type_name ────────────────────────────────────────────────────────────
@@ -147,7 +151,11 @@ class TestDisableTracking:
         _seed("ZAK1")
         result = related.disable_tracking("ZAK1", "JUDIKATURA")
         # State still has no related_tracking, function doesn't raise
-        assert result.get("related_tracking") in (None, {}, {"enabled": False, "types": []})
+        assert result.get("related_tracking") in (
+            None,
+            {},
+            {"enabled": False, "types": []},
+        )
 
     def test_missing_doc_raises(self, dokumenty_app_dir, mock_clients):
         with pytest.raises(DocumentNotTrackedError):

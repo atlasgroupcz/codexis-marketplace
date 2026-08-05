@@ -3,7 +3,7 @@ import { join, dirname } from "node:path"
 import { homedir } from "node:os"
 
 /**
- * Stable contract — SKILL.md documents these and the automation relies on them.
+ * Stable contract - SKILL.md documents these and the automation relies on them.
  *
  * AUTH is strictly "the key won't authenticate" (401). FORBIDDEN is separate
  * because SID answers an unknown id with 403 rather than 404 (it refuses to
@@ -21,7 +21,7 @@ export const EXIT = {
 } as const
 
 // Fallback for runs outside the daemon. The manifest (plugin.json) injects
-// CODEXIS_PLUGIN_SID_API_URL — production (sid.codexis.cz) — which always wins
+// CODEXIS_PLUGIN_SID_API_URL - production (sid.codexis.cz) - which always wins
 // via the resolver below; this onprem default only applies when neither the
 // env var nor a .env override is present.
 const DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev"
@@ -58,7 +58,7 @@ export function getApiKey(): string {
  * A plausible API key: non-empty and free of whitespace. The point is to
  * reject a pasted value carrying a newline, which would otherwise be written
  * as an extra `.env` line (e.g. injecting SID_API_URL and repointing every
- * request). Deliberately loose about the exact charset — SID validates the
+ * request). Deliberately loose about the exact charset - SID validates the
  * key itself, and an unusual-but-valid charset (base64url `-`/`_`) must pass.
  */
 export function isPlausibleApiKey(key: string): boolean {
@@ -67,7 +67,7 @@ export function isPlausibleApiKey(key: string): boolean {
 
 /**
  * Paths are appended as `${base}/api/…`, so a trailing slash would produce
- * `//api/…` — and a trailing slash is exactly what someone types by hand.
+ * `//api/…` - and a trailing slash is exactly what someone types by hand.
  */
 export function getBaseUrl(): string {
   const raw = process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL
@@ -103,7 +103,7 @@ export function writeApiKey(key: string): void {
 export function deleteApiKey(): void {
   const rest = readEnvFile()
   delete rest.SID_API_KEY
-  // The cached role/e-mail belong to the removed key — leaving them would let
+  // The cached role/e-mail belong to the removed key - leaving them would let
   // `settings status` report a stale role/isAdmin for a config that is gone.
   delete rest.SID_USER_ROLE
   delete rest.SID_USER_EMAIL

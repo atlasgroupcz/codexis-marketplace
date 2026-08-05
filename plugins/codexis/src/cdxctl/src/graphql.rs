@@ -30,50 +30,6 @@ query GetAutomations {
 }
 "#;
 
-pub const CREATE_AUTOMATION: &str = r#"
-mutation CreateAutomation($input: AutomationInput!) {
-    createAutomation(input: $input) {
-        id
-        type
-        command
-        title
-        description
-        agent { id fullName }
-        skills { id fullName }
-        schedule { repeat dayPart daysOfWeek dayOfMonth }
-        prompt
-        enabled
-        maxTurns
-        model
-        modelConfiguration { key value }
-        jurisdictions
-        workDirPath { absolutePath displayPath }
-    }
-}
-"#;
-
-pub const UPDATE_AUTOMATION: &str = r#"
-mutation UpdateAutomation($id: ID!, $input: AutomationInput!) {
-    updateAutomation(id: $id, input: $input) {
-        id
-        type
-        command
-        title
-        description
-        agent { id fullName }
-        skills { id fullName }
-        schedule { repeat dayPart daysOfWeek dayOfMonth }
-        prompt
-        enabled
-        maxTurns
-        model
-        modelConfiguration { key value }
-        jurisdictions
-        workDirPath { absolutePath displayPath }
-    }
-}
-"#;
-
 pub const SAVE_AUTOMATION: &str = r#"
 mutation SaveAutomation($id: ID, $input: AutomationInput!) {
     saveAutomation(id: $id, input: $input) {
@@ -99,7 +55,7 @@ mutation SaveAutomation($id: ID, $input: AutomationInput!) {
 }
 "#;
 
-// Toggle only the `enabled` flag. Unlike `updateAutomation` (USER-only, rejects
+// Toggle only the `enabled` flag. Unlike `saveAutomation` (USER-only, rejects
 // read-only carried/plugin automations), the daemon's `setAutomationEnabled`
 // works for both USER and carried automations - for carried ones it persists a
 // per-user enabled override. This is how a shipped plugin automation is disabled.
@@ -329,44 +285,6 @@ query GetChatContext($id: ID!) {
 }
 "#;
 
-pub const CREATE_AGENT_MARKDOWN: &str = r#"
-mutation CreateAgent($markdown: Markdown!) {
-    createAgent(markdown: $markdown) {
-        id
-        name
-        fullName
-        description
-        sourceKind
-        editable
-        deletable
-        maxTurns
-        tools { toolName }
-        disallowedTools { toolName }
-        path { absolutePath displayPath }
-        sourcePath { absolutePath displayPath }
-    }
-}
-"#;
-
-pub const UPDATE_AGENT_MARKDOWN: &str = r#"
-mutation UpdateAgent($id: ID!, $markdown: Markdown!) {
-    updateAgent(id: $id, markdown: $markdown) {
-        id
-        name
-        fullName
-        description
-        sourceKind
-        editable
-        deletable
-        maxTurns
-        tools { toolName }
-        disallowedTools { toolName }
-        path { absolutePath displayPath }
-        sourcePath { absolutePath displayPath }
-    }
-}
-"#;
-
 pub const SAVE_AGENT: &str = r#"
 mutation SaveAgent($id: ID, $input: AgentInput!) {
     saveAgent(id: $id, input: $input) {
@@ -413,42 +331,6 @@ query GetSkills {
         fullName
         description
         plugin { id name marketplace { id name } }
-        allowedTools
-        sourceKind
-        editable
-        deletable
-        path { absolutePath displayPath }
-        sourcePath { absolutePath displayPath }
-    }
-}
-"#;
-
-pub const CREATE_SKILL: &str = r#"
-mutation CreateSkill($markdown: Markdown!) {
-    createSkill(markdown: $markdown) {
-        id
-        name
-        fullName
-        description
-        plugin { id name }
-        allowedTools
-        sourceKind
-        editable
-        deletable
-        path { absolutePath displayPath }
-        sourcePath { absolutePath displayPath }
-    }
-}
-"#;
-
-pub const UPDATE_SKILL: &str = r#"
-mutation UpdateSkill($id: ID!, $markdown: Markdown!) {
-    updateSkill(id: $id, markdown: $markdown) {
-        id
-        name
-        fullName
-        description
-        plugin { id name }
         allowedTools
         sourceKind
         editable
@@ -676,9 +558,8 @@ mutation StartTabularExtraction($id: ID!) {
 #[cfg(test)]
 mod tests {
     use super::{
-        CREATE_AGENT_MARKDOWN, CREATE_AUTOMATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS,
-        GET_CHAT_CONTEXT, GET_SKILLS, REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION,
-        SET_AUTOMATION_ENABLED, UPDATE_AGENT_MARKDOWN, UPDATE_AUTOMATION,
+        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_SKILLS,
+        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SET_AUTOMATION_ENABLED,
     };
 
     #[test]
@@ -686,10 +567,6 @@ mod tests {
         assert!(GET_AGENTS.contains("query GetAgents"));
         assert!(GET_AGENTS.contains("agents {"));
         assert!(SAVE_AGENT.contains("saveAgent(id: $id, input: $input)"));
-        // The markdown path stays on the deprecated mutations so binaries already in a VM
-        // keep working after the daemon ships saveAgent.
-        assert!(CREATE_AGENT_MARKDOWN.contains("createAgent(markdown: $markdown)"));
-        assert!(UPDATE_AGENT_MARKDOWN.contains("updateAgent(id: $id, markdown: $markdown)"));
         assert!(DELETE_AGENT.contains("deleteNode(id: $id)"));
         assert!(GET_CHAT_CONTEXT.contains("... on Chat {"));
         assert!(GET_CHAT_CONTEXT.contains("modelConfiguration { key value }"));
@@ -697,12 +574,10 @@ mod tests {
 
     #[test]
     fn agent_mutations_read_the_payload_wrapper() {
-        // createAgent/updateAgent return a payload, so every agent field sits under
+        // saveAgent returns a payload, so every agent field sits under
         // `agent` and the rejected input is reported in `errors`.
-        for mutation in [SAVE_AGENT] {
-            assert!(mutation.contains("agent {"));
-            assert!(mutation.contains("errors { field message allowedValues }"));
-        }
+        assert!(SAVE_AGENT.contains("agent {"));
+        assert!(SAVE_AGENT.contains("errors { field message allowedValues }"));
     }
 
     #[test]
@@ -722,10 +597,10 @@ mod tests {
     #[test]
     fn set_automation_enabled_targets_dedicated_toggle_mutation() {
         // The enabled toggle must go through `setAutomationEnabled` (works for
-        // carried/plugin automations), NOT `updateAutomation` (USER-only guard).
+        // carried/plugin automations), NOT `saveAutomation` (USER-only guard).
         assert!(SET_AUTOMATION_ENABLED.contains("setAutomationEnabled(id: $id, enabled: $enabled)"));
         assert!(SET_AUTOMATION_ENABLED.contains("$enabled: Boolean!"));
-        assert!(!SET_AUTOMATION_ENABLED.contains("updateAutomation"));
+        assert!(!SET_AUTOMATION_ENABLED.contains("saveAutomation"));
     }
 
     #[test]
@@ -738,7 +613,7 @@ mod tests {
     fn automation_queries_select_agent_and_skills_as_nodes() {
         // Daemon schema exposes `agent: Agent` / `skills: [Skill!]!` (with id +
         // fullName), not the legacy flat `agentFullName` / `skillFullNames` fields.
-        for query in [GET_AUTOMATIONS, CREATE_AUTOMATION, UPDATE_AUTOMATION, SAVE_AUTOMATION] {
+        for query in [GET_AUTOMATIONS, SAVE_AUTOMATION] {
             assert!(query.contains("agent { id fullName }"));
             assert!(query.contains("skills { id fullName }"));
             assert!(!query.contains("agentFullName"));

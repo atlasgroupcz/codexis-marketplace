@@ -1,6 +1,6 @@
 """Client for the MF/GFŘ public VAT-payer reliability registry (no key, no auth).
 
-SOAP service "Registr plátců DPH – rozhraní pro veřejnost":
+SOAP service "Registr plátců DPH - rozhraní pro veřejnost":
 
     https://adisrws.mfcr.cz/adistc/axis2/services/rozhraniCRPDPH.rozhraniCRPDPHSOAP
 
@@ -94,7 +94,11 @@ def _format_account(ucet_el) -> dict:
         return {"ucet": ucet, "iban": False, "datum_zverejneni": datum}
     nestd = _find(ucet_el, "nestandardniUcet")
     if nestd is not None:
-        return {"ucet": (nestd.get("cislo") or "").strip(), "iban": True, "datum_zverejneni": datum}
+        return {
+            "ucet": (nestd.get("cislo") or "").strip(),
+            "iban": True,
+            "datum_zverejneni": datum,
+        }
     return {"ucet": "", "iban": False, "datum_zverejneni": datum}
 
 
@@ -128,9 +132,14 @@ def lookup_dph(ico: str) -> dict:
     sp = _find(root, "statusPlatceDPH")
     if sp is None:
         return {
-            "dic": dic, "found": False, "je_platce": False,
-            "nespolehlivy": None, "nespolehlivy_od": "", "cislo_fu": "",
-            "ucty": [], "generovano": generovano,
+            "dic": dic,
+            "found": False,
+            "je_platce": False,
+            "nespolehlivy": None,
+            "nespolehlivy_od": "",
+            "cislo_fu": "",
+            "ucty": [],
+            "generovano": generovano,
         }
 
     flag = (sp.get("nespolehlivyPlatce") or "").upper()

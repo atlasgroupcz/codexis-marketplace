@@ -2,30 +2,25 @@
 
 from __future__ import annotations
 
-import importlib.util
 import sys
-from pathlib import Path
 
 import pytest
 
-RUN_PY = Path(__file__).resolve().parent / "run.py"
-spec = importlib.util.spec_from_file_location("_run", RUN_PY)
-assert spec is not None and spec.loader is not None
-run = importlib.util.module_from_spec(spec)
-sys.modules["_run"] = run
-spec.loader.exec_module(run)
+from tests import run
 
 
 class TestDispatchTable:
     def test_every_tier_has_a_command(self):
-        assert set(run.COMMANDS) == {"unit", "marketplace", "e2e", "eval"}
+        assert set(run.COMMANDS) == {"unit", "marketplace", "eval"}
 
-    @pytest.mark.parametrize("tier,script", [
-        ("unit", "_unit_gate.py"),
-        ("marketplace", "test-marketplace.py"),
-        ("e2e", "test-plugin-e2e.py"),
-        ("eval", "promptfoo/run.py"),
-    ])
+    @pytest.mark.parametrize(
+        "tier,script",
+        [
+            ("unit", "_unit_gate.py"),
+            ("marketplace", "test-marketplace.py"),
+            ("eval", "promptfoo/run.py"),
+        ],
+    )
     def test_tier_maps_to_its_script(self, tier, script):
         assert run.COMMANDS[tier] == script
 
@@ -77,5 +72,5 @@ class TestMain:
         monkeypatch.setattr(run, "_run_one", fake_run_one)
         assert run.main(["all", "--daemon", "http://x", "--token", "t"]) == 0
         assert seen["unit"] == []
-        for tier in ("marketplace", "e2e", "eval"):
+        for tier in ("marketplace", "eval"):
             assert seen[tier] == ["--daemon", "http://x", "--token", "t"]

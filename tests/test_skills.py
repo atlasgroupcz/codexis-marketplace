@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from _skills import skills_of_plugin
+from tests._skills import skills_of_plugin
 
 OUR = "id-our-codexis"
 OTHER = "id-onboarding-codexis"
 
 
 def _skill(full_name, plugin_id):
-    return {"fullName": full_name, "plugin": None if plugin_id is None else {"id": plugin_id}}
+    return {
+        "fullName": full_name,
+        "plugin": None if plugin_id is None else {"id": plugin_id},
+    }
 
 
 def test_includes_skills_from_the_given_plugin():
@@ -44,4 +44,5 @@ def test_our_copy_survives_alongside_the_onboarding_copy():
 
 if __name__ == "__main__":
     import pytest
+
     sys.exit(pytest.main([__file__]))

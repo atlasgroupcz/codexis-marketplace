@@ -28,7 +28,7 @@ function filenameFrom(res: Response, fileId: string): string {
  * may read.
  *
  * SID gates this endpoint exactly like the download itself, so the lookup
- * grants nothing extra — a document the caller can't view answers 403 here
+ * grants nothing extra - a document the caller can't view answers 403 here
  * too and the caller keeps the original refusal. Anything else (expired key,
  * rate limit, network) is the real answer and propagates.
  */
@@ -50,7 +50,7 @@ async function currentFileIdOf(documentId: string, f?: FetchLike): Promise<strin
  * Fetch the file, accepting either id.
  *
  * Every listing and search result yields documentIds while this endpoint
- * wants a fileId, and both are bare UUIDs — so the mix-up is the norm, not an
+ * wants a fileId, and both are bare UUIDs - so the mix-up is the norm, not an
  * edge case. SID answers an unknown file id with 403 rather than 404 (it
  * won't confirm which ids exist), which is indistinguishable from a genuine
  * refusal; hence "403 → try resolving it as a document, once". If that
@@ -96,7 +96,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   // `--out ./sub/file.pdf` should work without creating the directory first.
   mkdirSync(dirname(target), { recursive: true })
 
-  // Streamed — documents run to tens of megabytes. The cast goes through
+  // Streamed - documents run to tens of megabytes. The cast goes through
   // `unknown` because the DOM and node:stream/web ReadableStream types are
   // structurally different declarations of the same runtime object.
   await pipeline(Readable.fromWeb(res.body as unknown as WebReadableStream), createWriteStream(target))

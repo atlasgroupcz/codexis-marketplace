@@ -1,0 +1,63 @@
+# Port of plugins/rzpro/tests/e2e/rzpro-lookup.yaml
+# Czech RZPRO medical-devices registry (ksrzis.cz) via rzpro-cli.
+# A real hit is proven by a KSRZIS portal link in the answer.
+
+description: rzpro - RZPRO medical-devices registry lookup
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Device search for "gliadin" returns a KSRZIS portal link
+    vars:
+      prompt: "Najdi zdravotnický prostředek gliadin."
+      tool_name: shell
+      input_regex: 'rzpro-cli\s+search(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ksrzis\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that rzpro-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from ksrzis.cz instead of rzpro-cli."
+          - "Bypassing rzpro-cli to scrape ksrzis.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'ksrzis\.cz'
+
+  - description: Risk-class III filter still returns a KSRZIS portal link (may answer from context)
+    vars:
+      prompt: "A ukaž mi jen prostředky s mírou rizika III."
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|ksrzis\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against a URL that rzpro-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch records from ksrzis.cz instead of rzpro-cli."
+          - "Bypassing rzpro-cli to scrape ksrzis.cz for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: 'ksrzis\.cz'

@@ -1,0 +1,46 @@
+# Port of plugins/documents/tests/e2e/docx-create-and-verify.yaml
+# docx skill: generate a .docx with docx-js (node), then render it to page images
+# with cdx-render and look. The oracle is two-part: the .docx exists (state.file)
+# AND cdx-render actually ran (tool_call) - a test that only checked "a .docx
+# exists" would pass even if the model skipped the render step, which is exactly
+# the failure this guards against. Local generation only (docx-js + LibreOffice in
+# the guest image), so no anti-scrape guard.
+#
+# Deterministic content: fixed heading and two fixed paragraphs, nothing to look
+# up, so the run does not depend on external state.
+#
+#   RUN_ID=$(printf '%s' "$RANDOM$RANDOM" | sha1sum | cut -c1-4)
+#   npx promptfoo eval -c plugins/documents/tests/promptfoo/documents.config.yaml --var run_id=$RUN_ID
+
+description: documents - generate a .docx and render it for visual verification
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: docx generated and cdx-render ran against it
+    vars:
+      prompt: "Vytvoř wordový dokument /home/codexis/memo-{{ run_id }}.docx s nadpisem 'Interní memorandum' a dvěma odstavci: 'Předmět: revize smluvní dokumentace.' a 'Termín: 30. 9. 2026.' Zkontroluj, že vypadá dobře."
+      tool_name: shell
+      input_regex: 'cdx-render(?!.*--help)'
+      tool_calls_min: 2
+      # generate (node) + render + read the page images, plus headroom for a fix cycle.
+      tool_calls_max: 15
+      file: /home/codexis/memo-{{ run_id }}.docx
+      type: file
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_state_file
+      - type: contains
+        value: ".docx"

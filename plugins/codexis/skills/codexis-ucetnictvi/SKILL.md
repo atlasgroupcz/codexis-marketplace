@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "CODEXIS - Účetnictví ČR"
     summary: "České účetní předpisy a praxe - závěrky, rozvaha, výsledovka, oceňování, odpisy, ČÚS i IFRS."
+    examplePrompts:
+      - "Jak se určuje kategorie účetní jednotky a co z ní plyne pro rozsah účetní závěrky?"
+      - "Koupili jsme nové výrobní zařízení - kdy ho dát rovnou do nákladů a kdy zařadit do majetku a odpisovat?"
+      - "Co musí obsahovat příloha k účetní závěrce u malé účetní jednotky?"
   en:
     displayName: "CODEXIS - Czech Accounting"
     summary: "Czech accounting regulations and practice - financial statements, balance sheet, income statement, valuation, ČÚS and IFRS."
+    examplePrompts:
+      - "How is the accounting-entity category determined in Czechia and what does it mean for the scope of the financial statements?"
+      - "We bought new production equipment - when is it an outright expense and when an asset to be depreciated?"
+      - "What must the notes to the financial statements contain for a small accounting entity?"
   sk:
     displayName: "CODEXIS - Účtovníctvo ČR"
     summary: "České účtovné predpisy a prax - závierky, súvaha, výsledovka, oceňovanie, odpisy, ČÚS i IFRS."
+    examplePrompts:
+      - "Ako sa v ČR určuje kategória účtovnej jednotky a čo z nej vyplýva pre rozsah účtovnej závierky?"
+      - "Kúpili sme nové výrobné zariadenie - kedy ho dať rovno do nákladov a kedy zaradiť do majetku a odpisovať?"
+      - "Čo musí obsahovať príloha k účtovnej závierke u malej účtovnej jednotky?"
 description: Use when the user's question relates to Czech accounting, or when the answer may depend on an accounting rule even if framed around something else - účetnictví, účetní jednotka, závěrka, rozvaha, výsledovka, příloha závěrky, vybraná účetní jednotka, účetní období, kategorie účetních jednotek (mikro/malá/střední/velká), oceňování, odpisy, rezervy, opravné položky, inventarizace, daňová evidence, archivace, účetní doklad, kniha, zákon č. 563/1991 Sb., vyhláška 500/2002 / 501/2002 / 502/2002 / 504/2002 / 410/2009 Sb., ČÚS, IFRS, or any Czech accounting standard. Activate also when the user does not name účetnictví explicitly but their situation requires accounting treatment (reporting, valuation, period-end, capitalization vs. expense, recognition, record-keeping). Standalone authoritative skill - bundles general CODEXIS methodology with Czech accounting reasoning; no need to load general codexis.
 ---
 
@@ -65,7 +77,7 @@ Referenční mapa - vždy ověř aktuální verzi přes `/versions` před extrak
 | Vyhláška pro VÚJ | 410/2009 Sb. | `cz_law/410/2009` | vybrané účetní jednotky (veřejný sektor) |
 | ZDP (tax-accounting vazba) | 586/1992 Sb. | `cz_law/586/1992` | daňová uznatelnost, daňové odpisy |
 
-České účetní standardy (ČÚS): vydává MF, číslované podle vyhlášky - ČÚS 001–024 pro podnikatele, samostatné řady pro banky, pojišťovny, VÚJ.
+České účetní standardy (ČÚS): vydává MF, číslované podle vyhlášky - ČÚS 001-024 pro podnikatele, samostatné řady pro banky, pojišťovny, VÚJ.
 
 ## Jak hledat přes cdx-cli
 
@@ -132,7 +144,7 @@ Než odpovíš, projdi tento checklist. Pokud některý bod nesplňuješ, **nepo
 - **Vybrané účetní jednotky (VÚJ - stát, obce, kraje, příspěvkové organizace, státní fondy)**: před odpovědí vždy ověř, zda existuje zvláštní veřejnosektorová úprava (zejména vyhláška 410/2009 Sb., vyhláška 270/2010 Sb. pro inventarizaci, České účetní standardy řady 700+). Neodpovídej z obecné úpravy pro podnikatele (vyhláška 500/2002 Sb.), pokud dotaz směřuje na VÚJ.
 - **Obsah výkazové položky** (rozvaha, výsledovka, příloha): otevři příslušný paragraf prováděcí vyhlášky (500/2002 pro podnikatele, 410/2009 pro VÚJ, 501/2002 banky, 502/2002 pojišťovny) a odpovídej z **obsahového vymezení** položky v této vyhlášce. Název položky v běžném jazyce je zavádějící - obsah je definován legislativou.
 - **Definiční pojem se zákonnou definicí** („účetní jednotka", „účetní období", „roční úhrn čistého obratu", „kategorie účetní jednotky"): otevři přesný § ZoÚ nebo prováděcí vyhlášky a **reprodukuj přesnou definici včetně všech kvalifikátorů** (obsahuje-li vzorec/výpočet, uveď ho úplně).
-- **Dotaz na konkrétní účetní knihu / výkaz / metodu**: ověř v ČÚS pro daný typ účetní jednotky (ČÚS 001–024 pro podnikatele, 700+ pro VÚJ). Pokud ČÚS mlčí, ověř příslušný § vyhlášky a teprve potom ZoÚ.
+- **Dotaz na konkrétní účetní knihu / výkaz / metodu**: ověř v ČÚS pro daný typ účetní jednotky (ČÚS 001-024 pro podnikatele, 700+ pro VÚJ). Pokud ČÚS mlčí, ověř příslušný § vyhlášky a teprve potom ZoÚ.
 
 ## Časté pasti
 

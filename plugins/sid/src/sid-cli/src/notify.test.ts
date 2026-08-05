@@ -97,7 +97,7 @@ describe("sendDigest", () => {
 describe("žádný e-mail", () => {
   /**
    * SID posílá vlastní e-maily (šablony, odkaz na konkrétní dokument,
-   * license gating). Plugin proto mail neposílá vůbec — ani když v
+   * license gating). Plugin proto mail neposílá vůbec - ani když v
    * nastavení po starší verzi zůstalo `email: true` a seznam adresátů.
    */
   it("nesahá na REST endpoint daemona ani se zděděným `email: true`", async () => {
@@ -156,7 +156,7 @@ describe("cíl zvonku", () => {
   })
 })
 
-describe("daemon token — žádná header injection", () => {
+describe("daemon token - žádná header injection", () => {
   it("token s vnitřním newlinem se očistí, do Authorization se nedostane konec řádku", async () => {
     writeSecret("Bearer abc\nX-Injected: 1")
     let auth = ""

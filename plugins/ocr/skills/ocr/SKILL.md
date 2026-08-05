@@ -13,12 +13,24 @@ i18n:
   cs:
     displayName: "OCR dokumentů"
     summary: "Převod dokumentů (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pro další AI zpracování."
+    examplePrompts:
+      - "Převeď tuhle naskenovanou fakturu do Markdownu."
+      - "Zpracuj tenhle ZIP s dokumenty a udělej ze všech čitelný text."
+      - "Vytáhni text z téhle fotky smlouvy, ať s ním můžu dál pracovat."
   en:
     displayName: "Document OCR"
     summary: "Convert documents (PDF, DOCX, PPTX, images, ZIP) to Markdown for downstream AI processing."
+    examplePrompts:
+      - "Convert this scanned invoice to Markdown."
+      - "Process this ZIP of documents and turn them all into readable text."
+      - "Extract the text from this photo of a contract so I can work with it."
   sk:
     displayName: "OCR dokumentov"
     summary: "Prevod dokumentov (PDF, DOCX, PPTX, obrázky, ZIP) do Markdownu pre ďalšie AI spracovanie."
+    examplePrompts:
+      - "Preveď túto naskenovanú faktúru do Markdownu."
+      - "Spracuj tento ZIP s dokumentmi a urob zo všetkých čitateľný text."
+      - "Vytiahni text z tejto fotky zmluvy, nech s ním môžem ďalej pracovať."
 ---
 
 # OCR - Document to Markdown Conversion

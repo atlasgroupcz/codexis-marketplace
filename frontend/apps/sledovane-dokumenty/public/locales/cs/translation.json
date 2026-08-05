@@ -1,0 +1,156 @@
+{
+  "followedDocs": {
+    "title": "Sledované dokumenty",
+    "empty": "Žádné sledované dokumenty.",
+    "back": "Zpět",
+    "trackedSince": "Sledováno od {{date}}",
+    "trackedParts": "Sledované části",
+    "changes": "Změny ({{count}})",
+    "total": "{{count}} celkem",
+    "unconfirmed": "{{count}} nepotvrzeno",
+    "noChanges": "Zatím nebyly zjištěny žádné změny.",
+    "addHintTitle": "Jak přidat dokument",
+    "addHintText": "Použijte chat pro přidání dokumentu ke sledování. Například: \"Sleduj změny v občanském zákoníku\" nebo \"Sleduj zákoník práce\".",
+    "retry": "Zkusit znovu",
+    "confirmed": "Potvrzeno {{date}}",
+    "notConfirmed": "Nepotvrzeno",
+    "detected": "Zjištěno: {{date}}",
+    "effective": "Účinnost: {{date}}",
+    "sourceDocuments": "Zdrojové dokumenty:",
+    "amendments": "Novely:",
+    "changeType": {
+      "documentChange": "Změna dokumentu",
+      "relatedChange": "Související změna"
+    },
+    "confirm": "Potvrdit",
+    "confirming": "Potvrzuji...",
+    "removeTracking": "Odebrat sledování",
+    "removeConfirmButton": "Opravdu odebrat?",
+    "cancel": "Zrušit",
+    "viewInCodexis": "Zobrazit změny v CODEXISu",
+    "showMore": "+{{count}} dalších",
+    "showLess": "méně",
+    "trackingType": {
+      "all": "Vše",
+      "documentChanges": "Změny dokumentu",
+      "relatedDocumentsChanges": "Související změny"
+    },
+    "groups": "Skupiny",
+    "allDocuments": "Vše",
+    "ungrouped": "Bez skupiny",
+    "addToGroup": "Přidat do skupiny",
+    "removeFromGroup": "Odebrat ze skupiny",
+    "createGroup": "Vytvořit skupinu",
+    "deleteGroup": "Smazat skupinu",
+    "deleteGroupHint": "Klikněte na skupinu, kterou chcete smazat",
+    "done": "Hotovo",
+    "manageGroups": "Skupiny",
+    "deleteGroupConfirm": "Smazat skupinu \"{{name}}\"? Dokumenty nebudou smazány.",
+    "groupName": "Název skupiny",
+    "noGroups": "Zatím žádné skupiny",
+    "notes": "Poznámky",
+    "notesHint": "AI shrnutí změn zohledňuje vaše poznámky",
+    "addNote": "Přidat poznámku",
+    "notePlaceholder": "Co vás na tomto dokumentu zajímá?",
+    "saveNote": "Uložit poznámku",
+    "noteSaved": "Poznámka uložena",
+    "subtitle": "Hlídáme změny ve vašich zákonech",
+    "refresh": "Obnovit",
+    "removed": "Sledování odebráno",
+    "tabs": {
+      "changes": "Změny",
+      "documents": "Dokumenty"
+    },
+    "feed": {
+      "searchPlaceholder": "Hledat ve změnách…",
+      "onlyUnconfirmed": "Jen nepotvrzené",
+      "empty": "Zatím žádné změny",
+      "emptyHint": "Jakmile se některý ze sledovaných dokumentů změní, uvidíte to tady.",
+      "emptyFiltered": "Žádná změna neodpovídá filtru."
+    },
+    "stats": {
+      "tracked": "Sledováno",
+      "totalChanges": "Změn celkem",
+      "unconfirmed": "Nepotvrzeno"
+    },
+    "landing": {
+      "title": "Vaše zákony pod dohledem",
+      "text": "Přidejte dokument do sledování a my vás upozorníme na každou novelu i související změnu.",
+      "chatLead": "Začněte z chatu CODEXIS:",
+      "chatPrompt": "Sleduj změny v zákoníku práce"
+    }
+  },
+  "folders": {
+    "section": {
+      "documents": "Akty",
+      "folders": "Složky"
+    },
+    "title": "Hlídané složky",
+    "subtitle": "Sledujeme legislativu, na kterou odkazují vaše dokumenty",
+    "add": "Přidat složku",
+    "back": "Zpět",
+    "cancel": "Zrušit",
+    "added": "Složka přidána, spouštím extrakci…",
+    "removed": "Složka odebrána",
+    "confirmed": "Změny potvrzeny",
+    "refresh": "Znovu načíst",
+    "remove": "Odebrat složku",
+    "checkNow": "Zkontrolovat teď",
+    "refreshStarted": "Spouštím novou extrakci…",
+    "checkStarted": "Spouštím kontrolu legislativy…",
+    "changed": "Nová změna",
+    "tracked": "Sledováno",
+    "untracked": "Neověřeno",
+    "confirm": "Potvrdit",
+    "viewInCodexis": "Zobrazit v CODEXISu",
+    "effectiveFrom": "Účinné od {{date}}",
+    "extractingProgress": "Extrahuji odkazy ({{done}}/{{total}})",
+    "legislationExtracting": "Probíhá extrakce odkazů na legislativu…",
+    "noLegislation": "V této složce zatím nebyla nalezena žádná legislativa.",
+    "extracted": "Zpracováno",
+    "pending": "Čeká",
+    "refCount": "{{count}} odkazů na legislativu",
+    "tabs": {
+      "legislation": "Legislativa",
+      "documents": "Dokumenty"
+    },
+    "card": {
+      "documents": "{{count}} dokumentů",
+      "legislation": "{{count}} předpisů",
+      "extracting": "extrahuji {{count}}"
+    },
+    "landing": {
+      "title": "Hlídejte legislativu ve svých dokumentech",
+      "text": "Vyberte složku se smlouvami nebo dokumenty. AI z nich vytáhne odkazy na zákony a my vás upozorníme, když se některý změní."
+    },
+    "picker": {
+      "title": "Vyberte složku ke sledování",
+      "watchThis": "Sledovat tuto složku",
+      "noSubfolders": "Žádné podsložky",
+      "home": "Domů",
+      "up": "O úroveň výš"
+    }
+  },
+  "notify": {
+    "title": "Nastavení dokumentů",
+    "description": "Jak vás upozorníme na změny.",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "emailLabel": "E-mail při změně",
+    "emailDescription": "Souhrn změn přijde e-mailem.",
+    "yourAddressLabel": "Vaše adresa",
+    "copyToLabel": "Kopie na",
+    "addRecipient": "Přidat příjemce",
+    "removeRecipient": "Odebrat",
+    "addPlaceholder": "jmeno@firma.cz",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámení v centru notifikací",
+    "inAppDescription": "",
+    "saved": "Nastavení uloženo",
+    "ownAddress": "Tato adresa je vaše - e-mail vám chodí vždy.",
+    "duplicate": "Tato adresa už je v seznamu."
+  },
+  "help": {
+    "docs": "Jak to funguje?"
+  }
+}

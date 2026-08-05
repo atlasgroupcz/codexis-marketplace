@@ -10,6 +10,8 @@ pub const CODEXIS_PUBLIC_DAEMON_URL_ENV: &str = "CODEXIS_PUBLIC_DAEMON_URL";
 pub const CODEXIS_PUBLIC_USER_HOME_ENV: &str = "CODEXIS_PUBLIC_USER_HOME";
 pub const CODEXIS_PUBLIC_SESSION_ID_ENV: &str = "CODEXIS_PUBLIC_SESSION_ID";
 pub const CODEXIS_PUBLIC_TOOL_CALL_ID_ENV: &str = "CODEXIS_PUBLIC_TOOL_CALL_ID";
+pub const CODEXIS_PUBLIC_SUBAGENT_RUN_ID_ENV: &str = "CODEXIS_PUBLIC_SUBAGENT_RUN_ID";
+pub const CODEXIS_PUBLIC_WORKING_DIR_ENV: &str = "CODEXIS_PUBLIC_WORKING_DIR";
 
 const DAEMON_SECRET_RELATIVE_PATH: &str = ".cdx/env/secret";
 
@@ -59,6 +61,8 @@ pub struct DaemonConfig {
     auth_header: String,
     chat_id: String,
     tool_call_id: String,
+    subagent_run_id: Option<String>,
+    working_directory: Option<String>,
     daemon_url: String,
 }
 
@@ -70,11 +74,15 @@ impl DaemonConfig {
         let token = read_daemon_secret()?;
         let chat_id = read_env(CODEXIS_PUBLIC_SESSION_ID_ENV)?;
         let tool_call_id = read_env(CODEXIS_PUBLIC_TOOL_CALL_ID_ENV)?;
+        let subagent_run_id = read_env(CODEXIS_PUBLIC_SUBAGENT_RUN_ID_ENV);
+        let working_directory = read_env(CODEXIS_PUBLIC_WORKING_DIR_ENV);
         Some(Self {
             daemon_url,
             auth_header: to_authorization_header(&token),
             chat_id,
             tool_call_id,
+            subagent_run_id,
+            working_directory,
         })
     }
 
@@ -92,7 +100,14 @@ impl DaemonConfig {
             auth_header,
             chat_id,
             tool_call_id,
+            subagent_run_id: None,
+            working_directory: None,
         }
+    }
+
+    /// Working directory of the tool call, when the daemon injected it.
+    pub fn working_directory(&self) -> Option<&str> {
+        self.working_directory.as_deref()
     }
 
     pub fn auth_header(&self) -> &str {
@@ -106,10 +121,16 @@ impl DaemonConfig {
             .trim_end_matches('/')
             .trim_end_matches("/graphql")
             .trim_end_matches('/');
-        format!(
-            "{base}/rest/v1/plugin/chats/{}/tool-calls/{}/sources",
-            self.chat_id, self.tool_call_id
-        )
+        match self.subagent_run_id.as_deref() {
+            Some(run) => format!(
+                "{base}/rest/v1/plugin/chats/{}/subagents/{}/tool-calls/{}/sources",
+                self.chat_id, run, self.tool_call_id
+            ),
+            None => format!(
+                "{base}/rest/v1/plugin/chats/{}/tool-calls/{}/sources",
+                self.chat_id, self.tool_call_id
+            ),
+        }
     }
 }
 

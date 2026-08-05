@@ -4,8 +4,9 @@ These call clients.cdx_get_text to fetch actual document texts from CODEXIS, the
 invoke the pure transformations tested in test_diff_normalize/sections/algo.
 """
 
-import pytest
+from typing import Any
 
+import pytest
 from sledovane_dokumenty_core import clients, diff
 
 
@@ -17,7 +18,7 @@ def mock_cdx_text(monkeypatch):
       - texts_by_path: {path: str}
       - raise_for_paths: set[str] of paths that should raise CdxClientError
     """
-    config = {"texts_by_path": {}, "raise_for_paths": set()}
+    config: dict[str, Any] = {"texts_by_path": {}, "raise_for_paths": set()}
 
     def _cdx_get_text(path):
         if path in config["raise_for_paths"]:
@@ -51,8 +52,12 @@ class TestComputeVersionDiffWholeDoc:
 
     def test_only_link_date_change_is_filtered(self, mock_cdx_text):
         # normalize_cdx_links strips dates → equal after normalize → no diff
-        mock_cdx_text["texts_by_path"]["cdx://doc/v1/text"] = "See [z](cdx://doc/X1_2025_01_01)"
-        mock_cdx_text["texts_by_path"]["cdx://doc/v2/text"] = "See [z](cdx://doc/X1_2025_06_15)"
+        mock_cdx_text["texts_by_path"]["cdx://doc/v1/text"] = (
+            "See [z](cdx://doc/X1_2025_01_01)"
+        )
+        mock_cdx_text["texts_by_path"]["cdx://doc/v2/text"] = (
+            "See [z](cdx://doc/X1_2025_06_15)"
+        )
         assert diff.compute_version_diff("v1", "v2", parts=[]) == []
 
 

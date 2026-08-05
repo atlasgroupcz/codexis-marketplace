@@ -33,7 +33,11 @@ _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 _SECRET_FILE = os.path.join(".cdx", "env", "secret")
 
 # Deep link into the plugin's app + notification type tag for the bell.
-APP_LINK = "/sledovana-judikatura"
+# Identifies this plugin's app so the bell's deep link can be resolved to the
+# daemon's /apps/<applicationId> route; see _resolve_app_link below.
+_PLUGIN_NAME = "codexis"
+_COMPONENT_ID = "sledovana-judikatura"
+_LINK_QUERY = ""
 _NOTIFICATION_TYPE = "case-law-changed"
 
 
@@ -48,34 +52,39 @@ def _load_auth() -> str | None:
     if not token:
         return None
     if token.lower().startswith("authorization:"):
-        token = token[len("Authorization:"):].strip()
+        token = token[len("Authorization:") :].strip()
     if token[:7].lower() == "bearer ":
         return token
     return f"Bearer {token}"
 
 
-def _query_me_email() -> str | None:
-    """Signed-in user's e-mail from the daemon (GraphQL `me`), or None. Best-effort."""
+def _graphql(query):
+    """POST a query to the daemon's GraphQL endpoint and return its `data` object.
+
+    Best-effort: missing config or any transport/parse error yields None, so
+    callers can treat "no daemon" and "bad answer" alike."""
     daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
     auth = _load_auth()
     if not daemon_url or not auth:
         return None
-    body = json.dumps({"query": "query { me { email } }"}).encode("utf-8")
     try:
         req = urllib.request.Request(
             daemon_url,
-            data=body,
+            data=json.dumps({"query": query}).encode("utf-8"),
             headers={"Content-Type": "application/json", "Authorization": auth},
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.load(resp)
-        if not isinstance(data, dict):
-            return None
-        me = (data.get("data") or {}).get("me") or {}
-        email = me.get("email")
-        return email if isinstance(email, str) and email else None
     except Exception:
         return None
+    return data.get("data") if isinstance(data, dict) else None
+
+
+def _query_me_email():
+    """Signed-in user's e-mail from the daemon (GraphQL `me`), or None. Best-effort."""
+    me = (_graphql("query { me { email } }") or {}).get("me") or {}
+    email = me.get("email")
+    return email if isinstance(email, str) and email else None
 
 
 def resolve_to(recipients: list | None) -> list | None:
@@ -126,7 +135,9 @@ def _rest_base(daemon_url: str) -> str:
     return base
 
 
-def _send_email(subject: str, body_text: str, body_html: str | None = None, to: list | None = None) -> None:
+def _send_email(
+    subject: str, body_text: str, body_html: str | None = None, to: list | None = None
+) -> None:
     daemon_url = os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
     auth = _load_auth()
     if not daemon_url or not auth:
@@ -149,7 +160,7 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
         "Content-Type: application/json; charset=utf-8\r\n\r\n"
         f"{json.dumps(payload, ensure_ascii=False)}\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     req = urllib.request.Request(
         _rest_base(daemon_url) + _EMAIL_ENDPOINT,
@@ -177,7 +188,8 @@ def _send_email(subject: str, body_text: str, body_html: str | None = None, to: 
 def _changed(results: list) -> list:
     """Results that completed OK and whose report found new case law."""
     return [
-        r for r in results
+        r
+        for r in results
         if r.get("ok") and (r.get("report") or {}).get("found_count", 0) > 0
     ]
 
@@ -206,14 +218,18 @@ def _report_lines(report: dict) -> list:
     found = report.get("found_count", 0)
     period_from = report.get("period_from") or "?"
     period_to = report.get("period_to") or "?"
-    lines = [f"Nalezeno {found} nových rozhodnutí (období {period_from} → {period_to})."]
+    lines = [
+        f"Nalezeno {found} nových rozhodnutí (období {period_from} → {period_to})."
+    ]
     for area in report.get("areas", []):
         docs = area.get("documents", [])
         if not docs:
             continue
         lines.append(f"{area.get('name', '')}:")
         for d in docs:
-            suffix = " (mění dosavadní výklad)" if d.get("changes_established_view") else ""
+            suffix = (
+                " (mění dosavadní výklad)" if d.get("changes_established_view") else ""
+            )
             lines.append(f"  • {_doc_title(d)}{suffix}")
     overall = report.get("overall_summary")
     if overall:
@@ -232,23 +248,27 @@ def _report_html(report: dict) -> str:
         for d in area.get("documents", []):
             suffix = (
                 ' <span style="color:#777">(mění dosavadní výklad)</span>'
-                if d.get("changes_established_view") else ""
+                if d.get("changes_established_view")
+                else ""
             )
-            items.append(f'<li style="margin:2px 0">{escape(_doc_title(d))}{suffix}</li>')
+            items.append(
+                f'<li style="margin:2px 0">{escape(_doc_title(d))}{suffix}</li>'
+            )
     ul = (
         f'<ul style="margin:0;padding-left:18px;font:14px/1.5 sans-serif;color:#333">'
-        f'{"".join(items)}</ul>'
-        if items else ""
+        f"{''.join(items)}</ul>"
+        if items
+        else ""
     )
-    return (
-        f'<p style="margin:0 0 6px;font:14px sans-serif;color:#555">{escape(lead)}</p>{ul}'
-    )
+    return f'<p style="margin:0 0 6px;font:14px sans-serif;color:#555">{escape(lead)}</p>{ul}'
 
 
 def _change_summary(changed: list):
     """(subject, body_text, body_html) for topics that found new case law."""
     if len(changed) == 1:
-        subject = f"Sledovaná judikatura: nová judikatura u tématu {changed[0]['topic_name']}"
+        subject = (
+            f"Sledovaná judikatura: nová judikatura u tématu {changed[0]['topic_name']}"
+        )
     else:
         subject = f"Sledovaná judikatura: nová judikatura u {len(changed)} témat"
 
@@ -260,13 +280,14 @@ def _change_summary(changed: list):
         text_lines.append("")
         html_blocks.append(
             f'<h3 style="margin:18px 0 6px;font:600 15px sans-serif;color:#0a0a0a">'
-            f"{escape(r['topic_name'])}</h3>"
-            + _report_html(r["report"])
+            f"{escape(r['topic_name'])}</h3>" + _report_html(r["report"])
         )
     text_lines.append(_FOOTER)
 
-    return subject, "\n".join(text_lines), _email_shell(
-        "Nová judikatura u sledovaných témat", "".join(html_blocks)
+    return (
+        subject,
+        "\n".join(text_lines),
+        _email_shell("Nová judikatura u sledovaných témat", "".join(html_blocks)),
     )
 
 
@@ -291,7 +312,68 @@ def email_change_summary(results: list, to: list | None = None):
     return len(changed)
 
 
-def _send_inapp(message: str, *, action: str | None = None, link: str | None = None) -> bool:
+# ── app deep link ─────────────────────────────────────────────────────────────
+# The bell navigates relative links through the frontend router, whose only route
+# for a plugin app is /apps/$applicationId - an opaque daemon node id, not a slug.
+# A hand-written /<slug> matches no route and lands on a 404. The id embeds the
+# marketplace install uuid, which the plugin has no way to know (it is absent from
+# the environment and from ~/.cdx state), so it is looked up at send time from the
+# daemon's `applications` query - scoped to the signed-in user, the same principal
+# this plugin's daemon token already authenticates as.
+#
+# The id is never parsed, only carried: the query also returns contentUrl, which
+# the daemon builds as /rest/plugin-components/<pluginNodeId>/<appId>/, so the
+# component id is readable as its last path segment. Matching on that avoids
+# decoding the daemon's internal node-id encoding, which this repo has no
+# contract with.
+
+
+def _component_id_of(content_url):
+    """The component id a contentUrl points at - its last path segment.
+
+    The daemon percent-encodes that segment, but component ids are kebab-case
+    ASCII (repo convention), for which the encoding is the identity, so the
+    segment is compared as-is."""
+    trimmed = (content_url or "").rstrip("/")
+    return trimmed.rsplit("/", 1)[-1] if trimmed else None
+
+
+def _pick_application(applications, plugin_name, component_id):
+    """The application id owned by `plugin_name`'s `component_id`.
+
+    Both halves matter: one plugin may publish several components (codexis ships
+    sledovana-judikatura and sledovane-dokumenty), and two marketplaces can carry
+    same-named components."""
+    if not isinstance(applications, list):
+        return None
+    for app in applications:
+        if not isinstance(app, dict):
+            continue
+        app_id = app.get("id")
+        plugin = app.get("plugin") or {}
+        content_url = app.get("contentUrl")
+        if not isinstance(app_id, str) or plugin.get("name") != plugin_name:
+            continue
+        if (
+            isinstance(content_url, str)
+            and _component_id_of(content_url) == component_id
+        ):
+            return app_id
+    return None
+
+
+def _resolve_app_link():
+    """/apps/<applicationId> for this plugin's component, or None. Best-effort: an
+    unresolvable link is omitted rather than sent broken - an unclickable bell item
+    beats one that navigates into a 404."""
+    data = _graphql("query { applications { id contentUrl plugin { name } } }") or {}
+    found = _pick_application(data.get("applications"), _PLUGIN_NAME, _COMPONENT_ID)
+    return f"/apps/{found}{_LINK_QUERY}" if found else None
+
+
+def _send_inapp(
+    message: str, *, action: str | None = None, link: str | None = None
+) -> bool:
     """Create an in-app (notification-center bell) notification via the daemon's
     GraphQL createNotification. Best-effort: returns False on missing config or a
     transport error, never raises (a notification must not fail the check)."""
@@ -335,4 +417,4 @@ def inapp_change_summary(results: list) -> bool:
     if not changed:
         return False
     subject = _change_summary(changed)[0]
-    return _send_inapp(subject, link=APP_LINK)
+    return _send_inapp(subject, link=_resolve_app_link())

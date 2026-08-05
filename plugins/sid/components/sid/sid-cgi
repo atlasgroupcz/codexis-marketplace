@@ -90,15 +90,15 @@ var NO_KEY_MSG = "API klíč není nastaven. Vygenerujte si ho v SID (Profil →
 function statusToError(status, bodyText) {
   const detail = bodyText.slice(0, 300);
   if (status === 401) {
-    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen — vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
+    return new CliError(`SID odmítl API klíč (401). Klíč vypršel nebo byl zrušen - vydejte nový na /api-klice. ${detail}`, EXIT.AUTH);
   }
   if (status === 403) {
-    return new CliError(`Přístup odepřen (403). SID vrací 403 i na id, které nezná, takže neplatné id ` + `a chybějící oprávnění od sebe nerozliší — ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`, EXIT.FORBIDDEN);
+    return new CliError(`Přístup odepřen (403). SID vrací 403 i na id, které nezná, takže neplatné id ` + `a chybějící oprávnění od sebe nerozliší - ověřte id; pokud sedí, nemáte k záznamu přístup. ${detail}`, EXIT.FORBIDDEN);
   }
   if (status === 404)
     return new CliError(`Nenalezeno (404). ${detail}`, EXIT.NOT_FOUND);
   if (status === 429) {
-    return new CliError(`Rate limit SID (429) — zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT);
+    return new CliError(`Rate limit SID (429) - zpomalte; search je 60 požadavků/min. ${detail}`, EXIT.RATE_LIMIT);
   }
   return new CliError(`SID vrátil HTTP ${status}. ${detail}`, EXIT.ERROR);
 }
@@ -107,7 +107,7 @@ var DOWNLOAD_TIMEOUT_MS = 15 * 60000;
 function networkError(e, timeoutMs) {
   const name = e instanceof Error ? e.name : "";
   if (name === "TimeoutError" || name === "AbortError") {
-    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) — server neodpovídá.`, EXIT.ERROR);
+    throw new CliError(`Požadavek na SID vypršel (${timeoutMs / 1000} s) - server neodpovídá.`, EXIT.ERROR);
   }
   throw new CliError(`SID není dostupný (${e instanceof Error ? e.message : String(e)}).`, EXIT.ERROR);
 }
@@ -129,7 +129,7 @@ async function parseJson(res) {
   try {
     return JSON.parse(text);
   } catch {
-    throw new CliError(`Odpověď ze SID není JSON — zkontrolujte adresu (${getBaseUrl()}); ` + `server vrátil: ${text.slice(0, 120).replace(/\s+/g, " ").trim()}`, EXIT.ERROR);
+    throw new CliError(`Odpověď ze SID není JSON - zkontrolujte adresu (${getBaseUrl()}); ` + `server vrátil: ${text.slice(0, 120).replace(/\s+/g, " ").trim()}`, EXIT.ERROR);
   }
 }
 async function apiGet(path, f = fetch, keyOverride) {
@@ -210,7 +210,7 @@ async function handle(body, f = fetch) {
         const err = e;
         return {
           ok: false,
-          error: err.exitCode === EXIT.AUTH ? "SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel." : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`
+          error: err.exitCode === EXIT.AUTH ? "SID klíč odmítl - zkontrolujte, že je zkopírovaný celý a že nevypršel." : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`
         };
       }
       writeApiKey(key);

@@ -16,12 +16,12 @@ beforeEach(() => {
   // config would come from whatever the machine (or a sibling test file)
   // left behind, making the notify assertions order-dependent.
   const defaults = join(home, "defaults.json")
-  writeFileSync(defaults, JSON.stringify({ notify: { email: false, inApp: true } }))
+  writeFileSync(defaults, JSON.stringify({ notify: { inApp: true } }))
   process.env.SID_DEFAULTS_FILE = defaults
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
 })
 
-/** Arms the daemon channel — without the secret `sendDigest` is a no-op. */
+/** Arms the daemon channel - without the secret `sendDigest` is a no-op. */
 function writeSecret(): void {
   mkdirSync(join(home, ".cdx", "env"), { recursive: true })
   writeFileSync(join(home, ".cdx", "env", "secret"), "vmtoken")
@@ -103,12 +103,12 @@ describe("odkaz ve zvonku", () => {
     expect(input.link).toBe("http://s")
   })
 
-  it("hlásí počty ve zprávě — zvonek je jediný kanál, musí nést celou informaci", async () => {
+  it("hlásí počty ve zprávě - zvonek je jediný kanál, musí nést celou informaci", async () => {
     const input = await bellInput([{ id: "n1" }], [{ id: "c1" }, { id: "c2" }])
     expect(input.message).toBe("SID: 1 nových notifikací, 2 čekajících potvrzení")
   })
 
-  it("odkaz respektuje roli — admin nesmí skončit na uživatelské routě", async () => {
+  it("odkaz respektuje roli - admin nesmí skončit na uživatelské routě", async () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_t\nSID_API_URL=http://s\nSID_USER_ROLE=ADMIN\n", {
       mode: 0o600,
     })

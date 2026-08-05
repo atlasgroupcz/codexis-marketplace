@@ -61,13 +61,13 @@ describe("apiGet", () => {
     }
   })
 
-  // SID answers an UNKNOWN file id with 403, not 404 — deliberate, so the
+  // SID answers an UNKNOWN file id with 403, not 404 - deliberate, so the
   // endpoint can't be used to enumerate which ids exist. The most common way
   // to hit it is passing a documentId to `download`, which takes a fileId.
   // Reporting that as EXIT.AUTH told the model "the key expired" (that's what
   // code 3 means in SKILL.md) and sent it to /api-klice instead of to
-  // `docs get` — a dead end we watched happen in a live session.
-  it("403 se NEhlásí jako problém s klíčem — to je 401", async () => {
+  // `docs get` - a dead end we watched happen in a live session.
+  it("403 se NEhlásí jako problém s klíčem - to je 401", async () => {
     const forbidden = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
     const unauthorized = await apiGet("/api/x", fakeFetch(401, {})).catch((e: unknown) => e)
 
@@ -86,9 +86,9 @@ describe("apiGet", () => {
   })
 
   // `download` resolves a documentId on its own, so the shared 403 text must
-  // not tell anyone to go fetch a fileId — that step is already handled and
+  // not tell anyone to go fetch a fileId - that step is already handled and
   // the advice would only send them in circles.
-  it("403 neradí ruční dohledávání fileId — to si download řeší sám", async () => {
+  it("403 neradí ruční dohledávání fileId - to si download řeší sám", async () => {
     const err = await apiGet("/api/x", fakeFetch(403, {})).catch((e: unknown) => e)
     expect(String((err as CliError).message)).not.toMatch(/docs get/)
   })
@@ -166,7 +166,7 @@ describe("download timeout", () => {
   })
 })
 
-describe("apiRaw — redirect na storage nesmí vynést klíč", () => {
+describe("apiRaw - redirect na storage nesmí vynést klíč", () => {
   it("následuje 302 na jiný host BEZ x-api-key", async () => {
     const { apiRaw } = await import("./http")
     const calls: Array<{ url: string; key: string | null; redirect?: RequestRedirect }> = []

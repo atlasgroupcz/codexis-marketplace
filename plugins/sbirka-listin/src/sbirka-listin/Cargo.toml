@@ -1,0 +1,33 @@
+[package]
+name = "sbirka-listin"
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+name = "sbirka_listin_core"
+path = "src/lib.rs"
+
+# Two binaries share the crate's logic through the lib: the system-wide CLI and
+# the plugin-component CGI handler (run in place by the daemon).
+[[bin]]
+name = "sbirka-listin-cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "sbirka-listin-cgi"
+path = "src/cgi_main.rs"
+
+[dependencies]
+cdx-common = { path = "../../../../shared/rust/cdx-common", features = ["http", "ico", "store", "time"] }
+cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
+cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
+cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
+clap = { version = "4", features = ["derive"] }
+ureq = { version = "2", default-features = false, features = ["tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+regex = "1"
+
+[dev-dependencies]
+tempfile = "3"

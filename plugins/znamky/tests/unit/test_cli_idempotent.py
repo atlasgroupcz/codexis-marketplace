@@ -1,20 +1,16 @@
 """CLI-layer idempotency: dup add-text and remove-not-tracked exit OK."""
 
 import argparse
-import importlib.machinery
-import importlib.util
 import os
 
 from znamky_core import tracking
 
+from tests._script_loader import load_script
+
 
 def _load_cli():
     path = os.path.join(os.path.dirname(__file__), "..", "..", "bin", "znamky-cli")
-    loader = importlib.machinery.SourceFileLoader("znamky_cli", path)
-    spec = importlib.util.spec_from_file_location("znamky_cli", path, loader=loader)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_script("znamky_cli", path)
 
 
 _cli = _load_cli()
@@ -23,18 +19,24 @@ _cli = _load_cli()
 def test_add_text_already_tracked_is_ok(app_dir, monkeypatch, capsys):
     def _raise(*a, **k):
         raise tracking.MarkAlreadyTrackedError("dup")
+
     monkeypatch.setattr(_cli.tracking, "add_text", _raise)
-    _cli.cmd_add_text(argparse.Namespace(
-        text="CODEXIS", nice="9", territory="CZ", owner="", label=""))
+    _cli.cmd_add_text(
+        argparse.Namespace(text="CODEXIS", nice="9", territory="CZ", owner="", label="")
+    )
     assert "je již sledována" in capsys.readouterr().err
 
 
 def test_add_text_already_tracked_hints_on_label(app_dir, monkeypatch, capsys):
     def _raise(*a, **k):
         raise tracking.MarkAlreadyTrackedError("dup")
+
     monkeypatch.setattr(_cli.tracking, "add_text", _raise)
-    _cli.cmd_add_text(argparse.Namespace(
-        text="CODEXIS", nice="9", territory="CZ", owner="", label="Klient"))
+    _cli.cmd_add_text(
+        argparse.Namespace(
+            text="CODEXIS", nice="9", territory="CZ", owner="", label="Klient"
+        )
+    )
     assert "set-label" in capsys.readouterr().err
 
 

@@ -9,7 +9,6 @@ license = "PROPRIETARY"
 serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 anyhow = { version = "1", optional = true }
-reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"], optional = true }
 
 [features]
@@ -27,8 +26,8 @@ search = ["dep:serde_json"]
 # The `search_engine` module (the shared search/get request flow). Needs curl +
 # sources (and thus serde_json).
 search-engine = ["curl", "sources"]
-# The `http` module (small reqwest helpers). Pulls in `reqwest` + `anyhow`.
-http = ["dep:reqwest", "dep:anyhow"]
+# The `http` module (URL/retry/prefix helpers). std-only, no dependencies.
+http = []
 # The `ico` module (IČO normalization). Pulls in `anyhow`.
 ico = ["dep:anyhow"]
 # The `fs` module (atomic file writes). Needs serde + serde_json for the JSON

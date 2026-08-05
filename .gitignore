@@ -45,6 +45,7 @@ logs/
 /out/
 **/target/
 target/
+.cargo-home/
 
 # Eclipse
 **/.settings/
@@ -83,6 +84,10 @@ crashlytics-build.properties
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+### macOS template
+# Finder's per-folder view settings. Written whenever a directory is opened in
+# Finder, so it reappears on its own and rides along in a `git add -A`.
+.DS_Store
 ### Windows template
 # Windows image file caches
 Thumbs.db
@@ -142,3 +147,14 @@ docs/superpowers/
 
 # uv-managed virtualenv (uv.lock is committed for reproducible CI)
 .venv/
+
+# Raw coverage profiles. cargo llvm-cov writes these next to the crate when a
+# test spawns the binary under test; they are build output, never sources.
+*.profraw
+
+# pytest --cov leaves this database in the working directory. dist-exclusions
+# is a deny-list over tracked files, so anything committed here reaches the
+# public dist by default - a build artifact must not become tracked at all.
+.coverage
+.coverage.*
+htmlcov/

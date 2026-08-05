@@ -16,6 +16,13 @@ from __future__ import annotations
 import base64
 import json
 import re
+import sys
+from pathlib import Path
+
+# Loaded by promptfoo from its file path, not imported as part of the `tests`
+# package, so the repo root has to go on sys.path before that package resolves.
+# The state assertions below need it; the tool-call ones are pure.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 # Must match the constants in provider.py.
 TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
@@ -39,6 +46,7 @@ def _encode_node_id(type_name: str, inner: str) -> str:
     URL-safe base64 (no padding) of `varint(len(typename)) || typename ||
     varint(len(inner)) || inner`.
     """
+
     def varint(n: int) -> bytes:
         out = bytearray()
         while True:
@@ -49,8 +57,13 @@ def _encode_node_id(type_name: str, inner: str) -> str:
             else:
                 out.append(b)
                 return bytes(out)
-    body = (varint(len(type_name)) + type_name.encode()
-            + varint(len(inner)) + inner.encode())
+
+    body = (
+        varint(len(type_name))
+        + type_name.encode()
+        + varint(len(inner))
+        + inner.encode()
+    )
     return base64.urlsafe_b64encode(body).decode().rstrip("=")
 
 
@@ -69,9 +82,11 @@ def _resolve_node_id_template(value, vars_: dict | None = None):
         return value
     if vars_ is not None:
         value = _NUNJUCKS_VAR_RE.sub(
-            lambda m: str(vars_.get(m.group(1), m.group(0))), value)
+            lambda m: str(vars_.get(m.group(1), m.group(0))), value
+        )
     return _NODE_ID_TEMPLATE_RE.sub(
-        lambda m: _encode_node_id(m.group(1), m.group(2)), value)
+        lambda m: _encode_node_id(m.group(1), m.group(2)), value
+    )
 
 
 def _extract_tool_calls(output: str) -> list[dict]:
@@ -101,27 +116,74 @@ def assert_tool_call(output: str, context: dict) -> dict:
     name = vars_.get("tool_name")
     pattern = vars_.get("input_regex")
     if not name:
-        return {"pass": False, "score": 0.0,
-                "reason": "assert_tool_call: missing 'tool_name' var"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_tool_call: missing 'tool_name' var",
+        }
 
     tool_calls = _extract_tool_calls(output)
-    rgx = re.compile(pattern) if pattern else None
+    rgx = re.compile(str(pattern)) if pattern else None
 
     saw = [tc.get("name") for tc in tool_calls]
     for tc in tool_calls:
         if tc.get("name") != name:
             continue
         if rgx is None:
-            return {"pass": True, "score": 1.0,
-                    "reason": f"matched {name} call (no input regex)"}
+            return {
+                "pass": True,
+                "score": 1.0,
+                "reason": f"matched {name} call (no input regex)",
+            }
         blob = json.dumps(tc.get("input") or {}, ensure_ascii=False)
         if rgx.search(blob):
-            return {"pass": True, "score": 1.0,
-                    "reason": f"matched {name} call: {blob[:120]}"}
+            return {
+                "pass": True,
+                "score": 1.0,
+                "reason": f"matched {name} call: {blob[:120]}",
+            }
 
-    return {"pass": False, "score": 0.0,
-            "reason": (f"no {name!r} call matched /{pattern}/. "
-                       f"Saw tool names: {saw!r}")}
+    return {
+        "pass": False,
+        "score": 0.0,
+        "reason": (f"no {name!r} call matched /{pattern}/. Saw tool names: {saw!r}"),
+    }
+
+
+def assert_sources(output: str, context: dict) -> dict:
+    """Pass if the turn attached enough chat sources matching an optional regex.
+
+    Plugins attach sources (the URL/file citations shown in the chat "Sources"
+    panel) to their tool calls; each smuggled tool call carries them in its
+    `sources` list. Proves the answer is backed by a real published document,
+    not hallucinated. Configure via the test's `vars`:
+        sources_min:   int - minimum attached sources across the turn (default 1).
+        sources_regex: str - Python regex matched against the JSON blob of all
+                       sources gathered across the turn (optional).
+    """
+    vars_ = (context or {}).get("vars") or {}
+    minimum = vars_.get("sources_min", 1)
+    pattern = vars_.get("sources_regex")
+
+    tool_calls = _extract_tool_calls(output)
+    sources = [s for tc in tool_calls for s in (tc.get("sources") or [])]
+    blob = json.dumps(sources, ensure_ascii=False)
+
+    if len(sources) < minimum:
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": (
+                f"assert_sources: got {len(sources)} source(s), expected >= {minimum}"
+            ),
+        }
+    if pattern and not re.search(pattern, blob):
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": f"assert_sources: regex /{pattern}/ did not match sources",
+        }
+    return {"pass": True, "score": 1.0, "reason": f"{len(sources)} source(s) attached"}
 
 
 def assert_no_tool_call(output: str, context: dict) -> dict:
@@ -138,21 +200,32 @@ def assert_no_tool_call(output: str, context: dict) -> dict:
     vars_ = (context or {}).get("vars") or {}
     pattern = vars_.get("forbidden_regex")
     if not pattern:
-        return {"pass": False, "score": 0.0,
-                "reason": "assert_no_tool_call: missing 'forbidden_regex' var"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_no_tool_call: missing 'forbidden_regex' var",
+        }
     only_name = vars_.get("forbidden_tool")
-    rgx = re.compile(pattern)
+    rgx = re.compile(str(pattern))
     tool_calls = _extract_tool_calls(output)
     for tc in tool_calls:
         if only_name and tc.get("name") != only_name:
             continue
         blob = json.dumps(tc.get("input") or {}, ensure_ascii=False)
         if rgx.search(blob):
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"forbidden {tc.get('name')!r} call matched "
-                               f"/{pattern}/: {blob[:200]}")}
-    return {"pass": True, "score": 1.0,
-            "reason": f"no calls matched forbidden /{pattern}/"}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (
+                    f"forbidden {tc.get('name')!r} call matched "
+                    f"/{pattern}/: {blob[:200]}"
+                ),
+            }
+    return {
+        "pass": True,
+        "score": 1.0,
+        "reason": f"no calls matched forbidden /{pattern}/",
+    }
 
 
 def assert_tool_count_max(output: str, context: dict) -> dict:
@@ -168,17 +241,26 @@ def assert_tool_count_max(output: str, context: dict) -> dict:
     vars_ = (context or {}).get("vars") or {}
     max_n = vars_.get("tool_calls_max")
     if max_n is None:
-        return {"pass": False, "score": 0.0,
-                "reason": "assert_tool_count_max: missing 'tool_calls_max' var"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_tool_count_max: missing 'tool_calls_max' var",
+        }
     max_n = int(max_n)
     tool_calls = _extract_tool_calls(output)
     work = [tc for tc in tool_calls if tc.get("name") != "skill"]
     if len(work) <= max_n:
-        return {"pass": True, "score": 1.0,
-                "reason": f"{len(work)} work calls (≤ {max_n})"}
+        return {
+            "pass": True,
+            "score": 1.0,
+            "reason": f"{len(work)} work calls (≤ {max_n})",
+        }
     names = [tc.get("name") for tc in work]
-    return {"pass": False, "score": 0.0,
-            "reason": f"{len(work)} work calls (> {max_n}). Names: {names}"}
+    return {
+        "pass": False,
+        "score": 0.0,
+        "reason": f"{len(work)} work calls (> {max_n}). Names: {names}",
+    }
 
 
 def assert_tool_count_min(output: str, context: dict) -> dict:
@@ -191,16 +273,25 @@ def assert_tool_count_min(output: str, context: dict) -> dict:
     vars_ = (context or {}).get("vars") or {}
     min_n = vars_.get("tool_calls_min")
     if min_n is None:
-        return {"pass": False, "score": 0.0,
-                "reason": "assert_tool_count_min: missing 'tool_calls_min' var"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_tool_count_min: missing 'tool_calls_min' var",
+        }
     min_n = int(min_n)
     tool_calls = _extract_tool_calls(output)
     work = [tc for tc in tool_calls if tc.get("name") != "skill"]
     if len(work) >= min_n:
-        return {"pass": True, "score": 1.0,
-                "reason": f"{len(work)} work calls (≥ {min_n})"}
-    return {"pass": False, "score": 0.0,
-            "reason": f"{len(work)} work calls (< {min_n})"}
+        return {
+            "pass": True,
+            "score": 1.0,
+            "reason": f"{len(work)} work calls (≥ {min_n})",
+        }
+    return {
+        "pass": False,
+        "score": 0.0,
+        "reason": f"{len(work)} work calls (< {min_n})",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -218,43 +309,55 @@ def assert_state_file(output: str, context: dict) -> dict:
         type:   "file" | "dir" | "absent" (default: "file").
     """
     import os
-    import sys
-    from pathlib import Path
 
     vars_ = (context or {}).get("vars") or {}
     path = vars_.get("file")
     if not path:
-        return {"pass": False, "score": 0.0,
-                "reason": "assert_state_file: missing 'file' var"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_state_file: missing 'file' var",
+        }
     kind = vars_.get("type", "file")
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from _daemon_client import DaemonClient  # noqa
+    from tests._daemon_client import DaemonClient
+
     graphql_url = os.environ.get(
-        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql")
-    base = (graphql_url[: -len("/graphql")] if graphql_url.endswith("/graphql")
-            else graphql_url.rstrip("/"))
+        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
+    )
+    base = (
+        graphql_url[: -len("/graphql")]
+        if graphql_url.endswith("/graphql")
+        else graphql_url.rstrip("/")
+    )
     client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
     entry = client.get_entry(path)
 
     if kind == "absent":
         if entry is None:
-            return {"pass": True, "score": 1.0,
-                    "reason": f"{path} absent (as expected)"}
-        return {"pass": False, "score": 0.0,
-                "reason": f"{path} unexpectedly exists"}
+            return {
+                "pass": True,
+                "score": 1.0,
+                "reason": f"{path} absent (as expected)",
+            }
+        return {"pass": False, "score": 0.0, "reason": f"{path} unexpectedly exists"}
     if kind == "file":
         if entry and entry.get("isFile"):
             return {"pass": True, "score": 1.0, "reason": f"{path} is a file"}
-        return {"pass": False, "score": 0.0,
-                "reason": f"{path} missing or not a file"}
+        return {"pass": False, "score": 0.0, "reason": f"{path} missing or not a file"}
     if kind == "dir":
         if entry and entry.get("isDirectory"):
             return {"pass": True, "score": 1.0, "reason": f"{path} is a directory"}
-        return {"pass": False, "score": 0.0,
-                "reason": f"{path} missing or not a directory"}
-    return {"pass": False, "score": 0.0,
-            "reason": f"assert_state_file: unknown type {kind!r}"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": f"{path} missing or not a directory",
+        }
+    return {
+        "pass": False,
+        "score": 0.0,
+        "reason": f"assert_state_file: unknown type {kind!r}",
+    }
 
 
 def assert_state_graphql(output: str, context: dict) -> dict:
@@ -285,21 +388,26 @@ def assert_state_graphql(output: str, context: dict) -> dict:
     """
     import os
     import re as _re
-    import sys
-    from pathlib import Path
 
     vars_ = (context or {}).get("vars") or {}
     query = vars_.get("graphql")
     if not query:
-        return {"pass": False, "score": 0.0,
-                "reason": "assert_state_graphql: missing 'graphql' var"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_state_graphql: missing 'graphql' var",
+        }
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from _daemon_client import DaemonClient  # noqa
+    from tests._daemon_client import DaemonClient
+
     graphql_url = os.environ.get(
-        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql")
-    base = (graphql_url[: -len("/graphql")] if graphql_url.endswith("/graphql")
-            else graphql_url.rstrip("/"))
+        "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
+    )
+    base = (
+        graphql_url[: -len("/graphql")]
+        if graphql_url.endswith("/graphql")
+        else graphql_url.rstrip("/")
+    )
     client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
 
     raw_vars = vars_.get("variables") or {}
@@ -307,71 +415,112 @@ def assert_state_graphql(output: str, context: dict) -> dict:
     try:
         data = client.gql_data(query, gql_vars)
     except Exception as e:
-        return {"pass": False, "score": 0.0,
-                "reason": f"assert_state_graphql: query failed: {e}"}
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": f"assert_state_graphql: query failed: {e}",
+        }
 
     extracted: list = [data]
     jp = vars_.get("jsonpath")
     if jp:
         try:
             from jsonpath_ng.ext import parse as _jp_parse
+
             extracted = [m.value for m in _jp_parse(jp).find(data)]
         except Exception as e:
-            return {"pass": False, "score": 0.0,
-                    "reason": f"assert_state_graphql: jsonpath {jp!r}: {e}"}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": f"assert_state_graphql: jsonpath {jp!r}: {e}",
+            }
 
     if "count" in vars_:
         want = int(vars_["count"])
         if len(extracted) != want:
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"count {len(extracted)} ≠ {want}; "
-                               f"extracted: {extracted!r}")}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (
+                    f"count {len(extracted)} ≠ {want}; extracted: {extracted!r}"
+                ),
+            }
     if "contains" in vars_:
         needle = vars_["contains"]
         if not any(needle in str(v) for v in extracted):
-            return {"pass": False, "score": 0.0,
-                    "reason": f"contains {needle!r} not in {extracted!r}"}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": f"contains {needle!r} not in {extracted!r}",
+            }
     if "not_contains" in vars_:
         needle = vars_["not_contains"]
         if any(needle in str(v) for v in extracted):
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"not_contains {needle!r} unexpectedly "
-                               f"in {extracted!r}")}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (f"not_contains {needle!r} unexpectedly in {extracted!r}"),
+            }
     if "matches" in vars_:
         pattern = vars_["matches"]
         if not any(_re.search(pattern, str(v)) for v in extracted):
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"no extracted value matched /{pattern}/. "
-                               f"Extracted: {extracted!r}")}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (
+                    f"no extracted value matched /{pattern}/. Extracted: {extracted!r}"
+                ),
+            }
     if "not_matches" in vars_:
         pattern = vars_["not_matches"]
         for v in extracted:
             if _re.search(pattern, str(v)):
-                return {"pass": False, "score": 0.0,
-                        "reason": (f"not_matches /{pattern}/ unexpectedly "
-                                   f"matched {v!r}")}
+                return {
+                    "pass": False,
+                    "score": 0.0,
+                    "reason": (f"not_matches /{pattern}/ unexpectedly matched {v!r}"),
+                }
     if "equals" in vars_:
         want = vars_["equals"]
         if not extracted or extracted[0] != want:
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"first extracted "
-                               f"{extracted[0] if extracted else 'none'!r} "
-                               f"≠ {want!r}")}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (
+                    f"first extracted "
+                    f"{extracted[0] if extracted else 'none'!r} "
+                    f"≠ {want!r}"
+                ),
+            }
     if "subset" in vars_:
         want = vars_["subset"]
         if not extracted:
-            return {"pass": False, "score": 0.0,
-                    "reason": f"subset check: no extracted values"}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": "subset check: no extracted values",
+            }
         first = extracted[0]
         if not isinstance(first, dict):
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"subset check: first extracted is "
-                               f"{type(first).__name__}, want dict")}
-        missing = {k: v for k, v in (want or {}).items()
-                   if first.get(k) != v}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (
+                    f"subset check: first extracted is "
+                    f"{type(first).__name__}, want dict"
+                ),
+            }
+        missing = {k: v for k, v in (want or {}).items() if first.get(k) != v}
         if missing:
-            return {"pass": False, "score": 0.0,
-                    "reason": (f"subset mismatch: expected {want!r}, "
-                               f"diff {missing!r} in {first!r}")}
-    return {"pass": True, "score": 1.0,
-            "reason": f"state.graphql ok ({len(extracted)} value(s))"}
+            return {
+                "pass": False,
+                "score": 0.0,
+                "reason": (
+                    f"subset mismatch: expected {want!r}, diff {missing!r} in {first!r}"
+                ),
+            }
+    return {
+        "pass": True,
+        "score": 1.0,
+        "reason": f"state.graphql ok ({len(extracted)} value(s))",
+    }

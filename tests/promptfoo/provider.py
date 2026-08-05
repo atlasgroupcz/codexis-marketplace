@@ -28,12 +28,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Loaded by promptfoo from its file path, not imported as part of the `tests`
+# package, so the repo root has to go on sys.path before that package resolves.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # Reuse the legacy runner's tested daemon abstractions. They already
 # speak the latest schema (Chat / AiChatMessage / typed *ToolMessagePart).
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _daemon_client import DaemonClient  # noqa: E402
-from _chat_runner import ChatRunner  # noqa: E402
-
+from tests._chat_runner import ChatRunner
+from tests._daemon_client import DaemonClient
 
 # Sentinel markers used to smuggle structured data from provider to
 # Python assertion through promptfoo's Python wrapper. The wrapper
@@ -65,8 +66,9 @@ def _build_client() -> DaemonClient:
 def call_api(prompt: str, options: dict | None, context: dict | None) -> dict[str, Any]:
     """One chat → one prompt → one AI turn. Returns promptfoo response shape."""
     timeout = float(os.environ.get("CDX_EVAL_POLL_TIMEOUT_S", "600"))
-    runner = ChatRunner(client=_build_client(), poll_interval_s=2.0,
-                        poll_timeout_s=timeout)
+    runner = ChatRunner(
+        client=_build_client(), poll_interval_s=2.0, poll_timeout_s=timeout
+    )
     try:
         runner.start()
         result = runner.step(prompt)
@@ -80,9 +82,12 @@ def call_api(prompt: str, options: dict | None, context: dict | None) -> dict[st
     # parses it back out; built-in regex assertions still match against
     # the text portion above the sentinel.
     import json
-    suffix = (f"\n\n{TOOL_CALLS_SENTINEL}"
-              f"{json.dumps(tool_calls, ensure_ascii=False)}"
-              f"{TOOL_CALLS_END}")
+
+    suffix = (
+        f"\n\n{TOOL_CALLS_SENTINEL}"
+        f"{json.dumps(tool_calls, ensure_ascii=False)}"
+        f"{TOOL_CALLS_END}"
+    )
     return {
         "output": text + suffix,
         # Kept for completeness even though Python assertions can't see it.

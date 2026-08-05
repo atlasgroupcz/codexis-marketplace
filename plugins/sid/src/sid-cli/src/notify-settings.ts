@@ -4,19 +4,19 @@ import { homedir } from "node:os"
 import { userHome } from "./config"
 
 /**
- * Notification channel settings — same convention as the znamky, katastr,
+ * Notification channel settings - same convention as the znamky, katastr,
  * insolvence and codexis plugins:
  *
  *   shipped defaults → ~/.local/share/sid/settings/defaults.json
  *                      (placed there by the install hook)
  *   user override    → $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/settings.json
- *                      (sparse — only the changed keys)
+ *                      (sparse - only the changed keys)
  *
  * The effective config is composed at read time; nothing is merged back into
  * the user file.
  *
- * The bell is the only channel. Unlike the peers — which watch external
- * registries that have no notifications of their own — SID mails its users
+ * The bell is the only channel. Unlike the peers - which watch external
+ * registries that have no notifications of their own - SID mails its users
  * itself (per-event templates, a link to the document, per-tenant gating),
  * so a second mailer here would only duplicate it with a worse message. An
  * `email` / `recipients` block left over from an older version of the
@@ -58,7 +58,7 @@ function readJson(path: string): Record<string, unknown> | null {
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"))
     return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null
   } catch {
-    // Missing or malformed file falls back to what we have — a typo in the
+    // Missing or malformed file falls back to what we have - a typo in the
     // config must not fail the scheduled run.
     return null
   }

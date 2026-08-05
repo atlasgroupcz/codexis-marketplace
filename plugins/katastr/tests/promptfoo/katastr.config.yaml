@@ -1,0 +1,111 @@
+# Port of plugins/katastr/tests/e2e/katastr-lookup.yaml
+# Czech cadastre (ČÚZK REST API KN) via katastr-cli. Three lookup flows against a
+# stable heritage parcel: parcel č. 1, k.ú. Moravská Ostrava (713520).
+# Deterministic facts: výměra 990 m², zastavěná plocha, LV 12069, kulturní památka.
+#
+# Each promptfoo test is a fresh single-turn chat (no cross-turn memory), so the
+# follow-up prompts the e2e phrased as "této parcely" / "ta parcela" are inlined
+# here with the parcel identity - otherwise a fresh chat has nothing to resolve
+# the referent against. The e2e left steps 2 and 3 without a required tool_call
+# (the model could reuse step-1 context); here there is no prior turn, but we
+# still only preserve the e2e oracle (tool_calls_max + response) plus the
+# anti-scrape guard, not a stronger tool_call assertion the e2e never made.
+#
+# Setup drops the ČÚZK API key into the per-app env file the CLI reads
+# (settings.rs loads API_KEY= from $HOME/.cdx/apps/katastr/.env).
+#
+#   tests/promptfoo/setup.py plugins/katastr/tests/promptfoo/katastr.config.yaml
+#   RUN_ID=$(cat plugins/katastr/tests/promptfoo/katastr.config.run_id)
+#   npx promptfoo eval -c plugins/katastr/tests/promptfoo/katastr.config.yaml --var run_id=$RUN_ID
+
+description: katastr - ČÚZK parcel / LV / protection lookups via katastr-cli
+
+# SKIPPED in CI: the setup below uploads a ČÚZK API key via `--var
+# katastr_api_key`, which the pipeline does not provision - without it
+# katastr-cli hits ČÚZK unauthenticated and the run only exercises the failure
+# path. Remove `skip` once the ČÚZK key is wired into the pipeline (the setup
+# and tests are ready as-is). Run it locally with an explicit --config/--plugin
+# and `--var katastr_api_key=...`.
+skip: "needs a ČÚZK API key (--var katastr_api_key) that the pipeline does not provision"
+
+setup:
+  - upload:
+      destination: /home/codexis/.cdx/apps/katastr
+      files:
+        - path: .env
+          content: "API_KEY={{ katastr_api_key }}\n"
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: basic lookup - area (990) and land-type (zastav) in one reply
+    vars:
+      prompt: "Najdi mi parcelu č. 1 v katastrálním území Moravská Ostrava. Jakou má výměru a druh pozemku?"
+      tool_name: shell
+      input_regex: 'katastr-cli(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|cuzk\.gov\.cz)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "Looking up the parcel through katastr-cli (the `parcela` domain command against ČÚZK); a single curl to confirm a URL katastr-cli itself returned is fine."
+        incorrect:
+          - "Using curl/wget/requests to hit cuzk.gov.cz directly instead of katastr-cli."
+          - "Bypassing katastr-cli to scrape ČÚZK for the parcel data."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # Both facts must be present (order-independent). JS regex - [\s\S] for (?s).
+      - type: regex
+        value: '990[\s\S]{0,400}zastav|zastav[\s\S]{0,400}990'
+
+  - description: owner / LV - title deed number 12069
+    vars:
+      prompt: "Jaké je číslo listu vlastnictví (LV) u parcely č. 1 v katastrálním území Moravská Ostrava?"
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|cuzk\.gov\.cz)'
+      arbitration:
+        correct:
+          - "Looking up the LV through katastr-cli (the `parcela` domain command against ČÚZK)."
+        incorrect:
+          - "Using curl/wget/requests to hit cuzk.gov.cz directly instead of katastr-cli."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: contains
+        value: "12069"
+
+  - description: protection status - nemovitá kulturní památka
+    vars:
+      prompt: "Je parcela č. 1 v katastrálním území Moravská Ostrava nějak chráněná? Třeba památkově?"
+      tool_calls_max: 5
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|cuzk\.gov\.cz)'
+      arbitration:
+        correct:
+          - "Checking protection / heritage status through katastr-cli (the `parcela` domain command against ČÚZK)."
+        incorrect:
+          - "Using curl/wget/requests to hit cuzk.gov.cz directly instead of katastr-cli."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # JS regex - character classes stand in for the e2e's (?i).
+      - type: regex
+        value: '[Kk]ulturní[ -]?[Pp]amátka'

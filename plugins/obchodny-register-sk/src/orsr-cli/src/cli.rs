@@ -64,7 +64,7 @@ pub enum Command {
 
 #[derive(Args, Debug)]
 pub struct SearchArgs {
-    /// IČO (1–8 digits; padded to 8 with leading zeros for the API call).
+    /// IČO (1-8 digits; padded to 8 with leading zeros for the API call).
     #[arg(long, visible_alias = "identifier")]
     pub ico: Option<String>,
 

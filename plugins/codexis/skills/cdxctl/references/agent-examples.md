@@ -2,8 +2,14 @@
 
 Worked `cdxctl agent create` calls. Copy the shape, swap the content.
 
-`--display-name` and `--summary` take `lang:text` and repeat once per language - the
-prompt's language and English.
+`--display-name`, `--summary` and `--example-prompt` take `lang:text` and repeat once
+per language - the prompt's language and English.
+
+Every agent gets **three `--example-prompt` per language**, in the order they should
+appear. They are what the user clicks to start a run, so each is a concrete, directly
+runnable sentence asking the agent for one of its jobs - never a category label, never
+a `«fill this in»` placeholder. Cover three different jobs rather than one question
+reworded.
 
 ## Employment-law reviewer
 
@@ -23,6 +29,12 @@ cdxctl agent create --name koncipient-pracovni-pravo \
   --display-name en:"Employment-law associate" \
   --summary cs:"Posoudí zákonnost výpovědi a navrhne nápravu." \
   --summary en:"Judges a dismissal and proposes a fix." \
+  --example-prompt cs:"Posuď zákonnost této výpovědi a navrhni nápravu." \
+  --example-prompt cs:"Zkontroluj, zda byla u této výpovědi dodržena výpovědní doba." \
+  --example-prompt cs:"Shrň rizika této výpovědi do tabulky." \
+  --example-prompt en:"Judge whether this dismissal is lawful and propose a fix." \
+  --example-prompt en:"Check whether the notice period was observed." \
+  --example-prompt en:"Summarize the risks of this dismissal in a table." \
   --instructions-file ./.tmp/koncipient-pp.md \
   --skill codexis
 ```
@@ -44,6 +56,12 @@ cdxctl agent create --name personalista-smlouvy \
   --display-name en:"HR contract preparer" \
   --summary cs:"Připraví a zkontroluje pracovní smlouvu nového zaměstnance." \
   --summary en:"Prepares and checks a new hire's employment contract." \
+  --example-prompt cs:"Připrav pracovní smlouvu pro nového zaměstnance na pozici účetní." \
+  --example-prompt cs:"Zkontroluj tuto pracovní smlouvu a označ riziková ujednání." \
+  --example-prompt cs:"Doplň do smlouvy konkurenční doložku podle zákoníku práce." \
+  --example-prompt en:"Draft an employment contract for a new accountant." \
+  --example-prompt en:"Review this employment contract and flag risky clauses." \
+  --example-prompt en:"Add a non-compete clause under the Czech Labour Code." \
   --instructions-file ./.tmp/personalista.md \
   --skill codexis --skill docx
 ```
@@ -57,6 +75,12 @@ cdxctl agent create --name danovy-poradce-dph \
   --display-name en:"VAT advisor" \
   --summary cs:"Odpoví na dotaz k DPH a shrne ho do krátkého memo." \
   --summary en:"Answers a VAT question and sums it up in a short memo." \
+  --example-prompt cs:"Napiš memo k DPH u přeúčtování nákladů mezi spřízněnými firmami." \
+  --example-prompt cs:"Kdy vzniká povinnost registrace k DPH při prodeji do EU?" \
+  --example-prompt cs:"Shrň, jak se uplatní odpočet DPH u firemního automobilu." \
+  --example-prompt en:"Write a VAT memo on recharging costs between related companies." \
+  --example-prompt en:"When does selling into the EU trigger VAT registration?" \
+  --example-prompt en:"Summarize how VAT deduction works for a company car." \
   --instructions-file ./.tmp/dph.md \
   --skill codexis-dane
 ```
@@ -70,6 +94,12 @@ cdxctl agent create --name shrnovac-dokumentu \
   --display-name en:"Document summariser" \
   --summary cs:"Z dlouhého dokumentu udělá přehledné shrnutí na jednu stranu." \
   --summary en:"Turns a long document into a one-page summary." \
+  --example-prompt cs:"Shrň tento dokument na jednu stranu." \
+  --example-prompt cs:"Vypiš z tohoto dokumentu klíčové termíny a lhůty." \
+  --example-prompt cs:"Porovnej tyto dvě verze dokumentu a popiš rozdíly." \
+  --example-prompt en:"Summarize this document in one page." \
+  --example-prompt en:"List the key dates and deadlines in this document." \
+  --example-prompt en:"Compare these two versions and describe the differences." \
   --instructions-file ./.tmp/shrnovac.md \
   --skill pdf --skill docx
 ```
@@ -83,6 +113,12 @@ cdxctl agent create --name kontrolor-jen-cteni \
   --display-name en:"Reviewer (read-only)" \
   --summary cs:"Přečte dokument a vrátí připomínky, soubory nemění." \
   --summary en:"Reads a document and returns notes without changing files." \
+  --example-prompt cs:"Zkontroluj tento dokument a vrať připomínky." \
+  --example-prompt cs:"Najdi v tomto dokumentu nesrovnalosti a rozpory." \
+  --example-prompt cs:"Posuď, zda dokument obsahuje všechny povinné náležitosti." \
+  --example-prompt en:"Review this document and return your notes." \
+  --example-prompt en:"Find inconsistencies and contradictions in this document." \
+  --example-prompt en:"Check whether the document has every mandatory element." \
   --instructions-file ./.tmp/kontrolor.md \
   --skill codexis --skill docx \
   --tool readFile --tool grep
@@ -91,8 +127,17 @@ cdxctl agent create --name kontrolor-jen-cteni \
 ## Updating an agent
 
 ```bash
-# Adds a skill and reword the Czech summary; other languages and fields stay put.
+# Adds the pdf skill: --skill replaces the WHOLE list, so repeat the skills the
+# agent already has. The Czech summary is replaced; other languages and fields stay put.
 cdxctl agent update personalista-smlouvy \
   --summary cs:"Připraví, zkontroluje a archivuje pracovní smlouvu." \
   --skill codexis --skill docx --skill pdf
+
+# --example-prompt is per-language too, and repeating it replaces that language's whole
+# list - so pass all three Czech prompts even when only one of them changes. English is
+# not passed here, so the stored English prompts stay.
+cdxctl agent update personalista-smlouvy \
+  --example-prompt cs:"Připrav pracovní smlouvu pro nového zaměstnance na pozici účetní." \
+  --example-prompt cs:"Zkontroluj tuto pracovní smlouvu a označ riziková ujednání." \
+  --example-prompt cs:"Ulož hotovou smlouvu do PDF."
 ```

@@ -28,7 +28,7 @@ describe("search", () => {
     )) as { hits: unknown[]; warning?: string }
     expect(cap.url).toBe("http://s/api/search?q=smlouva+o+d%C3%ADlo&size=5")
     expect(out.hits).toHaveLength(1)
-    // Every hit must carry the link into SID — the plugin leads users to the
+    // Every hit must carry the link into SID - the plugin leads users to the
     // app, it does not stand in for it.
     expect((out.hits[0] as { url: string }).url).toBe("http://s/files/d1")
     expect(out.warning).toBeUndefined()
@@ -46,7 +46,7 @@ describe("search", () => {
     expect(err.exitCode).toBe(2)
   })
 
-  it("200 bez pole hits nespadne — guard zachová fallback varování", async () => {
+  it("200 bez pole hits nespadne - guard zachová fallback varování", async () => {
     const out = (await run(["x"], fetchReturning({ total: 0, source: "opensearch_unavailable" }))) as {
       hits: unknown[]
       warning?: string

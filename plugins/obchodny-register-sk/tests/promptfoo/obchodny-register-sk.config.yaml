@@ -1,0 +1,133 @@
+# Port of plugins/obchodny-register-sk/tests/e2e/obchodny-register-sk-lookup.yaml
+# Slovak commercial register (RPO open API + orsr.sk extract links).
+# Deterministic target: ESET, spol. s r.o. - IČO 31333532, RPO id 937053,
+# register Sro/3586/B. Anti-scrape guard blocks orsr.sk.
+
+description: obchodny-register-sk - Slovak commercial register (RPO) lookup
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: Name search for ESET surfaces its IČO / registration / orsr.sk citation
+    vars:
+      prompt: "Nájdi v slovenskom obchodnom registri firmu ESET, spol. s r.o. - kto sú konatelia a aké má základné imanie?"
+      tool_calls_min: 1
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|orsr\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an orsr.sk extract URL that orsr-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch company records from orsr.sk instead of orsr-cli."
+          - "Bypassing orsr-cli to scrape orsr.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # A real RPO hit reports the IČO 31333532 (possibly digit-grouped) or the
+      # registration number Sro 3586/B or links to the orsr.sk extract (possibly
+      # rendered as a citation span).
+      - type: regex
+        value: '(31\s?333\s?532|Sro\D{0,15}3586/B|orsr\.sk|data-cdx-citation-id)'
+
+  - description: IČO search returns RPO id 937053 for ESET
+    vars:
+      prompt: "Vyhľadaj v RPO subjekt podľa IČO 31333532 a uveď jeho RPO ID."
+      tool_name: shell
+      input_regex: 'orsr-cli\s+(--no-cache\s+)?search\s+.*31333532(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|orsr\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an orsr.sk extract URL that orsr-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch company records from orsr.sk instead of orsr-cli."
+          - "Bypassing orsr-cli to scrape orsr.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # e2e (?s)937053.{0,240}ESET|ESET.{0,240}937053 - JS regex has no (?s), so `.`→[\s\S].
+      - type: regex
+        value: '937053[\s\S]{0,240}ESET|ESET[\s\S]{0,240}937053'
+
+  - description: detail surfaces source register + registration number
+    vars:
+      prompt: "U detailu RPO ID 937053 zisti zdrojový register a registračné číslo."
+      tool_name: shell
+      input_regex: 'orsr-cli\s+(--no-cache\s+)?detail\s+937053(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|orsr\.sk)'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an orsr.sk extract URL that orsr-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch company records from orsr.sk instead of orsr-cli."
+          - "Bypassing orsr-cli to scrape orsr.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # e2e (?s)Obchodn(ý|y|í) register.{0,240}Sro/3586/B|… - JS regex has no (?s), so `.`→[\s\S].
+      - type: regex
+        value: 'Obchodn(ý|y|í) register[\s\S]{0,240}Sro/3586/B|Sro/3586/B[\s\S]{0,240}Obchodn(ý|y|í) register'
+
+  - description: links returns the orsr.sk aktuálny výpis and attaches it as a source
+    vars:
+      prompt: "Daj mi odkaz na aktuálny výpis z obchodného registra pre IČO 31333532."
+      tool_name: shell
+      input_regex: 'orsr-cli\s+(--no-cache\s+)?links\s+.*31333532(?!.*--help)'
+      tool_calls_min: 1
+      tool_calls_max: 8
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|orsr\.sk)'
+      # orsr-cli links attaches the orsr.sk aktuálny výpis of each subject.
+      sources_min: 1
+      sources_regex: 'orsr\.sk/vypis\.asp'
+      # Arbitration criteria (read only by `run.py --arbitrate` when a
+      # deterministic check above fails): legitimate vs illegitimate behavior.
+      arbitration:
+        correct:
+          - "A single curl/HEAD against an orsr.sk extract URL that orsr-cli itself returned, only to confirm it resolves."
+        incorrect:
+          - "Using curl/wget/requests to fetch company records from orsr.sk instead of orsr-cli."
+          - "Bypassing orsr-cli to scrape orsr.sk for the records."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_min
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_sources
+      - type: regex
+        value: 'orsr\.sk/vypis\.asp'

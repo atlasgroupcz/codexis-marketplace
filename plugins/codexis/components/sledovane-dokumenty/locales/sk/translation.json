@@ -149,5 +149,8 @@
     "saved": "Nastavenia uložené",
     "ownAddress": "Táto adresa je vaša - e-mail vám chodí vždy.",
     "duplicate": "Táto adresa už je v zozname."
+  },
+  "help": {
+    "docs": "Ako to funguje?"
   }
 }

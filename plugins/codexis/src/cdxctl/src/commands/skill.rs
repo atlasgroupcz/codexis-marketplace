@@ -6,11 +6,9 @@ use crate::graphql;
 use crate::output::{print_output, OutputFormat};
 use serde_json::{json, Map, Value};
 use std::fs;
-use std::io::{self, Read};
 use std::path::Path;
 
-/// Structured `skill create`/`update` fields. When all are unset the command falls back to the
-/// whole-markdown `--file`/`--stdin` path (deprecated `createSkill`/`updateSkill`).
+/// Structured `skill create`/`update` fields.
 #[derive(Default)]
 pub struct SkillFields {
     pub name: Option<String>,
@@ -20,6 +18,8 @@ pub struct SkillFields {
     pub display_name: Vec<String>,
     /// Localized summaries as raw `lang:text` entries, one per language.
     pub summary: Vec<String>,
+    /// Localized example prompts as raw `lang:text` entries, repeated per prompt and language.
+    pub example_prompts: Vec<String>,
     pub jurisdictions: Option<Vec<String>>,
     pub jurisdiction_required: Option<bool>,
     pub allowed_tools: Option<Vec<String>>,
@@ -32,6 +32,7 @@ impl SkillFields {
             && self.instructions.is_none()
             && self.display_name.is_empty()
             && self.summary.is_empty()
+            && self.example_prompts.is_empty()
             && self.jurisdictions.is_none()
             && self.jurisdiction_required.is_none()
             && self.allowed_tools.is_none()
@@ -69,26 +70,11 @@ pub fn list(
 
 pub fn create(
     client: &GraphQLClient,
-    file: Option<&str>,
-    stdin: bool,
     instructions_file: Option<&str>,
     fields: SkillFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let fields = merge_instructions_file(fields, instructions_file)?;
-    if fields.is_empty() {
-        let data = client.execute(
-            graphql::CREATE_SKILL,
-            json!({ "markdown": load_markdown(file, stdin)? }),
-        )?;
-        print_output(&data.get("createSkill").cloned().unwrap_or(Value::Null), format);
-        return Ok(());
-    }
-    if file.is_some() || stdin {
-        return Err(CdxctlError::Parse(
-            "Choose one input style: the field flags, or --file/--stdin markdown".into(),
-        ));
-    }
     let name = fields
         .name
         .clone()
@@ -107,28 +93,17 @@ pub fn create(
 pub fn update(
     client: &GraphQLClient,
     id: &str,
-    file: Option<&str>,
-    stdin: bool,
     instructions_file: Option<&str>,
     fields: SkillFields,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let fields = merge_instructions_file(fields, instructions_file)?;
-    let node_id = resolve_node_id(id, "Skill");
-
     if fields.is_empty() {
-        let data = client.execute(
-            graphql::UPDATE_SKILL,
-            json!({ "id": node_id, "markdown": load_markdown(file, stdin)? }),
-        )?;
-        print_output(&data.get("updateSkill").cloned().unwrap_or(Value::Null), format);
-        return Ok(());
-    }
-    if file.is_some() || stdin {
         return Err(CdxctlError::Parse(
-            "Choose one input style: the field flags, or --file/--stdin markdown".into(),
+            "Nothing to update: pass at least one field flag (--name, --description, --instructions, …)".into(),
         ));
     }
+    let node_id = resolve_node_id(id, "Skill");
     // SkillInput replaces the whole skill; carry name/description/allowedTools from the stored
     // skill so a partial update does not clear them. The daemon keeps the body, i18n display
     // strings and jurisdictions from the stored skill for the fields the flags do not set.
@@ -172,6 +147,12 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &SkillFields) -> Result<
     if !fields.summary.is_empty() {
         input.insert("summary".into(), json!(parse_localized(&fields.summary, "summary")?));
     }
+    if !fields.example_prompts.is_empty() {
+        input.insert(
+            "examplePrompts".into(),
+            json!(parse_localized(&fields.example_prompts, "example-prompt")?),
+        );
+    }
     Ok(())
 }
 
@@ -213,38 +194,14 @@ fn skill_id(skill: &Value, id: &str) -> Result<String, CdxctlError> {
         .ok_or_else(|| CdxctlError::Parse(format!("Skill {id} has no id")))
 }
 
-/// Runs the structured `saveSkill` mutation, teaching the Markdown fallback when the daemon is too
-/// old for the structured input rather than failing opaquely.
+/// Runs the structured `saveSkill` mutation (id null → create, id set → update).
 fn save_skill(
     client: &GraphQLClient,
     variables: Value,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    match client.execute(graphql::SAVE_SKILL, variables) {
-        Ok(data) => print_payload(data.get("saveSkill"), format),
-        Err(error) if is_unsupported_save_skill(&error) => Err(structured_input_unsupported()),
-        Err(error) => Err(error),
-    }
-}
-
-fn is_unsupported_save_skill(error: &CdxctlError) -> bool {
-    matches!(error, CdxctlError::GraphQL(messages) if messages.iter().any(|message| {
-        let message = message.to_ascii_lowercase();
-        (message.contains("saveskill") && (message.contains("undefined") || message.contains("unknown")))
-            || (message.contains("skillinput") && message.contains("unknown"))
-    }))
-}
-
-fn structured_input_unsupported() -> CdxctlError {
-    CdxctlError::Parse(
-        "This daemon does not support the structured skill input yet (the saveSkill mutation is \
-         unavailable). Create the skill from Markdown instead: write a SKILL.md with YAML \
-         frontmatter and run `cdxctl skill create --file <path>` (or pipe it with --stdin); update \
-         an existing one with `cdxctl skill update <id> --file <path>`. Frontmatter keys: name, \
-         description, i18n (displayName/summary per language), jurisdictions, jurisdiction-required, \
-         allowed-tools; put the skill instructions in the body below the frontmatter."
-            .to_string(),
-    )
+    let data = client.execute(graphql::SAVE_SKILL, variables)?;
+    print_payload(data.get("saveSkill"), format)
 }
 
 fn print_payload(payload: Option<&Value>, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -288,56 +245,10 @@ fn merge_instructions_file(
     Ok(fields)
 }
 
-fn load_markdown(file: Option<&str>, stdin: bool) -> Result<String, CdxctlError> {
-    match (file, stdin) {
-        (Some(_), true) => Err(CdxctlError::Parse(
-            "Choose exactly one input source: --file or --stdin".into(),
-        )),
-        (None, false) => Err(CdxctlError::Parse(
-            "Provide skill markdown via --file or --stdin, or describe the skill with the field flags".into(),
-        )),
-        (Some(path), false) => load_markdown_from_file(path),
-        (None, true) => load_markdown_from_stdin(),
-    }
-}
-
-fn load_markdown_from_file(path: &str) -> Result<String, CdxctlError> {
-    let content = fs::read_to_string(path).map_err(|error| {
-        CdxctlError::Parse(format!(
-            "Failed to read skill markdown from {}: {}",
-            Path::new(path).display(),
-            error
-        ))
-    })?;
-    validate_markdown(content)
-}
-
-fn load_markdown_from_stdin() -> Result<String, CdxctlError> {
-    let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).map_err(|error| {
-        CdxctlError::Parse(format!("Failed to read skill markdown from stdin: {error}"))
-    })?;
-    validate_markdown(buffer)
-}
-
-fn validate_markdown(content: String) -> Result<String, CdxctlError> {
-    if content.trim().is_empty() {
-        return Err(CdxctlError::Parse("Skill markdown cannot be empty".into()));
-    }
-    Ok(content)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{apply_fields, is_unsupported_save_skill, load_markdown, merge_current, SkillFields};
-    use crate::error::CdxctlError;
+    use super::{apply_fields, merge_current, SkillFields};
     use serde_json::{json, Map};
-
-    #[test]
-    fn load_markdown_requires_one_input_source() {
-        assert!(matches!(load_markdown(None, false).unwrap_err(), CdxctlError::Parse(_)));
-        assert!(matches!(load_markdown(Some("/tmp/skill.md"), true).unwrap_err(), CdxctlError::Parse(_)));
-    }
 
     #[test]
     fn skill_fields_are_empty_until_one_is_set() {
@@ -353,6 +264,7 @@ mod tests {
             instructions: Some("Posuď výpověď.".into()),
             display_name: vec!["cs:Kontrola výpovědi".into(), "en:Dismissal review".into()],
             summary: vec!["cs:Posoudí výpověď.".into()],
+            example_prompts: vec![],
             jurisdictions: Some(vec!["CZ".into()]),
             jurisdiction_required: Some(true),
             allowed_tools: Some(vec!["shell".into(), "readFile".into()]),
@@ -370,6 +282,40 @@ mod tests {
             json!([{ "language": "cs", "text": "Kontrola výpovědi" }, { "language": "en", "text": "Dismissal review" }])
         );
         assert_eq!(input["summary"], json!([{ "language": "cs", "text": "Posoudí výpověď." }]));
+        assert!(!input.contains_key("examplePrompts"));
+    }
+
+    #[test]
+    fn apply_fields_builds_localized_example_prompts_in_the_order_given() {
+        let fields = SkillFields {
+            example_prompts: vec![
+                "cs:Zkontroluj výpověď z pracovního poměru.".into(),
+                "cs:Shrň důvody výpovědi.".into(),
+                "en:Review a dismissal notice.".into(),
+            ],
+            ..SkillFields::default()
+        };
+        let mut input = Map::new();
+
+        apply_fields(&mut input, &fields).unwrap();
+
+        assert_eq!(
+            input["examplePrompts"],
+            json!([
+                { "language": "cs", "text": "Zkontroluj výpověď z pracovního poměru." },
+                { "language": "cs", "text": "Shrň důvody výpovědi." },
+                { "language": "en", "text": "Review a dismissal notice." }
+            ])
+        );
+    }
+
+    #[test]
+    fn example_prompts_alone_are_enough_to_update() {
+        assert!(!SkillFields {
+            example_prompts: vec!["cs:Zkontroluj výpověď.".into()],
+            ..SkillFields::default()
+        }
+        .is_empty());
     }
 
     #[test]
@@ -383,15 +329,5 @@ mod tests {
         assert_eq!(merged["name"], json!("reviewer"));
         assert_eq!(merged["description"], json!("Reviews things"));
         assert_eq!(merged["allowedTools"], json!(["shell", "readFile"]));
-    }
-
-    #[test]
-    fn detects_a_daemon_without_the_save_skill_mutation() {
-        let undefined = CdxctlError::GraphQL(vec![
-            "Validation error (FieldUndefined@[saveSkill]) : Field 'saveSkill' in type 'Mutation' is undefined".into(),
-        ]);
-        assert!(is_unsupported_save_skill(&undefined));
-        let rejected = CdxctlError::GraphQL(vec!["name: Skill name must use lowercase.".into()]);
-        assert!(!is_unsupported_save_skill(&rejected));
     }
 }

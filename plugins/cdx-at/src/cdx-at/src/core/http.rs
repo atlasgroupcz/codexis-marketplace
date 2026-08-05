@@ -43,7 +43,16 @@ pub(crate) fn execute_search_request(
     order: Option<&str>,
 ) -> Result<(), CliError> {
     cdx_common::search_engine::execute_search_request(
-        &CdxAtApi, base_url, auth_header, source_code, payload, dry_run, sort, order,
+        &CdxAtApi,
+        cdx_common::search_engine::SearchRequest {
+            base_url,
+            auth_header,
+            source_code,
+            payload,
+            dry_run,
+            sort,
+            order,
+        },
     )
 }
 
@@ -69,7 +78,7 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
     let encoded_query = encode_query_values(query);
 
     if let Some(domain) = path.strip_prefix("search/") {
-        let api_path = lookup_search_prefix(domain)?;
+        let api_path = cdx_common::http::lookup_search_prefix(domain, ID_PREFIXES)?;
         Ok(format!("{base}/{api_path}/search{encoded_query}"))
     } else if let Some(rest) = path.strip_prefix("law/") {
         // Consolidated-law / point-in-time surface lives on the History domain.
@@ -118,7 +127,7 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         if endpoint.is_empty() {
             return Err(format!("Empty endpoint after doc/{id}/"));
         }
-        let api_path = lookup_display_id_prefix(id)?;
+        let api_path = cdx_common::http::lookup_display_id_prefix(id, ID_PREFIXES)?;
         Ok(format!(
             "{base}/{api_path}/doc/{id}/{endpoint}{encoded_query}"
         ))
@@ -183,24 +192,6 @@ pub(crate) fn resolve_attachment_links(body: &str, base_url: &str) -> String {
     }
     out.push_str(rest);
     out
-}
-
-fn lookup_search_prefix(code: &str) -> Result<&'static str, String> {
-    for &(prefix, api_path) in ID_PREFIXES {
-        if prefix == code {
-            return Ok(api_path);
-        }
-    }
-    Err(format!("Unknown search prefix: {code}"))
-}
-
-fn lookup_display_id_prefix(id: &str) -> Result<&'static str, String> {
-    for &(prefix, api_path) in ID_PREFIXES {
-        if id.starts_with(prefix) {
-            return Ok(api_path);
-        }
-    }
-    Err(format!("Unknown display ID prefix in: {id}"))
 }
 
 /// Domain URL segment -> API path, for the by-document-number resolver.

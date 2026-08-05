@@ -1,4 +1,4 @@
-# SID API — response shapes and filters
+# SID API - response shapes and filters
 
 Reference detail for `sid-cli`. The binary calls the endpoints itself; this
 page exists so the output can be interpreted correctly and filters composed
@@ -34,7 +34,7 @@ overrides it per user (e.g. to point at the onprem instance).
 ## Links back into SID
 
 Every result naming a document carries a `url`. The route depends on the
-signed-in role — SID's `(user)` layout redirects admins to the admin
+signed-in role - SID's `(user)` layout redirects admins to the admin
 dashboard, so admins get `/admin/files/<id>` and everyone else `/files/<id>`.
 The role is cached as `SID_USER_ROLE` when the key is stored, so building the
 link normally costs no extra request.
@@ -72,8 +72,8 @@ operators:
 
 | Input | Meaning |
 |-------|---------|
-| `slovo` | one word, stemmed — also matches *slovy*, *slovem* |
-| `slovo1 slovo2` | AND — both must appear |
+| `slovo` | one word, stemmed - also matches *slovy*, *slovem* |
+| `slovo1 slovo2` | AND - both must appear |
 | `"přesná fráze"` | exact phrase, adjacent, **not** stemmed |
 | `slo*` | prefix |
 | `-slovo` | exclude |
@@ -84,17 +84,17 @@ operators:
 Diacritics are folded, so `pravni` finds `právní`. Fields are weighted:
 title ×3, description ×2, content ×1.
 
-Stemming has limits — `smluvní` and `smlouva` are different roots. When a
+Stemming has limits - `smluvní` and `smlouva` are different roots. When a
 search returns less than expected, retry with a prefix (`smlou*`) or an
 explicit OR rather than concluding nothing exists.
 
 Two traps:
 
 - **`total` is not a total.** The route recomputes it to `hits.length` after
-  the ACL filter, so it never exceeds `size`. It cannot drive pagination —
+  the ACL filter, so it never exceeds `size`. It cannot drive pagination -
   use `docs list --page` for that.
 - **`source: "opensearch_unavailable"` means the index is down**, not "nothing
-  found" — HTTP is 200 either way. `sid-cli` adds a `warning` field in that
+  found" - HTTP is 200 either way. `sid-cli` adds a `warning` field in that
   case; take it seriously and fall back to `docs list --query`.
 
 ## `docs list`
@@ -116,7 +116,7 @@ and `--attribute` come from `folders list` / `attributes list`.
 { "documents": [ … ], "total": 42, "page": 1, "pageSize": 20, "totalPages": 3 }
 ```
 
-Here `total` **is** the real count — unlike `search`.
+Here `total` **is** the real count - unlike `search`.
 
 ## `folders list` and `attributes list`
 
@@ -126,8 +126,8 @@ those folders.
 
 `folders` returns a flat list with `parentId`; the CLI adds `path`
 ("Směrnice / Bezpečnost") and a `url` into the browser filtered to that
-folder. `attributes` hides archived entries — they can no longer be assigned
-— unless `--all` is given, and keeps `type` and `options` so a value can be
+folder. `attributes` hides archived entries - they can no longer be assigned
+- unless `--all` is given, and keeps `type` and `options` so a value can be
 picked without guessing.
 
 ## `confirmations`
@@ -164,12 +164,12 @@ The digest the automation runs (`automations/check-sid.md`, daily at 07:00):
 }
 ```
 
-With `--notify` it also pushes to the daemon — but only when there is
+With `--notify` it also pushes to the daemon - but only when there is
 something to report. `notified: false` means nothing was sent (no news, the
 bell switched off, or the daemon was unreachable); it is never an error that
 would fail the run.
 
-The notification carries a `link` back into SID — the pending-confirmations
+The notification carries a `link` back into SID - the pending-confirmations
 list when there is something to confirm, otherwise SID itself.
 
 Settings follow the same convention as the znamky/katastr plugins:
@@ -183,7 +183,7 @@ Settings follow the same convention as the znamky/katastr plugins:
 { "version": 1, "notify": { "inApp": true } }
 ```
 
-**The bell is the only channel — this plugin sends no e-mail.** SID mails its
+**The bell is the only channel - this plugin sends no e-mail.** SID mails its
 own users (per-event templates, a link to the document, per-tenant gating), so
 a mailer here would duplicate it with a worse message. An `email` /
 `recipients` block left in a settings file by an older version is read and
@@ -202,7 +202,7 @@ dropped.
 
 What the document tracks, as detected by the Codexis hypertexter or added by
 hand. Each entry carries `title`, `reference` ("262/2006 Sb."), optional
-`section` and `url`, a `type` (LAW, DECREE, …) and a `status` — `OK`, or a
+`section` and `url`, a `type` (LAW, DECREE, …) and a `status` - `OK`, or a
 flag that the source changed, with `changedAt`.
 
 Requires `view` on the document, the same as reading it. Adding or approving
@@ -216,8 +216,8 @@ sid-cli docs set-validity <id> [--from YYYY-MM-DD] [--to YYYY-MM-DD]
 ```
 
 The one write the CLI performs. Sends only the fields given, so setting the
-start does not disturb the end. Needs EDITOR rights on the document — not
-admin — and 403 means the caller lacks them.
+start does not disturb the end. Needs EDITOR rights on the document - not
+admin - and 403 means the caller lacks them.
 
 Dates are validated before the call, so `1.1.2026` fails as misuse (exit 2)
 rather than reaching the server. Changing an effective date makes SID notify
@@ -243,7 +243,7 @@ without a server-side change:
 - group writes,
 - access introspection ("what can this user see"),
 - **changing** what legislation a document tracks, and the Hypertexter
-  detection run. Reading it is available — see `docs legislation` above.
+  detection run. Reading it is available - see `docs legislation` above.
 
-Document upload *is* supported by the API but not wrapped by `sid-cli` — use
+Document upload *is* supported by the API but not wrapped by `sid-cli` - use
 the SID web interface for that.

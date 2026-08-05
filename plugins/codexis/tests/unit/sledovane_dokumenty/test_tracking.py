@@ -1,7 +1,6 @@
 """sledovane-dokumenty tracking.py - pure/stateful ops: notes, groups, list_all, confirm, remove."""
 
 import pytest
-
 from sledovane_dokumenty_core import state, tracking
 from sledovane_dokumenty_core.exceptions import (
     DocumentNotTrackedError,
@@ -35,23 +34,37 @@ class TestListAllSort:
 
     def test_unconfirmed_beats_confirmed_beats_idle(self, dokumenty_app_dir):
         _seed("IDLE", changes=[])
-        _seed("CONF", changes=[
-            {"detected_on": "2026-04-05T00:00:00Z",
-             "confirmed_on": "2026-04-06T00:00:00Z"},
-        ])
-        _seed("PEND", changes=[
-            {"detected_on": "2026-04-10T00:00:00Z", "confirmed_on": None},
-        ])
+        _seed(
+            "CONF",
+            changes=[
+                {
+                    "detected_on": "2026-04-05T00:00:00Z",
+                    "confirmed_on": "2026-04-06T00:00:00Z",
+                },
+            ],
+        )
+        _seed(
+            "PEND",
+            changes=[
+                {"detected_on": "2026-04-10T00:00:00Z", "confirmed_on": None},
+            ],
+        )
         result = tracking.list_all()
         assert [s["codexisId"] for s in result] == ["PEND", "CONF", "IDLE"]
 
     def test_within_unconfirmed_newest_detection_first(self, dokumenty_app_dir):
-        _seed("OLD", changes=[
-            {"detected_on": "2026-03-01T00:00:00Z", "confirmed_on": None},
-        ])
-        _seed("NEW", changes=[
-            {"detected_on": "2026-04-15T00:00:00Z", "confirmed_on": None},
-        ])
+        _seed(
+            "OLD",
+            changes=[
+                {"detected_on": "2026-03-01T00:00:00Z", "confirmed_on": None},
+            ],
+        )
+        _seed(
+            "NEW",
+            changes=[
+                {"detected_on": "2026-04-15T00:00:00Z", "confirmed_on": None},
+            ],
+        )
         assert [s["codexisId"] for s in tracking.list_all()] == ["NEW", "OLD"]
 
     def test_added_on_breaks_tie_among_idle(self, dokumenty_app_dir):
@@ -97,10 +110,13 @@ class TestRemove:
 
 class TestConfirm:
     def test_confirms_single_change_by_index(self, dokumenty_app_dir):
-        _seed("Z", changes=[
-            {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v2"},
-            {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v3"},
-        ])
+        _seed(
+            "Z",
+            changes=[
+                {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v2"},
+                {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v3"},
+            ],
+        )
         marked = tracking.confirm("Z", change_index=0)
         assert marked == 1
         s = state.load_state("Z")
@@ -108,30 +124,46 @@ class TestConfirm:
         assert s["changes"][1]["confirmed_on"] is None
 
     def test_confirm_by_index_does_not_advance_baseline(self, dokumenty_app_dir):
-        _seed("Z", baseline_version_id="v1", last_known_version_id="v2", changes=[
-            {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v2"},
-        ])
+        _seed(
+            "Z",
+            baseline_version_id="v1",
+            last_known_version_id="v2",
+            changes=[
+                {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v2"},
+            ],
+        )
         tracking.confirm("Z", change_index=0)
         assert state.load_state("Z")["baseline_version_id"] == "v1"
 
     def test_confirm_all_advances_baseline(self, dokumenty_app_dir):
-        _seed("Z", baseline_version_id="v1", last_known_version_id="v5", changes=[
-            {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v5"},
-        ])
+        _seed(
+            "Z",
+            baseline_version_id="v1",
+            last_known_version_id="v5",
+            changes=[
+                {"confirmed_on": None, "old_version_id": "v1", "new_version_id": "v5"},
+            ],
+        )
         marked = tracking.confirm("Z")
         assert marked == 1
         assert state.load_state("Z")["baseline_version_id"] == "v5"
 
     def test_confirm_already_confirmed_index_returns_zero(self, dokumenty_app_dir):
-        _seed("Z", changes=[
-            {"confirmed_on": "2026-04-01T00:00:00Z"},
-        ])
+        _seed(
+            "Z",
+            changes=[
+                {"confirmed_on": "2026-04-01T00:00:00Z"},
+            ],
+        )
         assert tracking.confirm("Z", change_index=0) == 0
 
     def test_confirm_no_unconfirmed_returns_zero(self, dokumenty_app_dir):
-        _seed("Z", changes=[
-            {"confirmed_on": "2026-04-01T00:00:00Z"},
-        ])
+        _seed(
+            "Z",
+            changes=[
+                {"confirmed_on": "2026-04-01T00:00:00Z"},
+            ],
+        )
         assert tracking.confirm("Z") == 0
 
     def test_out_of_range_raises(self, dokumenty_app_dir):
@@ -242,10 +274,12 @@ class TestGroupRemove:
 
 class TestGroupDelete:
     def test_removes_group(self, dokumenty_app_dir):
-        state.save_groups([
-            {"id": "dane", "name": "Daně", "members": []},
-            {"id": "obchod", "name": "Obchod", "members": []},
-        ])
+        state.save_groups(
+            [
+                {"id": "dane", "name": "Daně", "members": []},
+                {"id": "obchod", "name": "Obchod", "members": []},
+            ]
+        )
         tracking.group_delete("Daně")
         groups = state.load_groups()
         assert len(groups) == 1
@@ -258,10 +292,12 @@ class TestGroupDelete:
 
 class TestGroupDeleteById:
     def test_removes_by_slug(self, dokumenty_app_dir):
-        state.save_groups([
-            {"id": "dane", "name": "Daně", "members": []},
-            {"id": "obchod", "name": "Obchod", "members": []},
-        ])
+        state.save_groups(
+            [
+                {"id": "dane", "name": "Daně", "members": []},
+                {"id": "obchod", "name": "Obchod", "members": []},
+            ]
+        )
         tracking.group_delete_by_id("dane")
         groups = state.load_groups()
         assert len(groups) == 1

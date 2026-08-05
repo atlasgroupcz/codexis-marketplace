@@ -1,7 +1,6 @@
 """sledovana-judikatura state.py - I/O, resolve_uuid, report summaries."""
 
 import pytest
-
 from sledovana_judikatura_core import state
 from sledovana_judikatura_core.exceptions import AmbiguousTopicPrefixError
 
@@ -50,6 +49,7 @@ class TestResolveUuid:
 
     def test_missing_app_dir_returns_none(self, judikatura_app_dir):
         import os
+
         os.rmdir(str(judikatura_app_dir))
         assert state.resolve_uuid("anything") is None
 
@@ -64,6 +64,7 @@ class TestResolveUuid:
 class TestAllTopics:
     def test_empty_when_dir_missing(self, judikatura_app_dir):
         import os
+
         os.rmdir(str(judikatura_app_dir))
         assert state.all_topics() == []
 
@@ -131,14 +132,18 @@ class TestReportSummaries:
 
     def test_projects_expected_fields(self, judikatura_app_dir):
         state.save_topic("uid", {})
-        state.save_report("uid", "2026-04-20", {
-            "checked_at": "2026-04-20T08:00:00Z",
-            "period_from": "2026-04-13",
-            "period_to": "2026-04-20",
-            "found_count": 5,
-            "confirmed_on": None,
-            "extra_unused_field": "dropped",
-        })
+        state.save_report(
+            "uid",
+            "2026-04-20",
+            {
+                "checked_at": "2026-04-20T08:00:00Z",
+                "period_from": "2026-04-13",
+                "period_to": "2026-04-20",
+                "found_count": 5,
+                "confirmed_on": None,
+                "extra_unused_field": "dropped",
+            },
+        )
         summaries = state.report_summaries("uid")
         assert len(summaries) == 1
         s = summaries[0]

@@ -3,6 +3,11 @@ use std::process::{Command, Output, Stdio};
 
 use crate::config::DaemonConfig;
 
+// Publishing sources is a best-effort side channel: never let it stall the CLI
+// when the daemon endpoint is unreachable from the sandbox.
+const CONNECT_TIMEOUT_SECONDS: &str = "3";
+const REQUEST_TIMEOUT_SECONDS: &str = "10";
+
 /// Publishes the `sources` array from a tool response body to the CDX daemon.
 ///
 /// A `Null` or empty array is a no-op. Anything else is POSTed to the daemon's
@@ -24,7 +29,7 @@ pub fn publish_from_body(
     if entries.is_empty() {
         return Ok(());
     }
-    let body = build_publish_body(entries)?;
+    let body = build_publish_body(entries, daemon.working_directory())?;
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
 }
 
@@ -37,15 +42,21 @@ pub fn publish_entries(
     if entries.is_empty() {
         return Ok(());
     }
-    let body = build_publish_body(entries)?;
+    let body = build_publish_body(entries, daemon.working_directory())?;
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
 }
 
 /// Entries are forwarded to the daemon verbatim - every upstream field, including
 /// ones this crate does not know about (e.g. `previewUrl`), must survive publish.
-fn build_publish_body(entries: &[serde_json::Value]) -> Result<String, SourcesError> {
-    serde_json::to_string(&serde_json::json!({ "sources": entries }))
-        .map_err(|e| SourcesError::Parse(e.to_string()))
+fn build_publish_body(
+    entries: &[serde_json::Value],
+    working_directory: Option<&str>,
+) -> Result<String, SourcesError> {
+    let mut body = serde_json::json!({ "sources": entries });
+    if let Some(dir) = working_directory {
+        body["workingDirectory"] = serde_json::Value::String(dir.to_string());
+    }
+    serde_json::to_string(&body).map_err(|e| SourcesError::Parse(e.to_string()))
 }
 
 /// Best-effort publish of source entries: a no-op when empty or outside a
@@ -66,7 +77,10 @@ pub fn try_publish(plugin_name: &str, entries: &[serde_json::Value]) {
 fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), SourcesError> {
     let output = Command::new("curl")
         .args([
-            "-sS", "--fail-with-body", "-H", auth_header, "-X", "POST",
+            "-sS", "--fail-with-body",
+            "--connect-timeout", CONNECT_TIMEOUT_SECONDS,
+            "--max-time", REQUEST_TIMEOUT_SECONDS,
+            "-H", auth_header, "-X", "POST",
             "-H", "Content-Type: application/json", url, "-d", body,
         ])
         .stdin(Stdio::null())
@@ -140,7 +154,7 @@ mod tests {
             serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" }),
         ];
 
-        let body = build_publish_body(&entries).unwrap();
+        let body = build_publish_body(&entries, None).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
 
         assert_eq!(
@@ -149,5 +163,31 @@ mod tests {
         );
         assert!(parsed["sources"][1].get("previewUrl").is_none());
         assert_eq!(parsed["sources"], serde_json::json!(entries));
+    }
+
+    #[test]
+    fn should_include_working_directory_when_the_daemon_injected_it() {
+        // given
+        let entries = vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
+
+        // when
+        let body = build_publish_body(&entries, Some("/home/codexis/project")).unwrap();
+
+        // then
+        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(parsed["workingDirectory"], serde_json::json!("/home/codexis/project"));
+    }
+
+    #[test]
+    fn should_omit_working_directory_when_absent() {
+        // given
+        let entries = vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
+
+        // when
+        let body = build_publish_body(&entries, None).unwrap();
+
+        // then
+        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert!(parsed.get("workingDirectory").is_none());
     }
 }

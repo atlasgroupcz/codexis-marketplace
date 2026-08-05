@@ -14,14 +14,7 @@ class TestStripChangesInTime:
         assert strip_changes_in_time(text) == "Before  After"
 
     def test_removes_multiline_block(self):
-        text = (
-            "Before\n"
-            "<changes_in_time>\n"
-            "line 1\n"
-            "line 2\n"
-            "</changes_in_time>\n"
-            "After"
-        )
+        text = "Before\n<changes_in_time>\nline 1\nline 2\n</changes_in_time>\nAfter"
         result = strip_changes_in_time(text)
         assert "line 1" not in result
         assert "line 2" not in result
@@ -87,10 +80,7 @@ class TestStripPartMarkers:
         assert strip_part_markers(text) == "See Section 5 for details"
 
     def test_all_three_transformations_combined(self):
-        text = (
-            "[?part=intro]\n"
-            "Viz [§5](cdx://doc/X1) (anchor in this document) dále"
-        )
+        text = "[?part=intro]\nViz [§5](cdx://doc/X1) (anchor in this document) dále"
         result = strip_part_markers(text)
         assert "[?part=intro]" not in result
         assert "§5" in result

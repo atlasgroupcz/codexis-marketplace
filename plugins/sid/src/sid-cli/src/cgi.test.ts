@@ -40,7 +40,7 @@ describe("cgi handle", () => {
     expect(out.ok).toBe(false)
   })
 
-  it("save_config odmítne klíč s newlinem — žádná .env injection", async () => {
+  it("save_config odmítne klíč s newlinem - žádná .env injection", async () => {
     const out = (await handle(
       { action: "save_config", api_key: "sid_a\nSID_API_URL=http://evil" },
       okMe,
@@ -82,7 +82,7 @@ describe("renderCgi", () => {
   })
 })
 
-describe("cgi — notifikace", () => {
+describe("cgi - notifikace", () => {
   it("get_status vrací aktuální nastavení kanálů", async () => {
     const out = (await handle({ action: "get_status" }, okMe)) as { notify: unknown }
     expect(out.notify).toEqual({ inApp: true })
@@ -97,7 +97,7 @@ describe("cgi — notifikace", () => {
     expect(out.notify.inApp).toBe(false)
   })
 
-  it("panel se daemona neptá na adresu uživatele — status ji nenabízí", async () => {
+  it("panel se daemona neptá na adresu uživatele - status ji nenabízí", async () => {
     // The plugin sends no mail, so there is no address to show and no
     // reason to spend a daemon round trip resolving one.
     let called = false
@@ -111,7 +111,7 @@ describe("cgi — notifikace", () => {
   })
 
   it("zděděná e-mailová pole ze staré verze panelu se neuloží", async () => {
-    // `email` / `recipients` are no longer part of the request type — an
+    // `email` / `recipients` are no longer part of the request type - an
     // installed older panel build can still post them, which is exactly
     // what this asserts is harmless.
     const legacyBody = {

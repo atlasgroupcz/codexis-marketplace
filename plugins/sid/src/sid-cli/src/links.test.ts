@@ -16,7 +16,7 @@ describe("documentUrl", () => {
     expect(documentUrl("doc-1", "USER")).toBe("https://sid.test/files/doc-1")
   })
 
-  it("admin gets /admin/files — the (user) layout bounces admins to the dashboard", () => {
+  it("admin gets /admin/files - the (user) layout bounces admins to the dashboard", () => {
     expect(documentUrl("doc-1", "ADMIN")).toBe("https://sid.test/admin/files/doc-1")
   })
 
@@ -30,7 +30,7 @@ describe("documentUrl", () => {
 })
 
 describe("homeUrl", () => {
-  it("is SID's front door — no trailing slash to double up on", () => {
+  it("is SID's front door - no trailing slash to double up on", () => {
     expect(homeUrl()).toBe("https://sid.test")
   })
 })

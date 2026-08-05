@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 API_URL = "http://localhost:8080"
 ROOT = Path(__file__).resolve().parents[1]
 BINARY = ROOT / "cdx-cli"
@@ -124,10 +123,14 @@ def run_source_case(case: SourceCase) -> tuple[int, int, int]:
     if total_results <= 0:
         checks.append(CheckResult("FAIL", "base search", "expected totalResults > 0"))
     else:
-        checks.append(CheckResult("PASS", "base search", f"totalResults={total_results}"))
+        checks.append(
+            CheckResult("PASS", "base search", f"totalResults={total_results}")
+        )
 
     if not results:
-        checks.append(CheckResult("FAIL", "results", "expected at least one result item"))
+        checks.append(
+            CheckResult("FAIL", "results", "expected at least one result item")
+        )
     else:
         doc_id = results[0].get("docId", "<missing docId>")
         checks.append(CheckResult("PASS", "results", f"first docId={doc_id}"))
@@ -135,7 +138,9 @@ def run_source_case(case: SourceCase) -> tuple[int, int, int]:
     if case.with_facets:
         if not facets:
             checks.append(
-                CheckResult("FAIL", "availableFilters", "expected availableFilters in response")
+                CheckResult(
+                    "FAIL", "availableFilters", "expected availableFilters in response"
+                )
             )
         else:
             checks.append(
@@ -145,10 +150,14 @@ def run_source_case(case: SourceCase) -> tuple[int, int, int]:
     else:
         if facets:
             checks.append(
-                CheckResult("FAIL", "availableFilters", "ALL should not return facets here")
+                CheckResult(
+                    "FAIL", "availableFilters", "ALL should not return facets here"
+                )
             )
         else:
-            checks.append(CheckResult("PASS", "availableFilters", "none returned as expected"))
+            checks.append(
+                CheckResult("PASS", "availableFilters", "none returned as expected")
+            )
 
     for check in checks:
         print(f"[{check.status:<4}] {check.label:<28} {check.detail}")
@@ -172,7 +181,9 @@ def run_facet_checks(
         label = f"facet {key}"
 
         if facet_type in SKIPPED_FACET_TYPES:
-            checks.append(CheckResult("SKIP", label, f"{facet_type} skipped on purpose"))
+            checks.append(
+                CheckResult("SKIP", label, f"{facet_type} skipped on purpose")
+            )
             continue
 
         if facet_type == "STRING_CHOICE":
@@ -183,7 +194,9 @@ def run_facet_checks(
             checks.append(check_boolean(case, base_total, key))
             continue
 
-        checks.append(CheckResult("FAIL", label, f"unsupported facet type: {facet_type}"))
+        checks.append(
+            CheckResult("FAIL", label, f"unsupported facet type: {facet_type}")
+        )
 
     return checks
 
@@ -206,7 +219,9 @@ def check_string_choice(
     )
     actual = int(response["totalResults"])
     status = "PASS" if actual == expected else "FAIL"
-    detail = f'value="{chosen_value}" expected={expected} actual={actual} base={base_total}'
+    detail = (
+        f'value="{chosen_value}" expected={expected} actual={actual} base={base_total}'
+    )
     return CheckResult(status, f"facet {key}", detail)
 
 

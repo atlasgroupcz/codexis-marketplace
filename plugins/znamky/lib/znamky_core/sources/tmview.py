@@ -35,7 +35,9 @@ _FIELDS = [
 
 
 def _api_base() -> str:
-    return (os.environ.get("CODEXIS_PLUGIN_ZNAMKY_TMVIEW_API_URL") or DEFAULT_BASE).rstrip("/")
+    return (
+        os.environ.get("CODEXIS_PLUGIN_ZNAMKY_TMVIEW_API_URL") or DEFAULT_BASE
+    ).rstrip("/")
 
 
 def _first(record: dict, *names):
@@ -86,8 +88,12 @@ def parse_results(payload: dict) -> list:
                 applicant=_first(rec, "applicantName", "applicant", "holderName"),
                 status=_first(rec, "status", "markCurrentStatusCode"),
                 filing_date=_first(rec, "applicationDate", "filingDate"),
-                nice_classes=_as_list(_first(rec, "niceClass", "niceClasses", "classDescriptionDetails")),
-                vienna_codes=_as_list(_first(rec, "viennaClass", "viennaClasses", "viennaCode")),
+                nice_classes=_as_list(
+                    _first(rec, "niceClass", "niceClasses", "classDescriptionDetails")
+                ),
+                vienna_codes=_as_list(
+                    _first(rec, "viennaClass", "viennaClasses", "viennaCode")
+                ),
                 office=office,
                 url_detail=_detail_url(st13, office, number),
                 image_url=_first(rec, "markImageURI", "markImageUri", "imageUri"),
@@ -110,7 +116,9 @@ def search(query_text: str, nice_classes=None, offices=None, limit: int = 50) ->
     if classes:
         payload["fNiceClass"] = [str(c) for c in classes]
     response = base.post_json(
-        f"{_api_base()}/search/results", payload, SOURCE,
+        f"{_api_base()}/search/results",
+        payload,
+        SOURCE,
         headers={"Referer": "https://www.tmdn.org/tmview/"},
     )
     return parse_results(response)
@@ -123,5 +131,5 @@ def fetch_image(candidate: dict):
         return None
     try:
         return base.get_bytes(url, SOURCE)
-    except Exception:  # noqa: BLE001 - image fetch is best-effort
+    except Exception:
         return None

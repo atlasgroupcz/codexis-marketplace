@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Obchodný register SR"
     summary: "Vyhledávání slovenských firem - IČO, statutární orgány, sídlo, základní kapitál, historie a výpisy z orsr.sk."
+    examplePrompts:
+      - "Ověř v slovenském obchodním rejstříku firmu ESET - sídlo, statutáry a kapitál."
+      - "Stáhni účetní závěrky firmy ESET ze slovenského registru závěrek."
+      - "Kde najdu výpis ze slovenského obchodního rejstříku pro firmu?"
   en:
     displayName: "Slovak Commercial Register"
     summary: "Look up Slovak companies - IČO, statutory bodies, registered office, share capital, history and orsr.sk extracts."
+    examplePrompts:
+      - "Check ESET in the Slovak Commercial Register - address, statutory bodies and capital."
+      - "Download ESET's financial statements from the Slovak register of statements."
+      - "Where do I find a Slovak Commercial Register extract for a company?"
   sk:
     displayName: "Obchodný register SR"
     summary: "Vyhľadávanie slovenských firiem - IČO, štatutárne orgány, sídlo, základné imanie, história a výpisy z orsr.sk."
+    examplePrompts:
+      - "Over v obchodnom registri firmu ESET - sídlo, konateľov a základné imanie."
+      - "Stiahni účtovné závierky firmy ESET z registra účtovných závierok."
+      - "Kde nájdem výpis z obchodného registra pre firmu?"
 ---
 
 # Slovak Commercial Register (obchodný register SR)
@@ -74,7 +86,7 @@ most 500 hits - narrow the query if the result is truncated.
 
 | Flag | RPO parameter | Notes |
 |---|---|---|
-| `--ico <ICO>` | `identifier` | 1–8 digits, padded to 8 with leading zeros |
+| `--ico <ICO>` | `identifier` | 1-8 digits, padded to 8 with leading zeros |
 | `--name <TEXT>` | `fullName` | loose match, includes historical names |
 | `--municipality <TEXT>` | `addressMunicipality` | seat municipality |
 | `--street <TEXT>` | `addressStreet` | seat street |

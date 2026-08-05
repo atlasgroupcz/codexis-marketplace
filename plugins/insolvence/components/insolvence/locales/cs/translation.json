@@ -110,5 +110,8 @@
     "saved": "Nastavení oznámení uloženo.",
     "ownAddress": "Tato adresa je vaše - e-mail vám chodí vždy.",
     "duplicate": "Tato adresa už je v seznamu."
+  },
+  "help": {
+    "docs": "Jak to funguje?"
   }
 }

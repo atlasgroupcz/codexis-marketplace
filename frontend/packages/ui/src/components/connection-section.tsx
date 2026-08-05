@@ -3,6 +3,7 @@ import { Check, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
 import { Label } from '@workspace/ui/components/label'
+import { Skeleton } from '@workspace/ui/components/skeleton'
 import type { ConnField, ConnGetKeyLink } from '@workspace/ui/components/connection-settings'
 
 export interface ConnectionSectionLabels {
@@ -16,6 +17,12 @@ export interface ConnectionSectionLabels {
 
 export interface ConnectionSectionProps {
   configured: boolean
+  /**
+   * The first fetch has not answered yet. Renders a placeholder at this
+   * component's own heights, so the card is the size it will stay and the
+   * empty field is never shown for a frame before the stored key replaces it.
+   */
+  loading?: boolean
   maskedKey: string
   fields: Array<ConnField>
   getKey: ConnGetKeyLink
@@ -40,6 +47,7 @@ export interface ConnectionSectionProps {
  */
 export function ConnectionSection({
   configured,
+  loading = false,
   maskedKey,
   fields,
   getKey,
@@ -84,6 +92,24 @@ export function ConnectionSection({
     if (timerRef.current) clearTimeout(timerRef.current)
     setConfirmRemove(false)
     onDelete()
+  }
+
+  // Same three blocks at the same heights, so the placeholder cannot drift
+  // from the real layout the way a hand-measured copy in a consumer would.
+  if (loading) {
+    return (
+      <div className="space-y-2.5" aria-busy="true">
+        <Skeleton className="h-9 w-full" />
+        <div className="min-h-[1.25rem]" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <Skeleton className="h-5 w-32" />
+            {getKey.hint && <Skeleton className="h-4 w-44" />}
+          </div>
+          <Skeleton className="h-8 w-20 shrink-0" />
+        </div>
+      </div>
+    )
   }
 
   return (

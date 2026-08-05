@@ -18,12 +18,24 @@ i18n:
   cs:
     displayName: "Analýza videa a audia"
     summary: "Přepisy a analýza videa i audia (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) pomocí multimodálního modelu Gemini."
+    examplePrompts:
+      - "Přepiš tenhle záznam jednání i s časovými značkami."
+      - "Shrň do několika bodů, co zaznělo v tomhle YouTube videu."
+      - "Najdi v nahrávce místo, kde se mluví o ceně, a řekni, v kolikáté minutě to je."
   en:
     displayName: "Audio & Video Analysis"
     summary: "Transcribe and analyze audio and video (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) using Gemini multimodal models."
+    examplePrompts:
+      - "Transcribe this recording of the meeting, including timestamps."
+      - "Summarize in a few bullet points what is said in this YouTube video."
+      - "Find the part of the recording where the price is discussed and tell me the timestamp."
   sk:
     displayName: "Analýza videa a audia"
     summary: "Prepisy a analýza videa i audia (MP4, WebM, MOV, MP3, WAV, FLAC, OGG, YouTube) pomocou multimodálneho modelu Gemini."
+    examplePrompts:
+      - "Prepíš tento záznam rokovania aj s časovými značkami."
+      - "Zhrň do niekoľkých bodov, čo odznelo v tomto YouTube videu."
+      - "Nájdi v nahrávke miesto, kde sa hovorí o cene, a povedz, v ktorej minúte to je."
 ---
 
 # Video & Audio Analysis
@@ -46,7 +58,7 @@ The command prints the **file path** to stdout (e.g. `.transcripts/meeting.mp4.t
 
 The transcript uses a simple timestamped format with spoken dialogue, scene descriptions, and audio cues. Produced by Gemini Pro.
 
-**CRITICAL - always pass `timeoutMs: 300000` (5 minutes) to the shell call.** The default 30-second shell timeout is too short for transcription: Gemini upload + multi-pass transcription regularly takes 30s–3min even for short clips, and the daemon will kill the call mid-flight without it. Without `timeoutMs`, the call times out, leaving no transcript file on disk and no useful path on stdout.
+**CRITICAL - always pass `timeoutMs: 300000` (5 minutes) to the shell call.** The default 30-second shell timeout is too short for transcription: Gemini upload + multi-pass transcription regularly takes 30s-3min even for short clips, and the daemon will kill the call mid-flight without it. Without `timeoutMs`, the call times out, leaving no transcript file on disk and no useful path on stdout.
 
 ### Step 2: Answer from the transcript
 
@@ -84,7 +96,7 @@ video-analyze /home/codexis/meeting.mp4 "What color is the logo shown at 2:15?"
 
 ## Error handling
 
-- **429 / rate limit errors are transient.** Wait 10–30 seconds and retry.
+- **429 / rate limit errors are transient.** Wait 10-30 seconds and retry.
 
 ## Output
 

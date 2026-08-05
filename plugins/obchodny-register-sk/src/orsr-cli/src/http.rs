@@ -5,10 +5,7 @@ use std::time::Duration;
 use std::{env, fs};
 
 use anyhow::{anyhow, Result};
-use reqwest::blocking::Client;
-use reqwest::header::ACCEPT;
-use reqwest::Url;
-use cdx_common::http::{backoff, base_url_from_env, format_status, join_url, retryable_status};
+use ureq::Agent;
 
 const DEFAULT_RPO_BASE_URL: &str = "https://api.statistics.sk/rpo/v1";
 const DEFAULT_RUZ_BASE_URL: &str = "https://www.registeruz.sk/cruz-public/api";
@@ -18,7 +15,7 @@ const MAX_URL_LEN: usize = 2000;
 const USER_AGENT_VALUE: &str = concat!("orsr-cli/", env!("CARGO_PKG_VERSION"));
 
 pub struct RegistryClient {
-    client: Client,
+    agent: Agent,
     rpo_base_url: String,
     ruz_base_url: String,
     cache_enabled: bool,
@@ -27,14 +24,16 @@ pub struct RegistryClient {
 
 impl RegistryClient {
     pub fn new(cache_enabled: bool) -> Result<Self> {
-        let rpo_base_url = base_url_from_env("RPO_BASE_URL", DEFAULT_RPO_BASE_URL);
-        let ruz_base_url = base_url_from_env("RUZ_BASE_URL", DEFAULT_RUZ_BASE_URL);
-        let client = Client::builder()
-            .user_agent(USER_AGENT_VALUE)
-            .timeout(Duration::from_secs(30))
-            .build()?;
+        let rpo_base_url = cdx_common::http::base_url_from_env("RPO_BASE_URL", DEFAULT_RPO_BASE_URL);
+        let ruz_base_url = cdx_common::http::base_url_from_env("RUZ_BASE_URL", DEFAULT_RUZ_BASE_URL);
+        // ureq keeps a connection pool on the Agent -> the retry loops reuse the
+        // TCP+TLS connection to the same host.
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(Duration::from_secs(10))
+            .timeout_read(Duration::from_secs(30))
+            .build();
         Ok(Self {
-            client,
+            agent,
             rpo_base_url,
             ruz_base_url,
             cache_enabled,
@@ -52,29 +51,36 @@ impl RegistryClient {
 
     pub fn get_bytes(&self, url: &str) -> Result<Vec<u8>> {
         for attempt in 0..MAX_ATTEMPTS {
-            let mut resp = match self.client.get(url).send() {
+            let resp = match self
+                .agent
+                .get(url)
+                .set("User-Agent", USER_AGENT_VALUE)
+                .call()
+            {
                 Ok(resp) => resp,
-                Err(error) => {
-                    if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                Err(ureq::Error::Status(code, resp)) => {
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
-                    return Err(error.into());
+                    return Err(anyhow!(
+                        "HTTP {} on GET {url}",
+                        cdx_common::http::format_status(code, resp.status_text())
+                    ));
+                }
+                Err(error) => {
+                    if attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
+                        continue;
+                    }
+                    return Err(anyhow!("GET {url} failed: {error}"));
                 }
             };
-            let status = resp.status();
-            if !status.is_success() {
-                if retryable_status(status) && attempt + 1 < MAX_ATTEMPTS {
-                    sleep(backoff(attempt));
-                    continue;
-                }
-                return Err(anyhow!("HTTP {} on GET {url}", format_status(status)));
-            }
             let mut body = Vec::new();
             // TODO: drop once orsr.sk sends TLS close_notify - its legacy server
             // closes EOF-delimited responses abruptly, which strict rustls reads
             // report as an error even though the body already arrived.
-            if let Err(e) = resp.read_to_end(&mut body) {
+            if let Err(e) = resp.into_reader().read_to_end(&mut body) {
                 if body.is_empty() {
                     return Err(anyhow!("error reading GET {url}: {e}"));
                 }
@@ -90,34 +96,37 @@ impl RegistryClient {
         }
         for attempt in 0..MAX_ATTEMPTS {
             let resp = match self
-                .client
+                .agent
                 .get(url)
-                .header(ACCEPT, "application/json")
-                .send()
+                .set("Accept", "application/json")
+                .set("User-Agent", USER_AGENT_VALUE)
+                .call()
             {
                 Ok(resp) => resp,
-                Err(error) => {
-                    if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                Err(ureq::Error::Status(code, resp)) => {
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
-                    return Err(error.into());
+                    let final_url = resp.get_url().to_string();
+                    let status = cdx_common::http::format_status(code, resp.status_text());
+                    let body = resp.into_string().unwrap_or_default();
+                    return Err(anyhow!(
+                        "HTTP {status} on GET {final_url}\n{body}",
+                        status = status,
+                        body = body.trim()
+                    ));
+                }
+                Err(error) => {
+                    if attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
+                        continue;
+                    }
+                    return Err(anyhow!("GET {url} failed: {error}"));
                 }
             };
-            let status = resp.status();
-            let final_url = resp.url().to_string();
-            let body = resp.text().unwrap_or_default();
-            if !status.is_success() {
-                if retryable_status(status) && attempt + 1 < MAX_ATTEMPTS {
-                    sleep(backoff(attempt));
-                    continue;
-                }
-                return Err(anyhow!(
-                    "HTTP {status} on GET {final_url}\n{body}",
-                    status = format_status(status),
-                    body = body.trim()
-                ));
-            }
+            let final_url = resp.get_url().to_string();
+            let body = resp.into_string().unwrap_or_default();
             if body.trim_start().starts_with('<') {
                 return Err(anyhow!(
                     "GET {final_url} returned HTML instead of JSON - the service is unavailable or the request was blocked"
@@ -159,15 +168,18 @@ impl RegistryClient {
 }
 
 fn build_url(base: &str, path: &str, query: &[(&str, &str)]) -> Result<String> {
-    let mut url = Url::parse(&join_url(base, path))
-        .map_err(|error| anyhow!("invalid API URL: {error}"))?;
+    let mut url = cdx_common::http::join_url(base, path);
     if !query.is_empty() {
-        let mut pairs = url.query_pairs_mut();
-        for (key, value) in query {
-            pairs.append_pair(key, value);
+        url.push('?');
+        for (i, (key, value)) in query.iter().enumerate() {
+            if i > 0 {
+                url.push('&');
+            }
+            form_urlencode_into(&mut url, key);
+            url.push('=');
+            form_urlencode_into(&mut url, value);
         }
     }
-    let url = url.to_string();
     if url.len() > MAX_URL_LEN {
         return Err(anyhow!(
             "API URL is {} characters; URLs must stay under {} characters",
@@ -176,6 +188,26 @@ fn build_url(base: &str, path: &str, query: &[(&str, &str)]) -> Result<String> {
         ));
     }
     Ok(url)
+}
+
+/// Percent-encodes `value` into `out` using `application/x-www-form-urlencoded`
+/// rules (space -> `+`, uppercase hex), matching what reqwest's `Url` query
+/// serializer produced. Keeps built URLs - and therefore cache keys - stable.
+fn form_urlencode_into(out: &mut String, value: &str) {
+    for &byte in value.as_bytes() {
+        match byte {
+            b'*' | b'-' | b'.' | b'_' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z' => {
+                out.push(byte as char);
+            }
+            b' ' => out.push('+'),
+            _ => {
+                const HEX: &[u8; 16] = b"0123456789ABCDEF";
+                out.push('%');
+                out.push(HEX[(byte >> 4) as usize] as char);
+                out.push(HEX[(byte & 0x0f) as usize] as char);
+            }
+        }
+    }
 }
 
 fn configured_cache_ttl() -> Duration {

@@ -34,7 +34,7 @@ describe("folders list", () => {
       folders: Array<{ id: string; path: string; url: string }>
     }
     expect(cap.url).toBe("http://s/api/v1/folders")
-    // A flat list of ids is useless to the model — the path is what a person
+    // A flat list of ids is useless to the model - the path is what a person
     // recognises, and what makes `docs list --folder` usable.
     expect(out.folders.find((f) => f.id === "child")?.path).toBe("Směrnice / Bezpečnost")
     expect(out.folders.find((f) => f.id === "root")?.path).toBe("Směrnice")

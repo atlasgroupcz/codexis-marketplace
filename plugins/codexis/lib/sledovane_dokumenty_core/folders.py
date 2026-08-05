@@ -33,7 +33,13 @@ CONTRACT_VERSION = 1
 # Documents we can extract text from (the daemon extract agent handles docx/pdf/
 # txt directly and OCRs the rest).
 SUPPORTED_EXTS = {
-    ".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt", ".md",
+    ".pdf",
+    ".docx",
+    ".doc",
+    ".rtf",
+    ".odt",
+    ".txt",
+    ".md",
 }
 
 
@@ -145,7 +151,7 @@ def read_watched(root):
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -184,7 +190,7 @@ def sync_watched(root):
     old_by_path = _documents_by_path(existing)
     now = now_utc()
 
-    documents = []
+    documents: list[dict] = []
     added = changed = 0
     seen = set()
     for entry in scanned:
@@ -193,14 +199,16 @@ def sync_watched(root):
         checksum = entry["sha256"]
         prev = old_by_path.get(path)
         if prev is None:
-            documents.append({
-                "path": path,
-                "sha256": checksum,
-                "discoveredAt": now,
-                "extractedAt": None,
-                "updatedAt": now,
-                "legislation": [],
-            })
+            documents.append(
+                {
+                    "path": path,
+                    "sha256": checksum,
+                    "discoveredAt": now,
+                    "extractedAt": None,
+                    "updatedAt": now,
+                    "legislation": [],
+                }
+            )
             added += 1
         elif prev.get("sha256") != checksum:
             doc = dict(prev)
@@ -236,7 +244,8 @@ def docs_needing_harvest(root):
     if not data:
         return []
     return [
-        d["path"] for d in data.get("documents", [])
+        d["path"]
+        for d in data.get("documents", [])
         if d.get("extractedAt") is None and d.get("path")
     ]
 
@@ -299,7 +308,7 @@ def read_tracking(root):
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -335,7 +344,7 @@ def load_index():
     if not os.path.isfile(path):
         return []
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, list) else []
     except (json.JSONDecodeError, OSError):
@@ -413,15 +422,20 @@ def list_watches():
                     1 for c in leg.get("changes", []) if not c.get("confirmed_on")
                 )
         out = dict(entry)
-        out.update({
-            "documents": len(documents),
-            "pending_harvest": pending,
-            "legislation": len(legislation),
-            "unconfirmed_changes": unconfirmed,
-            "last_check_at": tracking.get("lastCheckAt") if tracking else None,
-        })
+        out.update(
+            {
+                "documents": len(documents),
+                "pending_harvest": pending,
+                "legislation": len(legislation),
+                "unconfirmed_changes": unconfirmed,
+                "last_check_at": tracking.get("lastCheckAt") if tracking else None,
+            }
+        )
         result.append(out)
-    result.sort(key=lambda e: (e.get("unconfirmed_changes", 0), e.get("added_on", "")), reverse=True)
+    result.sort(
+        key=lambda e: (e.get("unconfirmed_changes", 0), e.get("added_on", "")),
+        reverse=True,
+    )
     return result
 
 

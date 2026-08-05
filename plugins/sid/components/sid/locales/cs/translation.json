@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "SID — Interní dokumenty",
-    "lead": "Klíč propojí tento doplněk s vaším účtem v SID. Má stejná oprávnění jako vy — chraňte ho jako heslo.",
+    "title": "SID - Interní dokumenty",
+    "lead": "Klíč propojí tento doplněk s vaším účtem v SID. Má stejná oprávnění jako vy - chraňte ho jako heslo.",
     "connectionSection": "Připojení k SID",
     "notifySection": "Upozornění",
     "loadFailed": "Stav se nepodařilo načíst.",
@@ -27,5 +27,8 @@
     "inAppLabel": "Oznámení v centru notifikací",
     "inAppDescription": "Denní souhrn novinek a čekajících potvrzení. E-maily posílá samotné SID.",
     "save": "Uložit upozornění"
+  },
+  "help": {
+    "docs": "Jak to funguje?"
   }
 }

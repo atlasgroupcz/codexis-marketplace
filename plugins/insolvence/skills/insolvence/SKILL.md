@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "Hlídač insolvencí ČR"
     summary: "Lustrace firem a osob v insolvenčním rejstříku (ISIR) a sledování změn insolvenčních řízení."
+    examplePrompts:
+      - "Zjisti, jestli je firma s IČO 04863313 v insolvenci."
+      - "Prověř, jestli je na fyzickou osobu vedeno insolvenční řízení."
+      - "Hlídej insolvenci našeho dodavatele a dej vědět, když přibude nové řízení."
   en:
     displayName: "Czech Insolvency Watchdog"
     summary: "Look up companies and people in the Czech Insolvency Register (ISIR) and track changes to proceedings."
+    examplePrompts:
+      - "Check whether company 04863313 is in insolvency proceedings."
+      - "Check whether insolvency proceedings are recorded against an individual."
+      - "Watch our supplier for insolvency and tell me when a new proceeding appears."
   sk:
     displayName: "Hliadač insolvencií ČR"
     summary: "Lustrácia firiem a osôb v insolvenčnom registri (ISIR) a sledovanie zmien insolvenčných konaní."
+    examplePrompts:
+      - "Zisti, či je firma s IČO 04863313 v insolvencii."
+      - "Prever, či je na fyzickú osobu vedené insolvenčné konanie."
+      - "Sleduj insolvenciu nášho dodávateľa a daj vedieť, keď pribudne nové konanie."
 ---
 
 # Hlídač insolvencí ČR (ISIR)
@@ -185,7 +197,7 @@ insolvence-cli lustrace osoba <PŘÍJMENÍ> <JMÉNO> <RRRR-MM-DD>
 ```
 
 Returns JSON: `{ "nazev"?, "rizeni": [ { spisova_znacka, soud, druh, stav, datum_zahajeni,
-datum_ukonceni, aktivni, url_detail } ], "relevance" }`. The `relevance` field (1–7) reports the
+datum_ukonceni, aktivni, url_detail } ], "relevance" }`. The `relevance` field (1-7) reports the
 ISIR match quality (1 = by rodné číslo, 2 = by IČO, 4/5 = surname + DOB matched, 6/7 = weak
 surname-only - discarded for persons). `url_detail` is the official ISIR detail page for the
 proceeding.

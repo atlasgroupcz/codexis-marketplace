@@ -4,7 +4,6 @@ import json
 from unittest.mock import patch
 
 import pytest
-
 from znamky_core import notify
 
 
@@ -51,7 +50,9 @@ def test_secret_bearer_prefix_preserved(monkeypatch, tmp_path):
 
 
 def test_missing_secret_raises(monkeypatch, tmp_path):
-    monkeypatch.setenv("CODEXIS_USER_API_TOKEN", "codexis-token")  # present, still must fail
+    monkeypatch.setenv(
+        "CODEXIS_USER_API_TOKEN", "codexis-token"
+    )  # present, still must fail
     _stub_daemon(monkeypatch, tmp_path, secret=None)
     with pytest.raises(notify.ZnamkyError):
         notify._send_email("subj", "body")
@@ -132,7 +133,10 @@ class TestWithoutSelf:
 
     def test_keeps_all_when_me_unavailable(self):
         with patch.object(notify, "_query_me_email", return_value=None):
-            assert notify.without_self(["me@firma.cz", "a@x.cz"]) == ["me@firma.cz", "a@x.cz"]
+            assert notify.without_self(["me@firma.cz", "a@x.cz"]) == [
+                "me@firma.cz",
+                "a@x.cz",
+            ]
 
     def test_empty_returns_empty_without_querying_me(self):
         # No extras → nothing to filter, so it must not make the GraphQL `me` call.
@@ -167,7 +171,9 @@ def test_query_me_email_parses_email_from_graphql_response(monkeypatch, tmp_path
 
     class _Resp:
         def read(self):
-            return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode("utf-8")
+            return json.dumps({"data": {"me": {"email": "me@firma.cz"}}}).encode(
+                "utf-8"
+            )
 
         def __enter__(self):
             return self
@@ -248,13 +254,16 @@ def test_inapp_change_summary_sends_subject_and_link_on_changes(monkeypatch):
         return True
 
     monkeypatch.setattr(notify, "_send_inapp", fake_send_inapp)
+    # The bell link is resolved against the daemon, not hand-written; stub the
+    # resolution so this test stays about what gets sent.
+    monkeypatch.setattr(notify, "_resolve_app_link", lambda: "/apps/encoded-id")
 
     sent = notify.inapp_change_summary(_RESULTS_WITH_CHANGES)
 
     assert sent is True
     expected_subject = notify.build_summary(_RESULTS_WITH_CHANGES)[0]
     assert captured["message"] == expected_subject
-    assert captured["link"] == "/znamky"
+    assert captured["link"] == "/apps/encoded-id"
 
 
 def test_inapp_change_summary_no_changes_does_not_send(monkeypatch):
@@ -267,3 +276,126 @@ def test_inapp_change_summary_no_changes_does_not_send(monkeypatch):
 
     assert sent is False
     assert calls == []
+
+
+_EXPECTED_LINK_QUERY = ""
+# ── app deep link ─────────────────────────────────────────────────────────────
+
+# A real application id, captured from a running instance's /apps/... URL. It is
+# only ever carried through, never parsed - these tests pin that.
+_REAL_APP_ID = (
+    "BlBsdWdpbkttYXJrZXRwbGFjZS1wbHVnaW46bWFya2V0cGxhY2UtZGNlODg2Y2MtMjhkZi0zNzk3"
+    "LWFkY2UtYTU0OTY2OWE4NDY2OmthdGFzdHILQXBwbGljYXRpb24Ha2F0YXN0cg"
+)
+
+
+def _content_url(component_id):
+    """The shape the daemon builds: prefix, plugin node id, component id, slash."""
+    return (
+        f"/rest/plugin-components/BlBsdWdpbkttYXJrZXRwbGFjZS1wbHVnaW4/{component_id}/"
+    )
+
+
+def _app(plugin=None, component=None, app_id=_REAL_APP_ID):
+    return {
+        "id": app_id,
+        "contentUrl": _content_url(component or notify._COMPONENT_ID),
+        "plugin": {"name": plugin or notify._PLUGIN_NAME},
+    }
+
+
+def test_reads_the_component_id_from_a_content_url():
+    assert notify._component_id_of(_content_url("katastr")) == "katastr"
+
+
+def test_reads_the_component_id_without_a_trailing_slash():
+    assert notify._component_id_of("/rest/plugin-components/abc/znamky") == "znamky"
+
+
+def test_has_no_component_id_for_a_degenerate_url():
+    assert notify._component_id_of("") is None
+    assert notify._component_id_of("/") is None
+    assert notify._component_id_of(None) is None
+
+
+def test_picks_the_application_matching_plugin_and_component():
+    apps = [_app()]
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        == _REAL_APP_ID
+    )
+
+
+def test_ignores_an_application_of_another_plugin():
+    # Same component id, different owning plugin - the plugin name is what keeps
+    # two marketplaces' same-named components apart.
+    apps = [_app(plugin="other-plugin")]
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        is None
+    )
+
+
+def test_ignores_a_sibling_component_of_the_same_plugin():
+    apps = [_app(component="some-other-component")]
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        is None
+    )
+
+
+def test_returns_none_when_no_application_is_installed():
+    assert (
+        notify._pick_application([], notify._PLUGIN_NAME, notify._COMPONENT_ID) is None
+    )
+
+
+def test_skips_malformed_entries_instead_of_failing():
+    apps = [
+        {"plugin": {"name": notify._PLUGIN_NAME}},
+        {"id": _REAL_APP_ID, "plugin": {"name": notify._PLUGIN_NAME}},
+        {"id": _REAL_APP_ID, "contentUrl": _content_url(notify._COMPONENT_ID)},
+        "not a dict",
+        _app(),
+    ]
+    assert (
+        notify._pick_application(apps, notify._PLUGIN_NAME, notify._COMPONENT_ID)
+        == _REAL_APP_ID
+    )
+
+
+def _stub_applications_query(monkeypatch, tmp_path, payload):
+    """Point the resolver at a fake daemon returning `payload`."""
+    _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon/graphql")
+
+    class _Resp:
+        def read(self):
+            return json.dumps(payload).encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(
+        notify.urllib.request, "urlopen", lambda req, timeout=0: _Resp()
+    )
+
+
+def test_resolve_app_link_builds_the_apps_route(monkeypatch, tmp_path):
+    _stub_applications_query(
+        monkeypatch, tmp_path, {"data": {"applications": [_app()]}}
+    )
+    assert notify._resolve_app_link() == f"/apps/{_REAL_APP_ID}{_EXPECTED_LINK_QUERY}"
+
+
+def test_resolve_app_link_is_none_when_the_app_is_not_installed(monkeypatch, tmp_path):
+    _stub_applications_query(monkeypatch, tmp_path, {"data": {"applications": []}})
+    assert notify._resolve_app_link() is None
+
+
+def test_resolve_app_link_is_none_without_daemon_config(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("CODEXIS_PUBLIC_DAEMON_URL", raising=False)
+    assert notify._resolve_app_link() is None

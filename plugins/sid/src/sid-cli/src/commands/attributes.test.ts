@@ -22,7 +22,7 @@ const ATTRS = [
 const f = (async () => new Response(JSON.stringify(ATTRS), { status: 200 })) as unknown as typeof fetch
 
 describe("attributes list", () => {
-  it("hides archived attributes by default — they cannot be assigned", async () => {
+  it("hides archived attributes by default - they cannot be assigned", async () => {
     const out = (await run(["list"], f)) as { attributes: Array<{ id: string }> }
     expect(out.attributes.map((a) => a.id)).toEqual(["a1", "a2"])
   })

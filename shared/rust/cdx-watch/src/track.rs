@@ -12,6 +12,11 @@ use serde::Serialize;
 
 use crate::error::WatchError;
 
+/// What one [`Watcher::poll`] yields: the snapshot to persist, plus any change
+/// it detected. Named so the trait method and its impls read as one line.
+pub type Polled<W> =
+    Result<(<W as Watcher>::Snapshot, Option<<W as Watcher>::Change>), <W as Watcher>::Error>;
+
 /// A plugin's change-detection strategy. The crate owns the load/persist/loop;
 /// the plugin owns fetching, diffing, and its snapshot/change shapes.
 pub trait Watcher {
@@ -28,10 +33,7 @@ pub trait Watcher {
     ///
     /// The impl owns fetching, diffing, updating snapshot fields, appending to
     /// its own change log, and stamping timestamps.
-    fn poll(
-        &self,
-        prev: Self::Snapshot,
-    ) -> Result<(Self::Snapshot, Option<Self::Change>), Self::Error>;
+    fn poll(&self, prev: Self::Snapshot) -> Polled<Self>;
 
     /// The item's storage slug (its key in the [`ItemStore`]).
     fn slug(&self, snapshot: &Self::Snapshot) -> String;

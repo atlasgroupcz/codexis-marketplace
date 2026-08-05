@@ -1,5 +1,5 @@
 /**
- * CGI backend for the "SID — API key" component.
+ * CGI backend for the "SID - API key" component.
  *
  * Protocol (see plugins/znamky/components/znamky/znamky.py and the daemon's
  * CgiProtocol.java): input arrives as REQUEST_METHOD / CONTENT_LENGTH /
@@ -7,7 +7,7 @@
  * CRLF line, then the body.
  *
  * The daemon serves existing files in the component directory statically, so
- * only a path that isn't a file reaches this — hence the frontend POSTs to
+ * only a path that isn't a file reaches this - hence the frontend POSTs to
  * `api`.
  *
  * The key is never returned to the UI, only its prefix.
@@ -61,7 +61,7 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
           ok: false,
           error:
             err.exitCode === EXIT.AUTH
-              ? "SID klíč odmítl — zkontrolujte, že je zkopírovaný celý a že nevypršel."
+              ? "SID klíč odmítl - zkontrolujte, že je zkopírovaný celý a že nevypršel."
               : `Klíč se nepodařilo ověřit (SID neodpovědělo): ${err.message}`,
         }
       }
@@ -72,7 +72,7 @@ export async function handle(body: Body, f: FetchLike = fetch): Promise<unknown>
 
     case "save_notify_settings": {
       // Only what was actually sent is stored; the file stays a sparse
-      // override. The bell is the only channel — anything else a panel sends
+      // override. The bell is the only channel - anything else a panel sends
       // (an older build still posting `email` / `recipients`) is dropped
       // here rather than written to a file that nothing reads.
       const patch: Record<string, unknown> = {}

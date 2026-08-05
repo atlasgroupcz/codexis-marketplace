@@ -101,7 +101,7 @@
     "figurative": "Figurative",
     "text": "Mark text",
     "nice": "Goods/services classes (Nice)",
-    "niceHint": "Numbers 1–45, comma separated. Optional - narrows relevance.",
+    "niceHint": "Numbers 1-45, comma separated. Optional - narrows relevance.",
     "territory": "Territory",
     "logo": "Logo",
     "logoHint": "Click to upload a logo image (PNG, JPG, SVG).",

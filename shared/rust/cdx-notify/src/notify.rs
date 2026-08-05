@@ -38,30 +38,38 @@ fn rest_base(daemon_url: &str) -> String {
         .to_string()
 }
 
+// ── GraphQL ───────────────────────────────────────────────────────────────────
+
+/// Run a query against the daemon's GraphQL endpoint and return its `data`
+/// object. Best-effort: missing config or any transport/parse error yields
+/// `None`, so callers can treat "no daemon" and "bad answer" alike.
+pub(crate) fn graphql(query: &str) -> Option<serde_json::Value> {
+    let url = daemon_url()?;
+    let auth = daemon_bearer()?;
+    let resp = agent()
+        .post(&url)
+        .set("Authorization", &auth)
+        .set("Content-Type", "application/json")
+        .send_json(json!({ "query": query }))
+        .ok()?;
+    let parsed: serde_json::Value = resp.into_json().ok()?;
+    parsed.get("data").cloned()
+}
+
 // ── signed-in user resolution ─────────────────────────────────────────────────
 
 /// Signed-in user's e-mail from the daemon (GraphQL `me`), or `None`.
 /// Best-effort: any missing config or transport error yields `None`.
 pub fn query_me_email() -> Option<String> {
-    let url = daemon_url()?;
-    let auth = daemon_bearer()?;
-    let body = json!({ "query": "query { me { email } }" });
-    let resp = agent()
-        .post(&url)
-        .set("Authorization", &auth)
-        .set("Content-Type", "application/json")
-        .send_json(body)
-        .ok()?;
-    let parsed: serde_json::Value = resp.into_json().ok()?;
-    let email = parsed
-        .get("data")
-        .and_then(|d| d.get("me"))
+    let email = graphql("query { me { email } }")?
+        .get("me")
         .and_then(|m| m.get("email"))
-        .and_then(|e| e.as_str())?;
+        .and_then(|e| e.as_str())?
+        .to_string();
     if email.is_empty() {
         None
     } else {
-        Some(email.to_string())
+        Some(email)
     }
 }
 
@@ -115,6 +123,17 @@ pub fn without_self(recipients: &[String]) -> Vec<String> {
         .into_iter()
         .filter(|r| r.trim().to_lowercase() != me_key)
         .collect()
+}
+
+/// Extract the `recipients` array from a save-notify-settings request body and
+/// run it through [`without_self`]. Returns `None` when the key is absent, so
+/// the "omit `recipients` to leave the stored list untouched" rule lives in one
+/// place; non-string array entries are skipped.
+pub fn recipients_from_body(body: &serde_json::Value) -> Option<Vec<String>> {
+    body.get("recipients").and_then(|v| v.as_array()).map(|arr| {
+        let raw: Vec<String> = arr.iter().filter_map(|v| v.as_str().map(String::from)).collect();
+        without_self(&raw)
+    })
 }
 
 /// Minimal HTML escaping equivalent to Python's `html.escape(s)` (quote=True):

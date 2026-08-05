@@ -39,7 +39,16 @@ pub(crate) fn execute_search_request(
     order: Option<&str>,
 ) -> Result<(), CliError> {
     cdx_common::search_engine::execute_search_request(
-        &RegistrSmluvApi, base_url, auth_header, source_code, payload, dry_run, sort, order,
+        &RegistrSmluvApi,
+        cdx_common::search_engine::SearchRequest {
+            base_url,
+            auth_header,
+            source_code,
+            payload,
+            dry_run,
+            sort,
+            order,
+        },
     )
 }
 
@@ -64,7 +73,7 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         if endpoint.is_empty() {
             return Err(format!("Empty endpoint after doc/{id}/"));
         }
-        let api_path = lookup_display_id_prefix(id)?;
+        let api_path = cdx_common::http::lookup_display_id_prefix(id, ID_PREFIXES)?;
         Ok(format!("{base}/{api_path}/doc/{id}/{endpoint}"))
     } else if let Some(rest) = cdx_path.strip_prefix("resolve/") {
         if rest.is_empty() {
@@ -74,15 +83,6 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
     } else {
         Err(format!("Unknown registr-smluv:// path: {cdx_path}"))
     }
-}
-
-fn lookup_display_id_prefix(id: &str) -> Result<&'static str, String> {
-    for &(prefix, api_path) in ID_PREFIXES {
-        if id.starts_with(prefix) {
-            return Ok(api_path);
-        }
-    }
-    Err(format!("Unknown display ID prefix in: {id}"))
 }
 
 #[cfg(test)]

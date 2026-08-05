@@ -12,13 +12,13 @@ notify-on-success: true
 notify-on-failure: true
 i18n:
   cs:
-    title: "Compliance – sledování tématu"
+    title: "Compliance - sledování tématu"
     description: "Každý měsíc shrne změny regulace ve zvolené oblasti compliance (GDPR, ESG, whistleblowing…)."
   en:
     title: "Compliance watch on a topic"
     description: "Each month, summarize regulatory changes in a compliance area of your choice (GDPR, ESG, whistleblowing…)."
   sk:
-    title: "Compliance – sledovanie témy"
+    title: "Compliance - sledovanie témy"
     description: "Každý mesiac zhrnie zmeny regulácie vo zvolenej oblasti compliance (GDPR, ESG, whistleblowing…)."
 ---
 Sleduji za vás regulatorní vývoj v oblasti compliance: «UPRAVTE - např. GDPR / ochrana osobních údajů, ESG a CSRD, whistleblowing, kybernetická bezpečnost (NIS2), DORA».

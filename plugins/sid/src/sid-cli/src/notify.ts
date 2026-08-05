@@ -9,10 +9,10 @@ import type { FetchLike } from "./http"
  *
  * One channel only: the notification-centre bell. SID sends its own e-mail
  * (per-event templates, a link to the document, per-tenant gating), so a
- * mailer here would duplicate it with a strictly worse message — counts
+ * mailer here would duplicate it with a strictly worse message - counts
  * instead of the document that needs attention.
  *
- * Auth is the VM token from ~/.cdx/env/secret — NOT the SID API key and NOT
+ * Auth is the VM token from ~/.cdx/env/secret - NOT the SID API key and NOT
  * CODEXIS_USER_API_TOKEN, which the gateway rejects with 403.
  *
  * Best-effort throughout: any failure returns false. The digest on stdout is
@@ -25,7 +25,7 @@ import type { FetchLike } from "./http"
 const GRAPHQL_PATH = "/graphql"
 
 /**
- * Ceiling for daemon calls — this is the layer the cron job hangs on.
+ * Ceiling for daemon calls - this is the layer the cron job hangs on.
  * Follows the reference: 30s for delivery.
  */
 const DAEMON_TIMEOUT_MS = 30_000
@@ -54,7 +54,7 @@ function daemonAuth(): string | null {
  * Where the bell takes the reader, and what the button says.
  *
  * The notification centre renders `link` as a plain anchor, so an absolute
- * SID URL is fine (and is what we want — the plugin's own panel is a
+ * SID URL is fine (and is what we want - the plugin's own panel is a
  * settings screen, not a place to act on a document).
  */
 export type BellTarget = { link?: string; action?: string }
@@ -87,7 +87,7 @@ async function sendBell(
 
 /**
  * Puts the digest in the notification centre. False means it did not get
- * there (no daemon, bell switched off, or the call failed) — never throws.
+ * there (no daemon, bell switched off, or the call failed) - never throws.
  *
  * `target` is the way back into SID. The bell has nowhere to put a link
  * except this field, and without it the message is a count the reader

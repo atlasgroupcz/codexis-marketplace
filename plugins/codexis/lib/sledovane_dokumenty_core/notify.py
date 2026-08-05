@@ -24,7 +24,11 @@ _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 _GRAPHQL_PATH = "/graphql"
 
 # Deep link into the Sledované dokumenty app (folders tab).
-APP_LINK = "/sledovane-dokumenty?tab=folders"
+# Identifies this plugin's app so the bell's deep link can be resolved to the
+# daemon's /apps/<applicationId> route; see _resolve_app_link below.
+_PLUGIN_NAME = "codexis"
+_COMPONENT_ID = "sledovane-dokumenty"
+_LINK_QUERY = "?tab=folders"
 
 
 # ── transport ────────────────────────────────────────────────────────────────
@@ -52,7 +56,7 @@ def _send_email(subject, body_text, body_html, recipients=None):
         "Content-Type: application/json; charset=utf-8\r\n\r\n"
         f"{json.dumps(payload, ensure_ascii=False)}\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
     req = urllib.request.Request(
         rest_base(daemon_url) + _EMAIL_ENDPOINT,
         data=body,
@@ -76,27 +80,32 @@ def _graphql_url():
     return base + _GRAPHQL_PATH
 
 
-def _query_me_email():
-    """Signed-in user's e-mail from the daemon (GraphQL `me`), or None. Best-effort."""
+def _graphql(query):
+    """POST a query to the daemon's GraphQL endpoint and return its `data` object.
+
+    Best-effort: missing config or any transport/parse error yields None, so
+    callers can treat "no daemon" and "bad answer" alike."""
     daemon_url, auth = _daemon_url(), load_auth()
     if not daemon_url or not auth:
         return None
-    body = json.dumps({"query": "query { me { email } }"}).encode("utf-8")
     try:
         req = urllib.request.Request(
             _graphql_url(),
-            data=body,
+            data=json.dumps({"query": query}).encode("utf-8"),
             headers={"Content-Type": "application/json", "Authorization": auth},
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.load(resp)
-        if not isinstance(data, dict):
-            return None
-        me = (data.get("data") or {}).get("me") or {}
-        email = me.get("email")
-        return email if isinstance(email, str) and email else None
     except Exception:
         return None
+    return data.get("data") if isinstance(data, dict) else None
+
+
+def _query_me_email():
+    """Signed-in user's e-mail from the daemon (GraphQL `me`), or None. Best-effort."""
+    me = (_graphql("query { me { email } }") or {}).get("me") or {}
+    email = me.get("email")
+    return email if isinstance(email, str) and email else None
 
 
 def resolve_to(recipients):
@@ -137,6 +146,65 @@ def without_self(recipients):
         return items
     me_key = me.strip().lower()
     return [r for r in items if str(r).strip().lower() != me_key]
+
+
+# ── app deep link ─────────────────────────────────────────────────────────────
+# The bell navigates relative links through the frontend router, whose only route
+# for a plugin app is /apps/$applicationId - an opaque daemon node id, not a slug.
+# A hand-written /<slug> matches no route and lands on a 404. The id embeds the
+# marketplace install uuid, which the plugin has no way to know (it is absent from
+# the environment and from ~/.cdx state), so it is looked up at send time from the
+# daemon's `applications` query - scoped to the signed-in user, the same principal
+# this plugin's daemon token already authenticates as.
+#
+# The id is never parsed, only carried: the query also returns contentUrl, which
+# the daemon builds as /rest/plugin-components/<pluginNodeId>/<appId>/, so the
+# component id is readable as its last path segment. Matching on that avoids
+# decoding the daemon's internal node-id encoding, which this repo has no
+# contract with.
+
+
+def _component_id_of(content_url):
+    """The component id a contentUrl points at - its last path segment.
+
+    The daemon percent-encodes that segment, but component ids are kebab-case
+    ASCII (repo convention), for which the encoding is the identity, so the
+    segment is compared as-is."""
+    trimmed = (content_url or "").rstrip("/")
+    return trimmed.rsplit("/", 1)[-1] if trimmed else None
+
+
+def _pick_application(applications, plugin_name, component_id):
+    """The application id owned by `plugin_name`'s `component_id`.
+
+    Both halves matter: one plugin may publish several components (codexis ships
+    sledovana-judikatura and sledovane-dokumenty), and two marketplaces can carry
+    same-named components."""
+    if not isinstance(applications, list):
+        return None
+    for app in applications:
+        if not isinstance(app, dict):
+            continue
+        app_id = app.get("id")
+        plugin = app.get("plugin") or {}
+        content_url = app.get("contentUrl")
+        if not isinstance(app_id, str) or plugin.get("name") != plugin_name:
+            continue
+        if (
+            isinstance(content_url, str)
+            and _component_id_of(content_url) == component_id
+        ):
+            return app_id
+    return None
+
+
+def _resolve_app_link():
+    """/apps/<applicationId> for this plugin's component, or None. Best-effort: an
+    unresolvable link is omitted rather than sent broken - an unclickable bell item
+    beats one that navigates into a 404."""
+    data = _graphql("query { applications { id contentUrl plugin { name } } }") or {}
+    found = _pick_application(data.get("applications"), _PLUGIN_NAME, _COMPONENT_ID)
+    return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
 def _send_inapp(message, *, action=None, link=None, ntype="legislation-changed"):
@@ -202,8 +270,11 @@ def build_summary(results):
         text_lines.append("")
         items = "".join(
             f'<li style="margin:2px 0">{escape(c.get("text") or c.get("codexisId") or "")}'
-            + (f' <span style="color:#777">(účinné od {escape(c["effective_on"])})</span>'
-               if c.get("effective_on") else "")
+            + (
+                f' <span style="color:#777">(účinné od {escape(c["effective_on"])})</span>'
+                if c.get("effective_on")
+                else ""
+            )
             + "</li>"
             for c in r["changes"]
         )
@@ -240,17 +311,21 @@ def notify_changes(results, settings=None):
 
     if settings is None:
         from . import settings as _settings
+
         settings = _settings.get_notify()
     subject, body_text, body_html = summary
 
     email_sent = inapp_sent = False
     if settings.get("email"):
         email_sent = _send_email(
-            subject, body_text, body_html, recipients=resolve_to(settings.get("recipients"))
+            subject,
+            body_text,
+            body_html,
+            recipients=resolve_to(settings.get("recipients")),
         )
     if settings.get("inApp"):
         inapp_sent = _send_inapp(
-            subject, action="Zobrazit změny", link=APP_LINK
+            subject, action="Zobrazit změny", link=_resolve_app_link()
         )
     return {"email": email_sent, "inApp": inapp_sent, "changes": total}
 
@@ -279,9 +354,13 @@ def build_document_summary(changed):
     if not changed:
         return None
     n = len(changed)
-    subject = f"Sledované dokumenty – {n} změn" if n != 1 else "Sledované dokumenty – 1 změna"
+    subject = (
+        f"Sledované dokumenty - {n} změn" if n != 1 else "Sledované dokumenty - 1 změna"
+    )
     names = [c.get("name") or c.get("codexisId") or "?" for c in changed]
-    body_text = "Změny ve sledovaných dokumentech:\n" + "\n".join(f"- {x}" for x in names)
+    body_text = "Změny ve sledovaných dokumentech:\n" + "\n".join(
+        f"- {x}" for x in names
+    )
     inner = "".join(f"<li>{escape(x)}</li>" for x in names)
     body_html = _email_shell("Změny ve sledovaných dokumentech", f"<ul>{inner}</ul>")
     return subject, body_text, body_html
@@ -298,13 +377,19 @@ def notify_document_changes(changed, settings=None):
         return {"email": False, "inApp": False, "changes": 0}
     if settings is None:
         from . import settings as _settings
+
         settings = _settings.get_notify()
     subject, body_text, body_html = summary
     email_sent = inapp_sent = False
     if settings.get("email"):
         email_sent = _send_email(
-            subject, body_text, body_html, recipients=resolve_to(settings.get("recipients"))
+            subject,
+            body_text,
+            body_html,
+            recipients=resolve_to(settings.get("recipients")),
         )
     if settings.get("inApp"):
-        inapp_sent = _send_inapp(subject, action="Zobrazit změny", link=APP_LINK)
+        inapp_sent = _send_inapp(
+            subject, action="Zobrazit změny", link=_resolve_app_link()
+        )
     return {"email": email_sent, "inApp": inapp_sent, "changes": len(changed)}

@@ -2,9 +2,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
-use reqwest::blocking::Client;
-use reqwest::header::ACCEPT;
-use cdx_common::http::{backoff, base_url_from_env, format_status, join_url, retryable_status};
+use ureq::Agent;
 
 const DEFAULT_ZBGIS_BASE_URL: &str = "https://zbgis.skgeodesy.sk/mapka/api/search/kataster";
 const DEFAULT_ESKN_BASE_URL: &str =
@@ -15,74 +13,82 @@ const USER_AGENT_VALUE: &str =
 const MAX_ATTEMPTS: usize = 3;
 
 pub struct KatasterClient {
-    client: Client,
+    agent: Agent,
     zbgis_base_url: String,
     eskn_base_url: String,
 }
 
 impl KatasterClient {
     pub fn new() -> Result<Self> {
-        let zbgis_base_url = base_url_from_env("ZBGIS_BASE_URL", DEFAULT_ZBGIS_BASE_URL);
-        let eskn_base_url = base_url_from_env("ESKN_BASE_URL", DEFAULT_ESKN_BASE_URL);
-        let client = Client::builder()
-            .user_agent(USER_AGENT_VALUE)
-            .timeout(Duration::from_secs(30))
-            .build()?;
+        let zbgis_base_url = cdx_common::http::base_url_from_env("ZBGIS_BASE_URL", DEFAULT_ZBGIS_BASE_URL);
+        let eskn_base_url = cdx_common::http::base_url_from_env("ESKN_BASE_URL", DEFAULT_ESKN_BASE_URL);
+        // ureq keeps a connection pool on the Agent -> repeated requests to the
+        // same cadastre host reuse the TCP+TLS connection.
+        let agent = ureq::AgentBuilder::new()
+            .timeout_connect(Duration::from_secs(10))
+            .timeout_read(Duration::from_secs(30))
+            .build();
         Ok(Self {
-            client,
+            agent,
             zbgis_base_url,
             eskn_base_url,
         })
     }
 
     pub fn zbgis_get(&self, path: &str, query: &[(&str, &str)]) -> Result<String> {
-        self.get_json(&join_url(&self.zbgis_base_url, path), query)
+        self.get_json(&cdx_common::http::join_url(&self.zbgis_base_url, path), query)
     }
 
     pub fn eskn_get(&self, path: &str, query: &[(&str, &str)]) -> Result<String> {
-        self.get_json(&join_url(&self.eskn_base_url, path), query)
+        self.get_json(&cdx_common::http::join_url(&self.eskn_base_url, path), query)
     }
 
     fn get_json(&self, url: &str, query: &[(&str, &str)]) -> Result<String> {
         for attempt in 0..MAX_ATTEMPTS {
-            let resp = match self
-                .client
+            let mut req = self
+                .agent
                 .get(url)
-                .query(query)
-                .header(ACCEPT, "application/json")
-                .send()
-            {
-                Ok(resp) => resp,
-                Err(error) => {
-                    if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(backoff(attempt));
+                .set("Accept", "application/json")
+                .set("User-Agent", USER_AGENT_VALUE);
+            for &(k, v) in query {
+                req = req.query(k, v);
+            }
+            match req.call() {
+                Ok(resp) => {
+                    let body = resp.into_string()?;
+                    // A WAF block arrives as HTTP 200 + HTML - never retried.
+                    if body.trim_start().starts_with('<') {
+                        return Err(anyhow!(
+                            "GET {url} returned HTML instead of JSON - the cadastre WAF blocked the request or the service is unavailable"
+                        ));
+                    }
+                    return Ok(body);
+                }
+                Err(ureq::Error::Status(code, resp)) => {
+                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
                         continue;
                     }
-                    return Err(error.into());
+                    let reason = resp.status_text().to_string();
+                    let body = resp.into_string().unwrap_or_default();
+                    return Err(anyhow!(
+                        "HTTP {status} on GET {url}\n{body}",
+                        status = cdx_common::http::format_status(code, &reason),
+                        url = url,
+                        body = body.trim()
+                    ));
                 }
-            };
-            let status = resp.status();
-            let final_url = resp.url().to_string();
-            let body = resp.text().unwrap_or_default();
-            if !status.is_success() {
-                if retryable_status(status) && attempt + 1 < MAX_ATTEMPTS {
-                    sleep(backoff(attempt));
-                    continue;
+                Err(error) => {
+                    // Transport / network error.
+                    if attempt + 1 < MAX_ATTEMPTS {
+                        sleep(cdx_common::http::backoff(attempt));
+                        continue;
+                    }
+                    return Err(anyhow!("GET {url} failed: {error}"));
                 }
-                return Err(anyhow!(
-                    "HTTP {status} on GET {final_url}\n{body}",
-                    status = format_status(status),
-                    body = body.trim()
-                ));
             }
-            // A WAF block arrives as HTTP 200 + HTML - never retried.
-            if body.trim_start().starts_with('<') {
-                return Err(anyhow!(
-                    "GET {final_url} returned HTML instead of JSON - the cadastre WAF blocked the request or the service is unavailable"
-                ));
-            }
-            return Ok(body);
         }
         Err(anyhow!("GET {url} failed after {MAX_ATTEMPTS} attempts"))
     }
 }
+

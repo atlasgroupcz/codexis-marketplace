@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "PowerPoint prezentace"
     summary: "Tvorba a úprava prezentací (.pptx) s vizuální kontrolou každého slidu."
+    examplePrompts:
+      - "Připrav prezentaci, která shrne náš návrh do deseti slidů."
+      - "Předělej tuhle prezentaci do tmavého firemního vzhledu a na každý slide přidej vizuální prvek."
+      - "Projdi přiloženou prezentaci slide po slidu a najdi překrývající se nebo přetékající texty."
   en:
     displayName: "PowerPoint Presentations"
     summary: "Build and edit .pptx decks with visual inspection of every slide."
+    examplePrompts:
+      - "Prepare a presentation summarizing our proposal in ten slides."
+      - "Restyle this deck into a dark corporate look and add a visual element to every slide."
+      - "Go through the attached deck slide by slide and find overlapping or overflowing text."
   sk:
     displayName: "PowerPoint prezentácie"
     summary: "Tvorba a úprava prezentácií (.pptx) s vizuálnou kontrolou každého slidu."
+    examplePrompts:
+      - "Priprav prezentáciu, ktorá zhrnie náš návrh do desiatich slajdov."
+      - "Prerob túto prezentáciu do tmavého firemného vzhľadu a na každý slajd pridaj vizuálny prvok."
+      - "Prejdi priloženú prezentáciu slajd po slajde a nájdi prekrývajúce sa alebo pretekajúce texty."
 ---
 
 # PPTX - building decks that survive being looked at
@@ -68,7 +80,7 @@ Positions are in inches. Keep at least a 0.5" margin from every slide edge.
 Plain bullets on a white background impress nobody and read as machine-generated.
 
 **Pick a palette that fits the topic.** If you could drop your colours into an unrelated deck
-and it would still "work", you have not chosen anything. One colour dominates (60–70% of the
+and it would still "work", you have not chosen anything. One colour dominates (60-70% of the
 visual weight), one or two support it, one sharp accent. Never give all colours equal weight.
 
 | Theme | Primary | Secondary | Accent |
@@ -89,10 +101,10 @@ text-only slide is a forgettable slide.
 
 | Element | Size |
 |---|---|
-| Slide title | 36–44pt bold |
-| Section header | 20–24pt bold |
-| Body | 14–16pt |
-| Caption | 10–12pt, muted |
+| Slide title | 36-44pt bold |
+| Section header | 20-24pt bold |
+| Body | 14-16pt |
+| Caption | 10-12pt, muted |
 
 **Avoid:** the same layout twice in a row; centred body text (centre titles only, left-align
 prose); low-contrast text or icons; cramming every inch; styling one slide and leaving the rest

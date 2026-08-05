@@ -10,12 +10,24 @@ i18n:
   cs:
     displayName: "CODEXIS - Právní databáze"
     summary: "Česká, slovenská a evropská legislativa, česká a evropská judikatura, odborné komentáře, právní literatura a vzory smluv."
+    examplePrompts:
+      - "Najdi judikaturu Nejvyššího soudu k náhradě škody a shrň závěry."
+      - "Ukaž, jak se v čase měnil § 52 zákoníku práce a od kdy platí aktuální znění."
+      - "Najdi vzor smlouvy o dílo a shrň, na co si při jejím uzavírání dát pozor."
   en:
     displayName: "CODEXIS - Legal Database"
     summary: "Czech, Slovak and EU legislation, Czech and European case law, legal commentaries, literature and contract templates."
+    examplePrompts:
+      - "Find Supreme Court case law on damages and summarize the conclusions."
+      - "Show how § 52 of the Czech Labour Code has changed over time and since when the current wording applies."
+      - "Find a contract-for-work template and summarize what to watch out for when signing it."
   sk:
     displayName: "CODEXIS - Právna databáza"
     summary: "Česká, slovenská a európska legislatíva, česká a európska judikatúra, odborné komentáre, právna literatúra a vzory zmlúv."
+    examplePrompts:
+      - "Nájdi judikatúru českého Najvyššieho súdu k náhrade škody a zhrň závery."
+      - "Ukáž, ako sa v čase menil § 52 českého zákonníka práce a odkedy platí aktuálne znenie."
+      - "Nájdi vzor zmluvy o dielo a zhrň, na čo si pri jej uzatváraní dať pozor."
 ---
 
 # CODEXIS Legal Database CLI
@@ -90,6 +102,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 
 - If the law number is known, do not start with broad keyword search.
 - For Czech laws named by number and year, prefer `cdx-cli get cdx://cz_law/{lawNumber}/{lawYear}/...` and go straight to `/versions`, `/meta`, `/text`, or `/toc` as needed.
+- For EU acts named by type, year and number, prefer `cdx-cli get cdx://eu_law/{R|L|D}/{year}/{number}/...` (`/meta`, `/versions`) over `search EU`; the type letter is `R` regulation, `L` directive, `D` decision. Read the year and number off the citation - do not compute a CELEX, CODEXIS composes it. Mind only which side of the pair is the year: EU numbering flipped in 2015, so Nařízení (EU) 2016/679 is `R/2016/679` while Nařízení (ES) č. 988/2009 is `R/2009/988`. With a CELEX already in hand - a EUR-Lex link the user pasted - use `cdx://eu_law/by-celex/{celex}/...` instead. A `search EU` hit needs neither route: it already carries `docId`, so fetch `cdx://doc/{docId}/...` directly. Fall back to `search EU` only when no citation coordinates are available or the lookup returns 404.
 - For change questions, start with `/versions`, not `/text`, broad search, or web lookup.
 - Stop early if `/versions` shows no boundary at the target date. Answer that directly.
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
@@ -110,7 +123,7 @@ Whenever legal references appear in user text, tool output, or extracts, resolve
 - Do not present raw legal references without attempting lookup first.
 - If a reference cannot be found in CODEXIS, keep it as plain text instead of omitting it.
 - When listing laws with paragraphs, use one bullet per law and keep paragraph links inline, comma-separated.
-- Collapse truly consecutive paragraphs into a single range, for example `§ 312–332`.
+- Collapse truly consecutive paragraphs into a single range, for example `§ 312-332`.
 
 ## Short Best Practices
 

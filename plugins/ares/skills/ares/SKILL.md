@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "ARES - registr ekonomických subjektů"
     summary: "Vyhledávání firem a OSVČ v ARES - IČO, obchodní rejstřík, RES, živnostenský rejstřík, plátci DPH."
+    examplePrompts:
+      - "Ověř v ARES firmu s IČO 27082440 - sídlo, aktivitu a jestli je plátcem DPH."
+      - "Kdo je jednatelem a společníky firmy s IČO 27082440?"
+      - "Najdi v ARES firmy, které mají v názvu advokátní kancelář."
   en:
     displayName: "ARES - Czech Business Registry"
     summary: "Look up companies and sole traders in ARES - ICO, business register, statistical register, trade licence registry, VAT payers."
+    examplePrompts:
+      - "Check company 27082440 in ARES - address, whether it is active and VAT-registered."
+      - "Who are the statutory bodies and partners of company 27082440?"
+      - "Find companies in ARES with advokátní kancelář in their name."
   sk:
     displayName: "ARES - register ekonomických subjektov"
     summary: "Vyhľadávanie firiem a SZČO v ARES - IČO, obchodný register, RES, živnostenský register, platcovia DPH."
+    examplePrompts:
+      - "Over v ARES firmu s IČO 27082440 - sídlo, či je aktívna a či je platiteľom DPH."
+      - "Kto je konateľom a spoločníkmi firmy s IČO 27082440?"
+      - "Nájdi v ARES firmy, ktoré majú v názve advokátní kancelář."
 ---
 
 # ARES - Czech Business Registry
@@ -49,7 +61,7 @@ ares-cli search [filters …]
 ares-cli api {get|post} <PATH> [<JSON_BODY>]
 ```
 
-`<ICO>` accepts 1–8 digit input; `ares-cli` left-pads to 8 digits before the call.
+`<ICO>` accepts 1-8 digit input; `ares-cli` left-pads to 8 digits before the call.
 
 ### Registers (`--register`)
 

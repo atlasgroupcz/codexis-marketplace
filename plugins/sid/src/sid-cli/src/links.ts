@@ -2,7 +2,7 @@ import { apiGet, type FetchLike } from "./http"
 import { getBaseUrl, readEnvFile, writeEnvValue } from "./config"
 
 /**
- * Links back into the SID web app — the plugin leads people there rather than
+ * Links back into the SID web app - the plugin leads people there rather than
  * standing in for it.
  *
  * The route depends on the role: SID's `(user)` layout redirects admins to
@@ -18,7 +18,7 @@ export function documentUrl(documentId: string, role: Role | null): string {
 
 /**
  * SID's front door. The landing route differs per role, but SID sorts that
- * out itself — this is for the case where there is no one specific place to
+ * out itself - this is for the case where there is no one specific place to
  * send someone (a digest with notifications but nothing to confirm).
  */
 export function homeUrl(): string {

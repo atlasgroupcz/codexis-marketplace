@@ -1,7 +1,6 @@
 """ISIR SOAP response parsing - deterministic, no network (canned XML)."""
 
 import pytest
-
 from insolvence_core import api_client
 from insolvence_core.exceptions import ApiParseError
 
@@ -59,13 +58,14 @@ def _person_xml(relevance, rows):
         f"{data}<stav><pocetVysledku>{len(rows)}</pocetVysledku>"
         f"<relevanceVysledku>{relevance}</relevanceVysledku></stav>"
         "</ns2:getIsirWsCuzkDataResponse></soap:Body></soap:Envelope>"
-    ).encode("utf-8")
+    ).encode()
 
 
 @pytest.fixture
 def fake_post(monkeypatch):
     def _set(xml_bytes):
         monkeypatch.setattr(api_client, "_post", lambda envelope: xml_bytes)
+
     return _set
 
 
@@ -99,7 +99,9 @@ class TestCompanyParse:
 class TestPersonParse:
     def test_weak_relevance_discarded(self, fake_post):
         # relevance 7 = surname-only fallback → no trustworthy match
-        fake_post(_person_xml(7, [{"p": "Novak", "j": "Petr", "d": "1990-01-01", "bc": "1"}]))
+        fake_post(
+            _person_xml(7, [{"p": "Novak", "j": "Petr", "d": "1990-01-01", "bc": "1"}])
+        )
         result = api_client.lookup_person("Novak", "Jan", "1980-05-01")
         assert result["rizeni"] == []
         assert result["relevance"] == 7

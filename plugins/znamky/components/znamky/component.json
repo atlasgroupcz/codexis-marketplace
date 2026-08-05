@@ -5,7 +5,7 @@
   "route": "znamky",
   "description": "Hlídejte slovní i obrazové ochranné známky a nechte se upozornit na podobné přihlášky v ÚPV a EUIPO.",
   "entrypoint": "index.html",
-  "binary": "znamky.py",
+  "binary": "znamky-cgi",
   "i18n": {
     "cs": {
       "displayName": "Hlídač ochranných známek",

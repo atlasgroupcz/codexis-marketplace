@@ -119,5 +119,8 @@
     "connecting": "Pripájam…",
     "cancel": "Zrušiť",
     "section": "Pripojenie ku katastru"
+  },
+  "help": {
+    "docs": "Ako to funguje?"
   }
 }

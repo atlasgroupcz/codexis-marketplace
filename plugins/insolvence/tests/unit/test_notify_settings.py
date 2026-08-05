@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from insolvence_core import notify_settings as ns
 
 
@@ -21,7 +20,9 @@ def test_load_returns_defaults_when_no_user_file(home):
 
 def test_set_notify_writes_only_the_deviation(home):
     ns.set_notify(email=True)
-    on_disk = json.loads((home / ".cdx" / "apps" / ns.APP_ID / "settings.json").read_text())
+    on_disk = json.loads(
+        (home / ".cdx" / "apps" / ns.APP_ID / "settings.json").read_text()
+    )
     assert on_disk["notify"] == {"email": True}
     assert ns.get_notify() == {"email": True, "inApp": True, "recipients": []}
 
@@ -37,14 +38,18 @@ def test_unset_keys_drift_with_defaults(home):
 
 def test_ensure_settings_writes_minimal_sparse_file(home):
     ns.ensure_settings()
-    on_disk = json.loads((home / ".cdx" / "apps" / ns.APP_ID / "settings.json").read_text())
+    on_disk = json.loads(
+        (home / ".cdx" / "apps" / ns.APP_ID / "settings.json").read_text()
+    )
     assert on_disk == {"version": 1}
 
 
 def test_migrate_coerces_non_numeric_version(home):
     p = home / ".cdx" / "apps" / ns.APP_ID / "settings.json"
     p.parent.mkdir(parents=True)
-    p.write_text(json.dumps({"version": "oops", "notify": {"email": True}}), encoding="utf-8")
+    p.write_text(
+        json.dumps({"version": "oops", "notify": {"email": True}}), encoding="utf-8"
+    )
     ns.ensure_settings()
     assert json.loads(p.read_text())["version"] == 1
 

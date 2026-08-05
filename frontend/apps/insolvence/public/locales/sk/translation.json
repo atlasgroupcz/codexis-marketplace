@@ -1,0 +1,117 @@
+{
+  "common": {
+    "retry": "Skúsiť znova",
+    "cancel": "Zrušiť"
+  },
+  "app": {
+    "title": "Hliadač insolvencií",
+    "subtitle": "Sledovanie insolvenčného registra (ISIR)",
+    "checkAll": "Aktualizovať všetko",
+    "add": "Pridať subjekt",
+    "checkChanges": "Nájdené nové zmeny: {{count}}",
+    "checkErrors": "Chyby pri kontrole: {{count}}",
+    "checkNone": "Žiadne nové zmeny."
+  },
+  "list": {
+    "count": "Sledované: {{count}}",
+    "activeCount": "aktívne: {{count}}",
+    "unreadCount": "neprečítané: {{count}}",
+    "bornOn": "nar. {{date}}",
+    "unreadChanges": "{{count}} neprečítaných zmien"
+  },
+  "status": {
+    "active": "Aktívna insolvencia",
+    "closed": "Bez aktívnej insolvencie",
+    "clean": "Bez insolvencie"
+  },
+  "druh": {
+    "konkurs": "Konkurz",
+    "oddluzeni": "Oddlženie",
+    "reorganizace": "Reorganizácia",
+    "moratorium": "Moratórium",
+    "neurceno": "Konanie"
+  },
+  "add": {
+    "title": "Pridať subjekt na sledovanie",
+    "description": "Firmu zadajte podľa IČO, fyzickú osobu podľa priezviska, mena a dátumu narodenia.",
+    "company": "Firma",
+    "person": "Osoba",
+    "ico": "IČO",
+    "icoHint": "8 číslic, napr. 04863313.",
+    "surname": "Priezvisko",
+    "givenName": "Meno",
+    "birthDate": "Dátum narodenia",
+    "personHint": "Bez dátumu narodenia nie je možné osobu spoľahlivo dohľadať.",
+    "label": "Vlastné označenie (voliteľné)",
+    "labelPlaceholder": "Napr. Dodávateľ A",
+    "add": "Pridať",
+    "adding": "Pridávam…",
+    "success": "Subjekt pridaný na sledovanie.",
+    "error": "Subjekt sa nepodarilo pridať."
+  },
+  "detail": {
+    "statusLabel": "Stav",
+    "proceedingsCount": "Počet konaní",
+    "lastCheck": "Posledná kontrola",
+    "addedOn": "Sledované od",
+    "proceedings": "Insolvenčné konania",
+    "noProceedings": "Žiadne insolvenčné konanie",
+    "noProceedingsHint": "Subjekt nemá v registri ISIR žiadne insolvenčné konanie.",
+    "stav": "Stav",
+    "datumZahajeni": "Zistenie úpadku",
+    "datumUkonceni": "Ukončenie",
+    "openInIsir": "Otvoriť v ISIR",
+    "changeHistory": "História zmien",
+    "markAllRead": "Označiť všetko prečítané ({{count}})",
+    "markRead": "Označiť prečítané",
+    "noChanges": "Zatiaľ žiadne zmeny",
+    "noChangesHint": "Keď sa v sledovaných konaniach niečo zmení, uvidíte to tu.",
+    "refresh": "Aktualizovať",
+    "refreshed": "Subjekt aktualizovaný.",
+    "refreshError": "Kontrolu sa nepodarilo vykonať.",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "removed": "Subjekt odobraný zo sledovania."
+  },
+  "dph": {
+    "tab": "DPH",
+    "reliable": "Spoľahlivý platiteľ DPH",
+    "unreliable": "Nespoľahlivý platiteľ DPH",
+    "unreliableSince": "Nespoľahlivý od {{date}}",
+    "notPayer": "Nie je platiteľom DPH",
+    "taxOffice": "Daňový úrad",
+    "accounts": "Zverejnené účty",
+    "noAccounts": "Žiadne zverejnené účty",
+    "publishedOn": "zverejnený {{date}}",
+    "source": "Zdroj: register platiteľov DPH (MF ČR)"
+  },
+  "empty": {
+    "title": "Zatiaľ nesledujete žiadne subjekty",
+    "text": "Pridajte firmu alebo osobu a hliadač bude denne kontrolovať nové a zmenené insolvenčné konania.",
+    "add": "Pridať subjekt",
+    "noSelection": "Vyberte subjekt v zozname vľavo.",
+    "chatLead": "Alebo si sledovanie nastavte v konverzácii - napíšte napríklad:",
+    "chatPrompt": "Sleduj insolvenciu firmy s IČO 04863313 a každý týždeň mi pošli e-mailom súhrn nových a zmenených konaní."
+  },
+  "notify": {
+    "title": "Nastavenie insolvencií",
+    "description": "Ako vás upozorníme na zmeny.",
+    "save": "Uložiť",
+    "emailLabel": "E-mail pri zmene",
+    "emailDescription": "Súhrn zmien príde e-mailom.",
+    "yourAddressLabel": "Vaša adresa",
+    "copyToLabel": "Kópia na",
+    "addRecipient": "Pridať príjemcu",
+    "removeRecipient": "Odobrať",
+    "addPlaceholder": "meno@firma.sk",
+    "invalidEmail": "Neplatná e-mailová adresa.",
+    "inAppLabel": "Oznámenie v centre notifikácií",
+    "inAppDescription": "",
+    "saved": "Nastavenia oznámení uložené.",
+    "ownAddress": "Táto adresa je vaša - e-mail vám chodí vždy.",
+    "duplicate": "Táto adresa už je v zozname."
+  },
+  "help": {
+    "docs": "Ako to funguje?"
+  }
+}

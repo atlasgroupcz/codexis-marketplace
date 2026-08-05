@@ -1,17 +1,5 @@
 {
   "skills": [
     "kataster-sk:kataster-sk"
-  ],
-  "post_install": [
-    {
-      "type": "file",
-      "path": "$HOME/.local/bin/kataster-sk-cli"
-    }
-  ],
-  "post_uninstall": [
-    {
-      "type": "absent",
-      "path": "$HOME/.local/bin/kataster-sk-cli"
-    }
   ]
 }

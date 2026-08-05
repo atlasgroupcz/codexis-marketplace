@@ -4,12 +4,11 @@
 Usage:
   python tests/run.py unit          # fast unit gate (pytest + cargo + frontend)
   python tests/run.py marketplace   # daemon install/marketplace acceptance
-  python tests/run.py e2e           # chat-driven plugin e2e
-  python tests/run.py eval          # promptfoo LLM-judge evals
+  python tests/run.py eval          # promptfoo behavioral evals (the one tier)
   python tests/run.py all           # every tier in order, fail-fast on the gate
 
 Anything after the subcommand is passed straight through to the underlying
-script, so `python tests/run.py e2e --only ares --all` works. This is a thin
+script, so `python tests/run.py eval --only ares` works. This is a thin
 dispatcher; each tier's real logic stays in its own module.
 """
 
@@ -25,7 +24,6 @@ TESTS_DIR = Path(__file__).resolve().parent
 COMMANDS: dict[str, str] = {
     "unit": "_unit_gate.py",
     "marketplace": "test-marketplace.py",
-    "e2e": "test-plugin-e2e.py",
     "eval": "promptfoo/run.py",
 }
 
@@ -66,8 +64,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if command not in COMMANDS:
-        print(f"tests/run.py: unknown command {command!r}; "
-              f"known: {', '.join(sorted(COMMANDS))}, all", file=sys.stderr)
+        print(
+            f"tests/run.py: unknown command {command!r}; "
+            f"known: {', '.join(sorted(COMMANDS))}, all",
+            file=sys.stderr,
+        )
         return 2
 
     return _run_one(command, passthrough)

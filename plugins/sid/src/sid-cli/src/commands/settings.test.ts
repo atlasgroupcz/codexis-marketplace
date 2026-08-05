@@ -94,7 +94,7 @@ describe("settings", () => {
   })
 })
 
-describe("set-key — neničí funkční klíč", () => {
+describe("set-key - neničí funkční klíč", () => {
   it("při nedostupném SID ponechá původní klíč a nehlásí 'odmítl'", async () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_puvodni\n", { mode: 0o600 })
     const down = (async () => {
@@ -151,7 +151,7 @@ describe("settings whoami", () => {
   })
 })
 
-describe("settings status — role", () => {
+describe("settings status - role", () => {
   it("surfaces the cached role so a caller can tell it is an admin", async () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\nSID_USER_ROLE=ADMIN\n", { mode: 0o600 })
     const out = (await run(["status"])) as { role?: string; isAdmin?: boolean }

@@ -4,6 +4,7 @@ set -euo pipefail
 PLUGIN_DIR="${PLUGIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_BIN_DIR="${PLUGIN_DIR}/bin"
 TARGET_BIN_DIR="${TARGET_BIN_DIR:-${HOME}/.local/bin}"
+source "${PLUGIN_DIR}/../../plugin-runtime/install-executable.sh"
 
 cleanup_own_temps() {
   rm -f "${TARGET_BIN_DIR}"/.*.tmp.$$ 2>/dev/null || true
@@ -19,37 +20,11 @@ install_binary() {
     echo "ERROR: Missing executable ${source_path}" >&2
     exit 1
   fi
-  local tmp_path="${TARGET_BIN_DIR}/.${target_name}.tmp.$$"
-  if mkdir -p "${TARGET_BIN_DIR}" 2>/dev/null && [[ -w "${TARGET_BIN_DIR}" ]]; then
-    install -m 0755 "${source_path}" "${tmp_path}"
-    sync "${tmp_path}" 2>/dev/null || sync
-    mv -f "${tmp_path}" "${target_path}"
-  else
-    sudo install -d "${TARGET_BIN_DIR}"
-    sudo install -m 0755 "${source_path}" "${tmp_path}"
-    sudo sync "${tmp_path}" 2>/dev/null || sudo sync
-    sudo mv -f "${tmp_path}" "${target_path}"
-  fi
-  echo "Installed ${target_name} -> ${target_path}"
+  install_executable "${source_path}" "${target_path}" "${target_name}"
 }
 
-select_binary_source() {
-  local binary_name="$1"
-  case "$(uname -s):$(uname -m)" in
-    Darwin:arm64|Darwin:aarch64)
-      echo "${binary_name}-aarch64-apple-darwin"
-      ;;
-    Darwin:*)
-      echo "ERROR: ${binary_name} ships a macOS build for Apple Silicon only" >&2
-      exit 1
-      ;;
-    *)
-      echo "${binary_name}"
-      ;;
-  esac
-}
 
-install_binary "$(select_binary_source "rzpro-cli")" "rzpro-cli"
+install_binary "rzpro-cli" "rzpro-cli"
 
 # Migrate off the pre-1.1 local index. Old versions downloaded ~57 MB of KSRZIS
 # CSV datasets to ~/.cdx/apps/rzpro; the API client needs none of it. Best-effort

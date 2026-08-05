@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { SettingsDialog } from './settings-dialog'
 import type { NotifyLabels } from './notify-settings'
 import type { ConnectionSectionLabels } from './connection-section'
@@ -50,7 +50,7 @@ describe('SettingsDialog', () => {
     expect(screen.queryByText('Nepřipojeno')).toBeNull()
   })
 
-  it('renders both sections and saves notify values via the footer Save', () => {
+  it('renders both sections and saves notify values via the footer Save', async () => {
     const onSaveNotify = vi.fn()
     const onSaveConnection = vi.fn()
     render(
@@ -81,7 +81,12 @@ describe('SettingsDialog', () => {
 
     // connection self-manages via its own inline control, independent of notify
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'XYZ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Uložit' }))
+    // The connection section finishes saving in a `.finally`, which lands after
+    // the click returns. Waiting for the button to leave its saving label, not
+    // for a number of promise ticks - see connection-section.test.tsx.
+    const connectionSave = screen.getByRole('button', { name: 'Uložit' })
+    fireEvent.click(connectionSave)
+    await waitFor(() => expect(connectionSave).toHaveTextContent('Uložit'))
     expect(onSaveConnection).toHaveBeenCalledWith({ apiKey: 'XYZ' })
     expect(onSaveNotify).not.toHaveBeenCalled()
 

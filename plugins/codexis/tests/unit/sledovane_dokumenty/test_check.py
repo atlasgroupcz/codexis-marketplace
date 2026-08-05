@@ -10,8 +10,9 @@ related.detect_changes - the pure transformations they wrap are covered in
 test_diff_*.py and test_related.py.
 """
 
-import pytest
+from typing import Any
 
+import pytest
 from sledovane_dokumenty_core import clients, diff, related, state, tracking
 from sledovane_dokumenty_core.exceptions import DocumentNotTrackedError
 
@@ -19,13 +20,13 @@ from sledovane_dokumenty_core.exceptions import DocumentNotTrackedError
 @pytest.fixture
 def mock_all(monkeypatch):
     """Mock clients.* + diff.compute_version_diff + related.detect_changes + summarize_pending."""
-    config = {
-        "versions_by_id": {},           # {cid: [{"versionId": str, "validFrom": str, ...}]}
-        "raise_versions_for": set(),    # set of cids that should make get_versions raise
-        "amendments_by_vid": {},        # {version_id: [amendment dicts]}
-        "diff_by_pair": {},             # {(baseline_vid, latest_vid): diff_result}
-        "related_changes": {},          # {(cid, rtype): change_dict or None}
-        "raise_related_for": set(),     # set of (cid, rtype) that raise
+    config: dict[str, Any] = {
+        "versions_by_id": {},  # {cid: [{"versionId": str, "validFrom": str, ...}]}
+        "raise_versions_for": set(),  # set of cids that should make get_versions raise
+        "amendments_by_vid": {},  # {version_id: [amendment dicts]}
+        "diff_by_pair": {},  # {(baseline_vid, latest_vid): diff_result}
+        "related_changes": {},  # {(cid, rtype): change_dict or None}
+        "raise_related_for": set(),  # set of (cid, rtype) that raise
     }
 
     def _get_versions(cid):
@@ -78,7 +79,9 @@ def _seed(codexis_id, baseline_vid="v1", **overrides):
 
 
 def _versions(*vids):
-    return [{"versionId": v, "validFrom": f"2026-0{i+1}-01"} for i, v in enumerate(vids)]
+    return [
+        {"versionId": v, "validFrom": f"2026-0{i + 1}-01"} for i, v in enumerate(vids)
+    ]
 
 
 # ── empty / no-change cases ──────────────────────────────────────────────────
@@ -172,9 +175,7 @@ class TestCheckErrorIsolation:
         assert result["changes_found"] == 1
         assert len(state.load_state("ZAK3")["changes"]) == 1
 
-    def test_empty_versions_list_reported_as_error(
-        self, dokumenty_app_dir, mock_all
-    ):
+    def test_empty_versions_list_reported_as_error(self, dokumenty_app_dir, mock_all):
         _seed("ZAK1", baseline_vid="v1")
         # versions = [] → get_latest_version_id returns None
         mock_all["versions_by_id"]["ZAK1"] = []
@@ -253,7 +254,9 @@ class TestCheckRelatedPhase:
         state.save_state("ZAK1", s)
         mock_all["versions_by_id"]["ZAK1"] = _versions("v1")
         mock_all["related_changes"][("ZAK1", "JUDIKATURA")] = {
-            "change_type": "related_change", "added_docs": [], "removed_docs": [],
+            "change_type": "related_change",
+            "added_docs": [],
+            "removed_docs": [],
         }
         result = tracking.check()
         # detect_changes should not be called → no related_change recorded
@@ -264,14 +267,18 @@ class TestCheckRelatedPhase:
         self._seed_with_related("ZAK1", ["JUDIKATURA", "PROVADECI_PREDPIS"])
         mock_all["versions_by_id"]["ZAK1"] = _versions("v1")
         mock_all["related_changes"][("ZAK1", "JUDIKATURA")] = {
-            "change_type": "related_change", "relation_type": "JUDIKATURA",
+            "change_type": "related_change",
+            "relation_type": "JUDIKATURA",
             "relation_type_name": "Judikatura",
-            "added_docs": [{"docId": "J1", "title": "J1"}], "removed_docs": [],
+            "added_docs": [{"docId": "J1", "title": "J1"}],
+            "removed_docs": [],
         }
         mock_all["related_changes"][("ZAK1", "PROVADECI_PREDPIS")] = {
-            "change_type": "related_change", "relation_type": "PROVADECI_PREDPIS",
+            "change_type": "related_change",
+            "relation_type": "PROVADECI_PREDPIS",
             "relation_type_name": "Prováděcí předpis",
-            "added_docs": [], "removed_docs": [{"docId": "P1", "title": "P1"}],
+            "added_docs": [],
+            "removed_docs": [{"docId": "P1", "title": "P1"}],
         }
         result = tracking.check()
         assert result["changes_found"] == 2
@@ -324,14 +331,18 @@ class TestCheckChangedList:
         self._seed_with_related("ZAK1", ["JUDIKATURA", "PROVADECI_PREDPIS"])
         mock_all["versions_by_id"]["ZAK1"] = _versions("v1")  # no version change
         mock_all["related_changes"][("ZAK1", "JUDIKATURA")] = {
-            "change_type": "related_change", "relation_type": "JUDIKATURA",
+            "change_type": "related_change",
+            "relation_type": "JUDIKATURA",
             "relation_type_name": "Judikatura",
-            "added_docs": [{"docId": "J1", "title": "J1"}], "removed_docs": [],
+            "added_docs": [{"docId": "J1", "title": "J1"}],
+            "removed_docs": [],
         }
         mock_all["related_changes"][("ZAK1", "PROVADECI_PREDPIS")] = {
-            "change_type": "related_change", "relation_type": "PROVADECI_PREDPIS",
+            "change_type": "related_change",
+            "relation_type": "PROVADECI_PREDPIS",
             "relation_type_name": "Prováděcí předpis",
-            "added_docs": [], "removed_docs": [{"docId": "P1", "title": "P1"}],
+            "added_docs": [],
+            "removed_docs": [{"docId": "P1", "title": "P1"}],
         }
         result = tracking.check()
         assert result["changes_found"] == 2

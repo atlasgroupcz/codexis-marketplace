@@ -13,7 +13,6 @@ import re
 import shutil
 import unicodedata
 import uuid as uuid_mod
-from typing import Optional
 
 from . import api_client
 from .exceptions import (
@@ -41,7 +40,7 @@ DRUH_LABELS = {
 
 def now_utc() -> str:
     return (
-        datetime.datetime.now(datetime.timezone.utc)
+        datetime.datetime.now(datetime.UTC)
         .isoformat(timespec="seconds")
         .replace("+00:00", "Z")
     )
@@ -65,9 +64,7 @@ def normalize_ico(ico: str) -> str:
     mod = weighted % 11
     check = 1 if mod == 0 else (0 if mod == 1 else 11 - mod)
     if check != int(digits[7]):
-        raise InvalidSubjectError(
-            f"Neplatné IČO {digits}: nesedí kontrolní číslice."
-        )
+        raise InvalidSubjectError(f"Neplatné IČO {digits}: nesedí kontrolní číslice.")
     return digits
 
 
@@ -111,12 +108,12 @@ def _state_path(subject_uuid: str) -> str:
     return os.path.join(APP_DIR, subject_uuid, "state.json")
 
 
-def _load_state_dir(dir_name: str) -> Optional[dict]:
+def _load_state_dir(dir_name: str) -> dict | None:
     path = os.path.join(APP_DIR, dir_name, "state.json")
     if not os.path.isfile(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, dict) else None
     except (json.JSONDecodeError, OSError):
@@ -160,7 +157,7 @@ def list_all() -> list:
     return results
 
 
-def find_by_uuid(target_uuid: str) -> Optional[dict]:
+def find_by_uuid(target_uuid: str) -> dict | None:
     if not target_uuid or not os.path.isdir(APP_DIR):
         return None
     state = _load_state_dir(target_uuid)
@@ -174,7 +171,7 @@ def find_by_uuid(target_uuid: str) -> Optional[dict]:
     return None
 
 
-def _find_existing_company(ico: str) -> Optional[dict]:
+def _find_existing_company(ico: str) -> dict | None:
     for s in list_all():
         if s.get("kind") == "company" and s.get("ico") == ico:
             return s
@@ -183,7 +180,7 @@ def _find_existing_company(ico: str) -> Optional[dict]:
 
 def _find_existing_person(
     prijmeni_key: str, jmeno_key: str, datum_narozeni: str
-) -> Optional[dict]:
+) -> dict | None:
     for s in list_all():
         if (
             s.get("kind") == "person"
@@ -195,12 +192,12 @@ def _find_existing_person(
     return None
 
 
-def find_company(ico: str) -> Optional[dict]:
+def find_company(ico: str) -> dict | None:
     """Public: the tracked company with this IČO, or None."""
     return _find_existing_company(normalize_ico(ico))
 
 
-def find_person(prijmeni: str, jmeno: str, datum_narozeni: str) -> Optional[dict]:
+def find_person(prijmeni: str, jmeno: str, datum_narozeni: str) -> dict | None:
     """Public: the tracked person with this identity, or None."""
     return _find_existing_person(
         _fold(normalize_prijmeni(prijmeni)),
@@ -421,7 +418,7 @@ def check_all() -> list:
     return results
 
 
-def confirm(subject_uuid: str, change_index: Optional[int] = None) -> int:
+def confirm(subject_uuid: str, change_index: int | None = None) -> int:
     """Mark changes as read. Returns number of changes marked."""
     state = find_by_uuid(subject_uuid)
     if state is None:
@@ -459,7 +456,7 @@ def display_name(state: dict) -> str:
     return person or "?"
 
 
-def _primary_proceeding(rizeni: list) -> Optional[dict]:
+def _primary_proceeding(rizeni: list) -> dict | None:
     """The proceeding to surface in the overview (active first, then most recent)."""
     if not rizeni:
         return None
