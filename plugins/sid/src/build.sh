@@ -10,7 +10,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IMG="oven/bun@sha256:7156fcc0cee0194d390bfaf7f0eeda9a5e383e70cc90f31aad3a2440a033d7dc"
+IMG="oven/bun:1.3.9-slim@sha256:8ca06c7812d9050ccc4b80799685f395d6a0d051d3b7207dfd120e2b437b1ec9"
 
 # --user: bez něj kontejner zapisuje dist/ jako root a hostitelský uživatel
 # pak nemůže artefakty ani smazat. HOME=/tmp, protože přimapovaný uživatel

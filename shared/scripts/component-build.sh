@@ -19,7 +19,7 @@
 #   build_component <app> <component-dir>   # when the two names differ
 #
 # Override before `source` when needed:
-#   BUN_IMAGE            Docker image (default: pinned oven/bun)
+#   BUN_IMAGE            Docker image (default: pinned oven/bun 1.3.9 slim, by digest)
 #   CDX_DOCKER_PLATFORM  build platform (default: linux/amd64)
 
 set -euo pipefail
@@ -36,7 +36,7 @@ REPO_ROOT="$(cd "$_CDX_COMPONENT_DIR/../.." && pwd)"
 _CDX_CALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 FRONTEND_DIR="$REPO_ROOT/frontend"
 
-BUN_IMAGE="${BUN_IMAGE:-oven/bun:1.3.9-slim}"
+BUN_IMAGE="${BUN_IMAGE:-oven/bun:1.3.9-slim@sha256:8ca06c7812d9050ccc4b80799685f395d6a0d051d3b7207dfd120e2b437b1ec9}"
 
 # One platform for everyone, rather than the build machine's own. The bundle is
 # a committed artifact, so whether its bytes depend on the architecture that
