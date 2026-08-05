@@ -532,8 +532,8 @@ export default async function (args) {
 
   phase(PHASE_SCOPE)
 
-  const scope = await agent(PROMPT_SCOPE(question, jurisdiction, asOf),
-    { label: LABEL_SCOPE, agentType: "codexis:synthesizer", schema: SCOPE, model: MODEL })
+  const scope = await agent({ prompt: PROMPT_SCOPE(question, jurisdiction, asOf),
+    label: LABEL_SCOPE, agentType: "codexis:synthesizer", schema: SCOPE, model: MODEL })
 
   const issues = scope.issues.slice(0, MAX_ISSUES)
 
@@ -542,8 +542,8 @@ export default async function (args) {
   phase(PHASE_SEARCH)
 
   const drafts = await parallel(issues.map(issue => () =>
-    agent(PROMPT_SEARCH(scope.framing, issue.label, issue.question, asOf, standard),
-      { label: issue.label, model: MODEL })))
+    agent({ prompt: PROMPT_SEARCH(scope.framing, issue.label, issue.question, asOf, standard),
+      label: issue.label, model: MODEL })))
 
   const researched = issues
     .map((issue, i) => ({ issue, draft: drafts[i] }))
@@ -558,8 +558,8 @@ export default async function (args) {
   log(`ověřuje se oddílů: ${verified.length}`)
 
   const reviews = await parallel(verified.map(({ issue, draft }) => () =>
-    agent(PROMPT_VERIFY(scope.framing, issue.question, draft, standard),
-      { label: LABEL_VERIFY(issue.label), agentType: "codexis:verifier", model: MODEL })))
+    agent({ prompt: PROMPT_VERIFY(scope.framing, issue.question, draft, standard),
+      label: LABEL_VERIFY(issue.label), agentType: "codexis:verifier", model: MODEL })))
 
   const body = researched
     .map(({ issue, draft }, i) => section(issue.label, issue.question, draft, reviews[i]))
