@@ -33,6 +33,12 @@ package = false
 # The repo is written to roughly this width already: 95% of lines fit in 82
 # columns and 99% in 99, so the formatter reflows very little.
 line-length = 88
+# Git worktrees created inside the repo are checkouts of other branches, so
+# linting them reports the same file twice - once as it is here, once as some
+# other branch left it. A worktree cut before a cleanup lands keeps failing the
+# gate on violations that no longer exist on any branch anyone is working on.
+# Only the worktrees: the rest of .claude is shared project configuration.
+extend-exclude = [".claude/worktrees"]
 
 [tool.ruff.lint]
 # Named explicitly rather than left to the default. Ruff's default set widens
@@ -55,6 +61,11 @@ select = ["E4", "E7", "E9", "F", "I", "UP", "RUF"]
 # the expression on the line that opens the triple-quoted string, where a
 # trailing comment would land inside the string.
 "tests/_daemon_client.py" = ["UP031"]
+
+[tool.ty.src]
+# Same reason as ruff's extend-exclude: a git worktree inside the repo is a
+# checkout of another branch, and type-checking it reports every file twice.
+exclude = [".claude/worktrees"]
 
 [tool.ty.environment]
 # Each plugin ships its library under lib/ and its entry point puts that

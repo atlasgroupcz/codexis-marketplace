@@ -158,3 +158,9 @@ docs/superpowers/
 .coverage
 .coverage.*
 htmlcov/
+
+# Claude Code: git worktrees created inside the repo, and per-developer
+# settings. The rest of .claude/ is shared project configuration and is
+# tracked.
+.claude/worktrees/
+.claude/settings.local.json
