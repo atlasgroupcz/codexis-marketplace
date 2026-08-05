@@ -10,7 +10,7 @@ survives, and return an evidence package instead of the haystack.
   `cislaJednaci`, `releaseDate`, `ecli`, `sbirkoveCislo` and `derogated` are guaranteed on
   `cdx://doc/<id>/meta` under the source key (`jd`, `cr`, …). Never invent a citation from a hit.
 - **Values go in `args`, not into a command string.** No shell means no quoting, no word
-  splitting, and no `2>/dev/null` — stderr is not merged into what you parse.
+  splitting, and no `2>/dev/null` - stderr is not merged into what you parse.
 - **A decision text is long.** Fetching four of them one `get` at a time from the chat is the most
   expensive thing you can do with the context; fetch them inside one program and return only the
   passages. If a single text is too big to hold, write it out with `node:fs` and grep it there.
@@ -34,7 +34,7 @@ A shared preamble, assumed by every example below:
     }
     const json = async (...args) => JSON.parse(await cdx(...args))
 
-Only reach for a command string when you genuinely need the shell — a pipe, a redirect, `&&`.
+Only reach for a command string when you genuinely need the shell - a pipe, a redirect, `&&`.
 Those are the only places `2>/dev/null` belongs; with `args` there is no shell to merge streams.
 
 ## 1. Parallel multi-source sweep
@@ -228,7 +228,7 @@ Two query sets, two buckets. Never hand the synthesis only the confirming half.
         appearsInBoth: bothSides.map((doc) => doc.docId) }
     }
 
-A decision that answers both query sets is usually the one that draws the line — read it first.
+A decision that answers both query sets is usually the one that draws the line - read it first.
 Finding no opposing authority is not proof there is none; say so in the opinion.
 
 ## 5. One statute, everything about it at once
@@ -270,7 +270,7 @@ issues them together and returns the wording plus where it sits.
     }
 
 The same shape works across acts: put several `base` values in the outer `parallel` and you have the
-whole regime — wording, dates and structure — in one call instead of a dozen.
+whole regime - wording, dates and structure - in one call instead of a dozen.
 
 ## 6. Commentary sweep
 
@@ -297,4 +297,4 @@ Commentary tied to the provisions an earlier phase actually identified.
     }
 
 Commentary is secondary. Keep it in its own bucket so the opinion never rests a proposition on
-it — it points at primary sources, it does not replace them.
+it - it points at primary sources, it does not replace them.

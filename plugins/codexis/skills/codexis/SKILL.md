@@ -79,7 +79,7 @@ Reach for `script` when any of these holds:
 - full text is needed for a handful of candidates out of many,
 - relations must be chased across several documents (`/related`),
 - a provision's wording at a date must be checked across several acts (`/versions`),
-- one act's `/versions`, `/toc` and several `/text?part=` are all wanted — fetch them together, not one turn each.
+- one act's `/versions`, `/toc` and several `/text?part=` are all wanted - fetch them together, not one turn each.
 
 One query, one `get`, one check stays a plain `shell` call.
 
