@@ -16,6 +16,15 @@ export function documentUrl(documentId: string, role: Role | null): string {
   return `${getBaseUrl()}${base}/${encodeURIComponent(documentId)}`
 }
 
+/**
+ * SID's front door. The landing route differs per role, but SID sorts that
+ * out itself — this is for the case where there is no one specific place to
+ * send someone (a digest with notifications but nothing to confirm).
+ */
+export function homeUrl(): string {
+  return getBaseUrl()
+}
+
 export function confirmationsUrl(role: Role | null): string {
   return `${getBaseUrl()}${role === "ADMIN" ? "/admin/confirmations" : "/confirmations"}`
 }

@@ -137,14 +137,34 @@ async function resolveTo(
   return [me, ...extras.filter((e) => e.toLowerCase() !== meKey)]
 }
 
-async function sendBell(message: string, auth: string, daemonUrl: string, f: FetchLike): Promise<boolean> {
+/**
+ * Where the bell takes the reader, and what the button says.
+ *
+ * The notification centre renders `link` as a plain anchor, so an absolute
+ * SID URL is fine (and is what we want — the plugin's own panel is a
+ * settings screen, not a place to act on a document).
+ */
+export type BellTarget = { link?: string; action?: string }
+
+async function sendBell(
+  message: string,
+  auth: string,
+  daemonUrl: string,
+  f: FetchLike,
+  target: BellTarget,
+): Promise<boolean> {
   const query = "mutation Create($input: CreateNotificationInput!) { createNotification(input: $input) { id } }"
+  // Omit rather than send null: the fields are optional in the daemon's
+  // schema and the peer plugins leave them out when there is no target.
+  const input: Record<string, string> = { message, type: "sid-update" }
+  if (target.link) input.link = target.link
+  if (target.action) input.action = target.action
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
       signal: AbortSignal.timeout(DAEMON_TIMEOUT_MS),
       headers: { authorization: auth, "content-type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ query, variables: { input: { message, type: "sid-update" } } }),
+      body: JSON.stringify({ query, variables: { input } }),
     })
     return res.ok
   } catch {
@@ -178,8 +198,17 @@ export async function currentUserEmail(f: FetchLike = fetch): Promise<string> {
  *
  * True means at least one channel delivered — e-mail is off by default, so
  * keying the result to it alone would report failure on a working bell.
+ *
+ * `target` is the bell's way back into SID. The e-mail body carries its own
+ * link inline; the bell has nowhere to put one except this field, and
+ * without it the default channel is a count the reader cannot act on.
  */
-export async function sendDigest(subject: string, bodyText: string, f: FetchLike = fetch): Promise<boolean> {
+export async function sendDigest(
+  subject: string,
+  bodyText: string,
+  f: FetchLike = fetch,
+  target: BellTarget = {},
+): Promise<boolean> {
   const daemonUrl = process.env.CODEXIS_PUBLIC_DAEMON_URL
   const auth = daemonAuth()
   if (!daemonUrl || !auth) return false
@@ -190,7 +219,7 @@ export async function sendDigest(subject: string, bodyText: string, f: FetchLike
   const to = email ? await resolveTo(recipients, auth, daemonUrl, f) : null
   const results = await Promise.all([
     email ? sendEmail(subject, bodyText, auth, daemonUrl, f, to) : Promise.resolve(false),
-    inApp ? sendBell(subject, auth, daemonUrl, f) : Promise.resolve(false),
+    inApp ? sendBell(subject, auth, daemonUrl, f, target) : Promise.resolve(false),
   ])
   return results.some(Boolean)
 }

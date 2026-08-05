@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test"
 import { mkdtempSync, writeFileSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { documentUrl, resolveRole } from "./links"
+import { documentUrl, homeUrl, resolveRole } from "./links"
 
 beforeEach(() => {
   const d = mkdtempSync(join(tmpdir(), "sid-links-"))
@@ -26,6 +26,12 @@ describe("documentUrl", () => {
 
   it("id is url-encoded", () => {
     expect(documentUrl("a b/c", "USER")).toBe("https://sid.test/files/a%20b%2Fc")
+  })
+})
+
+describe("homeUrl", () => {
+  it("is SID's front door — no trailing slash to double up on", () => {
+    expect(homeUrl()).toBe("https://sid.test")
   })
 })
 

@@ -138,6 +138,34 @@ describe("sendDigest", () => {
   })
 })
 
+describe("cíl zvonku", () => {
+  async function bellInput(target?: { link?: string; action?: string }): Promise<Record<string, unknown>> {
+    writeSecret("t")
+    let gqlBody = ""
+    const f = (async (u: unknown, init: RequestInit) => {
+      if (String(u).endsWith("/graphql")) gqlBody = String(init.body)
+      return new Response("{}", { status: 200 })
+    }) as unknown as typeof fetch
+    await sendDigest("Předmět", "Tělo", f, target)
+    return JSON.parse(gqlBody).variables.input
+  }
+
+  it("předá odkaz i popisek akce do createNotification", async () => {
+    // Without this the bell is a dead end: a count with nothing to click,
+    // while the e-mail body (off by default) is the only channel carrying
+    // the way back into SID.
+    const input = await bellInput({ link: "https://sid.test/confirmations", action: "Otevřít v SID" })
+    expect(input.link).toBe("https://sid.test/confirmations")
+    expect(input.action).toBe("Otevřít v SID")
+  })
+
+  it("bez cíle pole vůbec neposílá (ne jako null)", async () => {
+    const input = await bellInput()
+    expect(input).not.toHaveProperty("link")
+    expect(input).not.toHaveProperty("action")
+  })
+})
+
 describe("recipients v e-mailu", () => {
   it("bez adresátů neposílá pole 'to' (daemon doručí přihlášenému)", async () => {
     writeSecret("t")
