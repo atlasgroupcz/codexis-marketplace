@@ -1,21 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Bell } from 'lucide-react'
 import { HeaderDocsLink } from '@workspace/ui/components/app-header'
 import { ConnectionSection } from '@workspace/ui/components/connection-section'
-import { NotifySettingsBody } from '@workspace/ui/components/notify-settings-body'
 import { Button } from '@workspace/ui/components/button'
+import { Switch } from '@workspace/ui/components/switch'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
-import type { NotifyBodyLabels, NotifyValues } from '@workspace/ui/components/notify-settings-body'
-import type { StatusResponse } from '@/lib/schemas'
+import type { NotifySettings, StatusResponse } from '@/lib/schemas'
 import { deleteApiKey, fetchStatus, saveApiKey, saveNotifySettings } from '@/lib/api'
 
-const EMPTY_NOTIFY: NotifyValues = { email: false, inApp: true, recipients: [] }
+/**
+ * The bell is the only channel this panel offers. The peers (znamky,
+ * katastr, ...) watch registries that notify nobody on their own and so
+ * ship an e-mail switch too; SID mails its users itself, with better
+ * messages than a digest of counts could be. Hence no
+ * `NotifySettingsBody` here - that shared component exists to edit the
+ * e-mail channel.
+ */
+const EMPTY_NOTIFY: NotifySettings = { inApp: true }
 
 export function App() {
   const { t, i18n } = useTranslation()
   const [status, setStatus] = useState<StatusResponse | null>(null)
-  const [notify, setNotify] = useState<NotifyValues>(EMPTY_NOTIFY)
+  const [notify, setNotify] = useState<NotifySettings>(EMPTY_NOTIFY)
   const [savingNotify, setSavingNotify] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
   // Set once the user edits the notification form. Saving the API key also
@@ -50,21 +58,6 @@ export function App() {
     confirmRemove: t('connection.confirmRemove'),
     save: t('connection.save'),
     saving: t('connection.saving'),
-  }
-
-  const notifyLabels: NotifyBodyLabels = {
-    emailLabel: t('notify.emailLabel'),
-    emailDescription: t('notify.emailDescription'),
-    yourAddressLabel: t('notify.yourAddressLabel'),
-    copyToLabel: t('notify.copyToLabel'),
-    addRecipient: t('notify.addRecipient'),
-    removeRecipient: t('notify.removeRecipient'),
-    addPlaceholder: t('notify.addPlaceholder'),
-    invalidEmail: t('notify.invalidEmail'),
-    ownAddress: t('notify.ownAddress'),
-    duplicate: t('notify.duplicate'),
-    inAppLabel: t('notify.inAppLabel'),
-    inAppDescription: t('notify.inAppDescription'),
   }
 
   /**
@@ -140,15 +133,26 @@ export function App() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold">{t('app.notifySection')}</h2>
-        <NotifySettingsBody
-          value={notify}
-          onChange={(next) => {
-            setNotify(next)
-            setNotifyDirty(true)
-          }}
-          userEmail={status?.userEmail ?? ''}
-          labels={notifyLabels}
-        />
+        <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5">
+          <span className="flex items-start gap-2.5">
+            <Bell className="text-muted-foreground mt-0.5 size-4" />
+            <span>
+              <span className="text-sm font-medium">{t('notify.inAppLabel')}</span>
+              <br />
+              <span className="text-muted-foreground text-xs">
+                {t('notify.inAppDescription')}
+              </span>
+            </span>
+          </span>
+          <Switch
+            aria-label={t('notify.inAppLabel')}
+            checked={notify.inApp}
+            onCheckedChange={(checked) => {
+              setNotify({ inApp: checked })
+              setNotifyDirty(true)
+            }}
+          />
+        </div>
         <div className="flex justify-end">
           <Button onClick={handleSaveNotify} disabled={savingNotify || status === null}>
             {t('notify.save')}

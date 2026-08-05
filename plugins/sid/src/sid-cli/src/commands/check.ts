@@ -1,7 +1,7 @@
 import { parseArgs } from "node:util"
 import { apiGet, type FetchLike } from "../http"
 import { sendDigest } from "../notify"
-import { confirmationsUrl, documentUrl, resolveRole } from "../links"
+import { confirmationsUrl, documentUrl, homeUrl, resolveRole } from "../links"
 
 /**
  * Daily digest for `automations/check-sid.md`.
@@ -30,14 +30,12 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
   }
 
   if (values.notify && (digest.unreadNotifications > 0 || digest.pendingConfirmations > 0)) {
-    const subject = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`
-    const lines = [
-      `Nepřečtené notifikace: ${digest.unreadNotifications}`,
-      `Čekající potvrzení: ${digest.pendingConfirmations}`,
-      "",
-      `Otevřete v SID: ${confirmationsUrl(role)}`,
-    ]
-    digest.notified = await sendDigest(subject, lines.join("\n"), f)
+    // Pending confirmations are the one thing with an obligation attached,
+    // so they win the click. With none, the confirmations page would open
+    // empty - send the reader to SID itself instead.
+    const link = digest.pendingConfirmations > 0 ? confirmationsUrl(role) : homeUrl()
+    const message = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`
+    digest.notified = await sendDigest(message, f, { link, action: "Otevřít v SID" })
   }
 
   return digest

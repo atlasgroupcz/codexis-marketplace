@@ -7,8 +7,7 @@ const STATUS = {
   configured: true,
   baseUrl: 'https://sid.test',
   start: 'sid_abc',
-  userEmail: 'ja@firma.cz',
-  notify: { email: false, inApp: true, recipients: [] },
+  notify: { inApp: true },
 }
 
 function stubFetch(payload: unknown, ok = true) {
@@ -78,15 +77,12 @@ describe('write actions', () => {
     expect(bodyOf(mock)).toEqual({ action: 'delete_config' })
   })
 
-  it('saveNotifySettings sends every channel field', async () => {
+  it('saveNotifySettings sends the bell switch and nothing else', async () => {
+    // No `email` / `recipients`: the plugin has one channel, and posting a
+    // second one would ask the CGI to store a setting nothing reads.
     const mock = stubFetch({ ok: true, notify: STATUS.notify })
-    await saveNotifySettings({ email: true, inApp: false, recipients: ['sef@firma.cz'] })
-    expect(bodyOf(mock)).toEqual({
-      action: 'save_notify_settings',
-      email: true,
-      inApp: false,
-      recipients: ['sef@firma.cz'],
-    })
+    await saveNotifySettings({ inApp: false })
+    expect(bodyOf(mock)).toEqual({ action: 'save_notify_settings', inApp: false })
   })
 })
 

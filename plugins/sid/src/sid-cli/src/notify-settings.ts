@@ -15,13 +15,17 @@ import { userHome } from "./config"
  * The effective config is composed at read time; nothing is merged back into
  * the user file.
  *
- * E-mail is off by default, matching the peers - a daily automation should
- * not reach someone's inbox unasked.
+ * The bell is the only channel. Unlike the peers - which watch external
+ * registries that have no notifications of their own - SID mails its users
+ * itself (per-event templates, a link to the document, per-tenant gating),
+ * so a second mailer here would only duplicate it with a worse message. An
+ * `email` / `recipients` block left over from an older version of the
+ * plugin is read and dropped.
  */
 
-export type NotifySettings = { email: boolean; inApp: boolean; recipients: string[] }
+export type NotifySettings = { inApp: boolean }
 
-const BUILTIN: NotifySettings = { email: false, inApp: true, recipients: [] }
+const BUILTIN: NotifySettings = { inApp: true }
 
 function defaultsPath(): string {
   // SID_DEFAULTS_FILE is a test-only override.
@@ -30,11 +34,6 @@ function defaultsPath(): string {
 
 export function userSettingsPath(): string {
   return join(userHome(), ".cdx", "apps", "sid", "settings.json")
-}
-
-/** Deliberately loose - the mail server validates properly anyway. */
-export function isEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim())
 }
 
 /**
@@ -65,33 +64,11 @@ function readJson(path: string): Record<string, unknown> | null {
   }
 }
 
-/** Extra recipients - non-empty strings only, trimmed and de-duplicated (case-insensitive). */
-function cleanRecipients(raw: unknown): string[] | undefined {
-  if (!Array.isArray(raw)) return undefined
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const v of raw) {
-    if (typeof v !== "string") continue
-    const t = v.trim()
-    if (!t) continue
-    const k = t.toLowerCase()
-    if (seen.has(k)) continue
-    seen.add(k)
-    out.push(t)
-  }
-  return out
-}
-
 function notifyBlock(source: Record<string, unknown> | null): Partial<NotifySettings> {
   const raw = source?.notify
   if (!raw || typeof raw !== "object") return {}
-  const out: Partial<NotifySettings> = {}
-  const { email, inApp, recipients } = raw as Record<string, unknown>
-  if (typeof email === "boolean") out.email = email
-  if (typeof inApp === "boolean") out.inApp = inApp
-  const cleaned = cleanRecipients(recipients)
-  if (cleaned) out.recipients = cleaned
-  return out
+  const { inApp } = raw as Record<string, unknown>
+  return typeof inApp === "boolean" ? { inApp } : {}
 }
 
 export function getNotifySettings(): NotifySettings {

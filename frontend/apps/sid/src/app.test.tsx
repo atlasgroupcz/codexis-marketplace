@@ -36,8 +36,7 @@ const NOT_CONFIGURED = {
   ok: true as const,
   configured: false,
   baseUrl: 'https://sid.test',
-  userEmail: 'ja@firma.cz',
-  notify: { email: false, inApp: true, recipients: [] },
+  notify: { inApp: true },
 }
 
 function renderApp() {
@@ -61,14 +60,21 @@ describe('App', () => {
       ...NOT_CONFIGURED,
       configured: true,
       start: 'sid_abc',
-      notify: { email: true, inApp: true, recipients: ['sef@firma.cz'] },
     })
     renderApp()
     await waitFor(() => expect(mocks.fetchStatus).toHaveBeenCalled())
 
     // The masked prefix, never the whole key.
     expect(await screen.findByText(/sid_abc…/)).toBeTruthy()
-    expect(screen.getByText('sef@firma.cz')).toBeTruthy()
+  })
+
+  it('offers the bell as the only channel - SID sends its own e-mail', async () => {
+    renderApp()
+    await waitFor(() => expect(mocks.fetchStatus).toHaveBeenCalled())
+
+    const switches = await screen.findAllByRole('switch')
+    expect(switches).toHaveLength(1)
+    expect(switches[0]?.getAttribute('aria-label')).toBe(i18n.t('notify.inAppLabel'))
   })
 
   it('keeps unsaved notification edits when the API key is saved', async () => {
@@ -78,8 +84,8 @@ describe('App', () => {
     renderApp()
     await waitFor(() => expect(mocks.fetchStatus).toHaveBeenCalled())
 
-    const emailToggle = await screen.findByRole('switch', { name: i18n.t('notify.emailLabel') })
-    await user.click(emailToggle)
+    const bellToggle = await screen.findByRole('switch', { name: i18n.t('notify.inAppLabel') })
+    await user.click(bellToggle)
 
     await user.type(screen.getByPlaceholderText(i18n.t('settings.placeholder')), 'sid_novy_klic')
     await user.click(screen.getByRole('button', { name: i18n.t('connection.save') }))
@@ -88,9 +94,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('notify.save') }))
     await waitFor(() => expect(mocks.saveNotifySettings).toHaveBeenCalled())
 
-    expect(mocks.saveNotifySettings).toHaveBeenCalledWith(
-      expect.objectContaining({ email: true }),
-    )
+    // Exactly the bell, nothing else: an `email` or `recipients` key here
+    // would be the CGI's cue to store a channel that no longer exists.
+    expect(mocks.saveNotifySettings).toHaveBeenCalledWith({ inApp: false })
   })
 
   it('reports a failed status load instead of rendering an empty panel', async () => {
