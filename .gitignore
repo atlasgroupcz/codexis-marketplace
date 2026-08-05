@@ -45,6 +45,7 @@ logs/
 /out/
 **/target/
 target/
+.cargo-home/
 
 # Eclipse
 **/.settings/
