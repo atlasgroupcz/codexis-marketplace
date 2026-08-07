@@ -9,8 +9,6 @@
     "total": "{{count}} celkem",
     "unconfirmed": "{{count}} nepotvrzeno",
     "noChanges": "Zatím nebyly zjištěny žádné změny.",
-    "addHintTitle": "Jak přidat dokument",
-    "addHintText": "Použijte chat pro přidání dokumentu ke sledování. Například: \"Sleduj změny v občanském zákoníku\" nebo \"Sleduj zákoník práce\".",
     "retry": "Zkusit znovu",
     "confirmed": "Potvrzeno {{date}}",
     "notConfirmed": "Nepotvrzeno",
@@ -54,8 +52,9 @@
     "notePlaceholder": "Co vás na tomto dokumentu zajímá?",
     "saveNote": "Uložit poznámku",
     "noteSaved": "Poznámka uložena",
-    "subtitle": "Hlídáme změny ve vašich zákonech",
+    "tagline": "Hlídáme legislativu, na které vám záleží",
     "refresh": "Obnovit",
+    "addMonitoring": "Nastavit další sledování",
     "removed": "Sledování odebráno",
     "tabs": {
       "changes": "Změny",
@@ -82,11 +81,10 @@
   },
   "folders": {
     "section": {
+      "label": "Co sledujeme",
       "documents": "Akty",
       "folders": "Složky"
     },
-    "title": "Hlídané složky",
-    "subtitle": "Sledujeme legislativu, na kterou odkazují vaše dokumenty",
     "add": "Přidat složku",
     "back": "Zpět",
     "cancel": "Zrušit",

@@ -18,7 +18,6 @@ import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { HeaderGear } from '@workspace/ui/components/app-header'
-import { SectionSwitch } from './section-switch'
 import { DetailSkeleton } from './loading-skeleton'
 import { ErrorMessage } from './error-message'
 import type { TrackedLegislation, WatchedDocument } from '@/lib/schemas'
@@ -27,19 +26,11 @@ import { postFolderAction } from '@/lib/api'
 
 interface FolderDetailProps {
   root: string
-  section: 'documents' | 'folders'
-  onChangeSection: (section: 'documents' | 'folders') => void
   onBack: () => void
   onOpenSettings: () => void
 }
 
-export function FolderDetail({
-  root,
-  section,
-  onChangeSection,
-  onBack,
-  onOpenSettings,
-}: FolderDetailProps) {
+export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps) {
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useFolderDetail(root)
   const [busy, setBusy] = useState<string | null>(null)
@@ -105,7 +96,6 @@ export function FolderDetail({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <SectionSwitch section={section} onChange={onChangeSection} />
           <Button
             variant="ghost"
             size="icon"

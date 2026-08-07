@@ -30,13 +30,7 @@ function folderWith(legislation: Array<TrackedLegislation>): FolderResponse {
 
 function renderFolder() {
   return renderApp(
-    <FolderDetail
-      root="/home/u/my-contracts"
-      section="folders"
-      onChangeSection={vi.fn()}
-      onBack={vi.fn()}
-      onOpenSettings={vi.fn()}
-    />,
+    <FolderDetail root="/home/u/my-contracts" onBack={vi.fn()} onOpenSettings={vi.fn()} />,
     { searchParams: { lang: 'en' } },
   )
 }

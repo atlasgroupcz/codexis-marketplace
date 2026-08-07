@@ -36,7 +36,7 @@ describe('i18n language resolution', () => {
     renderApp(<DocumentsHome section="documents" onChangeSection={() => {}} onSelectDocument={() => {}} onOpenSettings={() => {}} />)
 
     await waitFor(() => {
-      expect(screen.getByText('Strážime zmeny vo vašich zákonoch')).toBeInTheDocument()
+      expect(screen.getByText('Strážime legislatívu, na ktorej vám záleží')).toBeInTheDocument()
     })
   })
 
