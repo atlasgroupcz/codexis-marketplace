@@ -85,8 +85,6 @@ export function App() {
         <>
           <FolderDetail
             root={root}
-            section={section}
-            onChangeSection={changeSection}
             onBack={() => void setRoot(null)}
             onOpenSettings={openSettings}
           />

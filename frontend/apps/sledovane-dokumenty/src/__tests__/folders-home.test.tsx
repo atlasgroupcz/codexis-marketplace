@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { FoldersResponse } from '@/lib/schemas'
+import type { FoldersResponse, OverviewResponse } from '@/lib/schemas'
 import { FoldersHome } from '@/components/folders-home'
 import { renderApp } from '@/test/render-app'
+import { overviewFixture } from '@/test/fixtures'
 
 const foldersFixture: FoldersResponse = {
   mode: 'folders',
@@ -31,10 +32,17 @@ const emptyFolders: FoldersResponse = {
   settings: { email: true, inApp: true, recipients: [] },
 }
 
-function stubFolders(payload: FoldersResponse) {
+/** Folders for this screen, overview for the act badge the rail fetches itself. */
+function stubFolders(payload: FoldersResponse, overview: OverviewResponse = overviewFixture) {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(payload) }),
+    vi.fn().mockImplementation((input: unknown) =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve(String(input).includes('view=folders') ? payload : overview),
+      }),
+    ),
   )
 }
 
@@ -68,6 +76,52 @@ describe('FoldersHome', () => {
         screen.getByText('Watch the legislation in your documents'),
       ).toBeInTheDocument()
     })
+  })
+
+  it('keeps the app identity in the header across sections', async () => {
+    stubFolders(foldersFixture)
+    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
+      searchParams: { lang: 'en' },
+    })
+
+    // the folder mode is named by the section tab, not by retitling the app
+    expect(await screen.findByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
+  })
+
+  it('switches back to the act watchdog from the section navigation', async () => {
+    stubFolders(foldersFixture)
+    const onChangeSection = vi.fn()
+    const user = userEvent.setup()
+    renderApp(<FoldersHome section="folders" onChangeSection={onChangeSection} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
+      searchParams: { lang: 'en' },
+    })
+
+    const folders = await screen.findByRole('button', { name: /Folders/ })
+    expect(folders).toHaveAttribute('aria-current', 'page')
+
+    await user.click(screen.getByRole('button', { name: /Acts/ }))
+    expect(onChangeSection).toHaveBeenCalledWith('documents')
+  })
+
+  it('badges the act watchdog with the changes waiting there', async () => {
+    stubFolders(foldersFixture)
+    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
+      searchParams: { lang: 'en' },
+    })
+
+    // the overview fixture carries two unconfirmed act changes
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Acts/ })).toHaveTextContent('2')
+    })
+  })
+
+  it('offers adding a folder from the header', async () => {
+    stubFolders(foldersFixture)
+    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
+      searchParams: { lang: 'en' },
+    })
+
+    expect(await screen.findByRole('button', { name: /Add folder/ })).toBeInTheDocument()
   })
 
   it('selects a folder when its card is clicked', async () => {
