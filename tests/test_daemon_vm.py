@@ -162,6 +162,25 @@ def test_reports_the_gateway_message_when_it_gives_up(monkeypatch):
         client.ensure_vm_running(start_attempts=2, sleep=clock.sleep, now=clock.now)
 
 
+def test_tolerates_stopped_while_the_start_settles(monkeypatch):
+    clock = FakeClock()
+    client = _client(
+        monkeypatch, starts=[VM_OK], states=["STOPPED", "PROVISIONING", "RUNNING"]
+    )
+    client.ensure_vm_running(interval_s=5, sleep=clock.sleep, now=clock.now)
+    assert clock.sleeps == [5, 5]
+
+
+def test_aborts_when_stopped_outlasts_the_settle_window(monkeypatch):
+    clock = FakeClock()
+    client = _client(monkeypatch, starts=[VM_OK], states=["STOPPED"] * 100)
+    with pytest.raises(RuntimeError, match="terminal state STOPPED"):
+        client.ensure_vm_running(
+            settle_s=10, interval_s=5, sleep=clock.sleep, now=clock.now
+        )
+    assert clock.sleeps == [5, 5]
+
+
 def test_aborts_on_a_terminal_stopped(monkeypatch):
     clock = FakeClock()
     client = _client(monkeypatch, starts=[VM_OK], states=["PROVISIONING", "STOPPED"])
