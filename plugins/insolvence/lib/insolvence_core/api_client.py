@@ -156,7 +156,9 @@ def _query(fields: dict):
     codes raise ApiParseError.
     """
     try:
-        root = ET.fromstring(_post(fields if isinstance(fields, str) else _envelope(fields)))
+        root = ET.fromstring(
+            _post(fields if isinstance(fields, str) else _envelope(fields))
+        )
     except ET.ParseError as e:
         raise ApiParseError(f"Neplatná XML odpověď ISIR WS: {e}")
 

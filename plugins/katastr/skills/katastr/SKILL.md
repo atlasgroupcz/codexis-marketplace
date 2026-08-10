@@ -3,36 +3,49 @@ uuid: 6fb435d1-5a14-4a9a-88bc-f0e3a3cd03c2
 name: katastr
 icon: icon.svg
 jurisdictions: [CZ]
-description: Český katastr nemovitostí (ČÚZK REST API KN). Use for both ad-hoc lookups (parcels, buildings, units, addresses, owners via LV, plomby/řízení signals) and tracked monitoring of cadastral proceedings (vklad/záznam status with automatic change detection). Triggers on "katastr", "parcela", "stavba", "list vlastnictví", "LV", "vklad", "záznam", "plomba", "řízení katastr", "sleduj řízení", "hlídej vklad".
+description: Český katastr nemovitostí (ČÚZK REST API KN). Use for both ad-hoc lookups (parcels, buildings, units, addresses, LV numbers, plomby/řízení signals) and tracked monitoring of cadastral proceedings (vklad/záznam status with automatic change detection). Triggers on "katastr", "parcela", "stavba", "list vlastnictví", "LV", "vklad", "záznam", "plomba", "řízení katastr", "sleduj řízení", "hlídej vklad".
 i18n:
   cs:
     displayName: "Katastr nemovitostí ČR"
     summary: "Vyhledávání parcel, staveb, listů vlastnictví a sledování řízení (vklad/záznam) v katastru ČR."
+    examplePrompts:
+      - "Najdi v katastru dům na adrese Staroměstské náměstí 1, Praha a vypiš jeho parcely a číslo LV."
+      - "Zjisti, jestli na mé parcele vázne plomba nebo na ní běží katastrální řízení."
+      - "Sleduj vkladové řízení v katastru a upozorni mě, jakmile se změní jeho stav."
   en:
     displayName: "Czech Property Registry"
     summary: "Look up parcels, buildings, title deeds and track cadastral proceedings in the Czech Property Registry."
+    examplePrompts:
+      - "Look up the building at Staroměstské náměstí 1, Prague and list its parcels and title deed number."
+      - "Check whether my parcel has a pending cadastral proceeding recorded on it."
+      - "Track a cadastral deposit proceeding and alert me as soon as its status changes."
   sk:
     displayName: "Kataster nehnuteľností ČR"
     summary: "Vyhľadávanie parciel, stavieb, listov vlastníctva a sledovanie konaní (vklad/záznam) v katastri ČR."
+    examplePrompts:
+      - "Nájdi v katastri dom na adrese Staroměstské náměstí 1, Praha a vypíš jeho parcely a číslo LV."
+      - "Zisti, či na mojej parcele viazne plomba alebo na nej beží katastrálne konanie."
+      - "Sleduj vkladové konanie v katastri a upozorni ma, keď sa zmení jeho stav."
 ---
 
 # Katastr nemovitostí ČR
 
 A single tool - **`katastr-cli`** - wraps the entire ČÚZK REST API KN plus a stateful tracker for cadastral proceedings.
 
-**IMPORTANT:** For cadastral data use only `katastr-cli` - do NOT call `kn`, `cdx-cli`, or `curl` (the one data exception is the RUIAN address lookup in `references/api.md`). `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring (see *Monitoring & e-mail*), never to fetch cadastral data. Stop only on genuine `ERROR:` lines (invalid number, API key rejected/missing, network, "nebylo nalezeno v ČÚZK") - report them, don't guess workarounds. When acting on several proceedings, run each independently; one `ERROR:` doesn't mean skip the rest.
+**IMPORTANT:** For cadastral data use only `katastr-cli` - do NOT call `kn`, `cdx-cli`, or `curl`. `cdxctl` is the platform's automation tool: use it **only** to set up recurring monitoring (see *Monitoring & e-mail*), never to fetch cadastral data. Stop only on genuine `ERROR:` lines (invalid number, API key rejected/missing, network, "nebylo nalezeno v ČÚZK") - report them, don't guess workarounds. When acting on several proceedings, run each independently; one `ERROR:` doesn't mean skip the rest.
 
 ## Output Format
 
 `katastr-cli` output comes in three shapes - consume each the right way (`grep` on JSON or `jq` on plaintext will fail):
 
 - **`tracking list`, `tracking check`** - human-readable plain text. Read it and summarize for the user. **Do not parse with `sed`/`grep`.**
-- **`tracking add/confirm/remove/set-label`, `settings set/test`** - a single `OK: ...` (success) or `ERROR: ...` (failure) line. The whole line is the status; no parsing needed.
-- **`tracking show`, `api get <PATH>`** - structured JSON. Read directly or filter with `jq` (never `sed`/`grep`).
+- **`tracking add/confirm/remove/set-label`, `settings set`** - a single `OK: ...` (success) or `ERROR: ...` (failure) line. The whole line is the status; no parsing needed.
+- **`tracking show`, the lookup commands (`search`, `parcela`, `okoli`, `stavba`, `jednotka`, `rizeni`, `pravo-stavby`, `sousedni`, `pracoviste`), and `api get <PATH>`** - structured JSON. Read directly or filter with `jq` (never `sed`/`grep`).
+- **`settings show`, `settings test`** - an `OK:`/`ERROR:` status line (on stderr for `test`) **plus** plain-text diagnostic lines on stdout (call quota, key expiry, data-as-of date, service status, ČÚZK operational messages). Read every line and relay it to the user - the expiry warning in particular only shows up here, nowhere else.
 
   ```bash
   katastr-cli tracking show V-123/2026-701 | jq '.stav'
-  katastr-cli api get "/api/v1/Parcely/Vyhledani?..." | jq '.data[0].id'
+  katastr-cli parcela --ku 638790 --cislo 545 | jq '.data[0].id'
   ```
 
 ČÚZK errors are forwarded verbatim in the `ERROR:` line (including the API response body). Treat that message as authoritative - don't retry the same parameter; adjust or ask the user.
@@ -47,10 +60,12 @@ katastr-cli settings <verb> ...   # API key management
 
 ## Decision tree - when to use what
 
-**Raw INFO about a parcel / building / unit / address / owner / LV / plomba?**
-→ `katastr-cli api get <PATH>` (one-shot lookup, no state). Endpoints and workflows
-(identify parcel, "is it clean?", RUIAN address, LV, units, proceedings, code lists)
-are in **`references/api.md`** - read it when doing raw lookups.
+**Raw INFO about a parcel / building / unit / address / proceeding / right of superficies / neighboring parcels?**
+→ Use the matching lookup command - `search`, `parcela`, `okoli`, `stavba`,
+`jednotka`, `rizeni`, `pravo-stavby`, `sousedni`, `pracoviste` - not `api get`. Arguments,
+one example per command, and two ready-made workflows ("is it clean?", find a
+building by address) are in **`references/api.md`** - read it before doing a
+raw lookup.
 
 **START MONITORING a proceeding?** Trigger words: "sleduj", "hlídej", "monitoruj", "informuj mě o změnách", "začni hlídat".
 → `katastr-cli tracking add <CISLO_RIZENI> [--label "..."]`
@@ -62,7 +77,7 @@ are in **`references/api.md`** - read it when doing raw lookups.
 **"Co je nového / jaký je stav řízení V-XYZ?"** - ambiguous, check tracked state first:
 1. `katastr-cli tracking show V-XYZ` (or `tracking list`)
 2. **If tracked** → `tracking show V-XYZ` (rich state + change history); optionally `tracking check V-XYZ` first to refresh from ČÚZK.
-3. **If NOT tracked** → `api get "/api/v1/Rizeni/Vyhledani?TypRizeni=V&Cislo=...&Rok=...&KodPracoviste=..."`, present it, and offer:
+3. **If NOT tracked** → `katastr-cli rizeni <CISLO>` (e.g. `rizeni V-123/2026-701`), present it, and offer:
    *"Pokud chceš, můžu řízení přidat ke sledování - budu hlídat změny stavu a operací každý týden."*
 
 **API key error** (`ERROR: API klíč ... není nastaven` / `... byl odmítnut`) → see **settings** below.
@@ -157,9 +172,14 @@ scheduled automation - one prompt run fires at most once. Set it up with `cdxctl
 4. Briefly confirm what you set up (which proceedings, how often, which
    notification channels).
 
-## `katastr-cli api` - raw ČÚZK lookups
+## `katastr-cli` - lookups
 
-`katastr-cli api get "<PATH>"` - authenticated GET, JSON out. The full endpoint catalog, enums, and lookup workflows (parcels, buildings, units, LV, addresses, proceedings, code lists) live in **`references/api.md`**. Load that file when a task needs raw lookups.
+`search`, `parcela`, `okoli` (nearby parcels/buildings), `stavba`,
+`jednotka`, `rizeni`, `pravo-stavby`, `sousedni`, `pracoviste`. Arguments and
+examples are in **`references/api.md`**.
+
+`katastr-cli api get "<PATH>"` is the escape hatch for endpoints none of the
+commands above cover. Don't use it when a command exists.
 
 ## `katastr-cli settings` - API key management
 
@@ -168,6 +188,11 @@ katastr-cli settings show         # show configured key (masked) or "not configu
 katastr-cli settings set <KEY>    # validate against ČÚZK and persist
 katastr-cli settings test         # test current key against ČÚZK
 ```
+
+`show` also reports the account's call quota and the key's expiry date; `test`
+also reports data-as-of date and service health. Both are best-effort on top
+of the local key status/validation - relay whatever they print, including any
+ČÚZK operational message (e.g. an approaching key expiry).
 
 The key comes from the ČÚZK customer portal (free, requires Identita občana or remote-access account) and is stored in `~/.cdx/apps/katastr/.env` (shared by all `katastr-cli` subcommands and the UI). On `API klíč ... není nastaven` / `... byl odmítnut`:
 1. `katastr-cli settings test` to diagnose
@@ -182,4 +207,4 @@ The user-facing UI is at route `/katastr` (Doplňky → Katastr): a table of tra
 
 ## Reference Files
 
-- **`references/api.md`** - raw ČÚZK REST API KN: endpoint catalog, enums, response envelope, and lookup workflows (identify parcel, "is it clean?", RUIAN address → building, LV, units, proceedings, code lists). Load it when a task needs raw `api get` lookups.
+- **`references/api.md`** - the lookup commands (`search`, `parcela`, `okoli`, `stavba`, `jednotka`, `rizeni`, `pravo-stavby`, `sousedni`, `pracoviste`), the response envelope, identifiers, and two workflows ("is it clean?", find a building by address). `api get` is documented last, as the escape hatch. Load it when a task needs a raw lookup.

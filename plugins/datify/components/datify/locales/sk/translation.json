@@ -1,0 +1,26 @@
+{
+  "app": {
+    "loadFailed": "Nastavenia sa nepodarilo načítať.",
+    "saveFailed": "Uloženie sa nepodarilo.",
+    "leadConnected": "Agent môže čítať a upravovať vaše kolekcie, datasety a záznamy.",
+    "leadIdle": "Vložte token a agent sa dostane k vašim dátam v Datify.",
+    "saved": "Token uložený.",
+    "deleted": "Token zmazaný.",
+    "overridden": "Token je nastavený premennou {{source}} a má prednosť pred uloženým.",
+    "connectionSection": "Pripojenie"
+  },
+  "connection": {
+    "connected": "Pripojené",
+    "notConnected": "Nepripojené",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "save": "Uložiť",
+    "saving": "Ukladám..."
+  },
+  "settings": {
+    "placeholder": "Token z Datify",
+    "getKey": "Kde získam token?",
+    "getKeyHint": "Vygenerujte si ho v správe tokenov v Datify.",
+    "label": "Vložte token z Datify"
+  }
+}

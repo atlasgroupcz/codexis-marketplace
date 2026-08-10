@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Kataster nehnuteľností SR"
     summary: "Vyhledávání parcel ve slovenském katastru - parcelní čísla, výměry, druh pozemku a odkazy na list vlastníctva."
+    examplePrompts:
+      - "Zjisti výměru, druh pozemku a registr parcely v katastrálním území Ružinov."
+      - "Kde získám list vlastnictví k parcele v katastrálním území Ružinov?"
+      - "Ukaž mi na mapě hranice parcely v katastrálním území Petržalka."
   en:
     displayName: "Slovak Land Cadastre"
     summary: "Look up parcels in the Slovak cadastre - parcel numbers, areas, land use, and links to title deeds."
+    examplePrompts:
+      - "Find the area, land use and register of a parcel in the Ružinov cadastral unit."
+      - "Where do I get the title deed for a parcel in the Ružinov cadastral unit?"
+      - "Show me the boundaries of a parcel in the Petržalka cadastral unit on a map."
   sk:
     displayName: "Kataster nehnuteľností SR"
     summary: "Vyhľadávanie parciel v slovenskom katastri - parcelné čísla, výmery, druh pozemku a odkazy na list vlastníctva."
+    examplePrompts:
+      - "Zisti výmeru, druh pozemku a register parcely v katastrálnom území Ružinov."
+      - "Kde získam list vlastníctva k parcele v katastrálnom území Ružinov?"
+      - "Ukáž mi na mape hranice parcely v katastrálnom území Petržalka."
 ---
 
 # Slovak Land Cadastre (kataster nehnuteľností SR)

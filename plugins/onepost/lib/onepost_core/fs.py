@@ -2,11 +2,14 @@
 
 import os
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, TextIO
+from typing import TextIO
 
 
-def atomic_replace(path: str, writer: Callable[[TextIO], None], mode: int = 0o600) -> None:
+def atomic_replace(
+    path: str, writer: Callable[[TextIO], None], mode: int = 0o600
+) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=f".{target.name}.", dir=str(target.parent))

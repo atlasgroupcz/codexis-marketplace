@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Word dokumenty"
     summary: "Tvorba, úprava a vizuální kontrola .docx - smlouvy, podání, memoranda, dopisy."
+    examplePrompts:
+      - "Připrav ve Wordu vzor nájemní smlouvy k bytu."
+      - "Přečti přiloženou smlouvu ve Wordu a shrň mi, co je v ní sjednáno."
+      - "Sjednoť v tomto dokumentu písmo na Times New Roman 12 s řádkováním 1,5 a ukaž náhled stránek."
   en:
     displayName: "Word Documents"
     summary: "Create, edit and visually verify .docx files - contracts, filings, memos, letters."
+    examplePrompts:
+      - "Draft a residential lease agreement template in Word."
+      - "Read the attached Word contract and summarize what it agrees to."
+      - "Reformat this document to Times New Roman 12 with 1.5 line spacing and show me a preview of the pages."
   sk:
     displayName: "Word dokumenty"
     summary: "Tvorba, úprava a vizuálna kontrola .docx - zmluvy, podania, memorandá, listy."
+    examplePrompts:
+      - "Priprav vo Worde vzor nájomnej zmluvy k bytu."
+      - "Prečítaj priloženú zmluvu vo Worde a zhrň mi, čo je v nej dohodnuté."
+      - "Zjednoť v tomto dokumente písmo na Times New Roman 12 s riadkovaním 1,5 a ukáž náhľad strán."
 ---
 
 # DOCX - creation, editing, visual verification

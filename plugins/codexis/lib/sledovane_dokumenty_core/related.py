@@ -36,12 +36,16 @@ def get_type_name(relation_type, counts_data=None):
 def capture_baseline(codexis_id, relation_type):
     """Fetch current related IDs and store them as the baseline. Returns count."""
     doc_ids = clients.fetch_all_related_ids(codexis_id, relation_type)
-    state.save_related_baseline(codexis_id, relation_type, {
-        "type": relation_type,
-        "captured_at": now_utc(),
-        "total_count": len(doc_ids),
-        "doc_ids": doc_ids,
-    })
+    state.save_related_baseline(
+        codexis_id,
+        relation_type,
+        {
+            "type": relation_type,
+            "captured_at": now_utc(),
+            "total_count": len(doc_ids),
+            "doc_ids": doc_ids,
+        },
+    )
     return len(doc_ids)
 
 
@@ -49,9 +53,7 @@ def enable_tracking(codexis_id, relation_type):
     """Add a relation type to the document's tracking. Returns updated state."""
     s = state.load_state(codexis_id)
     if s is None:
-        raise DocumentNotTrackedError(
-            f"Dokument {codexis_id} není sledován."
-        )
+        raise DocumentNotTrackedError(f"Dokument {codexis_id} není sledován.")
 
     rt = s.get("related_tracking") or {}
     existing = list(rt.get("types", [])) if rt.get("enabled") else []
@@ -73,9 +75,7 @@ def disable_tracking(codexis_id, relation_type):
     """Remove a relation type from tracking. Returns updated state."""
     s = state.load_state(codexis_id)
     if s is None:
-        raise DocumentNotTrackedError(
-            f"Dokument {codexis_id} není sledován."
-        )
+        raise DocumentNotTrackedError(f"Dokument {codexis_id} není sledován.")
     rt = s.get("related_tracking") or {}
     existing = list(rt.get("types", []))
     if relation_type not in existing:
@@ -97,6 +97,7 @@ def detect_changes(codexis_id, relation_type, printer=None):
     Returns a `related_change` dict ready to append to state.changes, or None if
     no change. On API failure returns None and logs via printer.
     """
+
     def _log(msg):
         if printer:
             printer(msg)
@@ -151,7 +152,9 @@ def detect_changes(codexis_id, relation_type, printer=None):
     if removed_docs:
         if desc_lines:
             desc_lines.append("")
-        desc_lines.append(f"**Odebráno {len(removed_ids)}** dokumentů typu {type_name}:")
+        desc_lines.append(
+            f"**Odebráno {len(removed_ids)}** dokumentů typu {type_name}:"
+        )
         for doc in removed_docs:
             if doc["docId"] == "...":
                 desc_lines.append(f"- {doc['title']}")
@@ -162,16 +165,21 @@ def detect_changes(codexis_id, relation_type, printer=None):
 
     source_documents = [
         {"codexisId": f"cdx://doc/{doc['docId']}", "name": doc["title"]}
-        for doc in added_docs if doc["docId"] != "..."
+        for doc in added_docs
+        if doc["docId"] != "..."
     ]
 
     # Update baseline to current so next check starts fresh.
-    state.save_related_baseline(codexis_id, relation_type, {
-        "type": relation_type,
-        "captured_at": now_utc(),
-        "total_count": len(current_ids_list),
-        "doc_ids": current_ids_list,
-    })
+    state.save_related_baseline(
+        codexis_id,
+        relation_type,
+        {
+            "type": relation_type,
+            "captured_at": now_utc(),
+            "total_count": len(current_ids_list),
+            "doc_ids": current_ids_list,
+        },
+    )
 
     return {
         "change_type": "related_change",

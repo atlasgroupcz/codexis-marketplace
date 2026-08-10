@@ -3,18 +3,30 @@ uuid: 2b229bd1-c3ed-4aed-aea8-1a1d9a5b953c
 name: onepost
 icon: icon.svg
 description: 'ONEPOST - datové schránky (ISDS) přes ONEPOST API. Use for ONEPOST / ISDS Czech data box work: list datové schránky, folders, messages, attachments, search messages, download attachments, upload attachments, create/update/send concepts, receive new ISDS messages, ZFO, datové zprávy. Triggers on "ONEPOST", "datová schránka", "datové schránky", "ISDS", "ZFO", "zprávy", "příloha", "koncept", "odeslat koncept", "vyhledej zprávu", "stáhni zprávy", "přijmi zprávy".'
-version: 0.4.0
+version: 0.5.0
 jurisdictions: [CZ]
 i18n:
   cs:
     displayName: "ONEPOST - datové schránky"
     summary: "Práce s ONEPOST API - schránky, zprávy, přílohy, koncepty, odesílání a stažení zpráv z ISDS."
+    examplePrompts:
+      - "Ukaž mi nepřečtené zprávy v datové schránce."
+      - "Najdi v datové schránce zprávy od finančního úřadu a stáhni přílohy."
+      - "Připrav v datové schránce zprávu k odeslání."
   en:
     displayName: "ONEPOST - Data Boxes"
     summary: "Use the ONEPOST API for mailboxes, messages, attachments, concepts, sending, search, and receiving ISDS messages."
+    examplePrompts:
+      - "Show me the unread messages in my data box."
+      - "Find data box messages from the tax office and download their attachments."
+      - "Draft a data box message ready to send."
   sk:
     displayName: "ONEPOST - dátové schránky"
     summary: "Práca s ONEPOST API - schránky, správy, prílohy, koncepty, odosielanie a stiahnutie správ z ISDS."
+    examplePrompts:
+      - "Ukáž mi neprečítané správy v dátovej schránke."
+      - "Nájdi v dátovej schránke správy z finančného úradu a stiahni prílohy."
+      - "Priprav v dátovej schránke správu na odoslanie."
 ---
 
 # ONEPOST
@@ -58,6 +70,40 @@ onepost-cli api post <PATH> [--param KEY=VALUE] [--body '{"json":true}']
 All normal API commands print JSON to stdout. Parse JSON structurally; do not use
 `grep` or string slicing.
 
+## Message Identifiers
+
+A message carries two identifiers, and their shape tells them apart at a glance:
+
+- `isdsMessageId` - the ISDS number, digits only, for example `12054584`. This is
+  what the message is called in the data box, and the only identifier a user ever
+  sees.
+- `id` - the internal ONEPOST identifier, a UUID such as
+  `9f1c8f0e-3b7a-4a52-9f4e-2f5b8c7d1a03`. It comes back from `search`,
+  `folder-messages` and `message`. Users have no access to it.
+
+All digits means ISDS, a UUID means internal. An identifier a user gives you is
+almost always the ISDS one, so assume that and look it up - never ask the user
+which kind it is.
+
+When a command returns 404 for one form, fetch the message with
+`onepost-cli message <IDENTIFIER>`, which accepts either form and returns both
+`id` and `isdsMessageId`, then retry the command with the other form. Report a
+message or an attachment as missing only after that.
+
+## Attachments
+
+`message` and `folder-messages` return `attachmentCount`. That field is the
+answer to "does this message have attachments":
+
+```bash
+onepost-cli message "12054584"      # -> "attachmentCount": 2
+onepost-cli attachments "12054584"  # -> the two attachments with their ids
+```
+
+When `attachmentCount` is greater than zero, list the attachments and download
+what the user asked for in the same turn. Do not tell the user a message has no
+attachment on any other basis, and do not wait for a second prompt to download.
+
 ## Error Handling
 
 If `onepost-cli` prints `ERROR: ...`, stop and report the message. The client maps
@@ -90,13 +136,6 @@ Search messages:
 
 ```bash
 onepost-cli search "smlouva" --limit 10
-```
-
-Inspect one message and its attachments:
-
-```bash
-onepost-cli message "<MESSAGE_ID>"
-onepost-cli attachments "<MESSAGE_ID>"
 ```
 
 Download an attachment to a local file:

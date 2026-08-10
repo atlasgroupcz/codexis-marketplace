@@ -10,19 +10,19 @@ import-safe in any environment, including the test runner.
 import math
 
 try:  # optional heavy-ish deps
-    from PIL import Image  # type: ignore
     import imagehash  # type: ignore
+    from PIL import Image  # type: ignore
 
     HAS_IMAGE_LIBS = True
-except Exception:  # noqa: BLE001 - any import failure means "no pixel signals"
+except Exception:
     HAS_IMAGE_LIBS = False
 
 __all__ = [
     "HAS_IMAGE_LIBS",
-    "perceptual_hash",
-    "hash_similarity",
     "color_signature",
     "color_similarity",
+    "hash_similarity",
+    "perceptual_hash",
     "vienna_overlap",
 ]
 
@@ -43,7 +43,7 @@ def perceptual_hash(path: str):
                 "phash": str(imagehash.phash(rgb, hash_size=8)),
                 "dhash": str(imagehash.dhash(rgb, hash_size=8)),
             }
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
@@ -82,7 +82,7 @@ def color_signature(path: str):
         with Image.open(path) as img:
             hsv = img.convert("RGB").resize((64, 64)).convert("HSV")
             pixels = list(hsv.getdata())
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
     bins = [0.0] * (8 + 4 + 4)
     for h, s, v in pixels:

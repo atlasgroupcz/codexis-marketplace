@@ -10,7 +10,6 @@ import re
 
 from . import clients
 
-
 # ── text normalization ───────────────────────────────────────────────────────
 
 
@@ -73,7 +72,8 @@ def unified_text_diff(old_text, new_text, label=""):
     old_lines = old_text.splitlines(keepends=True)
     new_lines = new_text.splitlines(keepends=True)
     diff = difflib.unified_diff(
-        old_lines, new_lines,
+        old_lines,
+        new_lines,
         fromfile=f"old {label}".strip(),
         tofile=f"new {label}".strip(),
         lineterm="",
@@ -139,6 +139,7 @@ def compute_version_diff(baseline_vid, latest_vid, parts, printer=None):
 
     `printer` is an optional callable for progress reporting (e.g. print).
     """
+
     def _log(msg):
         if printer:
             printer(msg)
@@ -158,10 +159,12 @@ def compute_version_diff(baseline_vid, latest_vid, parts, printer=None):
             old_clean = normalize_text(old_text)
             new_clean = normalize_text(new_text)
             if old_clean != new_clean:
-                diff_parts.append({
-                    "part": part_id,
-                    "diff": unified_text_diff(old_clean, new_clean, label=part_id),
-                })
+                diff_parts.append(
+                    {
+                        "part": part_id,
+                        "diff": unified_text_diff(old_clean, new_clean, label=part_id),
+                    }
+                )
                 _log(f"    {part_id}: změněn")
             else:
                 _log(f"    {part_id}: beze změn")
@@ -175,10 +178,12 @@ def compute_version_diff(baseline_vid, latest_vid, parts, printer=None):
     old_clean = normalize_text(old_text)
     new_clean = normalize_text(new_text)
     if old_clean != new_clean:
-        diff_parts.append({
-            "part": "full",
-            "diff": unified_text_diff(old_clean, new_clean),
-        })
+        diff_parts.append(
+            {
+                "part": "full",
+                "diff": unified_text_diff(old_clean, new_clean),
+            }
+        )
     return diff_parts
 
 

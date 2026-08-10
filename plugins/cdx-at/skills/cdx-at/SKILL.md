@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "Rakouské právo (RIS)"
     summary: "Rakouský RIS - spolková (Bundesrecht) a zemská (Landesrecht) legislativa, judikatura (Judikatur) ze 7 soudů včetně VfGH a VwGH, další úřední publikace (Sonstige) a historické konsolidované předpisy."
+    examplePrompts:
+      - "Najdi aktuální znění § 1295 rakouského ABGB."
+      - "Najdi rozhodnutí rakouského Nejvyššího správního soudu k daňovým sporům."
+      - "Jak se měnilo znění § 1295 rakouského ABGB v čase?"
   en:
     displayName: "Austrian Legal Database (RIS)"
     summary: "Austria's RIS - federal (Bundesrecht) and state (Landesrecht) legislation, case law (Judikatur) from 7 courts including VfGH and VwGH, other official publications (Sonstige), and historical consolidated norms."
+    examplePrompts:
+      - "Find the current wording of section 1295 of the Austrian ABGB."
+      - "Find Austrian Supreme Administrative Court decisions on tax disputes."
+      - "How has section 1295 of the Austrian ABGB changed over time?"
   sk:
     displayName: "Rakúske právo (RIS)"
     summary: "Rakúsky RIS - spolková (Bundesrecht) a krajinská (Landesrecht) legislatíva, judikatúra (Judikatur) zo 7 súdov vrátane VfGH a VwGH, ďalšie úradné publikácie (Sonstige) a historické konsolidované predpisy."
+    examplePrompts:
+      - "Nájdi aktuálne znenie § 1295 rakúskeho ABGB."
+      - "Nájdi rozhodnutia rakúskeho Najvyššieho správneho súdu k daňovým sporom."
+      - "Ako sa menilo znenie § 1295 rakúskeho ABGB v čase?"
 ---
 
 # Austrian Legal Database (cdx-at)

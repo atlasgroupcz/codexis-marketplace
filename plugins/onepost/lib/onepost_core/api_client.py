@@ -17,16 +17,19 @@ from .exceptions import (
     ApiNetworkError,
     ApiPermissionError,
     ApiRateLimitError,
+    OnepostError,
 )
 
 API_PREFIX = "/rest/api/v1"
-USER_AGENT = "onepost-cli/0.4.0"
+USER_AGENT = "onepost-cli/0.5.0"
 
 
 class OnepostClient:
     def __init__(self, api_url: str | None = None, api_key: str | None = None):
         self.api_url = settings.normalize_api_url(api_url or settings.read_api_url())
-        self.api_key = (api_key if api_key is not None else settings.read_api_key()).strip()
+        self.api_key = (
+            api_key if api_key is not None else settings.read_api_key()
+        ).strip()
         if not self.api_key:
             raise ApiKeyMissingError(
                 "API klíč pro ONEPOST není nastaven. Vygenerujte ho v ONEPOSTu na "
@@ -38,10 +41,18 @@ class OnepostClient:
         return self.request("GET", "/mailboxes", {"includeArchive": include_archive})
 
     def get_folders(self, mailbox_id: str, parent_folder_id: str | None = None) -> Any:
-        return self.request("GET", f"/mailboxes/{mailbox_id}/folders", {"parentFolderId": parent_folder_id})
+        return self.request(
+            "GET",
+            f"/mailboxes/{mailbox_id}/folders",
+            {"parentFolderId": parent_folder_id},
+        )
 
     def get_message(self, message_id: str, include_attachments: bool = True) -> Any:
-        return self.request("GET", f"/messages/{message_id}", {"includeAttachments": include_attachments})
+        return self.request(
+            "GET",
+            f"/messages/{message_id}",
+            {"includeAttachments": include_attachments},
+        )
 
     def get_folder_messages(
         self,
@@ -77,10 +88,36 @@ class OnepostClient:
         )
 
     def get_attachments(self, message_id: str) -> Any:
-        return self.request("GET", f"/messages/{message_id}/attachments")
+        return self._with_resolved_message_id(
+            message_id,
+            lambda resolved: self.request("GET", f"/messages/{resolved}/attachments"),
+        )
+
+    def _with_resolved_message_id(self, message_id: str, call) -> Any:
+        try:
+            return call(message_id)
+        except ApiHttpError as e:
+            if e.status != 404:
+                raise
+            internal_id = self._internal_message_id(message_id)
+            if not internal_id or internal_id == message_id:
+                raise
+            return call(internal_id)
+
+    def _internal_message_id(self, message_id: str) -> str | None:
+        try:
+            message = self.get_message(message_id, include_attachments=False)
+        except OnepostError:
+            return None
+        if not isinstance(message, dict):
+            return None
+        internal_id = message.get("id")
+        return internal_id if isinstance(internal_id, str) and internal_id else None
 
     def receive_messages(self, mailbox_id: str, only_headers: bool = False) -> Any:
-        return self.request("POST", f"/mailboxes/{mailbox_id}/receive", {"onlyHeaders": only_headers})
+        return self.request(
+            "POST", f"/mailboxes/{mailbox_id}/receive", {"onlyHeaders": only_headers}
+        )
 
     def upload_attachment(
         self,
@@ -93,7 +130,11 @@ class OnepostClient:
             raise ApiHttpError(0, f"Příloha neexistuje nebo není soubor: {source}")
 
         resolved_file_name = file_name or source.name
-        resolved_mime_type = mime_type or mimetypes.guess_type(resolved_file_name)[0] or "application/octet-stream"
+        resolved_mime_type = (
+            mime_type
+            or mimetypes.guess_type(resolved_file_name)[0]
+            or "application/octet-stream"
+        )
         boundary, body = self._multipart_file_body(
             "file",
             resolved_file_name,
@@ -127,7 +168,9 @@ class OnepostClient:
         except urllib.error.HTTPError as e:
             self._raise_http_error(e)
         except urllib.error.URLError as e:
-            raise ApiNetworkError(f"Nepodařilo se kontaktovat ONEPOST API: {e.reason}") from e
+            raise ApiNetworkError(
+                f"Nepodařilo se kontaktovat ONEPOST API: {e.reason}"
+            ) from e
 
         target = Path(output).expanduser()
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -165,7 +208,9 @@ class OnepostClient:
         except urllib.error.HTTPError as e:
             self._raise_http_error(e)
         except urllib.error.URLError as e:
-            raise ApiNetworkError(f"Nepodařilo se kontaktovat ONEPOST API: {e.reason}") from e
+            raise ApiNetworkError(
+                f"Nepodařilo se kontaktovat ONEPOST API: {e.reason}"
+            ) from e
         except json.JSONDecodeError as e:
             raise ApiHttpError(200, f"ONEPOST API vrátilo neplatné JSON: {e}") from e
 
@@ -181,15 +226,20 @@ class OnepostClient:
         safe_file_name = OnepostClient._quote_header_value(file_name)
         head = (
             f"--{boundary}\r\n"
-            f"Content-Disposition: form-data; name=\"{safe_field_name}\"; filename=\"{safe_file_name}\"\r\n"
+            f'Content-Disposition: form-data; name="{safe_field_name}"; filename="{safe_file_name}"\r\n'
             f"Content-Type: {mime_type}\r\n\r\n"
-        ).encode("utf-8")
-        tail = f"\r\n--{boundary}--\r\n".encode("utf-8")
+        ).encode()
+        tail = f"\r\n--{boundary}--\r\n".encode()
         return boundary, b"".join([head, content, tail])
 
     @staticmethod
     def _quote_header_value(value: str) -> str:
-        return value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "_").replace("\n", "_")
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\r", "_")
+            .replace("\n", "_")
+        )
 
     def _headers(self) -> dict[str, str]:
         return {
@@ -211,7 +261,9 @@ class OnepostClient:
         if not cleaned:
             raise ApiHttpError(0, "API cesta je prázdná.")
         if cleaned.startswith("http://") or cleaned.startswith("https://"):
-            raise ApiHttpError(0, "Použijte jen relativní ONEPOST API cestu, ne absolutní URL.")
+            raise ApiHttpError(
+                0, "Použijte jen relativní ONEPOST API cestu, ne absolutní URL."
+            )
         if not cleaned.startswith("/"):
             cleaned = "/" + cleaned
         if cleaned.startswith(API_PREFIX + "/") or cleaned == API_PREFIX:
@@ -246,12 +298,20 @@ class OnepostClient:
                 "zprávě nebo konceptu."
             )
         if error.code == 429:
-            raise ApiRateLimitError("ONEPOST odmítl požadavek kvůli rate limitu (HTTP 429). Zkuste to později.")
+            raise ApiRateLimitError(
+                "ONEPOST odmítl požadavek kvůli rate limitu (HTTP 429). Zkuste to později."
+            )
         if 500 <= error.code <= 599:
-            raise ApiHttpError(error.code, f"ONEPOST API je dočasně nedostupné (HTTP {error.code}).", code)
+            raise ApiHttpError(
+                error.code,
+                f"ONEPOST API je dočasně nedostupné (HTTP {error.code}).",
+                code,
+            )
         detail = f": {message}" if message else ""
         label = code or "HTTP_ERROR"
-        raise ApiHttpError(error.code, f"ONEPOST API vrátilo {label} (HTTP {error.code}){detail}", code)
+        raise ApiHttpError(
+            error.code, f"ONEPOST API vrátilo {label} (HTTP {error.code}){detail}", code
+        )
 
     @staticmethod
     def _parse_error_body(body: str) -> tuple[str | None, str | None]:

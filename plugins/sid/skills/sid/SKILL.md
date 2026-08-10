@@ -8,12 +8,24 @@ i18n:
   cs:
     displayName: "SID - Interní dokumenty"
     summary: "Vyhledávání a čtení řízených dokumentů, přehled potvrzení, hlídání novinek."
+    examplePrompts:
+      - "Najdi v interních dokumentech, co u nás platí pro cestovní náhrady."
+      - "Které interní dokumenty mi zbývá potvrdit ke čtení?"
+      - "Stáhni mi aktuální znění naší směrnice o ochraně osobních údajů."
   en:
     displayName: "SID - Internal Documents"
     summary: "Search and read managed documents, see what needs confirming, watch for updates."
+    examplePrompts:
+      - "Find what our internal documents say about travel expense reimbursement."
+      - "Which internal documents am I still required to confirm as read?"
+      - "Download the current version of our internal data protection directive."
   sk:
     displayName: "SID - Interné dokumenty"
     summary: "Vyhľadávanie a čítanie riadených dokumentov, prehľad potvrdení, stráženie noviniek."
+    examplePrompts:
+      - "Nájdi vo vnútorných dokumentoch, čo u nás platí pre cestovné náhrady."
+      - "Ktoré vnútorné dokumenty mi zostáva potvrdiť na prečítanie?"
+      - "Stiahni mi aktuálne znenie našej smernice o ochrane osobných údajov."
 ---
 
 # SID - Interní dokumenty
@@ -173,11 +185,17 @@ sid-cli attributes list | jq '.attributes[] | {id, name, type, options}'
 
 The plugin already ships a daily watchdog (`automations/check-sid.md`, 07:00,
 `sid-cli check --notify`) - **do not create another automation for this**. If
-the user wants a different schedule or channel, point them at the plugin
-settings panel (in-app / e-mail toggles, extra recipients) or at the existing
-automation rather than adding a duplicate.
+the user wants a different schedule, point them at the existing automation
+rather than adding a duplicate; the bell can be switched off in the plugin
+settings panel.
 
-E-mail is off by default; the in-app bell is on.
+**The plugin sends no e-mail, and must not be made to.** SID mails its users
+itself - about an assigned document, a new version, changed legislation and
+an effectiveness date coming up - with the document linked. If a user asks
+why they get no mail from the plugin, or asks to have one set up, the answer
+is that SID owns that channel: what reaches their inbox is configured in SID,
+not here. The watchdog's job is the notification-centre bell, which carries a
+link back into SID.
 
 ## Reference Files
 

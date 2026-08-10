@@ -79,9 +79,7 @@ def score_candidate(watched: dict, candidate: dict) -> dict:
         watched.get("text", ""), candidate.get("mark_text", "")
     )
     image_score, image_breakdown = _image_component(watched, candidate)
-    classes = class_overlap(
-        watched.get("nice_classes"), candidate.get("nice_classes")
-    )
+    classes = class_overlap(watched.get("nice_classes"), candidate.get("nice_classes"))
 
     weights = _weights(watched.get("kind", "word"))
     parts = []

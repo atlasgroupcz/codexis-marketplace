@@ -9,12 +9,24 @@ i18n:
   cs:
     displayName: "SÚKL - registr léčiv"
     summary: "Vyhledávání léků v databázi SÚKL - podle názvu nebo kódu SÚKL, účinné látky, ATC."
+    examplePrompts:
+      - "Najdi lék Paralen - sílu, lékovou formu a jestli je vázán na předpis."
+      - "Které léky registrované v ČR obsahují ibuprofen?"
+      - "Kolik pacient doplácí na Ibalgin a kolik hradí pojišťovna?"
   en:
     displayName: "SÚKL - Medicines Registry"
     summary: "Look up medicines in the SÚKL database - by name or SÚKL code, active substances, ATC."
+    examplePrompts:
+      - "Look up the medicine Paralen - strength, dosage form and whether it needs a prescription."
+      - "Which medicines registered in Czechia contain ibuprofen?"
+      - "What is the patient copay for Ibalgin and how much does insurance cover?"
   sk:
     displayName: "SÚKL - register liekov"
     summary: "Vyhľadávanie liekov v databáze SÚKL - podľa názvu alebo kódu SÚKL, účinnej látky, ATC."
+    examplePrompts:
+      - "Nájdi liek Paralen - silu, liekovú formu a či je viazaný na predpis."
+      - "Ktoré lieky registrované v ČR obsahujú ibuprofen?"
+      - "Koľko pacient dopláca na Ibalgin a koľko hradí poisťovňa?"
 ---
 
 # SÚKL - registr léčiv
