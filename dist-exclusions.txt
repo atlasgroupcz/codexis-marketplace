@@ -9,6 +9,8 @@
 # Repository metadata and dist-generation files
 /.git/
 build.sh
+/build-volume-image.sh
+/Dockerfile.volume
 /create-dist.sh
 /dist-exclusions.txt
 /dist-content/
