@@ -1,15 +1,9 @@
-"use client"
+'use client'
 
-import React, {
-  
-  useCallback,
-  useEffect,
-  useRef,
-  useState
-} from "react"
-import type {ReactNode} from "react";
+import type { ReactNode } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-export type HTMLResponseStreamMode = "fade" // Currently only "fade" is supported
+export type HTMLResponseStreamMode = 'fade' // Currently only "fade" is supported
 
 export type UseHTMLTextStreamOptions = {
   htmlStream: string | AsyncIterable<string>
@@ -46,7 +40,7 @@ function useHTMLTextStream({
   const streamAbortControllerRef = useRef<AbortController | null>(null)
   const onCompleteRef = useRef(onComplete)
   const onErrorRef = useRef(onError)
-  const currentHtmlRef = useRef<string>("")
+  const currentHtmlRef = useRef<string>('')
 
   useEffect(() => {
     speedRef.current = speed
@@ -63,16 +57,14 @@ function useHTMLTextStream({
   }, [onError])
 
   const getCalculatedFadeDuration = useCallback(() => {
-    if (typeof fadeDurationRef.current === "number")
-      return Math.max(10, fadeDurationRef.current)
+    if (typeof fadeDurationRef.current === 'number') return Math.max(10, fadeDurationRef.current)
     const normalizedSpeed = Math.min(100, Math.max(1, speedRef.current))
     // Slower speed means longer fade. Example: speed 1 -> 1000ms, speed 100 -> 100ms
     return Math.max(100, Math.round(1000 / Math.sqrt(normalizedSpeed)))
   }, [])
 
   const getCalculatedSegmentDelay = useCallback(() => {
-    if (typeof segmentDelayRef.current === "number")
-      return Math.max(0, segmentDelayRef.current)
+    if (typeof segmentDelayRef.current === 'number') return Math.max(0, segmentDelayRef.current)
     const normalizedSpeed = Math.min(100, Math.max(1, speedRef.current))
     // Slower speed means longer delay. Example: speed 1 -> 100ms, speed 100 -> 10ms
     return Math.max(10, Math.round(100 / Math.sqrt(normalizedSpeed)))
@@ -81,7 +73,7 @@ function useHTMLTextStream({
   const transformNodeToReact = useCallback(
     (
       node: Node,
-      path: string // Base path for generating unique keys
+      path: string, // Base path for generating unique keys
     ): ReactNode | Array<ReactNode> | null => {
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element
@@ -100,57 +92,56 @@ function useHTMLTextStream({
 
         const props: Record<string, unknown> = { key: path }
         const attrNameMap: { [key: string]: string } = {
-          class: "className",
-          for: "htmlFor",
+          class: 'className',
+          for: 'htmlFor',
           // Common HTML attributes that have different names in React
-          tabindex: "tabIndex",
-          readonly: "readOnly",
-          maxlength: "maxLength",
-          cellspacing: "cellSpacing",
-          cellpadding: "cellPadding",
-          rowspan: "rowSpan",
-          colspan: "colSpan",
-          usemap: "useMap",
-          formaction: "formAction",
-          formenctype: "formEncType",
-          formmethod: "formMethod",
-          formnovalidate: "formNoValidate",
-          formtarget: "formTarget",
+          tabindex: 'tabIndex',
+          readonly: 'readOnly',
+          maxlength: 'maxLength',
+          cellspacing: 'cellSpacing',
+          cellpadding: 'cellPadding',
+          rowspan: 'rowSpan',
+          colspan: 'colSpan',
+          usemap: 'useMap',
+          formaction: 'formAction',
+          formenctype: 'formEncType',
+          formmethod: 'formMethod',
+          formnovalidate: 'formNoValidate',
+          formtarget: 'formTarget',
         }
 
         for (const attr of Array.from(element.attributes)) {
-
-          const propName =
-            attrNameMap[attr.name.toLowerCase()] || attr.name
+          const propName = attrNameMap[attr.name.toLowerCase()] || attr.name
 
           // Handle boolean attributes correctly
           if (typeof props[propName] === 'boolean') {
-            props[propName] = true;
+            props[propName] = true
           } else if (propName === 'style' && typeof attr.value === 'string') {
-             // Basic style string to object conversion (can be improved for full CSS parsing)
-            const styleObject: { [key: string]: string } = {};
-            attr.value.split(';').forEach(styleRule => {
-              const [key, value] = styleRule.split(':');
+            // Basic style string to object conversion (can be improved for full CSS parsing)
+            const styleObject: { [key: string]: string } = {}
+            attr.value.split(';').forEach((styleRule) => {
+              const [key, value] = styleRule.split(':')
               if (key && value) {
-                const camelCaseKey = key.trim().replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-                styleObject[camelCaseKey] = value.trim();
+                const camelCaseKey = key
+                  .trim()
+                  .replace(/-([a-z])/g, (_, char: string) => char.toUpperCase())
+                styleObject[camelCaseKey] = value.trim()
               }
-            });
-            props[propName] = styleObject;
-          }
-          else {
+            })
+            props[propName] = styleObject
+          } else {
             props[propName] = attr.value
           }
         }
-        
+
         return React.createElement(
           element.tagName.toLowerCase(),
           props,
-          children.length > 0 ? children : undefined
+          children.length > 0 ? children : undefined,
         )
       } else if (node.nodeType === Node.TEXT_NODE) {
-        const textContent = node.textContent || ""
-        if (textContent.trim() === "") {
+        const textContent = node.textContent || ''
+        if (textContent.trim() === '') {
           return textContent // Preserve whitespace nodes as is
         }
 
@@ -158,29 +149,31 @@ function useHTMLTextStream({
         const words = textContent.split(/(\s+)/).filter(Boolean) // "Hello world" -> ["Hello", " ", "world"]
 
         return words.map((wordOrSpace, wordIndexInTextNode) => {
-          if (wordOrSpace.trim() === "") {
+          if (wordOrSpace.trim() === '') {
             // Preserve spaces without animation, ensure they have keys
-            return React.createElement("span", {key: `${path}-space-${wordIndexInTextNode}`}, wordOrSpace);
+            return React.createElement(
+              'span',
+              { key: `${path}-space-${wordIndexInTextNode}` },
+              wordOrSpace,
+            )
           }
           const segmentKey = `${path}-word-${wordIndexInTextNode}`
           return React.createElement(
-            "span",
+            'span',
             {
               key: segmentKey,
-              className: "html-fade-segment", // For potential base styling via CSS class
+              className: 'html-fade-segment', // For potential base styling via CSS class
               style: {
-                display: "inline", // Ensure words flow like text
+                display: 'inline', // Ensure words flow like text
                 opacity: 0,
-                animationName: "htmlFadeIn",
+                animationName: 'htmlFadeIn',
                 animationDuration: `${getCalculatedFadeDuration()}ms`,
-                animationTimingFunction: "ease-out",
-                animationFillMode: "forwards",
-                animationDelay: `${
-                  wordIndexInTextNode * getCalculatedSegmentDelay()
-                }ms`,
+                animationTimingFunction: 'ease-out',
+                animationFillMode: 'forwards',
+                animationDelay: `${wordIndexInTextNode * getCalculatedSegmentDelay()}ms`,
               },
             },
-            wordOrSpace
+            wordOrSpace,
           )
         })
       } else if (node.nodeType === Node.COMMENT_NODE) {
@@ -188,39 +181,36 @@ function useHTMLTextStream({
       }
       return null
     },
-    [getCalculatedFadeDuration, getCalculatedSegmentDelay]
+    [getCalculatedFadeDuration, getCalculatedSegmentDelay],
   )
 
   const processHtmlString = useCallback(
     (html: string) => {
-      if (typeof DOMParser === "undefined") {
+      if (typeof DOMParser === 'undefined') {
         // SSR or environment without DOMParser
         setRenderedContent(html) // Fallback to raw HTML
-        onErrorRef.current?.(new Error("DOMParser not available."))
+        onErrorRef.current?.(new Error('DOMParser not available.'))
         return
       }
       try {
         const parser = new DOMParser()
-        const doc = parser.parseFromString(html, "text/html")
+        const doc = parser.parseFromString(html, 'text/html')
         // segmentCounterRef.current = 0 removed
         // Transform only the body's children, or the whole doc if no body (e.g. fragment)
         const rootNodeToTransform = doc.body
         const transformedContent = Array.from(rootNodeToTransform.childNodes)
-          .map((child, index) =>
-            transformNodeToReact(child, `root[${index}]`)
-          )
+          .map((child, index) => transformNodeToReact(child, `root[${index}]`))
           .filter(Boolean) // Filter out nulls (e.g. comments)
           .flat() // flatten arrays of spans from text nodes
-        
-        setRenderedContent(transformedContent)
 
+        setRenderedContent(transformedContent)
       } catch (error) {
-        console.error("Error processing HTML string:", error)
+        console.error('Error processing HTML string:', error)
         setRenderedContent(html) // Fallback to raw HTML on error
         onErrorRef.current?.(error)
       }
     },
-    [transformNodeToReact]
+    [transformNodeToReact],
   )
 
   const reset = useCallback(() => {
@@ -228,7 +218,7 @@ function useHTMLTextStream({
       streamAbortControllerRef.current.abort()
       streamAbortControllerRef.current = null
     }
-    currentHtmlRef.current = ""
+    currentHtmlRef.current = ''
     setRenderedContent(null)
     setIsComplete(false)
     // segmentCounterRef.current = 0 removed
@@ -237,7 +227,7 @@ function useHTMLTextStream({
   const startStreaming = useCallback(() => {
     reset()
 
-    if (typeof htmlStream === "string") {
+    if (typeof htmlStream === 'string') {
       currentHtmlRef.current = htmlStream
       processHtmlString(htmlStream)
       setIsComplete(true)
@@ -258,21 +248,21 @@ function useHTMLTextStream({
           }
         } catch (error) {
           if (!signal.aborted) {
-            console.error("Error processing HTML stream:", error)
+            console.error('Error processing HTML stream:', error)
             setIsComplete(true) // Mark as complete even on error to stop processing
             onErrorRef.current?.(error)
             onCompleteRef.current?.() // Call onComplete even on error
           }
         } finally {
-            if (streamAbortControllerRef.current.signal === signal) {
-              streamAbortControllerRef.current = null
-            }
+          if (streamAbortControllerRef.current.signal === signal) {
+            streamAbortControllerRef.current = null
+          }
         }
       }
       processAsync()
     } else {
-        setIsComplete(true); // No valid stream
-        onCompleteRef.current?.();
+      setIsComplete(true) // No valid stream
+      onCompleteRef.current?.()
     }
   }, [htmlStream, reset, processHtmlString])
 
@@ -297,10 +287,12 @@ export type ResponseStreamHTMLProps = {
   speed?: number
   className?: string
   onComplete?: () => void
-  as?: keyof React.JSX.IntrinsicElements | React.ComponentType<{
-    className?: string
-    children?: ReactNode
-  }>
+  as?:
+    | keyof React.JSX.IntrinsicElements
+    | React.ComponentType<{
+        className?: string
+        children?: ReactNode
+      }>
   fadeDuration?: number
   segmentDelay?: number
   onError?: (error: unknown) => void
@@ -308,24 +300,24 @@ export type ResponseStreamHTMLProps = {
 
 function ResponseStreamHTML({
   htmlStream,
-  mode = "fade",
+  mode = 'fade',
   speed = 10,
-  className = "",
+  className = '',
   onComplete,
-  as = "div",
+  as = 'div',
   fadeDuration,
   segmentDelay = 0,
   onError,
 }: ResponseStreamHTMLProps) {
   const { renderedContent } = useHTMLTextStream({
-      htmlStream,
-      speed,
-      mode,
-      onComplete,
-      fadeDuration,
-      segmentDelay,
-      onError,
-    })
+    htmlStream,
+    speed,
+    mode,
+    onComplete,
+    fadeDuration,
+    segmentDelay,
+    onError,
+  })
 
   // CSS keyframes for the fade-in animation
   // Using a <style> tag is one way to ensure keyframes are available.
@@ -347,4 +339,4 @@ function ResponseStreamHTML({
   )
 }
 
-export { useHTMLTextStream, ResponseStreamHTML } 
+export { ResponseStreamHTML, useHTMLTextStream }

@@ -1,6 +1,4 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Building2, User } from 'lucide-react'
+import { Button } from '@workspace/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,11 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/ui/components/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Input } from '@workspace/ui/components/input'
-import { Button } from '@workspace/ui/components/button'
 import { Label } from '@workspace/ui/components/label'
 import { toast } from '@workspace/ui/components/sonner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { Building2, User } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { addCompany, addPerson } from '@/lib/api'
 
 interface AddSubjectDialogProps {
@@ -55,7 +55,9 @@ export function AddSubjectDialog({ open, onOpenChange, onAdded }: AddSubjectDial
     if (!ico.trim()) return
     setSubmitting(true)
     addCompany(ico.trim(), label.trim())
-      .then((res) => (res.ok ? finish(res.subject?.uuid) : toast.error(res.error ?? t('add.error'))))
+      .then((res) =>
+        res.ok ? finish(res.subject?.uuid) : toast.error(res.error ?? t('add.error')),
+      )
       .catch(handleError)
       .finally(() => setSubmitting(false))
   }
@@ -64,7 +66,9 @@ export function AddSubjectDialog({ open, onOpenChange, onAdded }: AddSubjectDial
     if (!prijmeni.trim() || !datum) return
     setSubmitting(true)
     addPerson(prijmeni.trim(), jmeno.trim(), datum, label.trim())
-      .then((res) => (res.ok ? finish(res.subject?.uuid) : toast.error(res.error ?? t('add.error'))))
+      .then((res) =>
+        res.ok ? finish(res.subject?.uuid) : toast.error(res.error ?? t('add.error')),
+      )
       .catch(handleError)
       .finally(() => setSubmitting(false))
   }
@@ -111,7 +115,11 @@ export function AddSubjectDialog({ open, onOpenChange, onAdded }: AddSubjectDial
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                 {t('common.cancel')}
               </Button>
-              <Button onClick={submitCompany} disabled={submitting || !ico.trim()} data-testid="submit-company">
+              <Button
+                onClick={submitCompany}
+                disabled={submitting || !ico.trim()}
+                data-testid="submit-company"
+              >
                 {submitting ? t('add.adding') : t('add.add')}
               </Button>
             </DialogFooter>

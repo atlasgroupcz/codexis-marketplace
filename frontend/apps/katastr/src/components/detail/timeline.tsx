@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/lib/format'
 import type { ProceedingDetail } from '@/lib/schemas'
 import type { TimelineNode } from '@/lib/timeline'
 import { deriveTimeline } from '@/lib/timeline'
-import { formatDate } from '@/lib/format'
 
 interface ProceedingTimelineProps {
   proc: ProceedingDetail

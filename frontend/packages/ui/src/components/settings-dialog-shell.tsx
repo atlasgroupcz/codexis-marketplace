@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -8,6 +7,7 @@ import {
   DialogTitle,
 } from '@workspace/ui/components/dialog'
 import type { ReactNode } from 'react'
+import { useEffect } from 'react'
 
 export interface SettingsDialogShellProps {
   open: boolean

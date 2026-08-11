@@ -1,7 +1,7 @@
-import { useTranslation } from 'react-i18next'
 import { Image as ImageIcon, Layers, Type } from 'lucide-react'
-import { RiskDot } from './risk-badge'
+import { useTranslation } from 'react-i18next'
 import type { MarkSummary } from '@/lib/schemas'
+import { RiskDot } from './risk-badge'
 
 const KIND_ICON = { word: Type, figurative: ImageIcon, combined: Layers }
 
@@ -44,7 +44,9 @@ export function MarkListItem({
         <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
           <span>{mark.territories.join('/') || '-'}</span>
           {mark.nice_classes.length > 0 && (
-            <span className="truncate">· {t('list.classes')} {mark.nice_classes.join(', ')}</span>
+            <span className="truncate">
+              · {t('list.classes')} {mark.nice_classes.join(', ')}
+            </span>
           )}
         </div>
       </div>

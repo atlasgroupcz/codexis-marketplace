@@ -1,5 +1,5 @@
-import { Loader2Icon } from 'lucide-react'
 import { cn } from '@workspace/ui/lib/utils'
+import { Loader2Icon } from 'lucide-react'
 
 interface SpinnerProps {
   className?: string
@@ -15,9 +15,7 @@ const sizeClasses = {
 export function Spinner({ className, size = 'md' }: SpinnerProps) {
   return (
     <div className={cn('flex items-center justify-center', className)}>
-      <Loader2Icon
-        className={cn('animate-spin text-muted-foreground', sizeClasses[size])}
-      />
+      <Loader2Icon className={cn('animate-spin text-muted-foreground', sizeClasses[size])} />
     </div>
   )
 }

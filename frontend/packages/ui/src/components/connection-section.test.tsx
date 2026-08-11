@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { ConnectionSection } from './connection-section'
+import { describe, expect, it, vi } from 'vitest'
 import type { ConnectionSectionLabels } from './connection-section'
+import { ConnectionSection } from './connection-section'
 
 const labels: ConnectionSectionLabels = {
   connected: 'Připojeno',

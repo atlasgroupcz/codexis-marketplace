@@ -5,16 +5,9 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "paths": {
-      "@workspace/ui/*": [
-        "./src/*"
-      ]
+      "@workspace/ui/*": ["./src/*"]
     }
   },
-  "include": [
-    "."
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
 }

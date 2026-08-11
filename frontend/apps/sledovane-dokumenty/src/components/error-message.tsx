@@ -1,5 +1,5 @@
-import { AlertCircle } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 interface ErrorMessageProps {

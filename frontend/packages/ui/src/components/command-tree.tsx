@@ -1,9 +1,10 @@
 'use client'
 
-import * as React from 'react'
-import { CheckIcon, ChevronRightIcon } from 'lucide-react'
-import { cn } from '@workspace/ui/lib/utils'
-import { SkillAgentIcon } from '@workspace/ui/components/skill-agent-icon'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@workspace/ui/components/collapsible'
 import {
   Command,
   CommandEmpty,
@@ -11,12 +12,11 @@ import {
   CommandItem,
   CommandList,
 } from '@workspace/ui/components/command'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@workspace/ui/components/collapsible'
+import { SkillAgentIcon } from '@workspace/ui/components/skill-agent-icon'
 import type { TreeItem, TreeNode } from '@workspace/ui/lib/tree-picker-types'
+import { cn } from '@workspace/ui/lib/utils'
+import { CheckIcon, ChevronRightIcon } from 'lucide-react'
+import * as React from 'react'
 
 export interface CommandTreeProps<T extends TreeItem> {
   nodes: Array<TreeNode<T>>
@@ -64,13 +64,12 @@ export function CommandTree<T extends TreeItem>({
   }, [nodes, search, hasSearch])
 
   return (
-    <Command className={cn('flex h-full w-full flex-col overflow-hidden', className)} shouldFilter={false}>
+    <Command
+      className={cn('flex h-full w-full flex-col overflow-hidden', className)}
+      shouldFilter={false}
+    >
       {showSearch && (
-        <CommandInput
-          placeholder={searchPlaceholder}
-          value={search}
-          onValueChange={setSearch}
-        />
+        <CommandInput placeholder={searchPlaceholder} value={search} onValueChange={setSearch} />
       )}
       <CommandList>
         {filteredNodes.length === 0 && <CommandEmpty>{emptyText}</CommandEmpty>}
@@ -123,8 +122,7 @@ function TreeGroup<T extends TreeItem>({
   const isOpen = forceExpand || !collapsed.has(compositeKey)
 
   const hasContent =
-    (node.items && node.items.length > 0) ||
-    (node.children && node.children.length > 0)
+    (node.items && node.items.length > 0) || (node.children && node.children.length > 0)
 
   if (!hasContent) return null
 
@@ -212,7 +210,9 @@ function TreeLeafItem<T extends TreeItem>({
     >
       <SelectionIndicator isSelected={isSelected} multi={multi} />
       <span className="min-w-0 flex-1">
-        {renderItem ? renderItem(item, isSelected) : (
+        {renderItem ? (
+          renderItem(item, isSelected)
+        ) : (
           <span className="truncate block">{item.label}</span>
         )}
       </span>
@@ -229,13 +229,10 @@ function filterTree<T extends TreeItem>(
   for (const node of nodes) {
     const matchingItems = node.items?.filter(
       (item) =>
-        item.label.toLowerCase().includes(search) ||
-        node.label.toLowerCase().includes(search),
+        item.label.toLowerCase().includes(search) || node.label.toLowerCase().includes(search),
     )
 
-    const matchingChildren = node.children
-      ? filterTree(node.children, search)
-      : undefined
+    const matchingChildren = node.children ? filterTree(node.children, search) : undefined
 
     const hasItems = matchingItems && matchingItems.length > 0
     const hasChildren = matchingChildren && matchingChildren.length > 0
@@ -252,13 +249,7 @@ function filterTree<T extends TreeItem>(
   return result
 }
 
-function SelectionIndicator({
-  isSelected,
-  multi,
-}: {
-  isSelected: boolean
-  multi: boolean
-}) {
+function SelectionIndicator({ isSelected, multi }: { isSelected: boolean; multi: boolean }) {
   if (isSelected) {
     return (
       <div

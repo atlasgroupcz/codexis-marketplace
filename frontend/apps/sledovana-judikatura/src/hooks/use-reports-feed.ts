@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ReportSummary, TopicSummary } from '@/lib/schemas'
 import { fetchDetail } from '@/lib/api'
+import type { ReportSummary, TopicSummary } from '@/lib/schemas'
 
 export interface FeedReport extends ReportSummary {
   topicUuid: string

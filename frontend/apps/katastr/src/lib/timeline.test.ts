@@ -10,10 +10,7 @@ describe('deriveTimeline - event list', () => {
     const nodes = deriveTimeline({
       stav: 'x',
       datum_prijeti: '2026-06-01',
-      provedene_operace: [
-        op('Novější operace', '2026-06-05'),
-        op('Starší operace', '2026-06-01'),
-      ],
+      provedene_operace: [op('Novější operace', '2026-06-05'), op('Starší operace', '2026-06-01')],
     })
     expect(nodes.map((n) => n.rawName)).toEqual(['Novější operace', 'Starší operace'])
     expect(nodes[nodes.length - 1]?.state).toBe('current')
@@ -23,10 +20,7 @@ describe('deriveTimeline - event list', () => {
     const nodes = deriveTimeline({
       stav: 'Plomba',
       datum_prijeti: '2026-06-29',
-      provedene_operace: [
-        op('Založení řízení', '2026-06-29'),
-        op('Zaplombování', '2026-06-29'),
-      ],
+      provedene_operace: [op('Založení řízení', '2026-06-29'), op('Zaplombování', '2026-06-29')],
     })
     expect(nodes.map((n) => n.rawName)).toEqual(['Založení řízení', 'Zaplombování'])
   })

@@ -1,9 +1,9 @@
 import { resolve } from 'node:path'
-import { defineConfig, loadEnv, mergeConfig } from 'vite'
-import viteReact, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
+import viteReact, { reactCompilerPreset } from '@vitejs/plugin-react'
 import type { Plugin, UserConfig } from 'vite'
+import { defineConfig, loadEnv, mergeConfig } from 'vite'
 
 /**
  * Strip `crossorigin` attributes from <script> and <link> tags in the built HTML.

@@ -7,7 +7,14 @@ export function WatchDocsArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
       <defs>
-        <linearGradient id="docsweep" x1="100" y1="75" x2="150" y2="38" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="docsweep"
+          x1="100"
+          y1="75"
+          x2="150"
+          y2="38"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#5ea500" stopOpacity="0.4" />
           <stop offset="1" stopColor="#5ea500" stopOpacity="0" />
         </linearGradient>

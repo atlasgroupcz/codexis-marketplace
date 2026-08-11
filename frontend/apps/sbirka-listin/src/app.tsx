@@ -1,21 +1,21 @@
-import { useState } from 'react'
-import { useQueryState } from 'nuqs'
-import { FileStack, RefreshCw } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
+import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
 import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { useNotify } from '@workspace/ui/hooks/use-notify'
-import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
-import { filterParser, icoParser, viewParser } from '@/lib/url-state'
-import { SubjektyList } from '@/components/subjekty-list'
-import { SubjektDetail } from '@/components/subjekt-detail'
+import { FileStack, RefreshCw } from 'lucide-react'
+import { useQueryState } from 'nuqs'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AddSubjektForm } from '@/components/add-subjekt-form'
 import { EmptySubjekty, NoSelection } from '@/components/empty-state'
+import { SubjektDetail } from '@/components/subjekt-detail'
+import { SubjektyList } from '@/components/subjekty-list'
 import { useOverview } from '@/hooks/use-overview'
 import { checkAll, fetchNotify, saveNotify } from '@/lib/api'
 import { errorMessage } from '@/lib/format'
+import { filterParser, icoParser, viewParser } from '@/lib/url-state'
 
 export function App() {
   const { t, i18n } = useTranslation()
@@ -46,7 +46,12 @@ export function App() {
     checkAll()
       .then((res) => {
         if (res.errors.length > 0) {
-          toast.error(t('subjekty.checkResultErrors', { newChanges: res.new_changes, errors: res.errors.length }))
+          toast.error(
+            t('subjekty.checkResultErrors', {
+              newChanges: res.new_changes,
+              errors: res.errors.length,
+            }),
+          )
         } else if (res.new_changes > 0) {
           toast.success(t('subjekty.checkResultChanges', { count: res.new_changes }))
         } else {
@@ -131,7 +136,9 @@ export function App() {
                 onFilterChange={setFilter}
               />
             </section>
-            <section className={`min-h-0 overflow-y-auto ${detailOpen ? 'block' : 'hidden md:block'}`}>
+            <section
+              className={`min-h-0 overflow-y-auto ${detailOpen ? 'block' : 'hidden md:block'}`}
+            >
               {detailOpen && ico ? (
                 <SubjektDetail key={ico} ico={ico} onBack={handleBack} onChanged={refetch} />
               ) : (

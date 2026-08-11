@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { OverviewResponse } from '@/lib/schemas'
 import { fetchOverview } from '@/lib/api'
+import type { OverviewResponse } from '@/lib/schemas'
 
 export function useOverview() {
   const [data, setData] = useState<OverviewResponse | null>(null)

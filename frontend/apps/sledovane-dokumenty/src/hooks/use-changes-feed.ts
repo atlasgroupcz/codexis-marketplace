@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Change, TrackedDocumentSummary } from '@/lib/schemas'
 import { fetchDetail } from '@/lib/api'
+import type { Change, TrackedDocumentSummary } from '@/lib/schemas'
 
 export interface FeedChange extends Change {
   documentUuid: string
@@ -53,7 +53,8 @@ export function useChangesFeed(documents: Array<TrackedDocumentSummary>): UseCha
               flat.push({ ...change, documentUuid: document.uuid, documentName: document.name })
             }
           } else if (!firstError) {
-            firstError = result.reason instanceof Error ? result.reason : new Error(String(result.reason))
+            firstError =
+              result.reason instanceof Error ? result.reason : new Error(String(result.reason))
           }
         }
         if (!anyOk && firstError) {

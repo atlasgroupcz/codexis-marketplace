@@ -26,9 +26,5 @@ interface TrackingTypeBadgeProps {
 export function TrackingTypeBadge({ type }: TrackingTypeBadgeProps) {
   const { t } = useTranslation()
 
-  return (
-    <Badge variant={trackingTypeVariants[type]}>
-      {t(trackingTypeLabels[type])}
-    </Badge>
-  )
+  return <Badge variant={trackingTypeVariants[type]}>{t(trackingTypeLabels[type])}</Badge>
 }

@@ -1,19 +1,13 @@
-import { useTranslation } from 'react-i18next'
-import { ExternalLink } from 'lucide-react'
 import { Card, CardContent } from '@workspace/ui/components/card'
-import { DruhBadge } from './status-badge'
-import { NoProceedingsArt } from './illustrations'
-import type { Rizeni } from '@/lib/schemas'
+import { ExternalLink } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/lib/format'
 import { isirProceedingUrl } from '@/lib/isir'
+import type { Rizeni } from '@/lib/schemas'
+import { NoProceedingsArt } from './illustrations'
+import { DruhBadge } from './status-badge'
 
-export function ProceedingsList({
-  rizeni,
-  isirUrl,
-}: {
-  rizeni: Array<Rizeni>
-  isirUrl: string
-}) {
+export function ProceedingsList({ rizeni, isirUrl }: { rizeni: Array<Rizeni>; isirUrl: string }) {
   const { t } = useTranslation()
 
   if (rizeni.length === 0) {

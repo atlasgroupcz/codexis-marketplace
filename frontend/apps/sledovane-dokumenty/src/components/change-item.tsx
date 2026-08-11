@@ -1,12 +1,12 @@
+import { Button } from '@workspace/ui/components/button'
+import { Check, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Check, ExternalLink } from 'lucide-react'
-import { Button } from '@workspace/ui/components/button'
-import { useTranslation } from 'react-i18next'
-import type { Change } from '@/lib/schemas'
-import { formatDate, formatDateTime } from '@/lib/format'
 import { postAction } from '@/lib/api'
+import { formatDate, formatDateTime } from '@/lib/format'
+import type { Change } from '@/lib/schemas'
 
 interface ChangeItemProps {
   change: Change

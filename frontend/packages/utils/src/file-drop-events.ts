@@ -34,12 +34,7 @@ export function isOverChatInputDropZone(x: number, y: number): boolean {
 
   for (const zone of dropZones) {
     const rect = zone.getBoundingClientRect()
-    if (
-      x >= rect.left &&
-      x <= rect.right &&
-      y >= rect.top &&
-      y <= rect.bottom
-    ) {
+    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
       return true
     }
   }

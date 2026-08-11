@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
-import type { FolderResponse, TrackedLegislation } from '@/lib/schemas'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FolderDetail } from '@/components/folder-detail'
+import type { FolderResponse, TrackedLegislation } from '@/lib/schemas'
 import { renderApp } from '@/test/render-app'
 
 function stubFolder(payload: FolderResponse) {

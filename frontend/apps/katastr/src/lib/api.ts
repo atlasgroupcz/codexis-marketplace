@@ -1,11 +1,4 @@
 import { createApiClient } from '@workspace/ui/lib/api-client'
-import {
-  actionResponseSchema,
-  checkAllResponseSchema,
-  detailResponseSchema,
-  notifyResponseSchema,
-  overviewResponseSchema,
-} from './schemas'
 import type {
   ActionResponse,
   CheckAllResponse,
@@ -13,6 +6,13 @@ import type {
   NotifyResponse,
   NotifySettingsValues,
   OverviewResponse,
+} from './schemas'
+import {
+  actionResponseSchema,
+  checkAllResponseSchema,
+  detailResponseSchema,
+  notifyResponseSchema,
+  overviewResponseSchema,
 } from './schemas'
 
 // Shared client: same DEV/prod base and the same "reject on { ok: false }"
@@ -36,10 +36,7 @@ export function fetchNotify(): Promise<NotifyResponse> {
 
 // ─── writes ────────────────────────────────────────────────────────────────
 
-export function addProceeding(
-  cislo_rizeni: string,
-  label = '',
-): Promise<ActionResponse> {
+export function addProceeding(cislo_rizeni: string, label = ''): Promise<ActionResponse> {
   return postJson('add_proceeding', actionResponseSchema, { cislo_rizeni, label })
 }
 
@@ -51,10 +48,7 @@ export function removeProceeding(cisloRizeni: string): Promise<ActionResponse> {
   return postJson('remove', actionResponseSchema, { cislo_rizeni: cisloRizeni })
 }
 
-export function confirmChange(
-  cisloRizeni: string,
-  changeIndex?: number,
-): Promise<ActionResponse> {
+export function confirmChange(cisloRizeni: string, changeIndex?: number): Promise<ActionResponse> {
   const payload: Record<string, unknown> = { cislo_rizeni: cisloRizeni }
   if (changeIndex !== undefined) payload.change_index = changeIndex
   return postJson('confirm_change', actionResponseSchema, payload)

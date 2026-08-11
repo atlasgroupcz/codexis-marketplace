@@ -3,7 +3,11 @@ import type { z } from 'zod'
 export interface ApiClient {
   buildUrl: (params?: Record<string, string>) => string
   getJson: <T>(schema: z.ZodType<T>, params?: Record<string, string>) => Promise<T>
-  postJson: <T>(action: string, schema: z.ZodType<T>, payload?: Record<string, unknown>) => Promise<T>
+  postJson: <T>(
+    action: string,
+    schema: z.ZodType<T>,
+    payload?: Record<string, unknown>,
+  ) => Promise<T>
 }
 
 function defaultBase(): string {
@@ -20,7 +24,9 @@ function defaultBase(): string {
  * (e.g. "IČO už je sledované") instead of a naked "HTTP 409". */
 function httpError(res: Response, data: unknown): Error {
   const err =
-    data && typeof data === 'object' && 'error' in data ? (data as { error: unknown }).error : undefined
+    data && typeof data === 'object' && 'error' in data
+      ? (data as { error: unknown }).error
+      : undefined
   return new Error(typeof err === 'string' && err ? err : `HTTP ${res.status}: ${res.statusText}`)
 }
 
@@ -32,13 +38,20 @@ export function createApiClient(base: () => string = defaultBase): ApiClient {
   }
 
   async function getJson<T>(schema: z.ZodType<T>, params?: Record<string, string>): Promise<T> {
-    const res = await fetch(buildUrl(params), { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    const res = await fetch(buildUrl(params), {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
     const data: unknown = await res.json().catch(() => null)
     if (!res.ok) throw httpError(res, data)
     return schema.parse(data)
   }
 
-  async function postJson<T>(action: string, schema: z.ZodType<T>, payload?: Record<string, unknown>): Promise<T> {
+  async function postJson<T>(
+    action: string,
+    schema: z.ZodType<T>,
+    payload?: Record<string, unknown>,
+  ): Promise<T> {
     const res = await fetch(buildUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -48,7 +61,12 @@ export function createApiClient(base: () => string = defaultBase): ApiClient {
     if (!res.ok) throw httpError(res, data)
     // Actions also signal failure via `{ ok: false }` on an HTTP 200. Reject on it
     // too, so every caller has one error channel: resolve = success, reject = error.
-    if (data && typeof data === 'object' && 'ok' in data && (data as { ok: unknown }).ok === false) {
+    if (
+      data &&
+      typeof data === 'object' &&
+      'ok' in data &&
+      (data as { ok: unknown }).ok === false
+    ) {
       const err = (data as { error?: unknown }).error
       throw new Error(typeof err === 'string' && err ? err : 'Request failed')
     }

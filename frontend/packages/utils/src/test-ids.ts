@@ -30,11 +30,13 @@ export const TEST_ID = {
   // Plugin agent definitions
   PLUGIN_AGENTS_TRIGGER: (name: string) => `plugin-agents-trigger-${name}`,
   PLUGIN_AGENTS_CONTENT: (name: string) => `plugin-agents-content-${name}`,
-  PLUGIN_AGENT_ITEM: (pluginName: string, agentName: string) => `plugin-agent-${pluginName}-${agentName}`,
+  PLUGIN_AGENT_ITEM: (pluginName: string, agentName: string) =>
+    `plugin-agent-${pluginName}-${agentName}`,
 
   // Plugin skill definitions
   PLUGIN_SKILLS_CONTENT: (name: string) => `plugin-skills-content-${name}`,
-  PLUGIN_SKILL_ITEM: (pluginName: string, skillName: string) => `plugin-skill-${pluginName}-${skillName}`,
+  PLUGIN_SKILL_ITEM: (pluginName: string, skillName: string) =>
+    `plugin-skill-${pluginName}-${skillName}`,
 
   // Sidebar - plugin apps
   SIDEBAR_APP_ITEM: (pluginId: string, componentId: string) =>

@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
-import { useQueryState } from 'nuqs'
-import { useTranslation } from 'react-i18next'
+import type { NotifyValues } from '@workspace/ui/components/notify-settings'
 import { NotifySettings } from '@workspace/ui/components/notify-settings'
 import { toast } from '@workspace/ui/components/sonner'
-import type { NotifyValues } from '@workspace/ui/components/notify-settings'
-import { rootParser, sectionParser, uuidParser, viewParser } from '@/lib/url-state'
-import { DocumentsHome } from '@/components/documents-home'
+import { useQueryState } from 'nuqs'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { DocumentDetail } from '@/components/document-detail'
-import { FoldersHome } from '@/components/folders-home'
+import { DocumentsHome } from '@/components/documents-home'
 import { FolderDetail } from '@/components/folder-detail'
+import { FoldersHome } from '@/components/folders-home'
 import { fetchNotify, saveNotify } from '@/lib/api'
+import { rootParser, sectionParser, uuidParser, viewParser } from '@/lib/url-state'
 
 const defaultNotify: NotifyValues = { email: true, inApp: true, recipients: [] }
 

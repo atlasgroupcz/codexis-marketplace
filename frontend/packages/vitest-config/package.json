@@ -11,17 +11,17 @@
     "base.ts"
   ],
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "biome check ."
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^6.0.4"
+    "@vitejs/plugin-react": "^6.0.5"
   },
   "peerDependencies": {
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
   },
   "devDependencies": {
-    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "vitest": "^4.1.10"
   }

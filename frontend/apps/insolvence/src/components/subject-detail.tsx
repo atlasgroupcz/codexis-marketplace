@@ -1,21 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Building2, Clock, Eye, Pencil, RefreshCw, Trash2, User } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
-import { toast } from '@workspace/ui/components/sonner'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { toast } from '@workspace/ui/components/sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
-import { DetailSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import { InsolvencyStatus } from './status-badge'
-import { ProceedingsList } from './proceedings-list'
+import { ArrowLeft, Building2, Clock, Eye, Pencil, RefreshCw, Trash2, User } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useDetail } from '@/hooks/use-detail'
+import { checkSubject, removeSubject, setLabel } from '@/lib/api'
+import { formatRelative } from '@/lib/format'
 import { ChangeTimeline } from './change-timeline'
 import { DphPanel } from './dph-panel'
-import { formatRelative } from '@/lib/format'
-import { checkSubject, removeSubject, setLabel } from '@/lib/api'
-import { useDetail } from '@/hooks/use-detail'
+import { ErrorMessage } from './error-message'
+import { DetailSkeleton } from './loading-skeleton'
+import { ProceedingsList } from './proceedings-list'
+import { InsolvencyStatus } from './status-badge'
 
 interface SubjectDetailProps {
   uuid: string
@@ -47,7 +47,12 @@ export function SubjectDetail({ uuid, onBack, onRemoved, onChanged }: SubjectDet
   }, [editing])
 
   if (loading && !data) return <DetailSkeleton />
-  if (error) return <div className="p-6"><ErrorMessage message={error.message} onRetry={refetch} /></div>
+  if (error)
+    return (
+      <div className="p-6">
+        <ErrorMessage message={error.message} onRetry={refetch} />
+      </div>
+    )
   if (!data) return null
 
   const s = data.subject

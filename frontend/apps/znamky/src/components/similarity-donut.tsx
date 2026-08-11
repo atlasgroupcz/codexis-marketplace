@@ -1,8 +1,8 @@
+import type { ChartConfig } from '@workspace/ui/components/chart'
+import { ChartContainer } from '@workspace/ui/components/chart'
+import { ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart } from 'recharts'
-import { ShieldAlert } from 'lucide-react'
-import { ChartContainer } from '@workspace/ui/components/chart'
-import type { ChartConfig } from '@workspace/ui/components/chart'
 import type { Tier } from '@/lib/schemas'
 
 const TIER_FILL: Record<Tier, string> = {

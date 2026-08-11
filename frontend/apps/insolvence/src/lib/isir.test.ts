@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Rizeni } from '@/lib/schemas'
 import { isirProceedingUrl } from '@/lib/isir'
+import type { Rizeni } from '@/lib/schemas'
 import { rizeniSchema } from '@/lib/schemas'
 
 const FALLBACK = 'https://eisir.justice.cz/insolvencni-rejstrik/dle-ico/07862784'

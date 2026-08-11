@@ -1,12 +1,4 @@
 import { createApiClient } from '@workspace/ui/lib/api-client'
-import {
-  actionResponseSchema,
-  checkAllResponseSchema,
-  detailResponseSchema,
-  downloadResponseSchema,
-  notifyResponseSchema,
-  overviewResponseSchema,
-} from './schemas'
 import type {
   ActionResponse,
   CheckAllResponse,
@@ -15,6 +7,14 @@ import type {
   NotifyResponse,
   NotifySettingsValues,
   OverviewResponse,
+} from './schemas'
+import {
+  actionResponseSchema,
+  checkAllResponseSchema,
+  detailResponseSchema,
+  downloadResponseSchema,
+  notifyResponseSchema,
+  overviewResponseSchema,
 } from './schemas'
 
 // Shared client: DEV → `/api/` (Vite-proxied), prod → `./api` (component route).
@@ -50,19 +50,13 @@ export function checkAll(): Promise<CheckAllResponse> {
   return postJson('check_all', checkAllResponseSchema)
 }
 
-export function confirmChange(
-  ico: string,
-  changeIndex?: number,
-): Promise<ActionResponse> {
+export function confirmChange(ico: string, changeIndex?: number): Promise<ActionResponse> {
   const payload: Record<string, unknown> = { ico }
   if (changeIndex !== undefined) payload.change_index = changeIndex
   return postJson('confirm_change', actionResponseSchema, payload)
 }
 
-export function downloadDokument(
-  ico: string,
-  cislo: string,
-): Promise<DownloadResponse> {
+export function downloadDokument(ico: string, cislo: string): Promise<DownloadResponse> {
   return postJson('download', downloadResponseSchema, { ico, cislo })
 }
 

@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next'
 import { ErrorMessage } from '@workspace/ui/components/error-message'
+import { useTranslation } from 'react-i18next'
+import type { OverviewResponse } from '@/lib/schemas'
+import type { ListFilterValue } from './list-filter'
+import { ListFilter } from './list-filter'
 import { ListSkeleton } from './loading-skeleton'
 import { ProceedingRow } from './proceeding-row'
-import { ListFilter } from './list-filter'
-import type { ListFilterValue } from './list-filter'
-import type { OverviewResponse } from '@/lib/schemas'
 
 interface ProceedingsListProps {
   data: OverviewResponse | null
@@ -28,8 +28,18 @@ export function ProceedingsList({
   onFilterChange,
 }: ProceedingsListProps) {
   const { t } = useTranslation()
-  if (loading && !data) return <div className="p-3"><ListSkeleton /></div>
-  if (error) return <div className="p-3"><ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} /></div>
+  if (loading && !data)
+    return (
+      <div className="p-3">
+        <ListSkeleton />
+      </div>
+    )
+  if (error)
+    return (
+      <div className="p-3">
+        <ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} />
+      </div>
+    )
   if (!data) return null
 
   const unconfirmed = data.proceedings.filter((p) => p.unconfirmed_count > 0)

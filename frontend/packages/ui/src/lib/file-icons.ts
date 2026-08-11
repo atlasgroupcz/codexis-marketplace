@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   FileArchiveIcon,
   FileAudioIcon,
@@ -10,7 +11,6 @@ import {
   FileVideoIcon,
   FolderIcon,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 
 /** Extension categories for file type detection */
 const CODE_EXTENSIONS = new Set([
@@ -43,16 +43,7 @@ const CODE_EXTENSIONS = new Set([
 
 const JSON_EXTENSIONS = new Set(['json', 'jsonc', 'json5'])
 
-const ARCHIVE_EXTENSIONS = new Set([
-  'zip',
-  'tar',
-  'gz',
-  'bz2',
-  'xz',
-  '7z',
-  'rar',
-  'tgz',
-])
+const ARCHIVE_EXTENSIONS = new Set(['zip', 'tar', 'gz', 'bz2', 'xz', '7z', 'rar', 'tgz'])
 
 const SPREADSHEET_EXTENSIONS = new Set(['xlsx', 'xls', 'csv', 'ods'])
 
@@ -69,25 +60,9 @@ const IMAGE_EXTENSIONS = new Set([
   'avif',
 ])
 
-const VIDEO_EXTENSIONS = new Set([
-  'mp4',
-  'webm',
-  'mov',
-  'avi',
-  'mkv',
-  'flv',
-  'wmv',
-])
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv'])
 
-const AUDIO_EXTENSIONS = new Set([
-  'mp3',
-  'wav',
-  'ogg',
-  'flac',
-  'aac',
-  'm4a',
-  'wma',
-])
+const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'])
 
 const TEXT_EXTENSIONS = new Set([
   'txt',

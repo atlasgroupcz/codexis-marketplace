@@ -1,7 +1,7 @@
-import { useTranslation } from 'react-i18next'
 import { Building2, User } from 'lucide-react'
-import { StatusDot } from './status-badge'
+import { useTranslation } from 'react-i18next'
 import type { SubjectSummary } from '@/lib/schemas'
+import { StatusDot } from './status-badge'
 
 interface SubjectListItemProps {
   subject: SubjectSummary
@@ -29,9 +29,7 @@ export function SubjectListItem({ subject, selected, onSelect }: SubjectListItem
       data-testid="subject-list-item"
       aria-current={selected}
       className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
-        selected
-          ? 'border-primary/40 bg-accent'
-          : 'hover:bg-accent/50 border-transparent'
+        selected ? 'border-primary/40 bg-accent' : 'hover:bg-accent/50 border-transparent'
       }`}
     >
       <StatusDot active={subject.ma_aktivni_insolvenci} hasHistory={hasHistory} />

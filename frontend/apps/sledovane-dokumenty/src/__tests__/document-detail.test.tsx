@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DocumentDetail } from '@/components/document-detail'
-import { renderApp } from '@/test/render-app'
 import { detailFixture, detailWithPartsFixture } from '@/test/fixtures'
+import { renderApp } from '@/test/render-app'
 
 beforeEach(() => {
   vi.restoreAllMocks()
@@ -21,11 +21,17 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} onOpenSettings={vi.fn()} />,
+      <DocumentDetail
+        uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d"
+        onBack={onBack}
+        onOpenSettings={vi.fn()}
+      />,
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' })).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' }),
+      ).toBeInTheDocument()
     })
   })
 
@@ -40,7 +46,11 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} onOpenSettings={vi.fn()} />,
+      <DocumentDetail
+        uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d"
+        onBack={onBack}
+        onOpenSettings={vi.fn()}
+      />,
     )
 
     await waitFor(() => {
@@ -61,7 +71,11 @@ describe('DocumentDetail', () => {
 
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="6a6de088-1909-4d80-a764-d2fcb8ec4eb2" onBack={onBack} onOpenSettings={vi.fn()} />,
+      <DocumentDetail
+        uuid="6a6de088-1909-4d80-a764-d2fcb8ec4eb2"
+        onBack={onBack}
+        onOpenSettings={vi.fn()}
+      />,
     )
 
     await waitFor(() => {
@@ -82,11 +96,17 @@ describe('DocumentDetail', () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
     renderApp(
-      <DocumentDetail uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d" onBack={onBack} onOpenSettings={vi.fn()} />,
+      <DocumentDetail
+        uuid="2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d"
+        onBack={onBack}
+        onOpenSettings={vi.fn()}
+      />,
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' })).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: 'Zákoník práce (262/2006 Sb.)' }),
+      ).toBeInTheDocument()
     })
 
     await user.click(screen.getByRole('button', { name: /back/i }))
@@ -104,9 +124,7 @@ describe('DocumentDetail', () => {
     )
 
     const onBack = vi.fn()
-    renderApp(
-      <DocumentDetail uuid="nonexistent" onBack={onBack} onOpenSettings={vi.fn()} />,
-    )
+    renderApp(<DocumentDetail uuid="nonexistent" onBack={onBack} onOpenSettings={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText(/HTTP 404/)).toBeInTheDocument()

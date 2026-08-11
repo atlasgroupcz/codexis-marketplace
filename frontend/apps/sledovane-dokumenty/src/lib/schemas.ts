@@ -9,11 +9,7 @@ export type SourceDocument = z.infer<typeof sourceDocumentSchema>
 export const changeTypeSchema = z.enum(['document_change', 'related_change'])
 export type ChangeType = z.infer<typeof changeTypeSchema>
 
-export const trackingTypeSchema = z.enum([
-  'all',
-  'document_changes',
-  'related_documents_changes',
-])
+export const trackingTypeSchema = z.enum(['all', 'document_changes', 'related_documents_changes'])
 export type TrackingType = z.infer<typeof trackingTypeSchema>
 
 export const documentPartSchema = z.object({

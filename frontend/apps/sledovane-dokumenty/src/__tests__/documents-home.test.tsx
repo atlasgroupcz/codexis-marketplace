@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DetailResponse, FoldersResponse } from '@/lib/schemas'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DocumentsHome } from '@/components/documents-home'
-import { renderApp } from '@/test/render-app'
+import type { DetailResponse, FoldersResponse } from '@/lib/schemas'
 import { detailFixture, detailWithPartsFixture, overviewFixture } from '@/test/fixtures'
+import { renderApp } from '@/test/render-app'
 
 const detailByUuid: Record<string, DetailResponse> = {
   '2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d': detailFixture,
@@ -84,7 +84,14 @@ beforeEach(() => {
 describe('DocumentsHome', () => {
   it('renders the branded header', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
@@ -93,7 +100,14 @@ describe('DocumentsHome', () => {
 
   it('builds a cross-document changes feed', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     await waitFor(() => {
       expect(
@@ -106,9 +120,17 @@ describe('DocumentsHome', () => {
     stubRoutedFetch()
     const onSelectDocument = vi.fn()
     const user = userEvent.setup()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={onSelectDocument} onOpenSettings={vi.fn()} />, {
-      searchParams: { tab: 'documents' },
-    })
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={onSelectDocument}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { tab: 'documents' },
+      },
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Zákoník práce (262/2006 Sb.)')).toBeInTheDocument()
@@ -121,7 +143,14 @@ describe('DocumentsHome', () => {
 
   it('opens a pre-filled chat draft from the header once documents are tracked', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     const link = await screen.findByTestId('add-monitoring')
     expect(link).toHaveAttribute(
@@ -139,7 +168,14 @@ describe('DocumentsHome', () => {
         json: () => Promise.resolve({ ...overviewFixture, tracked_documents: [] }),
       }),
     )
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     // the landing screen carries the example prompt instead
     await waitFor(() => {
@@ -152,7 +188,14 @@ describe('DocumentsHome', () => {
     stubRoutedFetch()
     const onChangeSection = vi.fn()
     const user = userEvent.setup()
-    renderApp(<DocumentsHome section="documents" onChangeSection={onChangeSection} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={onChangeSection}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     const acts = await screen.findByRole('button', { name: /Acts/ })
     expect(acts).toHaveAttribute('aria-current', 'page')
@@ -163,7 +206,14 @@ describe('DocumentsHome', () => {
 
   it('badges the folder watchdog with the changes waiting there', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     // three plus one unconfirmed across the two folders it fetched for the badge
     await waitFor(() => {
@@ -173,7 +223,14 @@ describe('DocumentsHome', () => {
 
   it('badges its own watchdog from its own data', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     // the overview fixture carries two unconfirmed act changes
     expect(await screen.findByRole('button', { name: /Acts/ })).toHaveTextContent('2')
@@ -184,7 +241,14 @@ describe('DocumentsHome', () => {
       'fetch',
       vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Internal Server Error' }),
     )
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText(/HTTP 500/)).toBeInTheDocument()

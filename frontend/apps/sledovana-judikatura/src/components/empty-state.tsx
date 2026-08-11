@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next'
-import { ArrowRight, CalendarCheck, Mail, MessageSquareText, Scale } from 'lucide-react'
 import {
   Empty,
   EmptyDescription,
@@ -7,6 +5,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@workspace/ui/components/empty'
+import { ArrowRight, CalendarCheck, Mail, MessageSquareText, Scale } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { NoReportsArt, WatchCaseLawArt } from './illustrations'
 
 /** Opens a new CODEXIS conversation with an editable example request prefilled. */
@@ -22,7 +22,9 @@ function ConversationHint() {
         data-testid="empty-chat-example"
       >
         <MessageSquareText className="text-primary mt-0.5 size-4 shrink-0" />
-        <span className="text-foreground/90 flex-1 italic">“{t('judikatura.landing.chatPrompt')}”</span>
+        <span className="text-foreground/90 flex-1 italic">
+          “{t('judikatura.landing.chatPrompt')}”
+        </span>
         <ArrowRight className="text-primary size-4 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
       </a>
     </div>

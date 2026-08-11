@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildTree } from './tree-utils'
 import type { TreeItem } from './tree-picker-types'
+import { buildTree } from './tree-utils'
 
 interface TestItem extends TreeItem {
   group: string
@@ -24,9 +24,7 @@ describe('buildTree', () => {
       makeItem('3', 'Gamma', 'G2', 'S1'),
     ]
 
-    const result = buildTree(items, (item) => [
-      { key: item.group, label: item.group },
-    ])
+    const result = buildTree(items, (item) => [{ key: item.group, label: item.group }])
 
     expect(result).toHaveLength(2)
     expect(result[0]!.key).toBe('G1')
@@ -88,9 +86,7 @@ describe('buildTree', () => {
       makeItem('3', 'Item', 'Mango', 'M'),
     ]
 
-    const result = buildTree(items, (item) => [
-      { key: item.group, label: item.group },
-    ])
+    const result = buildTree(items, (item) => [{ key: item.group, label: item.group }])
 
     expect(result.map((n) => n.label)).toEqual(['Apple', 'Mango', 'Zebra'])
   })

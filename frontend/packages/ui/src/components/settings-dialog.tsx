@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
-import { Bell, KeyRound } from 'lucide-react'
+import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
 import { ConnectionSection } from '@workspace/ui/components/connection-section'
+import type { ConnField, ConnGetKeyLink } from '@workspace/ui/components/connection-settings'
+import { ConnectionStatus, connStateOf } from '@workspace/ui/components/connection-status'
+import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
+import type { NotifyValues } from '@workspace/ui/components/notify-settings-body'
 import { NotifySettingsBody } from '@workspace/ui/components/notify-settings-body'
 import { Separator } from '@workspace/ui/components/separator'
 import { SettingsDialogShell } from '@workspace/ui/components/settings-dialog-shell'
-import { ConnectionStatus, connStateOf } from '@workspace/ui/components/connection-status'
-import type { ConnField, ConnGetKeyLink } from '@workspace/ui/components/connection-settings'
-import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
-import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
-import type { NotifyValues } from '@workspace/ui/components/notify-settings-body'
+import { Bell, KeyRound } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 
 export interface SettingsDialogNotifyProps {
   values: NotifyValues

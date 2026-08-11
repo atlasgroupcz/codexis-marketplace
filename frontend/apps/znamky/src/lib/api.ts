@@ -1,12 +1,3 @@
-import {
-  actionResponseSchema,
-  checkAllResponseSchema,
-  configResponseSchema,
-  detailResponseSchema,
-  notifyResponseSchema,
-  overviewResponseSchema,
-  saveNotifyResponseSchema,
-} from './schemas'
 import type { z } from 'zod'
 import type {
   ActionResponse,
@@ -17,6 +8,15 @@ import type {
   NotifySettingsValues,
   OverviewResponse,
   SaveNotifyResponse,
+} from './schemas'
+import {
+  actionResponseSchema,
+  checkAllResponseSchema,
+  configResponseSchema,
+  detailResponseSchema,
+  notifyResponseSchema,
+  overviewResponseSchema,
+  saveNotifyResponseSchema,
 } from './schemas'
 
 function getApiBase(): string {
@@ -34,10 +34,7 @@ function buildUrl(params?: Record<string, string>): string {
   return url.toString()
 }
 
-async function getJson<T>(
-  schema: z.ZodType<T>,
-  params?: Record<string, string>,
-): Promise<T> {
+async function getJson<T>(schema: z.ZodType<T>, params?: Record<string, string>): Promise<T> {
   const response = await fetch(buildUrl(params), {
     headers: { Accept: 'application/json' },
     cache: 'no-store',
@@ -130,10 +127,7 @@ export function removeMark(uuid: string): Promise<ActionResponse> {
   return postJson('remove', actionResponseSchema, { uuid })
 }
 
-export function confirmChange(
-  uuid: string,
-  changeIndex?: number,
-): Promise<ActionResponse> {
+export function confirmChange(uuid: string, changeIndex?: number): Promise<ActionResponse> {
   const payload: Record<string, unknown> = { uuid }
   if (changeIndex !== undefined) payload.change_index = changeIndex
   return postJson('confirm_change', actionResponseSchema, payload)

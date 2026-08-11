@@ -79,7 +79,7 @@ export function useInProgressPolling(options: UseInProgressPollingOptions): void
       attemptRef.current += 1
 
       const currentMs = Math.min(
-        backoff.initialIntervalMs * Math.pow(backoff.multiplier, attemptRef.current - 1),
+        backoff.initialIntervalMs * backoff.multiplier ** (attemptRef.current - 1),
         backoff.maxIntervalMs,
       )
 
@@ -89,7 +89,7 @@ export function useInProgressPolling(options: UseInProgressPollingOptions): void
       }
 
       const nextMs = Math.min(
-        backoff.initialIntervalMs * Math.pow(backoff.multiplier, attemptRef.current),
+        backoff.initialIntervalMs * backoff.multiplier ** attemptRef.current,
         backoff.maxIntervalMs,
       )
 
@@ -112,7 +112,13 @@ export function useInProgressPolling(options: UseInProgressPollingOptions): void
         p.stopPolling()
       }
     }
-  }, [isInProgress, backoff.initialIntervalMs, backoff.maxIntervalMs, backoff.multiplier, clearTimer])
+  }, [
+    isInProgress,
+    backoff.initialIntervalMs,
+    backoff.maxIntervalMs,
+    backoff.multiplier,
+    clearTimer,
+  ])
 
   // Refetch mode: setTimeout chain with escalating delays
   useEffect(() => {
@@ -131,7 +137,7 @@ export function useInProgressPolling(options: UseInProgressPollingOptions): void
 
     const scheduleRefetch = () => {
       const intervalMs = Math.min(
-        backoff.initialIntervalMs * Math.pow(backoff.multiplier, attemptRef.current),
+        backoff.initialIntervalMs * backoff.multiplier ** attemptRef.current,
         backoff.maxIntervalMs,
       )
 
@@ -155,5 +161,11 @@ export function useInProgressPolling(options: UseInProgressPollingOptions): void
     return () => {
       clearTimer()
     }
-  }, [isInProgress, backoff.initialIntervalMs, backoff.maxIntervalMs, backoff.multiplier, clearTimer])
+  }, [
+    isInProgress,
+    backoff.initialIntervalMs,
+    backoff.maxIntervalMs,
+    backoff.multiplier,
+    clearTimer,
+  ])
 }

@@ -1,11 +1,6 @@
-import { useTranslation } from 'react-i18next'
-import { Check, ExternalLink } from 'lucide-react'
-import { Button } from '@workspace/ui/components/button'
-import { Badge } from '@workspace/ui/components/badge'
 import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
-import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
-import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { Badge } from '@workspace/ui/components/badge'
+import { Button } from '@workspace/ui/components/button'
 import {
   Card,
   CardContent,
@@ -13,6 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@workspace/ui/components/card'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
 import {
   Table,
   TableBody,
@@ -21,11 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from '@workspace/ui/components/table'
-import { LoadingSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { Check, ExternalLink } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useReport } from '@/hooks/use-report'
 import { postAction } from '@/lib/api'
 import { formatDate } from '@/lib/format'
+import { ErrorMessage } from './error-message'
+import { LoadingSkeleton } from './loading-skeleton'
 
 interface ReportViewProps {
   uuid: string
@@ -107,7 +107,8 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
           <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <span>
-                {t('judikatura.period')}: {report.period_from ? formatDate(report.period_from) : '-'}
+                {t('judikatura.period')}:{' '}
+                {report.period_from ? formatDate(report.period_from) : '-'}
                 {' - '}
                 {report.period_to ? formatDate(report.period_to) : '-'}
               </span>
@@ -239,10 +240,13 @@ export function ReportView({ uuid, reportId, onBack, onOpenSettings }: ReportVie
                               {doc.legal_sentence}
                             </p>
                           )}
-                          {doc.summary && <p className="mt-3 text-sm leading-relaxed">{doc.summary}</p>}
+                          {doc.summary && (
+                            <p className="mt-3 text-sm leading-relaxed">{doc.summary}</p>
+                          )}
                           {doc.practical_conclusion && (
                             <p className="text-muted-foreground mt-2 text-xs">
-                              <strong>{t('judikatura.practical')}:</strong> {doc.practical_conclusion}
+                              <strong>{t('judikatura.practical')}:</strong>{' '}
+                              {doc.practical_conclusion}
                             </p>
                           )}
                         </div>

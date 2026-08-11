@@ -16,17 +16,13 @@ describe('overviewResponseSchema', () => {
   })
 
   it('rejects response with wrong mode', () => {
-    expect(() =>
-      overviewResponseSchema.parse({ ...overviewFixture, mode: 'detail' }),
-    ).toThrow()
+    expect(() => overviewResponseSchema.parse({ ...overviewFixture, mode: 'detail' })).toThrow()
   })
 
   it('rejects document with invalid tracking_type', () => {
     const invalid = {
       ...overviewFixture,
-      tracked_documents: [
-        { ...overviewFixture.tracked_documents[0], tracking_type: 'invalid' },
-      ],
+      tracked_documents: [{ ...overviewFixture.tracked_documents[0], tracking_type: 'invalid' }],
     }
     expect(() => overviewResponseSchema.parse(invalid)).toThrow()
   })

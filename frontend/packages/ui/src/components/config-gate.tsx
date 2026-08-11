@@ -1,5 +1,5 @@
-import { ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { ExternalLink } from 'lucide-react'
 import type { ComponentType } from 'react'
 
 export interface ConfigGateProps {
@@ -19,9 +19,13 @@ export function ConfigGate({ icon: Icon, eyebrow, title, text, action, getKey }:
           <Icon className="size-7" strokeWidth={1.75} />
         </span>
         {eyebrow && (
-          <p className="text-primary mt-5 mb-2 text-xs font-semibold tracking-[0.14em] uppercase">{eyebrow}</p>
+          <p className="text-primary mt-5 mb-2 text-xs font-semibold tracking-[0.14em] uppercase">
+            {eyebrow}
+          </p>
         )}
-        <h2 className="font-display text-foreground mt-5 text-2xl leading-tight text-balance">{title}</h2>
+        <h2 className="font-display text-foreground mt-5 text-2xl leading-tight text-balance">
+          {title}
+        </h2>
         <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed text-pretty">{text}</p>
         <Button onClick={action.onClick} size="lg" className="mt-7" data-testid={action.testId}>
           <Icon className="size-4" />

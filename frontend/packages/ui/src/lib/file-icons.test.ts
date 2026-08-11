@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import {
   FileArchiveIcon,
   FileAudioIcon,
@@ -11,6 +10,7 @@ import {
   FileVideoIcon,
   FolderIcon,
 } from 'lucide-react'
+import { describe, expect, it } from 'vitest'
 import { getEntryIcon, getFileIcon } from './file-icons'
 
 describe('getFileIcon', () => {
@@ -135,11 +135,9 @@ describe('getFileIcon', () => {
 
     it('returns spreadsheet icon for spreadsheet MIME types', () => {
       expect(getFileIcon('application/vnd.ms-excel')).toBe(FileSpreadsheetIcon)
-      expect(
-        getFileIcon(
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ),
-      ).toBe(FileSpreadsheetIcon)
+      expect(getFileIcon('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')).toBe(
+        FileSpreadsheetIcon,
+      )
     })
   })
 

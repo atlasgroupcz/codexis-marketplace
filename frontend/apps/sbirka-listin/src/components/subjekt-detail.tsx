@@ -1,17 +1,17 @@
-import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ExternalLink, FileStack, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { ErrorMessage } from '@workspace/ui/components/error-message'
 import { toast } from '@workspace/ui/components/sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
-import { ErrorMessage } from '@workspace/ui/components/error-message'
-import { DetailSkeleton } from './loading-skeleton'
-import { ListinyList } from './listiny-list'
-import { ChangeHistory } from './detail/change-history'
+import { ArrowLeft, ExternalLink, FileStack, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useDetail } from '@/hooks/use-detail'
 import { removeSubjekt } from '@/lib/api'
 import { REGISTER_SUBJECT_URL } from '@/lib/constants'
 import { errorMessage, formatRelative } from '@/lib/format'
+import { ChangeHistory } from './detail/change-history'
+import { ListinyList } from './listiny-list'
+import { DetailSkeleton } from './loading-skeleton'
 
 interface SubjektDetailProps {
   ico: string
@@ -50,7 +50,13 @@ export function SubjektDetail({ ico, onBack, onChanged }: SubjektDetailProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack} data-testid="back-to-list">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onBack}
+            data-testid="back-to-list"
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <span className="bg-secondary text-primary ring-brand-100 flex size-10 shrink-0 items-center justify-center rounded-xl ring-1">

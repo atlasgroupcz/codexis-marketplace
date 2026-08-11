@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
-import { useQueryState } from 'nuqs'
-import { useTranslation } from 'react-i18next'
+import type { NotifyValues } from '@workspace/ui/components/notify-settings'
 import { NotifySettings } from '@workspace/ui/components/notify-settings'
 import { toast } from '@workspace/ui/components/sonner'
-import type { NotifyValues } from '@workspace/ui/components/notify-settings'
-import { reportParser, uuidParser, viewParser } from '@/lib/url-state'
+import { useQueryState } from 'nuqs'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { JudikaturaHome } from '@/components/judikatura-home'
-import { TopicDetail } from '@/components/topic-detail'
 import { ReportView } from '@/components/report-view'
+import { TopicDetail } from '@/components/topic-detail'
 import { fetchNotify, saveNotify } from '@/lib/api'
+import { reportParser, uuidParser, viewParser } from '@/lib/url-state'
 
 const emptyNotify: NotifyValues = { email: false, inApp: false, recipients: [] }
 

@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '@workspace/ui/components/card'
 import { toast } from '@workspace/ui/components/sonner'
-import type { ProceedingChange } from '@/lib/schemas'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { confirmChange } from '@/lib/api'
 import { errorMessage, formatDateTime } from '@/lib/format'
+import type { ProceedingChange } from '@/lib/schemas'
 
 interface ChangeHistoryProps {
   cisloRizeni: string

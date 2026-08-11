@@ -1,6 +1,6 @@
-import { actionResponseSchema, statusResponseSchema } from './schemas'
-import type { ActionResponse, NotifySettings, StatusResponse } from './schemas'
 import type { z } from 'zod'
+import type { ActionResponse, NotifySettings, StatusResponse } from './schemas'
+import { actionResponseSchema, statusResponseSchema } from './schemas'
 
 /**
  * In dev the Vite proxy maps /api to the component endpoint; in the VM the

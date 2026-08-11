@@ -1,6 +1,6 @@
+import type { Locale } from 'date-fns'
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { cs, enUS, sk } from 'date-fns/locale'
-import type { Locale } from 'date-fns'
 
 // Every app formatted dates through its own copy of this file. The copies had
 // drifted - different fallback locales, different nullability - so the shared

@@ -14,12 +14,7 @@ export default mergeConfig(
         reporter: ['text', 'html', 'lcov'],
         reportsDirectory: './coverage',
         include: ['src/components/**/*.{ts,tsx}', 'src/lib/**/*.ts', 'src/hooks/**/*.ts'],
-        exclude: [
-          '**/*.d.ts',
-          '**/test/**',
-          '**/*.test.{ts,tsx}',
-          '**/*.spec.{ts,tsx}',
-        ],
+        exclude: ['**/*.d.ts', '**/test/**', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
       },
       testTimeout: 10000,
       hookTimeout: 10000,

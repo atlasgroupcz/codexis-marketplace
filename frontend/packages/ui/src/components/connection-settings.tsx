@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { CheckCircle2, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
 import { Label } from '@workspace/ui/components/label'
 import { SettingsDialogShell } from '@workspace/ui/components/settings-dialog-shell'
+import { CheckCircle2, ExternalLink } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export interface ConnField {
   name: string

@@ -1,11 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { AlertTriangleIcon } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { TEST_ID } from '@workspace/utils/test-ids'
-import {
-  generateUniqueName,
-  getExistingNames,
-} from '@workspace/utils/upload-conflict-utils'
+import { Button } from '@workspace/ui/components/button'
+import { ButtonGroup } from '@workspace/ui/components/button-group'
 import {
   Dialog,
   DialogContent,
@@ -14,21 +8,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/ui/components/dialog'
-import { Button } from '@workspace/ui/components/button'
-import { ButtonGroup } from '@workspace/ui/components/button-group'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@workspace/ui/components/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@workspace/ui/components/tooltip'
 import { getEntryIcon } from '@workspace/ui/lib/file-icons'
 import type {
   ConflictResolution,
   FileConflict,
   ResolvedConflict,
 } from '@workspace/utils/file-upload'
+import { TEST_ID } from '@workspace/utils/test-ids'
 import type { FileNode } from '@workspace/utils/types/file-system'
+import { generateUniqueName, getExistingNames } from '@workspace/utils/upload-conflict-utils'
+import { AlertTriangleIcon } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface UploadConflictDialogProps {
   open: boolean
@@ -50,9 +43,7 @@ export function UploadConflictDialog({
   const { t } = useTranslation()
 
   // Track resolution for each conflict
-  const [resolutions, setResolutions] = useState<
-    Map<string, ConflictResolution>
-  >(() => new Map())
+  const [resolutions, setResolutions] = useState<Map<string, ConflictResolution>>(() => new Map())
 
   // "Apply to all" selection
   const [applyToAll, setApplyToAll] = useState<ConflictResolution | null>(null)
@@ -109,9 +100,7 @@ export function UploadConflictDialog({
     const result: Array<ResolvedConflict> = conflicts.map((conflict) => {
       const resolution = getResolution(conflict.name)
       const newName =
-        resolution === 'rename'
-          ? generateUniqueName(conflict.name, existingNames)
-          : undefined
+        resolution === 'rename' ? generateUniqueName(conflict.name, existingNames) : undefined
 
       // Add new name to existing names to prevent duplicates
       if (newName) {
@@ -146,15 +135,16 @@ export function UploadConflictDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] grid-cols-[minmax(0,1fr)]" data-testid={TEST_ID.UPLOAD_CONFLICT_DIALOG}>
+      <DialogContent
+        className="sm:max-w-[500px] grid-cols-[minmax(0,1fr)]"
+        data-testid={TEST_ID.UPLOAD_CONFLICT_DIALOG}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangleIcon className="size-5 text-amber-500" />
             {t('explorer.uploadConflict.title')}
           </DialogTitle>
-          <DialogDescription>
-            {t('explorer.uploadConflict.description')}
-          </DialogDescription>
+          <DialogDescription>{t('explorer.uploadConflict.description')}</DialogDescription>
         </DialogHeader>
 
         {/* Apply to all option */}
@@ -210,7 +200,11 @@ export function UploadConflictDialog({
           <Button variant="outline" onClick={handleCancel}>
             {t('common.cancel')}
           </Button>
-          <Button onClick={handleContinue} disabled={!allResolved} data-testid={TEST_ID.UPLOAD_CONFLICT_CONTINUE}>
+          <Button
+            onClick={handleContinue}
+            disabled={!allResolved}
+            data-testid={TEST_ID.UPLOAD_CONFLICT_CONTINUE}
+          >
             {t('explorer.uploadConflict.continue')}
           </Button>
         </DialogFooter>
@@ -226,21 +220,11 @@ interface ConflictItemProps {
   formatSize: (bytes?: number | null) => string
 }
 
-function ConflictItem({
-  conflict,
-  resolution,
-  onResolutionChange,
-  formatSize,
-}: ConflictItemProps) {
+function ConflictItem({ conflict, resolution, onResolutionChange, formatSize }: ConflictItemProps) {
   const { t } = useTranslation()
   const isFolder = conflict.existingType === 'directory'
-  const extension = conflict.name.includes('.')
-    ? conflict.name.split('.').pop()
-    : undefined
-  const Icon = useMemo(
-    () => getEntryIcon(isFolder, undefined, extension),
-    [isFolder, extension],
-  )
+  const extension = conflict.name.includes('.') ? conflict.name.split('.').pop() : undefined
+  const Icon = useMemo(() => getEntryIcon(isFolder, undefined, extension), [isFolder, extension])
 
   return (
     <div className="flex flex-col gap-2 rounded-md border p-3 overflow-hidden">
@@ -292,16 +276,10 @@ function ConflictItem({
           size="sm"
           variant={resolution === 'replace' ? 'default' : 'outline'}
           onClick={() => onResolutionChange('replace')}
-          title={
-            isFolder
-              ? t('explorer.uploadConflict.mergeFolderHint')
-              : undefined
-          }
+          title={isFolder ? t('explorer.uploadConflict.mergeFolderHint') : undefined}
           data-testid={TEST_ID.UPLOAD_CONFLICT_REPLACE}
         >
-          {isFolder
-            ? t('explorer.uploadConflict.merge')
-            : t('explorer.uploadConflict.replace')}
+          {isFolder ? t('explorer.uploadConflict.merge') : t('explorer.uploadConflict.replace')}
         </Button>
         <Button
           size="sm"

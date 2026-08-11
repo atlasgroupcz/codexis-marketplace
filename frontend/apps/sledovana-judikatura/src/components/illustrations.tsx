@@ -7,7 +7,14 @@ export function WatchCaseLawArt({ className }: ArtProps) {
   return (
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
       <defs>
-        <linearGradient id="lawsweep" x1="100" y1="72" x2="150" y2="36" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="lawsweep"
+          x1="100"
+          y1="72"
+          x2="150"
+          y2="36"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#5ea500" stopOpacity="0.38" />
           <stop offset="1" stopColor="#5ea500" stopOpacity="0" />
         </linearGradient>
@@ -16,7 +23,13 @@ export function WatchCaseLawArt({ className }: ArtProps) {
       <circle cx="100" cy="72" r="60" stroke="#dfe8d1" />
       <path d="M100 72V18A54 54 0 0 1 146 44Z" fill="url(#lawsweep)" />
       {/* scales of justice */}
-      <g stroke="#3f7000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+      <g
+        stroke="#3f7000"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      >
         <path d="M100 40v68" />
         <path d="M78 118h44" />
         <path d="M70 52h60" />
@@ -38,7 +51,16 @@ export function NoReportsArt({ className }: ArtProps) {
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
       <ellipse cx="100" cy="130" rx="52" ry="7" fill="#eef3e6" />
       <circle cx="96" cy="68" r="50" fill="#f4f7f0" />
-      <rect x="70" y="32" width="56" height="70" rx="6" fill="#ffffff" stroke="#e6e6e0" strokeWidth="2" />
+      <rect
+        x="70"
+        y="32"
+        width="56"
+        height="70"
+        rx="6"
+        fill="#ffffff"
+        stroke="#e6e6e0"
+        strokeWidth="2"
+      />
       <rect x="70" y="32" width="56" height="16" rx="6" fill="#f4f7f0" />
       <path
         d="M80 60h36M80 70h36M80 80h22"

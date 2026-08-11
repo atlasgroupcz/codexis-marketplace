@@ -1,17 +1,17 @@
-import { useQueryState } from 'nuqs'
-import { useTranslation } from 'react-i18next'
-import { ArrowRight, Plus, RefreshCw, Scale } from 'lucide-react'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
-import { TopicRail } from './topic-rail'
-import { ReportsFeed } from './reports-feed'
-import { EmptyTopics } from './empty-state'
-import { FeedSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
+import { ArrowRight, Plus, RefreshCw, Scale } from 'lucide-react'
+import { useQueryState } from 'nuqs'
+import { useTranslation } from 'react-i18next'
 import { useOverview } from '@/hooks/use-overview'
 import { topicFilterParser } from '@/lib/url-state'
+import { EmptyTopics } from './empty-state'
+import { ErrorMessage } from './error-message'
+import { FeedSkeleton } from './loading-skeleton'
+import { ReportsFeed } from './reports-feed'
+import { TopicRail } from './topic-rail'
 
 interface JudikaturaHomeProps {
   onSelectReport: (topicUuid: string, reportId: string) => void
@@ -19,7 +19,11 @@ interface JudikaturaHomeProps {
   onOpenSettings: () => void
 }
 
-export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: JudikaturaHomeProps) {
+export function JudikaturaHome({
+  onSelectReport,
+  onOpenTopic,
+  onOpenSettings,
+}: JudikaturaHomeProps) {
   const { t, i18n } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const [topicFilter, setTopicFilter] = useQueryState('topic', topicFilterParser)
@@ -95,7 +99,11 @@ export function JudikaturaHome({ onSelectReport, onOpenTopic, onOpenSettings }: 
                         {t('judikatura.areasCount', { count: activeTopic.areas })}
                       </p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => onOpenTopic(activeTopic.uuid)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onOpenTopic(activeTopic.uuid)}
+                    >
                       {t('judikatura.topicDetail')}
                       <ArrowRight className="size-4" />
                     </Button>

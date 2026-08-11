@@ -1,8 +1,4 @@
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@workspace/ui/components/hover-card'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@workspace/ui/components/hover-card'
 
 /** A small logo thumbnail that shows an enlarged preview on hover. */
 export function LogoZoom({
