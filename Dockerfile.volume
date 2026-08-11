@@ -1,0 +1,21 @@
+FROM registry.agrp.dev/dockerhub/library/alpine:3.22 AS builder
+
+RUN apk add --no-cache e2fsprogs e2fsprogs-extra
+
+COPY marketplace /contents
+
+RUN content_kib=$(du -sk /contents | awk '{print $1}') \
+    && image_kib=$((content_kib * 6 / 5 + 32768)) \
+    && truncate -s "${image_kib}K" /volume.ext4 \
+    && mke2fs -q -F -t ext4 -d /contents /volume.ext4 \
+    && e2fsck -fy /volume.ext4 \
+    && resize2fs -M /volume.ext4 \
+    && e2fsck -fn /volume.ext4
+
+FROM scratch
+
+ARG MARKETPLACE_REVISION
+LABEL org.opencontainers.image.title="Codexis marketplace VM volume" \
+      org.opencontainers.image.revision="${MARKETPLACE_REVISION}"
+
+COPY --from=builder --chmod=0644 /volume.ext4 /volume.ext4
