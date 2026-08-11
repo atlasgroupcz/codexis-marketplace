@@ -21,7 +21,7 @@ dev = [
     # Type checker. Pinned exactly: it is pre-1.0 and its authors state that
     # diagnostics may change between any two versions, which for a gate means a
     # bump can turn a green run red without a line of our code changing.
-    "ty==0.0.65",
+    "ty==0.0.70",
 ]
 
 [tool.uv]
