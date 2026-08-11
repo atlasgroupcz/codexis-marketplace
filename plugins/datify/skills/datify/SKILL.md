@@ -7,12 +7,24 @@ i18n:
   cs:
     displayName: "Datify - digitální AI kancelář"
     summary: "Čtení a úpravy kolekcí, datasetů a záznamů v Datify."
+    examplePrompts:
+      - "Ukaž mi přehled kolekcí a datasetů, které mám v Datify."
+      - "Vyfiltruj v Datify záznamy podle hodnoty vlastnosti a vypiš je do tabulky."
+      - "Nahraj tuhle smlouvu do Datify a nech z ní vytáhnout údaje do záznamu."
   en:
     displayName: "Datify - Digital AI Office"
     summary: "Read and edit Datify collections, datasets and records."
+    examplePrompts:
+      - "Show me an overview of the collections and datasets I have in Datify."
+      - "Filter Datify records by a property value and list them in a table."
+      - "Upload this contract to Datify and have its values extracted into a record."
   sk:
     displayName: "Datify - digitálna AI kancelária"
     summary: "Čítanie a úpravy kolekcií, datasetov a záznamov v Datify."
+    examplePrompts:
+      - "Ukáž mi prehľad kolekcií a datasetov, ktoré mám v Datify."
+      - "Vyfiltruj v Datify záznamy podľa hodnoty vlastnosti a vypíš ich do tabuľky."
+      - "Nahraj túto zmluvu do Datify a nechaj z nej vytiahnuť údaje do záznamu."
 ---
 
 # Datify
