@@ -55,7 +55,12 @@ promptfoo). Same name, different scope.
 
 ### Running tests
 
-Use the single entry point: `python tests/run.py <unit|marketplace|eval|all>`.
+Use the single entry point: `python tests/run.py <check|marketplace|eval|all>`.
+
+`check` is the fast tier and covers more than tests: ruff, ruff-format, ty,
+pytest, `cargo fmt --check`, `cargo test`, plus `turbo lint`, `turbo typecheck`
+and `turbo test`. Lint and typecheck are in there deliberately - a lint config
+broken outright still leaves `turbo test` green.
 
 ### Coverage
 

@@ -2,7 +2,7 @@
 """Single front door for the marketplace test suites.
 
 Usage:
-  python tests/run.py unit          # fast unit gate (pytest + cargo + frontend)
+  python tests/run.py check         # fast gate: lint, format, types, tests
   python tests/run.py marketplace   # daemon install/marketplace acceptance
   python tests/run.py eval          # promptfoo behavioral evals (the one tier)
   python tests/run.py all           # every tier in order, fail-fast on the gate
@@ -22,12 +22,12 @@ TESTS_DIR = Path(__file__).resolve().parent
 
 # subcommand -> script path (relative to tests/), invoked as `python <script> ...`.
 COMMANDS: dict[str, str] = {
-    "unit": "_unit_gate.py",
+    "check": "_unit_gate.py",
     "marketplace": "test-marketplace.py",
     "eval": "promptfoo/run.py",
 }
 
-# Order for `all`: the tiers run in COMMANDS order - the unit gate is defined first
+# Order for `all`: the tiers run in COMMANDS order - the check tier is defined first
 # because it needs no daemon and fails fastest.
 ORDER: list[str] = list(COMMANDS)
 
@@ -53,11 +53,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if command == "all":
         # `all` fans out to every tier in ORDER, stopping at the first failure so
-        # a broken unit gate does not burn ~2 minutes on the daemon suites. The
-        # unit gate takes no daemon args and its argparse rejects unknown flags, so
+        # a broken check tier does not burn ~2 minutes on the daemon suites. The
+        # check tier takes no daemon args and its argparse rejects unknown flags, so
         # passthrough (--daemon/--token/...) goes only to the daemon-backed tiers.
         for name in ORDER:
-            code = _run_one(name, [] if name == "unit" else passthrough)
+            code = _run_one(name, [] if name == "check" else passthrough)
             if code != 0:
                 print(f"tests/run.py: {name} failed - stopping.", file=sys.stderr)
                 return code

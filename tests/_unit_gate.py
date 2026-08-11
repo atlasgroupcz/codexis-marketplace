@@ -1,8 +1,12 @@
-"""Fast local unit suites, run as a gate before the daemon integration test.
+"""The fast gate: lint, formatting, types and tests, across all three toolchains.
 
-The marketplace test needs a live daemon, a VM and ~2 minutes. The repo's own
-unit tests need none of that and finish in seconds, so running them first turns
-a broken commit into a 6-second failure instead of a 2-minute one.
+The marketplace test needs a live daemon, a VM and ~2 minutes. Everything here
+needs none of that, so running it first turns a broken commit into a seconds-long
+failure instead of a two-minute one. Reached as `tests/run.py check`.
+
+Lint and typecheck belong here, not only the tests: a lint config that is broken
+outright still leaves `turbo test` green, which is how a completely dead ESLint
+setup once passed this gate.
 
 Kept separate from `test-marketplace.py` so the gate stays testable on its own
 (`tests/test_unit_gate.py`) - nothing here talks to the daemon.
@@ -22,22 +26,40 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class Suite:
-    """One runnable unit suite: a display name, argv, and the cwd to run it in."""
+    """One runnable suite: a display name, argv, and the cwd to run it in."""
 
     name: str
     argv: list[str]
     cwd: Path
 
 
-# Suite groups, one per pipeline stage. Grouped by what they cover rather than by
-# language: the plugin cores are being migrated from Python to Rust, so a split
-# along toolchain lines would have to be renamed as that migration progresses.
+# Suite groups, one per pipeline stage.
+#
+# These keys are a contract: Jenkins invokes this file as
+# `tests/_unit_gate.py --suite <key>` from aws0's
+# jenkins/dsl/cdx-daemon/marketplace-test-on-mr/Jenkinsfile. Renaming a key - or
+# this file - is a two-repo change, which is why the tier was renamed to `check`
+# and the filename was not. `tests/test_repo_hygiene.py` pins the key set.
+#
+# Grouped by what they cover rather than by language: the plugin cores are being
+# migrated from Python to Rust, so a split along toolchain lines would have to be
+# renamed as that migration progresses.
 SUITE_GROUPS: dict[str, tuple[str, ...]] = {
     # Plugin cores (pytest), their lint and format (ruff), and the CLI binaries
-    # plus shared crates (cargo).
-    "backend": ("ruff", "ruff-format", "ty", "pytest", "cargo"),
-    # The plugin component UIs.
-    "frontend": ("frontend",),
+    # plus shared crates (cargo, cargo-fmt).
+    "backend": ("ruff", "ruff-format", "ty", "pytest", "cargo-fmt", "cargo"),
+    # The plugin component UIs: lint and types before the tests, because a
+    # broken lint config passes `turbo test` without a word.
+    "frontend": ("frontend-lint", "frontend-typecheck", "frontend"),
+}
+
+
+# Frontend suite -> the turbo task it runs. A table rather than three branches:
+# the only thing that differs between them is this word.
+TURBO_TASKS: dict[str, str] = {
+    "frontend-lint": "lint",
+    "frontend-typecheck": "typecheck",
+    "frontend": "test",
 }
 
 
@@ -58,10 +80,10 @@ def missing_pytest_message() -> str:
     exactly how to repair the agent.
     """
     return (
-        "unit gate: pytest is not installed for this interpreter.\n"
+        "check: pytest is not installed for this interpreter.\n"
         "  The suites cannot run, and skipping them would report a green gate "
         "that tested nothing.\n"
-        "  Fix: uv sync   then run this via   uv run python3 tests/_unit_gate.py\n"
+        "  Fix: uv sync   then run this via   uv run python3 tests/run.py check\n"
         "  (test-only deps live in pyproject.toml under [dependency-groups].dev)"
     )
 
@@ -92,7 +114,7 @@ def _require_tool(repo_root: Path, name: str) -> str:
     """
     path = _tool(repo_root, name)
     if path is None:
-        raise UnavailableToolchain(f"unit gate: {name} was not found")
+        raise UnavailableToolchain(f"check: {name} was not found")
     return path
 
 
@@ -137,19 +159,26 @@ def _build_suite(repo_root: Path, name: str) -> Suite:
         )
     if name == "ty":
         return Suite("ty", [_require_tool(repo_root, "ty"), "check"], repo_root)
+    if name == "cargo-fmt":
+        # Separate from `cargo test` for the same reason ruff-format is separate
+        # from ruff check: a formatting complaint must not hide a failing test.
+        return Suite(
+            "cargo-fmt",
+            ["cargo", "fmt", "--all", "--check"],
+            repo_root,
+        )
     if name == "cargo":
-        # shared/rust is one workspace, so this covers every shared crate. The
-        # plugin crates sit outside it on purpose: each is its own project and
-        # compiling all 22 from cold would cost more than the daemon test this
-        # gate front-runs.
+        # One workspace at the repo root covers the shared crates and every
+        # plugin CLI, so this is the whole Rust tree.
         return Suite(
             "cargo",
             ["cargo", "test", "--all-features", "-q"],
-            repo_root / "shared" / "rust",
+            repo_root,
         )
-    if name == "frontend":
+    if name in TURBO_TASKS:
         runner = "bun" if shutil.which("bun") else "npx"
-        return Suite("frontend", [runner, "turbo", "test"], repo_root / "frontend")
+        argv = [runner, "turbo", TURBO_TASKS[name]]
+        return Suite(name, argv, repo_root / "frontend")
     raise ValueError(f"unknown suite: {name}")
 
 
@@ -167,14 +196,20 @@ def select_suites(
     error. ty next, then pytest - the broadest suite, and the only remaining
     one that needs no compile or install step.
     """
-    names = ["ruff", "ruff-format"] if ruff else []
+    enabled = {"pytest"}
+    if ruff:
+        enabled |= {"ruff", "ruff-format"}
     if ty:
-        names.append("ty")
-    names.append("pytest")
+        enabled.add("ty")
     if cargo:
-        names.append("cargo")
+        enabled |= {"cargo", "cargo-fmt"}
     if frontend:
-        names.append("frontend")
+        enabled |= set(TURBO_TASKS)
+
+    # Order comes from SUITE_GROUPS rather than being restated here: a suite
+    # added to a group but forgotten in this function would run in CI and
+    # silently not run locally, which is the false-green this module prevents.
+    names = [n for group in SUITE_GROUPS.values() for n in group if n in enabled]
     return [_build_suite(repo_root, name) for name in names]
 
 
@@ -192,9 +227,9 @@ def _default_availability(repo_root: Path) -> Callable[[str], bool]:
             return ruff_available(repo_root)
         if name == "ty":
             return ty_available(repo_root)
-        if name == "cargo":
+        if name in ("cargo", "cargo-fmt"):
             return cargo_available()
-        if name == "frontend":
+        if name in TURBO_TASKS:
             return frontend_available(repo_root)
         raise ValueError(f"unknown suite: {name}")
 
@@ -226,7 +261,7 @@ def suites_for_group(
     for name in names:
         if not available(name):
             raise UnavailableToolchain(
-                f"unit gate: suite {name!r} was requested via --suite {group}, "
+                f"check: suite {name!r} was requested via --suite {group}, "
                 f"but its toolchain is not installed.\n"
                 f"  Refusing to skip it: a green stage that ran nothing is worse "
                 f"than a red one.\n"
@@ -247,12 +282,12 @@ def run_gate(
     """
     failed: list[str] = []
     for suite in suites:
-        print(f"\n─── unit gate: {suite.name} ───", flush=True)
+        print(f"\n─── check: {suite.name} ───", flush=True)
         if runner(suite) != 0:
             failed.append(suite.name)
 
     if failed:
-        print(f"\nUnit gate FAILED: {', '.join(failed)}", file=sys.stderr, flush=True)
+        print(f"\ncheck FAILED: {', '.join(failed)}", file=sys.stderr, flush=True)
         return 1
     return 0
 
@@ -268,16 +303,16 @@ def run_default_gate(repo_root: Path) -> int:
     has_ruff = ruff_available(repo_root)
     has_ty = ty_available(repo_root)
     if not has_cargo:
-        print("unit gate: no cargo on PATH - skipping Rust suites", flush=True)
+        print("check: no cargo on PATH - skipping Rust suites", flush=True)
     if not has_frontend:
         print(
-            "unit gate: no bun/npx or frontend/node_modules - skipping frontend suite",
+            "check: no bun/npx or frontend/node_modules - skipping frontend suites",
             flush=True,
         )
     if not has_ruff:
-        print("unit gate: no ruff - skipping lint and format", flush=True)
+        print("check: no ruff - skipping lint and format", flush=True)
     if not has_ty:
-        print("unit gate: no ty - skipping the type check", flush=True)
+        print("check: no ty - skipping the type check", flush=True)
     return run_gate(
         select_suites(
             repo_root,
@@ -297,7 +332,7 @@ def main(argv: list[str] | None = None) -> int:
     absent - the pipeline provisions them, so a gap there is a broken agent,
     not something to skip past.
     """
-    parser = argparse.ArgumentParser(description="Run the repo's unit suites.")
+    parser = argparse.ArgumentParser(description="Run the repo's check suites.")
     parser.add_argument(
         "--suite",
         choices=sorted(SUITE_GROUPS),
