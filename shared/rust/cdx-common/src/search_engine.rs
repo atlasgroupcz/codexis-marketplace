@@ -30,19 +30,6 @@ pub trait SearchApi {
     fn resolve_attachment_links(&self, body: &str, base_url: &str) -> String;
 }
 
-/// Looks up a source code in a prefix table; `Err` when the code is unknown.
-pub fn lookup_prefix(
-    table: &'static [(&'static str, &'static str)],
-    code: &str,
-) -> Result<&'static str, String> {
-    for &(prefix, api_path) in table {
-        if prefix == code {
-            return Ok(api_path);
-        }
-    }
-    Err(format!("Unknown search prefix: {code}"))
-}
-
 /// One source search, as the caller describes it. A struct rather than a
 /// parameter list because there were eight of them, and the borrow of every
 /// field lives only for the call.
@@ -60,7 +47,10 @@ pub struct SearchRequest<'a> {
 }
 
 /// Runs a source search: POST the payload to the source's `/search` endpoint.
-pub fn execute_search_request(api: &impl SearchApi, req: SearchRequest<'_>) -> Result<(), CliError> {
+pub fn execute_search_request(
+    api: &impl SearchApi,
+    req: SearchRequest<'_>,
+) -> Result<(), CliError> {
     let curl_args = build_search_curl_args(
         api,
         req.base_url,
@@ -166,8 +156,8 @@ fn build_search_url(
     sort: Option<&str>,
     order: Option<&str>,
 ) -> Result<String, CliError> {
-    let api_path =
-        lookup_prefix(api.id_prefixes(), source_code).map_err(CliError::InvalidSearchArgument)?;
+    let api_path = crate::http::lookup_search_prefix(source_code, api.id_prefixes())
+        .map_err(CliError::InvalidSearchArgument)?;
     let base = base_url.trim_end_matches('/');
     let mut url = format!("{base}/{api_path}/search");
 
@@ -239,28 +229,52 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert!(matches!(err, CliError::InvalidSearchArgument(_)), "got: {err}");
+        assert!(
+            matches!(err, CliError::InvalidSearchArgument(_)),
+            "got: {err}"
+        );
     }
 
     #[test]
     fn lookup_prefix_maps_and_rejects() {
-        assert_eq!(lookup_prefix(MockApi.id_prefixes(), "ATBR").unwrap(), "AT/bundesrecht");
-        assert!(lookup_prefix(MockApi.id_prefixes(), "XXX").is_err());
+        assert_eq!(
+            crate::http::lookup_search_prefix("ATBR", MockApi.id_prefixes()).unwrap(),
+            "AT/bundesrecht"
+        );
+        assert!(crate::http::lookup_search_prefix("XXX", MockApi.id_prefixes()).is_err());
     }
 
     #[test]
     fn search_url_includes_sort_and_order() {
-        let args = build_search_curl_args(&MockApi, BASE, None, "ATBR", "{}", Some("date"), Some("desc"))
-            .unwrap();
-        assert!(args
-            .iter()
-            .any(|a| a == "https://api.example.com/api/AT/bundesrecht/search?sort=date&order=desc"));
+        let args = build_search_curl_args(
+            &MockApi,
+            BASE,
+            None,
+            "ATBR",
+            "{}",
+            Some("date"),
+            Some("desc"),
+        )
+        .unwrap();
+        assert!(
+            args.iter()
+                .any(|a| a
+                    == "https://api.example.com/api/AT/bundesrecht/search?sort=date&order=desc")
+        );
     }
 
     #[test]
     fn search_curl_args_are_post_json_with_auth() {
-        let args = build_search_curl_args(&MockApi, BASE, Some("Authorization: Bearer x"), "ATJD", "{\"q\":\"a\"}", None, None)
-            .unwrap();
+        let args = build_search_curl_args(
+            &MockApi,
+            BASE,
+            Some("Authorization: Bearer x"),
+            "ATJD",
+            "{\"q\":\"a\"}",
+            None,
+            None,
+        )
+        .unwrap();
         assert!(args.contains(&"POST".to_string()));
         assert!(args.contains(&"Content-Type: application/json".to_string()));
         assert!(args.contains(&"Authorization: Bearer x".to_string()));

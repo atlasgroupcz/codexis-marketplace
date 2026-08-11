@@ -25,7 +25,9 @@ use std::collections::BTreeMap;
 
 use serde::Deserialize;
 
-use crate::api_client::{agent, call_with_retry, Outcome};
+use cdx_common::http_client::{call_with_retry, Outcome};
+
+use crate::api_client::agent;
 use crate::error::{KatastrError, Result};
 use crate::settings::ruian_base;
 
@@ -155,7 +157,7 @@ struct RawSuggestion {
     typ: String,
 }
 
-/// Retrying is handled by `api_client::call_with_retry` - the same rule as for
+/// Retrying is handled by `cdx_common::http_client::call_with_retry` - the same rule as for
 /// ČÚZK. This used to be called exactly once, and it is precisely the call
 /// whose transport reset (the connection died mid TLS handshake) started this
 /// branch.
@@ -164,9 +166,10 @@ struct RawSuggestion {
 /// under "could not reach RÚIAN", so even a successfully contacted service
 /// answering HTTP 500 looked like a network outage.
 fn get_json(url: &str) -> Result<serde_json::Value> {
-    match call_with_retry(|| agent().get(url).set("Accept", "application/json")) {
-        Outcome::Ok(resp) => resp
-            .into_json::<serde_json::Value>()
+    match call_with_retry(|| agent().get(url).header("Accept", "application/json").call()) {
+        Outcome::Ok(mut resp) => resp
+            .body_mut()
+            .read_json::<serde_json::Value>()
             .map_err(|e| KatastrError::ApiNetwork(format!("RÚIAN vrátil neplatný JSON: {e}"))),
         Outcome::Status(code, body) => Err(KatastrError::ApiHttp {
             status: code,
@@ -380,7 +383,10 @@ mod tests {
             ("Ulice", 4),
             ("ZakladniSidelniJednotka", 6),
             ("KatastralniUzemi", 7),
-            ("MestskyObvodMestskaCastVeStatutarnimMesteAHlavnimMestePraze", 8),
+            (
+                "MestskyObvodMestskaCastVeStatutarnimMesteAHlavnimMestePraze",
+                8,
+            ),
             ("SpravniObvodVHlavnimMestePraze", 10),
             ("CastObce", 11),
             ("Obec", 12),
@@ -448,7 +454,11 @@ mod tests {
 
     #[test]
     fn an_ambiguous_or_empty_answer_yields_no_code() {
-        let row = |kod| Row { kod, nazev: "Nová Ves".into(), kontext: None };
+        let row = |kod| Row {
+            kod,
+            nazev: "Nová Ves".into(),
+            kontext: None,
+        };
         assert_eq!(jediny_kod(&found("Obec", 12, "Nová Ves", vec![])), None);
         assert_eq!(
             jediny_kod(&found("Obec", 12, "Nová Ves", vec![row(1), row(2)])),
@@ -461,10 +471,7 @@ mod tests {
     #[test]
     fn where_clause_escapes_single_quotes() {
         assert_eq!(escape_sql("O'Brien"), "O''Brien");
-        assert_eq!(
-            exact_where(12, "Ves O'Brien"),
-            "nazev='Ves O''Brien'"
-        );
+        assert_eq!(exact_where(12, "Ves O'Brien"), "nazev='Ves O''Brien'");
         assert_eq!(
             exact_where(1, "Malá Strana 66, 74247 Hladké Životice"),
             "adresa='Malá Strana 66, 74247 Hladké Životice'"

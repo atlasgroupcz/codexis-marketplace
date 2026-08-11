@@ -119,7 +119,10 @@ pub fn start(
 ) -> Result<(), CdxctlError> {
     let id = folder_to_node_id(folder);
     let started = client
-        .execute(graphql::START_TABULAR_EXTRACTION, json!({ "id": id.as_str() }))?
+        .execute(
+            graphql::START_TABULAR_EXTRACTION,
+            json!({ "id": id.as_str() }),
+        )?
         .get("startTabularExtraction")
         .cloned()
         .unwrap_or(Value::Null);
@@ -134,7 +137,10 @@ pub fn start(
     // terminal status is `status: "DONE" | "FAILED"`. ~5 min cap at 2s intervals.
     for _ in 0..150 {
         let ext = client
-            .execute(graphql::GET_TABULAR_EXTRACTION, json!({ "id": id.as_str() }))?
+            .execute(
+                graphql::GET_TABULAR_EXTRACTION,
+                json!({ "id": id.as_str() }),
+            )?
             .get("tabularExtraction")
             .cloned()
             .unwrap_or(Value::Null);
@@ -146,7 +152,7 @@ pub fn start(
             Some("FAILED") => {
                 print_output(&ext, format);
                 return Err(CdxctlError::GraphQL(vec![
-                    "tabular extraction FAILED".to_string(),
+                    "tabular extraction FAILED".to_string()
                 ]));
             }
             _ => std::thread::sleep(std::time::Duration::from_secs(2)),

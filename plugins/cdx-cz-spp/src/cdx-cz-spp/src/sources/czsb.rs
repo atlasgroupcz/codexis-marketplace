@@ -11,7 +11,10 @@ pub(crate) struct SearchCzsbArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "druh-predpisu", help = "Document type (e.g. \"Obecně závazná vyhláška\")")]
+    #[arg(
+        long = "druh-predpisu",
+        help = "Document type (e.g. \"Obecně závazná vyhláška\")"
+    )]
     pub(crate) druh_predpisu: Option<String>,
     #[arg(long, help = "Publisher/municipality name")]
     pub(crate) publikujici: Option<String>,
@@ -25,17 +28,29 @@ pub(crate) struct SearchCzsbArgs {
     pub(crate) ico: Option<String>,
     #[arg(long = "zakonne-zmocneni", help = "Legal authorization")]
     pub(crate) zakonne_zmocneni: Option<String>,
-    #[arg(long = "hlavni-typ", help = "Main type: \"pp\" (legal regs) or \"oa\" (other acts)")]
+    #[arg(
+        long = "hlavni-typ",
+        help = "Main type: \"pp\" (legal regs) or \"oa\" (other acts)"
+    )]
     pub(crate) hlavni_typ: Option<String>,
     #[arg(long = "datum-vydani-from", help = "Issue date from (YYYY-MM-DD)")]
     pub(crate) datum_vydani_from: Option<String>,
     #[arg(long = "datum-vydani-to", help = "Issue date to (YYYY-MM-DD)")]
     pub(crate) datum_vydani_to: Option<String>,
-    #[arg(long = "datum-zverejneni-from", help = "Publication date from (YYYY-MM-DD)")]
+    #[arg(
+        long = "datum-zverejneni-from",
+        help = "Publication date from (YYYY-MM-DD)"
+    )]
     pub(crate) datum_zverejneni_from: Option<String>,
-    #[arg(long = "datum-zverejneni-to", help = "Publication date to (YYYY-MM-DD)")]
+    #[arg(
+        long = "datum-zverejneni-to",
+        help = "Publication date to (YYYY-MM-DD)"
+    )]
     pub(crate) datum_zverejneni_to: Option<String>,
-    #[arg(long = "datum-ucinnosti-from", help = "Effective date from (YYYY-MM-DD)")]
+    #[arg(
+        long = "datum-ucinnosti-from",
+        help = "Effective date from (YYYY-MM-DD)"
+    )]
     pub(crate) datum_ucinnosti_from: Option<String>,
     #[arg(long = "datum-ucinnosti-to", help = "Effective date to (YYYY-MM-DD)")]
     pub(crate) datum_ucinnosti_to: Option<String>,

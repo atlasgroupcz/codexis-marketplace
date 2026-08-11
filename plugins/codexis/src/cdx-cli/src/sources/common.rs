@@ -3,7 +3,9 @@ use serde_json::{Map, Value};
 
 use crate::core::error::CliError;
 use crate::core::http::SearchFacetMode;
-pub(crate) use cdx_common::search::{insert_string, insert_u64, insert_bool, load_search_payload, get_non_negative_integer};
+pub(crate) use cdx_common::search::{
+    get_non_negative_integer, insert_bool, insert_string, insert_u64, load_search_payload,
+};
 
 pub(crate) type JsonMap = Map<String, Value>;
 

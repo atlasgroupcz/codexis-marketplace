@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_SKNUS_HELP: &str = r#"Example:
   cdx-sk search SKNUS --query "ústavné právo" --court NSSR --limit 5
@@ -17,16 +19,28 @@ pub(crate) struct SearchSknusArgs {
     #[arg(long = "court-name", help = "Court name")]
     pub(crate) court_name: Option<String>,
 
-    #[arg(long = "typ-rozhodnutia", help = "Decision type - Slovak alias for --decision-type")]
+    #[arg(
+        long = "typ-rozhodnutia",
+        help = "Decision type - Slovak alias for --decision-type"
+    )]
     pub(crate) typ_rozhodnutia: Option<String>,
 
-    #[arg(long = "decision-type", help = "Decision type - English alias for --typ-rozhodnutia")]
+    #[arg(
+        long = "decision-type",
+        help = "Decision type - English alias for --typ-rozhodnutia"
+    )]
     pub(crate) decision_type: Option<String>,
 
-    #[arg(long = "case-number", help = "Case number - alias for --spisova-znacka")]
+    #[arg(
+        long = "case-number",
+        help = "Case number - alias for --spisova-znacka"
+    )]
     pub(crate) case_number: Option<String>,
 
-    #[arg(long = "spisova-znacka", help = "Case file number - alias for --case-number")]
+    #[arg(
+        long = "spisova-znacka",
+        help = "Case file number - alias for --case-number"
+    )]
     pub(crate) spisova_znacka: Option<String>,
 
     #[arg(long, help = "ECLI identifier")]

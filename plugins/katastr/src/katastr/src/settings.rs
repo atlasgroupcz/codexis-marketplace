@@ -34,7 +34,10 @@ pub fn read_api_key() -> String {
 /// Write the API key to disk atomically with mode 0600.
 /// No validation here - use [`set_api_key`] for the validated path.
 pub fn write_api_key(key: &str) -> Result<()> {
-    Ok(env_file::write_env_file(&paths::env_file(), &[("API_KEY", key)])?)
+    Ok(env_file::write_env_file(
+        &paths::env_file(),
+        &[("API_KEY", key)],
+    )?)
 }
 
 /// Mask the key for display: `ABCD****WXYZ`. Anything shorter than 12
@@ -90,7 +93,9 @@ pub fn key_status() -> KeyStatus {
 /// `settings test` used to fail on the first network blip, being the only
 /// calls that bypassed retrying.
 pub fn validate_key(key: &str) -> Result<()> {
-    use crate::api_client::{agent, call_with_retry, Outcome};
+    use cdx_common::http_client::{call_with_retry, Outcome};
+
+    use crate::api_client::agent;
 
     let base = cuzk_base();
     let url = cdx_common::http::resolve_url(&base, crate::lookup::STAV_UCTU);
@@ -98,20 +103,19 @@ pub fn validate_key(key: &str) -> Result<()> {
     match call_with_retry(|| {
         agent()
             .get(&url)
-            .set("ApiKey", key)
-            .set("Accept", "application/json")
+            .header("ApiKey", key)
+            .header("Accept", "application/json")
+            .call()
     }) {
         // Read the body so the connection returns to the pool - `settings
         // test` makes further calls right after this one.
-        Outcome::Ok(resp) => {
-            let _ = resp.into_string();
+        Outcome::Ok(mut resp) => {
+            let _ = resp.body_mut().read_to_string();
             Ok(())
         }
-        Outcome::Status(code, _) if code == 401 || code == 403 => {
-            Err(KatastrError::ApiKeyInvalid(format!(
-                "API klíč je neplatný (HTTP {code})."
-            )))
-        }
+        Outcome::Status(code, _) if code == 401 || code == 403 => Err(KatastrError::ApiKeyInvalid(
+            format!("API klíč je neplatný (HTTP {code})."),
+        )),
         Outcome::Status(code, _) => Err(KatastrError::ApiHttp {
             status: code,
             message: format!("ČÚZK API vrátilo HTTP {code}"),

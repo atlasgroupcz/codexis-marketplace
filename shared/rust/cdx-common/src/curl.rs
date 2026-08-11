@@ -6,6 +6,7 @@
 //! across the search plugins. The per-plugin parts (URL schemes, `cdx://`
 //! resource resolvers, source-code → API-path maps) stay in each plugin.
 
+use percent_encoding::{utf8_percent_encode, AsciiSet};
 use std::io::{self, Write};
 use std::process::{Command, Output, Stdio};
 
@@ -99,33 +100,17 @@ pub fn encode_query_values(query: &str) -> String {
             Some((key, value)) => {
                 result.push_str(key);
                 result.push('=');
-                percent_encode_utf8(&mut result, value);
+                // `utf8_percent_encode` always escapes non-ASCII bytes; the set
+                // only names which ASCII to escape as well. An empty set is
+                // therefore exactly "escape non-ASCII, leave ASCII alone" -
+                // which is what a value already assembled into a query needs.
+                result.extend(utf8_percent_encode(value, &AsciiSet::EMPTY));
             }
             None => result.push_str(pair),
         }
     }
 
     result
-}
-
-fn percent_encode_utf8(out: &mut String, input: &str) {
-    for byte in input.bytes() {
-        if byte.is_ascii() {
-            out.push(byte as char);
-        } else {
-            out.push('%');
-            out.push(to_hex_digit(byte >> 4));
-            out.push(to_hex_digit(byte & 0x0F));
-        }
-    }
-}
-
-fn to_hex_digit(nibble: u8) -> char {
-    match nibble {
-        0..=9 => (b'0' + nibble) as char,
-        10..=15 => (b'A' + nibble - 10) as char,
-        _ => unreachable!(),
-    }
 }
 
 /// Redacts `Authorization:` headers in curl args, for safe dry-run output.
@@ -207,8 +192,7 @@ mod tests {
 
     #[test]
     fn split_envelope_extracts_content_and_sources() {
-        let (content, sources) =
-            split_envelope_str(r#"{"content":"hello","sources":[{"id":1}]}"#);
+        let (content, sources) = split_envelope_str(r#"{"content":"hello","sources":[{"id":1}]}"#);
         assert_eq!(content, "hello");
         assert!(sources.is_some());
     }

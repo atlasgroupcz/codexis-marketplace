@@ -61,7 +61,10 @@ enum Commands {
         source: SearchSource,
     },
 
-    #[command(about = "Fetch a cdx-cz-spp:// resource", arg_required_else_help = true)]
+    #[command(
+        about = "Fetch a cdx-cz-spp:// resource",
+        arg_required_else_help = true
+    )]
     Get(GetArgs),
 
     #[command(
@@ -246,7 +249,12 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_CZ_SPP_API_URL_ENV)?;
-    execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
+    execute_get_request(
+        &config.base_url,
+        config.auth_header.as_deref(),
+        &args.resource,
+        args.dry_run,
+    )
 }
 
 fn execute_schema(endpoint: ResourceSchemaCommand) -> Result<(), CliError> {
@@ -288,8 +296,7 @@ mod tests {
 
     #[test]
     fn cli_accepts_lowercase_source_alias() {
-        let cli =
-            Cli::try_parse_from(["cdx-cz-spp", "search", "czsb", "--query", "test"]).unwrap();
+        let cli = Cli::try_parse_from(["cdx-cz-spp", "search", "czsb", "--query", "test"]).unwrap();
 
         match cli.command {
             Commands::Search {
@@ -351,9 +358,13 @@ mod tests {
 
     #[test]
     fn cli_parses_get_command() {
-        let cli =
-            Cli::try_parse_from(["cdx-cz-spp", "get", "--dry-run", "cdx-cz-spp://doc/CZSB1/meta"])
-                .unwrap();
+        let cli = Cli::try_parse_from([
+            "cdx-cz-spp",
+            "get",
+            "--dry-run",
+            "cdx-cz-spp://doc/CZSB1/meta",
+        ])
+        .unwrap();
 
         match cli.command {
             Commands::Get(args) => {
@@ -479,7 +490,8 @@ mod tests {
         assert!(help.contains("cdx-cz-spp search CZSB --query"));
         assert!(help.contains("cdx-cz-spp get cdx-cz-spp://doc/CZSB1234/meta"));
         assert!(help.contains("cdx-cz-spp search <DATA_SOURCE> --help"));
-        assert!(help.contains("cdx-cz-spp schema [meta|text|toc|parts|versions|related|related/counts]"));
+        assert!(help
+            .contains("cdx-cz-spp schema [meta|text|toc|parts|versions|related|related/counts]"));
     }
 
     #[test]

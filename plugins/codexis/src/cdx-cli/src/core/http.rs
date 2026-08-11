@@ -90,7 +90,10 @@ fn split_envelope(body: &[u8]) -> (EnvelopeContent, Option<serde_json::Value>) {
         return (EnvelopeContent::Json(value), None);
     };
     if !map.contains_key("content") {
-        return (EnvelopeContent::Json(serde_json::Value::Object(map.clone())), None);
+        return (
+            EnvelopeContent::Json(serde_json::Value::Object(map.clone())),
+            None,
+        );
     }
     let sources = map.remove("sources");
     let content = map.remove("content").unwrap_or(serde_json::Value::Null);
@@ -102,7 +105,10 @@ enum EnvelopeContent {
     Raw(Vec<u8>),
 }
 
-fn print_search_content(content: EnvelopeContent, facet_mode: SearchFacetMode) -> Result<(), CliError> {
+fn print_search_content(
+    content: EnvelopeContent,
+    facet_mode: SearchFacetMode,
+) -> Result<(), CliError> {
     match content {
         EnvelopeContent::Json(mut value) => {
             apply_facet_mode(&mut value, facet_mode);
@@ -121,8 +127,7 @@ fn print_get_content(content: EnvelopeContent) -> Result<(), CliError> {
     match content {
         EnvelopeContent::Json(serde_json::Value::String(s)) => write_stdout(&s),
         EnvelopeContent::Json(value) => {
-            let rendered = serde_json::to_string(&value)
-                .unwrap_or_else(|_| String::new());
+            let rendered = serde_json::to_string(&value).unwrap_or_else(|_| String::new());
             write_stdout(&rendered)
         }
         EnvelopeContent::Raw(bytes) => {
@@ -403,7 +408,11 @@ mod tests {
             .unwrap()
             .clone();
         apply_facet_mode(&mut content_value, SearchFacetMode::Hidden);
-        assert!(content_value.as_object().unwrap().get("availableFilters").is_none());
+        assert!(content_value
+            .as_object()
+            .unwrap()
+            .get("availableFilters")
+            .is_none());
         assert_eq!(content_value["results"][0]["docId"], "JD1");
     }
 

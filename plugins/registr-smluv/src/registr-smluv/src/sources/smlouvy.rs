@@ -35,9 +35,15 @@ pub(crate) struct SearchSmlouvyArgs {
         help = "Counterparty (supplier) IČO, exact match (canonicalized to 8 digits)"
     )]
     pub(crate) counterparty_ico: Option<String>,
-    #[arg(long = "value-min", help = "Minimum contract value incl. VAT (hodnotaVcetneDph >=)")]
+    #[arg(
+        long = "value-min",
+        help = "Minimum contract value incl. VAT (hodnotaVcetneDph >=)"
+    )]
     pub(crate) value_min: Option<f64>,
-    #[arg(long = "value-max", help = "Maximum contract value incl. VAT (hodnotaVcetneDph <=)")]
+    #[arg(
+        long = "value-max",
+        help = "Maximum contract value incl. VAT (hodnotaVcetneDph <=)"
+    )]
     pub(crate) value_max: Option<f64>,
     #[arg(long = "date-from", help = "Conclusion date from (YYYY-MM-DD)")]
     pub(crate) date_from: Option<String>,

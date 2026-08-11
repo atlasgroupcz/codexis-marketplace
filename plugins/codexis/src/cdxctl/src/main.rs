@@ -900,7 +900,11 @@ fn main() {
                     summary,
                     example_prompts,
                     jurisdictions: none_if_empty(jurisdictions),
-                    jurisdiction_required: if jurisdiction_required { Some(true) } else { None },
+                    jurisdiction_required: if jurisdiction_required {
+                        Some(true)
+                    } else {
+                        None
+                    },
                     allowed_tools: none_if_empty(allowed_tools),
                 },
                 format,
@@ -1075,9 +1079,10 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Update {
-                    id, description, ..
-                },
+                command:
+                    AgentCommands::Update {
+                        id, description, ..
+                    },
             } => {
                 assert_eq!(id, "local-agent");
                 assert_eq!(description.as_deref(), Some("New description"));
@@ -1107,7 +1112,10 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Create { example_prompts, .. },
+                command:
+                    AgentCommands::Create {
+                        example_prompts, ..
+                    },
             } => assert_eq!(
                 example_prompts,
                 vec![
@@ -1131,8 +1139,14 @@ mod tests {
 
         match cli.command {
             Commands::Skill {
-                command: SkillCommands::Update { example_prompts, .. },
-            } => assert_eq!(example_prompts, vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]),
+                command:
+                    SkillCommands::Update {
+                        example_prompts, ..
+                    },
+            } => assert_eq!(
+                example_prompts,
+                vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]
+            ),
             _ => panic!("expected skill update command"),
         }
     }
@@ -1348,15 +1362,33 @@ mod tests {
     #[test]
     fn requires_every_bug_report_field() {
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--description", "d", "--severity", "LOW"
+            "cdxctl",
+            "bug",
+            "report",
+            "--description",
+            "d",
+            "--severity",
+            "LOW"
         ])
         .is_err());
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--title", "t", "--severity", "LOW"
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "t",
+            "--severity",
+            "LOW"
         ])
         .is_err());
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--title", "t", "--description", "d"
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "t",
+            "--description",
+            "d"
         ])
         .is_err());
     }

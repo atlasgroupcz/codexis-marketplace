@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_bool, insert_string, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_bool, insert_string, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_LECIVA_HELP: &str = r#"Examples:
   leciva-cli search CZSUKL --query "paralen"
@@ -18,17 +20,32 @@ pub(crate) struct SearchLecivaArgs {
     pub(crate) kod_sukl: Option<String>,
     #[arg(long, help = "ATC code - exact match")]
     pub(crate) atc: Option<String>,
-    #[arg(long, help = "Pharmaceutical form (Forma) - resolved Czech name; see `get …/doc/values/forma`")]
+    #[arg(
+        long,
+        help = "Pharmaceutical form (Forma) - resolved Czech name; see `get …/doc/values/forma`"
+    )]
     pub(crate) forma: Option<String>,
-    #[arg(long, help = "Dispensing category (Způsob výdeje) - resolved name; see `…/doc/values/vydej`")]
+    #[arg(
+        long,
+        help = "Dispensing category (Způsob výdeje) - resolved name; see `…/doc/values/vydej`"
+    )]
     pub(crate) vydej: Option<String>,
-    #[arg(long, help = "Registration status (Stav registrace) - resolved name; see `…/doc/values/stav`")]
+    #[arg(
+        long,
+        help = "Registration status (Stav registrace) - resolved name; see `…/doc/values/stav`"
+    )]
     pub(crate) stav: Option<String>,
     #[arg(long, help = "Active substance name (fulltext against látky)")]
     pub(crate) latka: Option<String>,
-    #[arg(long = "only-dodavka", help = "Only medicines currently on the market (jeDodavka = true)")]
+    #[arg(
+        long = "only-dodavka",
+        help = "Only medicines currently on the market (jeDodavka = true)"
+    )]
     pub(crate) only_dodavka: bool,
-    #[arg(long = "vcetne-zrusenych", help = "Include withdrawn/cancelled registrations")]
+    #[arg(
+        long = "vcetne-zrusenych",
+        help = "Include withdrawn/cancelled registrations"
+    )]
     pub(crate) vcetne_zrusenych: bool,
 }
 
@@ -58,7 +75,10 @@ mod tests {
     #[test]
     fn builds_full_filter_payload_with_correct_keys() {
         let args = SearchLecivaArgs {
-            base: SearchBaseArgs { query: Some("paralen".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("paralen".to_string()),
+                ..SearchBaseArgs::default()
+            },
             kod_sukl: Some("0000009".to_string()),
             atc: Some("N02BA51".to_string()),
             forma: Some("Tableta".to_string()),
@@ -83,7 +103,10 @@ mod tests {
     #[test]
     fn omits_absent_filters_and_false_bools() {
         let args = SearchLecivaArgs {
-            base: SearchBaseArgs { query: Some("x".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("x".to_string()),
+                ..SearchBaseArgs::default()
+            },
             ..SearchLecivaArgs::default()
         };
         let p: Value = serde_json::from_str(&args.build_payload().unwrap()).unwrap();

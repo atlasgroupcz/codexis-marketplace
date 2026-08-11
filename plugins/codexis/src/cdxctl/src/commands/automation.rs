@@ -483,7 +483,10 @@ mod tests {
             vec!["modelConfiguration", "jurisdictions"]
         );
 
-        input.insert("modelConfiguration".into(), json!([{"key": "effort", "value": "HIGH"}]));
+        input.insert(
+            "modelConfiguration".into(),
+            json!([{"key": "effort", "value": "HIGH"}]),
+        );
         input.insert("jurisdictions".into(), json!(["CZ"]));
         assert!(context_keys_to_fill(&input).is_empty());
     }

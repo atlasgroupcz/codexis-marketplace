@@ -153,7 +153,10 @@ pub fn profil(ico: &str, rows: &[Value]) -> Value {
             obory_by_misto.insert(mid.clone(), BTreeSet::new());
         }
         if !obor.is_empty() {
-            obory_by_misto.get_mut(&mid).unwrap().insert(obor.to_string());
+            obory_by_misto
+                .get_mut(&mid)
+                .unwrap()
+                .insert(obor.to_string());
         }
     }
 
@@ -217,7 +220,10 @@ mod tests {
     #[test]
     fn obor_code_matches_name_accent_insensitive() {
         assert_eq!(obor_code(&codelist(), "Urologie").as_deref(), Some("L42"));
-        assert_eq!(obor_code(&codelist(), "gynekologie").as_deref(), Some("L12"));
+        assert_eq!(
+            obor_code(&codelist(), "gynekologie").as_deref(),
+            Some("L12")
+        );
     }
 
     #[test]
@@ -272,7 +278,10 @@ mod tests {
         assert_eq!(p["kraje"], json!(["Středočeský kraj"]));
         assert_eq!(p["kontakt"]["telefon"], json!("+420318641123"));
         assert_eq!(p["provozovny"].as_array().unwrap().len(), 2);
-        assert_eq!(p["provozovny"][0]["obory"], json!(["chirurgie", "urologie"]));
+        assert_eq!(
+            p["provozovny"][0]["obory"],
+            json!(["chirurgie", "urologie"])
+        );
         assert_eq!(p["pravniForma"], json!("akciová společnost"));
         assert_eq!(p["typOsobyNazev"], json!("právnická osoba"));
     }

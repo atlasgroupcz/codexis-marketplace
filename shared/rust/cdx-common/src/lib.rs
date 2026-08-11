@@ -20,6 +20,15 @@ pub mod curl;
 #[cfg(feature = "http")]
 pub mod http;
 
+#[cfg(feature = "http-client")]
+pub mod http_client;
+
+#[cfg(feature = "reqwest-client")]
+pub mod reqwest_client;
+
+#[cfg(feature = "url")]
+pub mod url;
+
 #[cfg(feature = "schema")]
 pub mod schema;
 

@@ -5,10 +5,12 @@
 //! [`cdx_common::daemon_rest::daemon_bearer`]; the daemon URL comes from
 //! `CODEXIS_PUBLIC_DAEMON_URL` (via [`cdx_common::config::read_env`]).
 
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use cdx_common::config::{read_env, CODEXIS_PUBLIC_DAEMON_URL_ENV};
 use cdx_common::daemon_rest::daemon_bearer;
+use cdx_common::http_client::{outcome, Outcome};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -16,11 +18,20 @@ use crate::error::{NotifyError, Result};
 
 const EMAIL_ENDPOINT: &str = "/rest/v1/plugin/email/send";
 
-fn agent() -> ureq::Agent {
-    ureq::AgentBuilder::new()
-        .timeout_connect(Duration::from_secs(5))
-        .timeout_read(Duration::from_secs(30))
-        .build()
+const USER_AGENT_VALUE: &str = concat!("cdx-notify/", env!("CARGO_PKG_VERSION"));
+
+/// One Agent per process. A notifying run makes three to four calls to the same
+/// daemon host (resolve the user, send the mail, resolve the app link, ring the
+/// bell); one agent means one TCP+TLS handshake instead of one per call.
+fn agent() -> &'static ureq::Agent {
+    static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+    AGENT.get_or_init(|| {
+        cdx_common::http_client::agent(
+            USER_AGENT_VALUE,
+            Duration::from_secs(5),
+            Duration::from_secs(30),
+        )
+    })
 }
 
 /// GraphQL URL for the daemon (`CODEXIS_PUBLIC_DAEMON_URL`, which is the
@@ -46,13 +57,15 @@ fn rest_base(daemon_url: &str) -> String {
 pub(crate) fn graphql(query: &str) -> Option<serde_json::Value> {
     let url = daemon_url()?;
     let auth = daemon_bearer()?;
-    let resp = agent()
+    let sent = agent()
         .post(&url)
-        .set("Authorization", &auth)
-        .set("Content-Type", "application/json")
-        .send_json(json!({ "query": query }))
-        .ok()?;
-    let parsed: serde_json::Value = resp.into_json().ok()?;
+        .header("Authorization", &auth)
+        .header("Content-Type", "application/json")
+        .send_json(json!({ "query": query }));
+    let Outcome::Ok(mut resp) = outcome(sent) else {
+        return None;
+    };
+    let parsed: serde_json::Value = resp.body_mut().read_json().ok()?;
     parsed.get("data").cloned()
 }
 
@@ -130,10 +143,15 @@ pub fn without_self(recipients: &[String]) -> Vec<String> {
 /// the "omit `recipients` to leave the stored list untouched" rule lives in one
 /// place; non-string array entries are skipped.
 pub fn recipients_from_body(body: &serde_json::Value) -> Option<Vec<String>> {
-    body.get("recipients").and_then(|v| v.as_array()).map(|arr| {
-        let raw: Vec<String> = arr.iter().filter_map(|v| v.as_str().map(String::from)).collect();
-        without_self(&raw)
-    })
+    body.get("recipients")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            let raw: Vec<String> = arr
+                .iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect();
+            without_self(&raw)
+        })
 }
 
 /// Minimal HTML escaping equivalent to Python's `html.escape(s)` (quote=True):
@@ -192,28 +210,24 @@ pub fn send_email(
     );
 
     let url = format!("{}{}", rest_base(&url), EMAIL_ENDPOINT);
-    match agent()
+    // Sending mail is not idempotent, so this classifies one attempt rather than
+    // going through `call_with_retry` - a retry could deliver the mail twice.
+    let sent = agent()
         .post(&url)
-        .set("Authorization", &auth)
-        .set(
+        .header("Authorization", &auth)
+        .header(
             "Content-Type",
             &format!("multipart/form-data; boundary={boundary}"),
         )
-        .send_bytes(body.as_bytes())
-    {
-        Ok(_) => Ok(()),
-        Err(ureq::Error::Status(code, resp)) => {
-            let detail: String = resp
-                .into_string()
-                .unwrap_or_default()
-                .chars()
-                .take(300)
-                .collect();
-            Err(NotifyError::Notify(format!(
-                "E-mail se nepodařilo odeslat (HTTP {code}): {detail}"
-            )))
-        }
-        Err(ureq::Error::Transport(t)) => Err(NotifyError::Notify(format!(
+        .send(body.as_bytes());
+
+    match outcome(sent) {
+        Outcome::Ok(_) => Ok(()),
+        Outcome::Status(code, detail) => Err(NotifyError::Notify(format!(
+            "E-mail se nepodařilo odeslat (HTTP {code}): {}",
+            detail.chars().take(300).collect::<String>()
+        ))),
+        Outcome::Transport(t) => Err(NotifyError::Notify(format!(
             "E-mail se nepodařilo odeslat: {t}"
         ))),
     }
@@ -253,12 +267,13 @@ pub fn send_inapp(
     let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
         return false;
     };
-    agent()
+    // Creating a notification is not idempotent either, so one attempt only.
+    let sent = agent()
         .post(&url)
-        .set("Authorization", &auth)
-        .set("Content-Type", "application/json; charset=utf-8")
-        .send_json(build_inapp_body(message, notification_type, action, link))
-        .is_ok()
+        .header("Authorization", &auth)
+        .header("Content-Type", "application/json; charset=utf-8")
+        .send_json(build_inapp_body(message, notification_type, action, link));
+    matches!(outcome(sent), Outcome::Ok(_))
 }
 
 // ── tests ────────────────────────────────────────────────────────────────────

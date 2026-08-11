@@ -221,7 +221,10 @@ pub fn list_all() -> Vec<ProceedingState> {
 /// Same as `list_all`, but returning the overview projection used by the
 /// CGI's JSON response for the overview endpoint.
 pub fn list_overview() -> Vec<OverviewEntry> {
-    list_all().into_iter().map(OverviewEntry::from_state).collect()
+    list_all()
+        .into_iter()
+        .map(OverviewEntry::from_state)
+        .collect()
 }
 
 // ── ČÚZK fetch ───────────────────────────────────────────────────────────────
@@ -509,15 +512,16 @@ pub fn confirm(cislo_rizeni: &str, change_index: Option<usize>) -> Result<usize>
         KatastrError::ProceedingNotTracked(format!("Řízení {canonical} není sledováno."))
     })?;
 
-    let marked = confirm_changes(&mut state.changes, change_index, &now_utc()).map_err(|e| match e {
-        cdx_watch::WatchError::IndexOutOfRange { index, len } => {
-            KatastrError::InvalidProceedingNumber(format!(
-                "Index {index} je mimo rozsah (0..{}).",
-                len.saturating_sub(1)
-            ))
-        }
-        other => KatastrError::InvalidProceedingNumber(other.to_string()),
-    })?;
+    let marked =
+        confirm_changes(&mut state.changes, change_index, &now_utc()).map_err(|e| match e {
+            cdx_watch::WatchError::IndexOutOfRange { index, len } => {
+                KatastrError::InvalidProceedingNumber(format!(
+                    "Index {index} je mimo rozsah (0..{}).",
+                    len.saturating_sub(1)
+                ))
+            }
+            other => KatastrError::InvalidProceedingNumber(other.to_string()),
+        })?;
 
     if marked > 0 {
         save_state(&canonical, &state)?;
@@ -596,7 +600,10 @@ mod tests {
 
     #[test]
     fn normalize_matches_canonical() {
-        assert_eq!(normalize_number("v-123/2026-701").unwrap(), "V-123/2026-701");
+        assert_eq!(
+            normalize_number("v-123/2026-701").unwrap(),
+            "V-123/2026-701"
+        );
     }
 
     #[test]

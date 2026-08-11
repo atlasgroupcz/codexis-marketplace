@@ -1,6 +1,7 @@
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Error, Result};
+use cdx_common::http_client::{call_with_retry, Outcome};
 use serde_json::Value;
 use ureq::Agent;
 
@@ -15,56 +16,41 @@ pub struct NrpzsClient {
 
 impl NrpzsClient {
     pub fn new() -> Result<Self> {
-        let base_url =
-            std::env::var("NRPZS_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
-        let base_url = base_url.trim_end_matches('/').to_string();
-        // ureq keeps a connection pool on the Agent -> requests to the same host
-        // (e.g. the fetch_all pagination loop) reuse the TCP+TLS connection.
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout_read(Duration::from_secs(30))
-            .build();
+        let base_url = cdx_common::http::base_url_from_env("NRPZS_BASE_URL", DEFAULT_BASE_URL);
+        let agent = cdx_common::http_client::agent(
+            USER_AGENT_VALUE,
+            Duration::from_secs(10),
+            Duration::from_secs(30),
+        );
         Ok(Self { agent, base_url })
+    }
+
+    /// Issues the GET. The status is left unjudged: `get_raw_allow_empty` reads
+    /// a 404 as an empty result, `get_raw` reads it as an error.
+    fn send(&self, url: &str, params: &[(&str, &str)]) -> Outcome {
+        call_with_retry(|| {
+            self.agent
+                .get(url)
+                .header("Accept", "application/json")
+                .query_pairs(params.iter().copied())
+                .call()
+        })
     }
 
     pub fn get_raw(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
         let url = cdx_common::http::resolve_url(&self.base_url, path);
-        let mut req = self
-            .agent
-            .get(&url)
-            .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT_VALUE);
-        for &(k, v) in params {
-            req = req.query(k, v);
-        }
-        match req.call() {
-            Ok(resp) => Ok(resp.into_string()?),
-            Err(ureq::Error::Status(code, resp)) => {
-                let body = resp.into_string().unwrap_or_default();
-                Err(anyhow!("HTTP {code} on GET {url}\n{}", body.trim()))
-            }
-            Err(e) => Err(anyhow!("GET {url} failed: {e}")),
-        }
+        self.send(&url, params)
+            .into_text("GET", &url)
+            .map_err(Error::msg)
     }
 
+    /// This endpoint answers "no such register entry" with a 404, which is an
+    /// answer rather than a failure - every other status is judged as usual.
     pub fn get_raw_allow_empty(&self, path: &str, params: &[(&str, &str)]) -> Result<String> {
         let url = cdx_common::http::resolve_url(&self.base_url, path);
-        let mut req = self
-            .agent
-            .get(&url)
-            .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT_VALUE);
-        for &(k, v) in params {
-            req = req.query(k, v);
-        }
-        match req.call() {
-            Ok(resp) => Ok(resp.into_string()?),
-            Err(ureq::Error::Status(404, _)) => Ok("[]".to_string()),
-            Err(ureq::Error::Status(code, resp)) => {
-                let body = resp.into_string().unwrap_or_default();
-                Err(anyhow!("HTTP {code} on GET {url}\n{}", body.trim()))
-            }
-            Err(e) => Err(anyhow!("GET {url} failed: {e}")),
+        match self.send(&url, params) {
+            Outcome::Status(404, _) => Ok("[]".to_string()),
+            other => other.into_text("GET", &url).map_err(Error::msg),
         }
     }
 
@@ -98,4 +84,3 @@ impl NrpzsClient {
         Ok(all)
     }
 }
-

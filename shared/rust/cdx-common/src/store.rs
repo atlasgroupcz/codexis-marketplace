@@ -137,7 +137,10 @@ mod tests {
     }
 
     fn item(id: &str, n: u32) -> Item {
-        Item { id: id.to_string(), n }
+        Item {
+            id: id.to_string(),
+            n,
+        }
     }
 
     #[test]

@@ -98,12 +98,23 @@ mod tests {
             "Bearer test-token".to_string(),
         );
 
-        report(&client, "Chat hangs", "Steps: open chat", "high", OutputFormat::Json).unwrap();
+        report(
+            &client,
+            "Chat hangs",
+            "Steps: open chat",
+            "high",
+            OutputFormat::Json,
+        )
+        .unwrap();
 
         let request = requests.recv().unwrap();
         assert!(request.starts_with("POST /rest/v1/plugin/bug-report HTTP/1.1"));
-        assert!(request.to_lowercase().contains("authorization: bearer test-token"));
-        assert!(request.to_lowercase().contains("content-type: application/json"));
+        assert!(request
+            .to_lowercase()
+            .contains("authorization: bearer test-token"));
+        assert!(request
+            .to_lowercase()
+            .contains("content-type: application/json"));
         let body = request.split("\r\n\r\n").nth(1).unwrap();
         let parsed: Value = serde_json::from_str(body).unwrap();
         assert_eq!(parsed["severity"], json!("HIGH"));
@@ -133,7 +144,8 @@ mod tests {
 
     #[test]
     fn surfaces_a_daemon_rejection_as_a_network_error() {
-        let (address, _requests) = stub_daemon("HTTP/1.1 400 Bad Request", "{\"code\":\"BAD_REQUEST\"}");
+        let (address, _requests) =
+            stub_daemon("HTTP/1.1 400 Bad Request", "{\"code\":\"BAD_REQUEST\"}");
         let client = GraphQLClient::with_endpoint(
             format!("http://{address}/graphql"),
             "Bearer test-token".to_string(),
@@ -146,7 +158,10 @@ mod tests {
         }
     }
 
-    fn stub_daemon(status_line: &'static str, body: &'static str) -> (String, mpsc::Receiver<String>) {
+    fn stub_daemon(
+        status_line: &'static str,
+        body: &'static str,
+    ) -> (String, mpsc::Receiver<String>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap().to_string();
         let (sender, receiver) = mpsc::channel();

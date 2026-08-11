@@ -11,12 +11,12 @@ from tests import run
 
 class TestDispatchTable:
     def test_every_tier_has_a_command(self):
-        assert set(run.COMMANDS) == {"unit", "marketplace", "eval"}
+        assert set(run.COMMANDS) == {"check", "marketplace", "eval"}
 
     @pytest.mark.parametrize(
         "tier,script",
         [
-            ("unit", "_unit_gate.py"),
+            ("check", "_unit_gate.py"),
             ("marketplace", "test-marketplace.py"),
             ("eval", "promptfoo/run.py"),
         ],
@@ -26,8 +26,8 @@ class TestDispatchTable:
 
 
 class TestAllOrdering:
-    def test_all_runs_unit_first(self):
-        assert run.ORDER[0] == "unit"
+    def test_all_runs_check_first(self):
+        assert run.ORDER[0] == "check"
 
     def test_all_covers_every_command(self):
         assert set(run.ORDER) == set(run.COMMANDS)
@@ -35,7 +35,7 @@ class TestAllOrdering:
 
 class TestBuildArgv:
     def test_prefixes_python_and_the_script_path(self):
-        argv = run.build_argv("unit", ["--suite", "backend"])
+        argv = run.build_argv("check", ["--suite", "backend"])
         assert argv[0] == sys.executable
         assert argv[1].endswith("tests/_unit_gate.py")
         assert argv[-2:] == ["--suite", "backend"]
@@ -61,8 +61,8 @@ class TestMain:
         assert calls == run.ORDER[:2]
 
     def test_all_routes_passthrough_only_to_daemon_tiers(self, monkeypatch):
-        # The unit gate takes no daemon args (and rejects unknown flags), so `all`
-        # must send passthrough only to the daemon-backed tiers, not to unit.
+        # The check tier takes no daemon args (and rejects unknown flags), so `all`
+        # must send passthrough only to the daemon-backed tiers, not to check.
         seen: dict[str, list[str]] = {}
 
         def fake_run_one(command: str, passthrough: list[str]) -> int:
@@ -71,6 +71,6 @@ class TestMain:
 
         monkeypatch.setattr(run, "_run_one", fake_run_one)
         assert run.main(["all", "--daemon", "http://x", "--token", "t"]) == 0
-        assert seen["unit"] == []
+        assert seen["check"] == []
         for tier in ("marketplace", "eval"):
             assert seen[tier] == ["--daemon", "http://x", "--token", "t"]

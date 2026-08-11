@@ -16,21 +16,36 @@ pub(crate) struct SearchRzproArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "evidencni-cislo", help = "Evidenční číslo - exact, 8-digit device id")]
+    #[arg(
+        long = "evidencni-cislo",
+        help = "Evidenční číslo - exact, 8-digit device id"
+    )]
     pub(crate) evidencni_cislo: Option<String>,
     #[arg(long, help = "Device kind (Druh ZP) filter")]
     pub(crate) druh: Option<String>,
-    #[arg(long, help = "Risk class (Míra rizika) filter, e.g. I, IIa, III, IVDR C")]
+    #[arg(
+        long,
+        help = "Risk class (Míra rizika) filter, e.g. I, IIa, III, IVDR C"
+    )]
     pub(crate) riziko: Option<String>,
     #[arg(long, help = "Manufacturer country (Stát výrobce) filter")]
     pub(crate) stat: Option<String>,
     #[arg(long, value_parser = parse_ico, help = "Manufacturer/holder IČO filter, exact match (canonicalized to 8 digits)")]
     pub(crate) ico: Option<String>,
-    #[arg(long = "katalogove-cislo", help = "Catalogue number of a device variant, exact match")]
+    #[arg(
+        long = "katalogove-cislo",
+        help = "Catalogue number of a device variant, exact match"
+    )]
     pub(crate) katalogove_cislo: Option<String>,
-    #[arg(long = "expiruje-do", help = "Only devices with Platnost do on or before this date (YYYY-MM-DD)")]
+    #[arg(
+        long = "expiruje-do",
+        help = "Only devices with Platnost do on or before this date (YYYY-MM-DD)"
+    )]
     pub(crate) expiruje_do: Option<String>,
-    #[arg(long = "only-active", help = "Only currently valid devices (Stav = Platný)")]
+    #[arg(
+        long = "only-active",
+        help = "Only currently valid devices (Stav = Platný)"
+    )]
     pub(crate) only_active: bool,
 }
 
@@ -60,7 +75,10 @@ mod tests {
     #[test]
     fn builds_full_filter_payload_with_correct_keys() {
         let args = SearchRzproArgs {
-            base: SearchBaseArgs { query: Some("gliadin".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("gliadin".to_string()),
+                ..SearchBaseArgs::default()
+            },
             evidencni_cislo: Some("00000019".to_string()),
             druh: Some("Diagnostický zdravotnický prostředek in vitro".to_string()),
             riziko: Some("III".to_string()),
@@ -85,7 +103,10 @@ mod tests {
     #[test]
     fn omits_absent_filters_and_false_bool() {
         let args = SearchRzproArgs {
-            base: SearchBaseArgs { query: Some("x".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("x".to_string()),
+                ..SearchBaseArgs::default()
+            },
             ..SearchRzproArgs::default()
         };
         let p: Value = serde_json::from_str(&args.build_payload().unwrap()).unwrap();

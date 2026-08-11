@@ -152,29 +152,49 @@ mod tests {
             body_html: None,
         };
         let json = serde_json::to_string(&payload).expect("serialize");
-        assert!(!json.contains("\"to\""), "empty to list should be omitted: {json}");
-        assert!(!json.contains("\"cc\""), "empty cc list should be omitted: {json}");
-        assert!(!json.contains("\"bcc\""), "empty bcc list should be omitted: {json}");
-        assert!(!json.contains("bodyHtml"), "bodyHtml should be omitted when None");
+        assert!(
+            !json.contains("\"to\""),
+            "empty to list should be omitted: {json}"
+        );
+        assert!(
+            !json.contains("\"cc\""),
+            "empty cc list should be omitted: {json}"
+        );
+        assert!(
+            !json.contains("\"bcc\""),
+            "empty bcc list should be omitted: {json}"
+        );
+        assert!(
+            !json.contains("bodyHtml"),
+            "bodyHtml should be omitted when None"
+        );
         assert!(json.contains("\"subject\":\"hi\""));
         assert!(json.contains("\"bodyText\":\"body\""));
     }
 
     #[test]
     fn anchors_to_the_current_chat_when_running_inside_a_chat_vm() {
-        let headers = thread_headers_from(false, Some("3f2b1c00-0000-0000-0000-000000000001".into()));
+        let headers =
+            thread_headers_from(false, Some("3f2b1c00-0000-0000-0000-000000000001".into()));
 
         assert_eq!(
             headers,
-            vec![("X-CDX-Session-Id", "3f2b1c00-0000-0000-0000-000000000001".to_string())]
+            vec![(
+                "X-CDX-Session-Id",
+                "3f2b1c00-0000-0000-0000-000000000001".to_string()
+            )]
         );
     }
 
     #[test]
     fn omits_the_anchor_when_no_thread_is_requested() {
-        let headers = thread_headers_from(true, Some("3f2b1c00-0000-0000-0000-000000000001".into()));
+        let headers =
+            thread_headers_from(true, Some("3f2b1c00-0000-0000-0000-000000000001".into()));
 
-        assert!(headers.is_empty(), "--no-thread must suppress the anchor: {headers:?}");
+        assert!(
+            headers.is_empty(),
+            "--no-thread must suppress the anchor: {headers:?}"
+        );
     }
 
     #[test]
@@ -185,7 +205,10 @@ mod tests {
     #[test]
     fn treats_a_blank_session_id_as_absent() {
         assert!(normalize_env_value("   ".to_string()).is_none());
-        assert_eq!(normalize_env_value(" abc ".to_string()), Some("abc".to_string()));
+        assert_eq!(
+            normalize_env_value(" abc ".to_string()),
+            Some("abc".to_string())
+        );
     }
 
     #[test]

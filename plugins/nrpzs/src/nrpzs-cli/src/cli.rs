@@ -107,14 +107,18 @@ pub fn run() -> Result<()> {
     let client = NrpzsClient::new()?;
 
     let body = match cli.command {
-        Command::Detail { misto_poskytovani_id } => {
-            client.get_raw(&format!("/mista-poskytovani/{misto_poskytovani_id}"), &[])?
-        }
-        Command::Oddeleni { zdravotnicke_zarizeni_id } => client.get_raw_allow_empty(
+        Command::Detail {
+            misto_poskytovani_id,
+        } => client.get_raw(&format!("/mista-poskytovani/{misto_poskytovani_id}"), &[])?,
+        Command::Oddeleni {
+            zdravotnicke_zarizeni_id,
+        } => client.get_raw_allow_empty(
             &format!("/zdravotnicka-zarizeni/{zdravotnicke_zarizeni_id}/oddeleni"),
             &[],
         )?,
-        Command::OrdinacniDoba { zdravotnicke_zarizeni_id } => client.get_raw_allow_empty(
+        Command::OrdinacniDoba {
+            zdravotnicke_zarizeni_id,
+        } => client.get_raw_allow_empty(
             &format!("/zdravotnicka-zarizeni/{zdravotnicke_zarizeni_id}/ordinacni-doba"),
             &[],
         )?,
@@ -160,7 +164,9 @@ fn search(client: &NrpzsClient, a: SearchArgs) -> Result<String> {
         }
     }
     if a.limit > 100 {
-        return Err(anyhow::anyhow!("--limit must be ≤ 100 (NRPZS API page limit)"));
+        return Err(anyhow::anyhow!(
+            "--limit must be ≤ 100 (NRPZS API page limit)"
+        ));
     }
     let region = a.kraj.is_some() || a.okres.is_some();
     if a.level == Level::Zarizeni && (a.obor.is_some() || region) {
@@ -207,7 +213,9 @@ fn search(client: &NrpzsClient, a: SearchArgs) -> Result<String> {
         if let Some(o) = &a.okres {
             rows = transform::filter_region(rows, "OkresCode", "Okres", o);
         }
-        Ok(serde_json::to_string_pretty(&serde_json::Value::Array(rows))?)
+        Ok(serde_json::to_string_pretty(&serde_json::Value::Array(
+            rows,
+        ))?)
     } else {
         let off = a.offset.to_string();
         let lim = a.limit.to_string();

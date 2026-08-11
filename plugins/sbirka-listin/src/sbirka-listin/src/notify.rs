@@ -6,8 +6,8 @@
 //! branded e-mail shell live in `cdx_notify`; this module owns only the
 //! sbirka-listin summary content and the dispatch decision.
 
-use cdx_notify::email::email_shell;
 use cdx_notify::app_link::resolve_app_link;
+use cdx_notify::email::email_shell;
 use cdx_notify::notify::{html_escape, resolve_to, send_email, send_inapp};
 use cdx_notify::notify_settings::NotifySettings;
 use cdx_watch::track::CheckResult;
@@ -133,7 +133,12 @@ pub fn dispatch(results: &[CheckResult<Change>]) -> Value {
         // Resolution is best-effort - an unresolvable link is omitted rather
         // than sent broken.
         let link = resolve_app_link(PLUGIN_NAME, APP_ID);
-        if send_inapp(&change_subject(&changed), NOTIFICATION_TYPE, None, link.as_deref()) {
+        if send_inapp(
+            &change_subject(&changed),
+            NOTIFICATION_TYPE,
+            None,
+            link.as_deref(),
+        ) {
             "odesláno"
         } else {
             "selhalo"

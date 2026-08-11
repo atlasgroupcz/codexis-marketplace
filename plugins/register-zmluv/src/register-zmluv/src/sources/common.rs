@@ -2,7 +2,9 @@ use clap::Args;
 use serde_json::{Map, Number, Value};
 
 use crate::core::error::CliError;
-pub(crate) use cdx_common::search::{insert_string, insert_u64, load_search_payload, get_non_negative_integer};
+pub(crate) use cdx_common::search::{
+    get_non_negative_integer, insert_string, insert_u64, load_search_payload,
+};
 
 pub(crate) type JsonMap = Map<String, Value>;
 
@@ -20,13 +22,20 @@ pub(crate) fn parse_ico(raw: &str) -> Result<String, String> {
 
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchBaseArgs {
-    #[arg(long, short = 'q', help = "Fulltext query (nazov + predmet + party names)")]
+    #[arg(
+        long,
+        short = 'q',
+        help = "Fulltext query (nazov + predmet + party names)"
+    )]
     pub(crate) query: Option<String>,
 
     #[arg(long, help = "Result limit (default: 20, max: 100)")]
     pub(crate) limit: Option<u64>,
 
-    #[arg(long, help = "Result offset (default: 0; offset + limit must be <= 10000)")]
+    #[arg(
+        long,
+        help = "Result offset (default: 0; offset + limit must be <= 10000)"
+    )]
     pub(crate) offset: Option<u64>,
 
     #[arg(long, help = "Sort field (relevance, date)")]

@@ -4,6 +4,20 @@ use serde_json::{json, Value};
 
 const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
 
+/// The shared client: ring, and the roots compiled into the binary.
+///
+/// A failure here means the TLS policy itself is broken, which no command can
+/// work around - so it exits rather than handing back a client that would fail
+/// every request for a reason the user cannot see.
+fn http_client() -> reqwest::blocking::Client {
+    cdx_common::reqwest_client::client_builder()
+        .build()
+        .unwrap_or_else(|e| {
+            eprintln!("error: could not build the HTTP client: {e}");
+            std::process::exit(2);
+        })
+}
+
 pub struct GraphQLClient {
     url: String,
     auth: String,
@@ -12,12 +26,13 @@ pub struct GraphQLClient {
 
 impl GraphQLClient {
     pub fn new() -> Self {
-        let url = std::env::var("CODEXIS_PUBLIC_DAEMON_URL").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+        let url = std::env::var("CODEXIS_PUBLIC_DAEMON_URL")
+            .unwrap_or_else(|_| DEFAULT_API_URL.to_string());
         let auth = load_api_jwt_auth();
         GraphQLClient {
             url,
             auth,
-            client: reqwest::blocking::Client::new(),
+            client: http_client(),
         }
     }
 
@@ -85,7 +100,7 @@ impl GraphQLClient {
         GraphQLClient {
             url,
             auth,
-            client: reqwest::blocking::Client::new(),
+            client: http_client(),
         }
     }
 
@@ -140,4 +155,3 @@ fn load_api_jwt_auth() -> String {
         std::process::exit(2);
     })
 }
-

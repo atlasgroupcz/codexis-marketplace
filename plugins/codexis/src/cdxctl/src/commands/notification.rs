@@ -29,7 +29,10 @@ pub fn create(
         "vars": if vars.is_empty() { Value::Null } else { Value::Array(vars) },
     });
 
-    let data = client.execute(graphql::CREATE_NOTIFICATION_MUTATION, json!({ "input": input }))?;
+    let data = client.execute(
+        graphql::CREATE_NOTIFICATION_MUTATION,
+        json!({ "input": input }),
+    )?;
     let result = data
         .get("createNotification")
         .cloned()
@@ -75,11 +78,7 @@ pub fn seen(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<()
     update_state(client, &resolved, json!({ "seen": true }), format)
 }
 
-pub fn confirm(
-    client: &GraphQLClient,
-    id: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
+pub fn confirm(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let resolved = resolve_notification_id(client, id)?;
     update_state(client, &resolved, json!({ "confirmed": true }), format)
 }

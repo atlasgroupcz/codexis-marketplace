@@ -161,7 +161,14 @@ mod tests {
 
     fn seed(store: &ItemStore, id: &str, value: u32) {
         store
-            .save(id, &Snap { id: id.into(), value, checks: 0 })
+            .save(
+                id,
+                &Snap {
+                    id: id.into(),
+                    value,
+                    checks: 0,
+                },
+            )
             .unwrap();
     }
 

@@ -1,12 +1,9 @@
-
 use crate::core::error::CliError;
 
 const REGISTR_SMLUV_SCHEME: &str = "registr-smluv://";
 
 /// Display ID prefix -> API path (Czech smlouvy domain)
-const ID_PREFIXES: &[(&str, &str)] = &[
-    ("CZRS", "CZ/smlouvy"),
-];
+const ID_PREFIXES: &[(&str, &str)] = &[("CZRS", "CZ/smlouvy")];
 
 pub(crate) struct RegistrSmluvApi;
 
@@ -58,7 +55,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&RegistrSmluvApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &RegistrSmluvApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Resolve a registr-smluv:// path (everything after "registr-smluv://") into a full HTTP URL.
@@ -143,5 +146,4 @@ mod tests {
     }
 
     // --- envelope splitting ---
-
 }

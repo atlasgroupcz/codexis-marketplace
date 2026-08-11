@@ -2,7 +2,6 @@ use std::collections::HashSet;
 
 use serde_json::{json, Value};
 
-
 const ARES_WEB_BASE_URL: &str = "https://ares.gov.cz/ekonomicke-subjekty";
 const SNIPPET_MAX_CHARS: usize = 300;
 pub(crate) const SEARCH_SOURCES_CAP: usize = 10;
@@ -77,10 +76,16 @@ fn subject_entry(ico: &str, name: Option<&Value>, address: Option<&Value>) -> Va
         .unwrap_or_else(|| format!("IČO {ico} - ARES"));
     let mut entry = serde_json::Map::new();
     entry.insert("__kind".into(), json!("url"));
-    entry.insert("url".into(), json!(format!("{ARES_WEB_BASE_URL}?ico={ico}")));
+    entry.insert(
+        "url".into(),
+        json!(format!("{ARES_WEB_BASE_URL}?ico={ico}")),
+    );
     entry.insert("title".into(), json!(title));
     if let Some(addr) = address.and_then(Value::as_str) {
-        entry.insert("snippet".into(), json!(truncate_chars(addr, SNIPPET_MAX_CHARS)));
+        entry.insert(
+            "snippet".into(),
+            json!(truncate_chars(addr, SNIPPET_MAX_CHARS)),
+        );
     }
     Value::Object(entry)
 }
@@ -111,7 +116,8 @@ mod tests {
 
     #[test]
     fn detail_source_falls_back_to_ico_title_for_vr_shape() {
-        let body = r#"{"icoId":"45274649","zaznamy":[{"obchodniJmeno":[{"hodnota":"ČEZ, a. s."}]}]}"#;
+        let body =
+            r#"{"icoId":"45274649","zaznamy":[{"obchodniJmeno":[{"hodnota":"ČEZ, a. s."}]}]}"#;
         let entries = detail_source("45274649", body);
         assert_eq!(entries[0]["title"], json!("IČO 45274649 - ARES"));
         assert!(entries[0].get("snippet").is_none());

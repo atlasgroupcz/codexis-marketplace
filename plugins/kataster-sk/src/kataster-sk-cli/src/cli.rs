@@ -39,10 +39,7 @@ pub enum Command {
     /// Geocode cadastral units, municipalities and places by name.
     Ku { query: String },
     /// Find parcels by number within a cadastral unit (KU code from `ku`).
-    Parcela {
-        ku_code: u32,
-        parcel_number: String,
-    },
+    Parcela { ku_code: u32, parcel_number: String },
     /// Fetch parcel attributes by object id (from `parcela` results).
     Detail(DetailArgs),
 }
@@ -135,7 +132,10 @@ mod tests {
 
     #[test]
     fn require_nonempty_trims_and_rejects_blank() {
-        assert_eq!(require_nonempty(" 1234/9 ", "parcel number").unwrap(), "1234/9");
+        assert_eq!(
+            require_nonempty(" 1234/9 ", "parcel number").unwrap(),
+            "1234/9"
+        );
         assert!(require_nonempty("   ", "query").is_err());
     }
 

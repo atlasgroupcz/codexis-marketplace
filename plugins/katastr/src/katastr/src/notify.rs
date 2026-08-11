@@ -52,8 +52,10 @@ fn summary_subject(changed: &[&CheckResult]) -> String {
 fn change_summary(changed: &[&CheckResult]) -> (String, String, String) {
     let subject = summary_subject(changed);
 
-    let mut text_lines: Vec<String> =
-        vec!["Hlídač katastrálních řízení zaznamenal změny:".to_string(), String::new()];
+    let mut text_lines: Vec<String> = vec![
+        "Hlídač katastrálních řízení zaznamenal změny:".to_string(),
+        String::new(),
+    ];
     let mut html_blocks = String::new();
 
     for r in changed {

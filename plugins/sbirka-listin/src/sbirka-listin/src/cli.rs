@@ -407,7 +407,8 @@ mod tests {
 
     #[test]
     fn sledovani_show_and_remove_take_a_canonical_ico() {
-        let cli = Cli::try_parse_from(["sbirka-listin-cli", "sledovani", "show", "216208"]).unwrap();
+        let cli =
+            Cli::try_parse_from(["sbirka-listin-cli", "sledovani", "show", "216208"]).unwrap();
         let Command::Sledovani {
             command: SledovaniCommand::Show { ico },
         } = cli.command
@@ -459,9 +460,10 @@ mod tests {
         ])
         .unwrap();
         let Command::Notify {
-            command: NotifyCommand::Recipients {
-                command: RecipientsCommand::Set { emails },
-            },
+            command:
+                NotifyCommand::Recipients {
+                    command: RecipientsCommand::Set { emails },
+                },
         } = cli.command
         else {
             panic!("expected notify recipients set");
