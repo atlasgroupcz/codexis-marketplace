@@ -659,7 +659,13 @@ mod tests {
         // The prefixes themselves are covered by the sync test above; this pins the
         // suffix parity, which is what the eu_law routes gained.
         let help = Cli::command().render_long_help().to_string();
-        for suffix in ["meta", "toc", "text[?part=PART]", "versions", "related/counts[?part=PART]"] {
+        for suffix in [
+            "meta",
+            "toc",
+            "text[?part=PART]",
+            "versions",
+            "related/counts[?part=PART]",
+        ] {
             assert!(
                 help.contains(&format!("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/{suffix}")),
                 "root help is missing the eu_law {suffix} route"

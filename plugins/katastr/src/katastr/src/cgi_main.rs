@@ -117,7 +117,11 @@ fn handle_post() -> ExitCode {
 }
 
 fn post_save_api_key(body: &Value) -> ExitCode {
-    let api_key = body.get("apiKey").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let api_key = body
+        .get("apiKey")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
     if api_key.is_empty() {
         return emit_error(400, "API klíč je prázdný.");
     }
@@ -135,8 +139,16 @@ fn post_delete_api_key() -> ExitCode {
 }
 
 fn post_add(body: &Value) -> ExitCode {
-    let cislo = body.get("cislo_rizeni").and_then(|v| v.as_str()).unwrap_or("").trim();
-    let label = body.get("label").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let cislo = body
+        .get("cislo_rizeni")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    let label = body
+        .get("label")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
     match tracking::add(cislo, label) {
         Ok(state) => emit_json(&serde_json::json!({
             "ok": true,

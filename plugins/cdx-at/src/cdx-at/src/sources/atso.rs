@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_ATSO_HELP: &str = r#"Example:
   cdx-at search ATSO --query "Rundschreiben" --application Erlaesse --limit 5"#;

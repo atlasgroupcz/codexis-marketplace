@@ -118,12 +118,19 @@ impl NotifySettings {
         let merged = self.store.merged_or(fallback_defaults());
         let notify = merged.get("notify").cloned().unwrap_or(Value::Null);
         NotifyConfig {
-            email: notify.get("email").and_then(Value::as_bool).unwrap_or(false),
+            email: notify
+                .get("email")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             in_app: notify.get("inApp").and_then(Value::as_bool).unwrap_or(true),
             recipients: notify
                 .get("recipients")
                 .and_then(Value::as_array)
-                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
                 .unwrap_or_default(),
         }
     }

@@ -1,8 +1,7 @@
-
 use serde_json::{json, Value};
 
-
-const RUZ_ENTITY_WEB_URL: &str = "https://www.registeruz.sk/cruz-public/domain/accountingentity/show";
+const RUZ_ENTITY_WEB_URL: &str =
+    "https://www.registeruz.sk/cruz-public/domain/accountingentity/show";
 pub(crate) const LINKS_SOURCES_CAP: usize = 5;
 
 /// Best-effort publish of chat sources; delegates to the shared publisher.
@@ -44,7 +43,10 @@ pub(crate) fn ruz_source(record_body: &str, ico8: &str, entity_id: i64) -> Vec<V
         .and_then(Value::as_str)
         .map(str::to_string)
         .unwrap_or_else(|| format!("Register účtovných závierok - IČO {ico8}"));
-    vec![url_entry(&format!("{RUZ_ENTITY_WEB_URL}/{entity_id}"), &title)]
+    vec![url_entry(
+        &format!("{RUZ_ENTITY_WEB_URL}/{entity_id}"),
+        &title,
+    )]
 }
 
 /// Current (not yet terminated) IČO from an RPO entity detail.

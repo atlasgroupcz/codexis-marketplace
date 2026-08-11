@@ -1,4 +1,3 @@
-
 use crate::core::error::CliError;
 use cdx_common::curl::encode_query_values;
 
@@ -60,7 +59,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&CdxNlApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &CdxNlApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Resolve a cdx-nl:// path (everything after "cdx-nl://") into a full HTTP URL.
@@ -107,29 +112,40 @@ fn resolve_cdx_url(base_url: &str, cdx_path: &str) -> Result<String, String> {
         if rest.is_empty() {
             return Err("Missing abbreviation after afkorting/".to_string());
         }
-        Ok(format!("{base}/NL/wetten/bwb/afkorting/{rest}{encoded_query}"))
+        Ok(format!(
+            "{base}/NL/wetten/bwb/afkorting/{rest}{encoded_query}"
+        ))
     } else if let Some(rest) = path.strip_prefix("ecli/") {
         if rest.is_empty() {
             return Err("Missing ECLI after ecli/".to_string());
         }
-        Ok(format!("{base}/NL/rechtspraak/uitspraken/by-ecli/{rest}{encoded_query}"))
+        Ok(format!(
+            "{base}/NL/rechtspraak/uitspraken/by-ecli/{rest}{encoded_query}"
+        ))
     } else if let Some(rest) = path.strip_prefix("workid/") {
         // NLCVDR work-id resolver: cdx-nl://workid/<CVDR_WORK_ID> resolves a source work
         // identifier to its CVDR display document. CVDR-only (NLBWB uses law/NL + afkorting).
         if rest.is_empty() {
             return Err("Missing work-id after workid/".to_string());
         }
-        Ok(format!("{base}/NL/lokaleregelgeving/cvdr/workid/{rest}{encoded_query}"))
+        Ok(format!(
+            "{base}/NL/lokaleregelgeving/cvdr/workid/{rest}{encoded_query}"
+        ))
     } else if let Some(rest) = path.strip_prefix("publication/") {
         // Spec §6: only /<pubId>/resolve is exposed via the cdx-nl:// scheme.
         // The bare /publication/<id> bytes endpoint stays on the server but is
         // intentionally unreachable through this URI namespace.
-        let pub_id = rest.strip_suffix("/resolve")
+        let pub_id = rest
+            .strip_suffix("/resolve")
             .filter(|p| !p.is_empty() && !p.contains('/'))
-            .ok_or_else(|| format!(
-                "Only cdx-nl://publication/<id>/resolve is supported; got publication/{rest}"
-            ))?;
-        Ok(format!("{base}/NL/wetten/bwb/publication/{pub_id}/resolve{encoded_query}"))
+            .ok_or_else(|| {
+                format!(
+                    "Only cdx-nl://publication/<id>/resolve is supported; got publication/{rest}"
+                )
+            })?;
+        Ok(format!(
+            "{base}/NL/wetten/bwb/publication/{pub_id}/resolve{encoded_query}"
+        ))
     } else if let Some(rest) = path.strip_prefix("resolve/") {
         if rest.is_empty() {
             return Err("Missing ID after resolve/".to_string());
@@ -464,9 +480,9 @@ mod tests {
         let base = "https://example.com/api";
         let body = r#""cdx-nl://doc/NLBWB12/attachment/content_1.pdf?v=2#page=7""#;
         let out = resolve_attachment_links(body, base);
-        assert!(
-            out.contains("https://example.com/api/NL/wetten/bwb/doc/NLBWB12/attachment/content_1.pdf")
-        );
+        assert!(out.contains(
+            "https://example.com/api/NL/wetten/bwb/doc/NLBWB12/attachment/content_1.pdf"
+        ));
         assert!(
             out.ends_with("#page=7\""),
             "fragment must be preserved verbatim: {out}"
@@ -492,9 +508,17 @@ mod tests {
         // slicing - this resolver runs on NL content where a mis-sliced index panics.
         let body = "Besluit…cdx-nl://doc/NLBWB12/attachment/content_1.pdf#page=3,méér ë";
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("https://example.com/api/NL/wetten/bwb/doc/NLBWB12/attachment/content_1.pdf#page=3"));
-        assert!(out.starts_with("Besluit…https://"), "multi-byte text immediately before token preserved: {out}");
-        assert!(out.ends_with(",méér ë"), "multi-byte text after the delimiter preserved: {out}");
+        assert!(out.contains(
+            "https://example.com/api/NL/wetten/bwb/doc/NLBWB12/attachment/content_1.pdf#page=3"
+        ));
+        assert!(
+            out.starts_with("Besluit…https://"),
+            "multi-byte text immediately before token preserved: {out}"
+        );
+        assert!(
+            out.ends_with(",méér ë"),
+            "multi-byte text after the delimiter preserved: {out}"
+        );
     }
 
     #[test]
@@ -503,8 +527,12 @@ mod tests {
         let body = r#"["cdx-nl://doc/NLBWB1/attachment/a.pdf","cdx-nl://doc/NLBWB2/attachment/b.pdf#page=2"]"#;
         let out = resolve_attachment_links(body, base);
         assert!(out.contains("https://example.com/api/NL/wetten/bwb/doc/NLBWB1/attachment/a.pdf"));
-        assert!(out.contains("https://example.com/api/NL/wetten/bwb/doc/NLBWB2/attachment/b.pdf#page=2"));
-        assert!(!out.contains("cdx-nl://"), "all attachment links resolved: {out}");
+        assert!(out
+            .contains("https://example.com/api/NL/wetten/bwb/doc/NLBWB2/attachment/b.pdf#page=2"));
+        assert!(
+            !out.contains("cdx-nl://"),
+            "all attachment links resolved: {out}"
+        );
     }
 
     #[test]
@@ -513,8 +541,9 @@ mod tests {
         // Unknown ID prefix → resolve_cdx_url errors → original cdx:// link re-emitted unchanged.
         let body = r#""cdx-nl://doc/XXYY9/attachment/c.pdf#page=1""#;
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("\"cdx-nl://doc/XXYY9/attachment/c.pdf#page=1\""),
-            "unknown-prefix attachment link must be left as cdx://: {out}");
+        assert!(
+            out.contains("\"cdx-nl://doc/XXYY9/attachment/c.pdf#page=1\""),
+            "unknown-prefix attachment link must be left as cdx://: {out}"
+        );
     }
 }
-

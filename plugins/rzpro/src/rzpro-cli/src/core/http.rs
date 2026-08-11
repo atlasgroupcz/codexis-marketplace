@@ -65,7 +65,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&RzproApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &RzproApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Resolve a rzpro:// path into a full HTTP URL.

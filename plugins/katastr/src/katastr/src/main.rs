@@ -370,20 +370,46 @@ fn main() -> ExitCode {
         Namespace::Settings { cmd } => run_settings(cmd),
         Namespace::Notify { cmd } => run_notify(cmd),
         Namespace::Search { text, typ, klic } => cmd_search(text, typ, klic),
-        Namespace::Parcela { ku, cislo, poddeleni, druh, typ, puvod_ze, id } => {
-            cmd_parcela(ku, cislo, poddeleni, druh, typ, puvod_ze, id)
-        }
-        Namespace::Okoli { parcela, stavba, adresa, metru } => {
-            cmd_okoli(parcela, stavba, adresa, metru)
-        }
-        Namespace::Stavba { adresni_misto, cast_obce, cp, ce, id } => {
-            cmd_stavba(adresni_misto, cast_obce, cp, ce, id)
-        }
-        Namespace::Jednotka { cast_obce, cp, cj, id } => cmd_jednotka(cast_obce, cp, cj, id),
-        Namespace::Rizeni { cislo, id, prijate_dne, pracoviste, typ } => {
-            cmd_rizeni(cislo, id, prijate_dne, pracoviste, typ)
-        }
-        Namespace::PravoStavby { id, parcela, stavba } => cmd_pravo_stavby(id, parcela, stavba),
+        Namespace::Parcela {
+            ku,
+            cislo,
+            poddeleni,
+            druh,
+            typ,
+            puvod_ze,
+            id,
+        } => cmd_parcela(ku, cislo, poddeleni, druh, typ, puvod_ze, id),
+        Namespace::Okoli {
+            parcela,
+            stavba,
+            adresa,
+            metru,
+        } => cmd_okoli(parcela, stavba, adresa, metru),
+        Namespace::Stavba {
+            adresni_misto,
+            cast_obce,
+            cp,
+            ce,
+            id,
+        } => cmd_stavba(adresni_misto, cast_obce, cp, ce, id),
+        Namespace::Jednotka {
+            cast_obce,
+            cp,
+            cj,
+            id,
+        } => cmd_jednotka(cast_obce, cp, cj, id),
+        Namespace::Rizeni {
+            cislo,
+            id,
+            prijate_dne,
+            pracoviste,
+            typ,
+        } => cmd_rizeni(cislo, id, prijate_dne, pracoviste, typ),
+        Namespace::PravoStavby {
+            id,
+            parcela,
+            stavba,
+        } => cmd_pravo_stavby(id, parcela, stavba),
         Namespace::Sousedni { id } => print_get(&lookup::sousedni_parcely(&id)),
         Namespace::Pracoviste { kod } => match kod {
             Some(k) => print_get(&lookup::pracoviste_detail(k)),
@@ -479,7 +505,11 @@ fn cmd_check(cislo: Option<&str>) -> CliResult {
     let mut total_changes = 0usize;
     for r in &results {
         if !r.ok {
-            println!("  {}: CHYBA - {}", r.display_name, r.error.as_deref().unwrap_or(""));
+            println!(
+                "  {}: CHYBA - {}",
+                r.display_name,
+                r.error.as_deref().unwrap_or("")
+            );
             continue;
         }
         let Some(change) = r.change.as_ref() else {
@@ -553,7 +583,10 @@ fn cmd_set_label(cislo: &str, label: &str) -> CliResult {
     if label.is_empty() {
         eprintln!("OK: Označení řízení {} odstraněno.", state.cislo_rizeni);
     } else {
-        eprintln!("OK: Označení řízení {} nastaveno na: {label}", state.cislo_rizeni);
+        eprintln!(
+            "OK: Označení řízení {} nastaveno na: {label}",
+            state.cislo_rizeni
+        );
     }
     Ok(())
 }
@@ -604,7 +637,14 @@ fn cmd_parcela(
     // clap's `parcela_vstup` group guarantees exactly one of these shapes.
     let path = match (id.as_deref(), ku, cislo) {
         (Some(i), _, _) => lookup::parcela_detail(i),
-        (None, Some(k), Some(c)) => lookup::parcela_search(k, c, poddeleni, druh, typ.as_str(), puvod_ze.map(PuvodZe::as_u8)),
+        (None, Some(k), Some(c)) => lookup::parcela_search(
+            k,
+            c,
+            poddeleni,
+            druh,
+            typ.as_str(),
+            puvod_ze.map(PuvodZe::as_u8),
+        ),
         _ => unreachable!("clap group parcela_vstup"),
     };
     print_get(&path)
@@ -741,30 +781,38 @@ fn cmd_pravo_stavby(
     // "no right" answer can name it instead of coming back as a bare null
     // nobody can trace back to a parcel or building.
     let (path, dotaz) = match (id.as_deref(), parcela.as_deref(), stavba.as_deref()) {
-        (Some(i), None, None) => (lookup::pravo_stavby_detail(i), serde_json::json!({ "id": i })),
-        (None, Some(p), None) => {
-            (lookup::pravo_stavby_parcela(p), serde_json::json!({ "parcela": p }))
-        }
-        (None, None, Some(s)) => {
-            (lookup::pravo_stavby_stavba(s), serde_json::json!({ "stavba": s }))
-        }
+        (Some(i), None, None) => (
+            lookup::pravo_stavby_detail(i),
+            serde_json::json!({ "id": i }),
+        ),
+        (None, Some(p), None) => (
+            lookup::pravo_stavby_parcela(p),
+            serde_json::json!({ "parcela": p }),
+        ),
+        (None, None, Some(s)) => (
+            lookup::pravo_stavby_stavba(s),
+            serde_json::json!({ "stavba": s }),
+        ),
         // clap's `pravo_vstup` group guarantees exactly one of the three.
         _ => unreachable!("clap group pravo_vstup"),
     };
     match api_client::get(&path) {
         Ok(data) => print_json(&data),
         // A 404 means two things here, and only one of them is an error.
-        Err(KatastrError::ApiHttp { status: 404, message }) => {
-            match pravo_stavby::interpret_404(&message) {
-                pravo_stavby::Missing::NoRight => print_json(&serde_json::json!({
-                    "pravoStavby": null,
-                    "dotaz": dotaz,
-                })),
-                pravo_stavby::Missing::NotFound => {
-                    Err(KatastrError::ApiHttp { status: 404, message }.into())
-                }
+        Err(KatastrError::ApiHttp {
+            status: 404,
+            message,
+        }) => match pravo_stavby::interpret_404(&message) {
+            pravo_stavby::Missing::NoRight => print_json(&serde_json::json!({
+                "pravoStavby": null,
+                "dotaz": dotaz,
+            })),
+            pravo_stavby::Missing::NotFound => Err(KatastrError::ApiHttp {
+                status: 404,
+                message,
             }
-        }
+            .into()),
+        },
         Err(e) => Err(e.into()),
     }
 }
@@ -784,7 +832,12 @@ fn print_provozni_informace() {
     let Ok(v) = api_client::get(lookup::PROVOZNI_INFORMACE) else {
         return;
     };
-    for z in v.get("zpravy").and_then(|z| z.as_array()).into_iter().flatten() {
+    for z in v
+        .get("zpravy")
+        .and_then(|z| z.as_array())
+        .into_iter()
+        .flatten()
+    {
         if let Some(text) = z.get("text").and_then(|t| t.as_str()) {
             println!("ČÚZK hlásí: {text}");
         }
@@ -797,7 +850,12 @@ fn print_provozni_informace() {
 /// status rather than printing nothing at all.
 fn print_health(v: &serde_json::Value) {
     let mut printed = false;
-    for e in v.get("entries").and_then(|e| e.as_array()).into_iter().flatten() {
+    for e in v
+        .get("entries")
+        .and_then(|e| e.as_array())
+        .into_iter()
+        .flatten()
+    {
         if let (Some(check), Some(desc)) = (
             e.get("check").and_then(serde_json::Value::as_str),
             e.get("description").and_then(serde_json::Value::as_str),
@@ -831,8 +889,12 @@ fn run_settings(cmd: SettingsCmd) -> CliResult {
                         v.get("provedenoVolani").and_then(|x| x.as_u64()),
                         v.get("limitVolani").and_then(|x| x.as_u64()),
                     ) {
-                        println!("Volání: {pouzito} / {limit} za období {}",
-                            v.get("aktualniObdobi").and_then(|x| x.as_str()).unwrap_or("?"));
+                        println!(
+                            "Volání: {pouzito} / {limit} za období {}",
+                            v.get("aktualniObdobi")
+                                .and_then(|x| x.as_str())
+                                .unwrap_or("?")
+                        );
                     }
                     if let Some(exp) = v.get("expiraceApiKey").and_then(|x| x.as_str()) {
                         println!("Platnost klíče do: {exp}");
@@ -947,7 +1009,11 @@ fn print_state_short(state: &ProceedingState) {
     } else {
         format!(" ({})", state.label)
     };
-    let stav = if state.stav.is_empty() { "?" } else { &state.stav };
+    let stav = if state.stav.is_empty() {
+        "?"
+    } else {
+        &state.stav
+    };
     let ops = state.provedene_operace.len();
     let changes = state.changes.len();
     // Same "what counts as unread" rule the overview/CGI use, via the shared

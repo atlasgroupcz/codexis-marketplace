@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_ATLR_HELP: &str = r#"Example:
   cdx-at search ATLR --query "Landesgesetz" --state Tirol --limit 5"#;

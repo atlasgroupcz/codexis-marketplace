@@ -4,8 +4,6 @@
 //! from markdown, so a typo in a parameter name only surfaced as an error from
 //! ČÚZK. Here the type system and the tests catch it.
 
-use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
-
 /// Diagnostic paths. They take no arguments, so constants - but they belong
 /// here for the same reason as the rest: one module owns the API's paths, or a
 /// handful stay scattered across the callers.
@@ -126,19 +124,9 @@ pub fn stavby_polygon(coords: &str) -> String {
     polygon_path("Stavby", coords)
 }
 
-/// Everything outside RFC 3986's unreserved set gets escaped. Deliberately the
-/// conservative choice: a space becomes `%20`, which every decoder reads as a
-/// space. Form encoding would make it `+`, which only a form-urlencoded parser
-/// reads that way - and the RÚIAN `where` clause carries spaces.
-const UNRESERVED: &AsciiSet = &NON_ALPHANUMERIC
-    .remove(b'-')
-    .remove(b'_')
-    .remove(b'.')
-    .remove(b'~');
-
 /// Percent-encoding for a query value.
 pub fn percent_encode(s: &str) -> String {
-    utf8_percent_encode(s, UNRESERVED).to_string()
+    cdx_common::url::encode_query_value(s)
 }
 
 #[cfg(test)]
@@ -197,7 +185,10 @@ mod tests {
         assert_eq!(stavba_detail("387773804"), "/api/v1/Stavby/387773804");
         assert_eq!(jednotka_detail("555"), "/api/v1/Jednotky/555");
         assert_eq!(rizeni_detail("108667944010"), "/api/v1/Rizeni/108667944010");
-        assert_eq!(sousedni_parcely("123"), "/api/v1/Parcely/SousedniParcely/123");
+        assert_eq!(
+            sousedni_parcely("123"),
+            "/api/v1/Parcely/SousedniParcely/123"
+        );
     }
 
     #[test]
@@ -210,7 +201,10 @@ mod tests {
     #[test]
     fn pracoviste_has_list_and_by_code() {
         assert_eq!(pracoviste_list(), "/api/v1/CiselnikyISKN/Pracoviste");
-        assert_eq!(pracoviste_detail(802), "/api/v1/CiselnikyISKN/Pracoviste/802");
+        assert_eq!(
+            pracoviste_detail(802),
+            "/api/v1/CiselnikyISKN/Pracoviste/802"
+        );
     }
 
     #[test]
@@ -220,7 +214,10 @@ mod tests {
             p.starts_with("/api/v1/Parcely/Polygon?SeznamSouradnic="),
             "got: {p}"
         );
-        assert!(p.contains("%7B"), "coordinates must be percent-encoded: {p}");
+        assert!(
+            p.contains("%7B"),
+            "coordinates must be percent-encoded: {p}"
+        );
         assert!(stavby_polygon("[]").starts_with("/api/v1/Stavby/Polygon?SeznamSouradnic="));
     }
 

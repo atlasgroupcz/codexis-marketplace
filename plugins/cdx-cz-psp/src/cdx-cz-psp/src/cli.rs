@@ -63,7 +63,10 @@ enum Commands {
         source: SearchSource,
     },
 
-    #[command(about = "Fetch a cdx-cz-psp:// resource", arg_required_else_help = true)]
+    #[command(
+        about = "Fetch a cdx-cz-psp:// resource",
+        arg_required_else_help = true
+    )]
     Get(GetArgs),
 
     #[command(
@@ -168,10 +171,18 @@ impl ResourceSchemaCommand {
 
 #[derive(Subcommand, Debug, Clone)]
 enum SchemaSourceCommand {
-    #[command(name = "CZPSPDOK", visible_alias = "czpspdok", about = "CZPSPDOK schema")]
+    #[command(
+        name = "CZPSPDOK",
+        visible_alias = "czpspdok",
+        about = "CZPSPDOK schema"
+    )]
     Czpspdok,
 
-    #[command(name = "CZPSPPRE", visible_alias = "czpsppre", about = "CZPSPPRE schema")]
+    #[command(
+        name = "CZPSPPRE",
+        visible_alias = "czpsppre",
+        about = "CZPSPPRE schema"
+    )]
     Czpsppre,
 }
 
@@ -249,7 +260,12 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_CZ_PSP_API_URL_ENV)?;
-    execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
+    execute_get_request(
+        &config.base_url,
+        config.auth_header.as_deref(),
+        &args.resource,
+        args.dry_run,
+    )
 }
 
 fn execute_schema(endpoint: ResourceSchemaCommand) -> Result<(), CliError> {
@@ -328,9 +344,13 @@ mod tests {
 
     #[test]
     fn cli_parses_get_command() {
-        let cli =
-            Cli::try_parse_from(["cdx-cz-psp", "get", "--dry-run", "cdx-cz-psp://doc/CZPSPDOK1/meta"])
-                .unwrap();
+        let cli = Cli::try_parse_from([
+            "cdx-cz-psp",
+            "get",
+            "--dry-run",
+            "cdx-cz-psp://doc/CZPSPDOK1/meta",
+        ])
+        .unwrap();
 
         match cli.command {
             Commands::Get(args) => {
@@ -411,7 +431,9 @@ mod tests {
         assert!(help.contains("CZPSPPRE"));
         assert!(help.contains("cdx-cz-psp search CZPSPDOK --query"));
         assert!(help.contains("cdx-cz-psp get cdx-cz-psp://doc/CZPSPDOK1234/meta"));
-        assert!(help.contains("cdx-cz-psp schema [meta|text|toc|parts|related|related/counts|history]"));
+        assert!(
+            help.contains("cdx-cz-psp schema [meta|text|toc|parts|related|related/counts|history]")
+        );
     }
 
     #[test]

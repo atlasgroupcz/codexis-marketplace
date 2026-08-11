@@ -24,9 +24,15 @@ pub(crate) struct SearchZmluvyArgs {
     pub(crate) ico: Option<String>,
     #[arg(long, help = "Publishing sector/ministry id (rezort), exact match")]
     pub(crate) rezort: Option<String>,
-    #[arg(long = "value-min", help = "Minimum total contract value in EUR (sumaSpolu >=)")]
+    #[arg(
+        long = "value-min",
+        help = "Minimum total contract value in EUR (sumaSpolu >=)"
+    )]
     pub(crate) value_min: Option<f64>,
-    #[arg(long = "value-max", help = "Maximum total contract value in EUR (sumaSpolu <=)")]
+    #[arg(
+        long = "value-max",
+        help = "Maximum total contract value in EUR (sumaSpolu <=)"
+    )]
     pub(crate) value_max: Option<f64>,
     #[arg(long = "date-from", help = "Contract date from (YYYY-MM-DD)")]
     pub(crate) date_from: Option<String>,

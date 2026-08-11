@@ -417,7 +417,6 @@ fn resource_cdx_patterns(kind: ResourceSchemaKind) -> Vec<String> {
     ]
 }
 
-
 fn meta_source_patterns(source: MetaSchemaSource) -> Vec<String> {
     let mut patterns = vec![format!("{}/meta", patterns::DOC)];
     if source.supports_cz_law() {
@@ -571,10 +570,20 @@ mod tests {
 
     #[test]
     fn eu_law_patterns_are_offered_for_every_endpoint() {
-        for kind in [ResourceSchemaKind::Versions, ResourceSchemaKind::Text, ResourceSchemaKind::Toc] {
+        for kind in [
+            ResourceSchemaKind::Versions,
+            ResourceSchemaKind::Text,
+            ResourceSchemaKind::Toc,
+        ] {
             let rendered = render_resource_schema_with_source(kind, None).unwrap();
-            assert!(rendered.contains("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/"), "{kind:?} lacks the EU route");
-            assert!(rendered.contains("cdx://eu_law/by-celex/<CELEX>/"), "{kind:?} lacks the by-celex route");
+            assert!(
+                rendered.contains("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/"),
+                "{kind:?} lacks the EU route"
+            );
+            assert!(
+                rendered.contains("cdx://eu_law/by-celex/<CELEX>/"),
+                "{kind:?} lacks the by-celex route"
+            );
         }
     }
 

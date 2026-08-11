@@ -1,7 +1,7 @@
 //! katastr notify settings - thin wrappers over the shared per-app store.
 
-use cdx_notify::notify_settings::NotifySettings;
 pub use cdx_notify::notify_settings::NotifyConfig;
+use cdx_notify::notify_settings::NotifySettings;
 
 use crate::error::Result;
 

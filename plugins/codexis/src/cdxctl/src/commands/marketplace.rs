@@ -82,7 +82,11 @@ pub fn update(
             let mut results: Vec<Value> = Vec::new();
             if let Some(marketplaces) = listing.get("marketplaces").and_then(|v| v.as_array()) {
                 for mp in marketplaces {
-                    let mp_id = mp.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let mp_id = mp
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
                     if mp_id.is_empty() {
                         continue;
                     }

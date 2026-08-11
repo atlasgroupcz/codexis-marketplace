@@ -13,13 +13,20 @@ const DEFAULT_RESULT_OFFSET: u64 = 0;
 
 #[derive(Args, Debug, Clone, Default)]
 pub(crate) struct SearchBaseArgs {
-    #[arg(long, short = 'q', help = "Fulltext query (name + registered name + substances + ATC name)")]
+    #[arg(
+        long,
+        short = 'q',
+        help = "Fulltext query (name + registered name + substances + ATC name)"
+    )]
     pub(crate) query: Option<String>,
 
     #[arg(long, help = "Result limit (default: 20, max: 100)")]
     pub(crate) limit: Option<u64>,
 
-    #[arg(long, help = "Result offset (default: 0; offset + limit must be <= 10000)")]
+    #[arg(
+        long,
+        help = "Result offset (default: 0; offset + limit must be <= 10000)"
+    )]
     pub(crate) offset: Option<u64>,
 
     #[arg(long, help = "Sort field (relevance, date)")]
@@ -69,12 +76,23 @@ impl SearchBaseArgs {
     /// Inserts only the universal paging keys. The fulltext field is inserted by
     /// each source in its own `extend_payload` (leciva uses `q`).
     fn insert_into(&self, payload: &mut JsonMap) {
-        insert_u64(payload, "limit", Some(self.limit.unwrap_or(DEFAULT_RESULT_LIMIT)));
-        insert_u64(payload, "offset", Some(self.offset.unwrap_or(DEFAULT_RESULT_OFFSET)));
+        insert_u64(
+            payload,
+            "limit",
+            Some(self.limit.unwrap_or(DEFAULT_RESULT_LIMIT)),
+        );
+        insert_u64(
+            payload,
+            "offset",
+            Some(self.offset.unwrap_or(DEFAULT_RESULT_OFFSET)),
+        );
     }
 }
 
-fn merge_payload_override(payload: &mut JsonMap, raw_payload: Option<&str>) -> Result<(), CliError> {
+fn merge_payload_override(
+    payload: &mut JsonMap,
+    raw_payload: Option<&str>,
+) -> Result<(), CliError> {
     if let Some(override_payload) = load_search_payload(raw_payload)? {
         payload.extend(override_payload);
     }
@@ -95,7 +113,10 @@ mod tests {
     #[test]
     fn default_limit_and_offset_applied() {
         let args = SearchLecivaArgs {
-            base: SearchBaseArgs { query: Some("paralen".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("paralen".to_string()),
+                ..SearchBaseArgs::default()
+            },
             ..SearchLecivaArgs::default()
         };
         let p: Value = serde_json::from_str(&args.build_payload().unwrap()).unwrap();

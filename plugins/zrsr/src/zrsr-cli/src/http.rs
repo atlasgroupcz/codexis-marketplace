@@ -1,6 +1,7 @@
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Error, Result};
+use cdx_common::http_client::call_with_retry;
 use ureq::Agent;
 
 const DEFAULT_BASE_URL: &str = "https://api.statistics.sk/rpo/v1";
@@ -13,55 +14,33 @@ pub struct ZrsrClient {
 
 impl ZrsrClient {
     pub fn new() -> Result<Self> {
-        let base_url = std::env::var("ZRSR_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
-        let base_url = base_url.trim_end_matches('/').to_string();
-        // ureq keeps a connection pool on the Agent -> follow-up requests to the
-        // same host reuse the TCP+TLS connection.
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout_read(Duration::from_secs(30))
-            .build();
+        let base_url = cdx_common::http::base_url_from_env("ZRSR_BASE_URL", DEFAULT_BASE_URL);
+        let agent = cdx_common::http_client::agent(
+            USER_AGENT_VALUE,
+            Duration::from_secs(10),
+            Duration::from_secs(30),
+        );
         Ok(Self { agent, base_url })
     }
 
     pub fn get(&self, path: &str) -> Result<String> {
-        let url = self.url_for(path);
-        let req = self
-            .agent
-            .get(&url)
-            .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT_VALUE);
-        send(req, &url)
+        self.get_with_query(path, &[])
     }
 
     pub fn get_with_query(&self, path: &str, query: &[(&str, String)]) -> Result<String> {
         let url = self.url_for(path);
-        let mut req = self
-            .agent
-            .get(&url)
-            .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT_VALUE);
-        for (k, v) in query {
-            req = req.query(k, v);
-        }
-        send(req, &url)
+        call_with_retry(|| {
+            self.agent
+                .get(&url)
+                .header("Accept", "application/json")
+                .query_pairs(query.iter().map(|(k, v)| (*k, v.as_str())))
+                .call()
+        })
+        .into_text("GET", &url)
+        .map_err(Error::msg)
     }
 
     fn url_for(&self, path: &str) -> String {
         cdx_common::http::resolve_url(&self.base_url, path)
     }
 }
-
-/// Sends a prepared GET request and reads its body, mapping a non-2xx status or
-/// a transport error into an `anyhow` error carrying the status/URL/body.
-fn send(req: ureq::Request, url: &str) -> Result<String> {
-    match req.call() {
-        Ok(resp) => Ok(resp.into_string()?),
-        Err(ureq::Error::Status(code, resp)) => {
-            let body = resp.into_string().unwrap_or_default();
-            Err(anyhow!("HTTP {code} on GET {url}\n{}", body.trim()))
-        }
-        Err(e) => Err(anyhow!("GET {url} failed: {e}")),
-    }
-}
-

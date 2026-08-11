@@ -5,12 +5,12 @@ use crate::core::error::CliError;
 use crate::core::http::{execute_get_request, execute_search_request};
 use crate::core::schema::{render_resource_schema, ResourceSchemaKind, SchemaSource};
 use crate::get::GetArgs;
-use crate::sources::common::SearchPayloadArgs;
 use crate::sources::atbr::{SearchAtbrArgs, SEARCH_ATBR_HELP};
+use crate::sources::athi::{SearchAthiArgs, SEARCH_ATHI_HELP};
 use crate::sources::atjd::{SearchAtjdArgs, SEARCH_ATJD_HELP};
 use crate::sources::atlr::{SearchAtlrArgs, SEARCH_ATLR_HELP};
 use crate::sources::atso::{SearchAtsoArgs, SEARCH_ATSO_HELP};
-use crate::sources::athi::{SearchAthiArgs, SEARCH_ATHI_HELP};
+use crate::sources::common::SearchPayloadArgs;
 
 const ROOT_HELP: &str = "\
 Data sources:
@@ -243,7 +243,12 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_AT_API_URL_ENV)?;
-    execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
+    execute_get_request(
+        &config.base_url,
+        config.auth_header.as_deref(),
+        &args.resource,
+        args.dry_run,
+    )
 }
 
 fn execute_schema(endpoint: ResourceSchemaCommand) -> Result<(), CliError> {
@@ -285,8 +290,7 @@ mod tests {
 
     #[test]
     fn cli_accepts_lowercase_source_alias() {
-        let cli =
-            Cli::try_parse_from(["cdx-at", "search", "atbr", "--query", "test"]).unwrap();
+        let cli = Cli::try_parse_from(["cdx-at", "search", "atbr", "--query", "test"]).unwrap();
 
         match cli.command {
             Commands::Search {
@@ -347,13 +351,7 @@ mod tests {
     #[test]
     fn cli_parses_atlr_search_with_state() {
         let cli = Cli::try_parse_from([
-            "cdx-at",
-            "search",
-            "ATLR",
-            "--query",
-            "test",
-            "--state",
-            "Tirol",
+            "cdx-at", "search", "ATLR", "--query", "test", "--state", "Tirol",
         ])
         .unwrap();
 
@@ -394,14 +392,8 @@ mod tests {
 
     #[test]
     fn cli_parses_athi_search_with_abbreviation() {
-        let cli = Cli::try_parse_from([
-            "cdx-at",
-            "search",
-            "ATHI",
-            "--abbreviation",
-            "ASVG",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["cdx-at", "search", "ATHI", "--abbreviation", "ASVG"]).unwrap();
 
         match cli.command {
             Commands::Search {
@@ -416,8 +408,7 @@ mod tests {
     #[test]
     fn cli_parses_get_command() {
         let cli =
-            Cli::try_parse_from(["cdx-at", "get", "--dry-run", "cdx-at://doc/ATBR1/meta"])
-                .unwrap();
+            Cli::try_parse_from(["cdx-at", "get", "--dry-run", "cdx-at://doc/ATBR1/meta"]).unwrap();
 
         match cli.command {
             Commands::Get(args) => {
@@ -470,15 +461,7 @@ mod tests {
     #[test]
     fn cli_parses_search_with_sort_and_order() {
         let cli = Cli::try_parse_from([
-            "cdx-at",
-            "search",
-            "ATBR",
-            "--query",
-            "test",
-            "--sort",
-            "date",
-            "--order",
-            "asc",
+            "cdx-at", "search", "ATBR", "--query", "test", "--sort", "date", "--order", "asc",
         ])
         .unwrap();
 

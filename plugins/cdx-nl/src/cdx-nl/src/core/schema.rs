@@ -498,10 +498,7 @@ fn resource_cdx_patterns(kind: ResourceSchemaKind) -> Vec<String> {
     }
 }
 
-fn source_specific_cdx_patterns(
-    kind: ResourceSchemaKind,
-    source: SchemaSource,
-) -> Vec<String> {
+fn source_specific_cdx_patterns(kind: ResourceSchemaKind, source: SchemaSource) -> Vec<String> {
     let endpoint = resource_endpoint_name(kind);
 
     match source {

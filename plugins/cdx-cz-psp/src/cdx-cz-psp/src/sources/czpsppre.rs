@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, insert_u64, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, insert_u64, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_CZPSPPRE_HELP: &str = r#"Example:
   cdx-cz-psp search CZPSPPRE --query "daně" --type "Vládní návrh zákona" --limit 5
@@ -11,13 +13,19 @@ pub(crate) struct SearchCzpsppreArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "type", help = "Document type (e.g. \"Vládní návrh zákona\", \"Poslanecký návrh zákona\")")]
+    #[arg(
+        long = "type",
+        help = "Document type (e.g. \"Vládní návrh zákona\", \"Poslanecký návrh zákona\")"
+    )]
     pub(crate) doc_type: Option<String>,
 
     #[arg(long = "election-period", help = "Election period number (e.g. 10)")]
     pub(crate) election_period: Option<u64>,
 
-    #[arg(long = "state-class", help = "State class (approved, unapproved, lightgray, in_progress)")]
+    #[arg(
+        long = "state-class",
+        help = "State class (approved, unapproved, lightgray, in_progress)"
+    )]
     pub(crate) state_class: Option<String>,
 
     #[arg(long = "press-number", help = "Print/press number")]
@@ -29,7 +37,10 @@ pub(crate) struct SearchCzpsppreArgs {
     #[arg(long = "current-state", help = "Current state text")]
     pub(crate) current_state: Option<String>,
 
-    #[arg(long = "sbirka-number", help = "Publication number in Sbírka zákonů (e.g. \"459/2022 Sb.\")")]
+    #[arg(
+        long = "sbirka-number",
+        help = "Publication number in Sbírka zákonů (e.g. \"459/2022 Sb.\")"
+    )]
     pub(crate) sbirka_number: Option<String>,
 
     #[arg(long = "eurovoc-descriptor", help = "EUROVOC descriptor keyword")]

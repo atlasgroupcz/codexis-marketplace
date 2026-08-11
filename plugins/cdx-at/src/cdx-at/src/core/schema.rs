@@ -86,7 +86,13 @@ fn render_generic_source_schema(kind: ResourceSchemaKind) -> Result<String, CliE
     let available_sources = kind.available_sources();
     let subcommands = available_sources
         .iter()
-        .map(|source| format!("`cdx-at schema {} {}`", resource_endpoint_name(kind), source.source_code()))
+        .map(|source| {
+            format!(
+                "`cdx-at schema {} {}`",
+                resource_endpoint_name(kind),
+                source.source_code()
+            )
+        })
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -476,8 +482,7 @@ mod tests {
             SchemaSource::Atso,
             SchemaSource::Athi,
         ] {
-            let output =
-                render_resource_schema(ResourceSchemaKind::Meta, Some(source)).unwrap();
+            let output = render_resource_schema(ResourceSchemaKind::Meta, Some(source)).unwrap();
             let (intro, _) = split_rendered_schema_document(&output).unwrap();
 
             assert!(intro.contains("Endpoint: /meta"));

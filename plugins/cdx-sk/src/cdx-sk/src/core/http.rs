@@ -1,4 +1,3 @@
-
 use crate::core::error::CliError;
 use cdx_common::curl::encode_query_values;
 
@@ -67,7 +66,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&CdxSkApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &CdxSkApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Rewrite ONLY `cdx-sk://…/attachment/…` links in `body` to absolute https URLs,
@@ -271,9 +276,7 @@ mod tests {
     fn law_with_query_string() {
         assert_eq!(
             resolve_cdx_url(BASE, "law/SK/40/1964/text?timecutId=abc"),
-            Ok(format!(
-                "{BASE}/SK/ezbierka/law/40/1964/text?timecutId=abc"
-            ))
+            Ok(format!("{BASE}/SK/ezbierka/law/40/1964/text?timecutId=abc"))
         );
     }
 
@@ -312,9 +315,7 @@ mod tests {
     fn doc_with_query_string() {
         assert_eq!(
             resolve_cdx_url(BASE, "doc/SKEZ1/text?part=paragraf-1"),
-            Ok(format!(
-                "{BASE}/SK/ezbierka/doc/SKEZ1/text?part=paragraf-1"
-            ))
+            Ok(format!("{BASE}/SK/ezbierka/doc/SKEZ1/text?part=paragraf-1"))
         );
     }
 
@@ -424,9 +425,9 @@ mod tests {
         let base = "https://example.com/api";
         let body = r#""cdx-sk://doc/SKVS100/attachment/content_1.pdf?v=2#page=7""#;
         let out = resolve_attachment_links(body, base);
-        assert!(
-            out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf")
-        );
+        assert!(out.contains(
+            "https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf"
+        ));
         assert!(
             out.ends_with("#page=7\""),
             "fragment must be preserved verbatim: {out}"
@@ -452,9 +453,17 @@ mod tests {
         // slicing - this resolver runs on Slovak content where a mis-sliced index panics.
         let body = "Rozhodnutie…cdx-sk://doc/SKVS100/attachment/content_1.pdf#page=3,viac š";
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf#page=3"));
-        assert!(out.starts_with("Rozhodnutie…https://"), "multi-byte text immediately before token preserved: {out}");
-        assert!(out.ends_with(",viac š"), "multi-byte text after the delimiter preserved: {out}");
+        assert!(out.contains(
+            "https://example.com/api/SK/vseobecne-sudy/doc/SKVS100/attachment/content_1.pdf#page=3"
+        ));
+        assert!(
+            out.starts_with("Rozhodnutie…https://"),
+            "multi-byte text immediately before token preserved: {out}"
+        );
+        assert!(
+            out.ends_with(",viac š"),
+            "multi-byte text after the delimiter preserved: {out}"
+        );
     }
 
     #[test]
@@ -462,9 +471,16 @@ mod tests {
         let base = "https://example.com/api";
         let body = r#"["cdx-sk://doc/SKVS1/attachment/a.pdf","cdx-sk://doc/SKVS2/attachment/b.pdf#page=2"]"#;
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS1/attachment/a.pdf"));
-        assert!(out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS2/attachment/b.pdf#page=2"));
-        assert!(!out.contains("cdx-sk://"), "all attachment links resolved: {out}");
+        assert!(
+            out.contains("https://example.com/api/SK/vseobecne-sudy/doc/SKVS1/attachment/a.pdf")
+        );
+        assert!(out.contains(
+            "https://example.com/api/SK/vseobecne-sudy/doc/SKVS2/attachment/b.pdf#page=2"
+        ));
+        assert!(
+            !out.contains("cdx-sk://"),
+            "all attachment links resolved: {out}"
+        );
     }
 
     #[test]
@@ -473,7 +489,9 @@ mod tests {
         // Unknown ID prefix → resolve_cdx_url errors → original cdx:// link re-emitted unchanged.
         let body = r#""cdx-sk://doc/XXYY9/attachment/c.pdf#page=1""#;
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("\"cdx-sk://doc/XXYY9/attachment/c.pdf#page=1\""),
-            "unknown-prefix attachment link must be left as cdx://: {out}");
+        assert!(
+            out.contains("\"cdx-sk://doc/XXYY9/attachment/c.pdf#page=1\""),
+            "unknown-prefix attachment link must be left as cdx://: {out}"
+        );
     }
 }

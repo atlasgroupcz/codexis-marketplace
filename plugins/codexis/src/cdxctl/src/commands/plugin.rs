@@ -63,11 +63,7 @@ pub fn list(
     Ok(())
 }
 
-pub fn install(
-    client: &GraphQLClient,
-    id: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
+pub fn install(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let input = json!({
         "id": id,
     });

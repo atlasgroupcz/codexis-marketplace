@@ -1,12 +1,9 @@
-
 use crate::core::error::CliError;
 
 const REGISTER_ZMLUV_SCHEME: &str = "register-zmluv://";
 
 /// Display ID prefix -> API path (Slovak crz domain)
-const ID_PREFIXES: &[(&str, &str)] = &[
-    ("SKCRZ", "SK/crz"),
-];
+const ID_PREFIXES: &[(&str, &str)] = &[("SKCRZ", "SK/crz")];
 
 pub(crate) struct RegisterZmluvApi;
 
@@ -59,7 +56,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&RegisterZmluvApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &RegisterZmluvApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Resolve a register-zmluv:// path (everything after "register-zmluv://") into a full HTTP URL.

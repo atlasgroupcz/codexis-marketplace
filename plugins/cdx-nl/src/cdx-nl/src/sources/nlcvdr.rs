@@ -23,10 +23,16 @@ pub(crate) struct SearchNlcvdrArgs {
     #[arg(long = "work-id", help = "CVDR work identifier (e.g. CVDR72510)")]
     pub(crate) work_id: Option<String>,
 
-    #[arg(long = "type", help = "dcterms:type filter (DOCUMENT mode only; usually 'regeling')")]
+    #[arg(
+        long = "type",
+        help = "dcterms:type filter (DOCUMENT mode only; usually 'regeling')"
+    )]
     pub(crate) type_: Option<String>,
 
-    #[arg(long = "organisatie", help = "Issuing body, exact match (DOCUMENT mode only)")]
+    #[arg(
+        long = "organisatie",
+        help = "Issuing body, exact match (DOCUMENT mode only)"
+    )]
     pub(crate) organisatie: Option<String>,
 
     #[arg(
@@ -37,7 +43,10 @@ pub(crate) struct SearchNlcvdrArgs {
     )]
     pub(crate) organisatie_type: Option<String>,
 
-    #[arg(long = "rechtsgebied", help = "Legal area (repeatable; DOCUMENT mode only)")]
+    #[arg(
+        long = "rechtsgebied",
+        help = "Legal area (repeatable; DOCUMENT mode only)"
+    )]
     pub(crate) rechtsgebied: Vec<String>,
 
     #[arg(long = "valid-at", help = "Validity date (YYYY-MM-DD)")]
@@ -49,9 +58,11 @@ pub(crate) struct SearchNlcvdrArgs {
     #[arg(long = "valid-from-to", help = "Valid-from upper bound (YYYY-MM-DD)")]
     pub(crate) valid_from_to: Option<String>,
 
-    #[arg(long = "search-pages",
-          help = "If set, search page-level consolidated-text markdown instead of metadata only. \
-                  NOTE: type/organisatie/organisatie-type/rechtsgebied are ignored in this mode")]
+    #[arg(
+        long = "search-pages",
+        help = "If set, search page-level consolidated-text markdown instead of metadata only. \
+                  NOTE: type/organisatie/organisatie-type/rechtsgebied are ignored in this mode"
+    )]
     pub(crate) search_pages: bool,
 }
 

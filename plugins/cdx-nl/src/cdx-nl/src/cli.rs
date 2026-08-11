@@ -199,7 +199,10 @@ pub(crate) enum ResourceSchemaCommand {
     )]
     BwbId,
 
-    #[command(name = "workid", about = "Output schema for /workid/<CVDR_WORK_ID> (NLCVDR only)")]
+    #[command(
+        name = "workid",
+        about = "Output schema for /workid/<CVDR_WORK_ID> (NLCVDR only)"
+    )]
     WorkId,
 }
 
@@ -324,7 +327,12 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_NL_API_URL_ENV)?;
-    execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
+    execute_get_request(
+        &config.base_url,
+        config.auth_header.as_deref(),
+        &args.resource,
+        args.dry_run,
+    )
 }
 
 fn execute_schema(endpoint: ResourceSchemaCommand) -> Result<(), CliError> {
@@ -342,9 +350,20 @@ mod tests {
 
     #[test]
     fn parses_uppercase_nlbwb_search() {
-        let cli = Cli::try_parse_from(["cdx-nl", "search", "NLBWB", "--query", "BW", "--bwb-id", "BWBR0001827"]).unwrap();
+        let cli = Cli::try_parse_from([
+            "cdx-nl",
+            "search",
+            "NLBWB",
+            "--query",
+            "BW",
+            "--bwb-id",
+            "BWBR0001827",
+        ])
+        .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Nlbwb(args) } => {
+            Commands::Search {
+                source: SearchSource::Nlbwb(args),
+            } => {
                 assert_eq!(args.base.query.as_deref(), Some("BW"));
                 assert_eq!(args.bwb_id.as_deref(), Some("BWBR0001827"));
             }
@@ -354,9 +373,20 @@ mod tests {
 
     #[test]
     fn parses_lowercase_alias_nluit_search() {
-        let cli = Cli::try_parse_from(["cdx-nl", "search", "nluit", "--query", "huurrecht", "--court", "HR"]).unwrap();
+        let cli = Cli::try_parse_from([
+            "cdx-nl",
+            "search",
+            "nluit",
+            "--query",
+            "huurrecht",
+            "--court",
+            "HR",
+        ])
+        .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Nluit(args) } => {
+            Commands::Search {
+                source: SearchSource::Nluit(args),
+            } => {
                 assert_eq!(args.base.query.as_deref(), Some("huurrecht"));
                 assert_eq!(args.court, vec!["HR".to_string()]);
             }
@@ -366,9 +396,20 @@ mod tests {
 
     #[test]
     fn parses_uppercase_nlcvdr_search() {
-        let cli = Cli::try_parse_from(["cdx-nl", "search", "NLCVDR", "--query", "apv", "--work-id", "CVDR72510"]).unwrap();
+        let cli = Cli::try_parse_from([
+            "cdx-nl",
+            "search",
+            "NLCVDR",
+            "--query",
+            "apv",
+            "--work-id",
+            "CVDR72510",
+        ])
+        .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Nlcvdr(args) } => {
+            Commands::Search {
+                source: SearchSource::Nlcvdr(args),
+            } => {
                 assert_eq!(args.base.query.as_deref(), Some("apv"));
                 assert_eq!(args.work_id.as_deref(), Some("CVDR72510"));
             }
@@ -378,7 +419,8 @@ mod tests {
 
     #[test]
     fn parses_get_with_dry_run() {
-        let cli = Cli::try_parse_from(["cdx-nl", "get", "cdx-nl://doc/NLBWB1/meta", "--dry-run"]).unwrap();
+        let cli = Cli::try_parse_from(["cdx-nl", "get", "cdx-nl://doc/NLBWB1/meta", "--dry-run"])
+            .unwrap();
         match cli.command {
             Commands::Get { args } => {
                 assert_eq!(args.resource, "cdx-nl://doc/NLBWB1/meta");
@@ -390,7 +432,8 @@ mod tests {
 
     #[test]
     fn parses_get_with_ecli_colons() {
-        let cli = Cli::try_parse_from(["cdx-nl", "get", "cdx-nl://ecli/ECLI:NL:HR:2024:1234"]).unwrap();
+        let cli =
+            Cli::try_parse_from(["cdx-nl", "get", "cdx-nl://ecli/ECLI:NL:HR:2024:1234"]).unwrap();
         match cli.command {
             Commands::Get { args } => {
                 assert_eq!(args.resource, "cdx-nl://ecli/ECLI:NL:HR:2024:1234");

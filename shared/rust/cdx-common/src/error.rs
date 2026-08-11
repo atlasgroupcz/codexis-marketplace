@@ -11,7 +11,10 @@ pub enum CliError {
     MissingConfig(&'static str),
     /// Several required env vars are missing at once (collected before reporting).
     MissingConfigVars(Vec<&'static str>),
-    Io { context: String, source: io::Error },
+    Io {
+        context: String,
+        source: io::Error,
+    },
     InvalidJson(String),
     SerializePayload(String),
     SearchPayloadMustBeObject,
@@ -19,8 +22,12 @@ pub enum CliError {
     InvalidCdxUrl(String),
     InvalidStoredSchema(String),
     CurlSpawn(io::Error),
-    RequestFailed { code: i32 },
-    CommandTerminated { command: &'static str },
+    RequestFailed {
+        code: i32,
+    },
+    CommandTerminated {
+        command: &'static str,
+    },
 }
 
 impl CliError {
@@ -98,6 +105,8 @@ mod tests {
         let dyn_err: &dyn Error = &e;
         assert!(dyn_err.source().is_some(), "Io carries a source");
         assert!(CliError::MissingConfig("X").source().is_none());
-        assert!(CliError::CurlSpawn(io::Error::other("x")).source().is_some());
+        assert!(CliError::CurlSpawn(io::Error::other("x"))
+            .source()
+            .is_some());
     }
 }

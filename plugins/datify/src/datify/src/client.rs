@@ -59,7 +59,7 @@ impl DatifyClient {
     }
 
     fn build(base_url: String, token: String) -> Result<Self> {
-        let http = reqwest::blocking::Client::builder()
+        let http = cdx_common::reqwest_client::client_builder()
             .connect_timeout(Duration::from_secs(5))
             .timeout(Duration::from_secs(60))
             .user_agent(USER_AGENT)

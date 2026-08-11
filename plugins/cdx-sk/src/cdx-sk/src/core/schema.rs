@@ -92,7 +92,13 @@ fn render_generic_source_schema(kind: ResourceSchemaKind) -> Result<String, CliE
     let available_sources = kind.available_sources();
     let subcommands = available_sources
         .iter()
-        .map(|source| format!("`cdx-sk schema {} {}`", resource_endpoint_name(kind), source.source_code()))
+        .map(|source| {
+            format!(
+                "`cdx-sk schema {} {}`",
+                resource_endpoint_name(kind),
+                source.source_code()
+            )
+        })
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -204,44 +210,42 @@ fn load_source_aware_schema_bundle(
         (ResourceSchemaKind::Meta, SchemaSource::Skvs) => {
             Ok(include_str!("../../schemas/resource/meta-skvs.bundle.json"))
         }
-        (ResourceSchemaKind::Meta, SchemaSource::Sknus) => {
-            Ok(include_str!("../../schemas/resource/meta-sknus.bundle.json"))
-        }
-        (ResourceSchemaKind::Meta, SchemaSource::Sknss) => {
-            Ok(include_str!("../../schemas/resource/meta-sknss.bundle.json"))
-        }
+        (ResourceSchemaKind::Meta, SchemaSource::Sknus) => Ok(include_str!(
+            "../../schemas/resource/meta-sknus.bundle.json"
+        )),
+        (ResourceSchemaKind::Meta, SchemaSource::Sknss) => Ok(include_str!(
+            "../../schemas/resource/meta-sknss.bundle.json"
+        )),
         (ResourceSchemaKind::Meta, SchemaSource::Skus) => {
             Ok(include_str!("../../schemas/resource/meta-skus.bundle.json"))
         }
         (ResourceSchemaKind::Meta, SchemaSource::Skns) => {
             Ok(include_str!("../../schemas/resource/meta-skns.bundle.json"))
         }
-        (ResourceSchemaKind::Parts, SchemaSource::Skez) => {
-            Ok(include_str!("../../schemas/resource/parts-skez.bundle.json"))
-        }
-        (ResourceSchemaKind::Parts, SchemaSource::Skvs) => {
-            Ok(include_str!("../../schemas/resource/parts-skvs.bundle.json"))
-        }
-        (ResourceSchemaKind::Parts, SchemaSource::Sknus) => {
-            Ok(include_str!("../../schemas/resource/parts-sknus.bundle.json"))
-        }
-        (ResourceSchemaKind::Parts, SchemaSource::Sknss) => {
-            Ok(include_str!("../../schemas/resource/parts-sknss.bundle.json"))
-        }
-        (ResourceSchemaKind::Parts, SchemaSource::Skus) => {
-            Ok(include_str!("../../schemas/resource/parts-skus.bundle.json"))
-        }
-        (ResourceSchemaKind::Parts, SchemaSource::Skns) => {
-            Ok(include_str!("../../schemas/resource/parts-skns.bundle.json"))
-        }
+        (ResourceSchemaKind::Parts, SchemaSource::Skez) => Ok(include_str!(
+            "../../schemas/resource/parts-skez.bundle.json"
+        )),
+        (ResourceSchemaKind::Parts, SchemaSource::Skvs) => Ok(include_str!(
+            "../../schemas/resource/parts-skvs.bundle.json"
+        )),
+        (ResourceSchemaKind::Parts, SchemaSource::Sknus) => Ok(include_str!(
+            "../../schemas/resource/parts-sknus.bundle.json"
+        )),
+        (ResourceSchemaKind::Parts, SchemaSource::Sknss) => Ok(include_str!(
+            "../../schemas/resource/parts-sknss.bundle.json"
+        )),
+        (ResourceSchemaKind::Parts, SchemaSource::Skus) => Ok(include_str!(
+            "../../schemas/resource/parts-skus.bundle.json"
+        )),
+        (ResourceSchemaKind::Parts, SchemaSource::Skns) => Ok(include_str!(
+            "../../schemas/resource/parts-skns.bundle.json"
+        )),
         (ResourceSchemaKind::Versions, SchemaSource::Skez) => Ok(include_str!(
             "../../schemas/resource/versions-skez.bundle.json"
         )),
-        (ResourceSchemaKind::Versions, SchemaSource::Skvs) => {
-            Err(CliError::InvalidStoredSchema(
-                "the /versions endpoint is not available for SKVS documents".to_string(),
-            ))
-        }
+        (ResourceSchemaKind::Versions, SchemaSource::Skvs) => Err(CliError::InvalidStoredSchema(
+            "the /versions endpoint is not available for SKVS documents".to_string(),
+        )),
         (ResourceSchemaKind::Versions, SchemaSource::Sknus) => Ok(include_str!(
             "../../schemas/resource/versions-sknus.bundle.json"
         )),
@@ -447,10 +451,7 @@ fn resource_cdx_patterns(kind: ResourceSchemaKind) -> Vec<String> {
     patterns
 }
 
-fn source_specific_cdx_patterns(
-    kind: ResourceSchemaKind,
-    source: SchemaSource,
-) -> Vec<String> {
+fn source_specific_cdx_patterns(kind: ResourceSchemaKind, source: SchemaSource) -> Vec<String> {
     let endpoint = resource_endpoint_name(kind);
 
     let mut patterns = vec![format!("cdx-sk://doc/<DOC_ID>/{endpoint}")];
@@ -610,22 +611,19 @@ mod tests {
 
     #[test]
     fn toc_skvs_returns_error() {
-        let result =
-            render_resource_schema(ResourceSchemaKind::Toc, Some(SchemaSource::Skvs));
+        let result = render_resource_schema(ResourceSchemaKind::Toc, Some(SchemaSource::Skvs));
         assert!(result.is_err());
     }
 
     #[test]
     fn toc_sknus_returns_error() {
-        let result =
-            render_resource_schema(ResourceSchemaKind::Toc, Some(SchemaSource::Sknus));
+        let result = render_resource_schema(ResourceSchemaKind::Toc, Some(SchemaSource::Sknus));
         assert!(result.is_err());
     }
 
     #[test]
     fn versions_skvs_returns_error() {
-        let result =
-            render_resource_schema(ResourceSchemaKind::Versions, Some(SchemaSource::Skvs));
+        let result = render_resource_schema(ResourceSchemaKind::Versions, Some(SchemaSource::Skvs));
         assert!(result.is_err());
     }
 

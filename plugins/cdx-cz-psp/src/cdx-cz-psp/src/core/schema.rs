@@ -88,7 +88,13 @@ fn render_generic_source_schema(kind: ResourceSchemaKind) -> Result<String, CliE
     let available_sources = kind.available_sources();
     let subcommands = available_sources
         .iter()
-        .map(|source| format!("`cdx-cz-psp schema {} {}`", resource_endpoint_name(kind), source.source_code()))
+        .map(|source| {
+            format!(
+                "`cdx-cz-psp schema {} {}`",
+                resource_endpoint_name(kind),
+                source.source_code()
+            )
+        })
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -193,33 +199,33 @@ fn load_source_aware_schema_bundle(
     source: SchemaSource,
 ) -> Result<&'static str, CliError> {
     match (kind, source) {
-        (ResourceSchemaKind::Meta, SchemaSource::Czpspdok) => {
-            Ok(include_str!("../schemas/resource/meta-czpspdok.bundle.json"))
-        }
-        (ResourceSchemaKind::Meta, SchemaSource::Czpsppre) => {
-            Ok(include_str!("../schemas/resource/meta-czpsppre.bundle.json"))
-        }
+        (ResourceSchemaKind::Meta, SchemaSource::Czpspdok) => Ok(include_str!(
+            "../schemas/resource/meta-czpspdok.bundle.json"
+        )),
+        (ResourceSchemaKind::Meta, SchemaSource::Czpsppre) => Ok(include_str!(
+            "../schemas/resource/meta-czpsppre.bundle.json"
+        )),
         (ResourceSchemaKind::Toc, SchemaSource::Czpspdok) => {
             Ok(include_str!("../schemas/resource/toc-czpspdok.bundle.json"))
         }
         (ResourceSchemaKind::Toc, SchemaSource::Czpsppre) => {
             Ok(include_str!("../schemas/resource/toc-czpsppre.bundle.json"))
         }
-        (ResourceSchemaKind::Parts, SchemaSource::Czpspdok) => {
-            Ok(include_str!("../schemas/resource/parts-czpspdok.bundle.json"))
-        }
-        (ResourceSchemaKind::Parts, SchemaSource::Czpsppre) => {
-            Ok(include_str!("../schemas/resource/parts-czpsppre.bundle.json"))
-        }
-        (ResourceSchemaKind::Related, SchemaSource::Czpspdok) => {
-            Ok(include_str!("../schemas/resource/related-czpspdok.bundle.json"))
-        }
-        (ResourceSchemaKind::Related, SchemaSource::Czpsppre) => {
-            Ok(include_str!("../schemas/resource/related-czpsppre.bundle.json"))
-        }
-        (ResourceSchemaKind::History, SchemaSource::Czpsppre) => {
-            Ok(include_str!("../schemas/resource/history-czpsppre.bundle.json"))
-        }
+        (ResourceSchemaKind::Parts, SchemaSource::Czpspdok) => Ok(include_str!(
+            "../schemas/resource/parts-czpspdok.bundle.json"
+        )),
+        (ResourceSchemaKind::Parts, SchemaSource::Czpsppre) => Ok(include_str!(
+            "../schemas/resource/parts-czpsppre.bundle.json"
+        )),
+        (ResourceSchemaKind::Related, SchemaSource::Czpspdok) => Ok(include_str!(
+            "../schemas/resource/related-czpspdok.bundle.json"
+        )),
+        (ResourceSchemaKind::Related, SchemaSource::Czpsppre) => Ok(include_str!(
+            "../schemas/resource/related-czpsppre.bundle.json"
+        )),
+        (ResourceSchemaKind::History, SchemaSource::Czpsppre) => Ok(include_str!(
+            "../schemas/resource/history-czpsppre.bundle.json"
+        )),
         _ => Err(CliError::InvalidStoredSchema(format!(
             "the /{} endpoint is not available for {} documents",
             resource_endpoint_name(kind),
@@ -443,10 +449,9 @@ impl ResourceSchemaKind {
 
     fn available_sources(self) -> Vec<SchemaSource> {
         match self {
-            Self::Meta | Self::Toc | Self::Parts | Self::Related => vec![
-                SchemaSource::Czpspdok,
-                SchemaSource::Czpsppre,
-            ],
+            Self::Meta | Self::Toc | Self::Parts | Self::Related => {
+                vec![SchemaSource::Czpspdok, SchemaSource::Czpsppre]
+            }
             Self::History => vec![SchemaSource::Czpsppre],
             _ => vec![],
         }
@@ -511,8 +516,7 @@ mod tests {
     #[test]
     fn both_meta_sources_render_successfully() {
         for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
-            let output =
-                render_resource_schema(ResourceSchemaKind::Meta, Some(source)).unwrap();
+            let output = render_resource_schema(ResourceSchemaKind::Meta, Some(source)).unwrap();
             let (intro, _) = split_rendered_schema_document(&output).unwrap();
 
             assert!(intro.contains("Endpoint: /meta"));
@@ -531,8 +535,7 @@ mod tests {
     #[test]
     fn toc_renders_for_both_sources() {
         for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
-            let output =
-                render_resource_schema(ResourceSchemaKind::Toc, Some(source)).unwrap();
+            let output = render_resource_schema(ResourceSchemaKind::Toc, Some(source)).unwrap();
             let (intro, _) = split_rendered_schema_document(&output).unwrap();
 
             assert!(intro.contains("Endpoint: /toc"));
@@ -543,8 +546,7 @@ mod tests {
     #[test]
     fn parts_renders_for_both_sources() {
         for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
-            let output =
-                render_resource_schema(ResourceSchemaKind::Parts, Some(source)).unwrap();
+            let output = render_resource_schema(ResourceSchemaKind::Parts, Some(source)).unwrap();
             let (intro, _) = split_rendered_schema_document(&output).unwrap();
 
             assert!(intro.contains("Endpoint: /parts"));
@@ -555,8 +557,7 @@ mod tests {
     #[test]
     fn related_renders_for_both_sources() {
         for source in [SchemaSource::Czpspdok, SchemaSource::Czpsppre] {
-            let output =
-                render_resource_schema(ResourceSchemaKind::Related, Some(source)).unwrap();
+            let output = render_resource_schema(ResourceSchemaKind::Related, Some(source)).unwrap();
             let (intro, _) = split_rendered_schema_document(&output).unwrap();
 
             assert!(intro.contains("Endpoint: /related"));

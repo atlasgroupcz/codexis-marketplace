@@ -158,7 +158,11 @@ mod tests {
     fn human_message_truncates_unparseable_body() {
         let html = "<html>".to_string() + &"x".repeat(2000);
         let msg = human_message(404, &html, "/api/v1/Parcely/abc");
-        assert!(msg.len() < 700, "unparseable body must be truncated, len {}", msg.len());
+        assert!(
+            msg.len() < 700,
+            "unparseable body must be truncated, len {}",
+            msg.len()
+        );
     }
 
     #[test]
@@ -170,7 +174,10 @@ mod tests {
     #[test]
     fn unknown_json_body_still_reaches_the_user() {
         let msg = human_message(502, r#"{"error":"upstream timeout"}"#, "/api/v1/Parcely/1");
-        assert!(msg.contains("upstream timeout"), "body must not be lost: {msg}");
+        assert!(
+            msg.contains("upstream timeout"),
+            "body must not be lost: {msg}"
+        );
     }
 
     #[test]

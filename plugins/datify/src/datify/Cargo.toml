@@ -21,20 +21,22 @@ name = "datify-cgi"
 path = "src/cgi_main.rs"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 # Synchronous HTTP client, same feature set cdxctl already uses. The blocking
-# API brings a tokio runtime along; that is the deliberate trade for `multipart`,
-# whose Form::file assembles the body, escapes the filename and derives the part's
-# media type from the extension (via mime_guess) - so this crate keeps no
-# hand-maintained extension table that would silently miss a file type.
-# rustls-tls avoids the OpenSSL build dep.
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "multipart", "rustls-tls"] }
+# API brings a tokio runtime along - unavoidable, since reqwest is built on
+# hyper - and that is the deliberate trade for `multipart`, whose Form::file
+# assembles the body, escapes the filename and derives the part's media type
+# from the extension (via mime_guess), so this crate keeps no hand-maintained
+# extension table that would silently miss a file type.
+#
+# No TLS feature here: cdx-common's `reqwest-client` owns that choice for both
+# crates that use reqwest, and configures the client it hands back.
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "multipart", "query"] }
 clap = { version = "4", features = ["derive"] }
 # cdx-common: atomic fs + the KEY=VALUE credential file the settings component
 # writes. cdx-cgi: the CGI runtime (query parsing, body reading, JSON emission).
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["fs", "env-file"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "fs", "env-file"] }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
 
 [features]
@@ -49,4 +51,4 @@ datify = { path = ".", features = ["test-support"] }
 tempfile = "3"
 # The shared HomeGuard test helper (redirects $HOME to a scratch dir) instead of
 # a copy-pasted per-crate one.
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["test-support"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "test-support"] }

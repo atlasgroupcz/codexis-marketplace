@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, insert_u64, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, insert_u64, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_CZPSPDOK_HELP: &str = r#"Example:
   cdx-cz-psp search CZPSPDOK --query "interpelace" --election-period 10 --limit 5
@@ -11,13 +13,19 @@ pub(crate) struct SearchCzpspdokArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "document-type", help = "Document type (e.g. \"Písemná interpelace\", \"Zpráva a jiné\")")]
+    #[arg(
+        long = "document-type",
+        help = "Document type (e.g. \"Písemná interpelace\", \"Zpráva a jiné\")"
+    )]
     pub(crate) document_type: Option<String>,
 
     #[arg(long = "election-period", help = "Election period number (e.g. 10)")]
     pub(crate) election_period: Option<u64>,
 
-    #[arg(long = "state-class", help = "State class (approved, unapproved, lightgray, in_progress)")]
+    #[arg(
+        long = "state-class",
+        help = "State class (approved, unapproved, lightgray, in_progress)"
+    )]
     pub(crate) state_class: Option<String>,
 
     #[arg(long = "press-number", help = "Print/press number")]

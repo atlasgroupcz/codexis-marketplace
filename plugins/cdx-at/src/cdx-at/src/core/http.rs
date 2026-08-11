@@ -1,4 +1,3 @@
-
 use crate::core::error::CliError;
 use cdx_common::curl::encode_query_values;
 
@@ -62,7 +61,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&CdxAtApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &CdxAtApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Resolve a cdx-at:// path (everything after "cdx-at://") into a full HTTP URL.
@@ -347,7 +352,9 @@ mod tests {
     fn law_eli_token_toc_all() {
         assert_eq!(
             resolve_cdx_url(BASE, "law/eli~jgs~1811~946/toc?all=true"),
-            Ok(format!("{BASE}/AT/history/law/eli~jgs~1811~946/toc?all=true"))
+            Ok(format!(
+                "{BASE}/AT/history/law/eli~jgs~1811~946/toc?all=true"
+            ))
         );
     }
 
@@ -459,9 +466,9 @@ mod tests {
         let base = "https://example.com/api";
         let body = r#""cdx-at://doc/ATBR12/attachment/content_1.pdf?v=2#page=7""#;
         let out = resolve_attachment_links(body, base);
-        assert!(
-            out.contains("https://example.com/api/AT/bundesrecht/doc/ATBR12/attachment/content_1.pdf")
-        );
+        assert!(out.contains(
+            "https://example.com/api/AT/bundesrecht/doc/ATBR12/attachment/content_1.pdf"
+        ));
         assert!(
             out.ends_with("#page=7\""),
             "fragment must be preserved verbatim: {out}"
@@ -471,8 +478,7 @@ mod tests {
     #[test]
     fn non_attachment_url_in_sources_stays_cdx() {
         let base = "https://example.com/api";
-        let body =
-            r#"{"content":1,"sources":[{"__kind":"url","url":"cdx-at://doc/ATBR12/meta"}]}"#;
+        let body = r#"{"content":1,"sources":[{"__kind":"url","url":"cdx-at://doc/ATBR12/meta"}]}"#;
         let out = resolve_attachment_links(body, base);
         assert!(
             out.contains("\"cdx-at://doc/ATBR12/meta\""),
@@ -487,9 +493,17 @@ mod tests {
         // slicing - this resolver runs on Austrian legal content where a mis-sliced index panics.
         let body = "Verordnung über…cdx-at://doc/ATBR12/attachment/content_1.pdf#page=3,Änderung ü";
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("https://example.com/api/AT/bundesrecht/doc/ATBR12/attachment/content_1.pdf#page=3"));
-        assert!(out.starts_with("Verordnung über…https://"), "multi-byte text immediately before token preserved: {out}");
-        assert!(out.ends_with(",Änderung ü"), "multi-byte text after the delimiter preserved: {out}");
+        assert!(out.contains(
+            "https://example.com/api/AT/bundesrecht/doc/ATBR12/attachment/content_1.pdf#page=3"
+        ));
+        assert!(
+            out.starts_with("Verordnung über…https://"),
+            "multi-byte text immediately before token preserved: {out}"
+        );
+        assert!(
+            out.ends_with(",Änderung ü"),
+            "multi-byte text after the delimiter preserved: {out}"
+        );
     }
 
     #[test]
@@ -498,8 +512,13 @@ mod tests {
         let body = r#"["cdx-at://doc/ATBR1/attachment/a.pdf","cdx-at://doc/ATJD2/attachment/b.pdf#page=2"]"#;
         let out = resolve_attachment_links(body, base);
         assert!(out.contains("https://example.com/api/AT/bundesrecht/doc/ATBR1/attachment/a.pdf"));
-        assert!(out.contains("https://example.com/api/AT/judikatur/doc/ATJD2/attachment/b.pdf#page=2"));
-        assert!(!out.contains("cdx-at://"), "all attachment links resolved: {out}");
+        assert!(
+            out.contains("https://example.com/api/AT/judikatur/doc/ATJD2/attachment/b.pdf#page=2")
+        );
+        assert!(
+            !out.contains("cdx-at://"),
+            "all attachment links resolved: {out}"
+        );
     }
 
     #[test]
@@ -508,7 +527,9 @@ mod tests {
         // Unknown ID prefix → resolve_cdx_url errors → original cdx:// link re-emitted unchanged.
         let body = r#""cdx-at://doc/XXYY9/attachment/c.pdf#page=1""#;
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("\"cdx-at://doc/XXYY9/attachment/c.pdf#page=1\""),
-            "unknown-prefix attachment link must be left as cdx://: {out}");
+        assert!(
+            out.contains("\"cdx-at://doc/XXYY9/attachment/c.pdf#page=1\""),
+            "unknown-prefix attachment link must be left as cdx://: {out}"
+        );
     }
 }

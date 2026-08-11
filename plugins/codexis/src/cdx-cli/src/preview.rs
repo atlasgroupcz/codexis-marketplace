@@ -91,11 +91,21 @@ fn render_preview(path_info: &str) -> Result<Value, PreviewError> {
     let document = parse_document_path(path_info).ok_or(PreviewError::UnsupportedPath)?;
     let config = PreviewConfig::load()?;
     let previews_dir = previews_dir()?;
-    fs::create_dir_all(&previews_dir)
-        .map_err(|source| PreviewError::Cli(CliError::Io { context: "create previews dir".to_string(), source }))?;
+    fs::create_dir_all(&previews_dir).map_err(|source| {
+        PreviewError::Cli(CliError::Io {
+            context: "create previews dir".to_string(),
+            source,
+        })
+    })?;
 
     let title = fetch_title(&config, &document.doc_id).unwrap_or_else(|| document.doc_id.clone());
-    let file = write_preview_file(&config, &document, &previews_dir, &title, &asset_base_url()?)?;
+    let file = write_preview_file(
+        &config,
+        &document,
+        &previews_dir,
+        &title,
+        &asset_base_url()?,
+    )?;
     let size = fs::metadata(&file.path).map(|m| m.len()).unwrap_or(0);
 
     Ok(json!({
@@ -132,20 +142,38 @@ fn write_preview_file(
 
     match downloaded.as_deref() {
         Some(content_type) if content_type.starts_with("text/html") => {
-            let content = fs::read_to_string(&download_path)
-                .map_err(|source| PreviewError::Cli(CliError::Io { context: "read downloaded preview".to_string(), source }))?;
+            let content = fs::read_to_string(&download_path).map_err(|source| {
+                PreviewError::Cli(CliError::Io {
+                    context: "read downloaded preview".to_string(),
+                    source,
+                })
+            })?;
             let _ = fs::remove_file(&download_path);
             let page = document_page(title, &content, &stylesheet_href(asset_base_url));
             let path = previews_dir.join(format!("{base_name}.html"));
-            fs::write(&path, page)
-                .map_err(|source| PreviewError::Cli(CliError::Io { context: "write html preview".to_string(), source }))?;
-            Ok(PreviewFile { path, mime_type: "text/html" })
+            fs::write(&path, page).map_err(|source| {
+                PreviewError::Cli(CliError::Io {
+                    context: "write html preview".to_string(),
+                    source,
+                })
+            })?;
+            Ok(PreviewFile {
+                path,
+                mime_type: "text/html",
+            })
         }
         Some(content_type) if content_type.starts_with("application/pdf") => {
             let path = previews_dir.join(format!("{base_name}.pdf"));
-            fs::rename(&download_path, &path)
-                .map_err(|source| PreviewError::Cli(CliError::Io { context: "store pdf preview".to_string(), source }))?;
-            Ok(PreviewFile { path, mime_type: "application/pdf" })
+            fs::rename(&download_path, &path).map_err(|source| {
+                PreviewError::Cli(CliError::Io {
+                    context: "store pdf preview".to_string(),
+                    source,
+                })
+            })?;
+            Ok(PreviewFile {
+                path,
+                mime_type: "application/pdf",
+            })
         }
         _ => {
             let _ = fs::remove_file(&download_path);
@@ -155,9 +183,16 @@ fn write_preview_file(
                 &text_query(document),
             )?;
             let path = previews_dir.join(format!("{base_name}.md"));
-            fs::write(&path, markdown)
-                .map_err(|source| PreviewError::Cli(CliError::Io { context: "write markdown preview".to_string(), source }))?;
-            Ok(PreviewFile { path, mime_type: "text/markdown" })
+            fs::write(&path, markdown).map_err(|source| {
+                PreviewError::Cli(CliError::Io {
+                    context: "write markdown preview".to_string(),
+                    source,
+                })
+            })?;
+            Ok(PreviewFile {
+                path,
+                mime_type: "text/markdown",
+            })
         }
     }
 }
@@ -173,7 +208,11 @@ fn download_preview(
     // anchor (see render_preview) so the preview shows the full document and jumps
     // to the paragraph instead of rendering it in isolation.
     let resource_path = format!("doc/{}/preview", document.doc_id);
-    let url = format!("{}{}/{resource_path}", config.base_url, crate::core::http::API_PREFIX);
+    let url = format!(
+        "{}{}/{resource_path}",
+        config.base_url,
+        crate::core::http::API_PREFIX
+    );
     let mut curl_args = vec![
         "-sS".to_string(),
         "-o".to_string(),
@@ -207,8 +246,9 @@ fn previews_dir() -> Result<PathBuf, PreviewError> {
 }
 
 fn asset_base_url() -> Result<String, PreviewError> {
-    read_env(PREVIEW_ASSET_BASE_URL_ENV)
-        .ok_or(PreviewError::Cli(CliError::MissingConfig(PREVIEW_ASSET_BASE_URL_ENV)))
+    read_env(PREVIEW_ASSET_BASE_URL_ENV).ok_or(PreviewError::Cli(CliError::MissingConfig(
+        PREVIEW_ASSET_BASE_URL_ENV,
+    )))
 }
 
 /// The generated HTML links the stylesheet straight out of the plugin's `previews/`
@@ -223,7 +263,13 @@ fn file_base_name(document: &DocumentPreviewPath) -> String {
         None => document.doc_id.clone(),
     };
     raw.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -286,7 +332,11 @@ fn fetch_content(
     resource_path: &str,
     query_string: &str,
 ) -> Result<String, CliError> {
-    let mut url = format!("{}{}/{resource_path}", config.base_url, crate::core::http::API_PREFIX);
+    let mut url = format!(
+        "{}{}/{resource_path}",
+        config.base_url,
+        crate::core::http::API_PREFIX
+    );
     if !query_string.is_empty() {
         url.push('?');
         url.push_str(query_string);
@@ -347,7 +397,11 @@ fn canonical_url_for_base(base: &str, document: &DocumentPreviewPath) -> String 
         .as_ref()
         .map(|part| format!("#{part}"))
         .unwrap_or_default();
-    format!("{}/doc/{}{fragment}", base.trim_end_matches('/'), document.doc_id)
+    format!(
+        "{}/doc/{}{fragment}",
+        base.trim_end_matches('/'),
+        document.doc_id
+    )
 }
 
 fn document_page(title: &str, content_html: &str, stylesheet_href: &str) -> String {
@@ -398,7 +452,10 @@ mod tests {
             doc_id: "CR10".to_string(),
             part_id: Some("paragraf10".to_string()),
         };
-        let without_part = DocumentPreviewPath { doc_id: "CR10".to_string(), part_id: None };
+        let without_part = DocumentPreviewPath {
+            doc_id: "CR10".to_string(),
+            part_id: None,
+        };
 
         assert_eq!(text_query(&with_part), "part=paragraf10");
         assert_eq!(text_query(&without_part), "");
@@ -431,7 +488,10 @@ mod tests {
             r#"{"docId":"CR10","source":"CR","cr":{"main":{"docId":"CR10","title":"Zákon č. 586/1992 Sb."}}}"#,
         )
         .unwrap();
-        assert_eq!(first_title(&meta), Some("Zákon č. 586/1992 Sb.".to_string()));
+        assert_eq!(
+            first_title(&meta),
+            Some("Zákon č. 586/1992 Sb.".to_string())
+        );
     }
 
     #[test]
@@ -440,7 +500,10 @@ mod tests {
             doc_id: "CR10_2026_04_01".to_string(),
             part_id: Some("paragraf10".to_string()),
         };
-        let odd = DocumentPreviewPath { doc_id: "CR10/../x".to_string(), part_id: None };
+        let odd = DocumentPreviewPath {
+            doc_id: "CR10/../x".to_string(),
+            part_id: None,
+        };
 
         assert_eq!(file_base_name(&with_part), "CR10_2026_04_01-paragraf10");
         assert_eq!(file_base_name(&odd), "CR10____x");

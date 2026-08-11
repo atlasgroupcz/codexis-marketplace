@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 
-use crate::core::config::{Config, CODEXIS_PLUGIN_REGISTER_ZMLUV_API_URL_ENV, DEFAULT_API_BASE_URL};
+use crate::core::config::{
+    Config, CODEXIS_PLUGIN_REGISTER_ZMLUV_API_URL_ENV, DEFAULT_API_BASE_URL,
+};
 use crate::core::error::CliError;
 use crate::core::http::{execute_get_request, execute_search_request};
 use crate::get::GetArgs;
@@ -53,7 +55,10 @@ enum Commands {
         source: SearchSource,
     },
 
-    #[command(about = "Fetch a register-zmluv:// resource", arg_required_else_help = true)]
+    #[command(
+        about = "Fetch a register-zmluv:// resource",
+        arg_required_else_help = true
+    )]
     Get(GetArgs),
 }
 
@@ -214,14 +219,8 @@ mod tests {
     fn ico_flag_is_canonicalized_at_parse() {
         // A user-supplied IČO missing leading zeros is padded to 8 digits so it
         // matches the backend's zero-padded stored value.
-        let cli = Cli::try_parse_from([
-            "register-zmluv",
-            "search",
-            "SKCRZ",
-            "--ico",
-            "151513",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["register-zmluv", "search", "SKCRZ", "--ico", "151513"]).unwrap();
 
         match cli.command {
             Commands::Search {

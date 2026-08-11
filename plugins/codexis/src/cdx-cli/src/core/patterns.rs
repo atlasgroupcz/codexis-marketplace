@@ -25,7 +25,10 @@ mod tests {
         // concat! cannot take a const, so the literal above is repeated - this ties
         // it to the one CDX_SCHEME that build_cdx_url actually strips.
         for prefix in [DOC, CZ_LAW, EU_LAW, EU_LAW_BY_CELEX] {
-            assert!(prefix.starts_with(CDX_SCHEME), "{prefix} does not start with {CDX_SCHEME}");
+            assert!(
+                prefix.starts_with(CDX_SCHEME),
+                "{prefix} does not start with {CDX_SCHEME}"
+            );
         }
     }
 }

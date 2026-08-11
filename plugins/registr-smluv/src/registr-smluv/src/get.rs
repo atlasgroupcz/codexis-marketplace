@@ -14,7 +14,10 @@ Examples:
 #[derive(Args, Debug, Clone)]
 #[command(after_help = GET_HELP)]
 pub(crate) struct GetArgs {
-    #[arg(value_name = "REGISTR_SMLUV_URL", help = "Resource URL in registr-smluv:// protocol")]
+    #[arg(
+        value_name = "REGISTR_SMLUV_URL",
+        help = "Resource URL in registr-smluv:// protocol"
+    )]
     pub(crate) resource: String,
 
     #[arg(long, help = "Print the translated curl command and exit")]

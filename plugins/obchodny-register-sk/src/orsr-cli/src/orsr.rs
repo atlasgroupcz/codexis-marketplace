@@ -56,8 +56,7 @@ fn extract_subjects(page: &str) -> Vec<(String, String)> {
 fn param(query: &str, name: &str) -> Option<String> {
     query.split('&').find_map(|pair| {
         let (key, value) = pair.split_once('=')?;
-        (key == name && value.chars().all(|c| c.is_ascii_digit()))
-            .then(|| value.to_string())
+        (key == name && value.chars().all(|c| c.is_ascii_digit())).then(|| value.to_string())
     })
 }
 

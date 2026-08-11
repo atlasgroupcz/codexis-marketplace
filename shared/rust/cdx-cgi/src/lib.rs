@@ -39,7 +39,13 @@ pub fn emit_error(status: u16, message: &str) -> ExitCode {
          Cache-Control: no-store\r\n\
          \r\n"
     );
-    let _ = serde_json::to_writer(&mut out, &ErrorResponse { ok: false, error: message });
+    let _ = serde_json::to_writer(
+        &mut out,
+        &ErrorResponse {
+            ok: false,
+            error: message,
+        },
+    );
     ExitCode::SUCCESS
 }
 
@@ -61,7 +67,9 @@ pub fn read_body() -> io::Result<String> {
     if content_length > MAX_BODY_BYTES {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("request body of {content_length} bytes exceeds the {MAX_BODY_BYTES}-byte limit"),
+            format!(
+                "request body of {content_length} bytes exceeds the {MAX_BODY_BYTES}-byte limit"
+            ),
         ));
     }
     let mut buf = vec![0u8; content_length];
