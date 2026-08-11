@@ -1,8 +1,8 @@
+import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
-import { NotifySettingsBody } from './notify-settings-body'
 import type { NotifyBodyLabels, NotifyValues } from './notify-settings-body'
+import { NotifySettingsBody } from './notify-settings-body'
 
 const labels: NotifyBodyLabels = {
   emailLabel: 'E-mail při změně',

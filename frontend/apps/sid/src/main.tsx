@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Providers } from '@/components/providers'
 import { App } from '@/app'
+import { Providers } from '@/components/providers'
 import '@/lib/i18n'
 import '@/styles.css'
 

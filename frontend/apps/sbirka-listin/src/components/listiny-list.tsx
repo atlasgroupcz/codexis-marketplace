@@ -1,12 +1,12 @@
+import { toast } from '@workspace/ui/components/sonner'
+import { Check, Download, ExternalLink, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Download, ExternalLink, FileText } from 'lucide-react'
-import { toast } from '@workspace/ui/components/sonner'
-import type { Listina } from '@/lib/schemas'
 import { downloadDokument } from '@/lib/api'
 import { DAEMON_FILE_URL } from '@/lib/constants'
 import { errorMessage } from '@/lib/format'
 import { byNewest } from '@/lib/listiny'
+import type { Listina } from '@/lib/schemas'
 
 interface ListinyListProps {
   ico: string
@@ -75,7 +75,9 @@ function ListinaRow({
     <div className="border-border/60 grid grid-cols-[32px_1fr_auto] items-start gap-3.5 border-b py-4 pr-1 pl-1 last:border-b-0">
       <span
         className={`mt-0.5 grid size-8 place-items-center rounded-lg border ${
-          saved ? 'border-brand-100 bg-secondary text-brand-700' : 'border-border text-muted-foreground/70'
+          saved
+            ? 'border-brand-100 bg-secondary text-brand-700'
+            : 'border-border text-muted-foreground/70'
         }`}
       >
         <FileText className="size-4" strokeWidth={1.6} />

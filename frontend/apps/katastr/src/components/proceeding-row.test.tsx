@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
+
 import { render, screen } from '@testing-library/react'
-import { ProceedingRow } from './proceeding-row'
+import { describe, expect, it } from 'vitest'
 import type { ProceedingSummary } from '@/lib/schemas'
+import { ProceedingRow } from './proceeding-row'
 
 // react-i18next returns the key by default in tests (no provider) - assert on keys/values we control.
 const proc: ProceedingSummary = {
@@ -45,7 +46,9 @@ describe('ProceedingRow', () => {
   })
 
   it('omits the label (no reserved empty line) when there is none', () => {
-    render(<ProceedingRow proceeding={{ ...proc, label: '' }} onClick={() => {}} selected={false} />)
+    render(
+      <ProceedingRow proceeding={{ ...proc, label: '' }} onClick={() => {}} selected={false} />,
+    )
     expect(screen.queryByTestId('proceeding-label')).toBeNull()
   })
 })

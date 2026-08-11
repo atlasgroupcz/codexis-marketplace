@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { OverviewResponse } from '@/lib/schemas'
 import { fetchOverview } from '@/lib/api'
+import type { OverviewResponse } from '@/lib/schemas'
 
 interface UseOverviewResult {
   data: OverviewResponse | null
@@ -19,9 +19,7 @@ export function useOverview(): UseOverviewResult {
     setError(null)
     fetchOverview()
       .then(setData)
-      .catch((err: unknown) =>
-        setError(err instanceof Error ? err : new Error(String(err))),
-      )
+      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setLoading(false))
   }, [])
 

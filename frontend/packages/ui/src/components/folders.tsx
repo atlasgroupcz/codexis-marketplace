@@ -1,55 +1,54 @@
-"use client";
+'use client'
 
-import { motion, useAnimation } from "motion/react";
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
-
-import { cn } from "@workspace/ui/lib/utils";
-import type { HTMLAttributes } from "react";
+import { cn } from '@workspace/ui/lib/utils'
+import { motion, useAnimation } from 'motion/react'
+import type { HTMLAttributes } from 'react'
+import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react'
 
 export interface FoldersIconHandle {
-  startAnimation: () => void;
-  stopAnimation: () => void;
+  startAnimation: () => void
+  stopAnimation: () => void
 }
 
 interface FoldersIconProps extends HTMLAttributes<HTMLDivElement> {
-  size?: number;
+  size?: number
 }
 
 const FoldersIcon = forwardRef<FoldersIconHandle, FoldersIconProps>(
   ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
-    const controls = useAnimation();
-    const isControlledRef = useRef(false);
+    const controls = useAnimation()
+    const isControlledRef = useRef(false)
 
     useImperativeHandle(ref, () => {
-      isControlledRef.current = true;
+      isControlledRef.current = true
 
       return {
-        startAnimation: () => controls.start("animate"),
-        stopAnimation: () => controls.start("normal"),
-      };
-    });
+        startAnimation: () => controls.start('animate'),
+        stopAnimation: () => controls.start('normal'),
+      }
+    })
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (isControlledRef.current) {
-          onMouseEnter?.(e);
+          onMouseEnter?.(e)
         } else {
-          controls.start("animate");
+          controls.start('animate')
         }
       },
-      [controls, onMouseEnter]
-    );
+      [controls, onMouseEnter],
+    )
 
     const handleMouseLeave = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (isControlledRef.current) {
-          onMouseLeave?.(e);
+          onMouseLeave?.(e)
         } else {
-          controls.start("normal");
+          controls.start('normal')
         }
       },
-      [controls, onMouseLeave]
-    );
+      [controls, onMouseLeave],
+    )
 
     return (
       <div
@@ -73,7 +72,7 @@ const FoldersIcon = forwardRef<FoldersIconHandle, FoldersIconProps>(
             animate={controls}
             d="M20 17a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.9a2 2 0 0 1-1.69-.9l-.81-1.2a2 2 0 0 0-1.67-.9H8a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2Z"
             transition={{
-              type: "spring",
+              type: 'spring',
               stiffness: 250,
               damping: 25,
             }}
@@ -92,7 +91,7 @@ const FoldersIcon = forwardRef<FoldersIconHandle, FoldersIconProps>(
             animate={controls}
             d="M2 8v11a2 2 0 0 0 2 2h14"
             transition={{
-              type: "spring",
+              type: 'spring',
               stiffness: 250,
               damping: 25,
             }}
@@ -113,10 +112,10 @@ const FoldersIcon = forwardRef<FoldersIconHandle, FoldersIconProps>(
           />
         </svg>
       </div>
-    );
-  }
-);
+    )
+  },
+)
 
-FoldersIcon.displayName = "FoldersIcon";
+FoldersIcon.displayName = 'FoldersIcon'
 
-export { FoldersIcon };
+export { FoldersIcon }

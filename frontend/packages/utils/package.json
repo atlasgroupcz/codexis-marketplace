@@ -25,11 +25,7 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "typecheck": "bun run tsc",
-    "lint": "eslint --max-warnings=0 'src/**/*.{ts,tsx}'",
+    "lint": "biome check .",
     "test": "bun --bun vitest run --passWithNoTests"
-  },
-  "devDependencies": {
-    "@tanstack/eslint-config": "^0.4.0",
-    "@workspace/eslint-config": "workspace:*"
   }
 }

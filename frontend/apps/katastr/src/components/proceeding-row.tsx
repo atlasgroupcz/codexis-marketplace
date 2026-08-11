@@ -1,5 +1,5 @@
-import { StavBadge } from './stav-badge'
 import type { ProceedingSummary } from '@/lib/schemas'
+import { StavBadge } from './stav-badge'
 
 interface ProceedingRowProps {
   proceeding: ProceedingSummary

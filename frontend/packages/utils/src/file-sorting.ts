@@ -22,11 +22,7 @@ export interface SortableItem {
  * Compare two items by a specific field.
  * Returns negative if a < b, positive if a > b, 0 if equal.
  */
-function compareByField<T extends SortableItem>(
-  a: T,
-  b: T,
-  field: SortField,
-): number {
+function compareByField<T extends SortableItem>(a: T, b: T, field: SortField): number {
   switch (field) {
     case 'name':
       return a.name.localeCompare(b.name)

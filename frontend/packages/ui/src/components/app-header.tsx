@@ -1,9 +1,9 @@
-import { ArrowLeft, ExternalLink, Settings } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { docsUrl } from "@workspace/ui/lib/docs"
-import { cn } from "@workspace/ui/lib/utils"
-import type { DocsApp } from "@workspace/ui/lib/docs"
-import type { ComponentType, ReactNode } from "react"
+import { Button } from '@workspace/ui/components/button'
+import type { DocsApp } from '@workspace/ui/lib/docs'
+import { docsUrl } from '@workspace/ui/lib/docs'
+import { cn } from '@workspace/ui/lib/utils'
+import { ArrowLeft, ExternalLink, Settings } from 'lucide-react'
+import type { ComponentType, ReactNode } from 'react'
 
 interface BrandSpec {
   icon: ComponentType<{ className?: string; strokeWidth?: number }>
@@ -66,7 +66,9 @@ export function AppHeader({ brand, back, actions, docs }: AppHeaderProps) {
               docs={docs}
             />
             {brand.subtitle && (
-              <p className="text-muted-foreground hidden truncate text-xs sm:block">{brand.subtitle}</p>
+              <p className="text-muted-foreground hidden truncate text-xs sm:block">
+                {brand.subtitle}
+              </p>
             )}
           </div>
         </div>
@@ -84,8 +86,8 @@ export function AppHeader({ brand, back, actions, docs }: AppHeaderProps) {
             {back.subtitle && (
               <p
                 className={cn(
-                  "text-muted-foreground truncate",
-                  back.subtitleMono ? "font-mono text-[11px]" : "text-xs"
+                  'text-muted-foreground truncate',
+                  back.subtitleMono ? 'font-mono text-[11px]' : 'text-xs',
                 )}
               >
                 {back.subtitle}

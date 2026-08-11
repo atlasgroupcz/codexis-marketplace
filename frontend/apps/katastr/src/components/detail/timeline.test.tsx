@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
+
 import { render, screen } from '@testing-library/react'
-import { ProceedingTimeline } from './timeline'
+import { describe, expect, it } from 'vitest'
 import type { ProceedingDetail } from '@/lib/schemas'
+import { ProceedingTimeline } from './timeline'
 
 const base = {
   cislo_rizeni: 'V-1234/2026-701',

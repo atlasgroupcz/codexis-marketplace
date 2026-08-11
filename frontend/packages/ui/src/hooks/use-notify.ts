@@ -1,5 +1,5 @@
-import { useFetch } from './use-fetch'
 import type { UseFetchResult } from './use-fetch'
+import { useFetch } from './use-fetch'
 
 /**
  * Loads the current notification settings for a watchdog app.

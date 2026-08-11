@@ -8,30 +8,28 @@
     "preview": "./node_modules/.bin/vite preview",
     "test": "bun --bun vitest run",
     "test:watch": "bun --bun vitest",
-    "lint": "eslint --max-warnings=0 'src/**/*.{ts,tsx}'",
+    "lint": "biome check .",
     "typecheck": "tsc --noEmit",
     "codegen": "echo 'no codegen needed'"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@workspace/ui": "workspace:*",
-    "lucide-react": "^1.27.0",
+    "lucide-react": "^1.31.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@tanstack/eslint-config": "^0.4.0",
-    "@types/node": "^26.1.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
-    "@workspace/eslint-config": "workspace:*",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "@workspace/typescript-config": "workspace:*",
     "@workspace/vite-config": "workspace:*",
     "@workspace/vitest-config": "workspace:*",
-    "typescript": "^5.9.3",
-    "vite": "^8.1.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
     "vitest": "^4.1.10"
   }
 }

@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { FoldersResponse, OverviewResponse } from '@/lib/schemas'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FoldersHome } from '@/components/folders-home'
-import { renderApp } from '@/test/render-app'
+import type { FoldersResponse, OverviewResponse } from '@/lib/schemas'
 import { overviewFixture } from '@/test/fixtures'
+import { renderApp } from '@/test/render-app'
 
 const foldersFixture: FoldersResponse = {
   mode: 'folders',
@@ -39,8 +39,7 @@ function stubFolders(payload: FoldersResponse, overview: OverviewResponse = over
     vi.fn().mockImplementation((input: unknown) =>
       Promise.resolve({
         ok: true,
-        json: () =>
-          Promise.resolve(String(input).includes('view=folders') ? payload : overview),
+        json: () => Promise.resolve(String(input).includes('view=folders') ? payload : overview),
       }),
     ),
   )
@@ -53,9 +52,17 @@ beforeEach(() => {
 describe('FoldersHome', () => {
   it('renders folder cards from the overview', async () => {
     stubFolders(foldersFixture)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
-      searchParams: { lang: 'en' },
-    })
+    renderApp(
+      <FoldersHome
+        section="folders"
+        onChangeSection={vi.fn()}
+        onSelectFolder={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { lang: 'en' },
+      },
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Smlouvy')).toBeInTheDocument()
@@ -67,22 +74,36 @@ describe('FoldersHome', () => {
 
   it('shows the empty landing when no folders are watched', async () => {
     stubFolders(emptyFolders)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
-      searchParams: { lang: 'en' },
-    })
+    renderApp(
+      <FoldersHome
+        section="folders"
+        onChangeSection={vi.fn()}
+        onSelectFolder={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { lang: 'en' },
+      },
+    )
 
     await waitFor(() => {
-      expect(
-        screen.getByText('Watch the legislation in your documents'),
-      ).toBeInTheDocument()
+      expect(screen.getByText('Watch the legislation in your documents')).toBeInTheDocument()
     })
   })
 
   it('keeps the app identity in the header across sections', async () => {
     stubFolders(foldersFixture)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
-      searchParams: { lang: 'en' },
-    })
+    renderApp(
+      <FoldersHome
+        section="folders"
+        onChangeSection={vi.fn()}
+        onSelectFolder={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { lang: 'en' },
+      },
+    )
 
     // the folder mode is named by the section tab, not by retitling the app
     expect(await screen.findByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
@@ -92,9 +113,17 @@ describe('FoldersHome', () => {
     stubFolders(foldersFixture)
     const onChangeSection = vi.fn()
     const user = userEvent.setup()
-    renderApp(<FoldersHome section="folders" onChangeSection={onChangeSection} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
-      searchParams: { lang: 'en' },
-    })
+    renderApp(
+      <FoldersHome
+        section="folders"
+        onChangeSection={onChangeSection}
+        onSelectFolder={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { lang: 'en' },
+      },
+    )
 
     const folders = await screen.findByRole('button', { name: /Folders/ })
     expect(folders).toHaveAttribute('aria-current', 'page')
@@ -105,9 +134,17 @@ describe('FoldersHome', () => {
 
   it('badges the act watchdog with the changes waiting there', async () => {
     stubFolders(foldersFixture)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
-      searchParams: { lang: 'en' },
-    })
+    renderApp(
+      <FoldersHome
+        section="folders"
+        onChangeSection={vi.fn()}
+        onSelectFolder={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { lang: 'en' },
+      },
+    )
 
     // the overview fixture carries two unconfirmed act changes
     await waitFor(() => {
@@ -117,9 +154,17 @@ describe('FoldersHome', () => {
 
   it('offers adding a folder from the header', async () => {
     stubFolders(foldersFixture)
-    renderApp(<FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={vi.fn()} onOpenSettings={vi.fn()} />, {
-      searchParams: { lang: 'en' },
-    })
+    renderApp(
+      <FoldersHome
+        section="folders"
+        onChangeSection={vi.fn()}
+        onSelectFolder={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { lang: 'en' },
+      },
+    )
 
     expect(await screen.findByRole('button', { name: /Add folder/ })).toBeInTheDocument()
   })
@@ -129,7 +174,12 @@ describe('FoldersHome', () => {
     const onSelectFolder = vi.fn()
     const user = userEvent.setup()
     renderApp(
-      <FoldersHome section="folders" onChangeSection={vi.fn()} onSelectFolder={onSelectFolder} onOpenSettings={vi.fn()} />,
+      <FoldersHome
+        section="folders"
+        onChangeSection={vi.fn()}
+        onSelectFolder={onSelectFolder}
+        onOpenSettings={vi.fn()}
+      />,
       { searchParams: { lang: 'en' } },
     )
 

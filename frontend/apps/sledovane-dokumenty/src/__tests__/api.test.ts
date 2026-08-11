@@ -9,7 +9,6 @@ function firstCall(mock: { mock: { calls: Array<Array<unknown>> } }): Array<unkn
   return call
 }
 
-
 beforeEach(() => {
   vi.restoreAllMocks()
 })
@@ -185,6 +184,8 @@ describe('saveNotify', () => {
       vi.fn().mockResolvedValue({ ok: false, status: 400, statusText: 'Bad Request' }),
     )
 
-    await expect(saveNotify({ email: true, inApp: true, recipients: [] })).rejects.toThrow('HTTP 400')
+    await expect(saveNotify({ email: true, inApp: true, recipients: [] })).rejects.toThrow(
+      'HTTP 400',
+    )
   })
 })

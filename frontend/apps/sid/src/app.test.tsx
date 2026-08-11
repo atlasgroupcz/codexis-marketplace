@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-
-import { App } from './app'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Providers } from '@/components/providers'
 import i18n from '@/lib/i18n'
+import { App } from './app'
 
 // next-themes reads the OS colour-scheme preference; jsdom has no
 // matchMedia, so ThemeProvider throws on render without this.

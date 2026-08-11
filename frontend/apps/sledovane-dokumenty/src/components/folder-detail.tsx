@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { HeaderGear } from '@workspace/ui/components/app-header'
+import { Badge } from '@workspace/ui/components/badge'
+import { Button } from '@workspace/ui/components/button'
+import { Progress } from '@workspace/ui/components/progress'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -11,18 +16,13 @@ import {
   ScanSearch,
   Trash2,
 } from 'lucide-react'
-import { Button } from '@workspace/ui/components/button'
-import { Badge } from '@workspace/ui/components/badge'
-import { Progress } from '@workspace/ui/components/progress'
-import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
-import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { HeaderGear } from '@workspace/ui/components/app-header'
-import { DetailSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import type { TrackedLegislation, WatchedDocument } from '@/lib/schemas'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useFolderDetail } from '@/hooks/use-folder-detail'
 import { postFolderAction } from '@/lib/api'
+import type { TrackedLegislation, WatchedDocument } from '@/lib/schemas'
+import { ErrorMessage } from './error-message'
+import { DetailSkeleton } from './loading-skeleton'
 
 interface FolderDetailProps {
   root: string
@@ -79,18 +79,27 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
   }
 
   const extracted = (folder?.documents_count ?? 0) - pending
-  const progress = folder && folder.documents_count > 0 ? (extracted / folder.documents_count) * 100 : 0
+  const progress =
+    folder && folder.documents_count > 0 ? (extracted / folder.documents_count) * 100 : 0
 
   return (
-    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="folder-detail-root">
+    <div
+      className="bg-background text-foreground flex h-screen flex-col"
+      data-testid="folder-detail-root"
+    >
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('folders.back')}>
             <ArrowLeft className="size-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="font-display truncate text-[15px] leading-tight">{folder?.name ?? '…'}</h1>
-            <p className="text-muted-foreground truncate font-mono text-[11px]" title={folder?.root}>
+            <h1 className="font-display truncate text-[15px] leading-tight">
+              {folder?.name ?? '…'}
+            </h1>
+            <p
+              className="text-muted-foreground truncate font-mono text-[11px]"
+              title={folder?.root}
+            >
               {folder?.root ?? root}
             </p>
           </div>
@@ -143,7 +152,10 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
                 <div className="bg-secondary/50 space-y-2 rounded-xl border p-4">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Loader2 className="text-primary size-4 animate-spin" />
-                    {t('folders.extractingProgress', { done: extracted, total: folder.documents_count })}
+                    {t('folders.extractingProgress', {
+                      done: extracted,
+                      total: folder.documents_count,
+                    })}
                   </div>
                   <Progress value={progress} />
                 </div>
@@ -167,10 +179,20 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
 
                 <TabsContent value="legislation" className="space-y-2 pt-4">
                   {folder.legislation.length === 0 ? (
-                    <EmptyHint text={pending > 0 ? t('folders.legislationExtracting') : t('folders.noLegislation')} />
+                    <EmptyHint
+                      text={
+                        pending > 0
+                          ? t('folders.legislationExtracting')
+                          : t('folders.noLegislation')
+                      }
+                    />
                   ) : (
                     folder.legislation.map((leg, i) => (
-                      <LegislationItem key={leg.codexisId ?? leg.uri ?? i} leg={leg} onConfirm={() => confirm(leg.codexisId)} />
+                      <LegislationItem
+                        key={leg.codexisId ?? leg.uri ?? i}
+                        leg={leg}
+                        onConfirm={() => confirm(leg.codexisId)}
+                      />
                     ))
                   )}
                 </TabsContent>

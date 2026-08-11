@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useIsMobile } from './use-mobile'
 
 describe('useIsMobile', () => {
@@ -109,7 +109,9 @@ describe('useIsMobile', () => {
         value: 375,
       })
       // Trigger the change listener
-      listeners.forEach((listener) => listener())
+      listeners.forEach((listener) => {
+        listener()
+      })
     })
 
     expect(result.current).toBe(true)

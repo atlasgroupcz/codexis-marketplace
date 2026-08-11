@@ -1,7 +1,7 @@
 'use client'
 
-import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@workspace/ui/lib/utils'
+import { AnimatePresence, motion } from 'motion/react'
 
 export interface AnimatedPlaceholderProps {
   /** The placeholder text to display */

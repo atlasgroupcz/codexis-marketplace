@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import { useQueryState } from 'nuqs'
-import { KeyRound, Landmark, RefreshCw } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { ConfigGate } from '@workspace/ui/components/config-gate'
+import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
+import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
 import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { useNotify } from '@workspace/ui/hooks/use-notify'
-import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
-import type { NotifyLabels } from '@workspace/ui/components/notify-settings'
-import { cisloRizeniParser, filterParser, viewParser } from '@/lib/url-state'
-import { ProceedingsList } from '@/components/proceedings-list'
-import { ProceedingDetail } from '@/components/proceeding-detail'
+import { KeyRound, Landmark, RefreshCw } from 'lucide-react'
+import { useQueryState } from 'nuqs'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AddProceedingForm } from '@/components/add-proceeding-form'
 import { EmptyProceedings, NoSelection } from '@/components/empty-state'
+import { ProceedingDetail } from '@/components/proceeding-detail'
+import { ProceedingsList } from '@/components/proceedings-list'
 import { useOverview } from '@/hooks/use-overview'
 import { checkAll, deleteApiKey, fetchNotify, saveApiKey, saveNotify } from '@/lib/api'
 import { CUZK_REGISTRATION_URL } from '@/lib/constants'
 import { errorMessage } from '@/lib/format'
+import { cisloRizeniParser, filterParser, viewParser } from '@/lib/url-state'
 
 export function App() {
   const { t, i18n } = useTranslation()
@@ -52,7 +52,12 @@ export function App() {
     checkAll()
       .then((res) => {
         if (res.errors.length > 0) {
-          toast.error(t('proceedings.checkResultErrors', { newChanges: res.new_changes, errors: res.errors.length }))
+          toast.error(
+            t('proceedings.checkResultErrors', {
+              newChanges: res.new_changes,
+              errors: res.errors.length,
+            }),
+          )
         } else if (res.new_changes > 0) {
           toast.success(t('proceedings.checkResultChanges', { count: res.new_changes }))
         } else {
@@ -117,8 +122,16 @@ export function App() {
           icon={KeyRound}
           title={t('apiKeyBanner.title')}
           text={t('apiKeyBanner.text')}
-          action={{ label: t('apiKeyBanner.action'), onClick: () => setSettingsOpen(true), testId: 'open-settings' }}
-          getKey={{ href: CUZK_REGISTRATION_URL, label: t('settings.getKey'), hint: t('settings.getKeyHint') }}
+          action={{
+            label: t('apiKeyBanner.action'),
+            onClick: () => setSettingsOpen(true),
+            testId: 'open-settings',
+          }}
+          getKey={{
+            href: CUZK_REGISTRATION_URL,
+            label: t('settings.getKey'),
+            hint: t('settings.getKeyHint'),
+          }}
         />
       )
     }
@@ -143,7 +156,12 @@ export function App() {
         </section>
         <section className={`min-h-0 overflow-y-auto ${detailOpen ? 'block' : 'hidden md:block'}`}>
           {detailOpen && cisloRizeni ? (
-            <ProceedingDetail key={cisloRizeni} cisloRizeni={cisloRizeni} onBack={handleBack} onChanged={refetch} />
+            <ProceedingDetail
+              key={cisloRizeni}
+              cisloRizeni={cisloRizeni}
+              onBack={handleBack}
+              onChanged={refetch}
+            />
           ) : (
             <NoSelection />
           )}
@@ -155,7 +173,11 @@ export function App() {
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
-        brand={{ icon: Landmark, title: t('proceedings.title'), subtitle: t('proceedings.subtitle') }}
+        brand={{
+          icon: Landmark,
+          title: t('proceedings.title'),
+          subtitle: t('proceedings.subtitle'),
+        }}
         docs={{ app: 'katastr', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
@@ -208,7 +230,11 @@ export function App() {
               testId: 'api-key-input',
             },
           ],
-          getKey: { href: CUZK_REGISTRATION_URL, label: t('settings.getKey'), hint: t('settings.getKeyHint') },
+          getKey: {
+            href: CUZK_REGISTRATION_URL,
+            label: t('settings.getKey'),
+            hint: t('settings.getKeyHint'),
+          },
           labels: connectionLabels,
           onSave: handleSaveApiKey,
           onDelete: handleDeleteApiKey,

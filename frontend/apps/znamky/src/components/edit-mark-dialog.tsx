@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Button } from '@workspace/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,11 +8,12 @@ import {
   DialogTitle,
 } from '@workspace/ui/components/dialog'
 import { Input } from '@workspace/ui/components/input'
-import { Button } from '@workspace/ui/components/button'
 import { Label } from '@workspace/ui/components/label'
 import { toast } from '@workspace/ui/components/sonner'
-import type { MarkDetail } from '@/lib/schemas'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { updateMark } from '@/lib/api'
+import type { MarkDetail } from '@/lib/schemas'
 
 const TERRITORIES = ['CZ', 'EU'] as const
 
@@ -96,14 +96,22 @@ export function EditMarkDialog({
           {mark.kind !== 'figurative' && (
             <div className="space-y-1.5">
               <Label htmlFor="edit-text">{t('add.text')}</Label>
-              <Input id="edit-text" value={text} onChange={(e) => setText(e.target.value)} disabled={submitting} data-testid="edit-text-input" />
+              <Input
+                id="edit-text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                disabled={submitting}
+                data-testid="edit-text-input"
+              />
             </div>
           )}
 
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
               <Label htmlFor="edit-threshold">{t('detail.threshold')}</Label>
-              <span className="text-primary font-mono text-sm font-semibold tabular-nums">{Math.round(threshold * 100)}%</span>
+              <span className="text-primary font-mono text-sm font-semibold tabular-nums">
+                {Math.round(threshold * 100)}%
+              </span>
             </div>
             <input
               id="edit-threshold"
@@ -122,7 +130,14 @@ export function EditMarkDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="edit-nice">{t('add.nice')}</Label>
-            <Input id="edit-nice" placeholder="9, 42" value={nice} onChange={(e) => setNice(e.target.value)} disabled={submitting} data-testid="edit-nice-input" />
+            <Input
+              id="edit-nice"
+              placeholder="9, 42"
+              value={nice}
+              onChange={(e) => setNice(e.target.value)}
+              disabled={submitting}
+              data-testid="edit-nice-input"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -137,7 +152,9 @@ export function EditMarkDialog({
                   data-testid={`edit-territory-${terr}`}
                   aria-pressed={territories.includes(terr)}
                   className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                    territories.includes(terr) ? 'border-primary bg-secondary text-primary' : 'text-muted-foreground'
+                    territories.includes(terr)
+                      ? 'border-primary bg-secondary text-primary'
+                      : 'text-muted-foreground'
                   }`}
                 >
                   {t(`territory.${terr}`)}
@@ -149,17 +166,30 @@ export function EditMarkDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="edit-owner">{t('add.owner')}</Label>
-              <Input id="edit-owner" value={owner} onChange={(e) => setOwner(e.target.value)} disabled={submitting} />
+              <Input
+                id="edit-owner"
+                value={owner}
+                onChange={(e) => setOwner(e.target.value)}
+                disabled={submitting}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-label">{t('add.label')}</Label>
-              <Input id="edit-label" value={label} onChange={(e) => setLabel(e.target.value)} disabled={submitting} data-testid="edit-label-input" />
+              <Input
+                id="edit-label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                disabled={submitting}
+                data-testid="edit-label-input"
+              />
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('common.cancel')}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            {t('common.cancel')}
+          </Button>
           <Button onClick={save} disabled={submitting} data-testid="edit-save">
             {submitting ? t('edit.saving') : t('edit.save')}
           </Button>

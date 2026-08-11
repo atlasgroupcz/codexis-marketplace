@@ -1,4 +1,4 @@
-@import '@workspace/ui/globals.css';
+@import "@workspace/ui/globals.css";
 
 /* ── Datify brand - scoped to this app ─────────────────────────────────────
    Unlike the other component apps, this panel belongs to a third-party
@@ -78,11 +78,11 @@
 
 /* Only a real answer opens the gap: while the state is unknown the mark
    stays closed and grey, so it does not flick open on first paint. */
-.datify-mark[data-state='disconnected'] [data-part='bar'] {
+.datify-mark[data-state="disconnected"] [data-part="bar"] {
   transform: translateX(-16px);
 }
 
-.datify-mark[data-state='connected'] [data-part] {
+.datify-mark[data-state="connected"] [data-part] {
   fill: var(--primary);
 }
 

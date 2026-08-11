@@ -92,12 +92,7 @@ export async function uploadFilesToFolder(
     }
 
     const encodedDestination = encodeURIComponent(destination)
-    xhr.open(
-      'POST',
-      backendUrl(
-        `/rest/files/upload-multiple?destination=${encodedDestination}`,
-      ),
-    )
+    xhr.open('POST', backendUrl(`/rest/files/upload-multiple?destination=${encodedDestination}`))
     xhr.send(formData)
   })
 }
@@ -127,8 +122,7 @@ export async function uploadFolderToFolder(
     // Use provided relativePath if available, otherwise use webkitRelativePath from file
     // Fall back to filename if neither is available
     const providedRelativePath = options?.relativePaths?.[i]
-    const webkitRelativePath = (file as File & { webkitRelativePath?: string })
-      .webkitRelativePath
+    const webkitRelativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath
     const relativePath = providedRelativePath || webkitRelativePath || file.name
     formData.append('relativePaths', relativePath)
   }
@@ -168,12 +162,7 @@ export async function uploadFolderToFolder(
     }
 
     const encodedDestination = encodeURIComponent(destination)
-    xhr.open(
-      'POST',
-      backendUrl(
-        `/rest/files/upload-folder?destination=${encodedDestination}`,
-      ),
-    )
+    xhr.open('POST', backendUrl(`/rest/files/upload-folder?destination=${encodedDestination}`))
     xhr.send(formData)
   })
 }
@@ -183,8 +172,7 @@ export async function uploadFolderToFolder(
  */
 export function isFolderUpload(files: Array<File>): boolean {
   return files.some((file) => {
-    const relativePath = (file as File & { webkitRelativePath?: string })
-      .webkitRelativePath
+    const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath
     return relativePath && relativePath.length > 0
   })
 }

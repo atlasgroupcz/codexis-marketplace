@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useConfirmAction } from './use-confirm-action'
 
 describe('useConfirmAction', () => {
@@ -29,7 +29,12 @@ describe('useConfirmAction', () => {
 
   it('runs the action on the second trigger and tracks pending', async () => {
     let resolve: () => void = () => {}
-    const action = vi.fn(() => new Promise<void>((r) => { resolve = r }))
+    const action = vi.fn(
+      () =>
+        new Promise<void>((r) => {
+          resolve = r
+        }),
+    )
     const { result } = renderHook(() => useConfirmAction(action))
 
     act(() => result.current.trigger())

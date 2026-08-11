@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Bell, Mail, Plus, X } from 'lucide-react'
 import { isValidEmail } from '@workspace/ui/lib/notify-recipients'
 import { cn } from '@workspace/ui/lib/utils'
+import { Bell, Mail, Plus, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 /** Pill toggle sized to the notify-panel design (38×22, 18px knob). */
 function ToggleSwitch({
@@ -68,7 +68,12 @@ export interface NotifySettingsBodyProps {
  * (as a standalone dialog) and by composite dialogs that combine it with other
  * sections (e.g. `SettingsDialog` + `ConnectionSection`).
  */
-export function NotifySettingsBody({ value, onChange, userEmail, labels }: NotifySettingsBodyProps) {
+export function NotifySettingsBody({
+  value,
+  onChange,
+  userEmail,
+  labels,
+}: NotifySettingsBodyProps) {
   const { email, inApp, recipients } = value
   const [draft, setDraft] = useState('')
   const [err, setErr] = useState('')

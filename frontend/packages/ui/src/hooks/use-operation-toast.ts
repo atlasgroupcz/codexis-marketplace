@@ -32,10 +32,7 @@ export function useOperationToast(): UseOperationToastReturn {
         toast.success(successMessage, { id: toastId })
         return result
       } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : errorMessage || 'Operation failed'
+        const message = error instanceof Error ? error.message : errorMessage || 'Operation failed'
         toast.error(message, { id: toastId })
         return undefined
       }

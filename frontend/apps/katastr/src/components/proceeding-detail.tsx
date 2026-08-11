@@ -1,21 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Landmark, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { ErrorMessage } from '@workspace/ui/components/error-message'
 import { Input } from '@workspace/ui/components/input'
 import { toast } from '@workspace/ui/components/sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
-import { ErrorMessage } from '@workspace/ui/components/error-message'
-import { ListSkeleton } from './loading-skeleton'
-import { StavBadge } from './stav-badge'
-import { UhradaBadge } from './uhrada-badge'
-import { TypeLabel } from './type-label'
-import { ProceedingTimeline } from './detail/timeline'
-import { ChangeHistory } from './detail/change-history'
+import { ArrowLeft, Landmark, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDetail } from '@/hooks/use-detail'
 import { removeProceeding, setLabel } from '@/lib/api'
 import { errorMessage, formatDate, formatRelative } from '@/lib/format'
+import { ChangeHistory } from './detail/change-history'
+import { ProceedingTimeline } from './detail/timeline'
+import { ListSkeleton } from './loading-skeleton'
+import { StavBadge } from './stav-badge'
+import { TypeLabel } from './type-label'
+import { UhradaBadge } from './uhrada-badge'
 
 interface ProceedingDetailProps {
   cisloRizeni: string
@@ -56,7 +56,12 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
   }, [data?.proceeding.label, labelOverride])
 
   if (loading && !data) return <ListSkeleton />
-  if (error) return <div className="p-6"><ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} /></div>
+  if (error)
+    return (
+      <div className="p-6">
+        <ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} />
+      </div>
+    )
   if (!data) return null
 
   const proc = data.proceeding
@@ -92,7 +97,13 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack} data-testid="back-to-list">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onBack}
+            data-testid="back-to-list"
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <span className="bg-secondary text-primary ring-brand-100 flex size-10 shrink-0 items-center justify-center rounded-xl ring-1">

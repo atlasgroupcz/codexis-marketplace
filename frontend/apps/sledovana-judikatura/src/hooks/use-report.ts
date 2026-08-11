@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ReportResponse } from '@/lib/schemas'
 import { fetchReport } from '@/lib/api'
+import type { ReportResponse } from '@/lib/schemas'
 
 export function useReport(uuid: string, reportId: string) {
   const [data, setData] = useState<ReportResponse | null>(null)

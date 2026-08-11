@@ -1,19 +1,19 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { BookMarked, FileText, FolderClock, FolderPlus, Loader2, Scale } from 'lucide-react'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
-import { SectionSwitch } from './section-switch'
-import { FolderPicker } from './folder-picker'
-import { FeedSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import type { FolderSummary } from '@/lib/schemas'
+import { BookMarked, FileText, FolderClock, FolderPlus, Loader2, Scale } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useFolders } from '@/hooks/use-folders'
 import { useUnconfirmedCount } from '@/hooks/use-unconfirmed-count'
-import { sumUnconfirmed } from '@/lib/counts'
 import { postFolderAction } from '@/lib/api'
+import { sumUnconfirmed } from '@/lib/counts'
+import type { FolderSummary } from '@/lib/schemas'
+import { ErrorMessage } from './error-message'
+import { FolderPicker } from './folder-picker'
+import { FeedSkeleton } from './loading-skeleton'
+import { SectionSwitch } from './section-switch'
 
 interface FoldersHomeProps {
   section: 'documents' | 'folders'
@@ -50,9 +50,16 @@ export function FoldersHome({
   }
 
   return (
-    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="folders-root">
+    <div
+      className="bg-background text-foreground flex h-screen flex-col"
+      data-testid="folders-root"
+    >
       <AppHeader
-        brand={{ icon: BookMarked, title: t('followedDocs.title'), subtitle: t('followedDocs.tagline') }}
+        brand={{
+          icon: BookMarked,
+          title: t('followedDocs.title'),
+          subtitle: t('followedDocs.tagline'),
+        }}
         docs={{ app: 'sledovane-dokumenty', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
@@ -99,7 +106,12 @@ export function FoldersHome({
         </main>
       </div>
 
-      <FolderPicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={handleAdd} busy={adding} />
+      <FolderPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handleAdd}
+        busy={adding}
+      />
       <Toaster position="bottom-right" />
     </div>
   )

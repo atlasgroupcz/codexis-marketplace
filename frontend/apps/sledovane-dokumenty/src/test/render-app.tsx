@@ -1,9 +1,9 @@
-import { render } from '@testing-library/react'
-import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
-import { ThemeProvider } from 'next-themes'
-import { I18nextProvider } from 'react-i18next'
 import type { RenderOptions } from '@testing-library/react'
+import { render } from '@testing-library/react'
+import { ThemeProvider } from 'next-themes'
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import type { ReactElement } from 'react'
+import { I18nextProvider } from 'react-i18next'
 import testI18n from '@/test/i18n-test'
 
 interface AppRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -12,12 +12,7 @@ interface AppRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 
 export function renderApp(ui: ReactElement, options: AppRenderOptions = {}) {
   const { searchParams = {}, ...renderOptions } = options
-  const languageFromUrl = Object.prototype.hasOwnProperty.call(
-    searchParams,
-    'lang',
-  )
-    ? searchParams.lang
-    : undefined
+  const languageFromUrl = Object.hasOwn(searchParams, 'lang') ? searchParams.lang : undefined
   const languageFromStorage = window.localStorage.getItem('i18nextLng')
   const language = languageFromUrl ?? languageFromStorage ?? 'en'
   void testI18n.changeLanguage(language)

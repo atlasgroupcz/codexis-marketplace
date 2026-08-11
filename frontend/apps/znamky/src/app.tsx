@@ -1,23 +1,23 @@
-import { useState } from 'react'
-import { useQueryState } from 'nuqs'
-import { useTranslation } from 'react-i18next'
-import { KeyRound, Plus, RefreshCw, ShieldCheck } from 'lucide-react'
-import { Button } from '@workspace/ui/components/button'
-import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { Button } from '@workspace/ui/components/button'
 import { ConfigGate } from '@workspace/ui/components/config-gate'
-import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
-import { useFetch } from '@workspace/ui/hooks/use-fetch'
 import type { NotifyValues } from '@workspace/ui/components/notify-settings-body'
-import { uuidParser } from '@/lib/url-state'
-import { useOverview } from '@/hooks/use-overview'
-import { checkAll, deleteConfig, fetchConfig, fetchNotify, saveConfig, saveNotify } from '@/lib/api'
-import { MarkList } from '@/components/mark-list'
-import { MarkDetail } from '@/components/mark-detail'
+import { SettingsDialog } from '@workspace/ui/components/settings-dialog'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { useFetch } from '@workspace/ui/hooks/use-fetch'
+import { KeyRound, Plus, RefreshCw, ShieldCheck } from 'lucide-react'
+import { useQueryState } from 'nuqs'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AddMarkDialog } from '@/components/add-mark-dialog'
 import { EmptyMarks, NoSelection } from '@/components/empty-state'
-import { DetailSkeleton, ListSkeleton } from '@/components/loading-skeleton'
 import { ErrorMessage } from '@/components/error-message'
+import { DetailSkeleton, ListSkeleton } from '@/components/loading-skeleton'
+import { MarkDetail } from '@/components/mark-detail'
+import { MarkList } from '@/components/mark-list'
+import { useOverview } from '@/hooks/use-overview'
+import { checkAll, deleteConfig, fetchConfig, fetchNotify, saveConfig, saveNotify } from '@/lib/api'
+import { uuidParser } from '@/lib/url-state'
 
 const EUIPO_GET_KEY_URL = 'https://dev.euipo.europa.eu'
 
@@ -97,7 +97,13 @@ export function App() {
         actions={
           <>
             {configured && marks.length > 0 && (
-              <Button variant="outline" size="sm" onClick={handleCheckAll} disabled={checking} data-testid="check-all">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCheckAll}
+                disabled={checking}
+                data-testid="check-all"
+              >
                 <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">{t('app.checkAll')}</span>
               </Button>
@@ -116,8 +122,12 @@ export function App() {
       <main className="min-h-0 flex-1">
         {configured === null ? (
           <div className="grid h-full min-h-0 md:grid-cols-[320px_1fr]">
-            <div className="border-r"><ListSkeleton /></div>
-            <div className="hidden md:block"><DetailSkeleton /></div>
+            <div className="border-r">
+              <ListSkeleton />
+            </div>
+            <div className="hidden md:block">
+              <DetailSkeleton />
+            </div>
           </div>
         ) : !configured ? (
           <ConfigGate
@@ -125,22 +135,40 @@ export function App() {
             eyebrow={t('app.title')}
             title={t('config.title')}
             text={t('config.text')}
-            action={{ label: t('config.action'), onClick: () => setSettingsOpen(true), testId: 'open-settings' }}
-            getKey={{ href: EUIPO_GET_KEY_URL, label: t('settings.getKey'), hint: t('config.hint') }}
+            action={{
+              label: t('config.action'),
+              onClick: () => setSettingsOpen(true),
+              testId: 'open-settings',
+            }}
+            getKey={{
+              href: EUIPO_GET_KEY_URL,
+              label: t('settings.getKey'),
+              hint: t('config.hint'),
+            }}
           />
         ) : loading && !data ? (
           <div className="grid h-full min-h-0 md:grid-cols-[320px_1fr]">
-            <div className="border-r"><ListSkeleton /></div>
-            <div className="hidden md:block"><DetailSkeleton /></div>
+            <div className="border-r">
+              <ListSkeleton />
+            </div>
+            <div className="hidden md:block">
+              <DetailSkeleton />
+            </div>
           </div>
         ) : error ? (
-          <div className="p-6"><ErrorMessage message={error.message} onRetry={refetch} /></div>
+          <div className="p-6">
+            <ErrorMessage message={error.message} onRetry={refetch} />
+          </div>
         ) : marks.length === 0 ? (
           <EmptyMarks onAdd={() => setAddOpen(true)} />
         ) : (
           <div className="grid h-full min-h-0 md:grid-cols-[320px_1fr]">
             <div className={`${selectedUuid ? 'hidden md:block' : 'block'} min-h-0 border-r`}>
-              <MarkList marks={marks} selectedUuid={selectedUuid} onSelect={(uuid) => void setSelectedUuid(uuid)} />
+              <MarkList
+                marks={marks}
+                selectedUuid={selectedUuid}
+                onSelect={(uuid) => void setSelectedUuid(uuid)}
+              />
             </div>
             <div className={`${selectedUuid ? 'block' : 'hidden md:block'} min-h-0`}>
               {selectedUuid ? (
@@ -148,7 +176,10 @@ export function App() {
                   key={`${selectedUuid}:${detailNonce}`}
                   uuid={selectedUuid}
                   onBack={() => void setSelectedUuid(null)}
-                  onRemoved={() => { void setSelectedUuid(null); refetch() }}
+                  onRemoved={() => {
+                    void setSelectedUuid(null)
+                    refetch()
+                  }}
                   onChanged={refetch}
                 />
               ) : (
@@ -162,7 +193,10 @@ export function App() {
       <AddMarkDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        onAdded={(uuid) => { refetch(); if (uuid) void setSelectedUuid(uuid) }}
+        onAdded={(uuid) => {
+          refetch()
+          if (uuid) void setSelectedUuid(uuid)
+        }}
       />
       <SettingsDialog
         open={settingsOpen}
@@ -197,8 +231,20 @@ export function App() {
           maskedKey: config?.maskedKey ?? '',
           sectionLabel: t('connection.section'),
           fields: [
-            { name: 'clientId', label: t('settings.clientId'), type: 'text', mono: true, testId: 'client-id-input' },
-            { name: 'clientSecret', label: t('settings.clientSecret'), type: 'password', mono: true, testId: 'client-secret-input' },
+            {
+              name: 'clientId',
+              label: t('settings.clientId'),
+              type: 'text',
+              mono: true,
+              testId: 'client-id-input',
+            },
+            {
+              name: 'clientSecret',
+              label: t('settings.clientSecret'),
+              type: 'password',
+              mono: true,
+              testId: 'client-secret-input',
+            },
           ],
           getKey: { href: EUIPO_GET_KEY_URL, label: t('settings.getKey'), hint: t('config.hint') },
           labels: {

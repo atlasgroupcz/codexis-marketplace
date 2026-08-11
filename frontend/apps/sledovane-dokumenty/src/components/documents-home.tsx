@@ -1,21 +1,21 @@
-import { useQueryState } from 'nuqs'
-import { useTranslation } from 'react-i18next'
-import { BookMarked, Plus, RefreshCw } from 'lucide-react'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Toaster } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
-import { ChangesFeed } from './changes-feed'
-import { DocumentGrid } from './document-grid'
-import { EmptyDocuments } from './empty-state'
-import { FeedSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import { SectionSwitch } from './section-switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { BookMarked, Plus, RefreshCw } from 'lucide-react'
+import { useQueryState } from 'nuqs'
+import { useTranslation } from 'react-i18next'
 import { useOverview } from '@/hooks/use-overview'
 import { useUnconfirmedCount } from '@/hooks/use-unconfirmed-count'
 import { sumUnconfirmed } from '@/lib/counts'
 import { tabParser } from '@/lib/url-state'
+import { ChangesFeed } from './changes-feed'
+import { DocumentGrid } from './document-grid'
+import { EmptyDocuments } from './empty-state'
+import { ErrorMessage } from './error-message'
+import { FeedSkeleton } from './loading-skeleton'
+import { SectionSwitch } from './section-switch'
 
 interface DocumentsHomeProps {
   section: 'documents' | 'folders'
@@ -42,7 +42,11 @@ export function DocumentsHome({
   return (
     <div className="bg-background text-foreground flex h-screen flex-col" data-testid="app-root">
       <AppHeader
-        brand={{ icon: BookMarked, title: t('followedDocs.title'), subtitle: t('followedDocs.tagline') }}
+        brand={{
+          icon: BookMarked,
+          title: t('followedDocs.title'),
+          subtitle: t('followedDocs.tagline'),
+        }}
         docs={{ app: 'sledovane-dokumenty', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>

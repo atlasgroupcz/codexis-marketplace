@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { Landmark } from 'lucide-react'
+import { describe, expect, it, vi } from 'vitest'
 import { AppHeader, HeaderGear } from './app-header'
 
 describe('AppHeader', () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { DetailResponse } from '@/lib/schemas'
 import { fetchDetail } from '@/lib/api'
+import type { DetailResponse } from '@/lib/schemas'
 
 export function useTopicDetail(uuid: string) {
   const [data, setData] = useState<DetailResponse | null>(null)

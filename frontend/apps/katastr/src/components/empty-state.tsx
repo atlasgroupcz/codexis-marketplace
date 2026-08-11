@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next'
 import { MessageSquareText } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { AddProceedingForm } from './add-proceeding-form'
 
 /** Cadastral parcel-map motif - parcels, a boundary line and a located plot. */
@@ -8,10 +8,25 @@ function PickProceedingArt({ className }: { className?: string }) {
     <svg viewBox="0 0 200 150" fill="none" className={className} aria-hidden role="img">
       {/* parcels */}
       <path d="M20 30 L92 22 L100 70 L28 80 Z" fill="#f6f6f4" stroke="#e2e2db" strokeWidth="1.5" />
-      <path d="M92 22 L168 32 L160 78 L100 70 Z" fill="#f1f1ed" stroke="#e2e2db" strokeWidth="1.5" />
-      <path d="M100 70 L160 78 L168 120 L108 126 Z" fill="#f6f6f4" stroke="#e2e2db" strokeWidth="1.5" />
+      <path
+        d="M92 22 L168 32 L160 78 L100 70 Z"
+        fill="#f1f1ed"
+        stroke="#e2e2db"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M100 70 L160 78 L168 120 L108 126 Z"
+        fill="#f6f6f4"
+        stroke="#e2e2db"
+        strokeWidth="1.5"
+      />
       {/* highlighted / located parcel */}
-      <path d="M28 80 L100 70 L108 126 L36 134 Z" fill="#f4f7f0" stroke="#cfe3ad" strokeWidth="1.5" />
+      <path
+        d="M28 80 L100 70 L108 126 L36 134 Z"
+        fill="#f4f7f0"
+        stroke="#cfe3ad"
+        strokeWidth="1.5"
+      />
       {/* surveyor boundary line */}
       <path d="M8 62 L96 50 L190 62" stroke="#dcdcd5" strokeWidth="1.5" strokeDasharray="4 5" />
       {/* parcel-number faux labels */}

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import type { NotifyBodyLabels, NotifyValues } from '@workspace/ui/components/notify-settings-body'
 import { NotifySettingsBody } from '@workspace/ui/components/notify-settings-body'
 import { SettingsDialogShell } from '@workspace/ui/components/settings-dialog-shell'
-import type { NotifyBodyLabels, NotifyValues } from '@workspace/ui/components/notify-settings-body'
+import { useEffect, useState } from 'react'
 
 export type { NotifyValues } from '@workspace/ui/components/notify-settings-body'
 
@@ -50,7 +50,12 @@ export function NotifySettings({
       title={labels.title}
       description={labels.description}
     >
-      <NotifySettingsBody value={value} onChange={handleChange} userEmail={userEmail} labels={labels} />
+      <NotifySettingsBody
+        value={value}
+        onChange={handleChange}
+        userEmail={userEmail}
+        labels={labels}
+      />
     </SettingsDialogShell>
   )
 }

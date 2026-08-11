@@ -35,7 +35,7 @@ export function detectUploadConflicts(
   const conflicts: Array<FileConflict> = []
 
   // Check if this is a folder upload by looking at relativePaths
-  const isFolderUpload = relativePaths?.some((p) => p && p.includes('/'))
+  const isFolderUpload = relativePaths?.some((p) => p?.includes('/'))
 
   if (isFolderUpload && relativePaths) {
     // For folder uploads, check root folder conflicts only
@@ -92,14 +92,9 @@ export function detectUploadConflicts(
  * Generate a unique filename by appending (1), (2), etc.
  * Example: "file.txt" -> "file (1).txt" -> "file (2).txt"
  */
-export function generateUniqueName(
-  originalName: string,
-  existingNames: Set<string>,
-): string {
+export function generateUniqueName(originalName: string, existingNames: Set<string>): string {
   // Case-insensitive check
-  const lowerExisting = new Set(
-    Array.from(existingNames).map((n) => n.toLowerCase()),
-  )
+  const lowerExisting = new Set(Array.from(existingNames).map((n) => n.toLowerCase()))
 
   if (!lowerExisting.has(originalName.toLowerCase())) {
     return originalName
@@ -162,7 +157,7 @@ export async function prepareFilesForUpload(
   const resultPaths: Array<string | undefined> = []
 
   // Check if this is a folder upload
-  const isFolderUpload = relativePaths?.some((p) => p && p.includes('/'))
+  const isFolderUpload = relativePaths?.some((p) => p?.includes('/'))
 
   for (let i = 0; i < originalFiles.length; i++) {
     const file = originalFiles[i]
@@ -174,9 +169,7 @@ export async function prepareFilesForUpload(
     if (isFolderUpload && relativePath) {
       // For folder uploads, check if the root folder has a resolution
       const [rootFolder = ''] = relativePath.split('/')
-      const resolution = rootFolder
-        ? resolutionMap.get(rootFolder.toLowerCase())
-        : undefined
+      const resolution = rootFolder ? resolutionMap.get(rootFolder.toLowerCase()) : undefined
 
       if (!resolution) {
         // No conflict for this folder, include as-is
@@ -209,8 +202,7 @@ export async function prepareFilesForUpload(
 
           if (!newRootName) {
             // First time renaming this folder - generate new name
-            newRootName =
-              resolution.newName ?? generateUniqueName(rootFolder, usedNames)
+            newRootName = resolution.newName ?? generateUniqueName(rootFolder, usedNames)
             usedNames.add(newRootName.toLowerCase())
             renamedFolders.set(rootFolderLower, newRootName)
           }
@@ -251,8 +243,7 @@ export async function prepareFilesForUpload(
 
         case 'rename': {
           // Generate unique name and create new File object
-          const newName =
-            resolution.newName ?? generateUniqueName(file.name, usedNames)
+          const newName = resolution.newName ?? generateUniqueName(file.name, usedNames)
           // Use arrayBuffer() to get the raw content, avoiding Bun runtime bug
           // where passing File/Blob as BlobParts keeps the original name
           const buffer = await file.arrayBuffer()

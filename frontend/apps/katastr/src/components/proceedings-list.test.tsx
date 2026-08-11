@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
+
 import { render, screen } from '@testing-library/react'
-import { ProceedingsList } from './proceedings-list'
+import { describe, expect, it } from 'vitest'
 import type { OverviewResponse, ProceedingSummary } from '@/lib/schemas'
+import { ProceedingsList } from './proceedings-list'
 
 function proc(overrides: Partial<ProceedingSummary>): ProceedingSummary {
   return {
@@ -45,8 +46,14 @@ describe('ProceedingsList filter', () => {
   it('shows all rows and the unconfirmed count when filter=all', () => {
     render(
       <ProceedingsList
-        data={DATA} loading={false} error={null} refetch={noop}
-        selectedCislo={null} onSelect={noop} filter="all" onFilterChange={noop}
+        data={DATA}
+        loading={false}
+        error={null}
+        refetch={noop}
+        selectedCislo={null}
+        onSelect={noop}
+        filter="all"
+        onFilterChange={noop}
       />,
     )
     expect(screen.getByTestId('proceeding-row-V-1/2026-701')).toBeTruthy()
@@ -59,8 +66,14 @@ describe('ProceedingsList filter', () => {
   it('hides confirmed rows when filter=unconfirmed', () => {
     render(
       <ProceedingsList
-        data={DATA} loading={false} error={null} refetch={noop}
-        selectedCislo={null} onSelect={noop} filter="unconfirmed" onFilterChange={noop}
+        data={DATA}
+        loading={false}
+        error={null}
+        refetch={noop}
+        selectedCislo={null}
+        onSelect={noop}
+        filter="unconfirmed"
+        onFilterChange={noop}
       />,
     )
     expect(screen.getByTestId('proceeding-row-V-1/2026-701')).toBeTruthy()
@@ -69,13 +82,17 @@ describe('ProceedingsList filter', () => {
   })
 
   it('shows the empty message when filter=unconfirmed and none match', () => {
-    const allConfirmed = overview([
-      proc({ cislo_rizeni: 'V-1/2026-701', unconfirmed_count: 0 }),
-    ])
+    const allConfirmed = overview([proc({ cislo_rizeni: 'V-1/2026-701', unconfirmed_count: 0 })])
     render(
       <ProceedingsList
-        data={allConfirmed} loading={false} error={null} refetch={noop}
-        selectedCislo={null} onSelect={noop} filter="unconfirmed" onFilterChange={noop}
+        data={allConfirmed}
+        loading={false}
+        error={null}
+        refetch={noop}
+        selectedCislo={null}
+        onSelect={noop}
+        filter="unconfirmed"
+        onFilterChange={noop}
       />,
     )
     expect(screen.getByTestId('no-unconfirmed')).toBeTruthy()

@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Badge } from '@workspace/ui/components/badge'
 import {
   Card,
   CardAction,
@@ -7,10 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@workspace/ui/components/card'
-import { Badge } from '@workspace/ui/components/badge'
-import { TrackingTypeBadge } from './tracking-type-badge'
-import type { TrackedDocumentSummary } from '@/lib/schemas'
+import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/lib/format'
+import type { TrackedDocumentSummary } from '@/lib/schemas'
+import { TrackingTypeBadge } from './tracking-type-badge'
 
 interface DocumentCardProps {
   document: TrackedDocumentSummary

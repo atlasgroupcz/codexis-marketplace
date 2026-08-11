@@ -1,9 +1,9 @@
-import { useTranslation } from 'react-i18next'
-import { Activity, FileText, ShieldAlert } from 'lucide-react'
 import { Card, CardContent } from '@workspace/ui/components/card'
-import { NoChangesArt } from './illustrations'
-import type { SubjectChange } from '@/lib/schemas'
+import { Activity, FileText, ShieldAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { formatDateTime } from '@/lib/format'
+import type { SubjectChange } from '@/lib/schemas'
+import { NoChangesArt } from './illustrations'
 
 function iconFor(typ: string) {
   if (typ === 'nove_rizeni') return <ShieldAlert className="size-4 text-red-600" />

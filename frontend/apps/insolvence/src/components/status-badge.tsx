@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
-import { ShieldAlert, ShieldCheck } from 'lucide-react'
 import { Badge } from '@workspace/ui/components/badge'
+import { ShieldAlert, ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const DRUH_CLASSES: Record<string, string> = {
   konkurs: 'border-red-200 bg-red-50 text-red-800',

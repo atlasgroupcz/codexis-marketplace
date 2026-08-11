@@ -1,7 +1,7 @@
 import i18next from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import en from '../../public/locales/en/translation.json'
 import cs from '../../public/locales/cs/translation.json'
+import en from '../../public/locales/en/translation.json'
 import sk from '../../public/locales/sk/translation.json'
 
 const testI18n = i18next.createInstance()

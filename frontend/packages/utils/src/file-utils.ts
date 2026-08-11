@@ -30,9 +30,7 @@ function isJsonFile(mimeType: string, extension?: string | null): boolean {
 function isPlainTextFile(mimeType: string, extension?: string | null): boolean {
   if (mimeType === 'text/plain') return true
 
-  return ['txt', 'text', 'log', 'cfg', 'conf', 'ini'].includes(
-    normalizedExtension(extension),
-  )
+  return ['txt', 'text', 'log', 'cfg', 'conf', 'ini'].includes(normalizedExtension(extension))
 }
 
 export function isEditableFile(

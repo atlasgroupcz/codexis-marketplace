@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Check, ExternalLink } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import type { ConnField, ConnGetKeyLink } from '@workspace/ui/components/connection-settings'
 import { Input } from '@workspace/ui/components/input'
 import { Label } from '@workspace/ui/components/label'
 import { Skeleton } from '@workspace/ui/components/skeleton'
-import type { ConnField, ConnGetKeyLink } from '@workspace/ui/components/connection-settings'
+import { Check, ExternalLink } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 export interface ConnectionSectionLabels {
   connected: string
@@ -68,9 +68,12 @@ export function ConnectionSection({
     setConfirmRemove(false)
   }, [configured])
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
 
   const allFilled = fields.every((f) => (values[f.name] ?? '').trim().length > 0)
 

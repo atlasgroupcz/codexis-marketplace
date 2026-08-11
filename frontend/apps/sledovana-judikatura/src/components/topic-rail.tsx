@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next'
-import { cn } from '@workspace/ui/lib/utils'
 import {
   Item,
   ItemActions,
@@ -8,6 +6,8 @@ import {
   ItemGroup,
   ItemTitle,
 } from '@workspace/ui/components/item'
+import { cn } from '@workspace/ui/lib/utils'
+import { useTranslation } from 'react-i18next'
 import type { TopicSummary } from '@/lib/schemas'
 
 interface TopicRailProps {
@@ -67,7 +67,14 @@ export function TopicRail({ topics, topicFilter, onSelectFilter }: TopicRailProp
 
   return (
     <ItemGroup className="gap-1">
-      {railItem('__all__', !topicFilter, () => onSelectFilter(null), t('judikatura.allTopics'), null, totalUnconfirmed)}
+      {railItem(
+        '__all__',
+        !topicFilter,
+        () => onSelectFilter(null),
+        t('judikatura.allTopics'),
+        null,
+        totalUnconfirmed,
+      )}
       {topics.map((topic) =>
         railItem(
           topic.uuid,

@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next'
-import { Info, Landmark, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { Badge } from '@workspace/ui/components/badge'
 import { Card, CardContent } from '@workspace/ui/components/card'
-import { ErrorMessage } from './error-message'
+import { Info, Landmark, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useDph } from '@/hooks/use-dph'
 import { formatDate } from '@/lib/format'
+import { ErrorMessage } from './error-message'
 
 /** VAT-payer reliability + published bank accounts (MF registry), for a company. */
 export function DphPanel({ ico }: { ico: string }) {

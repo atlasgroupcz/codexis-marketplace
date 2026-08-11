@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next'
-import { MessageSquareText } from 'lucide-react'
 import {
   Empty,
   EmptyContent,
@@ -8,6 +6,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@workspace/ui/components/empty'
+import { MessageSquareText } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { NoChangesArt, WatchDocsArt } from './illustrations'
 
 /** Opens a new CODEXIS conversation pre-filled with an example request. */

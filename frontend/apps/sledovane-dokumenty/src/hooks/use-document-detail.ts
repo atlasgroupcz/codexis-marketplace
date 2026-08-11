@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { DetailResponse } from '@/lib/schemas'
 import { fetchDetail } from '@/lib/api'
+import type { DetailResponse } from '@/lib/schemas'
 
 interface UseDocumentDetailResult {
   data: DetailResponse | null
@@ -19,9 +19,7 @@ export function useDocumentDetail(uuid: string): UseDocumentDetailResult {
     setError(null)
     fetchDetail(uuid)
       .then(setData)
-      .catch((err: unknown) =>
-        setError(err instanceof Error ? err : new Error(String(err))),
-      )
+      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setLoading(false))
   }, [uuid])
 

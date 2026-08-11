@@ -1,21 +1,17 @@
-import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { FileText, Link2, Search } from 'lucide-react'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@workspace/ui/components/input-group'
+import { ItemGroup } from '@workspace/ui/components/item'
 import { Label } from '@workspace/ui/components/label'
 import { Switch } from '@workspace/ui/components/switch'
-import { ItemGroup } from '@workspace/ui/components/item'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@workspace/ui/components/input-group'
-import { FeedItem } from './feed-item'
-import { NoChanges } from './empty-state'
-import { FeedSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import type { TrackedDocumentSummary } from '@/lib/schemas'
+import { FileText, Link2, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useChangesFeed } from '@/hooks/use-changes-feed'
 import { formatDateTime, formatRelative, plainSnippet } from '@/lib/format'
+import type { TrackedDocumentSummary } from '@/lib/schemas'
+import { NoChanges } from './empty-state'
+import { ErrorMessage } from './error-message'
+import { FeedItem } from './feed-item'
+import { FeedSkeleton } from './loading-skeleton'
 
 interface ChangesFeedProps {
   documents: Array<TrackedDocumentSummary>
@@ -78,9 +74,7 @@ export function ChangesFeed({ documents, onSelectDocument }: ChangesFeedProps) {
               <FeedItem
                 key={`${change.documentUuid}-${change.detected_on}-${i}`}
                 unread={unread}
-                icon={
-                  <Icon className={unread ? 'text-primary' : 'text-muted-foreground'} />
-                }
+                icon={<Icon className={unread ? 'text-primary' : 'text-muted-foreground'} />}
                 title={change.documentName}
                 description={plainSnippet(change.description_md)}
                 date={formatRelative(change.detected_on)}
