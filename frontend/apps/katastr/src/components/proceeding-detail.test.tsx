@@ -61,4 +61,11 @@ describe('ProceedingDetail - confirm refreshes overview', () => {
     fireEvent.click(screen.getByTestId('mark-all-read'))
     await waitFor(() => expect(onChanged).toHaveBeenCalled())
   })
+
+  it('keeps the bulk action off the timeline tab so switching tabs shifts nothing', () => {
+    render(<ProceedingDetail cisloRizeni="V-1/2026-701" onBack={() => {}} />)
+    expect(screen.queryByTestId('mark-all-read')).toBeNull()
+    fireEvent.mouseDown(screen.getByTestId('tab-zmeny'))
+    expect(screen.getByTestId('mark-all-read')).toBeTruthy()
+  })
 })

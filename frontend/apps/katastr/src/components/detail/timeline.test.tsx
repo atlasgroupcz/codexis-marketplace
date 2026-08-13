@@ -42,6 +42,83 @@ describe('ProceedingTimeline', () => {
     expect(screen.queryByTestId('timeline-node-op:2')).toBeNull()
   })
 
+  it('shows the time of day, so same-day steps do not read as simultaneous', () => {
+    render(
+      <ProceedingTimeline
+        proc={{
+          ...base,
+          stav: 'Probíhá',
+          provedene_operace: [
+            { nazev: 'Založení řízení', datumProvedeni: '2026-01-15T07:42:54' },
+            { nazev: 'Informace o vyznačení plomby', datumProvedeni: '2026-01-15T07:54:18' },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByTestId('timeline-node-op:0').textContent).toContain('07:42')
+    expect(screen.getByTestId('timeline-node-op:1').textContent).toContain('07:54')
+  })
+
+  it('omits the time when ČÚZK sends a bare date, rather than inventing midnight', () => {
+    render(
+      <ProceedingTimeline
+        proc={{
+          ...base,
+          stav: 'Probíhá',
+          provedene_operace: [{ nazev: 'Založení řízení', datumProvedeni: '2026-01-15' }],
+        }}
+      />,
+    )
+    expect(screen.getByTestId('timeline-node-op:0').textContent).not.toContain('00:00')
+  })
+
+  it('swaps the now chip for a closed one once ČÚZK reports the ending', () => {
+    render(
+      <ProceedingTimeline
+        proc={{
+          ...base,
+          stav: 'Ukončeno',
+          provedene_operace: [
+            { nazev: 'Vyrozumění o provedení vkladu', datumProvedeni: '2026-06-09' },
+            { nazev: 'Ukončení řízení', datumProvedeni: '2026-06-12' },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByTestId('timeline-node-op:1').getAttribute('data-state')).toBe('done')
+    expect(screen.queryByText('now')).toBeNull()
+    expect(screen.getByText('closed')).toBeTruthy()
+  })
+
+  it('marks a rejected proceeding with its own chip, not the closed one', () => {
+    render(
+      <ProceedingTimeline
+        proc={{
+          ...base,
+          stav: 'Zamítnuto',
+          provedene_operace: [{ nazev: 'Zaplombování', datumProvedeni: '2026-06-01' }],
+        }}
+      />,
+    )
+    expect(screen.getByText('rejected')).toBeTruthy()
+    expect(screen.queryByText('closed')).toBeNull()
+    expect(screen.queryByText('now')).toBeNull()
+  })
+
+  it('an unrecognised ending keeps the now chip rather than inventing one', () => {
+    render(
+      <ProceedingTimeline
+        proc={{
+          ...base,
+          stav: 'Něco, co ČÚZK vymyslel dnes ráno',
+          provedene_operace: [{ nazev: 'Založení řízení', datumProvedeni: '2026-06-01' }],
+        }}
+      />,
+    )
+    expect(screen.getByText('now')).toBeTruthy()
+    expect(screen.queryByText('closed')).toBeNull()
+  })
+
   it('rejected proceeding renders a terminal node', () => {
     render(
       <ProceedingTimeline

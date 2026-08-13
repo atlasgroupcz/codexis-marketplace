@@ -25,6 +25,7 @@
     "checkResultErrors": "Refresh complete: {{newChanges}} new changes, {{errors}} errors.",
     "colNumber": "Proceeding No.",
     "colLabel": "Label",
+    "colDetected": "Detected",
     "colStav": "Status",
     "colOperations": "Operations",
     "colUhrada": "Payment",
@@ -40,10 +41,9 @@
     "changeHistory": "Change History",
     "noChanges": "No changes yet",
     "noChangesHint": "When something changes in this proceeding, it shows up here.",
-    "uhradaChanged": "Payment changed",
     "unreadChanges": "{{count}} unread changes",
     "markRead": "Mark as read",
-    "markAllRead": "Mark all read ({{count}})",
+    "markAllRead": "Mark all read",
     "readOn": "read on {{date}}",
     "addLabelHint": "add label",
     "labelPlaceholder": "e.g. Novák family",
@@ -53,25 +53,20 @@
     "allOperations": "All recorded operations",
     "timeline": {
       "title": "Proceeding progress",
-      "prijeti": "Petition received",
-      "plomba": "Lien marked",
-      "povoleniVkladu": "Entry authorised",
-      "provedeniVkladu": "Entry executed",
-      "vyrozumeni": "Notice of entry",
-      "zahajeni": "Proceeding opened",
-      "provedeniZaznamu": "Record executed",
-      "ukonceni": "Proceeding closed",
-      "zamitnuti": "Rejected",
-      "zastaveni": "Stopped",
-      "zpetvzeti": "Withdrawn",
       "now": "now",
-      "expected": "-"
+      "ended": "closed",
+      "rejected": "rejected"
     },
     "type": {
       "vklad": "Entry",
       "zaznam": "Record",
       "poznamka": "Note",
       "rizeni": "Proceeding"
+    },
+    "uhrada": {
+      "U": "Paid",
+      "N": "Unpaid",
+      "O": "Exempt"
     }
   },
   "settings": {
