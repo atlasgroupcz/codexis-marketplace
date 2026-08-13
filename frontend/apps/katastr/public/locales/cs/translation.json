@@ -25,6 +25,7 @@
     "checkResultErrors": "Kontrola dokončena: {{newChanges}} nových změn, {{errors}} chyb.",
     "colNumber": "Číslo řízení",
     "colLabel": "Označení",
+    "colDetected": "Zjištěno",
     "colStav": "Stav",
     "colOperations": "Provedené operace",
     "colUhrada": "Úhrada",
@@ -40,10 +41,9 @@
     "changeHistory": "Historie změn",
     "noChanges": "Zatím žádné změny",
     "noChangesHint": "Jakmile se u řízení něco změní, uvidíte to tady.",
-    "uhradaChanged": "Změna úhrady",
     "unreadChanges": "{{count}} nepřečtených změn",
     "markRead": "Označit přečteno",
-    "markAllRead": "Označit vše přečteno ({{count}})",
+    "markAllRead": "Označit vše přečteno",
     "readOn": "přečteno {{date}}",
     "addLabelHint": "přidat označení",
     "labelPlaceholder": "Např. Novákovi",
@@ -53,25 +53,20 @@
     "allOperations": "Všechny provedené operace",
     "timeline": {
       "title": "Průběh řízení",
-      "prijeti": "Přijetí návrhu",
-      "plomba": "Plomba vyznačena",
-      "povoleniVkladu": "Povolení vkladu",
-      "provedeniVkladu": "Provedení vkladu",
-      "vyrozumeni": "Vyrozumění o vkladu",
-      "zahajeni": "Zahájení řízení",
-      "provedeniZaznamu": "Provedení záznamu",
-      "ukonceni": "Ukončení řízení",
-      "zamitnuti": "Zamítnuto",
-      "zastaveni": "Zastaveno",
-      "zpetvzeti": "Vzato zpět",
       "now": "teď",
-      "expected": "-"
+      "ended": "ukončeno",
+      "rejected": "zamítnuto"
     },
     "type": {
       "vklad": "Vklad",
       "zaznam": "Záznam",
       "poznamka": "Poznámka",
       "rizeni": "Řízení"
+    },
+    "uhrada": {
+      "U": "Uhrazeno",
+      "N": "Neuhrazeno",
+      "O": "Osvobozeno"
     }
   },
   "settings": {

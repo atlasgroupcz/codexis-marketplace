@@ -7,6 +7,7 @@ import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
 import { ArrowLeft, Landmark, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useConfirmChange } from '@/hooks/use-confirm-change'
 import { useDetail } from '@/hooks/use-detail'
 import { removeProceeding, setLabel } from '@/lib/api'
 import { errorMessage, formatDate, formatRelative } from '@/lib/format'
@@ -31,6 +32,11 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
   const [editing, setEditing] = useState(false)
   const [labelDraft, setLabelDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const changeConfirm = useConfirmChange(cisloRizeni, () => {
+    refetch()
+    onChanged?.()
+  })
 
   const remove = useConfirmAction(() =>
     removeProceeding(cisloRizeni)
@@ -193,12 +199,9 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
         </TabsContent>
         <TabsContent value="zmeny">
           <ChangeHistory
-            cisloRizeni={cisloRizeni}
             changes={proc.changes}
-            onConfirmed={() => {
-              refetch()
-              onChanged?.()
-            }}
+            onConfirm={changeConfirm.confirm}
+            confirming={changeConfirm.pending}
           />
         </TabsContent>
       </Tabs>
