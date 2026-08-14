@@ -15,7 +15,7 @@ use std::process;
 #[command(name = "cdxctl", version, about)]
 struct Cli {
     /// Output format: json (default) or table
-    #[arg(long, default_value = "false")]
+    #[arg(long, global = true)]
     table: bool,
 
     #[command(subcommand)]
@@ -530,9 +530,6 @@ enum NotificationCommands {
         /// Notification message
         #[arg(short, long)]
         message: String,
-        /// Optional shell action to execute on refresh
-        #[arg(short, long)]
-        action: Option<String>,
         /// Optional link URL (clicking navigates here and marks as confirmed)
         #[arg(short, long)]
         link: Option<String>,
@@ -972,17 +969,9 @@ fn main() {
         Commands::Notification { command } => match command {
             NotificationCommands::Create {
                 message,
-                action,
                 link,
                 extra,
-            } => commands::notification::create(
-                &client,
-                &message,
-                action.as_deref(),
-                link.as_deref(),
-                &extra,
-                format,
-            ),
+            } => commands::notification::create(&client, &message, link.as_deref(), &extra, format),
             NotificationCommands::List { days, unseen } => {
                 commands::notification::list(&client, days, unseen, format)
             }
@@ -1049,6 +1038,26 @@ fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn accepts_the_table_flag_after_the_subcommand() {
+        // Where users put it, and where the docs imply it goes.
+        for argv in [
+            ["cdxctl", "skill", "list", "--table"],
+            ["cdxctl", "automation", "list", "--table"],
+        ] {
+            let cli = Cli::try_parse_from(argv).expect("--table should parse after the subcommand");
+            assert!(cli.table);
+        }
+    }
+
+    #[test]
+    fn accepts_the_table_flag_before_the_subcommand() {
+        let cli = Cli::try_parse_from(["cdxctl", "--table", "skill", "list"])
+            .expect("--table should parse before the subcommand");
+
+        assert!(cli.table);
+    }
 
     #[test]
     fn parses_agent_list_command() {

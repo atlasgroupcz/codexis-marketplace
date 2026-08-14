@@ -297,11 +297,6 @@ cdxctl notification create \
     --message "Chat completed - click to view" \
     --link "/chat/Q2hhdDoxMjYtMzZhOTFk..."
 
-# Create with a shell action (executed on daemon refresh)
-cdxctl notification create \
-    --message "Backup finished" \
-    --action "echo done > /tmp/backup_status"
-
 # Create with extra custom fields
 cdxctl notification create \
     --message "New data available" \
