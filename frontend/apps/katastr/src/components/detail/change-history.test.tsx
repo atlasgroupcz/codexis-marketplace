@@ -134,6 +134,37 @@ describe('ChangeHistory', () => {
     expect(container.textContent).toContain('Paid')
   })
 
+  it('appends a payment flip that rode along with new operations', () => {
+    // The payment used to be printed only beside a state change, so a check that
+    // found an operation and a payment at once showed the operation and dropped
+    // the payment entirely - the CLI and the e-mail reported both.
+    const { container } = render3([
+      change({
+        old_stav: 'Probíhá zpracování',
+        new_stav: 'Probíhá zpracování',
+        new_operations: [{ nazev: 'Zaplombování', datumProvedeni: '2026-05-15T13:41:00' }],
+        stav_uhrady_changed: true,
+        old_stav_uhrady: 'N',
+        new_stav_uhrady: 'U',
+      }),
+    ])
+    expect(container.textContent).toContain('Zaplombování')
+    expect(container.textContent).toContain('Paid')
+  })
+
+  it('leaves no dangling separator when the payment is the whole entry', () => {
+    const { container } = render3([
+      change({
+        old_stav: 'Probíhá',
+        new_stav: 'Probíhá',
+        stav_uhrady_changed: true,
+        old_stav_uhrady: 'N',
+        new_stav_uhrady: 'U',
+      }),
+    ])
+    expect(container.querySelectorAll('tbody td')[1]?.textContent?.trim()).toBe('Paid')
+  })
+
   it('lets neither the columns nor the rows be sized by what a row holds', () => {
     // Confirming removes buttons - the row's, and on the last one the header's -
     // and with the browser's defaults each removal re-measured the table and

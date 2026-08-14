@@ -53,11 +53,14 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
 
   if (negative) {
     // The bad outcome is a distinct closing node after everything that happened.
+    // `done`, not `current`: a rejected proceeding has no step in progress. The
+    // node used to claim both, and every reader had to know that `isTerminal`
+    // wins over `state` to draw it right.
     nodes.push({
       key: 'terminal',
       rawName: proc.stav,
       date: null,
-      state: 'current',
+      state: 'done',
       isPlomba: false,
       isTerminal: true,
       isNegative: true,

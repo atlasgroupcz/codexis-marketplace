@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next'
 import { CheckCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatDate, formatTime } from '@/lib/format'
@@ -14,22 +13,23 @@ interface ChangeHistoryProps {
 }
 
 /**
- * The state a proceeding was in after this check, in ČÚZK's own words.
+ * What this check found, in ČÚZK's own words - or null when the only thing that
+ * moved was the payment, which is appended separately.
  *
  * The previous state is never printed: changes are consecutive snapshots, so a
  * row's `old_stav` is always the `new_stav` of the row below it.
  *
- * Neither are the operation names. They are the very rows the Průběh tab draws,
- * there with ČÚZK's own timestamps, and ČÚZK names one event twice in two
- * vocabularies - "Řízení bylo ukončeno" as a state, "Ukončení řízení" as an
- * operation - so half the rows said it twice. They stay in the change record, so
- * `describe_change` still lists them in the CLI output and the e-mail.
+ * Neither are the operation names when the state itself moved. They are the very
+ * rows the Průběh tab draws, there with ČÚZK's own timestamps, and ČÚZK names one
+ * event twice in two vocabularies - "Řízení bylo ukončeno" as a state, "Ukončení
+ * řízení" as an operation - so half the rows said it twice. They stay in the
+ * change record, so `describe_change` still lists them in the CLI and the e-mail.
  */
-function changeLine(change: ProceedingChange, t: TFunction): string {
+function changeLine(change: ProceedingChange): string | null {
   if (change.old_stav !== change.new_stav) return change.new_stav
   if (change.new_operations.length > 0)
     return change.new_operations.map((op) => op.nazev).join(', ')
-  return uhradaLabel(t, change.new_stav_uhrady)
+  return null
 }
 
 export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryProps) {
@@ -102,6 +102,7 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
       <tbody>
         {ordered.map(({ change, index }) => {
           const isUnread = !change.confirmed_on
+          const line = changeLine(change)
           return (
             <tr key={index} className="border-secondary border-b last:border-b-0">
               <td className="text-muted-foreground py-2.5 pr-3 align-baseline text-xs whitespace-nowrap tabular-nums">
@@ -119,11 +120,15 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
                   isUnread ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
-                {changeLine(change, t)}
-                {change.stav_uhrady_changed && change.old_stav !== change.new_stav && (
+                {line}
+                {/* Shown whenever the payment moved - on its own, beside a state
+                    change, or beside new operations. It used to require a state
+                    change, so a check that brought an operation and a payment at
+                    once printed only the operation and dropped the payment. */}
+                {change.stav_uhrady_changed && (
                   <span className="text-muted-foreground font-normal">
-                    {' '}
-                    &middot; {uhradaLabel(t, change.new_stav_uhrady)}
+                    {line && <span className="text-border"> &middot; </span>}
+                    {uhradaLabel(t, change.new_stav_uhrady)}
                   </span>
                 )}
               </td>
