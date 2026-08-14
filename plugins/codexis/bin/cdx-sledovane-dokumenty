@@ -137,11 +137,18 @@ def cmd_list(args):
 
 def cmd_check(args):
     result = tracking.check(args.codexis_id, printer=print_progress)
+    notify_failed = False
     if result.get("changed"):
         from sledovane_dokumenty_core import notify
-        notify.notify_document_changes(result["changed"])
+        # `is False`, not falsy: None means no notification was attempted, which
+        # is not a failure. The check is already saved by this point, so the exit
+        # code says the user was not told - not that the check failed.
+        notify_failed = notify.notify_document_changes(result["changed"])["inApp"] is False
     if result["changes_found"] == 0 and not result["errors"]:
         status("Žádné nové změny.")
+    if notify_failed:
+        err("Upozornění se nepodařilo odeslat do aplikace.")
+        sys.exit(1)
 
 
 def cmd_confirm(args):
@@ -395,6 +402,12 @@ def cmd_folder_check(args):
         status("Žádné nové změny legislativy.")
     else:
         status(f"OK: {result['changes_found']} nových změn legislativy.")
+    # Only the refused notification ends the run non-zero. The errors printed
+    # above keep exiting zero, as they always have - turning those red is a
+    # separate decision and does not belong in this fix.
+    if result["notify_failed"]:
+        err("Upozornění se nepodařilo odeslat do aplikace.")
+        sys.exit(1)
 
 
 def cmd_folder_show(args):
