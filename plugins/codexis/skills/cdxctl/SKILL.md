@@ -85,7 +85,8 @@ cdxctl automation trigger <id>
 
 **Writing `--prompt`:** keep it short - one or two imperative sentences naming the task, e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. It is the first message of each run, not a scheduling request (the schedule is `--repeat`/`--day-part`). Never put `cdxctl automation create/update` inside the prompt - this command already creates the automation, so a nested create would just register more automations instead of doing the work.
 
-**IDs:** use the `id` or `uuid` from `automation list`. Both Node IDs (base64) and raw UUIDs work.
+**IDs:** use the `id` from `automation list`. A raw UUID works too - it is encoded
+into the Node ID for you.
 
 More worked calls: `references/automation-examples.md`.
 
@@ -382,7 +383,9 @@ records, so do not resend one you have already filed in this conversation.
 ## Output
 
 - **Default:** JSON to stdout (machine-parseable)
-- **Table:** Add `--table` flag for human-readable columns
+- **Table:** Add `--table` flag for human-readable columns. A value longer than
+  50 characters is truncated with an ellipsis, so take the full text from the
+  JSON rather than from a table you are passing on.
 - **Errors:** Printed to stderr
 
 ## Schedule Format
