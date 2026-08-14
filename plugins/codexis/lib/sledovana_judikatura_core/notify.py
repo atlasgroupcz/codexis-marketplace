@@ -371,9 +371,7 @@ def _resolve_app_link():
     return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
-def _send_inapp(
-    message: str, *, action: str | None = None, link: str | None = None
-) -> bool:
+def _send_inapp(message: str, *, link: str | None = None) -> bool:
     """Create an in-app (notification-center bell) notification via the daemon's
     GraphQL createNotification. Best-effort: returns False on missing config or a
     transport error, never raises (a notification must not fail the check)."""
@@ -386,8 +384,6 @@ def _send_inapp(
         "{ createNotification(input: $input) { id } }"
     )
     notification_input = {"message": message, "type": _NOTIFICATION_TYPE}
-    if action:
-        notification_input["action"] = action
     if link:
         notification_input["link"] = link
     body = json.dumps(

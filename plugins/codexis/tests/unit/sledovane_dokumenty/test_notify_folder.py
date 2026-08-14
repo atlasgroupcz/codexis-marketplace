@@ -481,3 +481,21 @@ def test_resolve_app_link_is_none_without_daemon_config(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.delenv("CODEXIS_PUBLIC_DAEMON_URL", raising=False)
     assert notify._resolve_app_link() is None
+
+
+def test_change_notification_sends_no_action_field(dokumenty_app_dir, monkeypatch):
+    # `CreateNotificationInput` has no `action` - the daemon dropped the
+    # call-to-action button, so a caller that still passes a label has the whole
+    # mutation rejected and the notification never arrives.
+    sent = []
+    monkeypatch.setattr(notify, "_send_inapp", lambda *a, **k: sent.append(k) or True)
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": False, "inApp": True, "recipients": []},
+    )
+
+    notify.notify_changes(_folder_results())
+
+    assert sent, "the in-app notification was not attempted"
+    assert "action" not in sent[0], f"still sends a dropped field: {sent[0]}"
