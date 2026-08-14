@@ -134,14 +134,16 @@ describe('ChangeHistory', () => {
     expect(container.textContent).toContain('Paid')
   })
 
-  it('keeps the columns the same width whether a row is read or not', () => {
+  it('lets neither the columns nor the rows be sized by what a row holds', () => {
+    // Confirming removes buttons - the row's, and on the last one the header's -
+    // and with the browser's defaults each removal re-measured the table and
+    // moved everything under it.
     const { container } = render3([change({ confirmed_on: '2026-05-19T08:00:00' })])
-    // Content must not decide the layout: confirming drops a button and recolours
-    // the state, and with the browser's default the whole table re-measured and
-    // every row moved under the reader.
-    const table = container.querySelector('table')
-    expect(table?.className).toContain('table-fixed')
+    expect(container.querySelector('table')?.className).toContain('table-fixed')
     expect(container.querySelectorAll('col')).toHaveLength(3)
+    // the header carries the bulk action, so its height is pinned too
+    expect(container.querySelector('thead tr')?.className).toMatch(/\bh-9\b/)
+    expect(container.querySelector('tbody tr')?.className).toMatch(/\bh-10\b/)
   })
 
   it('marks a read row by colour, not by weight', () => {
