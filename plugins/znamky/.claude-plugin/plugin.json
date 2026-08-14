@@ -1,7 +1,7 @@
 {
   "name": "znamky",
   "iconPath": "icon.svg",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Hlídač ochranných známek (ÚPV + EUIPO přes TMview)",
   "author": {
     "name": "ATLAS GROUP",

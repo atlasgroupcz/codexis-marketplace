@@ -227,3 +227,48 @@ def test_save_report_id_stays_clean_on_stdout(
     out, err = capsys.readouterr()
     assert out.strip() == "2026-04-20"
     assert "OK: report '2026-04-20' uložen" in err
+
+
+# ── a refused bell here does NOT end the run red ─────────────────────────────
+
+
+def test_save_report_says_the_bell_was_refused(
+    judikatura_app_dir, tmp_path, monkeypatch, capsys
+):
+    u, _ = tracking.init("Téma")
+    report_path = tmp_path / "report.json"
+    report_path.write_text(json.dumps(_report()))
+    monkeypatch.setattr(
+        _cli.notify_settings,
+        "get_notify",
+        lambda: {"email": False, "inApp": True, "recipients": []},
+    )
+
+    with patch.object(_cli.notify, "inapp_change_summary", return_value=False):
+        _cli.cmd_save_report(argparse.Namespace(uuid=u, file=str(report_path)))
+
+    # Deliberately no SystemExit, unlike the other plugins' `check`. This runs as
+    # one step of an AI agent's automation and the report is already written, so
+    # a non-zero exit invites the agent to repeat the step and store a second
+    # copy. The agent reads the output, so the ERROR line is what reaches the
+    # user.
+    assert "ERROR: Upozornění se nepodařilo odeslat" in capsys.readouterr().err
+
+
+def test_save_report_stays_quiet_when_there_was_nothing_to_notify(
+    judikatura_app_dir, tmp_path, monkeypatch, capsys
+):
+    u, _ = tracking.init("Téma")
+    report_path = tmp_path / "report.json"
+    report_path.write_text(json.dumps(_report()))
+    monkeypatch.setattr(
+        _cli.notify_settings,
+        "get_notify",
+        lambda: {"email": False, "inApp": True, "recipients": []},
+    )
+
+    with patch.object(_cli.notify, "inapp_change_summary", return_value=None):
+        _cli.cmd_save_report(argparse.Namespace(uuid=u, file=str(report_path)))
+
+    # None is a report with no new case law in it - normal, not a failure.
+    assert "nepodařilo" not in capsys.readouterr().err

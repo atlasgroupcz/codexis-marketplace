@@ -232,11 +232,26 @@ def _send_inapp(message, *, link=None, ntype="legislation-changed"):
             "Content-Type": "application/json; charset=utf-8",
         },
     )
+    return _accepted(req)
+
+
+def _accepted(req):
+    """True when the daemon accepted the mutation.
+
+    The status code alone does not say: a rejected mutation comes back as HTTP
+    200 with the reason in the body, so a handler that only closes the response
+    reports every rejection as a delivery. That is how a dropped input field went
+    unnoticed for a month of scheduled runs.
+
+    `ValueError` belongs in the tuple because that is what `json.load` raises on a
+    body that is not JSON at all, e.g. a proxy's error page.
+    """
     try:
-        urllib.request.urlopen(req, timeout=30).close()
-        return True
-    except (urllib.error.URLError, OSError):
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.load(resp)
+    except (urllib.error.URLError, OSError, ValueError):
         return False
+    return isinstance(payload, dict) and not payload.get("errors")
 
 
 # ── summaries ────────────────────────────────────────────────────────────────
@@ -299,13 +314,18 @@ def build_summary(results):
 def notify_changes(results, settings=None):
     """Send e-mail and/or in-app notifications for detected changes per settings.
 
-    Returns {"email": bool, "inApp": bool, "changes": int}. Best-effort; never
-    raises on transport failure.
+    Returns {"email": bool, "inApp": bool | None, "changes": int}. Best-effort;
+    never raises on transport failure.
+
+    `inApp` is None when nothing was attempted - no changes, or the channel is
+    switched off - True when the daemon accepted the notification, and False when
+    it refused it. The caller needs those three apart: a quiet run must not read
+    as a failure, and a refused notification must not read as a delivery.
     """
     summary = build_summary(results)
     total = sum(len(r["changes"]) for r in _changed_folders(results))
     if summary is None:
-        return {"email": False, "inApp": False, "changes": 0}
+        return {"email": False, "inApp": None, "changes": 0}
 
     if settings is None:
         from . import settings as _settings
@@ -313,7 +333,8 @@ def notify_changes(results, settings=None):
         settings = _settings.get_notify()
     subject, body_text, body_html = summary
 
-    email_sent = inapp_sent = False
+    email_sent = False
+    inapp_sent = None
     if settings.get("email"):
         email_sent = _send_email(
             subject,
@@ -365,18 +386,24 @@ def build_document_summary(changed):
 def notify_document_changes(changed, settings=None):
     """Send e-mail and/or in-app notifications for changed tracked documents.
 
-    Returns {"email": bool, "inApp": bool, "changes": int}. Best-effort; never
-    raises on transport failure.
+    Returns {"email": bool, "inApp": bool | None, "changes": int}. Best-effort;
+    never raises on transport failure.
+
+    `inApp` is None when nothing was attempted - no changes, or the channel is
+    switched off - True when the daemon accepted the notification, and False when
+    it refused it. The caller needs those three apart: a quiet run must not read
+    as a failure, and a refused notification must not read as a delivery.
     """
     summary = build_document_summary(changed)
     if summary is None:
-        return {"email": False, "inApp": False, "changes": 0}
+        return {"email": False, "inApp": None, "changes": 0}
     if settings is None:
         from . import settings as _settings
 
         settings = _settings.get_notify()
     subject, body_text, body_html = summary
-    email_sent = inapp_sent = False
+    email_sent = False
+    inapp_sent = None
     if settings.get("email"):
         email_sent = _send_email(
             subject,
