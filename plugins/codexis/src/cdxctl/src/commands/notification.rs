@@ -46,11 +46,15 @@ fn build_create_input(message: &str, link: Option<&str>, extra: &[(String, Strin
 
 pub fn list(
     client: &GraphQLClient,
-    _days: u32,
+    limit: u32,
+    offset: u32,
     unseen: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::NOTIFICATIONS_QUERY, json!({}))?;
+    let data = client.execute(
+        graphql::NOTIFICATIONS_QUERY,
+        json!({ "offset": offset, "limit": limit }),
+    )?;
     let notifications = data
         .get("notifications")
         .and_then(|n| n.get("items"))
@@ -135,8 +139,48 @@ fn update_state(
 
 #[cfg(test)]
 mod tests {
-    use super::build_create_input;
+    use super::{build_create_input, list};
+    use crate::client::GraphQLClient;
+    use crate::output::OutputFormat;
+    use crate::test_support::stub_daemon;
     use serde_json::json;
+
+    const EMPTY_PAGE: &str =
+        r#"{"data":{"notifications":{"items":[],"totalItems":0,"unseenCount":0}}}"#;
+
+    #[test]
+    fn list_asks_the_daemon_for_the_requested_offset() {
+        // A flag the parser accepts and the query never carries is exactly how
+        // --days looked: accepted, ignored, and silently wrong.
+        let (address, requests) = stub_daemon("HTTP/1.1 200 OK", EMPTY_PAGE);
+        let client =
+            GraphQLClient::with_endpoint(format!("http://{address}/graphql"), "Bearer t".into());
+
+        list(&client, 50, 100, false, OutputFormat::Json).unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(
+            request.contains("\"offset\":100"),
+            "the offset never reached the daemon:\n{request}"
+        );
+    }
+
+    #[test]
+    fn list_asks_the_daemon_for_the_requested_page_size() {
+        // The daemon defaults to 50 and offers no date filter, so the only way to
+        // see past the newest 50 is to say how many are wanted.
+        let (address, requests) = stub_daemon("HTTP/1.1 200 OK", EMPTY_PAGE);
+        let client =
+            GraphQLClient::with_endpoint(format!("http://{address}/graphql"), "Bearer t".into());
+
+        list(&client, 200, 0, false, OutputFormat::Json).unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(
+            request.contains("\"limit\":200"),
+            "no page size reached the daemon:\n{request}"
+        );
+    }
 
     #[test]
     fn create_input_carries_no_action_key() {

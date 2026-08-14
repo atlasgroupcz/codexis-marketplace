@@ -375,8 +375,8 @@ mutation DeleteSkill($id: ID!) {
 // ==================== Notifications ====================
 
 pub const NOTIFICATIONS_QUERY: &str = r#"
-query Notifications {
-    notifications {
+query Notifications($offset: Int, $limit: Int) {
+    notifications(offset: $offset, limit: $limit) {
         items {
             id
             message

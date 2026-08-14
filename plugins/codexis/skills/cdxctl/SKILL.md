@@ -303,8 +303,12 @@ cdxctl notification create \
     --extra source=pipeline \
     --extra priority=high
 
-# List notifications (last 7 days)
+# List notifications (newest 50)
 cdxctl notification list
+
+# Fetch more, or reach older ones
+cdxctl notification list --limit 200
+cdxctl notification list --limit 50 --offset 50
 
 # List only unseen notifications
 cdxctl notification list --unseen
@@ -316,7 +320,9 @@ cdxctl notification seen <id>
 cdxctl notification confirm <id>
 ```
 
-**File format:** Notifications are JSON files at `~/.cdx/notifications/YYYY/MM/DD/HH/n_{timestamp_ms}_{uuid}.json` with fields: `message` (required), `action`, `link`, `seen`, `confirmed`, plus any custom fields.
+**Paging:** `list` returns the newest 50 unless `--limit` says otherwise. There is
+no filter by age. `--unseen` filters what was fetched, so raise `--limit` when the
+unread one is older than the newest 50.
 
 ### Outbound email
 

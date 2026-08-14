@@ -4,6 +4,8 @@ mod error;
 mod graphql;
 mod guard;
 mod output;
+#[cfg(test)]
+mod test_support;
 
 use clap::{Parser, Subcommand};
 use client::GraphQLClient;
@@ -539,9 +541,12 @@ enum NotificationCommands {
     },
     /// List notifications
     List {
-        /// Number of days to show (default: 7)
-        #[arg(long, default_value = "7")]
-        days: u32,
+        /// How many to fetch, newest first (default 50, the daemon's own page size)
+        #[arg(long, default_value = "50")]
+        limit: u32,
+        /// Skip this many before listing, to reach older ones
+        #[arg(long, default_value = "0")]
+        offset: u32,
         /// Show only unseen notifications
         #[arg(long)]
         unseen: bool,
@@ -972,9 +977,11 @@ fn main() {
                 link,
                 extra,
             } => commands::notification::create(&client, &message, link.as_deref(), &extra, format),
-            NotificationCommands::List { days, unseen } => {
-                commands::notification::list(&client, days, unseen, format)
-            }
+            NotificationCommands::List {
+                limit,
+                offset,
+                unseen,
+            } => commands::notification::list(&client, limit, offset, unseen, format),
             NotificationCommands::Seen { id } => commands::notification::seen(&client, &id, format),
             NotificationCommands::Confirm { id } => {
                 commands::notification::confirm(&client, &id, format)
@@ -1038,6 +1045,26 @@ fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn notification_list_pages_instead_of_filtering_by_age() {
+        // --days was accepted and dropped: the daemon has no date filter, and
+        // stopped windowing to seven days when it moved to offset/limit.
+        assert!(Cli::try_parse_from(["cdxctl", "notification", "list", "--days", "7"]).is_err());
+
+        let cli = Cli::try_parse_from(["cdxctl", "notification", "list", "--limit", "200"])
+            .expect("--limit should parse");
+
+        match cli.command {
+            Commands::Notification {
+                command: NotificationCommands::List { limit, offset, .. },
+            } => {
+                assert_eq!(limit, 200);
+                assert_eq!(offset, 0);
+            }
+            _ => panic!("expected notification list"),
+        }
+    }
 
     #[test]
     fn accepts_the_table_flag_after_the_subcommand() {
