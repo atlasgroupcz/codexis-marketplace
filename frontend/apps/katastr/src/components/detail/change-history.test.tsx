@@ -133,4 +133,25 @@ describe('ChangeHistory', () => {
     expect(container.textContent).toContain('Ukončení řízení')
     expect(container.textContent).toContain('Paid')
   })
+
+  it('keeps the columns the same width whether a row is read or not', () => {
+    const { container } = render3([change({ confirmed_on: '2026-05-19T08:00:00' })])
+    // Content must not decide the layout: confirming drops a button and recolours
+    // the state, and with the browser's default the whole table re-measured and
+    // every row moved under the reader.
+    const table = container.querySelector('table')
+    expect(table?.className).toContain('table-fixed')
+    expect(container.querySelectorAll('col')).toHaveLength(3)
+  })
+
+  it('marks a read row by colour, not by weight', () => {
+    const { container } = render3([
+      change({ confirmed_on: '2026-05-19T08:00:00', new_stav: 'Ukončení řízení' }),
+    ])
+    // Bold text is wider, so a weight change could re-wrap a long state name and
+    // move the row's own height.
+    const cell = container.querySelectorAll('tbody td')[1]
+    expect(cell?.className).toContain('font-medium')
+    expect(cell?.className).toContain('text-muted-foreground')
+  })
 })

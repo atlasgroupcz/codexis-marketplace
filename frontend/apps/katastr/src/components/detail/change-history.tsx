@@ -57,7 +57,19 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
   const unconfirmedCount = changes.filter((c) => !c.confirmed_on).length
 
   return (
-    <table className="w-full border-collapse">
+    // Fixed layout, because the default one measures the content: confirming a
+    // change drops that row's button, un-bolds its state and - on the last one -
+    // removes the header's button too, and every one of those made the browser
+    // re-measure and shift every row. The columns are ours to decide now, and
+    // the widths hold whatever the rows say.
+    <table className="w-full table-fixed border-collapse">
+      <colgroup>
+        {/* date and time, tabular figures, so it never needs more */}
+        <col className="w-[9.5rem]" />
+        <col />
+        {/* the widest thing that can sit here is the header's own action */}
+        <col className="w-[12rem]" />
+      </colgroup>
       <thead>
         <tr className="text-muted-foreground text-[10.5px] font-bold tracking-wider uppercase">
           <th className="border-b pr-3 pb-2 text-left font-bold">{t('proceedings.colDetected')}</th>
@@ -65,7 +77,7 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
           {/* The bulk action heads the column of per-row ones, so it needs no
               row of its own - the row that used to hold it dropped the content
               of this tab below where the Průběh tab starts. */}
-          <th className="w-px border-b pb-2 text-right">
+          <th className="border-b pb-2 text-right">
             {unconfirmedCount > 0 && (
               <button
                 type="button"
@@ -94,7 +106,12 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
                 {formatDate(change.detected_on)} {formatTime(change.detected_on)}
               </td>
               <td
-                className={`py-2.5 pr-3 align-baseline text-[13.5px] leading-snug ${isUnread ? 'font-semibold' : ''}`}
+                // Read and unread differ in colour, not in weight. Bold text is
+                // wider, so confirming a change could re-wrap a long state name
+                // and change the row's height under the reader's cursor.
+                className={`py-2.5 pr-3 align-baseline text-[13.5px] leading-snug font-medium ${
+                  isUnread ? 'text-foreground' : 'text-muted-foreground'
+                }`}
               >
                 {changeLine(change, uhrada)}
                 {change.stav_uhrady_changed && change.old_stav !== change.new_stav && (
