@@ -8,26 +8,11 @@ use serde_json::{json, Value};
 pub fn create(
     client: &GraphQLClient,
     message: &str,
-    action: Option<&str>,
     link: Option<&str>,
     extra: &[(String, String)],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    // The daemon's CreateNotificationInput exposes the key/value metadata as
-    // `vars: [KeyValueInput!]` (KeyValueInput { key, value }). The CLI's
-    // `--extra k=v` pairs map straight onto it. (This field used to be named
-    // `extra`, which the current daemon schema rejects.)
-    let vars: Vec<Value> = extra
-        .iter()
-        .map(|(k, v)| json!({ "key": k, "value": v }))
-        .collect();
-
-    let input = json!({
-        "message": message,
-        "action": action,
-        "link": link,
-        "vars": if vars.is_empty() { Value::Null } else { Value::Array(vars) },
-    });
+    let input = build_create_input(message, link, extra);
 
     let data = client.execute(
         graphql::CREATE_NOTIFICATION_MUTATION,
@@ -39,6 +24,24 @@ pub fn create(
         .unwrap_or(Value::Null);
     print_output(&result, format);
     Ok(())
+}
+
+/// Builds the `CreateNotificationInput` payload.
+///
+/// The daemon exposes the key/value metadata as `vars: [KeyValueInput!]`
+/// (KeyValueInput { key, value }); the CLI's `--extra k=v` pairs map straight
+/// onto it. (This field used to be named `extra`, which the schema rejects.)
+fn build_create_input(message: &str, link: Option<&str>, extra: &[(String, String)]) -> Value {
+    let vars: Vec<Value> = extra
+        .iter()
+        .map(|(k, v)| json!({ "key": k, "value": v }))
+        .collect();
+
+    json!({
+        "message": message,
+        "link": link,
+        "vars": if vars.is_empty() { Value::Null } else { Value::Array(vars) },
+    })
 }
 
 pub fn list(
@@ -128,4 +131,37 @@ fn update_state(
         .unwrap_or(Value::Null);
     print_output(&updated, format);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_create_input;
+    use serde_json::json;
+
+    #[test]
+    fn create_input_carries_no_action_key() {
+        // `CreateNotificationInput` has no `action` - sending one is rejected.
+        let input = build_create_input("hotovo", None, &[]);
+
+        assert!(input.get("action").is_none(), "input still sends: {input}");
+    }
+
+    #[test]
+    fn create_input_maps_extra_pairs_onto_vars() {
+        let extra = [("source".to_string(), "katastr".to_string())];
+
+        let input = build_create_input("hotovo", None, &extra);
+
+        assert_eq!(
+            input["vars"],
+            json!([{ "key": "source", "value": "katastr" }])
+        );
+    }
+
+    #[test]
+    fn create_input_omits_vars_when_no_extra_pairs_are_given() {
+        let input = build_create_input("hotovo", None, &[]);
+
+        assert!(input["vars"].is_null());
+    }
 }

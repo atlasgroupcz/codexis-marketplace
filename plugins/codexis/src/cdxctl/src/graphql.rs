@@ -380,7 +380,6 @@ query Notifications {
         items {
             id
             message
-            action
             link
             seen
             confirmed
@@ -397,7 +396,6 @@ mutation CreateNotification($input: CreateNotificationInput!) {
     createNotification(input: $input) {
         id
         message
-        action
         link
         seen
         confirmed
@@ -558,9 +556,23 @@ mutation StartTabularExtraction($id: ID!) {
 #[cfg(test)]
 mod tests {
     use super::{
-        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_SKILLS,
-        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SET_AUTOMATION_ENABLED,
+        CREATE_NOTIFICATION_MUTATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT,
+        GET_SKILLS, NOTIFICATIONS_QUERY, REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION,
+        SET_AUTOMATION_ENABLED,
     };
+
+    #[test]
+    fn notification_documents_do_not_select_the_dropped_action_field() {
+        // The daemon's `Notification` carries no `action` - the call-to-action
+        // button is gone and the whole card is the link. Selecting it fails the
+        // whole document at validation, so neither query may ask for it.
+        for document in [NOTIFICATIONS_QUERY, CREATE_NOTIFICATION_MUTATION] {
+            assert!(
+                !document.contains("action"),
+                "selects a dropped field:\n{document}"
+            );
+        }
+    }
 
     #[test]
     fn agent_queries_target_canonical_agent_api() {
