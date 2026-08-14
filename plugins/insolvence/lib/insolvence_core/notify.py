@@ -321,18 +321,38 @@ def _send_inapp(message: str, *, link: str | None = None) -> bool:
             "Content-Type": "application/json; charset=utf-8",
         },
     )
+    return _accepted(req)
+
+
+def _accepted(req) -> bool:
+    """True when the daemon accepted the mutation.
+
+    The status code alone does not say: a rejected mutation comes back as HTTP
+    200 with the reason in the body, so a handler that only closes the response
+    reports every rejection as a delivery. That is how a dropped input field went
+    unnoticed for a month of scheduled runs.
+
+    `ValueError` belongs in the tuple because that is what `json.load` raises on a
+    body that is not JSON at all, e.g. a proxy's error page.
+    """
     try:
-        urllib.request.urlopen(req, timeout=30).close()
-        return True
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.load(resp)
     except (urllib.error.URLError, OSError, ValueError):
         return False
+    return isinstance(payload, dict) and not payload.get("errors")
 
 
-def inapp_change_summary(results: list) -> bool:
-    """Send one in-app notification summarizing new changes. Returns True if sent
-    (there were changes), False otherwise. Best-effort."""
+def inapp_change_summary(results: list) -> bool | None:
+    """Send one in-app notification summarizing new changes. Best-effort.
+
+    None when there was nothing to notify about, True when the daemon accepted
+    the notification, False when it refused it. The caller needs those three
+    apart: a run with no changes is a normal quiet run, a refused notification is
+    a failure the user has to hear about.
+    """
     summary = build_summary(results)
     if summary is None:
-        return False
+        return None
     subject = summary[0]
     return _send_inapp(subject, link=_resolve_app_link())

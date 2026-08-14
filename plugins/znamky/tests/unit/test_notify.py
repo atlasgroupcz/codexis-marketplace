@@ -6,8 +6,14 @@ from unittest.mock import patch
 import pytest
 from znamky_core import notify
 
+# A GraphQL answer the daemon accepted. It carries no `errors` key - that is the
+# only thing that separates it from a rejection, which arrives as HTTP 200 too.
+_ACCEPTED = {"data": {"createNotification": {"id": "n1"}}}
 
-def _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-token"):
+
+def _stub_daemon(
+    monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-token", body=None
+):
     """Point _send_email at a fake daemon: HOME→tmp, write ~/.cdx/env/secret, stub urlopen.
 
     Returns a dict populated with the outgoing request's url/auth/body.
@@ -22,6 +28,26 @@ def _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-t
     captured = {}
 
     class _Resp:
+        """The daemon's real answer: a JSON body, read inside a `with`.
+
+        The old stub offered only close(), which is why a mutation the daemon
+        rejected still read as a delivery in these tests.
+        """
+
+        def read(self):
+            payload = body if body is not None else _ACCEPTED
+            # bytes pass through, so a test can hand over a body that is not JSON
+            # at all - a proxy's HTML error page arrives as HTTP 200 too.
+            if isinstance(payload, bytes):
+                return payload
+            return json.dumps(payload).encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
         def close(self):
             pass
 
@@ -274,7 +300,9 @@ def test_inapp_change_summary_no_changes_does_not_send(monkeypatch):
 
     sent = notify.inapp_change_summary(_RESULTS_NO_CHANGES)
 
-    assert sent is False
+    # None, not False: nothing was attempted. A quiet run must not read as a
+    # failed delivery - False is reserved for a notification the daemon refused.
+    assert sent is None
     assert calls == []
 
 
@@ -399,3 +427,36 @@ def test_resolve_app_link_is_none_without_daemon_config(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.delenv("CODEXIS_PUBLIC_DAEMON_URL", raising=False)
     assert notify._resolve_app_link() is None
+
+
+# ── the daemon refused it ────────────────────────────────────────────────────
+# HTTP 200 with the reason in the body is how a rejected mutation comes back, so
+# a sender that only closes the response calls every rejection a delivery. That
+# is what kept a dropped input field invisible for a month of scheduled runs.
+
+_REJECTED = {
+    "errors": [{"message": "Unknown field 'action' on type 'CreateNotificationInput'"}]
+}
+
+
+def test_inapp_reports_failure_when_the_daemon_rejects_the_mutation(
+    monkeypatch, tmp_path
+):
+    _stub_daemon(monkeypatch, tmp_path, body=_REJECTED)
+
+    assert notify._send_inapp("hello") is False
+
+
+def test_inapp_reports_failure_when_the_body_is_not_json(monkeypatch, tmp_path):
+    # A proxy's HTML error page: status 200, nothing json.load can read.
+    _stub_daemon(monkeypatch, tmp_path, body=b"<html>502</html>")
+
+    assert notify._send_inapp("hello") is False
+
+
+def test_inapp_reports_success_when_the_daemon_accepts_the_mutation(
+    monkeypatch, tmp_path
+):
+    _stub_daemon(monkeypatch, tmp_path)
+
+    assert notify._send_inapp("hello") is True

@@ -121,7 +121,11 @@ def check_folder(root, printer=None):
 def check_folders(root=None, printer=None, send_notifications=True):
     """Check one or all watched folders, then notify on detected changes.
 
-    Returns {checked, changes_found, errors, results}.
+    Returns {checked, changes_found, errors, notify_failed, results}.
+
+    `notify_failed` is its own flag rather than another entry in `errors` so the
+    caller can end the run non-zero for a notification the daemon refused without
+    doing the same for every unrelated problem the check already collects.
     """
     if root:
         roots = [os.path.abspath(os.path.expanduser(str(root)))]
@@ -137,9 +141,13 @@ def check_folders(root=None, printer=None, send_notifications=True):
         changes_found += len(res["changes"])
         errors.extend(res["errors"])
 
+    notify_failed = False
     if send_notifications and changes_found:
         try:
-            notify.notify_changes(results)
+            sent = notify.notify_changes(results)
+            # `is False`, not falsy: None means no notification was attempted,
+            # which is not a failure.
+            notify_failed = sent["inApp"] is False
         except Exception as exc:  # notifications must never fail the run
             errors.append(f"notifikace: {exc}")
 
@@ -147,6 +155,7 @@ def check_folders(root=None, printer=None, send_notifications=True):
         "checked": len(roots),
         "changes_found": changes_found,
         "errors": errors,
+        "notify_failed": notify_failed,
         "results": results,
     }
 

@@ -261,8 +261,22 @@ def _notify_new_case_law(partial_uuid, report_id):
         except TopicError as e:
             print(str(e), file=sys.stderr)
     if cfg.get("inApp"):
-        if notify.inapp_change_summary(results):
+        # `is False`, not a plain else: None means there was nothing to send, and
+        # a quiet run must not read as a failure.
+        #
+        # Unlike the other plugins' `check`, this runs inside `save-report`, which
+        # an AI agent calls as one step of its automation. The report is already
+        # written by the time we get here, and a non-zero exit invites the agent
+        # to run the step again and store a second copy of it. The agent reads the
+        # command's output, so an ERROR line reaches the user without that risk.
+        sent = notify.inapp_change_summary(results)
+        if sent:
             print("Upozornění odesláno do aplikace (zvoneček).", file=sys.stderr)
+        elif sent is False:
+            print(
+                "ERROR: Upozornění se nepodařilo odeslat do aplikace.",
+                file=sys.stderr,
+            )
 
 
 def cmd_save_report(args):

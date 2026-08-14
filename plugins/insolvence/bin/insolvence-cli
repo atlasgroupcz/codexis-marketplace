@@ -172,8 +172,17 @@ def cmd_check(args):
         except InsolvenceError as e:
             info(f"E-mail se nepodařilo odeslat: {e}")
     if notify_cfg.get("inApp"):
-        if notify.inapp_change_summary(results):
+        # `is False`, not a plain else: None means there was nothing to send, and
+        # a quiet run must not read as a failure. Only a refusal by the daemon
+        # ends the run non-zero, so the automation shows it. The check itself is
+        # already finished and saved by this point - the exit code says the user
+        # was not told, not that the check failed.
+        sent = notify.inapp_change_summary(results)
+        if sent:
             info("Upozornění odesláno do aplikace (zvoneček).")
+        elif sent is False:
+            err("Upozornění se nepodařilo odeslat do aplikace.")
+            sys.exit(1)
 
 
 def cmd_confirm(args):

@@ -113,3 +113,50 @@ def test_recipients_set_drops_signed_in_user_keeps_others(_cli_home):
             argparse.Namespace(rcmd="set", emails=["me@firma.cz", "a@x.cz"])
         )
     assert _recipients_dir(_cli_home) == ["a@x.cz"]
+
+
+# ── a refused bell ends the run red ──────────────────────────────────────────
+
+
+def _folder_check_result(**overrides):
+    base = {
+        "checked": 1,
+        "changes_found": 1,
+        "errors": [],
+        "notify_failed": False,
+        "results": [],
+    }
+    return {**base, **overrides}
+
+
+def test_folder_check_ends_the_run_red_when_the_bell_is_refused(monkeypatch, capsys):
+    # The changes are found and saved by this point; the user was simply never
+    # told. A scheduled run reports only through its exit code, so this is the
+    # one signal that says so.
+    monkeypatch.setattr(
+        _cli.folder_check,
+        "check_folders",
+        lambda *a, **k: _folder_check_result(notify_failed=True),
+    )
+
+    with pytest.raises(SystemExit) as exit_info:
+        _cli.cmd_folder_check(argparse.Namespace(root=None, no_notify=False))
+
+    assert exit_info.value.code == 1
+    assert "nepodařilo" in capsys.readouterr().err
+
+
+def test_folder_check_stays_green_for_the_check_s_own_errors(monkeypatch, capsys):
+    # Errors the check itself collected keep exiting zero, exactly as before.
+    # Turning those red is a separate decision and does not ride on this fix.
+    monkeypatch.setattr(
+        _cli.folder_check,
+        "check_folders",
+        lambda *a, **k: _folder_check_result(
+            changes_found=0, errors=["složka nedostupná"]
+        ),
+    )
+
+    _cli.cmd_folder_check(argparse.Namespace(root=None, no_notify=False))
+
+    assert "nepodařilo" not in capsys.readouterr().err
