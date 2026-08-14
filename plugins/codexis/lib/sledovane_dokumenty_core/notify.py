@@ -207,7 +207,7 @@ def _resolve_app_link():
     return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
-def _send_inapp(message, *, action=None, link=None, ntype="legislation-changed"):
+def _send_inapp(message, *, link=None, ntype="legislation-changed"):
     daemon_url, auth = _daemon_url(), load_auth()
     if not daemon_url or not auth:
         return False
@@ -217,8 +217,6 @@ def _send_inapp(message, *, action=None, link=None, ntype="legislation-changed")
         "{ createNotification(input: $input) { id } }"
     )
     notification_input = {"message": message, "type": ntype}
-    if action:
-        notification_input["action"] = action
     if link:
         notification_input["link"] = link
     body = json.dumps(
@@ -324,9 +322,7 @@ def notify_changes(results, settings=None):
             recipients=resolve_to(settings.get("recipients")),
         )
     if settings.get("inApp"):
-        inapp_sent = _send_inapp(
-            subject, action="Zobrazit změny", link=_resolve_app_link()
-        )
+        inapp_sent = _send_inapp(subject, link=_resolve_app_link())
     return {"email": email_sent, "inApp": inapp_sent, "changes": total}
 
 
@@ -389,7 +385,5 @@ def notify_document_changes(changed, settings=None):
             recipients=resolve_to(settings.get("recipients")),
         )
     if settings.get("inApp"):
-        inapp_sent = _send_inapp(
-            subject, action="Zobrazit změny", link=_resolve_app_link()
-        )
+        inapp_sent = _send_inapp(subject, link=_resolve_app_link())
     return {"email": email_sent, "inApp": inapp_sent, "changes": len(changed)}
