@@ -74,25 +74,30 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
         <col className="w-[12rem]" />
       </colgroup>
       <thead>
-        <tr className="text-muted-foreground h-9 text-[10.5px] font-bold tracking-wider uppercase">
+        <tr className="text-muted-foreground text-[10.5px] font-bold tracking-wider uppercase">
           <th className="border-b pr-3 pb-2 text-left font-bold">{t('proceedings.colDetected')}</th>
           <th className="border-b pr-3 pb-2 text-left font-bold">{t('proceedings.colStav')}</th>
           {/* The bulk action heads the column of per-row ones, so it needs no
               row of its own - the row that used to hold it dropped the content
               of this tab below where the Průběh tab starts. */}
           <th className="border-b pb-2 text-right">
-            {unconfirmedCount > 0 && (
-              <button
-                type="button"
-                onClick={() => onConfirm()}
-                disabled={confirming}
-                data-testid="mark-all-read"
-                className="text-muted-foreground hover:text-brand-700 hover:border-primary inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors"
-              >
-                <CheckCheck className="size-3.5" />
-                {t('proceedings.markAllRead')}
-              </button>
-            )}
+            {/* Kept in the tree once everything is read, only hidden. It is the
+                tallest thing in this row, so removing it shortened the header -
+                and the header sits above the list, so the whole list moved. */}
+            <button
+              type="button"
+              onClick={() => onConfirm()}
+              disabled={confirming || unconfirmedCount === 0}
+              aria-hidden={unconfirmedCount === 0}
+              tabIndex={unconfirmedCount === 0 ? -1 : undefined}
+              data-testid={unconfirmedCount > 0 ? 'mark-all-read' : undefined}
+              className={`text-muted-foreground hover:text-brand-700 hover:border-primary inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                unconfirmedCount === 0 ? 'invisible' : ''
+              }`}
+            >
+              <CheckCheck className="size-3.5" />
+              {t('proceedings.markAllRead')}
+            </button>
           </th>
         </tr>
       </thead>
@@ -100,7 +105,7 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
         {ordered.map(({ change, index }) => {
           const isUnread = !change.confirmed_on
           return (
-            <tr key={index} className="border-secondary h-10 border-b last:border-b-0">
+            <tr key={index} className="border-secondary border-b last:border-b-0">
               <td className="text-muted-foreground py-2.5 pr-3 align-baseline text-xs whitespace-nowrap tabular-nums">
                 <span
                   aria-hidden
@@ -125,17 +130,23 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
                 )}
               </td>
               <td className="py-2.5 text-right align-baseline">
-                {isUnread && (
-                  <button
-                    type="button"
-                    onClick={() => onConfirm(index)}
-                    disabled={confirming}
-                    data-testid={`mark-read-${index}`}
-                    className="text-muted-foreground hover:text-brand-700 hover:border-primary rounded-md border px-1.5 py-0.5 text-[11px] whitespace-nowrap transition-colors"
-                  >
-                    {t('proceedings.markRead')}
-                  </button>
-                )}
+                {/* Hidden rather than removed once the change is read: the button
+                    is taller than the text beside it, so taking it out of the
+                    tree shrank the row under the reader's cursor. Reserving the
+                    space with the button itself beats guessing a row height. */}
+                <button
+                  type="button"
+                  onClick={() => onConfirm(index)}
+                  disabled={confirming || !isUnread}
+                  aria-hidden={!isUnread}
+                  tabIndex={isUnread ? undefined : -1}
+                  data-testid={isUnread ? `mark-read-${index}` : undefined}
+                  className={`text-muted-foreground hover:text-brand-700 hover:border-primary rounded-md border px-1.5 py-0.5 text-[11px] whitespace-nowrap transition-colors ${
+                    isUnread ? '' : 'invisible'
+                  }`}
+                >
+                  {t('proceedings.markRead')}
+                </button>
               </td>
             </tr>
           )
