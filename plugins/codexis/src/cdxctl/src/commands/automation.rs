@@ -141,12 +141,11 @@ pub fn update(
         .and_then(|a| a.as_array())
         .ok_or_else(|| CdxctlError::Parse("Failed to fetch automations".into()))?;
 
+    // Only `id`: no query in this CLI selects `uuid`. A raw UUID still resolves,
+    // because `resolve_node_id` encodes it into the Node ID compared here.
     let current = automations
         .iter()
-        .find(|a| {
-            a.get("id").and_then(|v| v.as_str()) == Some(&node_id)
-                || a.get("uuid").and_then(|v| v.as_str()) == Some(args.id)
-        })
+        .find(|a| a.get("id").and_then(|v| v.as_str()) == Some(&node_id))
         .cloned()
         .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation not found: {}", args.id)]))?;
 
