@@ -3,6 +3,7 @@ import { formatDate, formatTime, hasTime } from '@/lib/format'
 import type { ProceedingDetail } from '@/lib/schemas'
 import type { TimelineNode } from '@/lib/timeline'
 import { deriveTimeline } from '@/lib/timeline'
+import { CLOSED_CLASSES, NEGATIVE_CLASSES } from '../stav-colors'
 
 interface ProceedingTimelineProps {
   proc: ProceedingDetail
@@ -19,9 +20,7 @@ function StateChip({ node }: { node: TimelineNode }) {
   const { t } = useTranslation()
   if (node.isTerminal)
     return (
-      <span
-        className={`${CHIP} ${node.isNegative ? 'bg-red-100 text-red-700' : 'bg-stone-100 text-stone-600'}`}
-      >
+      <span className={`${CHIP} ${node.isNegative ? NEGATIVE_CLASSES : CLOSED_CLASSES}`}>
         {t(node.isNegative ? 'proceedings.timeline.rejected' : 'proceedings.timeline.ended')}
       </span>
     )

@@ -11,6 +11,7 @@ import { useConfirmChange } from '@/hooks/use-confirm-change'
 import { useDetail } from '@/hooks/use-detail'
 import { removeProceeding, setLabel } from '@/lib/api'
 import { errorMessage, formatDate, formatRelative } from '@/lib/format'
+import type { ProceedingSummary } from '@/lib/schemas'
 import { ChangeHistory } from './detail/change-history'
 import { ProceedingTimeline } from './detail/timeline'
 import { ListSkeleton } from './loading-skeleton'
@@ -20,13 +21,20 @@ import { UhradaBadge } from './uhrada-badge'
 
 interface ProceedingDetailProps {
   cisloRizeni: string
+  /** The list's own row for this proceeding, so the header paints before the detail lands. */
+  summary?: ProceedingSummary
   onBack: () => void
   onChanged?: () => void
 }
 
-export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingDetailProps) {
+export function ProceedingDetail({
+  cisloRizeni,
+  summary,
+  onBack,
+  onChanged,
+}: ProceedingDetailProps) {
   const { t } = useTranslation()
-  const { data, loading, error, refetch } = useDetail(cisloRizeni)
+  const { data, error, refetch } = useDetail(cisloRizeni)
 
   const [labelOverride, setLabelOverride] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
@@ -61,16 +69,21 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
     }
   }, [data?.proceeding.label, labelOverride])
 
-  if (loading && !data) return <ListSkeleton />
   if (error)
     return (
       <div className="p-6">
         <ErrorMessage message={error.message} onRetry={refetch} retryLabel={t('common.retry')} />
       </div>
     )
-  if (!data) return null
 
-  const proc = data.proceeding
+  // Two gates, not one: the header needs any of the two, the tabs need the
+  // detail. The list row already carries every header field, so the header
+  // paints at once and only the tabs wait for the request - selecting a
+  // proceeding used to blank the whole pane for one VM round-trip.
+  const detail = data?.proceeding
+  const proc = detail ?? summary
+  if (!proc) return <ListSkeleton />
+
   const currentLabel = labelOverride !== null ? labelOverride : proc.label
 
   const startEdit = () => {
@@ -153,7 +166,7 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
             {/* Inline, scannable summary */}
             <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
               <StavBadge stav={proc.stav} />
-              <UhradaBadge stavUhrady={proc.stav_uhrady} label={proc.stav_uhrady_label} />
+              <UhradaBadge stavUhrady={proc.stav_uhrady} />
               {sep}
               <span>
                 {t('proceedings.datumPrijeti')}{' '}
@@ -191,18 +204,24 @@ export function ProceedingDetail({ cisloRizeni, onBack, onChanged }: ProceedingD
           </TabsTrigger>
           <TabsTrigger value="zmeny" className="flex-none px-0" data-testid="tab-zmeny">
             {t('proceedings.changeHistory')}
-            {proc.changes.length > 0 && <CountChip>{proc.changes.length}</CountChip>}
+            {proc.changes_count > 0 && <CountChip>{proc.changes_count}</CountChip>}
           </TabsTrigger>
         </TabsList>
+        {/* Only the tab bodies need the operations and the change log, so they
+            are the only part that waits for the request. */}
         <TabsContent value="prubeh">
-          <ProceedingTimeline proc={proc} />
+          {detail ? <ProceedingTimeline proc={detail} /> : <ListSkeleton />}
         </TabsContent>
         <TabsContent value="zmeny">
-          <ChangeHistory
-            changes={proc.changes}
-            onConfirm={changeConfirm.confirm}
-            confirming={changeConfirm.pending}
-          />
+          {detail ? (
+            <ChangeHistory
+              changes={detail.changes}
+              onConfirm={changeConfirm.confirm}
+              confirming={changeConfirm.pending}
+            />
+          ) : (
+            <ListSkeleton />
+          )}
         </TabsContent>
       </Tabs>
     </div>

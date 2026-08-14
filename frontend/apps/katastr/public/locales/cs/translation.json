@@ -67,6 +67,16 @@
       "U": "Uhrazeno",
       "N": "Neuhrazeno",
       "O": "Osvobozeno"
+    },
+    "stav": {
+      "mistaken": "Mylné řízení",
+      "closed": "Ukončeno",
+      "notified": "Vyrozumění",
+      "registered": "Provedení vkladu",
+      "allowed": "Povolení vkladu",
+      "plomba": "Plomba",
+      "running": "Probíhá",
+      "received": "Přijetí návrhu"
     }
   },
   "settings": {

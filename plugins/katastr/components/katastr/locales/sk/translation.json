@@ -67,6 +67,16 @@
       "U": "Uhradené",
       "N": "Neuhradené",
       "O": "Oslobodené"
+    },
+    "stav": {
+      "mistaken": "Mylné konanie",
+      "closed": "Ukončené",
+      "notified": "Vyrozumenie",
+      "registered": "Vykonanie vkladu",
+      "allowed": "Povolenie vkladu",
+      "plomba": "Plomba",
+      "running": "Prebieha",
+      "received": "Prijatie návrhu"
     }
   },
   "settings": {

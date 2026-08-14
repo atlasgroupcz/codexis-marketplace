@@ -1,61 +1,54 @@
 import { Badge } from '@workspace/ui/components/badge'
-import { isNegativeTerminal, isPlomba } from '@/lib/stav'
+import { useTranslation } from 'react-i18next'
+import type { StavKind } from '@/lib/stav'
+import { stavKind } from '@/lib/stav'
+import { CLOSED_CLASSES, NEGATIVE_CLASSES } from './stav-colors'
 
 interface StavBadgeProps {
   stav: string
 }
 
-// Keyword → tailwind classes. Order matters: most specific first.
-function getStavColor(stav: string): string | null {
-  const s = stav.toLowerCase()
-  // A bad ending (rejected / stopped / withdrawn) reads red, matching the
-  // timeline's terminal node - checked first so it wins over any other keyword.
-  if (isNegativeTerminal(stav)) return 'bg-red-100 text-red-700'
-  if (s.includes('ukončeno')) return 'bg-stone-100 text-stone-600'
-  if (s.includes('vyrozumění') || s.includes('provedení vkladu'))
-    return 'bg-brand-100 text-brand-700'
-  if (isPlomba(stav)) return 'bg-plomba-soft text-plomba'
-  if (
-    s.includes('povolení vkladu') ||
-    s.includes('probíhá') ||
-    s.includes('podáno') ||
-    s.includes('přijet')
-  )
-    return 'bg-amber-100 text-amber-800'
-  return null
-}
-
-// Verbose ČÚZK statuses → short chip label. Order matters: vyrozumění before
-// provedení (a vyrozumění string also contains "proveden"). Falls back to the
-// raw stav for anything we don't recognise, so nothing is hidden.
-function shortStav(stav: string): string {
-  const s = stav.toLowerCase()
-  if (s.includes('ukončeno')) return 'Ukončeno'
-  if (s.includes('vyrozum')) return 'Vyrozumění'
-  if (s.includes('provedení vkladu') || s.includes('proveden')) return 'Provedení vkladu'
-  if (s.includes('povolení vkladu') || s.includes('povolen')) return 'Povolení vkladu'
-  if (isPlomba(stav)) return 'Plomba'
-  if (s.includes('probíhá')) return 'Probíhá'
-  if (s.includes('přijet') || s.includes('podáno')) return 'Přijetí návrhu'
-  return stav
+// Several states share a colour - approved, running and received are all "under
+// way" - so the map is wider than the palette. `stavKind` decides which state it
+// is; this decides only how it looks.
+const KIND_CLASSES: Record<StavKind, string> = {
+  negative: NEGATIVE_CLASSES,
+  mistaken: CLOSED_CLASSES,
+  closed: CLOSED_CLASSES,
+  notified: 'bg-brand-100 text-brand-700',
+  registered: 'bg-brand-100 text-brand-700',
+  allowed: 'bg-amber-100 text-amber-800',
+  plomba: 'bg-plomba-soft text-plomba',
+  running: 'bg-amber-100 text-amber-800',
+  received: 'bg-amber-100 text-amber-800',
 }
 
 const PILL_BASE =
   'inline-flex items-center whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold'
 
 export function StavBadge({ stav }: StavBadgeProps) {
-  const colorClass = getStavColor(stav)
-  const label = shortStav(stav)
-  if (colorClass) {
+  const { t } = useTranslation()
+  const kind = stavKind(stav)
+
+  // ČÚZK writes `stav` as a sentence and only a few characters fit, so a state
+  // we recognise wears our own short name for it - in the reader's language,
+  // which the wire text never is. The full sentence stays in the tooltip.
+  //
+  // A bad ending is the exception: "Zamítnuto", "Zastaveno" and "Zpětvzetí" are
+  // three different outcomes, each already short, and one shared word for them
+  // would say less than ČÚZK did.
+  const label = kind && kind !== 'negative' ? t(`proceedings.stav.${kind}`) : stav
+
+  if (!kind) {
     return (
-      <span title={stav} className={`${PILL_BASE} ${colorClass}`}>
+      <Badge variant="outline" title={stav} className="text-[10.5px] font-semibold">
         {label}
-      </span>
+      </Badge>
     )
   }
   return (
-    <Badge variant="outline" title={stav} className="text-[10.5px] font-semibold">
+    <span title={stav} className={`${PILL_BASE} ${KIND_CLASSES[kind]}`}>
       {label}
-    </Badge>
+    </span>
   )
 }
