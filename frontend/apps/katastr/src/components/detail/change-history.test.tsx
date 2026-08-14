@@ -141,9 +141,23 @@ describe('ChangeHistory', () => {
     const { container } = render3([change({ confirmed_on: '2026-05-19T08:00:00' })])
     expect(container.querySelector('table')?.className).toContain('table-fixed')
     expect(container.querySelectorAll('col')).toHaveLength(3)
-    // the header carries the bulk action, so its height is pinned too
-    expect(container.querySelector('thead tr')?.className).toMatch(/\bh-9\b/)
-    expect(container.querySelector('tbody tr')?.className).toMatch(/\bh-10\b/)
+  })
+
+  it('keeps a read row the same height by holding the button it no longer needs', () => {
+    // The button is taller than the text beside it, so removing it shrank the
+    // row. Its own box reserves the space, which beats guessing a row height.
+    const { container } = render3([change({ confirmed_on: '2026-05-19T08:00:00' })])
+    const button = container.querySelector('tbody button')
+    expect(button?.className).toContain('invisible')
+    expect(button?.getAttribute('aria-hidden')).toBe('true')
+    expect(button?.getAttribute('tabindex')).toBe('-1')
+    expect((button as HTMLButtonElement | null)?.disabled).toBe(true)
+  })
+
+  it('keeps the header the same height once everything is read', () => {
+    // The header sits above the list, so its height moved every row below it.
+    const { container } = render3([change({ confirmed_on: '2026-05-19T08:00:00' })])
+    expect(container.querySelector('thead button')?.className).toContain('invisible')
   })
 
   it('marks a read row by colour, not by weight', () => {
