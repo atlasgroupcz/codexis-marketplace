@@ -1,7 +1,9 @@
+import type { TFunction } from 'i18next'
 import { CheckCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatDate, formatTime } from '@/lib/format'
 import type { ProceedingChange } from '@/lib/schemas'
+import { uhradaLabel } from '@/lib/uhrada'
 
 interface ChangeHistoryProps {
   changes: Array<ProceedingChange>
@@ -23,11 +25,11 @@ interface ChangeHistoryProps {
  * operation - so half the rows said it twice. They stay in the change record, so
  * `describe_change` still lists them in the CLI output and the e-mail.
  */
-function changeLine(change: ProceedingChange, uhrada: (code?: string | null) => string): string {
+function changeLine(change: ProceedingChange, t: TFunction): string {
   if (change.old_stav !== change.new_stav) return change.new_stav
   if (change.new_operations.length > 0)
     return change.new_operations.map((op) => op.nazev).join(', ')
-  return uhrada(change.new_stav_uhrady)
+  return uhradaLabel(t, change.new_stav_uhrady)
 }
 
 export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryProps) {
@@ -43,10 +45,6 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
       </div>
     )
   }
-
-  // ČÚZK's own code is the fallback, so an unknown one shows rather than blanks.
-  const uhrada = (code?: string | null) =>
-    code ? t(`proceedings.uhrada.${code}`, { defaultValue: code }) : '---'
 
   // Newest first. The index is the one `confirmChange` takes, so it has to
   // survive the sort.
@@ -121,11 +119,11 @@ export function ChangeHistory({ changes, onConfirm, confirming }: ChangeHistoryP
                   isUnread ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
-                {changeLine(change, uhrada)}
+                {changeLine(change, t)}
                 {change.stav_uhrady_changed && change.old_stav !== change.new_stav && (
                   <span className="text-muted-foreground font-normal">
                     {' '}
-                    &middot; {uhrada(change.new_stav_uhrady)}
+                    &middot; {uhradaLabel(t, change.new_stav_uhrady)}
                   </span>
                 )}
               </td>

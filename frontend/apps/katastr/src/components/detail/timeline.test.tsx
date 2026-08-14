@@ -2,24 +2,19 @@
 
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { ProceedingDetail } from '@/lib/schemas'
+import { detailFixture } from '@/test/fixtures'
 import { ProceedingTimeline } from './timeline'
 
-const base = {
+// Each test spreads this and sets the `stav` and the operations it is about.
+const base = detailFixture({
   cislo_rizeni: 'V-1234/2026-701',
-  typ_rizeni: 'Vklad',
-  label: '',
   stav_uhrady: 'U',
-  stav_uhrady_label: 'Uhrazeno',
   datum_prijeti: '2026-06-01',
   added_on: '2026-06-01',
   last_check_at: '2026-06-12',
   last_op_date: '2026-06-12',
   operace_count: 2,
-  changes_count: 0,
-  unconfirmed_count: 0,
-  changes: [],
-} as unknown as ProceedingDetail
+})
 
 describe('ProceedingTimeline', () => {
   it('renders one node per operation, last is current', () => {

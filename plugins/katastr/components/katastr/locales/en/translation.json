@@ -67,6 +67,16 @@
       "U": "Paid",
       "N": "Unpaid",
       "O": "Exempt"
+    },
+    "stav": {
+      "mistaken": "Filed in error",
+      "closed": "Closed",
+      "notified": "Notified",
+      "registered": "Entry completed",
+      "allowed": "Entry approved",
+      "plomba": "Flagged",
+      "running": "In progress",
+      "received": "Application received"
     }
   },
   "settings": {

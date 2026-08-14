@@ -159,6 +159,7 @@ export function App() {
             <ProceedingDetail
               key={cisloRizeni}
               cisloRizeni={cisloRizeni}
+              summary={data?.proceedings.find((p) => p.cislo_rizeni === cisloRizeni)}
               onBack={handleBack}
               onChanged={refetch}
             />

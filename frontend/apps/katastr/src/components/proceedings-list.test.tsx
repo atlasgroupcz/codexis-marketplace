@@ -3,26 +3,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { OverviewResponse, ProceedingSummary } from '@/lib/schemas'
+import { proceedingFixture as proc } from '@/test/fixtures'
 import { ProceedingsList } from './proceedings-list'
-
-function proc(overrides: Partial<ProceedingSummary>): ProceedingSummary {
-  return {
-    cislo_rizeni: 'V-1/2026-701',
-    typ_rizeni: 'V',
-    label: '',
-    stav: 'Zapsáno',
-    stav_uhrady: null,
-    stav_uhrady_label: null,
-    datum_prijeti: '2026-04-01',
-    added_on: '2026-04-01',
-    last_check_at: '2026-04-01',
-    last_op_date: null,
-    operace_count: 0,
-    changes_count: 0,
-    unconfirmed_count: 0,
-    ...overrides,
-  }
-}
 
 function overview(proceedings: Array<ProceedingSummary>): OverviewResponse {
   return {
