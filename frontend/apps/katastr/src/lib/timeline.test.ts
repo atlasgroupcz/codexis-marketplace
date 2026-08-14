@@ -106,8 +106,11 @@ describe('deriveTimeline - negative outcome', () => {
     const last = nodes[nodes.length - 1]!
     expect(last.isTerminal).toBe(true)
     expect(last.isNegative).toBe(true)
-    expect(last.state).toBe('current')
-    expect(nodes.filter((n) => n.state === 'done')).toHaveLength(2)
+    // Nothing is in progress on a rejected proceeding. The closing node used to
+    // be `current` as well as terminal, so drawing it right meant knowing which
+    // of the two won.
+    expect(nodes.every((n) => n.state === 'done')).toBe(true)
+    expect(nodes).toHaveLength(3)
   })
 
   it('a benign ending is not marked negative', () => {
