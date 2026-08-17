@@ -298,6 +298,20 @@ fn validate_search_payload(source_code: &str, payload: &JsonMap) -> Result<(), C
         ));
     }
 
+    // Every source rejects a blank query with a bare "400 Invalid request
+    // content" that names nothing. Read from the merged payload, not the flag, so
+    // a query supplied through the JSON body counts. An agent reads this message
+    // and acts on it, so it states the limit and offers no way around it.
+    let has_query = payload
+        .get("query")
+        .and_then(Value::as_str)
+        .is_some_and(|query| !query.trim().is_empty());
+    if !has_query {
+        return Err(CliError::InvalidSearchArgument(
+            "query is required: filters narrow a search, they cannot be one".to_string(),
+        ));
+    }
+
     Ok(())
 }
 
@@ -430,7 +444,30 @@ mod tests {
     }
 
     #[test]
-    fn search_payload_allows_missing_query_for_backend_to_handle() {
+    fn jd_boolean_filters_are_sent_only_when_asked_for() {
+        // An omitted boolean must stay out of the payload: sending false would
+        // narrow the search to decisions that lack the trait, not widen it.
+        let asked = SearchJdArgs {
+            base: SearchBaseArgs {
+                query: Some("náhrada škody".to_string()),
+                ..SearchBaseArgs::default()
+            },
+            has_legal_sentence: true,
+            has_citex: true,
+            ..SearchJdArgs::default()
+        };
+
+        let payload = asked.build_payload("JD").unwrap();
+        assert!(payload.contains(r#""hasLegalSentence":true"#));
+        assert!(payload.contains(r#""hasCitex":true"#));
+        assert!(!payload.contains("isCommentedCaseLaw"));
+        assert!(!payload.contains("isOfficialSource"));
+    }
+
+    #[test]
+    fn a_date_only_search_is_refused_before_it_reaches_the_backend() {
+        // Filters alone are not a search: the backend answers 400 without naming
+        // the cause, so the date sweep a user reaches for has to be named here.
         let args = SearchJdArgs {
             issued: IssuedDateArgs {
                 issued_from: Some("2026-05-26".to_string()),
@@ -439,11 +476,43 @@ mod tests {
             ..SearchJdArgs::default()
         };
 
+        let error = args.build_payload("JD").unwrap_err();
+        let CliError::InvalidSearchArgument(message) = error else {
+            panic!("a query-less search must be refused as an invalid argument");
+        };
+        assert!(message.contains("query is required"), "got: {message}");
+    }
+
+    #[test]
+    fn a_query_supplied_through_the_json_payload_satisfies_the_check() {
+        // The check reads the merged payload, not the flag, so the escape hatch
+        // for callers who build their own body keeps working.
+        let args = SearchJdArgs {
+            base: SearchBaseArgs {
+                payload: Some(r#"{"query":"náhrada škody"}"#.to_string()),
+                ..SearchBaseArgs::default()
+            },
+            ..SearchJdArgs::default()
+        };
+
         let payload = args.build_payload("JD").unwrap();
-        assert_eq!(
-            payload,
-            r#"{"issuedFrom":"2026-05-26","issuedTo":"2026-06-01","limit":10,"offset":0,"sort":"RELEVANCE","sortOrder":"DESC"}"#
-        );
+        assert!(payload.contains(r#""query":"náhrada škody""#));
+    }
+
+    #[test]
+    fn a_blank_query_is_refused_the_same_as_a_missing_one() {
+        let args = SearchJdArgs {
+            base: SearchBaseArgs {
+                query: Some("   ".to_string()),
+                ..SearchBaseArgs::default()
+            },
+            ..SearchJdArgs::default()
+        };
+
+        assert!(matches!(
+            args.build_payload("JD").unwrap_err(),
+            CliError::InvalidSearchArgument(_)
+        ));
     }
 
     #[test]

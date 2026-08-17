@@ -50,7 +50,7 @@ Endpoint schema help:
 
 Common get resources (cdx://doc/<DOC_ID> + suffix):
   /meta, /toc, /text
-  /versions (supported for CR documents only)
+  /versions (any document; only CR carries more than one)
   /related, /related/counts
 
 Direct Czech law fetches:
@@ -61,14 +61,8 @@ Direct Czech law fetches:
   cdx://cz_law/<NUM>/<YEAR>/related[?type=TYPE&part=PART&offset=N&limit=N&sort=FIELD&order=ORDER]
   cdx://cz_law/<NUM>/<YEAR>/related/counts[?part=PART]
 
-Direct EU law fetches (TYPE is R regulation, L directive, D decision):
-  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/meta
-  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/toc
-  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/text[?part=PART]
-  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/versions
-  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/related[?type=TYPE&part=PART&offset=N&limit=N&sort=FIELD&order=ORDER]
-  cdx://eu_law/<TYPE>/<YEAR>/<NUM>/related/counts[?part=PART]
-  cdx://eu_law/by-celex/<CELEX>/...           same suffixes, when a CELEX is already at hand";
+EU acts have no direct fetch route - reach them with `search EU`, then
+fetch cdx://doc/<DOC_ID>/... with the docId the hit carries.";
 
 #[derive(Parser, Debug)]
 #[command(
@@ -633,9 +627,7 @@ mod tests {
         assert!(rendered.contains("cz_law"));
     }
 
-    #[test]
-    fn every_cdx_prefix_is_documented_on_both_help_surfaces() {
-        // Keeps the two hand-written help blocks in step with core::patterns.
+    fn help_surfaces() -> [(&'static str, String); 2] {
         let mut command = Cli::command();
         let get = command
             .find_subcommand_mut("get")
@@ -643,33 +635,33 @@ mod tests {
             .render_long_help()
             .to_string();
         let root = command.render_long_help().to_string();
-        for prefix in [
-            crate::core::patterns::DOC,
-            crate::core::patterns::CZ_LAW,
-            crate::core::patterns::EU_LAW,
-            crate::core::patterns::EU_LAW_BY_CELEX,
-        ] {
-            assert!(root.contains(prefix), "root help is missing {prefix}");
-            assert!(get.contains(prefix), "get help is missing {prefix}");
+        [("root", root), ("get", get)]
+    }
+
+    #[test]
+    fn every_cdx_prefix_is_documented_on_both_help_surfaces() {
+        // Keeps the two hand-written help blocks in step with core::patterns.
+        for (surface, help) in help_surfaces() {
+            for prefix in crate::core::patterns::ALL {
+                assert!(help.contains(prefix), "{surface} help is missing {prefix}");
+            }
         }
     }
 
     #[test]
-    fn root_help_lists_the_same_suffixes_for_eu_as_for_czech_law() {
-        // The prefixes themselves are covered by the sync test above; this pins the
-        // suffix parity, which is what the eu_law routes gained.
-        let help = Cli::command().render_long_help().to_string();
-        for suffix in [
-            "meta",
-            "toc",
-            "text[?part=PART]",
-            "versions",
-            "related/counts[?part=PART]",
-        ] {
-            assert!(
-                help.contains(&format!("cdx://eu_law/<TYPE>/<YEAR>/<NUM>/{suffix}")),
-                "root help is missing the eu_law {suffix} route"
-            );
+    fn every_cdx_url_in_help_names_a_namespace_the_cli_advertises() {
+        // The converse of the test above, and the half that catches a route for
+        // something the API does not serve: advertising one sends every caller
+        // that follows it into a 404 that reads as a broken tool.
+        for (surface, help) in help_surfaces() {
+            let found = crate::core::patterns::cdx_namespaces_in(&help);
+            assert!(!found.is_empty(), "{surface} help advertises no cdx:// URL");
+            for namespace in found {
+                assert!(
+                    crate::core::patterns::namespaces().any(|known| known == namespace),
+                    "{surface} help offers cdx://{namespace}/, which is not a known prefix"
+                );
+            }
         }
     }
 
@@ -687,7 +679,7 @@ mod tests {
         assert!(help.contains("cdx-cli search [JD|CR|EU|ES|SK|LT|VS|COMMENT|ALL] --help"));
         assert!(help.contains("cdx-cli schema [meta|toc|versions|text|related|related/counts]"));
         assert!(help.contains("cdx://cz_law/<NUM>/<YEAR>/meta"));
-        assert!(help.contains("/versions (supported for CR documents only)"));
+        assert!(help.contains("/versions (any document; only CR carries more than one)"));
         assert!(!help.contains("cz_law  Fetch Czech law resources by number/year"));
     }
 
@@ -698,7 +690,7 @@ mod tests {
         let help = get.render_long_help().to_string();
 
         assert!(help.contains("cdx://doc/<DOC_ID>/versions"));
-        assert!(help.contains("CR documents only"));
+        assert!(help.contains("only CR carries more than one"));
         assert!(help.contains("cdx://cz_law/<NUM>/<YEAR>/related/counts"));
     }
 
