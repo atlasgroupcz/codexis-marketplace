@@ -102,7 +102,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 
 - If the law number is known, do not start with broad keyword search.
 - For Czech laws named by number and year, prefer `cdx-cli get cdx://cz_law/{lawNumber}/{lawYear}/...` and go straight to `/versions`, `/meta`, `/text`, or `/toc` as needed.
-- For EU acts named by type, year and number, prefer `cdx-cli get cdx://eu_law/{R|L|D}/{year}/{number}/...` (`/meta`, `/versions`) over `search EU`; the type letter is `R` regulation, `L` directive, `D` decision. Read the year and number off the citation - do not compute a CELEX, CODEXIS composes it. Mind only which side of the pair is the year: EU numbering flipped in 2015, so Nařízení (EU) 2016/679 is `R/2016/679` while Nařízení (ES) č. 988/2009 is `R/2009/988`. With a CELEX already in hand - a EUR-Lex link the user pasted - use `cdx://eu_law/by-celex/{celex}/...` instead. A `search EU` hit needs neither route: it already carries `docId`, so fetch `cdx://doc/{docId}/...` directly. Fall back to `search EU` only when no citation coordinates are available or the lookup returns 404.
+- For EU acts there is no direct fetch route. Resolve the act with `search EU` - quote the citation in the query - then fetch `cdx://doc/{docId}/...` with the `docId` the hit carries.
 - For change questions, start with `/versions`, not `/text`, broad search, or web lookup.
 - Stop early if `/versions` shows no boundary at the target date. Answer that directly.
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
@@ -112,6 +112,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 - Treat `ALL` as source-selection help, not as a final citation target.
 - For source-specific search, use `cdx-cli search <SOURCE>` with explicit flags first. Use raw JSON only when a needed filter is unavailable as a flag or when piping a saved payload via stdin.
 - When filters are unclear, use `cdx-cli search <SOURCE> --help` or `--with-facets`; do not rely on separate datasource cheat sheets.
+- Every search needs a query; filters narrow a search, they cannot be one. For "what changed since <date>", use the curated statute list plus `/versions` above rather than trying to enumerate a date range.
 - For section extraction, prefer marker-based extraction from `/text`; use TOC to resolve the correct element when needed.
 - For specific paragraphs, fetch `/toc`, resolve the paragraph `elementId` (for example `paragraf19c`), then use `/text?part=<elementId>`; repeat `part=` when needed.
 - Do not guess `docId` values. Extract them from API responses.
