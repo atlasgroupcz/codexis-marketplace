@@ -1,26 +1,10 @@
 use std::env;
-use std::fmt::Write;
 use std::fs;
 use std::process::Command;
 
 use cdx_common::daemon_rest::daemon_bearer;
 
 // OCR endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL - see ocr_endpoint().
-
-fn percent_encode(input: &[u8]) -> String {
-    let mut out = String::with_capacity(input.len() * 3);
-    for &b in input {
-        match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                out.push(b as char);
-            }
-            _ => {
-                let _ = write!(out, "%{:02X}", b);
-            }
-        }
-    }
-    out
-}
 
 fn ocr_endpoint() -> String {
     // CODEXIS_PUBLIC_DAEMON_URL is the daemon GraphQL URL (…/graphql); the OCR
@@ -40,7 +24,11 @@ fn main() {
 
     if args.len() != 1 || args.iter().any(|arg| arg == "-h" || arg == "--help") {
         eprintln!("usage: ocr <path>");
-        std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
+        std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") {
+            0
+        } else {
+            1
+        });
     }
 
     let daemon_auth = daemon_bearer().unwrap_or_else(|| {
@@ -49,14 +37,22 @@ fn main() {
     });
 
     let path = &args[0];
-    let encoded_path = percent_encode(path.as_bytes());
+    let encoded_path = cdx_common::url::encode_query_value(path);
     let url = format!("{}?path={}", ocr_endpoint(), encoded_path);
     let auth_header = format!("Authorization: {}", daemon_auth);
 
     // The endpoint OCRs the file and returns {path, resultPath}; the recognized
     // text is written to resultPath. Capture the JSON, then print the result text.
     let output = Command::new("curl")
-        .args(["-s", "--fail-with-body", "-X", "POST", &url, "-H", &auth_header])
+        .args([
+            "-s",
+            "--fail-with-body",
+            "-X",
+            "POST",
+            &url,
+            "-H",
+            &auth_header,
+        ])
         .output();
     let resp = match output {
         Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).into_owned(),
@@ -76,7 +72,11 @@ fn main() {
 
     let result_path = serde_json::from_str::<serde_json::Value>(&resp)
         .ok()
-        .and_then(|v| v.get("resultPath").and_then(|s| s.as_str()).map(str::to_string))
+        .and_then(|v| {
+            v.get("resultPath")
+                .and_then(|s| s.as_str())
+                .map(str::to_string)
+        })
         .unwrap_or_default();
     if result_path.is_empty() {
         eprintln!("error: ocr response has no resultPath: {}", resp);

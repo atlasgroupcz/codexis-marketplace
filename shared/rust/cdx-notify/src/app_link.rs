@@ -129,8 +129,14 @@ mod tests {
     #[test]
     fn picks_the_right_sibling_component_of_one_plugin() {
         let apps = json!([
-            app("codexis", "/rest/plugin-components/abc/sledovana-judikatura/"),
-            app("codexis", "/rest/plugin-components/abc/sledovane-dokumenty/"),
+            app(
+                "codexis",
+                "/rest/plugin-components/abc/sledovana-judikatura/"
+            ),
+            app(
+                "codexis",
+                "/rest/plugin-components/abc/sledovane-dokumenty/"
+            ),
         ]);
         assert_eq!(
             pick_application(&apps, "codexis", "sledovane-dokumenty"),

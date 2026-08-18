@@ -1,7 +1,8 @@
+import { ErrorBoundary } from '@workspace/ui/components/error-boundary'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Providers } from '@/components/providers'
 import { App } from '@/app'
+import { Providers } from '@/components/providers'
 import '@/lib/i18n'
 import '@/styles.css'
 
@@ -12,8 +13,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <Providers>
-      <App />
-    </Providers>
+    <ErrorBoundary>
+      <Providers>
+        <App />
+      </Providers>
+    </ErrorBoundary>
   </StrictMode>,
 )

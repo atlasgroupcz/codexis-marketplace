@@ -1,17 +1,17 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, Pencil, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { toast } from '@workspace/ui/components/sonner'
-import { CollisionCard } from './collision-card'
-import { EditMarkDialog } from './edit-mark-dialog'
-import { LogoZoom } from './logo-zoom'
-import { DetailSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import type { Collision } from '@/lib/schemas'
+import { ArrowLeft, Check, Pencil, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDetail } from '@/hooks/use-detail'
 import { checkSubject, confirmChange, removeMark } from '@/lib/api'
 import { formatRelative } from '@/lib/format'
+import type { Collision } from '@/lib/schemas'
+import { CollisionCard } from './collision-card'
+import { EditMarkDialog } from './edit-mark-dialog'
+import { ErrorMessage } from './error-message'
+import { DetailSkeleton } from './loading-skeleton'
+import { LogoZoom } from './logo-zoom'
 
 export function MarkDetail({
   uuid,
@@ -30,16 +30,18 @@ export function MarkDetail({
   const [editOpen, setEditOpen] = useState(false)
 
   if (loading && !data) return <DetailSkeleton />
-  if (error) return <div className="p-6"><ErrorMessage message={error.message} onRetry={refetch} /></div>
+  if (error)
+    return (
+      <div className="p-6">
+        <ErrorMessage message={error.message} onRetry={refetch} />
+      </div>
+    )
   if (!data) return null
 
   const mark = data.mark
   const collisions = mark.collisions
   const unconfirmed = collisions.filter((c) => !c.confirmed_on)
-  const sorted: Array<Collision> = [
-    ...unconfirmed,
-    ...collisions.filter((c) => c.confirmed_on),
-  ]
+  const sorted: Array<Collision> = [...unconfirmed, ...collisions.filter((c) => c.confirmed_on)]
 
   const runCheck = () => {
     setBusy(true)
@@ -60,13 +62,20 @@ export function MarkDetail({
 
   const confirmOne = (index: number) => {
     confirmChange(uuid, index)
-      .then(() => { refetch(); onChanged() })
+      .then(() => {
+        refetch()
+        onChanged()
+      })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
   }
 
   const confirmAllUnread = () => {
     confirmChange(uuid)
-      .then(() => { refetch(); onChanged(); toast.success(t('detail.allMarked')) })
+      .then(() => {
+        refetch()
+        onChanged()
+        toast.success(t('detail.allMarked'))
+      })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
   }
 
@@ -74,7 +83,10 @@ export function MarkDetail({
     if (!window.confirm(t('detail.confirmRemove'))) return
     setBusy(true)
     removeMark(uuid)
-      .then(() => { toast.success(t('detail.removed')); onRemoved() })
+      .then(() => {
+        toast.success(t('detail.removed'))
+        onRemoved()
+      })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : String(e)))
       .finally(() => setBusy(false))
   }
@@ -82,27 +94,60 @@ export function MarkDetail({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack} aria-label={t('common.back')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onBack}
+          aria-label={t('common.back')}
+        >
           <ArrowLeft className="size-5" />
         </Button>
         {mark.logo_data_url && (
-          <LogoZoom src={mark.logo_data_url} className="bg-background size-9 rounded border object-contain p-0.5" />
+          <LogoZoom
+            src={mark.logo_data_url}
+            className="bg-background size-9 rounded border object-contain p-0.5"
+          />
         )}
         <div className="min-w-0 flex-1">
           <h2 className="font-display truncate text-lg leading-tight">{mark.display_name}</h2>
           <p className="text-muted-foreground truncate text-xs">
             {t(`kind.${mark.kind}`)} · {mark.territories.join('/')}
-            {mark.nice_classes.length > 0 && <> · {t('list.classes')} {mark.nice_classes.join(', ')}</>}
+            {mark.nice_classes.length > 0 && (
+              <>
+                {' '}
+                · {t('list.classes')} {mark.nice_classes.join(', ')}
+              </>
+            )}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={runCheck} disabled={busy} data-testid="check-mark">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={runCheck}
+          disabled={busy}
+          data-testid="check-mark"
+        >
           <RefreshCw className={`size-4 ${busy ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">{t('detail.refresh')}</span>
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => setEditOpen(true)} disabled={busy} aria-label={t('edit.title')} data-testid="edit-mark">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setEditOpen(true)}
+          disabled={busy}
+          aria-label={t('edit.title')}
+          data-testid="edit-mark"
+        >
           <Pencil className="size-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={remove} disabled={busy} aria-label={t('detail.remove')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={remove}
+          disabled={busy}
+          aria-label={t('detail.remove')}
+        >
           <Trash2 className="size-4" />
         </Button>
       </div>
@@ -118,7 +163,12 @@ export function MarkDetail({
         <div className="flex items-center justify-between">
           <h3 className="font-display text-base">{t('detail.collisions')}</h3>
           {unconfirmed.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={confirmAllUnread} data-testid="mark-all-read">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={confirmAllUnread}
+              data-testid="mark-all-read"
+            >
               <Check className="size-4" />
               {t('detail.markAllRead', { count: unconfirmed.length })}
             </Button>

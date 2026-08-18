@@ -1,6 +1,7 @@
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Error, Result};
+use cdx_common::http_client::call_with_retry;
 use serde_json::Value;
 use ureq::Agent;
 
@@ -14,61 +15,43 @@ pub struct AresClient {
 
 impl AresClient {
     pub fn new() -> Result<Self> {
-        let base_url =
-            std::env::var("ARES_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
-        let base_url = base_url.trim_end_matches('/').to_string();
-        // ureq keeps a connection pool on the Agent -> repeated lookups to the
-        // same host reuse the TCP+TLS connection.
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout_read(Duration::from_secs(30))
-            .build();
+        let base_url = cdx_common::http::base_url_from_env("ARES_BASE_URL", DEFAULT_BASE_URL);
+        let agent = cdx_common::http_client::agent(
+            USER_AGENT_VALUE,
+            Duration::from_secs(10),
+            Duration::from_secs(30),
+        );
         Ok(Self { agent, base_url })
     }
 
     pub fn get(&self, path: &str) -> Result<String> {
         let url = self.url_for(path);
-        let result = self
-            .agent
-            .get(&url)
-            .set("Accept", "application/json")
-            .set("User-Agent", USER_AGENT_VALUE)
-            .call();
-        read_response(result, &url, "GET")
+        call_with_retry(|| {
+            self.agent
+                .get(&url)
+                .header("Accept", "application/json")
+                .call()
+        })
+        .into_text("GET", &url)
+        .map_err(Error::msg)
     }
 
+    /// The only POST ARES takes is `vyhledat`, a search. It changes nothing on
+    /// the server, so it retries like the GETs do.
     pub fn post_json(&self, path: &str, body: &Value) -> Result<String> {
         let url = self.url_for(path);
-        let result = self
-            .agent
-            .post(&url)
-            .set("Accept", "application/json")
-            .set("Content-Type", "application/json")
-            .set("User-Agent", USER_AGENT_VALUE)
-            .send_json(body);
-        read_response(result, &url, "POST")
+        call_with_retry(|| {
+            self.agent
+                .post(&url)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .send_json(body)
+        })
+        .into_text("POST", &url)
+        .map_err(Error::msg)
     }
 
     fn url_for(&self, path: &str) -> String {
         cdx_common::http::resolve_url(&self.base_url, path)
     }
 }
-
-/// Reads a ureq response, returning the body on success or an error carrying
-/// the status, method, URL and body on failure. Stays local: each plugin's
-/// error type and message differ, so there is nothing shared to lift out.
-fn read_response(
-    result: Result<ureq::Response, ureq::Error>,
-    url: &str,
-    method: &str,
-) -> Result<String> {
-    match result {
-        Ok(resp) => Ok(resp.into_string()?),
-        Err(ureq::Error::Status(code, resp)) => {
-            let body = resp.into_string().unwrap_or_default();
-            Err(anyhow!("HTTP {code} on {method} {url}\n{}", body.trim()))
-        }
-        Err(ureq::Error::Transport(t)) => Err(anyhow!("{method} {url} failed: {t}")),
-    }
-}
-

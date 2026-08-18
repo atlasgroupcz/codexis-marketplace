@@ -8,28 +8,16 @@ use serde_json::{json, Value};
 pub fn create(
     client: &GraphQLClient,
     message: &str,
-    action: Option<&str>,
     link: Option<&str>,
     extra: &[(String, String)],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    // The daemon's CreateNotificationInput exposes the key/value metadata as
-    // `vars: [KeyValueInput!]` (KeyValueInput { key, value }). The CLI's
-    // `--extra k=v` pairs map straight onto it. (This field used to be named
-    // `extra`, which the current daemon schema rejects.)
-    let vars: Vec<Value> = extra
-        .iter()
-        .map(|(k, v)| json!({ "key": k, "value": v }))
-        .collect();
+    let input = build_create_input(message, link, extra);
 
-    let input = json!({
-        "message": message,
-        "action": action,
-        "link": link,
-        "vars": if vars.is_empty() { Value::Null } else { Value::Array(vars) },
-    });
-
-    let data = client.execute(graphql::CREATE_NOTIFICATION_MUTATION, json!({ "input": input }))?;
+    let data = client.execute(
+        graphql::CREATE_NOTIFICATION_MUTATION,
+        json!({ "input": input }),
+    )?;
     let result = data
         .get("createNotification")
         .cloned()
@@ -38,13 +26,35 @@ pub fn create(
     Ok(())
 }
 
+/// Builds the `CreateNotificationInput` payload.
+///
+/// The daemon exposes the key/value metadata as `vars: [KeyValueInput!]`
+/// (KeyValueInput { key, value }); the CLI's `--extra k=v` pairs map straight
+/// onto it. (This field used to be named `extra`, which the schema rejects.)
+fn build_create_input(message: &str, link: Option<&str>, extra: &[(String, String)]) -> Value {
+    let vars: Vec<Value> = extra
+        .iter()
+        .map(|(k, v)| json!({ "key": k, "value": v }))
+        .collect();
+
+    json!({
+        "message": message,
+        "link": link,
+        "vars": if vars.is_empty() { Value::Null } else { Value::Array(vars) },
+    })
+}
+
 pub fn list(
     client: &GraphQLClient,
-    _days: u32,
+    limit: u32,
+    offset: u32,
     unseen: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let data = client.execute(graphql::NOTIFICATIONS_QUERY, json!({}))?;
+    let data = client.execute(
+        graphql::NOTIFICATIONS_QUERY,
+        json!({ "offset": offset, "limit": limit }),
+    )?;
     let notifications = data
         .get("notifications")
         .and_then(|n| n.get("items"))
@@ -75,11 +85,7 @@ pub fn seen(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<()
     update_state(client, &resolved, json!({ "seen": true }), format)
 }
 
-pub fn confirm(
-    client: &GraphQLClient,
-    id: &str,
-    format: OutputFormat,
-) -> Result<(), CdxctlError> {
+pub fn confirm(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
     let resolved = resolve_notification_id(client, id)?;
     update_state(client, &resolved, json!({ "confirmed": true }), format)
 }
@@ -129,4 +135,77 @@ fn update_state(
         .unwrap_or(Value::Null);
     print_output(&updated, format);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{build_create_input, list};
+    use crate::client::GraphQLClient;
+    use crate::output::OutputFormat;
+    use crate::test_support::stub_daemon;
+    use serde_json::json;
+
+    const EMPTY_PAGE: &str =
+        r#"{"data":{"notifications":{"items":[],"totalItems":0,"unseenCount":0}}}"#;
+
+    #[test]
+    fn list_asks_the_daemon_for_the_requested_offset() {
+        // A flag the parser accepts and the query never carries is exactly how
+        // --days looked: accepted, ignored, and silently wrong.
+        let (address, requests) = stub_daemon("HTTP/1.1 200 OK", EMPTY_PAGE);
+        let client =
+            GraphQLClient::with_endpoint(format!("http://{address}/graphql"), "Bearer t".into());
+
+        list(&client, 50, 100, false, OutputFormat::Json).unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(
+            request.contains("\"offset\":100"),
+            "the offset never reached the daemon:\n{request}"
+        );
+    }
+
+    #[test]
+    fn list_asks_the_daemon_for_the_requested_page_size() {
+        // The daemon defaults to 50 and offers no date filter, so the only way to
+        // see past the newest 50 is to say how many are wanted.
+        let (address, requests) = stub_daemon("HTTP/1.1 200 OK", EMPTY_PAGE);
+        let client =
+            GraphQLClient::with_endpoint(format!("http://{address}/graphql"), "Bearer t".into());
+
+        list(&client, 200, 0, false, OutputFormat::Json).unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(
+            request.contains("\"limit\":200"),
+            "no page size reached the daemon:\n{request}"
+        );
+    }
+
+    #[test]
+    fn create_input_carries_no_action_key() {
+        // `CreateNotificationInput` has no `action` - sending one is rejected.
+        let input = build_create_input("hotovo", None, &[]);
+
+        assert!(input.get("action").is_none(), "input still sends: {input}");
+    }
+
+    #[test]
+    fn create_input_maps_extra_pairs_onto_vars() {
+        let extra = [("source".to_string(), "katastr".to_string())];
+
+        let input = build_create_input("hotovo", None, &extra);
+
+        assert_eq!(
+            input["vars"],
+            json!([{ "key": "source", "value": "katastr" }])
+        );
+    }
+
+    #[test]
+    fn create_input_omits_vars_when_no_extra_pairs_are_given() {
+        let input = build_create_input("hotovo", None, &[]);
+
+        assert!(input["vars"].is_null());
+    }
 }

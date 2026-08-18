@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next'
+import { uhradaLabel } from '@/lib/uhrada'
+
 interface UhradaBadgeProps {
   stavUhrady: string | null | undefined
-  label: string | null | undefined
 }
 
 // Coloured text (like the mockup's `.pay`), not a pill.
@@ -10,10 +12,10 @@ const colorMap: Record<string, string> = {
   O: 'text-amber-700',
 }
 
-export function UhradaBadge({ stavUhrady, label }: UhradaBadgeProps) {
-  if (!stavUhrady || !label) {
-    return <span className="text-muted-foreground">---</span>
-  }
+/** The payment state of a proceeding, coloured, as the detail header shows it. */
+export function UhradaBadge({ stavUhrady }: UhradaBadgeProps) {
+  const { t } = useTranslation()
+  if (!stavUhrady) return <span className="text-muted-foreground">---</span>
   const color = colorMap[stavUhrady] ?? 'text-foreground'
-  return <span className={`font-semibold ${color}`}>{label}</span>
+  return <span className={`font-semibold ${color}`}>{uhradaLabel(t, stavUhrady)}</span>
 }

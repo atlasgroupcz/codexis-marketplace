@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { FoldersResponse } from '@/lib/schemas'
 import { fetchFolders } from '@/lib/api'
+import type { FoldersResponse } from '@/lib/schemas'
 
 interface UseFoldersResult {
   data: FoldersResponse | null

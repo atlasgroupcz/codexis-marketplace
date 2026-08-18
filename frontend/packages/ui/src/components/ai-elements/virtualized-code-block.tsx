@@ -1,15 +1,12 @@
 'use client'
 
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { CheckIcon, CopyIcon } from 'lucide-react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import {
-  oneDark,
-  oneLight,
-} from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@workspace/ui/components/button'
 import { cn } from '@workspace/ui/lib/utils'
+import { CheckIcon, CopyIcon } from 'lucide-react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 export interface VirtualizedCodeBlockProps {
   code: string
@@ -23,11 +20,7 @@ export interface VirtualizedCodeBlockProps {
  * Uses react-syntax-highlighter with oneDark/oneLight themes.
  * Horizontal scrolling is synchronized across all lines via the parent container.
  */
-export function VirtualizedCodeBlock({
-  code,
-  language,
-  className,
-}: VirtualizedCodeBlockProps) {
+export function VirtualizedCodeBlock({ code, language, className }: VirtualizedCodeBlockProps) {
   const lines = useMemo(() => code.split('\n'), [code])
   const parentRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -163,10 +156,7 @@ export function VirtualizedCodeBlock({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <HighlightedLine
-                  content={lines[virtualRow.index] ?? ''}
-                  language={language}
-                />
+                <HighlightedLine content={lines[virtualRow.index] ?? ''} language={language} />
               </div>
             ))}
           </div>
@@ -180,13 +170,7 @@ export function VirtualizedCodeBlock({
  * Per-line syntax highlighting component.
  * Uses react-syntax-highlighter with oneDark/oneLight themes.
  */
-function HighlightedLine({
-  content,
-  language,
-}: {
-  content: string
-  language: string
-}) {
+function HighlightedLine({ content, language }: { content: string; language: string }) {
   if (!content) {
     // Empty line - render non-breaking space to maintain height
     return <code className="flex-1 px-4 whitespace-pre">&nbsp;</code>

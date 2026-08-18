@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DetailResponse } from '@/lib/schemas'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DocumentsHome } from '@/components/documents-home'
-import { renderApp } from '@/test/render-app'
+import type { DetailResponse, FoldersResponse } from '@/lib/schemas'
 import { detailFixture, detailWithPartsFixture, overviewFixture } from '@/test/fixtures'
+import { renderApp } from '@/test/render-app'
 
 const detailByUuid: Record<string, DetailResponse> = {
   '2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d': detailFixture,
@@ -32,7 +32,32 @@ function emptyDetail(uuid: string): DetailResponse {
   }
 }
 
-/** Returns overview for the base endpoint and the matching detail when ?uuid= is present. */
+/** The rail fetches the folder badge itself; four unconfirmed across two folders. */
+const foldersFixture: FoldersResponse = {
+  mode: 'folders',
+  generated_at: '2026-06-01T12:00:00Z',
+  folders: [
+    {
+      root: '/home/u/contracts',
+      name: 'Smlouvy',
+      documents: 3,
+      pending_harvest: 0,
+      legislation: 2,
+      unconfirmed_changes: 3,
+    },
+    {
+      root: '/home/u/policies',
+      name: 'Směrnice',
+      documents: 1,
+      pending_harvest: 0,
+      legislation: 1,
+      unconfirmed_changes: 1,
+    },
+  ],
+  settings: { email: true, inApp: true, recipients: [] },
+}
+
+/** Detail when ?uuid= is present, folders for the rail badge, overview otherwise. */
 function stubRoutedFetch() {
   vi.stubGlobal(
     'fetch',
@@ -43,6 +68,9 @@ function stubRoutedFetch() {
         const uuid = decodeURIComponent(match[1] ?? '')
         const detail = detailByUuid[uuid] ?? emptyDetail(uuid)
         return Promise.resolve({ ok: true, json: () => Promise.resolve(detail) })
+      }
+      if (url.includes('view=folders')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(foldersFixture) })
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve(overviewFixture) })
     }),
@@ -56,7 +84,14 @@ beforeEach(() => {
 describe('DocumentsHome', () => {
   it('renders the branded header', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Followed documents' })).toBeInTheDocument()
@@ -65,7 +100,14 @@ describe('DocumentsHome', () => {
 
   it('builds a cross-document changes feed', async () => {
     stubRoutedFetch()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     await waitFor(() => {
       expect(
@@ -78,9 +120,17 @@ describe('DocumentsHome', () => {
     stubRoutedFetch()
     const onSelectDocument = vi.fn()
     const user = userEvent.setup()
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={onSelectDocument} onOpenSettings={vi.fn()} />, {
-      searchParams: { tab: 'documents' },
-    })
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={onSelectDocument}
+        onOpenSettings={vi.fn()}
+      />,
+      {
+        searchParams: { tab: 'documents' },
+      },
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Zákoník práce (262/2006 Sb.)')).toBeInTheDocument()
@@ -91,12 +141,114 @@ describe('DocumentsHome', () => {
     expect(onSelectDocument).toHaveBeenCalledWith('2f4b1f72-3fa2-4b65-9e7a-4bb4ddda1f1d')
   })
 
+  it('opens a pre-filled chat draft from the header once documents are tracked', async () => {
+    stubRoutedFetch()
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
+
+    const link = await screen.findByTestId('add-monitoring')
+    expect(link).toHaveAttribute(
+      'href',
+      `/?draft=${encodeURIComponent('Track changes in the Labour Code')}`,
+    )
+    expect(link).toHaveAttribute('target', '_top')
+  })
+
+  it('hides the header draft link while nothing is tracked', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ...overviewFixture, tracked_documents: [] }),
+      }),
+    )
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
+
+    // the landing screen carries the example prompt instead
+    await waitFor(() => {
+      expect(screen.getByTestId('empty-chat-example')).toBeInTheDocument()
+    })
+    expect(screen.queryByTestId('add-monitoring')).not.toBeInTheDocument()
+  })
+
+  it('switches to the folder watchdog from the section navigation', async () => {
+    stubRoutedFetch()
+    const onChangeSection = vi.fn()
+    const user = userEvent.setup()
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={onChangeSection}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
+
+    const acts = await screen.findByRole('button', { name: /Acts/ })
+    expect(acts).toHaveAttribute('aria-current', 'page')
+
+    await user.click(screen.getByRole('button', { name: /Folders/ }))
+    expect(onChangeSection).toHaveBeenCalledWith('folders')
+  })
+
+  it('badges the folder watchdog with the changes waiting there', async () => {
+    stubRoutedFetch()
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
+
+    // three plus one unconfirmed across the two folders it fetched for the badge
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Folders/ })).toHaveTextContent('4')
+    })
+  })
+
+  it('badges its own watchdog from its own data', async () => {
+    stubRoutedFetch()
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
+
+    // the overview fixture carries two unconfirmed act changes
+    expect(await screen.findByRole('button', { name: /Acts/ })).toHaveTextContent('2')
+  })
+
   it('shows an error when the overview request fails', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Internal Server Error' }),
     )
-    renderApp(<DocumentsHome section="documents" onChangeSection={vi.fn()} onSelectDocument={vi.fn()} onOpenSettings={vi.fn()} />)
+    renderApp(
+      <DocumentsHome
+        section="documents"
+        onChangeSection={vi.fn()}
+        onSelectDocument={vi.fn()}
+        onOpenSettings={vi.fn()}
+      />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText(/HTTP 500/)).toBeInTheDocument()

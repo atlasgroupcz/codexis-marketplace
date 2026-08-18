@@ -53,7 +53,10 @@ enum Commands {
         source: SearchSource,
     },
 
-    #[command(about = "Fetch a registr-smluv:// resource", arg_required_else_help = true)]
+    #[command(
+        about = "Fetch a registr-smluv:// resource",
+        arg_required_else_help = true
+    )]
     Get(GetArgs),
 }
 
@@ -213,14 +216,8 @@ mod tests {
     fn ico_flag_is_canonicalized_at_parse() {
         // A user-supplied IČO missing leading zeros is padded to 8 digits so it
         // matches the backend's zero-padded stored value.
-        let cli = Cli::try_parse_from([
-            "registr-smluv",
-            "search",
-            "CZRS",
-            "--ico",
-            "151513",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["registr-smluv", "search", "CZRS", "--ico", "151513"]).unwrap();
 
         match cli.command {
             Commands::Search {

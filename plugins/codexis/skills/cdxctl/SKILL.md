@@ -85,7 +85,8 @@ cdxctl automation trigger <id>
 
 **Writing `--prompt`:** keep it short - one or two imperative sentences naming the task, e.g. `--prompt "Check the documents in /home/codexis/Smlouvy and notify me about issues"`. It is the first message of each run, not a scheduling request (the schedule is `--repeat`/`--day-part`). Never put `cdxctl automation create/update` inside the prompt - this command already creates the automation, so a nested create would just register more automations instead of doing the work.
 
-**IDs:** use the `id` or `uuid` from `automation list`. Both Node IDs (base64) and raw UUIDs work.
+**IDs:** use the `id` from `automation list`. A raw UUID works too - it is encoded
+into the Node ID for you.
 
 More worked calls: `references/automation-examples.md`.
 
@@ -297,19 +298,18 @@ cdxctl notification create \
     --message "Chat completed - click to view" \
     --link "/chat/Q2hhdDoxMjYtMzZhOTFk..."
 
-# Create with a shell action (executed on daemon refresh)
-cdxctl notification create \
-    --message "Backup finished" \
-    --action "echo done > /tmp/backup_status"
-
 # Create with extra custom fields
 cdxctl notification create \
     --message "New data available" \
     --extra source=pipeline \
     --extra priority=high
 
-# List notifications (last 7 days)
+# List notifications (newest 50)
 cdxctl notification list
+
+# Fetch more, or reach older ones
+cdxctl notification list --limit 200
+cdxctl notification list --limit 50 --offset 50
 
 # List only unseen notifications
 cdxctl notification list --unseen
@@ -321,7 +321,9 @@ cdxctl notification seen <id>
 cdxctl notification confirm <id>
 ```
 
-**File format:** Notifications are JSON files at `~/.cdx/notifications/YYYY/MM/DD/HH/n_{timestamp_ms}_{uuid}.json` with fields: `message` (required), `action`, `link`, `seen`, `confirmed`, plus any custom fields.
+**Paging:** `list` returns the newest 50 unless `--limit` says otherwise. There is
+no filter by age. `--unseen` filters what was fetched, so raise `--limit` when the
+unread one is older than the newest 50.
 
 ### Outbound email
 
@@ -381,7 +383,9 @@ records, so do not resend one you have already filed in this conversation.
 ## Output
 
 - **Default:** JSON to stdout (machine-parseable)
-- **Table:** Add `--table` flag for human-readable columns
+- **Table:** Add `--table` flag for human-readable columns. A value longer than
+  50 characters is truncated with an ellipsis, so take the full text from the
+  JSON rather than from a table you are passing on.
 - **Errors:** Printed to stderr
 
 ## Schedule Format

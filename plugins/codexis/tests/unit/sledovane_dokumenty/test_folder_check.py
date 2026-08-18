@@ -89,11 +89,55 @@ def test_change_triggers_notifications(seeded, monkeypatch):
     mapping["CR26785"] = [{"versionId": "v2"}, {"versionId": "v1"}]
 
     captured = {}
-    monkeypatch.setattr(
-        notify,
-        "notify_changes",
-        lambda results: captured.setdefault("results", results),
-    )
+
+    def fake_notify_changes(results):
+        captured["results"] = results
+        # The real shape, because check_folders now reads `inApp` out of it.
+        return {"email": False, "inApp": True, "changes": 1}
+
+    monkeypatch.setattr(notify, "notify_changes", fake_notify_changes)
     folder_check.check_folders(seeded, send_notifications=True)
     assert "results" in captured
     assert captured["results"][0]["changes"][0]["new_version_id"] == "v2"
+
+
+# ── a refused bell is its own flag ───────────────────────────────────────────
+
+
+def _changed_once(monkeypatch, seeded):
+    """Get `seeded` into a state where the next check finds one change."""
+    mapping = {"CR26785": [{"versionId": "v1"}]}
+    _mock_versions(monkeypatch, mapping)
+    folder_check.check_folders(seeded, send_notifications=False)
+    mapping["CR26785"] = [{"versionId": "v2"}, {"versionId": "v1"}]
+
+
+def test_notify_failed_is_set_when_the_daemon_refuses_the_bell(seeded, monkeypatch):
+    _changed_once(monkeypatch, seeded)
+    monkeypatch.setattr(
+        notify,
+        "notify_changes",
+        lambda results: {"email": False, "inApp": False, "changes": 1},
+    )
+
+    result = folder_check.check_folders(seeded, send_notifications=True)
+
+    assert result["notify_failed"] is True
+    # Its own flag, not another entry in `errors`: the caller ends the run
+    # non-zero for this and not for the unrelated problems the check collects.
+    assert result["errors"] == []
+
+
+def test_notify_failed_is_clear_when_no_notification_was_attempted(seeded, monkeypatch):
+    _changed_once(monkeypatch, seeded)
+    monkeypatch.setattr(
+        notify,
+        "notify_changes",
+        lambda results: {"email": False, "inApp": None, "changes": 1},
+    )
+
+    result = folder_check.check_folders(seeded, send_notifications=True)
+
+    # None means the channel is off or there was nothing to send. Neither is a
+    # failure, and treating them as one would paint every quiet run red.
+    assert result["notify_failed"] is False

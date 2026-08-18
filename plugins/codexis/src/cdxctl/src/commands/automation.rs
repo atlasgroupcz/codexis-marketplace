@@ -132,20 +132,7 @@ pub fn update(
     args: UpdateArgs,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let UpdateArgs {
-        id,
-        title,
-        schedule,
-        prompt,
-        description,
-        agent,
-        skills,
-        max_turns,
-        model,
-        jurisdictions,
-        work_dir,
-    } = args;
-    let node_id = resolve_node_id(id, "Automation");
+    let node_id = resolve_node_id(args.id, "Automation");
 
     // Fetch current automation to merge with
     let data = client.execute(graphql::GET_AUTOMATIONS, json!({}))?;
@@ -154,36 +141,67 @@ pub fn update(
         .and_then(|a| a.as_array())
         .ok_or_else(|| CdxctlError::Parse("Failed to fetch automations".into()))?;
 
-    let mut current = automations
+    // Only `id`: no query in this CLI selects `uuid`. A raw UUID still resolves,
+    // because `resolve_node_id` encodes it into the Node ID compared here.
+    let current = automations
         .iter()
-        .find(|a| {
-            a.get("id").and_then(|v| v.as_str()) == Some(&node_id)
-                || a.get("uuid").and_then(|v| v.as_str()) == Some(id)
-        })
+        .find(|a| a.get("id").and_then(|v| v.as_str()) == Some(&node_id))
         .cloned()
-        .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation not found: {id}")]))?;
-    flatten_automation(&mut current);
+        .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation not found: {}", args.id)]))?;
 
     let auto_type = current
         .get("type")
         .and_then(|v| v.as_str())
-        .unwrap_or("AGENT");
+        .unwrap_or("AGENT")
+        .to_string();
+
+    // Only AGENT automations carry an agent and skills, so a COMMAND update must
+    // not spend a round trip resolving names it will never send.
+    let (agent_id, skill_ids) = if auto_type == "COMMAND" {
+        (None, None)
+    } else {
+        (
+            args.agent
+                .map(|a| resolve_agent_id(client, a))
+                .transpose()?,
+            args.skills
+                .map(|s| resolve_skill_ids(client, s))
+                .transpose()?,
+        )
+    };
+
+    let input = build_update_input(current, &args, &auto_type, agent_id, skill_ids)?;
+    save_automation(client, json!({ "id": node_id, "input": input }), format)
+}
+
+/// Merges the update flags onto the automation as it is stored, producing the
+/// `AutomationInput` payload. `agent_id` / `skill_ids` arrive already resolved
+/// because that needs the daemon; everything else is a pure merge.
+fn build_update_input(
+    mut current: Value,
+    args: &UpdateArgs,
+    auto_type: &str,
+    agent_id: Option<Value>,
+    skill_ids: Option<Vec<Value>>,
+) -> Result<Value, CdxctlError> {
+    lift_agent_and_skills(&mut current);
 
     let mut input = json!({
         "type": auto_type,
-        "title": title.map(String::from).or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
-        "schedule": schedule.to_input()?.or_else(|| current.get("schedule").cloned()).unwrap_or(Value::Null),
+        "title": args.title.map(String::from).or_else(|| current.get("title").and_then(|v| v.as_str()).map(String::from)).unwrap_or_default(),
+        "schedule": args.schedule.to_input()?.or_else(|| current.get("schedule").cloned()).unwrap_or(Value::Null),
         // `update` never changes the enabled flag - preserve the current value.
         // Toggling enabled goes through `enable`/`disable` (setAutomationEnabled),
         // which also works for read-only carried automations.
         "enabled": json!(current.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)),
-        "description": description.map(String::from).or_else(|| current.get("description").and_then(|v| v.as_str()).map(String::from)),
+        "description": args.description.map(String::from).or_else(|| current.get("description").and_then(|v| v.as_str()).map(String::from)),
     });
 
     if auto_type == "COMMAND" {
         input["command"] = current.get("command").cloned().unwrap_or(Value::Null);
     } else {
-        input["prompt"] = prompt
+        input["prompt"] = args
+            .prompt
             .map(String::from)
             .or_else(|| {
                 current
@@ -194,13 +212,13 @@ pub fn update(
             .map(|s| json!(s))
             .unwrap_or(Value::Null);
 
-        input["agentId"] = match agent {
-            Some(a) => resolve_agent_id(client, a)?,
+        input["agentId"] = match agent_id {
+            Some(a) => a,
             None => current.get("agentId").cloned().unwrap_or(Value::Null),
         };
 
-        input["skillIds"] = match skills {
-            Some(s) => Value::Array(resolve_skill_ids(client, s)?),
+        input["skillIds"] = match skill_ids {
+            Some(s) => Value::Array(s),
             None => Value::Array(
                 current
                     .get("skillIds")
@@ -213,7 +231,8 @@ pub fn update(
             ),
         };
 
-        input["maxTurns"] = json!(max_turns
+        input["maxTurns"] = json!(args
+            .max_turns
             .or_else(|| current
                 .get("maxTurns")
                 .and_then(|v| v.as_u64())
@@ -221,7 +240,8 @@ pub fn update(
             .unwrap_or(20));
     }
 
-    input["workDir"] = work_dir
+    input["workDir"] = args
+        .work_dir
         .map(String::from)
         .or_else(|| {
             current
@@ -233,11 +253,11 @@ pub fn update(
         .map(|s| json!(s))
         .unwrap_or(Value::Null);
 
-    input["model"] = match model {
+    input["model"] = match args.model {
         Some(m) => json!(m),
         None => current.get("model").cloned().unwrap_or(Value::Null),
     };
-    input["jurisdictions"] = match jurisdictions {
+    input["jurisdictions"] = match args.jurisdictions {
         Some(list) => json!(list),
         None => current
             .get("jurisdictions")
@@ -250,7 +270,7 @@ pub fn update(
         .cloned()
         .unwrap_or(Value::Array(Vec::new()));
 
-    save_automation(client, json!({ "id": node_id, "input": input }), format)
+    Ok(input)
 }
 
 /// Runs the structured `saveAutomation` mutation (id null → create, id set → update).
@@ -332,10 +352,22 @@ pub fn set_enabled(
     Ok(())
 }
 
+/// Prepares a fetched automation for display: lifts the nested nodes, then
+/// renders the schedule as one cell. Output only - the update merge takes
+/// `lift_agent_and_skills` instead, because it needs the schedule as an object.
+fn flatten_automation(value: &mut Value) {
+    lift_agent_and_skills(value);
+    if let Some(object) = value.as_object_mut() {
+        if let Some(schedule) = object.remove("schedule") {
+            object.insert("schedule".into(), json!(format_schedule(&schedule)));
+        }
+    }
+}
+
 /// Flatten the daemon's nested `agent { id fullName }` / `skills { id fullName }`
 /// selections into the flat `agentFullName` / `agentId` / `skillFullNames` /
 /// `skillIds` keys the CLI output and the update-merge logic rely on.
-fn flatten_automation(value: &mut Value) {
+fn lift_agent_and_skills(value: &mut Value) {
     let Some(object) = value.as_object_mut() else {
         return;
     };
@@ -361,9 +393,6 @@ fn flatten_automation(value: &mut Value) {
             .collect();
         object.insert("skillFullNames".into(), Value::Array(full_names));
         object.insert("skillIds".into(), Value::Array(ids));
-    }
-    if let Some(schedule) = object.remove("schedule") {
-        object.insert("schedule".into(), json!(format_schedule(&schedule)));
     }
 }
 
@@ -464,10 +493,104 @@ fn resolve_skill_ids(client: &GraphQLClient, values: &[String]) -> Result<Vec<Va
 
 #[cfg(test)]
 mod tests {
-    use super::{context_keys_to_fill, flatten_automation, print_automation_payload};
+    use super::{
+        build_update_input, context_keys_to_fill, flatten_automation, lift_agent_and_skills,
+        print_automation_payload, ScheduleArgs, UpdateArgs,
+    };
     use crate::error::CdxctlError;
     use crate::output::OutputFormat;
     use serde_json::{json, Map, Value};
+
+    /// An automation as `GET_AUTOMATIONS` returns it, with the schedule nested.
+    fn stored_automation() -> Value {
+        json!({
+            "id": "Automation:a",
+            "type": "AGENT",
+            "title": "Kontrola katastru",
+            "prompt": "zkontroluj",
+            "enabled": true,
+            "schedule": {
+                "repeat": "DAILY",
+                "dayPart": "MORNING",
+                "daysOfWeek": [],
+                "dayOfMonth": null
+            },
+            "agent": null,
+            "skills": []
+        })
+    }
+
+    fn update_args(id: &str) -> UpdateArgs<'_> {
+        UpdateArgs {
+            id,
+            title: None,
+            schedule: ScheduleArgs::default(),
+            prompt: None,
+            description: None,
+            agent: None,
+            skills: None,
+            max_turns: None,
+            model: None,
+            jurisdictions: None,
+            work_dir: None,
+        }
+    }
+
+    #[test]
+    fn lifting_nodes_leaves_the_schedule_object_alone() {
+        // The write path lifts without rendering; only display collapses the
+        // schedule, and merging an update on top of a rendered one fails.
+        let mut value = stored_automation();
+
+        lift_agent_and_skills(&mut value);
+
+        assert!(value["schedule"].is_object());
+        assert_eq!(value["skillIds"], json!([]));
+    }
+
+    #[test]
+    fn display_flattening_renders_the_schedule_as_one_cell() {
+        let mut value = stored_automation();
+
+        flatten_automation(&mut value);
+
+        assert_eq!(value["schedule"], json!("DAILY MORNING"));
+    }
+
+    #[test]
+    fn update_replaces_the_stored_schedule_when_schedule_flags_are_given() {
+        let mut args = update_args("a");
+        args.schedule.repeat = Some("WEEKLY");
+        args.schedule.day_part = Some("EVENING");
+        args.schedule.days_of_week = &[1, 4];
+
+        let input = build_update_input(stored_automation(), &args, "AGENT", None, None).unwrap();
+
+        assert_eq!(input["schedule"]["repeat"], json!("WEEKLY"));
+        assert_eq!(input["schedule"]["dayPart"], json!("EVENING"));
+        assert_eq!(input["schedule"]["daysOfWeek"], json!([1, 4]));
+    }
+
+    #[test]
+    fn update_sends_the_stored_schedule_as_an_input_object() {
+        // `AutomationScheduleInput` is a Map. Sending the table rendering of the
+        // schedule instead fails the whole mutation, which is what changing any
+        // other field used to do.
+        let mut args = update_args("a");
+        args.prompt = Some("novy prompt");
+
+        let input = build_update_input(stored_automation(), &args, "AGENT", None, None).unwrap();
+
+        assert_eq!(
+            input["schedule"],
+            json!({
+                "repeat": "DAILY",
+                "dayPart": "MORNING",
+                "daysOfWeek": [],
+                "dayOfMonth": null
+            })
+        );
+    }
 
     #[test]
     fn context_keys_to_fill_lists_only_unset_keys() {
@@ -483,7 +606,10 @@ mod tests {
             vec!["modelConfiguration", "jurisdictions"]
         );
 
-        input.insert("modelConfiguration".into(), json!([{"key": "effort", "value": "HIGH"}]));
+        input.insert(
+            "modelConfiguration".into(),
+            json!([{"key": "effort", "value": "HIGH"}]),
+        );
         input.insert("jurisdictions".into(), json!(["CZ"]));
         assert!(context_keys_to_fill(&input).is_empty());
     }

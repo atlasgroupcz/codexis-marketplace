@@ -1,16 +1,16 @@
 [package]
 name = "cdxctl"
-version = "0.2.0"
+version = "0.2.3"
 edition = "2021"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "multipart", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-base64 = "0.22"
-chrono = "0.4"
-uuid = { version = "1", features = ["v4"] }
-zip = { version = "2", default-features = false, features = ["deflate"] }
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false }
+# Blocking reqwest, for `multipart` on the daemon's e-mail endpoint. It brings a
+# tokio runtime along - reqwest is built on hyper - which is why the lookup
+# plugins use ureq instead. TLS is cdx-common's `reqwest-client` to decide.
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "multipart", "query"] }
+base64 = "0.23"
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client"] }
 

@@ -16,7 +16,11 @@ const POLL_DEADLINE: Duration = Duration::from_secs(600);
 /// (up to 10 minutes) until the run reports SUCCEEDED or FAILED. This keeps each
 /// HTTP request short, so the import is not bound by client/proxy read timeouts.
 /// Already-present chats and agents are skipped, so re-running is idempotent.
-pub fn sync(client: &GraphQLClient, dry_run: bool, format: OutputFormat) -> Result<(), CdxctlError> {
+pub fn sync(
+    client: &GraphQLClient,
+    dry_run: bool,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
     if dry_run {
         eprintln!("--dry-run is no longer supported: the import now runs inside the daemon.");
         return Ok(());
@@ -37,7 +41,10 @@ pub fn sync(client: &GraphQLClient, dry_run: bool, format: OutputFormat) -> Resu
     let deadline = Instant::now() + POLL_DEADLINE;
     loop {
         let data = client.execute(graphql::CODEXIS_IMPORT_STATUS, json!({}))?;
-        if let Some(state) = data.get("codexisImportStatus").filter(|value| !value.is_null()) {
+        if let Some(state) = data
+            .get("codexisImportStatus")
+            .filter(|value| !value.is_null())
+        {
             match status_of(state).as_str() {
                 "SUCCEEDED" => {
                     eprintln!("Codexis 1.0 import finished.");

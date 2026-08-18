@@ -245,7 +245,8 @@ fn truncate_results(body: &str, limit: usize) -> Result<String> {
     if let Some(results) = parsed.get_mut("results").and_then(Value::as_array_mut) {
         results.truncate(limit);
     }
-    serde_json::to_string(&parsed).map_err(|e| anyhow!("could not serialize truncated results: {e}"))
+    serde_json::to_string(&parsed)
+        .map_err(|e| anyhow!("could not serialize truncated results: {e}"))
 }
 
 #[cfg(test)]

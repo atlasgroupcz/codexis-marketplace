@@ -28,7 +28,10 @@ pub(crate) struct SearchBaseArgs {
     #[arg(long, help = "Result limit (default: 20, max: 100)")]
     pub(crate) limit: Option<u64>,
 
-    #[arg(long, help = "Result offset (default: 0; offset + limit must be <= 10000)")]
+    #[arg(
+        long,
+        help = "Result offset (default: 0; offset + limit must be <= 10000)"
+    )]
     pub(crate) offset: Option<u64>,
 
     #[arg(long, help = "Sort field (relevance, date)")]
@@ -79,12 +82,23 @@ impl SearchBaseArgs {
     /// source (`q` for devices, `nazev` for persons), so each source inserts it
     /// in its own `extend_payload`.
     fn insert_into(&self, payload: &mut JsonMap) {
-        insert_u64(payload, "limit", Some(self.limit.unwrap_or(DEFAULT_RESULT_LIMIT)));
-        insert_u64(payload, "offset", Some(self.offset.unwrap_or(DEFAULT_RESULT_OFFSET)));
+        insert_u64(
+            payload,
+            "limit",
+            Some(self.limit.unwrap_or(DEFAULT_RESULT_LIMIT)),
+        );
+        insert_u64(
+            payload,
+            "offset",
+            Some(self.offset.unwrap_or(DEFAULT_RESULT_OFFSET)),
+        );
     }
 }
 
-fn merge_payload_override(payload: &mut JsonMap, raw_payload: Option<&str>) -> Result<(), CliError> {
+fn merge_payload_override(
+    payload: &mut JsonMap,
+    raw_payload: Option<&str>,
+) -> Result<(), CliError> {
     if let Some(override_payload) = load_search_payload(raw_payload)? {
         payload.extend(override_payload);
     }
@@ -105,7 +119,10 @@ mod tests {
     #[test]
     fn default_paging_and_query_key_q() {
         let args = SearchRzproArgs {
-            base: SearchBaseArgs { query: Some("gliadin".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("gliadin".to_string()),
+                ..SearchBaseArgs::default()
+            },
             ..SearchRzproArgs::default()
         };
         let p: Value = serde_json::from_str(&args.build_payload().unwrap()).unwrap();

@@ -1,6 +1,4 @@
-import { useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Image as ImageIcon, Type, Upload } from 'lucide-react'
+import { Button } from '@workspace/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,11 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/ui/components/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
 import { Input } from '@workspace/ui/components/input'
-import { Button } from '@workspace/ui/components/button'
 import { Label } from '@workspace/ui/components/label'
 import { toast } from '@workspace/ui/components/sonner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs'
+import { Image as ImageIcon, Type, Upload } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { addLogo, addText } from '@/lib/api'
 
 const TERRITORIES = ['CZ', 'EU'] as const
@@ -30,7 +30,10 @@ function parseClasses(value: string): Array<number> {
 }
 
 function parseList(value: string): Array<string> {
-  return value.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean)
+  return value
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 export function AddMarkDialog({
@@ -56,8 +59,14 @@ export function AddMarkDialog({
   const fileRef = useRef<HTMLInputElement>(null)
 
   const reset = () => {
-    setText(''); setLogoText(''); setNice(''); setVienna('')
-    setTerritories(['CZ', 'EU']); setOwner(''); setLabel(''); setLogo(null)
+    setText('')
+    setLogoText('')
+    setNice('')
+    setVienna('')
+    setTerritories(['CZ', 'EU'])
+    setOwner('')
+    setLabel('')
+    setLogo(null)
   }
 
   const toggleTerritory = (terr: string) =>
@@ -66,7 +75,8 @@ export function AddMarkDialog({
   const onFile = (file: File | undefined) => {
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setLogo({ dataUrl: String(reader.result), mime: file.type || 'image/png' })
+    reader.onload = () =>
+      setLogo({ dataUrl: String(reader.result), mime: file.type || 'image/png' })
     reader.readAsDataURL(file)
   }
 
@@ -115,7 +125,14 @@ export function AddMarkDialog({
     <>
       <div className="space-y-1.5">
         <Label htmlFor="nice">{t('add.nice')}</Label>
-        <Input id="nice" placeholder="9, 42" value={nice} onChange={(e) => setNice(e.target.value)} disabled={submitting} data-testid="nice-input" />
+        <Input
+          id="nice"
+          placeholder="9, 42"
+          value={nice}
+          onChange={(e) => setNice(e.target.value)}
+          disabled={submitting}
+          data-testid="nice-input"
+        />
         <p className="text-muted-foreground text-xs">{t('add.niceHint')}</p>
       </div>
       <div className="space-y-1.5">
@@ -130,7 +147,9 @@ export function AddMarkDialog({
               data-testid={`territory-${terr}`}
               aria-pressed={territories.includes(terr)}
               className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                territories.includes(terr) ? 'border-primary bg-secondary text-primary' : 'text-muted-foreground'
+                territories.includes(terr)
+                  ? 'border-primary bg-secondary text-primary'
+                  : 'text-muted-foreground'
               }`}
             >
               {t(`territory.${terr}`)}
@@ -151,20 +170,48 @@ export function AddMarkDialog({
 
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="text" data-testid="tab-text"><Type className="size-4" />{t('add.word')}</TabsTrigger>
-            <TabsTrigger value="logo" data-testid="tab-logo"><ImageIcon className="size-4" />{t('add.figurative')}</TabsTrigger>
+            <TabsTrigger value="text" data-testid="tab-text">
+              <Type className="size-4" />
+              {t('add.word')}
+            </TabsTrigger>
+            <TabsTrigger value="logo" data-testid="tab-logo">
+              <ImageIcon className="size-4" />
+              {t('add.figurative')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="text" className="max-h-[60vh] space-y-4 overflow-y-auto pt-2">
             <div className="space-y-1.5">
               <Label htmlFor="text">{t('add.text')}</Label>
-              <Input id="text" autoComplete="off" placeholder="CODEXIS" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitText()} disabled={submitting} data-testid="text-input" />
+              <Input
+                id="text"
+                autoComplete="off"
+                placeholder="CODEXIS"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && submitText()}
+                disabled={submitting}
+                data-testid="text-input"
+              />
             </div>
             {filters}
-            <OwnerLabel owner={owner} setOwner={setOwner} label={label} setLabel={setLabel} disabled={submitting} t={t} />
+            <OwnerLabel
+              owner={owner}
+              setOwner={setOwner}
+              label={label}
+              setLabel={setLabel}
+              disabled={submitting}
+              t={t}
+            />
             <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('common.cancel')}</Button>
-              <Button onClick={submitText} disabled={submitting || !text.trim()} data-testid="submit-text">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={submitText}
+                disabled={submitting || !text.trim()}
+                data-testid="submit-text"
+              >
                 {submitting ? t('add.adding') : t('add.add')}
               </Button>
             </DialogFooter>
@@ -173,7 +220,14 @@ export function AddMarkDialog({
           <TabsContent value="logo" className="max-h-[60vh] space-y-4 overflow-y-auto pt-2">
             <div className="space-y-1.5">
               <Label>{t('add.logo')}</Label>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} data-testid="logo-input" />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onFile(e.target.files?.[0])}
+                data-testid="logo-input"
+              />
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
@@ -193,16 +247,38 @@ export function AddMarkDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="logoText">{t('add.logoText')}</Label>
-              <Input id="logoText" autoComplete="off" value={logoText} onChange={(e) => setLogoText(e.target.value)} disabled={submitting} data-testid="logo-text-input" />
+              <Input
+                id="logoText"
+                autoComplete="off"
+                value={logoText}
+                onChange={(e) => setLogoText(e.target.value)}
+                disabled={submitting}
+                data-testid="logo-text-input"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="vienna">{t('add.vienna')}</Label>
-              <Input id="vienna" placeholder="26.4.1, 27.5" value={vienna} onChange={(e) => setVienna(e.target.value)} disabled={submitting} />
+              <Input
+                id="vienna"
+                placeholder="26.4.1, 27.5"
+                value={vienna}
+                onChange={(e) => setVienna(e.target.value)}
+                disabled={submitting}
+              />
             </div>
             {filters}
-            <OwnerLabel owner={owner} setOwner={setOwner} label={label} setLabel={setLabel} disabled={submitting} t={t} />
+            <OwnerLabel
+              owner={owner}
+              setOwner={setOwner}
+              label={label}
+              setLabel={setLabel}
+              disabled={submitting}
+              t={t}
+            />
             <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>{t('common.cancel')}</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+                {t('common.cancel')}
+              </Button>
               <Button onClick={submitLogo} disabled={submitting || !logo} data-testid="submit-logo">
                 {submitting ? t('add.adding') : t('add.add')}
               </Button>
@@ -215,21 +291,43 @@ export function AddMarkDialog({
 }
 
 function OwnerLabel({
-  owner, setOwner, label, setLabel, disabled, t,
+  owner,
+  setOwner,
+  label,
+  setLabel,
+  disabled,
+  t,
 }: {
-  owner: string; setOwner: (v: string) => void
-  label: string; setLabel: (v: string) => void
-  disabled: boolean; t: (k: string) => string
+  owner: string
+  setOwner: (v: string) => void
+  label: string
+  setLabel: (v: string) => void
+  disabled: boolean
+  t: (k: string) => string
 }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <div className="space-y-1.5">
         <Label htmlFor="owner">{t('add.owner')}</Label>
-        <Input id="owner" autoComplete="off" value={owner} onChange={(e) => setOwner(e.target.value)} disabled={disabled} />
+        <Input
+          id="owner"
+          autoComplete="off"
+          value={owner}
+          onChange={(e) => setOwner(e.target.value)}
+          disabled={disabled}
+        />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="label">{t('add.label')}</Label>
-        <Input id="label" autoComplete="off" placeholder={t('add.labelPlaceholder')} value={label} onChange={(e) => setLabel(e.target.value)} disabled={disabled} data-testid="label-input" />
+        <Input
+          id="label"
+          autoComplete="off"
+          placeholder={t('add.labelPlaceholder')}
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          disabled={disabled}
+          data-testid="label-input"
+        />
       </div>
     </div>
   )

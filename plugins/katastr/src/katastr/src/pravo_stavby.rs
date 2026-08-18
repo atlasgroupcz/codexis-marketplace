@@ -40,7 +40,8 @@ mod tests {
     use super::{interpret_404, Missing};
 
     const NO_RIGHT: &str = r#"{"title":"Not found","status":404,"detail":"Parcela [ID:2034508804] was found but without PravoStavby"}"#;
-    const NOT_FOUND: &str = r#"{"title":"Not found","status":404,"detail":"Parcela [ID:1] was not found"}"#;
+    const NOT_FOUND: &str =
+        r#"{"title":"Not found","status":404,"detail":"Parcela [ID:1] was not found"}"#;
     const REWORDED: &str = r#"{"title":"Not found","status":404,"detail":"neco uplne jineho"}"#;
 
     #[test]

@@ -58,10 +58,7 @@ fn normalize_severity(raw: &str) -> Result<String, CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Read, Write};
-    use std::net::TcpListener;
-    use std::sync::mpsc;
-    use std::thread;
+    use crate::test_support::stub_daemon;
 
     #[test]
     fn builds_the_payload_the_daemon_expects() {
@@ -98,12 +95,23 @@ mod tests {
             "Bearer test-token".to_string(),
         );
 
-        report(&client, "Chat hangs", "Steps: open chat", "high", OutputFormat::Json).unwrap();
+        report(
+            &client,
+            "Chat hangs",
+            "Steps: open chat",
+            "high",
+            OutputFormat::Json,
+        )
+        .unwrap();
 
         let request = requests.recv().unwrap();
         assert!(request.starts_with("POST /rest/v1/plugin/bug-report HTTP/1.1"));
-        assert!(request.to_lowercase().contains("authorization: bearer test-token"));
-        assert!(request.to_lowercase().contains("content-type: application/json"));
+        assert!(request
+            .to_lowercase()
+            .contains("authorization: bearer test-token"));
+        assert!(request
+            .to_lowercase()
+            .contains("content-type: application/json"));
         let body = request.split("\r\n\r\n").nth(1).unwrap();
         let parsed: Value = serde_json::from_str(body).unwrap();
         assert_eq!(parsed["severity"], json!("HIGH"));
@@ -133,7 +141,8 @@ mod tests {
 
     #[test]
     fn surfaces_a_daemon_rejection_as_a_network_error() {
-        let (address, _requests) = stub_daemon("HTTP/1.1 400 Bad Request", "{\"code\":\"BAD_REQUEST\"}");
+        let (address, _requests) =
+            stub_daemon("HTTP/1.1 400 Bad Request", "{\"code\":\"BAD_REQUEST\"}");
         let client = GraphQLClient::with_endpoint(
             format!("http://{address}/graphql"),
             "Bearer test-token".to_string(),
@@ -144,57 +153,5 @@ mod tests {
             CdxctlError::Network(message) => assert!(message.contains("400")),
             other => panic!("expected a network error, got {other:?}"),
         }
-    }
-
-    fn stub_daemon(status_line: &'static str, body: &'static str) -> (String, mpsc::Receiver<String>) {
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let address = listener.local_addr().unwrap().to_string();
-        let (sender, receiver) = mpsc::channel();
-        thread::spawn(move || {
-            let (mut stream, _) = listener.accept().unwrap();
-            sender.send(read_request(&mut stream)).unwrap();
-            let response = format!(
-                "{status_line}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
-                body.len()
-            );
-            stream.write_all(response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-        });
-        (address, receiver)
-    }
-
-    /// Read until the headers and the whole declared body have arrived. A single
-    /// `read()` can return the headers without the body when TCP splits them,
-    /// which made the assertions on the payload intermittently fail.
-    fn read_request(stream: &mut std::net::TcpStream) -> String {
-        let mut raw = Vec::new();
-        let mut chunk = [0_u8; 1024];
-        loop {
-            let read = stream.read(&mut chunk).unwrap();
-            if read == 0 {
-                break;
-            }
-            raw.extend_from_slice(&chunk[..read]);
-            let text = String::from_utf8_lossy(&raw).to_string();
-            let Some(header_end) = text.find("\r\n\r\n") else {
-                continue;
-            };
-            let expected = content_length(&text[..header_end]);
-            if raw.len() >= header_end + 4 + expected {
-                return text;
-            }
-        }
-        String::from_utf8_lossy(&raw).to_string()
-    }
-
-    fn content_length(headers: &str) -> usize {
-        headers
-            .lines()
-            .find_map(|line| {
-                let (name, value) = line.split_once(':')?;
-                name.eq_ignore_ascii_case("content-length")
-                    .then(|| value.trim().parse().ok())?
-            })
-            .unwrap_or(0)
     }
 }

@@ -111,7 +111,11 @@ pub fn update(
     let stored_id = skill_id(&current, id)?;
     let mut input = merge_current(&current);
     apply_fields(&mut input, &fields)?;
-    save_skill(client, json!({ "id": stored_id, "input": Value::Object(input) }), format)
+    save_skill(
+        client,
+        json!({ "id": stored_id, "input": Value::Object(input) }),
+        format,
+    )
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -142,10 +146,16 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &SkillFields) -> Result<
         input.insert("allowedTools".into(), json!(allowed));
     }
     if !fields.display_name.is_empty() {
-        input.insert("displayName".into(), json!(parse_localized(&fields.display_name, "display-name")?));
+        input.insert(
+            "displayName".into(),
+            json!(parse_localized(&fields.display_name, "display-name")?),
+        );
     }
     if !fields.summary.is_empty() {
-        input.insert("summary".into(), json!(parse_localized(&fields.summary, "summary")?));
+        input.insert(
+            "summary".into(),
+            json!(parse_localized(&fields.summary, "summary")?),
+        );
     }
     if !fields.example_prompts.is_empty() {
         input.insert(
@@ -216,7 +226,10 @@ fn print_payload(payload: Option<&Value>, format: OutputFormat) -> Result<(), Cd
             errors.iter().map(format_input_error).collect(),
         ));
     }
-    print_output(&payload.get("skill").cloned().unwrap_or(Value::Null), format);
+    print_output(
+        &payload.get("skill").cloned().unwrap_or(Value::Null),
+        format,
+    );
     Ok(())
 }
 
@@ -231,7 +244,8 @@ fn merge_instructions_file(
     };
     if fields.instructions.is_some() {
         return Err(CdxctlError::Parse(
-            "Choose one source for the skill body: --instructions or --instructions-file, not both".into(),
+            "Choose one source for the skill body: --instructions or --instructions-file, not both"
+                .into(),
         ));
     }
     let content = fs::read_to_string(path).map_err(|error| {
@@ -253,7 +267,11 @@ mod tests {
     #[test]
     fn skill_fields_are_empty_until_one_is_set() {
         assert!(SkillFields::default().is_empty());
-        assert!(!SkillFields { description: Some("x".into()), ..SkillFields::default() }.is_empty());
+        assert!(!SkillFields {
+            description: Some("x".into()),
+            ..SkillFields::default()
+        }
+        .is_empty());
     }
 
     #[test]
@@ -281,7 +299,10 @@ mod tests {
             input["displayName"],
             json!([{ "language": "cs", "text": "Kontrola výpovědi" }, { "language": "en", "text": "Dismissal review" }])
         );
-        assert_eq!(input["summary"], json!([{ "language": "cs", "text": "Posoudí výpověď." }]));
+        assert_eq!(
+            input["summary"],
+            json!([{ "language": "cs", "text": "Posoudí výpověď." }])
+        );
         assert!(!input.contains_key("examplePrompts"));
     }
 

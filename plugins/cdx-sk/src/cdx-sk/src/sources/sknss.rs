@@ -18,7 +18,10 @@ pub(crate) struct SearchSknssArgs {
     #[command(flatten)]
     pub(crate) base: SearchBaseArgs,
 
-    #[arg(long = "forma", help = "Decision form (repeatable): e.g. Rozsudok, Uznesenie")]
+    #[arg(
+        long = "forma",
+        help = "Decision form (repeatable): e.g. Rozsudok, Uznesenie"
+    )]
     pub(crate) forma: Vec<String>,
 
     #[arg(

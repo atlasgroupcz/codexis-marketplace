@@ -1,18 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { KeyRound } from "lucide-react";
-import { ConnectionSection } from "@workspace/ui/components/connection-section";
-import {
-  ConnectionStatus,
-  connStateOf,
-} from "@workspace/ui/components/connection-status";
-import { GroupLabel } from "@workspace/ui/components/settings-dialog";
-import { Skeleton } from "@workspace/ui/components/skeleton";
-import { Toaster, toast } from "@workspace/ui/components/sonner";
-import type { ConnectionSectionLabels } from "@workspace/ui/components/connection-section";
-import type { ConnState } from "@workspace/ui/components/connection-status";
-import type { Settings } from "@/lib/api";
-import { deleteToken, fetchSettings, saveToken } from "@/lib/api";
+import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
+import { ConnectionSection } from '@workspace/ui/components/connection-section'
+import type { ConnState } from '@workspace/ui/components/connection-status'
+import { ConnectionStatus, connStateOf } from '@workspace/ui/components/connection-status'
+import { GroupLabel } from '@workspace/ui/components/settings-dialog'
+import { Skeleton } from '@workspace/ui/components/skeleton'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { KeyRound } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { Settings } from '@/lib/api'
+import { deleteToken, fetchSettings, saveToken } from '@/lib/api'
 
 /**
  * Datify's brand mark, its two shapes taken verbatim from their logo.svg.
@@ -39,76 +36,70 @@ function DatifyMark({ state }: { state: ConnState }) {
         d="M134.28,18.07v60.25c0,9.98-8.09,18.07-18.07,18.07H39.79l-19.87-19.88h87.6c3.8,0,6.88-3.08,6.88-6.88V26.77c0-3.8-3.08-6.88-6.88-6.88h-32.67L55.11.14V0h61.11c9.98,0,18.07,8.09,18.07,18.07Z"
       />
     </svg>
-  );
+  )
 }
 
 export function App() {
-  const { t } = useTranslation();
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const { t } = useTranslation()
+  const [settings, setSettings] = useState<Settings | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const refetch = useCallback(async () => {
     try {
-      setSettings(await fetchSettings());
-      setLoadFailed(false);
+      setSettings(await fetchSettings())
+      setLoadFailed(false)
     } catch {
-      setLoadFailed(true);
+      setLoadFailed(true)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    void refetch();
-  }, [refetch]);
+    void refetch()
+  }, [refetch])
 
   // Three states, not two: `unknown` until the first fetch answers.
-  const state: ConnState = connStateOf(settings?.configured ?? null);
+  const state: ConnState = connStateOf(settings?.configured ?? null)
 
   const labels: ConnectionSectionLabels = {
-    connected: t("connection.connected"),
-    notConnected: t("connection.notConnected"),
-    remove: t("connection.remove"),
-    confirmRemove: t("connection.confirmRemove"),
-    save: t("connection.save"),
-    saving: t("connection.saving"),
-  };
+    connected: t('connection.connected'),
+    notConnected: t('connection.notConnected'),
+    remove: t('connection.remove'),
+    confirmRemove: t('connection.confirmRemove'),
+    save: t('connection.save'),
+    saving: t('connection.saving'),
+  }
 
   /**
    * Must reject on a token Datify refuses, so ConnectionSection renders the
    * reason inline instead of the page reporting a save that did not happen.
    */
   const handleSave = async (values: Record<string, string>) => {
-    await saveToken(values.apiKey ?? "");
-    await refetch();
-    toast.success(t("app.saved"));
-  };
+    await saveToken(values.apiKey ?? '')
+    await refetch()
+    toast.success(t('app.saved'))
+  }
 
   const handleDelete = () => {
     deleteToken()
       .then(refetch)
-      .then(() => toast.success(t("app.deleted")))
-      .catch((e: unknown) =>
-        toast.error(e instanceof Error ? e.message : t("app.saveFailed")),
-      );
-  };
+      .then(() => toast.success(t('app.deleted')))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('app.saveFailed')))
+  }
 
   return (
     <div className="mx-auto max-w-xl space-y-6 p-6">
       <header className="flex items-center gap-4">
         <DatifyMark state={state} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold tracking-tight">
-            Datify
-          </h1>
+          <h1 className="truncate text-lg font-semibold tracking-tight">Datify</h1>
           {/* Same rule as the status dot: leadIdle is the "no token yet"
               wording, so showing it before the answer arrives asserts a state
               nothing has checked. Reserve the line instead. */}
-          {state === "unknown" ? (
+          {state === 'unknown' ? (
             <Skeleton className="mt-0.5 h-5 w-56" />
           ) : (
             <p className="text-muted-foreground mt-0.5 text-sm">
-              {state === "connected"
-                ? t("app.leadConnected")
-                : t("app.leadIdle")}
+              {state === 'connected' ? t('app.leadConnected') : t('app.leadIdle')}
             </p>
           )}
         </div>
@@ -116,7 +107,7 @@ export function App() {
 
       {loadFailed && (
         <p className="text-destructive text-sm" role="alert">
-          {t("app.loadFailed")}
+          {t('app.loadFailed')}
         </p>
       )}
 
@@ -137,25 +128,25 @@ export function App() {
             />
           }
         >
-          {t("app.connectionSection")}
+          {t('app.connectionSection')}
         </GroupLabel>
         <ConnectionSection
           loading={settings === null}
           configured={settings?.configured ?? false}
-          maskedKey={settings?.maskedKey ?? ""}
+          maskedKey={settings?.maskedKey ?? ''}
           fields={[
             {
-              name: "apiKey",
-              label: t("settings.label"),
-              type: "password",
-              placeholder: t("settings.placeholder"),
+              name: 'apiKey',
+              label: t('settings.label'),
+              type: 'password',
+              placeholder: t('settings.placeholder'),
               mono: true,
             },
           ]}
           getKey={{
-            href: settings?.generateUrl ?? "",
-            label: t("settings.getKey"),
-            hint: t("settings.getKeyHint"),
+            href: settings?.generateUrl ?? '',
+            label: t('settings.getKey'),
+            hint: t('settings.getKeyHint'),
           }}
           labels={labels}
           onSave={handleSave}
@@ -165,11 +156,11 @@ export function App() {
 
       {settings?.keySource && settings.keySource !== settings.settingsFile && (
         <p className="text-muted-foreground text-xs">
-          {t("app.overridden", { source: settings.keySource })}
+          {t('app.overridden', { source: settings.keySource })}
         </p>
       )}
 
       <Toaster />
     </div>
-  );
+  )
 }

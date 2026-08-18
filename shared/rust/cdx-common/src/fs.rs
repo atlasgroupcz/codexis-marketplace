@@ -133,7 +133,10 @@ mod tests {
             .flatten()
             .map(|e| e.file_name())
             .collect();
-        assert!(leftovers.is_empty(), "expected empty dir, got: {leftovers:?}");
+        assert!(
+            leftovers.is_empty(),
+            "expected empty dir, got: {leftovers:?}"
+        );
     }
 
     #[test]
@@ -145,7 +148,14 @@ mod tests {
             name: String,
             count: u32,
         }
-        atomic_write_json(&path, &Payload { name: "test".into(), count: 3 }).unwrap();
+        atomic_write_json(
+            &path,
+            &Payload {
+                name: "test".into(),
+                count: 3,
+            },
+        )
+        .unwrap();
         let body = fs::read_to_string(&path).unwrap();
         assert!(body.contains("\"name\": \"test\""));
         assert!(body.contains("\"count\": 3"));

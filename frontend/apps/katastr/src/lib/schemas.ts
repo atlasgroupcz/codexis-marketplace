@@ -27,8 +27,10 @@ export const proceedingSummarySchema = z.object({
   typ_rizeni: z.string(),
   label: z.string().optional().default(''),
   stav: z.string(),
+  // No `stav_uhrady_label`: the wire carries one, but it is built in Rust, which
+  // has no language context, so it is Czech whoever reads it. The single-letter
+  // `stav_uhrady` code is the language-free part and the UI translates that.
   stav_uhrady: z.string().nullable().optional(),
-  stav_uhrady_label: z.string().nullable().optional(),
   datum_prijeti: z.string(),
   added_on: z.string(),
   last_check_at: z.string(),

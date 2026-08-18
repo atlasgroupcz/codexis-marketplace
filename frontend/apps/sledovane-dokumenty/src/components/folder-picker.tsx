@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { ArrowUp, ChevronRight, Folder, Home, Loader2 } from 'lucide-react'
+import { Button } from '@workspace/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -8,10 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/ui/components/dialog'
-import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import type { BrowseResponse } from '@/lib/schemas'
+import { ArrowUp, ChevronRight, Folder, Home, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { browseFolders } from '@/lib/api'
+import type { BrowseResponse } from '@/lib/schemas'
 
 interface FolderPickerProps {
   open: boolean

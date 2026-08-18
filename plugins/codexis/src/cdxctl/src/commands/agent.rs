@@ -49,7 +49,10 @@ pub(crate) fn parse_localized(entries: &[String], field: &str) -> Result<Vec<Val
     entries
         .iter()
         .map(|entry| {
-            let (language, text) = entry.split_once(':').map(|(l, t)| (l.trim(), t.trim())).unwrap_or(("", ""));
+            let (language, text) = entry
+                .split_once(':')
+                .map(|(l, t)| (l.trim(), t.trim()))
+                .unwrap_or(("", ""));
             if language.is_empty() || text.is_empty() {
                 return Err(CdxctlError::Parse(format!(
                     "--{field} expects lang:text (e.g. cs:\"…\"), got '{entry}'"
@@ -100,7 +103,10 @@ fn context_keys_to_fill(input: &Map<String, Value>) -> Vec<&'static str> {
 
 /// `model` is required by the schema and `jurisdictions` shape what the agent may cite, so
 /// both fall back to the chat in use. Outside a chat there is nothing to fall back to.
-fn apply_chat_context(client: &GraphQLClient, input: &mut Map<String, Value>) -> Result<(), CdxctlError> {
+fn apply_chat_context(
+    client: &GraphQLClient,
+    input: &mut Map<String, Value>,
+) -> Result<(), CdxctlError> {
     let missing = context_keys_to_fill(input);
     if missing.is_empty() {
         return Ok(());
@@ -138,12 +144,14 @@ pub fn create(
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let fields = merge_instructions_file(fields, instructions_file)?;
-    let name = fields.name.clone().ok_or_else(|| {
-        CdxctlError::Parse("Creating an agent needs --name".into())
-    })?;
-    let description = fields.description.clone().ok_or_else(|| {
-        CdxctlError::Parse("Creating an agent needs --description".into())
-    })?;
+    let name = fields
+        .name
+        .clone()
+        .ok_or_else(|| CdxctlError::Parse("Creating an agent needs --name".into()))?;
+    let description = fields
+        .description
+        .clone()
+        .ok_or_else(|| CdxctlError::Parse("Creating an agent needs --description".into()))?;
     let mut input = Map::new();
     input.insert("name".into(), json!(name));
     input.insert("description".into(), json!(description));
@@ -178,7 +186,11 @@ pub fn update(
     let mut input = merge_current(&current);
     apply_fields(&mut input, &fields)?;
 
-    save_agent(client, json!({ "id": stored_id, "input": Value::Object(input) }), format)
+    save_agent(
+        client,
+        json!({ "id": stored_id, "input": Value::Object(input) }),
+        format,
+    )
 }
 
 pub fn delete(client: &GraphQLClient, id: &str, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -342,10 +354,16 @@ fn apply_fields(input: &mut Map<String, Value>, fields: &AgentFields) -> Result<
         input.insert("instructions".into(), json!(instructions));
     }
     if !fields.display_name.is_empty() {
-        input.insert("displayName".into(), json!(parse_localized(&fields.display_name, "display-name")?));
+        input.insert(
+            "displayName".into(),
+            json!(parse_localized(&fields.display_name, "display-name")?),
+        );
     }
     if !fields.summary.is_empty() {
-        input.insert("summary".into(), json!(parse_localized(&fields.summary, "summary")?));
+        input.insert(
+            "summary".into(),
+            json!(parse_localized(&fields.summary, "summary")?),
+        );
     }
     if !fields.example_prompts.is_empty() {
         input.insert(
@@ -434,7 +452,10 @@ mod tests {
     fn explicit_model_and_jurisdictions_leave_nothing_for_the_chat_to_fill() {
         let mut stated = Map::new();
         stated.insert("model".into(), json!("CLAUDE_OPUS_4_8"));
-        stated.insert("modelConfiguration".into(), json!([{"key": "effort", "value": "HIGH"}]));
+        stated.insert(
+            "modelConfiguration".into(),
+            json!([{"key": "effort", "value": "HIGH"}]),
+        );
         stated.insert("jurisdictions".into(), json!(["SK"]));
 
         assert!(context_keys_to_fill(&stated).is_empty());
@@ -495,7 +516,10 @@ mod tests {
     #[test]
     fn apply_fields_builds_localized_display_name_and_summary() {
         let fields = AgentFields {
-            display_name: vec!["cs:Personalista pro smlouvy".into(), "en:Contract HR agent".into()],
+            display_name: vec![
+                "cs:Personalista pro smlouvy".into(),
+                "en:Contract HR agent".into(),
+            ],
             summary: vec!["cs:Připraví smlouvu.".into()],
             ..AgentFields::default()
         };
@@ -510,7 +534,10 @@ mod tests {
                 { "language": "en", "text": "Contract HR agent" }
             ])
         );
-        assert_eq!(input["summary"], json!([{ "language": "cs", "text": "Připraví smlouvu." }]));
+        assert_eq!(
+            input["summary"],
+            json!([{ "language": "cs", "text": "Připraví smlouvu." }])
+        );
         assert!(!input.contains_key("examplePrompts"));
     }
 

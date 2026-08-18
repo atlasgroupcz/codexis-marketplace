@@ -18,12 +18,7 @@ export function RiskDot({ tier }: { tier: Tier | null | undefined }) {
   if (!tier) {
     return <span className="bg-muted size-2.5 shrink-0 rounded-full" aria-hidden />
   }
-  return (
-    <span
-      className={`size-2.5 shrink-0 rounded-full ${DOT_CLASSES[tier]}`}
-      aria-hidden
-    />
-  )
+  return <span className={`size-2.5 shrink-0 rounded-full ${DOT_CLASSES[tier]}`} aria-hidden />
 }
 
 export function RiskBadge({ tier }: { tier: Tier }) {

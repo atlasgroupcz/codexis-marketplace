@@ -7,12 +7,9 @@ export function formatDate(isoString: string): string {
   return shared.formatDate(isoString, i18n.language)
 }
 
-export function formatDateTime(isoString: string): string {
-  return shared.formatDateTime(isoString, i18n.language)
-}
-
 export function formatRelative(isoString: string | null | undefined): string {
   return shared.formatRelative(isoString, i18n.language)
 }
 
-export { errorMessage } from '@workspace/ui/lib/format'
+// Language-free, so they need no binding and pass straight through.
+export { errorMessage, formatTime, hasTime } from '@workspace/ui/lib/format'

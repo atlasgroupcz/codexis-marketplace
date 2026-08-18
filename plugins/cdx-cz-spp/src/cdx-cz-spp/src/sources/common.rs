@@ -2,7 +2,9 @@ use clap::Args;
 use serde_json::{Map, Value};
 
 use crate::core::error::CliError;
-pub(crate) use cdx_common::search::{insert_string, insert_u64, load_search_payload, get_non_negative_integer};
+pub(crate) use cdx_common::search::{
+    get_non_negative_integer, insert_string, insert_u64, load_search_payload,
+};
 
 pub(crate) type JsonMap = Map<String, Value>;
 
@@ -109,19 +111,14 @@ mod tests {
             base: SearchBaseArgs {
                 query: Some("from-flags".to_string()),
                 limit: Some(5),
-                payload: Some(
-                    r#"{"query":"from-json","limit":1,"offset":7}"#.to_string(),
-                ),
+                payload: Some(r#"{"query":"from-json","limit":1,"offset":7}"#.to_string()),
                 ..SearchBaseArgs::default()
             },
             ..SearchCzsbArgs::default()
         };
 
         let payload = args.build_payload("CZSB").unwrap();
-        assert_eq!(
-            payload,
-            r#"{"limit":1,"offset":7,"query":"from-json"}"#
-        );
+        assert_eq!(payload, r#"{"limit":1,"offset":7,"query":"from-json"}"#);
     }
 
     #[test]

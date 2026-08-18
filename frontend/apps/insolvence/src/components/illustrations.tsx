@@ -43,7 +43,12 @@ export function NoProceedingsArt({ className }: ArtProps) {
         stroke="#e6e6e0"
         transform="rotate(-9 79 67)"
       />
-      <path d="M68 52h22M66 62h26M67 72h18" stroke="#deded7" strokeWidth="3" strokeLinecap="round" />
+      <path
+        d="M68 52h22M66 62h26M67 72h18"
+        stroke="#deded7"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
       <path
         d="M104 30c12.5 5.2 22.5 7 30 7v25c0 23-13.5 35.8-30 41.5C87.5 97.8 74 85 74 62V37c7.5 0 17.5-1.8 30-7Z"
         fill="#e7f0d8"

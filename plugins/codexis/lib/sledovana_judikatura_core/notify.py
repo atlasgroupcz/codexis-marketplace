@@ -371,9 +371,7 @@ def _resolve_app_link():
     return f"/apps/{found}{_LINK_QUERY}" if found else None
 
 
-def _send_inapp(
-    message: str, *, action: str | None = None, link: str | None = None
-) -> bool:
+def _send_inapp(message: str, *, link: str | None = None) -> bool:
     """Create an in-app (notification-center bell) notification via the daemon's
     GraphQL createNotification. Best-effort: returns False on missing config or a
     transport error, never raises (a notification must not fail the check)."""
@@ -386,8 +384,6 @@ def _send_inapp(
         "{ createNotification(input: $input) { id } }"
     )
     notification_input = {"message": message, "type": _NOTIFICATION_TYPE}
-    if action:
-        notification_input["action"] = action
     if link:
         notification_input["link"] = link
     body = json.dumps(
@@ -403,18 +399,39 @@ def _send_inapp(
             "Content-Type": "application/json; charset=utf-8",
         },
     )
+    return _accepted(req)
+
+
+def _accepted(req) -> bool:
+    """True when the daemon accepted the mutation.
+
+    The status code alone does not say: a rejected mutation comes back as HTTP
+    200 with the reason in the body, so a handler that only closes the response
+    reports every rejection as a delivery. That is how a dropped input field went
+    unnoticed for a month of scheduled runs.
+
+    `ValueError` belongs in the tuple because that is what `json.load` raises on a
+    body that is not JSON at all, e.g. a proxy's error page.
+    """
     try:
-        urllib.request.urlopen(req, timeout=30).close()
-        return True
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.load(resp)
     except (urllib.error.URLError, OSError, ValueError):
         return False
+    return isinstance(payload, dict) and not payload.get("errors")
 
 
-def inapp_change_summary(results: list) -> bool:
+def inapp_change_summary(results: list) -> bool | None:
     """Send an in-app (bell) notification only when new case law was found
-    (no heartbeat bell). Returns True if sent."""
+    (no heartbeat bell).
+
+    None when there was nothing to notify about, True when the daemon accepted
+    the notification, False when it refused it. The caller needs those three
+    apart: a run with no new case law is a normal quiet run, a refused
+    notification is a failure the user has to hear about.
+    """
     changed = _changed(results)
     if not changed:
-        return False
+        return None
     subject = _change_summary(changed)[0]
     return _send_inapp(subject, link=_resolve_app_link())

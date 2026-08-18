@@ -108,7 +108,6 @@ pub struct OverviewEntry {
     pub label: String,
     pub stav: String,
     pub stav_uhrady: Option<String>,
-    pub stav_uhrady_label: Option<String>,
     pub datum_prijeti: String,
     pub added_on: String,
     pub last_check_at: String,
@@ -133,11 +132,6 @@ impl OverviewEntry {
         let operace_count = state.provedene_operace.len();
         let changes_count = state.changes.len();
         let unconfirmed_count = unconfirmed_count(&state.changes);
-        let stav_uhrady_label = state
-            .stav_uhrady
-            .as_deref()
-            .and_then(uhrada_label)
-            .map(String::from);
 
         Self {
             cislo_rizeni: state.cislo_rizeni,
@@ -145,7 +139,6 @@ impl OverviewEntry {
             label: state.label,
             stav: state.stav,
             stav_uhrady: state.stav_uhrady,
-            stav_uhrady_label,
             datum_prijeti: state.datum_prijeti,
             added_on: state.added_on,
             last_check_at: state.last_check_at,
@@ -157,8 +150,12 @@ impl OverviewEntry {
     }
 }
 
-/// Map the single-letter ČÚZK payment code (`U`/`N`/`O`) to its display label.
-/// Returns `None` for unknown codes - UI falls back to showing the raw code.
+/// Map the single-letter ČÚZK payment code (`U`/`N`/`O`) to its Czech label.
+/// Returns `None` for unknown codes, which `uhrada_display` prints raw.
+///
+/// For the CLI output and the e-mail only. The web UI is translated and this
+/// process has no language context, so it sends the code and lets the UI name
+/// it; a label built here would be Czech whoever read it.
 pub fn uhrada_label(code: &str) -> Option<&'static str> {
     match code {
         "U" => Some("Uhrazeno"),
@@ -221,7 +218,10 @@ pub fn list_all() -> Vec<ProceedingState> {
 /// Same as `list_all`, but returning the overview projection used by the
 /// CGI's JSON response for the overview endpoint.
 pub fn list_overview() -> Vec<OverviewEntry> {
-    list_all().into_iter().map(OverviewEntry::from_state).collect()
+    list_all()
+        .into_iter()
+        .map(OverviewEntry::from_state)
+        .collect()
 }
 
 // ── ČÚZK fetch ───────────────────────────────────────────────────────────────
@@ -509,15 +509,16 @@ pub fn confirm(cislo_rizeni: &str, change_index: Option<usize>) -> Result<usize>
         KatastrError::ProceedingNotTracked(format!("Řízení {canonical} není sledováno."))
     })?;
 
-    let marked = confirm_changes(&mut state.changes, change_index, &now_utc()).map_err(|e| match e {
-        cdx_watch::WatchError::IndexOutOfRange { index, len } => {
-            KatastrError::InvalidProceedingNumber(format!(
-                "Index {index} je mimo rozsah (0..{}).",
-                len.saturating_sub(1)
-            ))
-        }
-        other => KatastrError::InvalidProceedingNumber(other.to_string()),
-    })?;
+    let marked =
+        confirm_changes(&mut state.changes, change_index, &now_utc()).map_err(|e| match e {
+            cdx_watch::WatchError::IndexOutOfRange { index, len } => {
+                KatastrError::InvalidProceedingNumber(format!(
+                    "Index {index} je mimo rozsah (0..{}).",
+                    len.saturating_sub(1)
+                ))
+            }
+            other => KatastrError::InvalidProceedingNumber(other.to_string()),
+        })?;
 
     if marked > 0 {
         save_state(&canonical, &state)?;
@@ -596,7 +597,10 @@ mod tests {
 
     #[test]
     fn normalize_matches_canonical() {
-        assert_eq!(normalize_number("v-123/2026-701").unwrap(), "V-123/2026-701");
+        assert_eq!(
+            normalize_number("v-123/2026-701").unwrap(),
+            "V-123/2026-701"
+        );
     }
 
     #[test]

@@ -1,7 +1,7 @@
+import type { i18n, Resource } from 'i18next'
 import i18next from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
-import type { Resource, i18n } from 'i18next'
 
 export interface CreateI18nOptions {
   // `Resource` (from i18next) rather than the brief's `Record<string, { translation: unknown }>`:

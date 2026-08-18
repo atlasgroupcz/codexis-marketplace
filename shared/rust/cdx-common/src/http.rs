@@ -5,15 +5,15 @@
 //! leaving `(was cdx_common::http::…)` breadcrumbs behind and this module dead
 //! behind a feature nobody enabled. This is the ureq-era replacement.
 //!
-//! Only the stateless helpers that are genuinely identical across plugins live
-//! here. Request logic - the per-plugin `Client` structs and the search/get
-//! flows - stays where it is: measured across the plugins, those really do
-//! differ implementation by implementation, and folding them together would
-//! trade a real difference for a false one.
+//! This module holds the rules; [`crate::http_client`] holds the plumbing that
+//! applies them - the configured agent and the retry loop. What stays with each
+//! plugin is its own `Client` struct and the search/get flows on top: those
+//! really do differ service by service, and folding them together would trade a
+//! real difference for a false one.
 //!
 //! Nothing here needs an HTTP crate, so the module is std-only and the `http`
-//! feature carries no dependencies. Statuses are plain `u16`, which is what
-//! ureq reports.
+//! feature carries no dependencies. Statuses are plain `u16` rather than a
+//! `StatusCode`, which is what keeps it that way.
 
 use std::time::Duration;
 
@@ -49,12 +49,32 @@ pub fn base_url_from_env(var: &str, default: &str) -> String {
 }
 
 /// `"404 Not Found"`, or just `"404"` when the reason phrase is empty.
-pub fn format_status(code: u16, reason: &str) -> String {
+///
+/// Not public: ureq 3 does not report the server's own phrase, so every caller
+/// wants [`crate::http_client::status_text`], which derives it from the code.
+pub(crate) fn format_status(code: u16, reason: &str) -> String {
     if reason.is_empty() {
         code.to_string()
     } else {
         format!("{code} {reason}")
     }
+}
+
+/// Whether a status means the request failed: 400 and above. The boundary lives
+/// here rather than as a literal at each call site, next to the other status
+/// rules.
+pub fn is_failure(code: u16) -> bool {
+    code >= 400
+}
+
+/// Whether a body is an HTML page rather than the JSON that was asked for.
+///
+/// Some services answer a block or an outage with HTTP 200 and an error page,
+/// so the status alone does not catch it. Two plugins test for this and both
+/// phrase the resulting error differently, which is theirs to keep - the test
+/// itself is not.
+pub fn looks_like_html(body: &str) -> bool {
+    body.trim_start().starts_with('<')
 }
 
 /// Whether a status is worth retrying: rate limiting or a server-side fault.
@@ -115,7 +135,10 @@ mod tests {
 
     #[test]
     fn resolve_url_inserts_exactly_one_slash() {
-        assert_eq!(resolve_url("https://b.example", "/a"), "https://b.example/a");
+        assert_eq!(
+            resolve_url("https://b.example", "/a"),
+            "https://b.example/a"
+        );
         assert_eq!(resolve_url("https://b.example", "a"), "https://b.example/a");
     }
 
@@ -145,6 +168,23 @@ mod tests {
     fn format_status_omits_an_empty_reason() {
         assert_eq!(format_status(404, "Not Found"), "404 Not Found");
         assert_eq!(format_status(404, ""), "404");
+    }
+
+    #[test]
+    fn a_status_of_400_and_up_is_a_failure() {
+        assert!(is_failure(400));
+        assert!(is_failure(404));
+        assert!(is_failure(500));
+        assert!(!is_failure(200));
+        assert!(!is_failure(302));
+    }
+
+    #[test]
+    fn html_is_recognised_regardless_of_leading_space() {
+        assert!(looks_like_html("<!DOCTYPE html>"));
+        assert!(looks_like_html("\n  <html>"));
+        assert!(!looks_like_html(r#"{"ico":"27082440"}"#));
+        assert!(!looks_like_html(""));
     }
 
     #[test]

@@ -1,14 +1,14 @@
+import { HeaderDocsLink } from '@workspace/ui/components/app-header'
+import { Button } from '@workspace/ui/components/button'
+import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
+import { ConnectionSection } from '@workspace/ui/components/connection-section'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { Switch } from '@workspace/ui/components/switch'
+import { Bell } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Bell } from 'lucide-react'
-import { HeaderDocsLink } from '@workspace/ui/components/app-header'
-import { ConnectionSection } from '@workspace/ui/components/connection-section'
-import { Button } from '@workspace/ui/components/button'
-import { Switch } from '@workspace/ui/components/switch'
-import { Toaster, toast } from '@workspace/ui/components/sonner'
-import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
-import type { NotifySettings, StatusResponse } from '@/lib/schemas'
 import { deleteApiKey, fetchStatus, saveApiKey, saveNotifySettings } from '@/lib/api'
+import type { NotifySettings, StatusResponse } from '@/lib/schemas'
 
 /**
  * The bell is the only channel this panel offers. The peers (znamky,
@@ -30,22 +30,19 @@ export function App() {
   // refetches, and without this those edits would be silently reverted.
   const [notifyDirty, setNotifyDirty] = useState(false)
 
-  const refetch = useCallback(
-    async (resetNotify = true) => {
-      try {
-        const next = await fetchStatus()
-        setStatus(next)
-        if (resetNotify) {
-          setNotify(next.notify)
-          setNotifyDirty(false)
-        }
-        setLoadFailed(false)
-      } catch {
-        setLoadFailed(true)
+  const refetch = useCallback(async (resetNotify = true) => {
+    try {
+      const next = await fetchStatus()
+      setStatus(next)
+      if (resetNotify) {
+        setNotify(next.notify)
+        setNotifyDirty(false)
       }
-    },
-    [],
-  )
+      setLoadFailed(false)
+    } catch {
+      setLoadFailed(true)
+    }
+  }, [])
 
   useEffect(() => {
     void refetch()
@@ -139,9 +136,7 @@ export function App() {
             <span>
               <span className="text-sm font-medium">{t('notify.inAppLabel')}</span>
               <br />
-              <span className="text-muted-foreground text-xs">
-                {t('notify.inAppDescription')}
-              </span>
+              <span className="text-muted-foreground text-xs">{t('notify.inAppDescription')}</span>
             </span>
           </span>
           <Switch

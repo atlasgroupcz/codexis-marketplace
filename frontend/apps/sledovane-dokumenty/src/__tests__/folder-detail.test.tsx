@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
-import type { FolderResponse, TrackedLegislation } from '@/lib/schemas'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FolderDetail } from '@/components/folder-detail'
+import type { FolderResponse, TrackedLegislation } from '@/lib/schemas'
 import { renderApp } from '@/test/render-app'
 
 function stubFolder(payload: FolderResponse) {
@@ -30,13 +30,7 @@ function folderWith(legislation: Array<TrackedLegislation>): FolderResponse {
 
 function renderFolder() {
   return renderApp(
-    <FolderDetail
-      root="/home/u/my-contracts"
-      section="folders"
-      onChangeSection={vi.fn()}
-      onBack={vi.fn()}
-      onOpenSettings={vi.fn()}
-    />,
+    <FolderDetail root="/home/u/my-contracts" onBack={vi.fn()} onOpenSettings={vi.fn()} />,
     { searchParams: { lang: 'en' } },
   )
 }

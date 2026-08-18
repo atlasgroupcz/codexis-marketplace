@@ -1,4 +1,4 @@
-import { isNegativeTerminal, isPlomba } from '@/lib/stav'
+import { isNegativeTerminal, isPlomba, isTerminal } from '@/lib/stav'
 
 export type TimelineState = 'done' | 'current'
 
@@ -8,7 +8,7 @@ export interface TimelineNode {
   date: string | null // ISO date or null
   state: TimelineState
   isPlomba: boolean
-  isTerminal: boolean // distinct closing node derived from `stav`, not an operation
+  isTerminal: boolean // this is where the proceeding ended
   isNegative: boolean // ended badly (rejected/stopped/withdrawn)
 }
 
@@ -49,21 +49,32 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
   )
 
   const negative = isNegativeTerminal(proc.stav)
+  const terminal = isTerminal(proc.stav)
 
   if (negative) {
     // The bad outcome is a distinct closing node after everything that happened.
+    // `done`, not `current`: a rejected proceeding has no step in progress. The
+    // node used to claim both, and every reader had to know that `isTerminal`
+    // wins over `state` to draw it right.
     nodes.push({
       key: 'terminal',
       rawName: proc.stav,
       date: null,
-      state: 'current',
+      state: 'done',
       isPlomba: false,
       isTerminal: true,
       isNegative: true,
     })
   } else {
+    // A closed proceeding has no step happening "now" - the last operation is
+    // where it ended. ČÚZK's own wording is the only hint we get, so a miss here
+    // just swaps the closing chip back for "teď"; it never affects which nodes
+    // exist or how they connect.
     const last = nodes[nodes.length - 1]
-    if (last) last.state = 'current'
+    if (last) {
+      if (terminal) last.isTerminal = true
+      else last.state = 'current'
+    }
   }
 
   // No operations yet - show the current state as the single node.
@@ -72,9 +83,9 @@ export function deriveTimeline(proc: TimelineInput): Array<TimelineNode> {
       key: 'stav',
       rawName: proc.stav,
       date: proc.datum_prijeti || null,
-      state: 'current',
+      state: terminal ? 'done' : 'current',
       isPlomba: isPlomba(proc.stav),
-      isTerminal: false,
+      isTerminal: terminal,
       isNegative: false,
     })
   }

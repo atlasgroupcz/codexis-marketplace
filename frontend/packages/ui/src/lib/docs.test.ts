@@ -25,6 +25,8 @@ describe('docsUrl', () => {
   })
 
   it('falls back to English for a language the manual does not have', () => {
-    expect(docsUrl('sid', 'de')).toBe('https://docs.codexis.ai/en/codexis-ai-2-0/manual/aplikace/sid/')
+    expect(docsUrl('sid', 'de')).toBe(
+      'https://docs.codexis.ai/en/codexis-ai-2-0/manual/aplikace/sid/',
+    )
   })
 })

@@ -7,9 +7,9 @@ use crate::core::schema::{render_resource_schema, ResourceSchemaKind, SchemaSour
 use crate::get::GetArgs;
 use crate::sources::common::SearchPayloadArgs;
 use crate::sources::skez::{SearchSkezArgs, SEARCH_SKEZ_HELP};
+use crate::sources::skns::{SearchSknsArgs, SEARCH_SKNS_HELP};
 use crate::sources::sknss::{SearchSknssArgs, SEARCH_SKNSS_HELP};
 use crate::sources::sknus::{SearchSknusArgs, SEARCH_SKNUS_HELP};
-use crate::sources::skns::{SearchSknsArgs, SEARCH_SKNS_HELP};
 use crate::sources::skus::{SearchSkusArgs, SEARCH_SKUS_HELP};
 use crate::sources::skvs::{SearchSkvsArgs, SEARCH_SKVS_HELP};
 
@@ -331,7 +331,12 @@ fn execute_search(source: SearchSource) -> Result<(), CliError> {
 
 fn execute_get(args: GetArgs) -> Result<(), CliError> {
     let config = Config::load(CODEXIS_PLUGIN_SK_API_URL_ENV)?;
-    execute_get_request(&config.base_url, config.auth_header.as_deref(), &args.resource, args.dry_run)
+    execute_get_request(
+        &config.base_url,
+        config.auth_header.as_deref(),
+        &args.resource,
+        args.dry_run,
+    )
 }
 
 fn execute_schema(endpoint: ResourceSchemaCommand) -> Result<(), CliError> {
@@ -373,8 +378,7 @@ mod tests {
 
     #[test]
     fn cli_accepts_lowercase_source_alias() {
-        let cli =
-            Cli::try_parse_from(["cdx-sk", "search", "skez", "--query", "test"]).unwrap();
+        let cli = Cli::try_parse_from(["cdx-sk", "search", "skez", "--query", "test"]).unwrap();
 
         match cli.command {
             Commands::Search {
@@ -387,13 +391,7 @@ mod tests {
     #[test]
     fn cli_parses_skvs_search_with_court() {
         let cli = Cli::try_parse_from([
-            "cdx-sk",
-            "search",
-            "SKVS",
-            "--query",
-            "test",
-            "--court",
-            "OSBA1",
+            "cdx-sk", "search", "SKVS", "--query", "test", "--court", "OSBA1",
         ])
         .unwrap();
 
@@ -435,8 +433,7 @@ mod tests {
     #[test]
     fn cli_parses_get_command() {
         let cli =
-            Cli::try_parse_from(["cdx-sk", "get", "--dry-run", "cdx-sk://doc/SKEZ1/meta"])
-                .unwrap();
+            Cli::try_parse_from(["cdx-sk", "get", "--dry-run", "cdx-sk://doc/SKEZ1/meta"]).unwrap();
 
         match cli.command {
             Commands::Get(args) => {
@@ -531,15 +528,7 @@ mod tests {
     #[test]
     fn cli_parses_search_with_sort_and_order() {
         let cli = Cli::try_parse_from([
-            "cdx-sk",
-            "search",
-            "SKEZ",
-            "--query",
-            "test",
-            "--sort",
-            "date",
-            "--order",
-            "asc",
+            "cdx-sk", "search", "SKEZ", "--query", "test", "--sort", "date", "--order", "asc",
         ])
         .unwrap();
 
@@ -564,7 +553,9 @@ mod tests {
         assert!(help.contains("cdx-sk search SKEZ --query"));
         assert!(help.contains("cdx-sk get cdx-sk://doc/SKEZ1234/meta"));
         assert!(help.contains("cdx-sk search <DATA_SOURCE> --help"));
-        assert!(help.contains("cdx-sk schema [meta|text|toc|parts|versions|related|related/counts]"));
+        assert!(
+            help.contains("cdx-sk schema [meta|text|toc|parts|versions|related|related/counts]")
+        );
         assert!(help.contains("cdx-sk://law/SK/<NUM>/<YEAR>/meta"));
     }
 

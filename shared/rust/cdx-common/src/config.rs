@@ -142,8 +142,14 @@ impl DaemonConfig {
 /// `daemon_rest::daemon_bearer` both use it.
 pub fn read_daemon_secret() -> Option<String> {
     let home = read_env("HOME")?;
-    let path = format!("{}/{}", home.trim_end_matches('/'), DAEMON_SECRET_RELATIVE_PATH);
-    std::fs::read_to_string(path).ok().and_then(normalize_config_value)
+    let path = format!(
+        "{}/{}",
+        home.trim_end_matches('/'),
+        DAEMON_SECRET_RELATIVE_PATH
+    );
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(normalize_config_value)
 }
 
 /// Reads an env var, returning `None` for unset or blank values.

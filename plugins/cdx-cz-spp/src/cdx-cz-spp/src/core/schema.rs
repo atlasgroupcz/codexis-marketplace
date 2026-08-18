@@ -87,7 +87,13 @@ fn render_generic_source_schema(kind: ResourceSchemaKind) -> Result<String, CliE
     let available_sources = kind.available_sources();
     let subcommands = available_sources
         .iter()
-        .map(|source| format!("`cdx-cz-spp schema {} {}`", resource_endpoint_name(kind), source.source_code()))
+        .map(|source| {
+            format!(
+                "`cdx-cz-spp schema {} {}`",
+                resource_endpoint_name(kind),
+                source.source_code()
+            )
+        })
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -196,9 +202,9 @@ fn load_source_aware_schema_bundle(
         (ResourceSchemaKind::Meta, SchemaSource::Czsb) => {
             Ok(include_str!("../../schemas/resource/meta-czsb.bundle.json"))
         }
-        (ResourceSchemaKind::Parts, SchemaSource::Czsb) => {
-            Ok(include_str!("../../schemas/resource/parts-czsb.bundle.json"))
-        }
+        (ResourceSchemaKind::Parts, SchemaSource::Czsb) => Ok(include_str!(
+            "../../schemas/resource/parts-czsb.bundle.json"
+        )),
         (ResourceSchemaKind::Versions, SchemaSource::Czsb) => Ok(include_str!(
             "../../schemas/resource/versions-czsb.bundle.json"
         )),

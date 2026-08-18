@@ -294,6 +294,7 @@ class DaemonClient:
         start_attempts: int = 5,
         timeout_s: float = 600,
         interval_s: float = 5,
+        settle_s: float = 60,
         sleep: Callable[[float], None] = time.sleep,
         now: Callable[[], float] = time.monotonic,
         log: Callable[[str], None] | None = None,
@@ -310,6 +311,13 @@ class DaemonClient:
         redeploys, which is a blip rather than a refusal. Poll failures are
         tolerated for the same reason - only a terminal state or the deadline
         ends the wait.
+
+        STOPPED is both the state a VM starts from and the state a failed start
+        lands in, so it only counts as terminal once the VM has been seen active
+        or settle_s has passed since the start was accepted. The gateway reports
+        STOPPED for the moment between accepting the start and the control plane
+        publishing the new instance, and aborting on that first poll fails a run
+        whose VM goes on to boot normally.
         """
         say = log if log is not None else _discard
 
@@ -332,7 +340,11 @@ class DaemonClient:
             )
             sleep(backoff)
 
+        say(f"  VM start accepted (status {started.get('status') or 'unknown'})")
+
         deadline = now() + timeout_s
+        settle_deadline = now() + settle_s
+        seen_active = False
         while True:
             try:
                 state = self.vm_status()
@@ -342,9 +354,12 @@ class DaemonClient:
             if state == "RUNNING":
                 return
             if state == "STOPPED":
-                raise RuntimeError(
-                    "VM entered terminal state STOPPED while waiting for RUNNING"
-                )
+                if seen_active or now() >= settle_deadline:
+                    raise RuntimeError(
+                        "VM entered terminal state STOPPED while waiting for RUNNING"
+                    )
+            elif state != "REQUEST_FAILED":
+                seen_active = True
             if now() >= deadline:
                 raise RuntimeError(
                     f"VM did not reach RUNNING within {timeout_s}s (last state: {state})"

@@ -58,7 +58,8 @@ export const detailFixture: DetailResponse = {
         change_type: 'document_change',
         description_md: 'Novela zákoníku práce v oblasti pracovní doby a dovolené.',
         confirmed_on: null,
-        compare_url: 'https://next.codexis.cz/porovnat?sourceDocId=CR13986_2025_01_01&targetDocId=CR13986_2026_01_01&puvodniZneni=CR13986_2025_01_01&viewType=INSIDE&changesOnly=true',
+        compare_url:
+          'https://next.codexis.cz/porovnat?sourceDocId=CR13986_2025_01_01&targetDocId=CR13986_2026_01_01&puvodniZneni=CR13986_2025_01_01&viewType=INSIDE&changesOnly=true',
         amendments: [{ id: 'CR156140_2026_01_01', name: '270/2025 Sb. novela zákoníku práce' }],
       },
     ],
@@ -93,7 +94,8 @@ export const detailWithPartsFixture: DetailResponse = {
         change_type: 'document_change',
         description_md: 'Úprava ustanovení \u00a7 2991 o náhradě škody.',
         confirmed_on: '2026-02-24T07:00:00Z',
-        compare_url: 'https://next.codexis.cz/porovnat?sourceDocId=CR26785_2025_01_01&targetDocId=CR26785_2026_01_01&puvodniZneni=CR26785_2025_01_01&viewType=INSIDE&changesOnly=true',
+        compare_url:
+          'https://next.codexis.cz/porovnat?sourceDocId=CR26785_2025_01_01&targetDocId=CR26785_2026_01_01&puvodniZneni=CR26785_2025_01_01&viewType=INSIDE&changesOnly=true',
         amendments: [],
       },
     ],

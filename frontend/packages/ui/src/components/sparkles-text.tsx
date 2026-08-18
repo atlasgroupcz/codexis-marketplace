@@ -1,10 +1,9 @@
-"use client"
+'use client'
 
-import {   useCallback, useEffect, useState } from "react"
-import { motion } from "motion/react"
-
-import { cn } from "@workspace/ui/lib/utils"
-import type {CSSProperties, ReactElement} from "react";
+import { cn } from '@workspace/ui/lib/utils'
+import { motion } from 'motion/react'
+import type { CSSProperties, ReactElement } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export interface SparkleData {
   id: string
@@ -26,7 +25,7 @@ export interface UseSparklesOptions {
 }
 
 export function useSparkles({
-  colors = { first: "#f43f5e", second: "#d946ef" },
+  colors = { first: '#f43f5e', second: '#d946ef' },
   sparklesCount = 10,
   enabled = true,
 }: UseSparklesOptions = {}): Array<SparkleData> {
@@ -62,7 +61,7 @@ export function useSparkles({
           } else {
             return { ...star, lifespan: star.lifespan - 0.1 }
           }
-        })
+        }),
       )
     }
 
@@ -146,7 +145,7 @@ interface SparklesTextProps {
 
 export const SparklesText: React.FC<SparklesTextProps> = ({
   children,
-  colors = { first: "#9E7AFF", second: "#FE8BBB" },
+  colors = { first: '#9E7AFF', second: '#FE8BBB' },
   className,
   sparklesCount = 10,
   ...props
@@ -155,12 +154,12 @@ export const SparklesText: React.FC<SparklesTextProps> = ({
 
   return (
     <div
-      className={cn("text-6xl font-bold", className)}
+      className={cn('text-6xl font-bold', className)}
       {...props}
       style={
         {
-          "--sparkles-first-color": `${colors.first}`,
-          "--sparkles-second-color": `${colors.second}`,
+          '--sparkles-first-color': `${colors.first}`,
+          '--sparkles-second-color': `${colors.second}`,
         } as CSSProperties
       }
     >

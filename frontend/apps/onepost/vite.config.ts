@@ -1,5 +1,5 @@
-import { createAppConfig } from '@workspace/vite-config/app'
 import { fileURLToPath, URL } from 'node:url'
+import { createAppConfig } from '@workspace/vite-config/app'
 
 export default createAppConfig({
   port: 3007,

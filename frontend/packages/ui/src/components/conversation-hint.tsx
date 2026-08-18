@@ -1,5 +1,5 @@
-import { ArrowRight, MessageSquareText } from "lucide-react"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from '@workspace/ui/lib/utils'
+import { ArrowRight, MessageSquareText } from 'lucide-react'
 
 export interface ConversationHintProps {
   lead: string
@@ -8,10 +8,15 @@ export interface ConversationHintProps {
   className?: string
 }
 
-export function ConversationHint({ lead, prompt, showArrow = false, className }: ConversationHintProps) {
+export function ConversationHint({
+  lead,
+  prompt,
+  showArrow = false,
+  className,
+}: ConversationHintProps) {
   const href = `/?draft=${encodeURIComponent(prompt)}`
   return (
-    <div className={cn("border-t pt-6", className)}>
+    <div className={cn('border-t pt-6', className)}>
       <p className="text-muted-foreground text-sm">{lead}</p>
       <a
         href={href}

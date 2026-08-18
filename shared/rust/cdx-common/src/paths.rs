@@ -37,7 +37,10 @@ mod tests {
     #[test]
     fn app_dir_is_under_user_home_cdx_apps() {
         let _g = crate::test_support::home_guard(Path::new("/tmp/x-home"));
-        assert_eq!(app_dir("katastr"), PathBuf::from("/tmp/x-home/.cdx/apps/katastr"));
+        assert_eq!(
+            app_dir("katastr"),
+            PathBuf::from("/tmp/x-home/.cdx/apps/katastr")
+        );
     }
 
     #[test]

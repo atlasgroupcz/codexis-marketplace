@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseExternalImageDropOptions {
   onDrop: (files: Array<File>) => void
@@ -80,7 +80,7 @@ function getUrlFromDragEvent(event: DragEvent): string | null {
 
 export function useExternalImageDrop(
   containerRef: RefObject<HTMLElement | null>,
-  { onDrop, onFallback, enabled = true }: UseExternalImageDropOptions
+  { onDrop, onFallback, enabled = true }: UseExternalImageDropOptions,
 ): UseExternalImageDropReturn {
   const [isDragOver, setIsDragOver] = useState(false)
   const dragCounterRef = useRef(0)
@@ -136,7 +136,7 @@ export function useExternalImageDrop(
         onFallback(url)
       }
     },
-    [onDrop, onFallback]
+    [onDrop, onFallback],
   )
 
   useEffect(() => {

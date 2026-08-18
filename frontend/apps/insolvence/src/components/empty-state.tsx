@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
-import { MessageSquareText, Plus } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { MessageSquareText, Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PickSubjectArt, WatchRegisterArt } from './illustrations'
 
 /** Opens a new CODEXIS conversation pre-filled with an example request. */

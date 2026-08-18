@@ -1,13 +1,10 @@
-
 use crate::core::error::CliError;
 use cdx_common::curl::encode_query_values;
 
 const CDX_CZ_SPP_SCHEME: &str = "cdx-cz-spp://";
 
 /// Display ID prefix -> API path (Czech sbirkapp domain)
-const ID_PREFIXES: &[(&str, &str)] = &[
-    ("CZSB", "CZ/sbirkapp"),
-];
+const ID_PREFIXES: &[(&str, &str)] = &[("CZSB", "CZ/sbirkapp")];
 
 pub(crate) struct CdxCzSppApi;
 
@@ -58,7 +55,13 @@ pub(crate) fn execute_get_request(
     resource: &str,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    cdx_common::search_engine::execute_get_request(&CdxCzSppApi, base_url, auth_header, resource, dry_run)
+    cdx_common::search_engine::execute_get_request(
+        &CdxCzSppApi,
+        base_url,
+        auth_header,
+        resource,
+        dry_run,
+    )
 }
 
 /// Resolve a cdx-cz-spp:// path (everything after "cdx-cz-spp://") into a full HTTP URL.
@@ -196,9 +199,7 @@ mod tests {
     fn doc_czsb_related() {
         assert_eq!(
             resolve_cdx_url(BASE, "doc/CZSB5678/related"),
-            Ok(format!(
-                "{BASE}/CZ/sbirkapp/doc/CZSB5678/related"
-            ))
+            Ok(format!("{BASE}/CZ/sbirkapp/doc/CZSB5678/related"))
         );
     }
 
@@ -206,9 +207,7 @@ mod tests {
     fn doc_with_query_string() {
         assert_eq!(
             resolve_cdx_url(BASE, "doc/CZSB1/text?part=paragraf-1"),
-            Ok(format!(
-                "{BASE}/CZ/sbirkapp/doc/CZSB1/text?part=paragraf-1"
-            ))
+            Ok(format!("{BASE}/CZ/sbirkapp/doc/CZSB1/text?part=paragraf-1"))
         );
     }
 
@@ -225,10 +224,7 @@ mod tests {
     #[test]
     fn query_with_multiple_params_and_diacritics() {
         assert_eq!(
-            resolve_cdx_url(
-                BASE,
-                "doc/CZSB1/text?part=paragraf-1&timecutId=účinnost"
-            ),
+            resolve_cdx_url(BASE, "doc/CZSB1/text?part=paragraf-1&timecutId=účinnost"),
             Ok(format!(
                 "{BASE}/CZ/sbirkapp/doc/CZSB1/text?part=paragraf-1&timecutId=%C3%BA%C4%8Dinnost"
             ))
@@ -336,9 +332,17 @@ mod tests {
         // slicing - this resolver runs on Czech sbirkapp content where a mis-sliced index panics.
         let body = "Vyhláška…cdx-cz-spp://doc/CZSB12/attachment/content_1.pdf#page=3,více š";
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB12/attachment/content_1.pdf#page=3"));
-        assert!(out.starts_with("Vyhláška…https://"), "multi-byte text immediately before token preserved: {out}");
-        assert!(out.ends_with(",více š"), "multi-byte text after the delimiter preserved: {out}");
+        assert!(out.contains(
+            "https://example.com/api/CZ/sbirkapp/doc/CZSB12/attachment/content_1.pdf#page=3"
+        ));
+        assert!(
+            out.starts_with("Vyhláška…https://"),
+            "multi-byte text immediately before token preserved: {out}"
+        );
+        assert!(
+            out.ends_with(",více š"),
+            "multi-byte text after the delimiter preserved: {out}"
+        );
     }
 
     #[test]
@@ -347,8 +351,13 @@ mod tests {
         let body = r#"["cdx-cz-spp://doc/CZSB1/attachment/a.pdf","cdx-cz-spp://doc/CZSB2/attachment/b.pdf#page=2"]"#;
         let out = resolve_attachment_links(body, base);
         assert!(out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB1/attachment/a.pdf"));
-        assert!(out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB2/attachment/b.pdf#page=2"));
-        assert!(!out.contains("cdx-cz-spp://"), "all attachment links resolved: {out}");
+        assert!(
+            out.contains("https://example.com/api/CZ/sbirkapp/doc/CZSB2/attachment/b.pdf#page=2")
+        );
+        assert!(
+            !out.contains("cdx-cz-spp://"),
+            "all attachment links resolved: {out}"
+        );
     }
 
     #[test]
@@ -357,7 +366,9 @@ mod tests {
         // Unknown ID prefix → resolve_cdx_url errors → original cdx:// link re-emitted unchanged.
         let body = r#""cdx-cz-spp://doc/XXYY9/attachment/c.pdf#page=1""#;
         let out = resolve_attachment_links(body, base);
-        assert!(out.contains("\"cdx-cz-spp://doc/XXYY9/attachment/c.pdf#page=1\""),
-            "unknown-prefix attachment link must be left as cdx://: {out}");
+        assert!(
+            out.contains("\"cdx-cz-spp://doc/XXYY9/attachment/c.pdf#page=1\""),
+            "unknown-prefix attachment link must be left as cdx://: {out}"
+        );
     }
 }

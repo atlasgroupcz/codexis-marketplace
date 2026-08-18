@@ -1,22 +1,22 @@
-import { useState } from 'react'
-import { ArrowLeft, BookMarked, FileText, Hash, Info, Link2, Plus, Trash2, X } from 'lucide-react'
+import { HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
-import { Textarea } from '@workspace/ui/components/textarea'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { HeaderGear } from '@workspace/ui/components/app-header'
-import { cn } from '@workspace/ui/lib/utils'
+import { Textarea } from '@workspace/ui/components/textarea'
 import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
+import { cn } from '@workspace/ui/lib/utils'
+import { ArrowLeft, BookMarked, FileText, Hash, Info, Link2, Plus, Trash2, X } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TrackingTypeBadge } from './tracking-type-badge'
-import { ChangeItem } from './change-item'
-import { NoChanges } from './empty-state'
-import { DetailSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
 import { useDocumentDetail } from '@/hooks/use-document-detail'
 import { postAction, postGroupAction, postNoteAction } from '@/lib/api'
 import { formatDate } from '@/lib/format'
+import { ChangeItem } from './change-item'
+import { NoChanges } from './empty-state'
+import { ErrorMessage } from './error-message'
+import { DetailSkeleton } from './loading-skeleton'
+import { TrackingTypeBadge } from './tracking-type-badge'
 
 interface DocumentDetailProps {
   uuid: string
@@ -108,7 +108,9 @@ export function DocumentDetail({ uuid, onBack, onOpenSettings }: DocumentDetailP
           >
             <Trash2 className="size-4" />
             <span className="hidden sm:inline">
-              {remove.confirming ? t('followedDocs.removeConfirmButton') : t('followedDocs.removeTracking')}
+              {remove.confirming
+                ? t('followedDocs.removeConfirmButton')
+                : t('followedDocs.removeTracking')}
             </span>
           </Button>
           <HeaderGear onClick={onOpenSettings} title={t('notify.title')} />

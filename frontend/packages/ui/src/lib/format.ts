@@ -1,6 +1,6 @@
+import type { Locale } from 'date-fns'
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { cs, enUS, sk } from 'date-fns/locale'
-import type { Locale } from 'date-fns'
 
 // Every app formatted dates through its own copy of this file. The copies had
 // drifted - different fallback locales, different nullability - so the shared
@@ -25,6 +25,25 @@ export function formatDate(isoString: string | null | undefined, language: strin
 export function formatDateTime(isoString: string | null | undefined, language: string): string {
   if (!isoString) return '-'
   return format(parseISO(isoString), 'Pp', { locale: getDateFnsLocale(language) })
+}
+
+/**
+ * Time of day only, e.g. "09:12". Always a two-digit hour, unlike the locale's
+ * own short time: the Czech format drops the leading zero, so "8:22" and "11:57"
+ * put their colons in different places and a column of times reads ragged. That
+ * is why this one takes no language.
+ */
+export function formatTime(isoString: string): string {
+  return format(parseISO(isoString), 'HH:mm')
+}
+
+/**
+ * True when a timestamp carries a time of day. ČÚZK's `datumProvedeni` does,
+ * down to the second, but the field is typed as a plain date, so a date-only
+ * value must not render as a fabricated midnight.
+ */
+export function hasTime(isoString: string): boolean {
+  return isoString.includes('T')
 }
 
 /**

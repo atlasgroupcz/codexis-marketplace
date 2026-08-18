@@ -1,17 +1,19 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { FileText, FolderClock, FolderPlus, Loader2, Scale } from 'lucide-react'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
-import { SectionSwitch } from './section-switch'
+import { BookMarked, FileText, FolderClock, FolderPlus, Loader2, Scale } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useFolders } from '@/hooks/use-folders'
+import { useUnconfirmedCount } from '@/hooks/use-unconfirmed-count'
+import { postFolderAction } from '@/lib/api'
+import { sumUnconfirmed } from '@/lib/counts'
+import type { FolderSummary } from '@/lib/schemas'
+import { ErrorMessage } from './error-message'
 import { FolderPicker } from './folder-picker'
 import { FeedSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
-import type { FolderSummary } from '@/lib/schemas'
-import { useFolders } from '@/hooks/use-folders'
-import { postFolderAction } from '@/lib/api'
+import { SectionSwitch } from './section-switch'
 
 interface FoldersHomeProps {
   section: 'documents' | 'folders'
@@ -30,8 +32,10 @@ export function FoldersHome({
   const { data, loading, error, refetch } = useFolders()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [adding, setAdding] = useState(false)
+  const actChanges = useUnconfirmedCount('documents')
 
   const folders = data?.folders ?? []
+  const unconfirmed = sumUnconfirmed(folders)
 
   const handleAdd = (path: string) => {
     setAdding(true)
@@ -46,13 +50,19 @@ export function FoldersHome({
   }
 
   return (
-    <div className="bg-background text-foreground flex h-screen flex-col" data-testid="folders-root">
+    <div
+      className="bg-background text-foreground flex h-screen flex-col"
+      data-testid="folders-root"
+    >
       <AppHeader
-        brand={{ icon: FolderClock, title: t('folders.title'), subtitle: t('folders.subtitle') }}
+        brand={{
+          icon: BookMarked,
+          title: t('followedDocs.title'),
+          subtitle: t('followedDocs.tagline'),
+        }}
         docs={{ app: 'sledovane-dokumenty', lang: i18n.language, label: t('help.docs') }}
         actions={
           <>
-            <SectionSwitch section={section} onChange={onChangeSection} />
             <Button size="sm" onClick={() => setPickerOpen(true)}>
               <FolderPlus className="size-4" />
               <span className="hidden sm:inline">{t('folders.add')}</span>
@@ -62,29 +72,46 @@ export function FoldersHome({
         }
       />
 
-      <main className="min-h-0 flex-1">
-        {loading && !data ? (
-          <div className="mx-auto max-w-5xl p-4 sm:p-6">
-            <FeedSkeleton />
-          </div>
-        ) : error ? (
-          <div className="p-6">
-            <ErrorMessage message={error.message} onRetry={refetch} />
-          </div>
-        ) : folders.length === 0 ? (
-          <EmptyFolders onAdd={() => setPickerOpen(true)} />
-        ) : (
-          <ScrollArea className="h-full">
-            <div className="mx-auto grid max-w-5xl gap-3 p-4 sm:grid-cols-2 sm:p-6">
-              {folders.map((folder) => (
-                <FolderCard key={folder.root} folder={folder} onClick={() => onSelectFolder(folder.root)} />
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <SectionSwitch
+          section={section}
+          onChange={onChangeSection}
+          counts={{ documents: actChanges, folders: unconfirmed }}
+        />
 
-      <FolderPicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={handleAdd} busy={adding} />
+        <main className="min-h-0 min-w-0 flex-1">
+          {loading && !data ? (
+            <div className="mx-auto max-w-5xl p-4 sm:p-6">
+              <FeedSkeleton />
+            </div>
+          ) : error ? (
+            <div className="p-6">
+              <ErrorMessage message={error.message} onRetry={refetch} />
+            </div>
+          ) : folders.length === 0 ? (
+            <EmptyFolders onAdd={() => setPickerOpen(true)} />
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="mx-auto grid max-w-5xl gap-3 p-4 sm:grid-cols-2 sm:p-6">
+                {folders.map((folder) => (
+                  <FolderCard
+                    key={folder.root}
+                    folder={folder}
+                    onClick={() => onSelectFolder(folder.root)}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </main>
+      </div>
+
+      <FolderPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handleAdd}
+        busy={adding}
+      />
       <Toaster position="bottom-right" />
     </div>
   )

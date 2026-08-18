@@ -9,7 +9,6 @@ function firstCall(mock: { mock: { calls: Array<Array<unknown>> } }): Array<unkn
   return call
 }
 
-
 beforeEach(() => {
   vi.restoreAllMocks()
 })
@@ -82,7 +81,8 @@ describe('saveNotify', () => {
   it('posts the save_notify_settings action with the given values', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ ok: true, settings: { email: true, inApp: true, recipients: [] } }),
+      json: () =>
+        Promise.resolve({ ok: true, settings: { email: true, inApp: true, recipients: [] } }),
     })
     vi.stubGlobal('fetch', mockFetch)
 

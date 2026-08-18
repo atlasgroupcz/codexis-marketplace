@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from 'react'
 import type { RefObject } from 'react'
+import { useCallback, useEffect } from 'react'
 
 interface UseClipboardPasteOptions {
   onPaste: (files: Array<File>) => void
@@ -8,17 +8,13 @@ interface UseClipboardPasteOptions {
 
 export function useClipboardPaste(
   containerRef: RefObject<HTMLElement | null>,
-  { onPaste, enabled = true }: UseClipboardPasteOptions
+  { onPaste, enabled = true }: UseClipboardPasteOptions,
 ): void {
   const handlePaste = useCallback(
     (event: ClipboardEvent) => {
       // Skip if target is an input/textarea (they have their own paste handling)
       const target = event.target as HTMLElement
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return
       }
 
@@ -38,7 +34,7 @@ export function useClipboardPaste(
         onPaste(files)
       }
     },
-    [onPaste]
+    [onPaste],
   )
 
   useEffect(() => {

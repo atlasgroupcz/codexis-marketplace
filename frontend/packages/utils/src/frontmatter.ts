@@ -17,9 +17,7 @@ export type ParsedMarkdownWithFrontmatter = {
 
 const FRONTMATTER_REGEX = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/
 
-export function parseMarkdownFrontmatter(
-  content: string,
-): ParsedMarkdownWithFrontmatter {
+export function parseMarkdownFrontmatter(content: string): ParsedMarkdownWithFrontmatter {
   const match = content.match(FRONTMATTER_REGEX)
 
   if (!match) {

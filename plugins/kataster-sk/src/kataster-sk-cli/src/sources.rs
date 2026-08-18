@@ -2,7 +2,6 @@ use std::collections::HashSet;
 
 use serde_json::{json, Value};
 
-
 const MAPKA_DETAIL_BASE_URL: &str = "https://zbgis.skgeodesy.sk/mapka/sk/kataster/detail";
 const SNIPPET_MAX_CHARS: usize = 300;
 pub(crate) const PARCEL_SOURCES_CAP: usize = 10;
@@ -43,7 +42,10 @@ pub(crate) fn parcela_sources(body: &str, cap: usize) -> Vec<Value> {
 fn parcel_entry(route: &str, data: &Value) -> Value {
     let mut entry = serde_json::Map::new();
     entry.insert("__kind".into(), json!("url"));
-    entry.insert("url".into(), json!(format!("{MAPKA_DETAIL_BASE_URL}/{route}")));
+    entry.insert(
+        "url".into(),
+        json!(format!("{MAPKA_DETAIL_BASE_URL}/{route}")),
+    );
     entry.insert("title".into(), json!(parcel_title(route, data)));
     if let Some(description) = data.get("description").and_then(Value::as_str) {
         entry.insert(

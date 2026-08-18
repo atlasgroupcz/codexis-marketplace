@@ -1,16 +1,15 @@
 use std::io::Read;
 use std::path::PathBuf;
-use std::thread::sleep;
 use std::time::Duration;
 use std::{env, fs};
 
-use anyhow::{anyhow, Result};
-use ureq::Agent;
+use anyhow::{anyhow, Error, Result};
+use cdx_common::http_client::{call_with_retry, status_text, Outcome};
+use ureq::{Agent, ResponseExt};
 
 const DEFAULT_RPO_BASE_URL: &str = "https://api.statistics.sk/rpo/v1";
 const DEFAULT_RUZ_BASE_URL: &str = "https://www.registeruz.sk/cruz-public/api";
 const DEFAULT_CACHE_TTL_SECS: u64 = 24 * 60 * 60;
-const MAX_ATTEMPTS: usize = 3;
 const MAX_URL_LEN: usize = 2000;
 const USER_AGENT_VALUE: &str = concat!("orsr-cli/", env!("CARGO_PKG_VERSION"));
 
@@ -24,14 +23,15 @@ pub struct RegistryClient {
 
 impl RegistryClient {
     pub fn new(cache_enabled: bool) -> Result<Self> {
-        let rpo_base_url = cdx_common::http::base_url_from_env("RPO_BASE_URL", DEFAULT_RPO_BASE_URL);
-        let ruz_base_url = cdx_common::http::base_url_from_env("RUZ_BASE_URL", DEFAULT_RUZ_BASE_URL);
-        // ureq keeps a connection pool on the Agent -> the retry loops reuse the
-        // TCP+TLS connection to the same host.
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout_read(Duration::from_secs(30))
-            .build();
+        let rpo_base_url =
+            cdx_common::http::base_url_from_env("RPO_BASE_URL", DEFAULT_RPO_BASE_URL);
+        let ruz_base_url =
+            cdx_common::http::base_url_from_env("RUZ_BASE_URL", DEFAULT_RUZ_BASE_URL);
+        let agent = cdx_common::http_client::agent(
+            USER_AGENT_VALUE,
+            Duration::from_secs(10),
+            Duration::from_secs(30),
+        );
         Ok(Self {
             agent,
             rpo_base_url,
@@ -50,92 +50,54 @@ impl RegistryClient {
     }
 
     pub fn get_bytes(&self, url: &str) -> Result<Vec<u8>> {
-        for attempt in 0..MAX_ATTEMPTS {
-            let resp = match self
-                .agent
-                .get(url)
-                .set("User-Agent", USER_AGENT_VALUE)
-                .call()
-            {
-                Ok(resp) => resp,
-                Err(ureq::Error::Status(code, resp)) => {
-                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
-                        sleep(cdx_common::http::backoff(attempt));
-                        continue;
-                    }
-                    return Err(anyhow!(
-                        "HTTP {} on GET {url}",
-                        cdx_common::http::format_status(code, resp.status_text())
-                    ));
-                }
-                Err(error) => {
-                    if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(cdx_common::http::backoff(attempt));
-                        continue;
-                    }
-                    return Err(anyhow!("GET {url} failed: {error}"));
-                }
-            };
-            let mut body = Vec::new();
-            // TODO: drop once orsr.sk sends TLS close_notify - its legacy server
-            // closes EOF-delimited responses abruptly, which strict rustls reads
-            // report as an error even though the body already arrived.
-            if let Err(e) = resp.into_reader().read_to_end(&mut body) {
-                if body.is_empty() {
-                    return Err(anyhow!("error reading GET {url}: {e}"));
-                }
+        let mut resp = call_with_retry(|| self.agent.get(url).call())
+            .into_response("GET", url)
+            .map_err(Error::msg)?;
+
+        let mut body = Vec::new();
+        // TODO: drop once orsr.sk sends TLS close_notify - its legacy server
+        // closes EOF-delimited responses abruptly, which strict rustls reads
+        // report as an error even though the body already arrived.
+        if let Err(e) = resp.body_mut().as_reader().read_to_end(&mut body) {
+            if body.is_empty() {
+                return Err(anyhow!("error reading GET {url}: {e}"));
             }
-            return Ok(body);
         }
-        Err(anyhow!("GET {url} failed after {MAX_ATTEMPTS} attempts"))
+        Ok(body)
     }
 
     fn get_json(&self, url: &str) -> Result<String> {
         if let Some(cached) = self.read_cache(url) {
             return Ok(cached);
         }
-        for attempt in 0..MAX_ATTEMPTS {
-            let resp = match self
-                .agent
+        let outcome = call_with_retry(|| {
+            self.agent
                 .get(url)
-                .set("Accept", "application/json")
-                .set("User-Agent", USER_AGENT_VALUE)
+                .header("Accept", "application/json")
                 .call()
-            {
-                Ok(resp) => resp,
-                Err(ureq::Error::Status(code, resp)) => {
-                    if cdx_common::http::retryable_status(code) && attempt + 1 < MAX_ATTEMPTS {
-                        sleep(cdx_common::http::backoff(attempt));
-                        continue;
-                    }
-                    let final_url = resp.get_url().to_string();
-                    let status = cdx_common::http::format_status(code, resp.status_text());
-                    let body = resp.into_string().unwrap_or_default();
+        });
+        match outcome {
+            Outcome::Ok(mut resp) => {
+                let body = resp.body_mut().read_to_string().unwrap_or_default();
+                if cdx_common::http::looks_like_html(&body) {
+                    // The post-redirect URI, so the complaint names where the
+                    // request actually landed. Only built on this branch.
+                    let final_url = resp.get_uri().to_string();
                     return Err(anyhow!(
-                        "HTTP {status} on GET {final_url}\n{body}",
-                        status = status,
-                        body = body.trim()
+                        "GET {final_url} returned HTML instead of JSON - the service is unavailable or the request was blocked"
                     ));
                 }
-                Err(error) => {
-                    if attempt + 1 < MAX_ATTEMPTS {
-                        sleep(cdx_common::http::backoff(attempt));
-                        continue;
-                    }
-                    return Err(anyhow!("GET {url} failed: {error}"));
-                }
-            };
-            let final_url = resp.get_url().to_string();
-            let body = resp.into_string().unwrap_or_default();
-            if body.trim_start().starts_with('<') {
-                return Err(anyhow!(
-                    "GET {final_url} returned HTML instead of JSON - the service is unavailable or the request was blocked"
-                ));
+                self.write_cache(url, &body);
+                Ok(body)
             }
-            self.write_cache(url, &body);
-            return Ok(body);
+            Outcome::Status(code, body) => Err(anyhow!(
+                "HTTP {status} on GET {url}\n{body}",
+                status = status_text(code),
+                url = url,
+                body = body.trim()
+            )),
+            Outcome::Transport(error) => Err(anyhow!("GET {url} failed: {error}")),
         }
-        Err(anyhow!("GET {url} failed after {MAX_ATTEMPTS} attempts"))
     }
 
     fn read_cache(&self, url: &str) -> Option<String> {
@@ -260,7 +222,12 @@ mod tests {
 
     #[test]
     fn build_url_appends_query_pairs() {
-        let url = build_url("https://api.statistics.sk/rpo/v1", "search", &[("identifier", "00031333532")]).unwrap();
+        let url = build_url(
+            "https://api.statistics.sk/rpo/v1",
+            "search",
+            &[("identifier", "00031333532")],
+        )
+        .unwrap();
         assert_eq!(
             url,
             "https://api.statistics.sk/rpo/v1/search?identifier=00031333532"
@@ -270,7 +237,11 @@ mod tests {
     #[test]
     fn build_url_rejects_overlong_urls() {
         let long_value = "x".repeat(MAX_URL_LEN);
-        assert!(build_url("https://api.statistics.sk/rpo/v1", "search", &[("fullName", &long_value)]).is_err());
+        assert!(build_url(
+            "https://api.statistics.sk/rpo/v1",
+            "search",
+            &[("fullName", &long_value)]
+        )
+        .is_err());
     }
-
 }

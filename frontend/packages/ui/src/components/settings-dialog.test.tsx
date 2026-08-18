@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { SettingsDialog } from './settings-dialog'
-import type { NotifyLabels } from './notify-settings'
+import { describe, expect, it, vi } from 'vitest'
 import type { ConnectionSectionLabels } from './connection-section'
+import type { NotifyLabels } from './notify-settings'
+import { SettingsDialog } from './settings-dialog'
 
 const notifyLabels: NotifyLabels = {
   title: 'Oznámení',

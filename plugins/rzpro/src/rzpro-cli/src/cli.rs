@@ -140,11 +140,19 @@ mod tests {
     #[test]
     fn parses_device_search_and_filters() {
         let cli = Cli::try_parse_from([
-            "rzpro-cli", "search", "CZRZP", "--query", "gliadin", "--riziko", "III",
+            "rzpro-cli",
+            "search",
+            "CZRZP",
+            "--query",
+            "gliadin",
+            "--riziko",
+            "III",
         ])
         .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Czrzp(args) } => {
+            Commands::Search {
+                source: SearchSource::Czrzp(args),
+            } => {
                 assert_eq!(args.base.query.as_deref(), Some("gliadin"));
                 assert_eq!(args.riziko.as_deref(), Some("III"));
             }
@@ -154,12 +162,12 @@ mod tests {
 
     #[test]
     fn parses_person_search_source() {
-        let cli = Cli::try_parse_from([
-            "rzpro-cli", "search", "CZRZP-OS", "--query", "Medtronic",
-        ])
-        .unwrap();
+        let cli = Cli::try_parse_from(["rzpro-cli", "search", "CZRZP-OS", "--query", "Medtronic"])
+            .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::CzrzpOs(args) } => {
+            Commands::Search {
+                source: SearchSource::CzrzpOs(args),
+            } => {
                 assert_eq!(args.base.query.as_deref(), Some("Medtronic"));
             }
             _ => panic!("expected CZRZP-OS search"),
@@ -170,10 +178,11 @@ mod tests {
     fn ico_flag_is_canonicalized_at_parse() {
         // A user-supplied IČO missing leading zeros is padded to 8 digits so it
         // matches the backend's zero-padded stored value.
-        let cli =
-            Cli::try_parse_from(["rzpro-cli", "search", "CZRZP", "--ico", "565474"]).unwrap();
+        let cli = Cli::try_parse_from(["rzpro-cli", "search", "CZRZP", "--ico", "565474"]).unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Czrzp(args) } => {
+            Commands::Search {
+                source: SearchSource::Czrzp(args),
+            } => {
                 assert_eq!(args.ico.as_deref(), Some("00565474"));
             }
             _ => panic!("expected CZRZP search"),

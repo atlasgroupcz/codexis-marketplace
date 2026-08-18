@@ -24,38 +24,55 @@ pub(crate) struct SearchNluitArgs {
     #[arg(long, help = "Court code (repeatable: HR, RBAMS, GHARL, …)")]
     pub(crate) court: Vec<String>,
 
-    #[arg(long = "decision-type", help = "Decision type (Uitspraak, Conclusie, …)")]
+    #[arg(
+        long = "decision-type",
+        help = "Decision type (Uitspraak, Conclusie, …)"
+    )]
     pub(crate) decision_type: Option<String>,
 
-    #[arg(long = "decision-date-from", help = "Decision date lower bound (YYYY-MM-DD)")]
+    #[arg(
+        long = "decision-date-from",
+        help = "Decision date lower bound (YYYY-MM-DD)"
+    )]
     pub(crate) decision_date_from: Option<String>,
 
-    #[arg(long = "decision-date-to", help = "Decision date upper bound (YYYY-MM-DD)")]
+    #[arg(
+        long = "decision-date-to",
+        help = "Decision date upper bound (YYYY-MM-DD)"
+    )]
     pub(crate) decision_date_to: Option<String>,
 
-    #[arg(long = "legal-area", help = "Legal area (repeatable, e.g. \"Civiel recht\")")]
+    #[arg(
+        long = "legal-area",
+        help = "Legal area (repeatable, e.g. \"Civiel recht\")"
+    )]
     pub(crate) legal_area: Vec<String>,
 
     #[arg(long, help = "Procedure type (Cassatie, Hoger beroep, Eerste aanleg)")]
     pub(crate) procedure: Option<String>,
 
-    #[arg(long = "case-number", help = "Exact case number (e.g. \"21/00123\"). For ECLI lookup use `cdx-nl get cdx-nl://ecli/<ECLI>`.")]
+    #[arg(
+        long = "case-number",
+        help = "Exact case number (e.g. \"21/00123\"). For ECLI lookup use `cdx-nl get cdx-nl://ecli/<ECLI>`."
+    )]
     pub(crate) case_number: Option<String>,
 }
 
 impl SearchPayloadArgs for SearchNluitArgs {
-    fn base(&self) -> &SearchBaseArgs { &self.base }
+    fn base(&self) -> &SearchBaseArgs {
+        &self.base
+    }
 
     fn extend_payload(&self, payload: &mut JsonMap) {
         self.pagination.insert_into(payload);
         insert_string_list(payload, "court", &self.court);
-        insert_string(payload, "decisionType",     &self.decision_type);
+        insert_string(payload, "decisionType", &self.decision_type);
         insert_string(payload, "decisionDateFrom", &self.decision_date_from);
-        insert_string(payload, "decisionDateTo",   &self.decision_date_to);
+        insert_string(payload, "decisionDateTo", &self.decision_date_to);
         // NB: backend DTO field is `legalAreas` (plural) - see RechtspraakSearchRequest.java
         insert_string_list(payload, "legalAreas", &self.legal_area);
-        insert_string(payload, "procedure",        &self.procedure);
-        insert_string(payload, "caseNumber",       &self.case_number);
+        insert_string(payload, "procedure", &self.procedure);
+        insert_string(payload, "caseNumber", &self.case_number);
     }
 }
 
@@ -65,11 +82,16 @@ mod tests {
     use clap::Parser;
 
     #[derive(Parser)]
-    struct Wrapper { #[command(flatten)] args: SearchNluitArgs }
+    struct Wrapper {
+        #[command(flatten)]
+        args: SearchNluitArgs,
+    }
 
     #[test]
     fn parses_basic_query_and_from_size() {
-        let w = Wrapper::try_parse_from(["t", "--query", "huurrecht", "--from", "10", "--size", "5"]).unwrap();
+        let w =
+            Wrapper::try_parse_from(["t", "--query", "huurrecht", "--from", "10", "--size", "5"])
+                .unwrap();
         assert_eq!(w.args.base.query.as_deref(), Some("huurrecht"));
         assert_eq!(w.args.pagination.from, Some(10));
         assert_eq!(w.args.pagination.size, Some(5));
@@ -85,7 +107,10 @@ mod tests {
     fn payload_emits_camelcase_keys_and_from_size() {
         let args = SearchNluitArgs {
             decision_date_from: Some("2024-01-01".into()),
-            pagination: FromSizeArgs { from: Some(0), size: Some(20) },
+            pagination: FromSizeArgs {
+                from: Some(0),
+                size: Some(20),
+            },
             legal_area: vec!["Civiel recht".to_string()],
             ..Default::default()
         };
@@ -95,8 +120,8 @@ mod tests {
         assert!(json.contains("\"size\":20"));
         // backend field is plural - must be legalAreas, not legalArea
         assert!(json.contains("\"legalAreas\""));
-        assert!(!json.contains("\"legalArea\":"));   // singular form forbidden
-        // must NOT contain offset/limit
+        assert!(!json.contains("\"legalArea\":")); // singular form forbidden
+                                                   // must NOT contain offset/limit
         assert!(!json.contains("\"offset\""));
         assert!(!json.contains("\"limit\""));
         // sort/order live in URL query, never in body

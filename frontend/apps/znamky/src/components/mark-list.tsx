@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { MarkListItem } from './mark-list-item'
 import type { MarkSummary } from '@/lib/schemas'
+import { MarkListItem } from './mark-list-item'
 
 export function MarkList({
   marks,

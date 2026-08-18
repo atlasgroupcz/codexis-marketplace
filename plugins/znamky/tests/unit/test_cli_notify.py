@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from tests._script_loader import load_script
 
 BIN = Path(__file__).resolve().parents[2] / "bin" / "znamky-cli"
@@ -163,3 +165,38 @@ def test_check_forwards_none_when_no_recipients(monkeypatch, capsys):
         _cli.cmd_check(argparse.Namespace(id=None))
     assert m.call_args.kwargs.get("to") is None
     me_mock.assert_not_called()  # no extras → resolve_to short-circuits, no GraphQL call
+
+
+# ── a refused bell ends the run red ──────────────────────────────────────────
+
+
+def _notify_on():
+    return {"email": False, "inApp": True, "recipients": []}
+
+
+def test_check_ends_the_run_red_when_the_bell_is_refused(monkeypatch, capsys):
+    # The check found its changes and saved them; the user was simply never told.
+    # A scheduled run reports only through its exit code, so this is the one
+    # signal that says so - a printed line alone is what let a month of
+    # undelivered notifications pass for healthy runs.
+    monkeypatch.setattr(_cli.tracking, "check_all", _one_result)
+    monkeypatch.setattr(_cli.notify_settings, "get_notify", _notify_on)
+    monkeypatch.setattr(_cli.notify, "inapp_change_summary", lambda results: False)
+
+    with pytest.raises(SystemExit) as exit_info:
+        _cli.cmd_check(argparse.Namespace(id=None))
+
+    assert exit_info.value.code == 1
+    assert "nepodařilo" in capsys.readouterr().err
+
+
+def test_check_stays_green_when_there_was_nothing_to_notify(monkeypatch, capsys):
+    # None, not False: a run with no changes sends nothing, which is normal. A
+    # plain `else` here would paint every quiet run red.
+    monkeypatch.setattr(_cli.tracking, "check_all", _one_result)
+    monkeypatch.setattr(_cli.notify_settings, "get_notify", _notify_on)
+    monkeypatch.setattr(_cli.notify, "inapp_change_summary", lambda results: None)
+
+    _cli.cmd_check(argparse.Namespace(id=None))
+
+    assert "nepodařilo" not in capsys.readouterr().err

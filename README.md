@@ -96,3 +96,18 @@ Run the suites through the single entry point:
 ```bash
 python tests/run.py <unit|marketplace|eval|all>
 ```
+
+## VM volume image
+
+The released public distribution can be packaged as the read-only marketplace volume consumed by
+CODEXIS VMs:
+
+```bash
+./build-volume-image.sh \
+  --source ./dist \
+  --tag registry.agrp.dev/legal-machine/codexis-marketplace-volume:<dist-commit>
+```
+
+The source must be a clean distribution checkout. The resulting scratch OCI image contains a
+world-readable `/volume.ext4`; the filesystem contains the distribution and its full Git revision
+in `/.codexis-marketplace-revision`.

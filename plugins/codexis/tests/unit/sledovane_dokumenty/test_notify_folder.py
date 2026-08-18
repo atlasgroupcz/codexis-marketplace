@@ -55,17 +55,25 @@ def test_notify_changes_respects_settings(dokumenty_app_dir, monkeypatch):
 
     res = notify.notify_changes(_results([{"codexisId": "CR1", "text": "OZ"}]))
     assert calls == {"email": 1, "inapp": 0}
-    assert res["changes"] == 1 and res["email"] is True and res["inApp"] is False
+    # inApp is None because the channel is off, not because a send failed.
+    assert res["changes"] == 1 and res["email"] is True and res["inApp"] is None
 
 
 def test_notify_changes_noop_without_changes(dokumenty_app_dir, monkeypatch):
     monkeypatch.setattr(notify, "_send_email", lambda *a, **k: True)
     monkeypatch.setattr(notify, "_send_inapp", lambda *a, **k: True)
     res = notify.notify_changes(_results([]))
-    assert res == {"email": False, "inApp": False, "changes": 0}
+    assert res == {"email": False, "inApp": None, "changes": 0}
 
 
-def _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-token"):
+# A GraphQL answer the daemon accepted. It carries no `errors` key - that is the
+# only thing that separates it from a rejection, which arrives as HTTP 200 too.
+_ACCEPTED = {"data": {"createNotification": {"id": "n1"}}}
+
+
+def _stub_daemon(
+    monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-token", body=None
+):
     """HOME→tmp + ~/.cdx/env/secret + stubbed urlopen; returns captured url/auth."""
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("CODEXIS_PUBLIC_DAEMON_URL", daemon_url)
@@ -77,6 +85,26 @@ def _stub_daemon(monkeypatch, tmp_path, daemon_url="http://daemon", secret="vm-t
     captured = {}
 
     class _Resp:
+        """The daemon's real answer: a JSON body, read inside a `with`.
+
+        The old stub offered only close(), which is why a mutation the daemon
+        rejected still read as a delivery in these tests.
+        """
+
+        def read(self):
+            payload = body if body is not None else _ACCEPTED
+            # bytes pass through, so a test can hand over a body that is not JSON
+            # at all - a proxy's HTML error page arrives as HTTP 200 too.
+            if isinstance(payload, bytes):
+                return payload
+            return json.dumps(payload).encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
         def close(self):
             pass
 
@@ -481,3 +509,54 @@ def test_resolve_app_link_is_none_without_daemon_config(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.delenv("CODEXIS_PUBLIC_DAEMON_URL", raising=False)
     assert notify._resolve_app_link() is None
+
+
+def test_change_notification_sends_no_action_field(dokumenty_app_dir, monkeypatch):
+    # `CreateNotificationInput` has no `action` - the daemon dropped the
+    # call-to-action button, so a caller that still passes a label has the whole
+    # mutation rejected and the notification never arrives.
+    sent = []
+    monkeypatch.setattr(notify, "_send_inapp", lambda *a, **k: sent.append(k) or True)
+    monkeypatch.setattr(
+        settings_mod,
+        "get_notify",
+        lambda: {"email": False, "inApp": True, "recipients": []},
+    )
+
+    notify.notify_changes(_folder_results())
+
+    assert sent, "the in-app notification was not attempted"
+    assert "action" not in sent[0], f"still sends a dropped field: {sent[0]}"
+
+
+# ── the daemon refused it ────────────────────────────────────────────────────
+# HTTP 200 with the reason in the body is how a rejected mutation comes back, so
+# a sender that only closes the response calls every rejection a delivery. That
+# is what kept a dropped input field invisible for a month of scheduled runs.
+
+_REJECTED = {
+    "errors": [{"message": "Unknown field 'action' on type 'CreateNotificationInput'"}]
+}
+
+
+def test_inapp_reports_failure_when_the_daemon_rejects_the_mutation(
+    monkeypatch, tmp_path
+):
+    _stub_daemon(monkeypatch, tmp_path, body=_REJECTED)
+
+    assert notify._send_inapp("hello") is False
+
+
+def test_inapp_reports_failure_when_the_body_is_not_json(monkeypatch, tmp_path):
+    # A proxy's HTML error page: status 200, nothing json.load can read.
+    _stub_daemon(monkeypatch, tmp_path, body=b"<html>502</html>")
+
+    assert notify._send_inapp("hello") is False
+
+
+def test_inapp_reports_success_when_the_daemon_accepts_the_mutation(
+    monkeypatch, tmp_path
+):
+    _stub_daemon(monkeypatch, tmp_path)
+
+    assert notify._send_inapp("hello") is True

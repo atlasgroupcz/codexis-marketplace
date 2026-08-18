@@ -139,11 +139,18 @@ mod tests {
     #[test]
     fn parses_uppercase_source_and_flags() {
         let cli = Cli::try_parse_from([
-            "leciva-cli", "search", "CZSUKL", "--query", "paralen", "--only-dodavka",
+            "leciva-cli",
+            "search",
+            "CZSUKL",
+            "--query",
+            "paralen",
+            "--only-dodavka",
         ])
         .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Czsukl(args) } => {
+            Commands::Search {
+                source: SearchSource::Czsukl(args),
+            } => {
                 assert_eq!(args.base.query.as_deref(), Some("paralen"));
                 assert!(args.only_dodavka);
             }
@@ -153,9 +160,12 @@ mod tests {
 
     #[test]
     fn accepts_lowercase_alias() {
-        let cli = Cli::try_parse_from(["leciva-cli", "search", "czsukl", "--kod-sukl", "0000009"]).unwrap();
+        let cli = Cli::try_parse_from(["leciva-cli", "search", "czsukl", "--kod-sukl", "0000009"])
+            .unwrap();
         match cli.command {
-            Commands::Search { source: SearchSource::Czsukl(args) } => {
+            Commands::Search {
+                source: SearchSource::Czsukl(args),
+            } => {
                 assert_eq!(args.kod_sukl.as_deref(), Some("0000009"));
             }
             _ => panic!("expected CZSUKL search"),
@@ -165,7 +175,10 @@ mod tests {
     #[test]
     fn parses_get_command() {
         let cli = Cli::try_parse_from([
-            "leciva-cli", "get", "--dry-run", "leciva://doc/CZSUKL0000009/meta",
+            "leciva-cli",
+            "get",
+            "--dry-run",
+            "leciva://doc/CZSUKL0000009/meta",
         ])
         .unwrap();
         match cli.command {

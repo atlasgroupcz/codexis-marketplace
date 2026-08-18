@@ -22,9 +22,5 @@ interface ChangeTypeBadgeProps {
 export function ChangeTypeBadge({ type }: ChangeTypeBadgeProps) {
   const { t } = useTranslation()
 
-  return (
-    <Badge variant={changeTypeVariants[type]}>
-      {t(changeTypeLabels[type])}
-    </Badge>
-  )
+  return <Badge variant={changeTypeVariants[type]}>{t(changeTypeLabels[type])}</Badge>
 }

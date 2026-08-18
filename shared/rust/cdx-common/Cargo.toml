@@ -10,6 +10,11 @@ serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 anyhow = { version = "1", optional = true }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"], optional = true }
+percent-encoding = { version = "2", optional = true }
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "multipart", "query", "rustls-no-provider"], optional = true }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"], optional = true }
+webpki-roots = { version = "1", optional = true }
+ureq = { version = "3", default-features = false, features = ["rustls"], optional = true }
 
 [features]
 default = ["sources"]
@@ -18,16 +23,26 @@ default = ["sources"]
 # for plugins that only need the std-only helpers (e.g. ocr, video-analyze).
 sources = ["dep:serde_json"]
 # The `curl` module (curl HTTP plumbing for the search plugins). Pulls in `serde_json`.
-curl = ["dep:serde_json"]
+curl = ["dep:serde_json", "url"]
 # The `schema` module (generic JSON-schema machinery). Pulls in `serde_json`.
 schema = ["dep:serde_json"]
 # The `search` module (search-payload building blocks). Pulls in `serde_json`.
 search = ["dep:serde_json"]
 # The `search_engine` module (the shared search/get request flow). Needs curl +
-# sources (and thus serde_json).
-search-engine = ["curl", "sources"]
+# sources (and thus serde_json), and `http` for the prefix lookup.
+search-engine = ["curl", "http", "sources"]
+# The `url` module (percent-encoding for URL values). Pulls in `percent-encoding`.
+url = ["dep:percent-encoding"]
 # The `http` module (URL/retry/prefix helpers). std-only, no dependencies.
 http = []
+# The `reqwest_client` module (blocking reqwest builder + this repo's TLS
+# policy). Only for the plugins that need multipart; everything else uses
+# `http-client`, which is far lighter.
+reqwest-client = ["dep:reqwest", "dep:rustls", "dep:webpki-roots"]
+# The `http_client` module (configured ureq agent + the shared retry policy).
+# Builds on `http` for the retry rules, and is the only feature that pulls an
+# HTTP crate - keep it off for plugins that make no requests.
+http-client = ["http", "dep:ureq"]
 # The `ico` module (IČO normalization). Pulls in `anyhow`.
 ico = ["dep:anyhow"]
 # The `fs` module (atomic file writes). Needs serde + serde_json for the JSON

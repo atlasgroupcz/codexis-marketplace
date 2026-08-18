@@ -39,8 +39,18 @@ mod tests {
     fn square_extends_by_the_radius_in_both_axes() {
         let s = square_around(0.0, 0.0, 100.0);
         let v: serde_json::Value = serde_json::from_str(&s).unwrap();
-        let xs: Vec<f64> = v.as_array().unwrap().iter().map(|p| p["x"].as_f64().unwrap()).collect();
-        let ys: Vec<f64> = v.as_array().unwrap().iter().map(|p| p["y"].as_f64().unwrap()).collect();
+        let xs: Vec<f64> = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p["x"].as_f64().unwrap())
+            .collect();
+        let ys: Vec<f64> = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p["y"].as_f64().unwrap())
+            .collect();
         assert_eq!(xs.iter().cloned().fold(f64::MIN, f64::max), 100.0);
         assert_eq!(xs.iter().cloned().fold(f64::MAX, f64::min), -100.0);
         assert_eq!(ys.iter().cloned().fold(f64::MIN, f64::max), 100.0);

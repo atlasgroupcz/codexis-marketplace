@@ -26,8 +26,7 @@ pub fn enrich_detail(body: &str) -> String {
         return body.to_string();
     };
     for feature in features {
-        let Some(attributes) = feature.get_mut("attributes").and_then(Value::as_object_mut)
-        else {
+        let Some(attributes) = feature.get_mut("attributes").and_then(Value::as_object_mut) else {
             continue;
         };
         let Some(id) = attributes
@@ -36,10 +35,7 @@ pub fn enrich_detail(body: &str) -> String {
         else {
             continue;
         };
-        if let Some(&(code, label)) = id
-            .checked_sub(1)
-            .and_then(|i| DRUH_POZEMKU.get(i as usize))
-        {
+        if let Some(&(code, label)) = id.checked_sub(1).and_then(|i| DRUH_POZEMKU.get(i as usize)) {
             attributes.insert("DRUH_POZEMKU".into(), json!(label));
             attributes.insert("DRUH_POZEMKU_KOD".into(), json!(code));
         }

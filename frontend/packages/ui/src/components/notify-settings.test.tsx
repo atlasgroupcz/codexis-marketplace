@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { NotifySettings } from './notify-settings'
+import { describe, expect, it, vi } from 'vitest'
 import type { NotifyLabels } from './notify-settings'
+import { NotifySettings } from './notify-settings'
 
 const labels: NotifyLabels = {
   title: 'Oznámení',

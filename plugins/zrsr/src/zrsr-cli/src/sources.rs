@@ -2,7 +2,6 @@ use std::collections::HashSet;
 
 use serde_json::{json, Value};
 
-
 const RPO_ENTITY_BASE_URL: &str = "https://api.statistics.sk/rpo/v1/entity";
 const SNIPPET_MAX_CHARS: usize = 300;
 pub(crate) const SEARCH_SOURCES_CAP: usize = 10;
@@ -69,7 +68,10 @@ fn entity_entry(entity: &Value) -> Option<Value> {
     entry.insert("url".into(), json!(format!("{RPO_ENTITY_BASE_URL}/{id}")));
     entry.insert("title".into(), json!(title));
     if let Some(address) = current_value(entity.get("addresses")).and_then(format_address) {
-        entry.insert("snippet".into(), json!(truncate_chars(&address, SNIPPET_MAX_CHARS)));
+        entry.insert(
+            "snippet".into(),
+            json!(truncate_chars(&address, SNIPPET_MAX_CHARS)),
+        );
     }
     Some(Value::Object(entry))
 }
@@ -99,15 +101,19 @@ fn current_value(history: Option<&Value>) -> Option<&Value> {
 }
 
 fn format_address(address: &Value) -> Option<String> {
-    let street_name = address
-        .get("street")
-        .and_then(Value::as_str)
-        .or_else(|| address.pointer("/municipality/value").and_then(Value::as_str))?;
+    let street_name = address.get("street").and_then(Value::as_str).or_else(|| {
+        address
+            .pointer("/municipality/value")
+            .and_then(Value::as_str)
+    })?;
     let mut formatted = street_name.to_string();
     if let Some(building) = address.get("buildingNumber").and_then(Value::as_str) {
         formatted = format!("{formatted} {building}");
     }
-    if let Some(municipality) = address.pointer("/municipality/value").and_then(Value::as_str) {
+    if let Some(municipality) = address
+        .pointer("/municipality/value")
+        .and_then(Value::as_str)
+    {
         if municipality != street_name {
             formatted = format!("{formatted}, {municipality}");
         }
@@ -173,7 +179,10 @@ mod tests {
             sniff_sources(&entity(42, "X"))[0]["url"],
             serde_json::json!("https://api.statistics.sk/rpo/v1/entity/42")
         );
-        assert_eq!(sniff_sources(&format!(r#"{{"results":[{}]}}"#, entity(1, "X"))).len(), 1);
+        assert_eq!(
+            sniff_sources(&format!(r#"{{"results":[{}]}}"#, entity(1, "X"))).len(),
+            1
+        );
         assert!(sniff_sources(r#"{"results":[]}"#).is_empty());
         assert!(sniff_sources("not json").is_empty());
     }

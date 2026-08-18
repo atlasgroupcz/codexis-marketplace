@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { backendUrl } from '@workspace/utils/url'
+import { useState } from 'react'
 
 interface SkillAgentIconProps {
   iconPath?: string | null
@@ -18,16 +18,7 @@ export function SkillAgentIcon({
     return null
   }
 
-  const src = backendUrl(
-    `/rest/files/download?path=${encodeURIComponent(iconPath)}`,
-  )
+  const src = backendUrl(`/rest/files/download?path=${encodeURIComponent(iconPath)}`)
 
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      onError={() => setFailed(true)}
-    />
-  )
+  return <img src={src} alt={alt} className={className} onError={() => setFailed(true)} />
 }

@@ -10,10 +10,7 @@ describe('deriveTimeline - event list', () => {
     const nodes = deriveTimeline({
       stav: 'x',
       datum_prijeti: '2026-06-01',
-      provedene_operace: [
-        op('Novější operace', '2026-06-05'),
-        op('Starší operace', '2026-06-01'),
-      ],
+      provedene_operace: [op('Novější operace', '2026-06-05'), op('Starší operace', '2026-06-01')],
     })
     expect(nodes.map((n) => n.rawName)).toEqual(['Novější operace', 'Starší operace'])
     expect(nodes[nodes.length - 1]?.state).toBe('current')
@@ -23,10 +20,7 @@ describe('deriveTimeline - event list', () => {
     const nodes = deriveTimeline({
       stav: 'Plomba',
       datum_prijeti: '2026-06-29',
-      provedene_operace: [
-        op('Založení řízení', '2026-06-29'),
-        op('Zaplombování', '2026-06-29'),
-      ],
+      provedene_operace: [op('Založení řízení', '2026-06-29'), op('Zaplombování', '2026-06-29')],
     })
     expect(nodes.map((n) => n.rawName)).toEqual(['Založení řízení', 'Zaplombování'])
   })
@@ -112,8 +106,11 @@ describe('deriveTimeline - negative outcome', () => {
     const last = nodes[nodes.length - 1]!
     expect(last.isTerminal).toBe(true)
     expect(last.isNegative).toBe(true)
-    expect(last.state).toBe('current')
-    expect(nodes.filter((n) => n.state === 'done')).toHaveLength(2)
+    // Nothing is in progress on a rejected proceeding. The closing node used to
+    // be `current` as well as terminal, so drawing it right meant knowing which
+    // of the two won.
+    expect(nodes.every((n) => n.state === 'done')).toBe(true)
+    expect(nodes).toHaveLength(3)
   })
 
   it('a benign ending is not marked negative', () => {
@@ -123,6 +120,51 @@ describe('deriveTimeline - negative outcome', () => {
       provedene_operace: [op('Založení řízení', '2026-06-01'), op('Ukončení řízení', '2026-06-03')],
     })
     expect(nodes.every((n) => !n.isNegative)).toBe(true)
+  })
+})
+
+describe('deriveTimeline - a closed proceeding has no current step', () => {
+  // ČÚZK reports the ending as free text, and these are the wordings seen in
+  // production. Each one used to leave the last node marked `current`, so a
+  // finished proceeding claimed to be happening right now.
+  it.each(['Ukončeno', 'Ukončení řízení', 'Řízení bylo uzavřeno jako mylné'])(
+    'stav %s leaves every node done',
+    (stav) => {
+      const nodes = deriveTimeline({
+        stav,
+        datum_prijeti: '2026-05-19',
+        provedene_operace: [op('Založení řízení', '2026-05-19'), op('Mylné řízení', '2026-05-19')],
+      })
+      expect(nodes.every((n) => n.state === 'done')).toBe(true)
+    },
+  )
+
+  it('a running proceeding still marks its last operation current', () => {
+    const nodes = deriveTimeline({
+      stav: 'Obeslání účastníků řízení',
+      datum_prijeti: '2026-07-29',
+      provedene_operace: [op('Založení řízení', '2026-07-29'), op('Zaplombování', '2026-07-29')],
+    })
     expect(nodes[nodes.length - 1]?.state).toBe('current')
+  })
+
+  it('an unrecognised ending falls back to current rather than hiding the node', () => {
+    const nodes = deriveTimeline({
+      stav: 'Něco, co ČÚZK vymyslel dnes ráno',
+      datum_prijeti: '2026-06-01',
+      provedene_operace: [op('Založení řízení', '2026-06-01')],
+    })
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0]?.state).toBe('current')
+  })
+
+  it('a closed proceeding with no operations shows its stav as a done node', () => {
+    const nodes = deriveTimeline({
+      stav: 'Ukončeno',
+      datum_prijeti: '2026-06-01',
+      provedene_operace: [],
+    })
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0]?.state).toBe('done')
   })
 })

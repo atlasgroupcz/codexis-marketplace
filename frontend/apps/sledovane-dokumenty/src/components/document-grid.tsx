@@ -1,14 +1,14 @@
-import { useState } from 'react'
-import { useQueryState } from 'nuqs'
-import { useTranslation } from 'react-i18next'
-import { Plus, Settings2, Trash2 } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@workspace/ui/components/popover'
-import { DocumentCard } from './document-card'
-import type { Group, TrackedDocumentSummary } from '@/lib/schemas'
+import { Plus, Settings2, Trash2 } from 'lucide-react'
+import { useQueryState } from 'nuqs'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { postGroupAction } from '@/lib/api'
+import type { Group, TrackedDocumentSummary } from '@/lib/schemas'
 import { groupParser } from '@/lib/url-state'
+import { DocumentCard } from './document-card'
 
 interface DocumentGridProps {
   documents: Array<TrackedDocumentSummary>

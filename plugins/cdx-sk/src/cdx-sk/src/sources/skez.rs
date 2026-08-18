@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, IssuedDateArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_SKEZ_HELP: &str = r#"Example:
   cdx-sk search SKEZ --query "občiansky zákonník" --limit 5

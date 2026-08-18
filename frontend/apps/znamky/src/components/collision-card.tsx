@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next'
-import { Check, ExternalLink, Sparkles } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
-import { SimilarityDonut } from './similarity-donut'
-import { LogoZoom } from './logo-zoom'
-import type { Collision } from '@/lib/schemas'
+import { Check, ExternalLink, Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/lib/format'
+import type { Collision } from '@/lib/schemas'
+import { LogoZoom } from './logo-zoom'
+import { SimilarityDonut } from './similarity-donut'
 
 const RISK_CLASSES: Record<string, string> = {
   high: 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200',
@@ -40,7 +40,8 @@ export function CollisionCard({
 
   const meta: Array<string> = []
   if (collision.filing_date) meta.push(formatDate(collision.filing_date))
-  if (collision.nice_classes.length > 0) meta.push(`${t('list.classes')} ${collision.nice_classes.join(', ')}`)
+  if (collision.nice_classes.length > 0)
+    meta.push(`${t('list.classes')} ${collision.nice_classes.join(', ')}`)
 
   return (
     <div
@@ -84,14 +85,24 @@ export function CollisionCard({
             <div className="mt-3 flex items-center gap-3">
               {markLogoDataUrl && (
                 <figure className="text-center">
-                  <LogoZoom src={markLogoDataUrl} className="bg-background size-14 rounded border object-contain p-1" />
-                  <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.yours')}</figcaption>
+                  <LogoZoom
+                    src={markLogoDataUrl}
+                    className="bg-background size-14 rounded border object-contain p-1"
+                  />
+                  <figcaption className="text-muted-foreground mt-1 text-[10px]">
+                    {t('collision.yours')}
+                  </figcaption>
                 </figure>
               )}
               {collision.image_data_url && (
                 <figure className="text-center">
-                  <LogoZoom src={collision.image_data_url} className="bg-background size-14 rounded border object-contain p-1" />
-                  <figcaption className="text-muted-foreground mt-1 text-[10px]">{t('collision.candidate')}</figcaption>
+                  <LogoZoom
+                    src={collision.image_data_url}
+                    className="bg-background size-14 rounded border object-contain p-1"
+                  />
+                  <figcaption className="text-muted-foreground mt-1 text-[10px]">
+                    {t('collision.candidate')}
+                  </figcaption>
                 </figure>
               )}
             </div>
@@ -102,22 +113,31 @@ export function CollisionCard({
               const v = Math.round(b.value * 100)
               return (
                 <div key={b.key} className="flex items-center gap-2 text-xs">
-                  <dt className="text-muted-foreground w-24 shrink-0 truncate">{t(`score.${b.key}`)}</dt>
+                  <dt className="text-muted-foreground w-24 shrink-0 truncate">
+                    {t(`score.${b.key}`)}
+                  </dt>
                   <div className="bg-muted h-1.5 w-16 shrink-0 overflow-hidden rounded-full">
                     <div className="bg-primary/60 h-full rounded-full" style={{ width: `${v}%` }} />
                   </div>
-                  <dd className="text-foreground/70 w-8 shrink-0 text-right font-mono tabular-nums">{v}%</dd>
+                  <dd className="text-foreground/70 w-8 shrink-0 text-right font-mono tabular-nums">
+                    {v}%
+                  </dd>
                 </div>
               )
             })}
           </dl>
 
           {ai && (
-            <div className="border-border/60 mt-3 rounded-lg border border-dashed p-3" data-testid="ai-assessment">
+            <div
+              className="border-border/60 mt-3 rounded-lg border border-dashed p-3"
+              data-testid="ai-assessment"
+            >
               <div className="flex items-center gap-2">
                 <Sparkles className="text-primary size-4" />
                 <span className="text-sm font-medium">{t('collision.aiTitle')}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${RISK_CLASSES[ai.risk] ?? ''}`}>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${RISK_CLASSES[ai.risk] ?? ''}`}
+                >
                   {t(`risk.${ai.risk}`)}
                 </span>
               </div>
@@ -126,7 +146,9 @@ export function CollisionCard({
                 {ai.visual && <Row label={t('collision.visual')} value={ai.visual} />}
                 {ai.aural && <Row label={t('collision.aural')} value={ai.aural} />}
                 {ai.conceptual && <Row label={t('collision.conceptual')} value={ai.conceptual} />}
-                {ai.goods_similarity && <Row label={t('collision.goods')} value={ai.goods_similarity} />}
+                {ai.goods_similarity && (
+                  <Row label={t('collision.goods')} value={ai.goods_similarity} />
+                )}
               </dl>
             </div>
           )}

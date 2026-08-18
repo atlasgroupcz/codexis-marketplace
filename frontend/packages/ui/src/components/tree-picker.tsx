@@ -1,23 +1,25 @@
 'use client'
 
-import * as React from 'react'
-import { ChevronsUpDownIcon, XIcon } from 'lucide-react'
-import { cn } from '@workspace/ui/lib/utils'
-import { Button } from '@workspace/ui/components/button'
 import { Badge } from '@workspace/ui/components/badge'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@workspace/ui/components/popover'
-import { CommandTree  } from '@workspace/ui/components/command-tree'
-import type {CommandTreeProps} from '@workspace/ui/components/command-tree';
+import { Button } from '@workspace/ui/components/button'
+import type { CommandTreeProps } from '@workspace/ui/components/command-tree'
+import { CommandTree } from '@workspace/ui/components/command-tree'
+import { Popover, PopoverContent, PopoverTrigger } from '@workspace/ui/components/popover'
 import type { TreeItem } from '@workspace/ui/lib/tree-picker-types'
+import { cn } from '@workspace/ui/lib/utils'
+import { ChevronsUpDownIcon, XIcon } from 'lucide-react'
+import * as React from 'react'
 
 export interface TreePickerProps<T extends TreeItem>
   extends Pick<
     CommandTreeProps<T>,
-    'nodes' | 'selectedIds' | 'onItemToggle' | 'multi' | 'searchPlaceholder' | 'emptyText' | 'renderItem'
+    | 'nodes'
+    | 'selectedIds'
+    | 'onItemToggle'
+    | 'multi'
+    | 'searchPlaceholder'
+    | 'emptyText'
+    | 'renderItem'
   > {
   placeholder?: string
   selectedItems: Array<{ id: string; label: string }>
@@ -72,7 +74,7 @@ export function TreePicker<T extends TreeItem>({
     ? selectedItems.length > 0
       ? `${selectedItems.length} selected`
       : placeholder
-    : selectedItems[0]?.label ?? placeholder
+    : (selectedItems[0]?.label ?? placeholder)
 
   const showClearButton = !multi && selectedItems.length > 0 && onClear
 
@@ -87,12 +89,7 @@ export function TreePicker<T extends TreeItem>({
             className={cn('w-full justify-between font-normal px-3', triggerClassName)}
             data-testid={testId}
           >
-            <span
-              className={cn(
-                'truncate',
-                selectedItems.length === 0 && 'text-muted-foreground',
-              )}
-            >
+            <span className={cn('truncate', selectedItems.length === 0 && 'text-muted-foreground')}>
               {triggerLabel}
             </span>
             {showClearButton ? (
@@ -114,7 +111,10 @@ export function TreePicker<T extends TreeItem>({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className={cn('w-(--radix-popover-trigger-width) max-w-[calc(100vw-2rem)] overflow-hidden p-0 !animate-none data-[state=open]:!animate-none data-[state=closed]:!animate-none', popoverClassName)}
+          className={cn(
+            'w-(--radix-popover-trigger-width) max-w-[calc(100vw-2rem)] overflow-hidden p-0 !animate-none data-[state=open]:!animate-none data-[state=closed]:!animate-none',
+            popoverClassName,
+          )}
           align="start"
           sideOffset={-36}
           data-testid={popoverTestId}

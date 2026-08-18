@@ -9,8 +9,6 @@
     "total": "{{count}} total",
     "unconfirmed": "{{count}} unconfirmed",
     "noChanges": "No changes detected yet.",
-    "addHintTitle": "How to add a document",
-    "addHintText": "Use the chat to add a document to tracking. For example: \"Track changes in the Civil Code\" or \"Track Labour Code\".",
     "retry": "Try again",
     "confirmed": "Confirmed {{date}}",
     "notConfirmed": "Unconfirmed",
@@ -54,8 +52,9 @@
     "notePlaceholder": "What interests you about this document?",
     "saveNote": "Save note",
     "noteSaved": "Note saved",
-    "subtitle": "We watch your laws for changes",
+    "tagline": "We watch the legislation you care about",
     "refresh": "Refresh",
+    "addMonitoring": "Add another watch",
     "removed": "Tracking removed",
     "tabs": {
       "changes": "Changes",
@@ -82,11 +81,10 @@
   },
   "folders": {
     "section": {
+      "label": "What we watch",
       "documents": "Acts",
       "folders": "Folders"
     },
-    "title": "Watched folders",
-    "subtitle": "We track the legislation your documents reference",
     "add": "Add folder",
     "back": "Back",
     "cancel": "Cancel",

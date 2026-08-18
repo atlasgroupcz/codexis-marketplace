@@ -1,16 +1,16 @@
-import {
-  actionResponseSchema,
-  detailResponseSchema,
-  notifyResponseSchema,
-  overviewResponseSchema,
-  reportResponseSchema,
-} from './schemas'
 import type {
   ActionResponse,
   DetailResponse,
   NotifySettingsValues,
   OverviewResponse,
   ReportResponse,
+} from './schemas'
+import {
+  actionResponseSchema,
+  detailResponseSchema,
+  notifyResponseSchema,
+  overviewResponseSchema,
+  reportResponseSchema,
 } from './schemas'
 
 function getApiBase(): string {
@@ -62,7 +62,10 @@ export async function fetchReport(uuid: string, reportId: string): Promise<Repor
   return reportResponseSchema.parse(json)
 }
 
-export async function fetchNotify(): Promise<{ settings: NotifySettingsValues; userEmail: string }> {
+export async function fetchNotify(): Promise<{
+  settings: NotifySettingsValues
+  userEmail: string
+}> {
   const url = new URL(getApiBase(), window.location.href)
   url.searchParams.set('view', 'notify')
   const response = await fetch(url.toString(), {

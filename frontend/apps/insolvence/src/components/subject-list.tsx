@@ -1,6 +1,6 @@
 import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import { SubjectListItem } from './subject-list-item'
 import type { SubjectSummary } from '@/lib/schemas'
+import { SubjectListItem } from './subject-list-item'
 
 interface SubjectListProps {
   subjects: Array<SubjectSummary>

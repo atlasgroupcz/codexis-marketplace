@@ -1,4 +1,4 @@
-"""Unit tests for the pre-daemon unit-test gate."""
+"""Unit tests for the pre-daemon check gate."""
 
 from __future__ import annotations
 
@@ -29,11 +29,16 @@ class TestSuiteGroups:
             "ruff-format",
             "ty",
             "pytest",
+            "cargo-fmt",
             "cargo",
         )
 
-    def test_frontend_group_covers_the_ui_suite(self):
-        assert SUITE_GROUPS["frontend"] == ("frontend",)
+    def test_frontend_group_lints_and_typechecks_before_it_tests(self):
+        assert SUITE_GROUPS["frontend"] == (
+            "frontend-lint",
+            "frontend-typecheck",
+            "frontend",
+        )
 
 
 class TestSuitesForGroup:
@@ -48,17 +53,28 @@ class TestSuitesForGroup:
             "ruff-format",
             "ty",
             "pytest",
+            "cargo-fmt",
             "cargo",
         ]
 
-    def test_frontend_selects_the_frontend_suite_only(self):
+    def test_frontend_selects_lint_typecheck_and_tests(self):
         suites = suites_for_group(Path("/repo"), "frontend", available=self.ALL_PRESENT)
-        assert [s.name for s in suites] == ["frontend"]
+        assert [s.name for s in suites] == [
+            "frontend-lint",
+            "frontend-typecheck",
+            "frontend",
+        ]
 
-    def test_cargo_suite_runs_in_the_shared_rust_directory(self):
+    def test_cargo_suite_runs_over_the_whole_workspace(self):
+        """One workspace at the repo root, so the plugin CLIs are covered too."""
         suites = suites_for_group(Path("/repo"), "backend", available=self.ALL_PRESENT)
         cargo = next(s for s in suites if s.name == "cargo")
-        assert cargo.cwd == Path("/repo") / "shared" / "rust"
+        assert cargo.cwd == Path("/repo")
+
+    def test_formatting_is_its_own_suite_so_it_cannot_hide_a_failing_test(self):
+        suites = suites_for_group(Path("/repo"), "backend", available=self.ALL_PRESENT)
+        fmt = next(s for s in suites if s.name == "cargo-fmt")
+        assert fmt.argv == ["cargo", "fmt", "--all", "--check"]
 
     def test_unknown_group_is_rejected(self):
         with pytest.raises(ValueError, match="unknown suite group"):
@@ -169,7 +185,7 @@ class TestSelectSuites:
 
 class TestDefaultRunner:
     def test_cargo_runs_once_at_the_workspace_root(self, monkeypatch):
-        """shared/rust is one Cargo workspace, so a single `cargo test` covers
+        """The repo is one Cargo workspace, so a single `cargo test` covers
         every member. Walking the crates by hand re-resolves the workspace once
         per crate and silently skips any member not on the hardcoded list.
         """
@@ -191,7 +207,7 @@ class TestDefaultRunner:
             if s.name == "cargo"
         )
         assert _unit_gate._default_runner(suite) == 0
-        assert calls == [(suite.argv, repo_root / "shared" / "rust")]
+        assert calls == [(suite.argv, repo_root)]
 
 
 class TestRunGate:
@@ -221,3 +237,25 @@ class TestRunGate:
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__]))
+
+
+class TestGroupsAndSelectionAgree:
+    """The local gate and the CI stages must cover the same suites.
+
+    A suite added to a group but forgotten in `select_suites` would run in CI
+    and silently not run locally - the false-green this module exists to stop.
+    """
+
+    def test_every_grouped_suite_is_selectable_locally(self):
+        grouped = {name for group in SUITE_GROUPS.values() for name in group}
+        selected = {
+            s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)
+        }
+        assert grouped == selected
+
+    def test_selection_runs_in_group_order(self):
+        expected = [name for group in SUITE_GROUPS.values() for name in group]
+        actual = [
+            s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)
+        ]
+        assert actual == expected

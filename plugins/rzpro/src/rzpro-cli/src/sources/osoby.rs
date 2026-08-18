@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, parse_ico, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, parse_ico, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_OSOBY_HELP: &str = r#"Examples:
   rzpro-cli search CZRZP-OS --query "Medtronic"
@@ -37,7 +39,10 @@ mod tests {
     #[test]
     fn query_maps_to_nazev_not_q() {
         let args = SearchOsobyArgs {
-            base: SearchBaseArgs { query: Some("Medtronic".to_string()), ..SearchBaseArgs::default() },
+            base: SearchBaseArgs {
+                query: Some("Medtronic".to_string()),
+                ..SearchBaseArgs::default()
+            },
             ico: Some("12345678".to_string()),
         };
         let p: Value = serde_json::from_str(&args.build_payload().unwrap()).unwrap();

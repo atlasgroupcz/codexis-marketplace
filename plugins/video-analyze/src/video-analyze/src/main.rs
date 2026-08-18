@@ -31,7 +31,11 @@ fn main() {
 
     if args.is_empty() || args.iter().any(|a| a == "-h" || a == "--help") {
         print_usage();
-        std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") { 0 } else { 1 });
+        std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") {
+            0
+        } else {
+            1
+        });
     }
 
     let is_transcript = args.first().map(|a| a == "transcript").unwrap_or(false);
@@ -51,7 +55,14 @@ fn main() {
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
-        let response = query_gemini(&api_key, &file_uri, &mime_type, TRANSCRIPT_PROMPT, is_youtube, MODEL_TRANSCRIPT);
+        let response = query_gemini(
+            &api_key,
+            &file_uri,
+            &mime_type,
+            TRANSCRIPT_PROMPT,
+            is_youtube,
+            MODEL_TRANSCRIPT,
+        );
         let text = extract_response_text(&response);
         if text.is_empty() {
             eprintln!("{}", response);
@@ -91,7 +102,14 @@ fn main() {
         let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
 
         let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
-        let response = query_gemini(&api_key, &file_uri, &mime_type, &query, is_youtube, MODEL_QUERY);
+        let response = query_gemini(
+            &api_key,
+            &file_uri,
+            &mime_type,
+            &query,
+            is_youtube,
+            MODEL_QUERY,
+        );
         let text = extract_response_text(&response);
         if text.is_empty() {
             eprintln!("{}", response);
@@ -107,7 +125,11 @@ fn upload_source(source: &str, daemon_auth: &str, is_youtube: bool) -> (String, 
     } else {
         let upload_json = upload_file(source, daemon_auth);
         let parsed: serde_json::Value = serde_json::from_str(&upload_json).unwrap_or_default();
-        let uri = parsed.get("uri").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let uri = parsed
+            .get("uri")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
         let mime = parsed
             .get("mimeType")
             .and_then(|v| v.as_str())
@@ -124,8 +146,15 @@ fn upload_source(source: &str, daemon_auth: &str, is_youtube: bool) -> (String, 
 fn transcript_filename(source: &str, is_youtube: bool) -> String {
     if is_youtube {
         let video_id = source
-            .split("v=").nth(1).map(|s| s.split('&').next().unwrap_or(s))
-            .or_else(|| source.split("youtu.be/").nth(1).map(|s| s.split('?').next().unwrap_or(s)))
+            .split("v=")
+            .nth(1)
+            .map(|s| s.split('&').next().unwrap_or(s))
+            .or_else(|| {
+                source
+                    .split("youtu.be/")
+                    .nth(1)
+                    .map(|s| s.split('?').next().unwrap_or(s))
+            })
             .unwrap_or("unknown");
         format!("youtube-{}", video_id)
     } else {
@@ -180,12 +209,22 @@ fn upload_endpoint() -> String {
 }
 
 fn upload_file(path: &str, daemon_auth: &str) -> String {
-    let encoded_path = percent_encode(path.as_bytes());
+    let encoded_path = cdx_common::url::encode_path_value(path);
     let url = format!("{}?path={}", upload_endpoint(), encoded_path);
 
     let auth_header = format!("Authorization: {}", daemon_auth);
     let output = Command::new("curl")
-        .args(["-s", "--fail-with-body", "-X", "POST", &url, "-H", &auth_header, "-H", "Content-Type: application/json"])
+        .args([
+            "-s",
+            "--fail-with-body",
+            "-X",
+            "POST",
+            &url,
+            "-H",
+            &auth_header,
+            "-H",
+            "Content-Type: application/json",
+        ])
         .output();
 
     match output {
@@ -205,14 +244,27 @@ fn upload_file(path: &str, daemon_auth: &str) -> String {
     }
 }
 
-fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_youtube: bool, model: &str) -> String {
+fn query_gemini(
+    api_key: &str,
+    file_uri: &str,
+    mime_type: &str,
+    query: &str,
+    is_youtube: bool,
+    model: &str,
+) -> String {
     let url = format!(
         "{}/vertex_ai/v1/projects/{}/locations/{}/publishers/google/models/{}:generateContent",
-        litellm_base(), VERTEX_PROJECT, VERTEX_LOCATION, model
+        litellm_base(),
+        VERTEX_PROJECT,
+        VERTEX_LOCATION,
+        model
     );
 
     let file_data = if is_youtube {
-        format!(r#"{{"fileData":{{"fileUri":"{}","mimeType":"video/webm"}}}}"#, escape_json(file_uri))
+        format!(
+            r#"{{"fileData":{{"fileUri":"{}","mimeType":"video/webm"}}}}"#,
+            escape_json(file_uri)
+        )
     } else {
         format!(
             r#"{{"fileData":{{"fileUri":"{}","mimeType":"{}"}}}}"#,
@@ -230,25 +282,30 @@ fn query_gemini(api_key: &str, file_uri: &str, mime_type: &str, query: &str, is_
     let auth_header = format!("Authorization: Bearer {}", api_key);
 
     let mut args = vec![
-        "-s".to_string(), "--fail-with-body".to_string(),
-        "-X".to_string(), "POST".to_string(),
+        "-s".to_string(),
+        "--fail-with-body".to_string(),
+        "-X".to_string(),
+        "POST".to_string(),
         url.clone(),
-        "-H".to_string(), auth_header,
-        "-H".to_string(), "Content-Type: application/json".to_string(),
+        "-H".to_string(),
+        auth_header,
+        "-H".to_string(),
+        "Content-Type: application/json".to_string(),
     ];
     if let Ok(chat_id) = env::var("CODEXIS_PUBLIC_SESSION_ID") {
         if !chat_id.is_empty() {
             args.extend([
                 "-H".to_string(),
-                format!("x-litellm-spend-logs-metadata: {{\"sessionId\":\"{}\"}}", chat_id),
+                format!(
+                    "x-litellm-spend-logs-metadata: {{\"sessionId\":\"{}\"}}",
+                    chat_id
+                ),
             ]);
         }
     }
     args.extend(["-d".to_string(), body]);
 
-    let output = Command::new("curl")
-        .args(&args)
-        .output();
+    let output = Command::new("curl").args(&args).output();
 
     match output {
         Ok(out) => {
@@ -297,21 +354,6 @@ fn escape_json(s: &str) -> String {
                 let _ = write!(out, "\\u{:04x}", c as u32);
             }
             _ => out.push(c),
-        }
-    }
-    out
-}
-
-fn percent_encode(input: &[u8]) -> String {
-    let mut out = String::with_capacity(input.len() * 3);
-    for &b in input {
-        match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' => {
-                out.push(b as char);
-            }
-            _ => {
-                let _ = write!(out, "%{:02X}", b);
-            }
         }
     }
     out

@@ -164,3 +164,15 @@ htmlcov/
 # tracked.
 .claude/worktrees/
 .claude/settings.local.json
+
+# Turborepo task cache: one zstd archive per task hash, each holding nothing
+# but that task's captured log, so turbo can replay a lint/test/typecheck run
+# instead of repeating it. Derived, and some 3700 files of noise in git status.
+# frontend/.gitignore covers frontend/.turbo, where the component build puts
+# the live cache; a gitignore file governs only its own directory and below, so
+# it says nothing about a .turbo sitting next to frontend/ rather than under it.
+.turbo/
+
+# Per-developer MCP server configuration. It holds API tokens in plain text,
+# so it must never become committable by a stray `git add -A`.
+.air/

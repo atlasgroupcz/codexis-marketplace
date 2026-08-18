@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next'
 import { ErrorMessage } from '@workspace/ui/components/error-message'
+import { useTranslation } from 'react-i18next'
+import type { OverviewResponse } from '@/lib/schemas'
+import type { ListFilterValue } from './list-filter'
+import { ListFilter } from './list-filter'
 import { ListSkeleton } from './loading-skeleton'
 import { SubjektRow } from './subjekt-row'
-import { ListFilter } from './list-filter'
-import type { ListFilterValue } from './list-filter'
-import type { OverviewResponse } from '@/lib/schemas'
 
 interface SubjektyListProps {
   data: OverviewResponse | null

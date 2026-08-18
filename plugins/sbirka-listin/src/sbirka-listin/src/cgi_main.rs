@@ -55,7 +55,10 @@ fn fail(status: u16, e: impl Display) -> ExitCode {
 fn handle_get(query: &str) -> ExitCode {
     let params = parse_query(query);
 
-    if params.iter().any(|(k, v)| k == "view" && v.trim() == "notify") {
+    if params
+        .iter()
+        .any(|(k, v)| k == "view" && v.trim() == "notify")
+    {
         return handle_notify_view();
     }
     if let Some((_, ico)) = params.iter().find(|(k, _)| k == "ico") {
@@ -89,7 +92,8 @@ fn handle_detail(ico: &str) -> ExitCode {
         .listiny
         .iter()
         .map(|(cislo, l)| {
-            let path = dokument::stored_path(&ico8, cislo).map(|p| p.to_string_lossy().into_owned());
+            let path =
+                dokument::stored_path(&ico8, cislo).map(|p| p.to_string_lossy().into_owned());
             json!({ "cislo": cislo, "typ": l.typ, "zalozeno": l.zalozeno, "path": path })
         })
         .collect();
@@ -211,7 +215,8 @@ fn post_confirm(body: &Value) -> Handled {
         .get("change_index")
         .and_then(Value::as_u64)
         .map(|n| n as usize);
-    let marked = confirm_changes(&mut snapshot.changes, index, &now_utc()).map_err(|e| fail(400, e))?;
+    let marked =
+        confirm_changes(&mut snapshot.changes, index, &now_utc()).map_err(|e| fail(400, e))?;
     store.save(&ico8, &snapshot).map_err(|e| fail(500, e))?;
     Ok(emit_json(&json!({
         "ok": true,
@@ -234,7 +239,11 @@ fn post_save_notify_settings(body: &Value) -> Handled {
 
 fn post_download(body: &Value) -> Handled {
     let ico8 = body_ico(body)?;
-    let cislo = body.get("cislo").and_then(Value::as_str).unwrap_or("").trim();
+    let cislo = body
+        .get("cislo")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
     if cislo.is_empty() {
         return Ok(emit_error(400, "Chybí číslo listiny"));
     }

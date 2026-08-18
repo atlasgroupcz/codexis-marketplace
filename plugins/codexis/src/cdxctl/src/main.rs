@@ -4,6 +4,8 @@ mod error;
 mod graphql;
 mod guard;
 mod output;
+#[cfg(test)]
+mod test_support;
 
 use clap::{Parser, Subcommand};
 use client::GraphQLClient;
@@ -15,7 +17,7 @@ use std::process;
 #[command(name = "cdxctl", version, about)]
 struct Cli {
     /// Output format: json (default) or table
-    #[arg(long, default_value = "false")]
+    #[arg(long, global = true)]
     table: bool,
 
     #[command(subcommand)]
@@ -530,9 +532,6 @@ enum NotificationCommands {
         /// Notification message
         #[arg(short, long)]
         message: String,
-        /// Optional shell action to execute on refresh
-        #[arg(short, long)]
-        action: Option<String>,
         /// Optional link URL (clicking navigates here and marks as confirmed)
         #[arg(short, long)]
         link: Option<String>,
@@ -542,9 +541,12 @@ enum NotificationCommands {
     },
     /// List notifications
     List {
-        /// Number of days to show (default: 7)
-        #[arg(long, default_value = "7")]
-        days: u32,
+        /// How many to fetch, newest first (default 50, the daemon's own page size)
+        #[arg(long, default_value = "50")]
+        limit: u32,
+        /// Skip this many before listing, to reach older ones
+        #[arg(long, default_value = "0")]
+        offset: u32,
         /// Show only unseen notifications
         #[arg(long)]
         unseen: bool,
@@ -900,7 +902,11 @@ fn main() {
                     summary,
                     example_prompts,
                     jurisdictions: none_if_empty(jurisdictions),
-                    jurisdiction_required: if jurisdiction_required { Some(true) } else { None },
+                    jurisdiction_required: if jurisdiction_required {
+                        Some(true)
+                    } else {
+                        None
+                    },
                     allowed_tools: none_if_empty(allowed_tools),
                 },
                 format,
@@ -968,20 +974,14 @@ fn main() {
         Commands::Notification { command } => match command {
             NotificationCommands::Create {
                 message,
-                action,
                 link,
                 extra,
-            } => commands::notification::create(
-                &client,
-                &message,
-                action.as_deref(),
-                link.as_deref(),
-                &extra,
-                format,
-            ),
-            NotificationCommands::List { days, unseen } => {
-                commands::notification::list(&client, days, unseen, format)
-            }
+            } => commands::notification::create(&client, &message, link.as_deref(), &extra, format),
+            NotificationCommands::List {
+                limit,
+                offset,
+                unseen,
+            } => commands::notification::list(&client, limit, offset, unseen, format),
             NotificationCommands::Seen { id } => commands::notification::seen(&client, &id, format),
             NotificationCommands::Confirm { id } => {
                 commands::notification::confirm(&client, &id, format)
@@ -1047,6 +1047,46 @@ mod tests {
     use super::*;
 
     #[test]
+    fn notification_list_pages_instead_of_filtering_by_age() {
+        // --days was accepted and dropped: the daemon has no date filter, and
+        // stopped windowing to seven days when it moved to offset/limit.
+        assert!(Cli::try_parse_from(["cdxctl", "notification", "list", "--days", "7"]).is_err());
+
+        let cli = Cli::try_parse_from(["cdxctl", "notification", "list", "--limit", "200"])
+            .expect("--limit should parse");
+
+        match cli.command {
+            Commands::Notification {
+                command: NotificationCommands::List { limit, offset, .. },
+            } => {
+                assert_eq!(limit, 200);
+                assert_eq!(offset, 0);
+            }
+            _ => panic!("expected notification list"),
+        }
+    }
+
+    #[test]
+    fn accepts_the_table_flag_after_the_subcommand() {
+        // Where users put it, and where the docs imply it goes.
+        for argv in [
+            ["cdxctl", "skill", "list", "--table"],
+            ["cdxctl", "automation", "list", "--table"],
+        ] {
+            let cli = Cli::try_parse_from(argv).expect("--table should parse after the subcommand");
+            assert!(cli.table);
+        }
+    }
+
+    #[test]
+    fn accepts_the_table_flag_before_the_subcommand() {
+        let cli = Cli::try_parse_from(["cdxctl", "--table", "skill", "list"])
+            .expect("--table should parse before the subcommand");
+
+        assert!(cli.table);
+    }
+
+    #[test]
     fn parses_agent_list_command() {
         let cli =
             Cli::try_parse_from(["cdxctl", "agent", "list"]).expect("agent list should parse");
@@ -1075,9 +1115,10 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Update {
-                    id, description, ..
-                },
+                command:
+                    AgentCommands::Update {
+                        id, description, ..
+                    },
             } => {
                 assert_eq!(id, "local-agent");
                 assert_eq!(description.as_deref(), Some("New description"));
@@ -1107,7 +1148,10 @@ mod tests {
 
         match cli.command {
             Commands::Agent {
-                command: AgentCommands::Create { example_prompts, .. },
+                command:
+                    AgentCommands::Create {
+                        example_prompts, ..
+                    },
             } => assert_eq!(
                 example_prompts,
                 vec![
@@ -1131,8 +1175,14 @@ mod tests {
 
         match cli.command {
             Commands::Skill {
-                command: SkillCommands::Update { example_prompts, .. },
-            } => assert_eq!(example_prompts, vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]),
+                command:
+                    SkillCommands::Update {
+                        example_prompts, ..
+                    },
+            } => assert_eq!(
+                example_prompts,
+                vec!["cs:Zkontroluj vypoved z pracovniho pomeru."]
+            ),
             _ => panic!("expected skill update command"),
         }
     }
@@ -1348,15 +1398,33 @@ mod tests {
     #[test]
     fn requires_every_bug_report_field() {
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--description", "d", "--severity", "LOW"
+            "cdxctl",
+            "bug",
+            "report",
+            "--description",
+            "d",
+            "--severity",
+            "LOW"
         ])
         .is_err());
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--title", "t", "--severity", "LOW"
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "t",
+            "--severity",
+            "LOW"
         ])
         .is_err());
         assert!(Cli::try_parse_from([
-            "cdxctl", "bug", "report", "--title", "t", "--description", "d"
+            "cdxctl",
+            "bug",
+            "report",
+            "--title",
+            "t",
+            "--description",
+            "d"
         ])
         .is_err());
     }

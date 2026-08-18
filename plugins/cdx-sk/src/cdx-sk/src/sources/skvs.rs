@@ -1,6 +1,8 @@
 use clap::Args;
 
-use crate::sources::common::{insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs};
+use crate::sources::common::{
+    insert_string, DateRangeArgs, JsonMap, SearchBaseArgs, SearchPayloadArgs,
+};
 
 pub(crate) const SEARCH_SKVS_HELP: &str = r#"Example:
   cdx-sk search SKVS --query "náhrada škody" --court OSBA1 --limit 5
@@ -14,7 +16,10 @@ pub(crate) struct SearchSkvsArgs {
     #[arg(long, help = "Court code (e.g. \"OSBA1\")")]
     pub(crate) court: Option<String>,
 
-    #[arg(long = "court-name", help = "Court name (e.g. \"Okresný súd Bratislava I\")")]
+    #[arg(
+        long = "court-name",
+        help = "Court name (e.g. \"Okresný súd Bratislava I\")"
+    )]
     pub(crate) court_name: Option<String>,
 
     #[arg(long, help = "Judge name")]

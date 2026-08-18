@@ -1,9 +1,9 @@
+import { toast } from '@workspace/ui/components/sonner'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from '@workspace/ui/components/sonner'
-import type { Change } from '@/lib/schemas'
 import { confirmChange } from '@/lib/api'
 import { errorMessage, formatDateTime } from '@/lib/format'
+import type { Change } from '@/lib/schemas'
 
 interface ChangeHistoryProps {
   ico: string
@@ -68,7 +68,9 @@ export function ChangeHistory({ ico, changes, onConfirmed }: ChangeHistoryProps)
           >
             <div className="mb-2 flex items-center justify-between gap-2.5">
               <span className="text-muted-foreground flex items-center gap-2 text-[12.5px]">
-                {isUnread && <span aria-hidden className="bg-primary size-[7px] shrink-0 rounded-full" />}
+                {isUnread && (
+                  <span aria-hidden className="bg-primary size-[7px] shrink-0 rounded-full" />
+                )}
                 {formatDateTime(change.detected_on)}
               </span>
               {isUnread && (

@@ -159,15 +159,24 @@ mod tests {
     fn name_matches_cislo_keys_on_the_cislo_segment() {
         let cislo = "B-8573-SL95-MSPH";
         // new descriptive name, empty-typ fallback, and a different extension all match
-        assert!(name_matches_cislo("ucetni-zaverka-2024__B-8573-SL95-MSPH.pdf", cislo));
+        assert!(name_matches_cislo(
+            "ucetni-zaverka-2024__B-8573-SL95-MSPH.pdf",
+            cislo
+        ));
         assert!(name_matches_cislo("B-8573-SL95-MSPH.pdf", cislo));
         assert!(name_matches_cislo("stanovy__B-8573-SL95-MSPH.xhtml", cislo));
         // a different číslo must not match
-        assert!(!name_matches_cislo("ucetni-zaverka-2024__B-8573-SL12-MSPH.pdf", cislo));
+        assert!(!name_matches_cislo(
+            "ucetni-zaverka-2024__B-8573-SL12-MSPH.pdf",
+            cislo
+        ));
         // a longer number that merely shares a tail must not match on a partial segment
         assert!(!name_matches_cislo("B-8573-SL95-MSPH-EXTRA.pdf", cislo));
         // a hidden / .tmp. leftover is ignored
-        assert!(!name_matches_cislo(".ucetni-zaverka-2024__B-8573-SL95-MSPH.pdf.tmp.42", cislo));
+        assert!(!name_matches_cislo(
+            ".ucetni-zaverka-2024__B-8573-SL95-MSPH.pdf.tmp.42",
+            cislo
+        ));
     }
 
     #[test]

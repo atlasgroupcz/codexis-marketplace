@@ -77,11 +77,21 @@ pub fn try_publish(plugin_name: &str, entries: &[serde_json::Value]) {
 fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), SourcesError> {
     let output = Command::new("curl")
         .args([
-            "-sS", "--fail-with-body",
-            "--connect-timeout", CONNECT_TIMEOUT_SECONDS,
-            "--max-time", REQUEST_TIMEOUT_SECONDS,
-            "-H", auth_header, "-X", "POST",
-            "-H", "Content-Type: application/json", url, "-d", body,
+            "-sS",
+            "--fail-with-body",
+            "--connect-timeout",
+            CONNECT_TIMEOUT_SECONDS,
+            "--max-time",
+            REQUEST_TIMEOUT_SECONDS,
+            "-H",
+            auth_header,
+            "-X",
+            "POST",
+            "-H",
+            "Content-Type: application/json",
+            url,
+            "-d",
+            body,
         ])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -90,7 +100,10 @@ fn post_to_daemon(url: &str, auth_header: &str, body: &str) -> Result<(), Source
         .map_err(|e| SourcesError::Spawn(e.to_string()))?;
     match output.status.code() {
         Some(0) => Ok(()),
-        Some(code) => Err(SourcesError::Http { code, detail: response_detail(&output) }),
+        Some(code) => Err(SourcesError::Http {
+            code,
+            detail: response_detail(&output),
+        }),
         None => Err(SourcesError::Spawn("curl terminated without status".into())),
     }
 }
@@ -168,20 +181,25 @@ mod tests {
     #[test]
     fn should_include_working_directory_when_the_daemon_injected_it() {
         // given
-        let entries = vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
+        let entries =
+            vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
 
         // when
         let body = build_publish_body(&entries, Some("/home/codexis/project")).unwrap();
 
         // then
         let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert_eq!(parsed["workingDirectory"], serde_json::json!("/home/codexis/project"));
+        assert_eq!(
+            parsed["workingDirectory"],
+            serde_json::json!("/home/codexis/project")
+        );
     }
 
     #[test]
     fn should_omit_working_directory_when_absent() {
         // given
-        let entries = vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
+        let entries =
+            vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
 
         // when
         let body = build_publish_body(&entries, None).unwrap();

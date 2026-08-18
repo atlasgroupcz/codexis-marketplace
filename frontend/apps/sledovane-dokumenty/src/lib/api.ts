@@ -1,12 +1,3 @@
-import {
-  actionResponseSchema,
-  browseResponseSchema,
-  detailResponseSchema,
-  folderResponseSchema,
-  foldersResponseSchema,
-  notifyResponseSchema,
-  overviewResponseSchema,
-} from './schemas'
 import type {
   ActionResponse,
   BrowseResponse,
@@ -16,6 +7,15 @@ import type {
   NotifyResponse,
   NotifySettings,
   OverviewResponse,
+} from './schemas'
+import {
+  actionResponseSchema,
+  browseResponseSchema,
+  detailResponseSchema,
+  folderResponseSchema,
+  foldersResponseSchema,
+  notifyResponseSchema,
+  overviewResponseSchema,
 } from './schemas'
 
 function getApiBase(): string {
@@ -52,7 +52,11 @@ export async function fetchDetail(uuid: string): Promise<DetailResponse> {
   return detailResponseSchema.parse(json)
 }
 
-export async function postAction(action: string, uuid: string, changeIndex?: number): Promise<ActionResponse> {
+export async function postAction(
+  action: string,
+  uuid: string,
+  changeIndex?: number,
+): Promise<ActionResponse> {
   const url = new URL(getApiBase(), window.location.href).toString()
   const body: Record<string, unknown> = { action, uuid }
   if (changeIndex !== undefined) {

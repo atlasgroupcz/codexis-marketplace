@@ -1,21 +1,21 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { FileText, Trash2 } from 'lucide-react'
+import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
 import { Button } from '@workspace/ui/components/button'
-import { Textarea } from '@workspace/ui/components/textarea'
-import { ScrollArea } from '@workspace/ui/components/scroll-area'
-import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { Card, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card'
 import { ItemGroup } from '@workspace/ui/components/item'
-import { AppHeader, HeaderGear } from '@workspace/ui/components/app-header'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
+import { Toaster, toast } from '@workspace/ui/components/sonner'
+import { Textarea } from '@workspace/ui/components/textarea'
 import { useConfirmAction } from '@workspace/ui/hooks/use-confirm-action'
-import { FeedItem } from './feed-item'
-import { NoReports } from './empty-state'
-import { LoadingSkeleton } from './loading-skeleton'
-import { ErrorMessage } from './error-message'
+import { FileText, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTopicDetail } from '@/hooks/use-topic-detail'
 import { postAction } from '@/lib/api'
 import { formatDate, formatRelative } from '@/lib/format'
+import { NoReports } from './empty-state'
+import { ErrorMessage } from './error-message'
+import { FeedItem } from './feed-item'
+import { LoadingSkeleton } from './loading-skeleton'
 
 interface TopicDetailProps {
   uuid: string
@@ -97,7 +97,9 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
             >
               <Trash2 className="size-4" />
               <span className="hidden sm:inline">
-                {remove.confirming ? t('judikatura.deleteConfirmTitle') : t('judikatura.deleteTopic')}
+                {remove.confirming
+                  ? t('judikatura.deleteConfirmTitle')
+                  : t('judikatura.deleteTopic')}
               </span>
             </Button>
             <HeaderGear onClick={onOpenSettings} title={t('judikatura.notify.title')} />
@@ -166,7 +168,9 @@ export function TopicDetail({ uuid, onBack, onSelectReport, onOpenSettings }: To
                         }
                         title={t('judikatura.report')}
                         description={`${t('judikatura.foundCount', { count: report.found_count })}${period}`}
-                        date={report.checked_at ? formatRelative(report.checked_at) : report.report_id}
+                        date={
+                          report.checked_at ? formatRelative(report.checked_at) : report.report_id
+                        }
                         dateTitle={report.checked_at ? formatDate(report.checked_at) : undefined}
                         onClick={() => onSelectReport(report.report_id)}
                       />
