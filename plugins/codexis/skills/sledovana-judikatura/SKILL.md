@@ -164,7 +164,7 @@ For each area (or the topic as a whole if no areas):
 
 1. Search CODEXIS for relevant case law: `cdx-cli search JD --query "<relevant query>" --sort DATE --limit 20`
    - Use multiple targeted queries per area if needed
-   - Apply filters: `--court`, `--doc-type`, `--from`, `--has-legal-sentence`, etc.
+   - Apply filters: `--court`, `--type`, `--issued-from`, `--issued-to`, `--has-legal-sentence`
    - Refer to the `codexis` skill for full search syntax and flags
 2. Read the most important decisions to understand the current judicial approach
 3. Write a baseline summary and save it: `cdx-sledovana-judikatura area set-baseline <uuid> <index> "<summary>"`
@@ -266,7 +266,7 @@ When running a periodic check:
 
 1. Load topic: `cdx-sledovana-judikatura show <uuid>`
 2. Note `last_check_at` - search only for decisions since that date
-3. For each area, search CODEXIS: `cdx-cli search JD --query "..." --from <last_check_at_date>`
+3. For each area, search CODEXIS: `cdx-cli search JD --query "..." --issued-from <last_check_at_date>`
 4. If new relevant decisions found:
    - Compare against baseline summaries - does anything change the established view?
    - Generate report with `period_from` = last check, `period_to` = now
