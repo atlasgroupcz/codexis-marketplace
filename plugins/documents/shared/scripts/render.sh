@@ -5,14 +5,16 @@
 
 DEPENDENCIES=(soffice pdftoppm)
 SCRIPT_NAME=$(basename "$0")
-VERSION="1.0.0"
+VERSION="1.1.0"
+WORKDIR=""
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 if [[ -n "${NO_COLOR:-}" ]] || [[ "${TERM:-}" == "dumb" ]]; then
-    RED="" GREEN="" NC=""
+    RED="" GREEN="" YELLOW="" NC=""
 fi
 
 function usage() {
@@ -31,8 +33,12 @@ options:
     -h|--help                Show this help
 
 dependencies: ${DEPENDENCIES[*]}
+optional: pngcheck (pages are verified when it is installed)
 
 output: prints the output directory, then one image path per line.
+
+Pages are rendered into a staging directory and moved into place only after all
+of them render, so an interrupted run leaves no partial page behind.
 
 examples:
     ${SCRIPT_NAME} -i /home/codexis/smlouva.docx
@@ -83,17 +89,30 @@ function main() {
         exit 1
     }
 
+    # Staged inside the output directory so publishing is a same-filesystem
+    # rename. A staging area under /tmp would make it a copy, which is exactly
+    # the half-written file this is meant to prevent.
+    # Global, not local: the EXIT trap runs after main has returned, so a local
+    # would already be out of scope and the staging directory would survive.
+    WORKDIR=$(mktemp -d "${outdir}/.render-XXXXXX") || {
+        echo -e "${RED}Error: cannot create a staging directory under ${outdir}${NC}" >&2
+        exit 1
+    }
+    trap discard_staging EXIT
+
     local pdf
     if [ "$(to_lower "$ext")" = "pdf" ]; then
         pdf="$input"
     else
-        pdf=$(convert_to_pdf "$input" "$outdir") || exit 1
+        pdf=$(convert_to_pdf "$input" "$WORKDIR") || exit 1
     fi
 
-    rasterize "$pdf" "$outdir" "$dpi" "$first" "$last" || exit 1
+    rasterize "$pdf" "$WORKDIR" "$dpi" "$first" "$last" || exit 1
+    verify_pages "$WORKDIR" || exit 1
+    publish_pages "$WORKDIR" "$outdir" || exit 1
 
     echo -e "${GREEN}${outdir}${NC}"
-    find "$outdir" -name 'page-*.png' | sort
+    find "$outdir" -maxdepth 1 -name 'page-*.png' | sort
 }
 
 function convert_to_pdf() {
@@ -130,6 +149,44 @@ function rasterize() {
         echo -e "${RED}Error: pdftoppm failed on ${pdf}${NC}" >&2
         return 1
     fi
+}
+
+function verify_pages() {
+    local workdir="$1"
+    local page
+
+    if ! command -v pngcheck &>/dev/null; then
+        echo -e "${YELLOW}Warning: pngcheck not installed, pages were not verified${NC}" >&2
+        return 0
+    fi
+
+    for page in "$workdir"/page-*.png; do
+        [ -e "$page" ] || continue
+        if ! pngcheck -q "$page"; then
+            echo -e "${RED}Error: ${page##*/} is incomplete or corrupt, discarding the render${NC}" >&2
+            return 1
+        fi
+    done
+}
+
+function publish_pages() {
+    local workdir="$1" outdir="$2"
+    local page
+
+    # A shorter re-render must not leave the previous run's extra pages behind.
+    rm -f "$outdir"/page-*.png
+
+    for page in "$workdir"/page-*.png; do
+        [ -e "$page" ] || continue
+        if ! mv "$page" "$outdir/"; then
+            echo -e "${RED}Error: cannot move ${page##*/} into ${outdir}${NC}" >&2
+            return 1
+        fi
+    done
+}
+
+function discard_staging() {
+    [ -n "$WORKDIR" ] && rm -rf "$WORKDIR"
 }
 
 function to_lower() {
