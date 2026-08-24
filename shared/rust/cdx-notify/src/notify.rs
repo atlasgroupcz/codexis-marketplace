@@ -233,18 +233,19 @@ pub fn send_email(
     }
 }
 
-/// The GraphQL `createNotification` request body. `action` and `link` are
-/// omitted (not null) when unset, mirroring the Python `_send_inapp`.
+/// The GraphQL `createNotification` request body. `link` is omitted (not null)
+/// when unset, mirroring the Python `_send_inapp`.
+///
+/// There is deliberately no call-to-action field. `CreateNotificationInput`
+/// defines `message`, `content`, `link`, `type` and `vars`; the daemon rejects
+/// the whole mutation over an input field it does not know, and it answers that
+/// rejection with HTTP 200, so the sender cannot see it from the status.
 fn build_inapp_body(
     message: &str,
     notification_type: &str,
-    action: Option<&str>,
     link: Option<&str>,
 ) -> serde_json::Value {
     let mut input = json!({ "message": message, "type": notification_type });
-    if let Some(action) = action {
-        input["action"] = json!(action);
-    }
     if let Some(link) = link {
         input["link"] = json!(link);
     }
@@ -255,15 +256,31 @@ fn build_inapp_body(
     })
 }
 
+/// True when the daemon accepted the mutation.
+///
+/// The status alone does not say. A rejected mutation comes back as HTTP 200
+/// with the reason in `errors`, so a sender that reads only the status reports
+/// every rejection as a delivery - that is how a dropped input field went
+/// unnoticed for a month of scheduled runs in the Python plugins. A body that
+/// is not JSON at all, e.g. a proxy's error page, is not a delivery either.
+fn accepted_body(body: &str) -> bool {
+    let Ok(payload) = serde_json::from_str::<serde_json::Value>(body) else {
+        return false;
+    };
+    let Some(object) = payload.as_object() else {
+        return false;
+    };
+    match object.get("errors") {
+        None | Some(serde_json::Value::Null) => true,
+        Some(serde_json::Value::Array(errors)) => errors.is_empty(),
+        Some(_) => false,
+    }
+}
+
 /// Create an in-app (notification-center bell) notification via the daemon's
 /// GraphQL `createNotification`. Best-effort: returns `false` on missing config
 /// or a transport error, never raises (a notification must not fail the check).
-pub fn send_inapp(
-    message: &str,
-    notification_type: &str,
-    action: Option<&str>,
-    link: Option<&str>,
-) -> bool {
+pub fn send_inapp(message: &str, notification_type: &str, link: Option<&str>) -> bool {
     let (Some(url), Some(auth)) = (daemon_url(), daemon_bearer()) else {
         return false;
     };
@@ -272,8 +289,15 @@ pub fn send_inapp(
         .post(&url)
         .header("Authorization", &auth)
         .header("Content-Type", "application/json; charset=utf-8")
-        .send_json(build_inapp_body(message, notification_type, action, link));
-    matches!(outcome(sent), Outcome::Ok(_))
+        .send_json(build_inapp_body(message, notification_type, link));
+    match outcome(sent) {
+        Outcome::Ok(mut response) => response
+            .body_mut()
+            .read_to_string()
+            .map(|body| accepted_body(&body))
+            .unwrap_or(false),
+        _ => false,
+    }
 }
 
 // ── tests ────────────────────────────────────────────────────────────────────
@@ -303,20 +327,58 @@ mod tests {
     }
 
     #[test]
-    fn inapp_body_includes_action_and_link_when_set() {
-        let body = build_inapp_body("msg", "cadastre-changed", Some("open"), Some("/katastr"));
+    fn inapp_body_includes_link_when_set() {
+        let body = build_inapp_body("msg", "cadastre-changed", Some("/katastr"));
         let input = &body["variables"]["input"];
         assert_eq!(input["message"], json!("msg"));
         assert_eq!(input["type"], json!("cadastre-changed"));
-        assert_eq!(input["action"], json!("open"));
         assert_eq!(input["link"], json!("/katastr"));
     }
 
     #[test]
-    fn inapp_body_omits_action_and_link_when_none() {
-        let body = build_inapp_body("msg", "t", None, None);
+    fn inapp_body_omits_link_when_none() {
+        let body = build_inapp_body("msg", "t", None);
+        let input = body["variables"]["input"].as_object().unwrap();
+        assert!(!input.contains_key("link"));
+    }
+
+    #[test]
+    fn inapp_body_never_carries_an_action_field() {
+        // `CreateNotificationInput` does not define one, and the daemon rejects
+        // the whole mutation over an input field it does not know.
+        let body = build_inapp_body("msg", "t", Some("/katastr"));
         let input = body["variables"]["input"].as_object().unwrap();
         assert!(!input.contains_key("action"));
-        assert!(!input.contains_key("link"));
+    }
+
+    #[test]
+    fn a_response_carrying_errors_is_not_a_delivery() {
+        assert!(!accepted_body(
+            r#"{"errors":[{"message":"Field 'action' in type 'Notification' is undefined"}]}"#
+        ));
+    }
+
+    #[test]
+    fn a_body_that_is_not_json_is_not_a_delivery() {
+        assert!(!accepted_body("<html>502 Bad Gateway</html>"));
+    }
+
+    #[test]
+    fn a_json_array_is_not_a_delivery() {
+        assert!(!accepted_body(r#"["not","an","object"]"#));
+    }
+
+    #[test]
+    fn a_data_response_is_a_delivery() {
+        assert!(accepted_body(
+            r#"{"data":{"createNotification":{"id":"n1"}}}"#
+        ));
+    }
+
+    #[test]
+    fn an_empty_errors_array_is_a_delivery() {
+        assert!(accepted_body(
+            r#"{"data":{"createNotification":{"id":"n1"}},"errors":[]}"#
+        ));
     }
 }

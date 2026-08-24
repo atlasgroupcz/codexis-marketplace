@@ -35,7 +35,7 @@ export async function run(argv: string[], f?: FetchLike): Promise<unknown> {
     // empty - send the reader to SID itself instead.
     const link = digest.pendingConfirmations > 0 ? confirmationsUrl(role) : homeUrl()
     const message = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`
-    digest.notified = await sendDigest(message, f, { link, action: "Otevřít v SID" })
+    digest.notified = await sendDigest(message, f, { link })
   }
 
   return digest
