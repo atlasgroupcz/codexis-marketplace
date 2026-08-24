@@ -39,7 +39,7 @@ Výpis listin i stažení dokumentu zvládnete přímo v chatu.
 ## Doporučená kombinace
 
 Identifikaci firmy (název, jednatelé, DPH) řeší doplněk **ARES** - Sbírka listin je na
-dokumenty. Pro čtení naskenovaných listin se hodí doplněk **OCR dokumentů**.
+dokumenty.
 
 ## Zdroj dat
 

@@ -281,18 +281,17 @@ datify-cli download <attachmentId> --output-dir /home/codexis/prilohy
 ```
 
 **Give it a directory, never a file path.** The name comes from Datify, so the
-extension matches what the file really is - and `ocr` picks its reader from that
-extension. To rename afterwards, use `mv` on the `path` it returned.
+extension matches what the file really is - and the extension is what decides how
+the file gets read. To rename afterwards, use `mv` on the `path` it returned.
 
 Pass an absolute directory; a relative one resolves against whatever directory
 the shell happens to be in, which moves during a conversation.
 
-**To answer a question about a file's contents**, download it and read it with
-`ocr`, which converts PDF and images to Markdown:
+**To answer a question about a file's contents**, download it and read the file at
+the path it returns. A scanned PDF reads too - it goes through OCR.
 
 ```bash
-path=$(datify-cli download <attachmentId> --output-dir /home/codexis | jq -r .path)
-ocr "$path"
+datify-cli download <attachmentId> --output-dir /home/codexis | jq -r .path
 ```
 
 A name already taken in the target directory is not overwritten - the second
