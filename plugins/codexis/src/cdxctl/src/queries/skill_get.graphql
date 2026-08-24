@@ -1,0 +1,15 @@
+query GetSkills {
+    skills {
+        id
+        name
+        fullName
+        description
+        plugin { id name marketplace { id name } }
+        allowedTools
+        sourceKind
+        editable
+        deletable
+        path { absolutePath displayPath }
+        sourcePath { absolutePath displayPath }
+    }
+}

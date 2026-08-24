@@ -1,0 +1,7 @@
+mutation AddDateTabularColumn($id: ID!, $name: String!, $description: String) {
+    addDateTabularColumn(id: $id, name: $name, description: $description) {
+        id
+        columns { id name description __typename }
+        status
+    }
+}

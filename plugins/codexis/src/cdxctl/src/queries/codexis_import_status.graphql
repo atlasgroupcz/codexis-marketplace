@@ -1,0 +1,14 @@
+query CodexisImportStatus {
+    codexisImportStatus {
+        runId
+        status
+        snapshotId
+        chatsImported
+        chatsSkipped
+        messagesImported
+        agentsImported
+        agentsSkipped
+        filesImported
+        error
+    }
+}

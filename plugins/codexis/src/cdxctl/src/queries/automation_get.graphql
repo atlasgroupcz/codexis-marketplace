@@ -1,0 +1,27 @@
+query GetAutomations {
+    automations {
+        id
+        type
+        command
+        title
+        description
+        agent { id fullName }
+        skills { id fullName }
+        schedule { repeat dayPart daysOfWeek dayOfMonth }
+        prompt
+        enabled
+        maxTurns
+        model
+        modelConfiguration { key value }
+        jurisdictions
+        workDirPath { absolutePath displayPath }
+        lastRun {
+            id
+            status
+            startedAt
+            finishedAt
+            trigger
+            errorMessage
+        }
+    }
+}

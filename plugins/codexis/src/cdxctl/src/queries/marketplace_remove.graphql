@@ -1,0 +1,6 @@
+mutation RemoveMarketplace($id: ID!) {
+    deleteNode(id: $id) {
+        id
+        ... on Marketplace { name }
+    }
+}

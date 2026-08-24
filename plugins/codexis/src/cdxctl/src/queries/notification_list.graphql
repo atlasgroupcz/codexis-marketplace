@@ -1,0 +1,14 @@
+query Notifications($offset: Int, $limit: Int) {
+    notifications(offset: $offset, limit: $limit) {
+        items {
+            id
+            message
+            link
+            seen
+            confirmed
+            createdAt
+        }
+        totalItems
+        unseenCount
+    }
+}

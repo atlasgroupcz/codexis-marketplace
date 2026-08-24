@@ -1,0 +1,10 @@
+mutation AddMarketplace($input: MarketplaceSourceInput!) {
+    addMarketplace(input: $input) {
+        id
+        name
+        description
+        source { source url path ref }
+        pluginCount
+        error
+    }
+}

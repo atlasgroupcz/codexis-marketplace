@@ -1,0 +1,10 @@
+mutation InstallPlugin($input: PluginInstallInput!) {
+    installPlugin(input: $input) {
+        id
+        name
+        version
+        description
+        marketplace { id name }
+        installation { installedAt installedVersion }
+    }
+}

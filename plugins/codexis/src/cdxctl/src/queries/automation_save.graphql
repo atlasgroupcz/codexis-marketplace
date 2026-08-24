@@ -1,0 +1,22 @@
+mutation SaveAutomation($id: ID, $input: AutomationInput!) {
+    saveAutomation(id: $id, input: $input) {
+        automation {
+            id
+            type
+            command
+            title
+            description
+            agent { id fullName }
+            skills { id fullName }
+            schedule { repeat dayPart daysOfWeek dayOfMonth }
+            prompt
+            enabled
+            maxTurns
+            model
+            modelConfiguration { key value }
+            jurisdictions
+            workDirPath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
+    }
+}

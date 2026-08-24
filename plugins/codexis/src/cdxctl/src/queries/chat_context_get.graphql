@@ -1,0 +1,10 @@
+query GetChatContext($id: ID!) {
+    node(id: $id) {
+        ... on Chat {
+            id
+            model
+            modelConfiguration { key value }
+            jurisdictions
+        }
+    }
+}

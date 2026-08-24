@@ -11,12 +11,13 @@ from tests import run
 
 class TestDispatchTable:
     def test_every_tier_has_a_command(self):
-        assert set(run.COMMANDS) == {"check", "marketplace", "eval"}
+        assert set(run.COMMANDS) == {"check", "contract", "marketplace", "eval"}
 
     @pytest.mark.parametrize(
         "tier,script",
         [
             ("check", "_unit_gate.py"),
+            ("contract", "test-cdxctl-contract.py"),
             ("marketplace", "test-marketplace.py"),
             ("eval", "promptfoo/run.py"),
         ],
@@ -72,5 +73,5 @@ class TestMain:
         monkeypatch.setattr(run, "_run_one", fake_run_one)
         assert run.main(["all", "--daemon", "http://x", "--token", "t"]) == 0
         assert seen["check"] == []
-        for tier in ("marketplace", "eval"):
+        for tier in ("contract", "marketplace", "eval"):
             assert seen[tier] == ["--daemon", "http://x", "--token", "t"]

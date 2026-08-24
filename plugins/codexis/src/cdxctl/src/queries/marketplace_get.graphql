@@ -1,0 +1,20 @@
+query GetMarketplaces {
+    marketplaces {
+        id
+        name
+        description
+        source { source url path ref }
+        installLocation { absolutePath displayPath }
+        lastUpdated
+        pluginCount
+        error
+        plugins {
+            id
+            name
+            description
+            version
+            category
+            tags
+        }
+    }
+}

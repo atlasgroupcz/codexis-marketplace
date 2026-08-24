@@ -1,0 +1,7 @@
+mutation RemoveTabularColumn($id: ID!, $columnId: ID!) {
+    removeTabularColumn(id: $id, columnId: $columnId) {
+        id
+        columns { id name description __typename }
+        status
+    }
+}

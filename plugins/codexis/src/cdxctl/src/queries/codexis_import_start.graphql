@@ -1,0 +1,14 @@
+mutation StartCodexisImport {
+    startCodexisImport {
+        runId
+        status
+        snapshotId
+        chatsImported
+        chatsSkipped
+        messagesImported
+        agentsImported
+        agentsSkipped
+        filesImported
+        error
+    }
+}

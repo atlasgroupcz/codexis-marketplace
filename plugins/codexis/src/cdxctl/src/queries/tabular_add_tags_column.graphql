@@ -1,0 +1,7 @@
+mutation AddTagsTabularColumn($id: ID!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
+    addTagsTabularColumn(id: $id, name: $name, description: $description, options: $options) {
+        id
+        columns { id name description __typename }
+        status
+    }
+}

@@ -1,0 +1,10 @@
+mutation CreateNotification($input: CreateNotificationInput!) {
+    createNotification(input: $input) {
+        id
+        message
+        link
+        seen
+        confirmed
+        createdAt
+    }
+}
