@@ -7,13 +7,14 @@
 //!
 //! Cargo compiles this module separately into each test binary, so whatever one
 //! of them does not use reads as dead code there - hence the crate-wide allow,
-//! which is the usual price of sharing a test helper.
-#![allow(dead_code)]
+//! which is the usual price of sharing a test helper. Re-exports need the same
+//! treatment: only the CLI tests download a file, so only they need `stub_raw`.
+#![allow(dead_code, unused_imports)]
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-pub use datify_core::test_support::stub;
+pub use datify_core::test_support::{stub, stub_raw};
 
 /// A scratch home, so the settings file a test writes cannot reach the real one.
 pub struct Sandbox {

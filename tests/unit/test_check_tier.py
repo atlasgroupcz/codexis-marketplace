@@ -276,6 +276,13 @@ class TestParts:
             )
 
     def test_only_runs_that_part_and_nothing_else(self, monkeypatch):
+        # Routing, not availability. An agent that runs `--only backend` has no
+        # frontend toolchain, and the real probe would drop those suites: `check`
+        # silently, leaving nothing to assert on, and `test` by raising, leaving
+        # `run_gate` uncalled. Both read as a routing bug that is not there, so
+        # the probe says yes and the flag alone decides what was picked.
+        monkeypatch.setattr(suites, "frontend_available", lambda _root: True)
+        monkeypatch.setattr(suites, "cargo_available", lambda: True)
         for name in self.TIERS:
             tier = self._tier(name)
             ran: list[list[str]] = []

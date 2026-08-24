@@ -1,7 +1,7 @@
 ---
 name: datify
-description: "This skill should be invoked whenever the user needs to read or change data in Datify - listing collections and datasets, reading or paging through records, filtering records by property values, creating or updating records, uploading attachments, or configuring the Datify API token. Trigger keywords: Datify, datify.cz, kolekce, dataset, datasety, záznam, záznamy, records, property, vlastnost, filtrovat záznamy, přidat záznam, upravit záznam, smazat záznam, příloha do Datify, Datify token, Datify API."
-version: 1.0.0
+description: "This skill should be invoked whenever the user needs to read or change data in Datify - listing collections and datasets, reading or paging through records, filtering records by property values, creating or updating records, uploading attachments, listing or downloading a record's attachments, or configuring the Datify API token. Trigger keywords: Datify, datify.cz, kolekce, dataset, datasety, záznam, záznamy, records, property, vlastnost, filtrovat záznamy, přidat záznam, upravit záznam, smazat záznam, příloha do Datify, přílohy záznamu, stáhnout přílohu, otevřít přílohu, co je v příloze, Datify token, Datify API."
+version: 1.1.0
 icon: icon.svg
 i18n:
   cs:
@@ -159,8 +159,8 @@ datify-cli property <recordId> <propertyId> --limit 50
 ```
 
 Use it for relation and rollup properties. On an attachment property Datify
-answers HTTP 500 - read the attachment itself instead
-(`datify-cli attachment <attachmentId>`), taking the id from the record.
+answers HTTP 500 - list the record's files with
+`datify-cli records attachments <recordId>` instead.
 
 ## Writing
 
@@ -177,6 +177,49 @@ datify-cli records update <recordId> --data '{"values": {"<uuid>": 42}}'
 # replace the whole record (PUT) - properties you omit are cleared
 datify-cli records update <recordId> --data '{"values": {...}}' --replace
 ```
+
+`records create` answers with an **array**, one entry per record created, even
+for a single one - so the new id is `.[0].id`, not `.id`.
+
+**To clear one property, PATCH it to `null`.** Omitting it on a PATCH changes
+nothing, and `--replace` would wipe every property you did not resend - so `null`
+is the only way to empty one value without risking the rest of the record.
+
+```bash
+datify-cli records update <recordId> --data '{"values": {"<uuid>": null}}'
+```
+
+**A `percent` value is a whole number: `21` means 21 %.** Writing `0.21` stores
+0.21 %. Datify keeps the number exactly as sent and never rescales it.
+
+`single_select` and `multi_select` take an option **name** as well as its id, and
+store the id either way - so a write can use the same names a filter does.
+
+### A record you read cannot be written back as it came
+
+Two value types differ between reading and writing, so a body built by reading a
+record and changing one field is rejected whole:
+
+- **Computed properties cannot be written.** `formula` and `rollup` are refused
+  with `HTTP 422 Invalid value for property of type ...`, even when the value is
+  the one Datify itself just returned. `attachment` too - files are managed by
+  `upload`, not by record values.
+- **`relation` reads as `{"items": [...], "cursor": ...}` but writes as a bare
+  array of ids.** Sending back the object fails with
+  `HTTP 422 Invalid relation value`.
+
+So drop the computed properties and unwrap every relation before writing:
+
+```bash
+# read, keep only what is writable, put it back
+datify-cli records get <recordId> | jq '{values: (.values
+  | del(.["<formula-uuid>"], .["<rollup-uuid>"])
+  | map_values(if type == "object" and has("items") then .items else . end))}' \
+  | datify-cli records update <recordId> --data - --replace
+```
+
+This bites hardest on `--replace`, which needs the whole record in the body.
+Prefer a PATCH carrying only the properties you actually change.
 
 Bulk create takes `records` instead, and its items are **bare uuid → value
 maps** - do not wrap each one in `values`:
@@ -208,20 +251,55 @@ datify-cli records delete-many <recordId> <recordId> ...
 
 ## Attachments
 
-A record does not carry its files - a property of type `attachment` holds a list
-of attachment ids:
+A record does not carry its files. One call lists everything on a record, across
+every attachment property it owns:
 
-```json
-{"id": "<recordId>", "values": {"<attachment-property-uuid>": ["<attachmentId>", ...]}}
+```bash
+datify-cli records attachments <recordId>                # every file on a record
+datify-cli attachment <attachmentId>                     # metadata for one
+datify-cli download <attachmentId> --output-dir <dir>    # the file itself
 ```
 
-So to read a file already on a record, take an id from that list and resolve it
-with `datify-cli attachment <attachmentId>`, which returns `filename`,
-`contentType`, `size` and `url`.
+`records attachments` returns `{"attachments": [...]}`, each entry carrying
+`filename`, `contentType`, `size`, `url` and the `propertyId` it hangs under -
+the record's own values cannot tell those apart, being bare id arrays per
+property.
 
 Attachment properties cannot be filtered on - there is no `attachment` condition
 key, and using one fails with `a condition must specify exactly one type-block`.
 To find the records that have a file, read them and check the property.
+
+### Reading a file
+
+`download` saves into the directory you name, creating it when missing, and
+prints where the file landed:
+
+```bash
+datify-cli download <attachmentId> --output-dir /home/codexis/prilohy
+# → {"path": "/home/codexis/prilohy/smlouva.pdf", "filename": "smlouva.pdf",
+#    "contentType": "application/pdf", "size": 1718462}
+```
+
+**Give it a directory, never a file path.** The name comes from Datify, so the
+extension matches what the file really is - and `ocr` picks its reader from that
+extension. To rename afterwards, use `mv` on the `path` it returned.
+
+Pass an absolute directory; a relative one resolves against whatever directory
+the shell happens to be in, which moves during a conversation.
+
+**To answer a question about a file's contents**, download it and read it with
+`ocr`, which converts PDF and images to Markdown:
+
+```bash
+path=$(datify-cli download <attachmentId> --output-dir /home/codexis | jq -r .path)
+ocr "$path"
+```
+
+A name already taken in the target directory is not overwritten - the second
+file becomes `smlouva (2).pdf`. Two different attachments do share a name in
+practice.
+
+### Uploading
 
 The file is read from the VM's own filesystem, so pass an absolute path - a
 relative one resolves against whatever directory the shell happens to be in.
@@ -230,7 +308,6 @@ relative one resolves against whatever directory the shell happens to be in.
 datify-cli upload <path> --record <recordId> --property <propertyId>  # onto a record
 datify-cli upload <path> --dataset <datasetId>                        # dataset pool
 datify-cli upload <path>                                              # unattached
-datify-cli attachment <attachmentId>                                  # metadata
 
 datify-cli upload /home/codexis/smlouva.pdf --dataset <datasetId> --ai
 ```
@@ -286,7 +363,7 @@ The exit code is non-zero and stderr names the cause. The ones worth acting on:
 | odmítlo API token (401) | Token is wrong or revoked - the user regenerates it |
 | nepovolilo akci (403) | Rights **or** a wrong id - see below |
 | nenašlo objekt (404) | Check the id - list the parent to find the right one |
-| odmítlo data (422) | The message names the offending property; fix and retry |
+| odmítlo data (422) | The message names the offending property **type**, not which property it was - match it against the types in the body you sent |
 | rate limitu (429) | Wait and retry |
 | API vrátilo chybu (500) | Usually a bad cursor - drop it and re-read the first page |
 

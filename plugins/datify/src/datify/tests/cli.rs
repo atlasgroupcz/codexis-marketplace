@@ -7,7 +7,7 @@
 
 mod common;
 
-use common::{stderr, stdout, stub, Sandbox};
+use common::{stderr, stdout, stub, stub_raw, Sandbox};
 
 const CLI: &str = env!("CARGO_BIN_EXE_datify-cli");
 
@@ -63,6 +63,11 @@ fn each_subcommand_reaches_its_own_endpoint() {
             "/v0/records",
         ),
         (&["attachment", "a1"], "GET", "/v0/attachments/a1"),
+        (
+            &["records", "attachments", "r1"],
+            "GET",
+            "/v0/records/r1/attachments",
+        ),
         (&["user", "u1"], "GET", "/v0/users/u1"),
         (
             &["property", "r1", "p1"],
@@ -398,6 +403,57 @@ fn clear_key_forgets_a_stored_token() {
     let shown = sandbox.run(CLI, &["settings", "show"], Some(&api), None);
     let parsed: serde_json::Value = serde_json::from_str(&stdout(&shown)).unwrap();
     assert_eq!(parsed["configured"], false);
+}
+
+/// The one command whose result is a file rather than stdout, so nothing else
+/// proves the bytes survive the process boundary intact.
+#[test]
+fn download_writes_the_file_under_the_name_datify_reports() {
+    let sandbox = Sandbox::new();
+    let (api, seen) = stub_raw(
+        200,
+        &[
+            ("Content-Type", "image/png"),
+            (
+                "Content-Disposition",
+                "attachment; filename=\"AAA 1234 foto1.png\"",
+            ),
+        ],
+        b"\x89PNG\r\n\x1a\n\xff\x00",
+    );
+    let target = sandbox.home().join("prilohy");
+
+    let output = sandbox.run(
+        CLI,
+        &["download", "a1", "--output-dir", target.to_str().unwrap()],
+        Some(&api),
+        Some("t"),
+    );
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert_eq!(seen.recv().unwrap().target, "/v0/attachments/a1/content");
+
+    let report: serde_json::Value = serde_json::from_str(&stdout(&output)).unwrap();
+    assert_eq!(report["filename"], "AAA 1234 foto1.png");
+    assert_eq!(report["contentType"], "image/png");
+    assert_eq!(report["size"], 10);
+
+    let written = std::fs::read(report["path"].as_str().unwrap()).unwrap();
+    assert_eq!(written, b"\x89PNG\r\n\x1a\n\xff\x00");
+}
+
+/// `--output-dir` is required: without it the agent would have to guess a
+/// filename, which is the thing this command exists to avoid.
+#[test]
+fn download_without_an_output_dir_is_refused_by_argument_parsing() {
+    let sandbox = Sandbox::new();
+    let output = sandbox.run(CLI, &["download", "a1"], None, Some("t"));
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("--output-dir"),
+        "{}",
+        stderr(&output)
+    );
 }
 
 #[test]
