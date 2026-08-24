@@ -28,15 +28,19 @@ from tests.harness.suites import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-SUITES: tuple[str, ...] = (
-    "ruff",
-    "ruff-format",
-    "ty",
-    "conformance",
-    "cargo-fmt",
-    "frontend-lint",
-    "frontend-typecheck",
-)
+# Lanes: sets of suites that can run at the same time as each other, because
+# they reach for a different toolchain and a different part of the tree. Not
+# "one pipeline stage" - that was the old grouping, and it existed only so
+# `bun install` could happen between two of them. A pipeline may run the lanes
+# in parallel or one after the other; either way each reports its own result.
+LANES: dict[str, tuple[str, ...]] = {
+    "backend": ("ruff", "ruff-format", "ty", "conformance", "cargo-fmt"),
+    "frontend": ("frontend-lint", "frontend-typecheck"),
+}
+
+# Derived, so the two cannot drift: a suite added to a lane runs, and a suite
+# added nowhere is a name this tier does not know.
+SUITES: tuple[str, ...] = tuple(name for lane in LANES.values() for name in lane)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -47,7 +51,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Fail when a toolchain is missing instead of skipping its suite. "
         "For CI, which provisions them.",
     )
+    parser.add_argument(
+        "--lane",
+        choices=sorted(LANES),
+        help="Run one lane instead of all of them, for a pipeline that gives "
+        "each its own stage.",
+    )
     args = parser.parse_args(argv)
+
+    wanted = LANES[args.lane] if args.lane else SUITES
 
     # conformance is pytest underneath, so this covers it too.
     if not pytest_available():
@@ -57,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         suites = select(
             REPO_ROOT,
-            SUITES,
+            wanted,
             strict=args.strict,
             available=default_availability(REPO_ROOT),
         )
