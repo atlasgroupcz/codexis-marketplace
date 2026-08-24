@@ -1,7 +1,7 @@
 {
   "name": "datify",
   "iconPath": "icon.svg",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Datify API access - collections, datasets, records, filtered queries, attachments and users",
   "author": {
     "name": "ATLAS GROUP",

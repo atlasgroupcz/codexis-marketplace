@@ -154,4 +154,3 @@ border above the total row; every hardcoded input cites its source in a cell com
 - `ExcelJS` (Node, preinstalled) - creating and editing workbooks
 - `cdx-recalc` - formula recalculation and error report (LibreOffice)
 - `cdx-render` - workbook → page PNGs
-- `ocr` - reading an existing workbook as markdown

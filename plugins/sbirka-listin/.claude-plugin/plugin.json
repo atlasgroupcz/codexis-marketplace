@@ -1,7 +1,7 @@
 {
   "name": "sbirka-listin",
   "iconPath": "icon.svg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sbírka listin veřejných rejstříků ČR - dokumenty subjektu podle IČO a hlídání nových přírůstků",
   "author": {
     "name": "ATLAS GROUP",

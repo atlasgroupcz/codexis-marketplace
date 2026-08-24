@@ -713,8 +713,6 @@ async function sendBell(message, auth, daemonUrl, f, target) {
   const input = { message, type: "sid-update" };
   if (target.link)
     input.link = target.link;
-  if (target.action)
-    input.action = target.action;
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
@@ -722,7 +720,12 @@ async function sendBell(message, auth, daemonUrl, f, target) {
       headers: { authorization: auth, "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify({ query, variables: { input } })
     });
-    return res.ok;
+    if (!res.ok)
+      return false;
+    const payload = await res.json();
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload))
+      return false;
+    return !payload.errors;
   } catch {
     return false;
   }
@@ -768,7 +771,7 @@ async function run9(argv, f) {
   if (values.notify && (digest.unreadNotifications > 0 || digest.pendingConfirmations > 0)) {
     const link = digest.pendingConfirmations > 0 ? confirmationsUrl(role) : homeUrl();
     const message = `SID: ${digest.unreadNotifications} nových notifikací, ${digest.pendingConfirmations} čekajících potvrzení`;
-    digest.notified = await sendDigest(message, f, { link, action: "Otevřít v SID" });
+    digest.notified = await sendDigest(message, f, { link });
   }
   return digest;
 }
