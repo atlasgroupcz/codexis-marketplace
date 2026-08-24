@@ -29,6 +29,7 @@ normalized to hyphens - keep it that way.
 | unit | Python: `plugins/<name>/tests/unit/` (pytest); Rust: inline `#[cfg(test)]` in `src/<crate>/src/` | pytest / cargo |
 | integration | Rust: `plugins/<name>/src/<crate>/tests/*.rs`; Python: `tests/integration/` if needed | cargo / pytest |
 | contract | the GraphQL documents a CLI sends (`plugins/<name>/src/<crate>/src/queries/*.graphql`) | central harness |
+| conformance | the repo's own conventions: manifests, READMEs, i18n, hygiene | central harness |
 | install | `plugins/<name>/tests/install/expected.json` (just the `skills` a plugin registers) | central harness |
 | behavioral | `plugins/<name>/tests/promptfoo/*.config.yaml` (one config per scenario) | promptfoo |
 
@@ -59,16 +60,35 @@ Two different `tests/` folders exist: `tests/` at the repo root is the central
 harness; `plugins/<name>/tests/` holds one plugin's own tests (unit, install,
 promptfoo). Same name, different scope.
 
+Inside the central one, each directory has one role: `tiers/` is what `run.py`
+launches, `harness/` is what the tiers share, `unit/` tests the harness and the
+tiers, and `conformance/` tests the repository itself. `promptfoo/` is the eval
+tier, machinery and all.
+
 ### Running tests
 
 Use the single entry point:
-`python tests/run.py <check|contract|marketplace|eval|all>`. Tiers run
-cheapest first, and `contract` needs a daemon but answers in one request.
+`python tests/run.py <check|test|contract|marketplace|eval|all>`. Tiers are cut
+by the kind of failure they report, and happen to rise in cost down the list.
 
-`check` is the fast tier and covers more than tests: ruff, ruff-format, ty,
-pytest, `cargo fmt --check`, `cargo test`, plus `turbo lint`, `turbo typecheck`
-and `turbo test`. Lint and typecheck are in there deliberately - a lint config
-broken outright still leaves `turbo test` green.
+| tier | what it answers | what it runs |
+| --- | --- | --- |
+| `check` | does the source obey its rules? | ruff, ruff-format, ty, conformance, `cargo fmt`, `turbo lint`, `turbo typecheck` |
+| `test` | does the code work? | pytest, `cargo test`, `turbo test` |
+| `contract` | does the client still match the daemon? | the GraphQL documents against a live schema |
+| `marketplace` | does every plugin install and uninstall? | the whole plugin lifecycle |
+| `eval` | does the model behave? | promptfoo (opt-in) |
+
+Lint and types sit in `check` rather than beside the tests deliberately: a lint
+config broken outright still leaves `turbo test` green.
+
+`check` runs the conformance tree and `test` runs everything else, so a bare
+`pytest` runs both and matches neither tier's count. That is deliberate - a
+developer wants the whole suite, a tier wants its own half.
+
+Add `--strict` in CI, where the toolchains are provisioned: without it a missing
+one is skipped rather than failing, and a stage that ran less than it should
+still reports green. `test` is always strict, having nothing to auto-detect for.
 
 ### Coverage
 

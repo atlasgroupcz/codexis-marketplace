@@ -40,10 +40,10 @@ class TestBuildArgv:
         """`-m`, not a path: a script run by path gets its own directory on
         sys.path and not the repo root, which is what every tier used to work
         around with a bootstrap of its own."""
-        argv = run.build_argv("check", ["--suite", "backend"])
+        argv = run.build_argv("check", ["--strict"])
         assert argv[0] == sys.executable
         assert argv[1:3] == ["-m", "tests.tiers.check"]
-        assert argv[-2:] == ["--suite", "backend"]
+        assert argv[-1] == "--strict"
 
     def test_every_command_names_an_importable_module(self):
         import importlib.util
@@ -68,6 +68,18 @@ class TestBuildArgv:
         source = Path(marketplace.__file__).read_text()
         assert "run_default_gate" not in source
         assert "skip-unit-tests" not in source
+
+    def test_every_tier_takes_its_arguments_as_a_list(self):
+        """`main(argv)` rather than reading sys.argv, so a tier can be driven
+        from a test instead of only from a shell."""
+        import inspect
+
+        from tests.tiers import check, contract, marketplace
+        from tests.tiers import test as test_tier
+
+        for tier in (check, test_tier, contract, marketplace):
+            params = inspect.signature(tier.main).parameters
+            assert "argv" in params, tier.__name__
 
     def test_unknown_command_raises(self):
         with pytest.raises(KeyError):

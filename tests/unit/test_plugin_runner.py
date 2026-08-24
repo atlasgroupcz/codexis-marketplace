@@ -172,5 +172,50 @@ class TestCrashIsolation:
         assert seen == ["a"]  # stopped there, never reached b
 
 
+class TestMarketplaceTierWiring:
+    """The guard in run_plugins only helps if the tier actually goes through it.
+
+    Nothing else here would notice a tier that looped over the plugins itself:
+    every test above would stay green and the crash that started all this would
+    be back.
+    """
+
+    def test_main_runs_the_plugins_through_run_plugins(self, monkeypatch):
+        from tests.tiers import marketplace
+
+        plugins = [{"name": "a", "id": "id-a"}, {"name": "b", "id": "id-b"}]
+        seen: list[list[dict]] = []
+
+        monkeypatch.setattr(marketplace, "DaemonClient", lambda *a, **k: object())
+        monkeypatch.setattr(marketplace, "preflight", lambda *a, **k: {"name": "m"})
+        monkeypatch.setattr(
+            marketplace,
+            "add_marketplace",
+            lambda *a, **k: {"id": "m", "plugins": plugins},
+        )
+        monkeypatch.setattr(marketplace, "validate_listing", lambda *a, **k: None)
+        monkeypatch.setattr(marketplace, "remove_marketplace", lambda *a, **k: None)
+        monkeypatch.setattr(
+            marketplace,
+            "run_plugins",
+            lambda items, run_one, res, workers=1: seen.append(list(items)),
+        )
+
+        marketplace.main(
+            [
+                "--daemon",
+                "http://daemon",
+                "--token",
+                "t",
+                "--git-url",
+                "http://git",
+                "--git-ref",
+                "ref",
+            ]
+        )
+
+        assert seen == [plugins]
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__]))

@@ -9,7 +9,7 @@ Automation, and `action` on Notification.
 
 This module is the machinery: read the documents out of the Rust source, turn a
 daemon introspection response into a schema, and validate one against the other.
-The tier that owns a daemon calls it - see tests/test-cdxctl-contract.py.
+The tier that owns a daemon calls it - see tests/tiers/contract.py.
 
 What it does NOT see: the variables. `mutation($input: CreateNotificationInput!)`
 is a legal document whatever the client later puts in `$input`, so a dropped

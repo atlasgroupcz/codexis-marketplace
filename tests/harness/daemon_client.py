@@ -613,7 +613,7 @@ class DaemonClient:
     def download_file(self, path: str) -> bytes:
         """Fetch a VM-side file's raw bytes via REST.
 
-        Used by test-marketplace.py to read the daemon-managed .env file
+        Used by the marketplace tier to read the daemon-managed .env file
         and verify each plugin's required vars are populated.
         """
         url = f"{self.base_url}/rest/files/download?path={urllib.parse.quote(path)}"

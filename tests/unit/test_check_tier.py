@@ -1,4 +1,4 @@
-"""Unit tests for the pre-daemon check gate."""
+"""Unit tests for the suite engine and the two tiers built on it."""
 
 from __future__ import annotations
 
@@ -9,177 +9,69 @@ from pathlib import Path
 import pytest
 
 from tests.harness import suites
-from tests.tiers import check as check_tier
-from tests.tiers.check import (
-    SUITE_GROUPS,
+from tests.harness.suites import (
     Suite,
     UnavailableToolchain,
     missing_pytest_message,
     run_gate,
-    select_suites,
-    suites_for_group,
 )
+from tests.tiers import check as check_tier
 
 
-class TestSuiteGroups:
-    """The groups map 1:1 onto the pipeline stages that invoke them."""
+class TestSelect:
+    """`select` is the one place a tier says what it wants and gets what the
+    environment can give, or an error saying it cannot."""
 
-    def test_backend_group_covers_lint_plugin_cores_and_binaries(self):
-        assert SUITE_GROUPS["backend"] == (
-            "ruff",
-            "ruff-format",
-            "ty",
-            "conformance",
-            "pytest",
-            "cargo-fmt",
-            "cargo",
+    ALL = staticmethod(lambda name: True)
+
+    def test_strict_keeps_every_suite_asked_for_in_order(self):
+        got = suites.select(
+            Path("/repo"), ["ruff", "ty", "cargo"], strict=True, available=self.ALL
         )
-
-    def test_frontend_group_lints_and_typechecks_before_it_tests(self):
-        assert SUITE_GROUPS["frontend"] == (
-            "frontend-lint",
-            "frontend-typecheck",
-            "frontend",
-        )
-
-
-class TestSuitesForGroup:
-    """Selection only - toolchain presence is stubbed so these stay hermetic."""
-
-    ALL_PRESENT = staticmethod(lambda _name: True)
-
-    def test_backend_selects_lint_pytest_and_cargo_only(self):
-        suites = suites_for_group(Path("/repo"), "backend", available=self.ALL_PRESENT)
-        assert [s.name for s in suites] == [
-            "ruff",
-            "ruff-format",
-            "ty",
-            "conformance",
-            "pytest",
-            "cargo-fmt",
-            "cargo",
-        ]
-
-    def test_frontend_selects_lint_typecheck_and_tests(self):
-        suites = suites_for_group(Path("/repo"), "frontend", available=self.ALL_PRESENT)
-        assert [s.name for s in suites] == [
-            "frontend-lint",
-            "frontend-typecheck",
-            "frontend",
-        ]
-
-    def test_cargo_suite_runs_over_the_whole_workspace(self):
-        """One workspace at the repo root, so the plugin CLIs are covered too."""
-        suites = suites_for_group(Path("/repo"), "backend", available=self.ALL_PRESENT)
-        cargo = next(s for s in suites if s.name == "cargo")
-        assert cargo.cwd == Path("/repo")
-
-    def test_formatting_is_its_own_suite_so_it_cannot_hide_a_failing_test(self):
-        suites = suites_for_group(Path("/repo"), "backend", available=self.ALL_PRESENT)
-        fmt = next(s for s in suites if s.name == "cargo-fmt")
-        assert fmt.argv == ["cargo", "fmt", "--all", "--check"]
-
-    def test_unknown_group_is_rejected(self):
-        with pytest.raises(ValueError, match="unknown suite group"):
-            suites_for_group(Path("/repo"), "sideways", available=self.ALL_PRESENT)
-
-    def test_missing_toolchain_raises_instead_of_silently_skipping(self):
-        """An explicitly requested group must never report success on a
-        toolchain the environment lacks - that is the false-green the gate
-        exists to prevent. Auto-detection may skip; an explicit request may not.
-        """
-        with pytest.raises(UnavailableToolchain, match="cargo"):
-            suites_for_group(
-                Path("/repo"), "backend", available=lambda name: name != "cargo"
-            )
-
-
-class TestMissingPytestMessage:
-    def test_names_the_fix_so_a_ci_agent_can_be_repaired(self):
-        """A bare ModuleNotFoundError doesn't say what to run."""
-        msg = missing_pytest_message()
-        assert "uv sync" in msg
-        assert "uv run" in msg
-
-
-class TestStrictGate:
-    """`--strict` is the pipeline's promise that the agent was provisioned.
-
-    A bare run skips what the machine lacks, which is right locally and wrong in
-    CI: a stage that ran less than it should still reports green. `--suite`
-    already carried that promise per stage; `--strict` carries it for a caller
-    that runs the whole gate in one.
-    """
-
-    def test_strict_runs_every_suite_in_every_group(self):
-        suites = check_tier.all_suites_strict(Path("/repo"), available=lambda n: True)
-        names = [suite.name for suite in suites]
-        for group in SUITE_GROUPS.values():
-            for name in group:
-                assert name in names, name
+        assert [s.name for s in got] == ["ruff", "ty", "cargo"]
 
     def test_strict_refuses_to_skip_a_missing_toolchain(self):
+        """A green stage that ran nothing is worse than a red one."""
         with pytest.raises(UnavailableToolchain, match="cargo"):
-            check_tier.all_suites_strict(
-                Path("/repo"), available=lambda n: n != "cargo"
+            suites.select(
+                Path("/repo"),
+                ["ruff", "cargo"],
+                strict=True,
+                available=lambda n: n != "cargo",
             )
 
-    def test_a_bare_run_still_skips_what_the_machine_lacks(self):
-        """The local default is untouched. Strictness is opt-in."""
-        names = [
-            s.name for s in select_suites(Path("/repo"), cargo=False, frontend=False)
-        ]
-        assert "cargo" not in names
-
-    def test_suite_and_strict_cannot_both_be_given(self):
-        """--suite already carries the promise for its group. Two ways to say
-        the same thing is one too many."""
-        with pytest.raises(SystemExit):
-            check_tier.main(["--suite", "backend", "--strict"])
-
-
-class TestSelectSuites:
-    def test_pytest_suite_is_always_selected(self):
-        suites = select_suites(Path("/repo"), cargo=False, frontend=False)
-        names = [s.name for s in suites]
-        assert "pytest" in names
-
-    def test_cargo_suite_selected_only_when_toolchain_present(self):
-        without = [
-            s.name for s in select_suites(Path("/repo"), cargo=False, frontend=False)
-        ]
-        assert "cargo" not in without
-
-        with_cargo = [
-            s.name for s in select_suites(Path("/repo"), cargo=True, frontend=False)
-        ]
-        assert "cargo" in with_cargo
-
-    def test_ruff_suites_selected_only_when_the_binary_is_present(self):
-        without = [
-            s.name
-            for s in select_suites(
-                Path("/repo"), cargo=False, frontend=False, ruff=False
+    def test_the_error_names_every_missing_suite_not_just_the_first(self):
+        with pytest.raises(UnavailableToolchain, match=r"cargo.*frontend"):
+            suites.select(
+                Path("/repo"),
+                ["cargo", "frontend"],
+                strict=True,
+                available=lambda n: False,
             )
-        ]
-        assert "ruff" not in without
-        assert "ruff-format" not in without
 
-        with_ruff = [
-            s.name for s in select_suites(Path("/repo"), cargo=False, frontend=False)
-        ]
-        assert "ruff" in with_ruff
-        assert "ruff-format" in with_ruff
+    def test_without_strict_what_the_machine_lacks_is_left_out(self):
+        """The laptop case: no Rust installed should not stop ruff running."""
+        got = suites.select(
+            Path("/repo"),
+            ["ruff", "cargo"],
+            strict=False,
+            available=lambda n: n != "cargo",
+        )
+        assert [s.name for s in got] == ["ruff"]
 
+
+class TestBuildSuite:
     def test_lint_and_format_are_separate_suites(self):
         """Run as one, the first failure would hide the second."""
-        suites = select_suites(Path("/repo"), cargo=False, frontend=False)
-        argvs = {s.name: s.argv for s in suites}
+        argv = {
+            name: suites.build_suite(Path("/repo"), name).argv
+            for name in ("ruff", "ruff-format", "ty")
+        }
         # argv[0] is a resolved path - the project's copy when there is one.
-        assert argvs["ruff"][0].endswith("ruff")
-        assert argvs["ruff"][1:] == ["check"]
-        assert argvs["ruff-format"][1:] == ["format", "--check"]
-        assert argvs["ty"][1:] == ["check"]
+        assert argv["ruff"][0].endswith("ruff")
+        assert argv["ruff"][1:] == ["check"]
+        assert argv["ruff-format"][1:] == ["format", "--check"]
+        assert argv["ty"][1:] == ["check"]
 
     def test_project_copy_of_a_tool_wins_over_the_one_on_path(self, tmp_path):
         """The pinned versions in pyproject are the point: ty is pinned exactly
@@ -193,36 +85,22 @@ class TestSelectSuites:
     def test_a_tool_with_no_project_copy_falls_back_to_path(self, tmp_path):
         assert suites._tool(tmp_path, "ruff") == shutil.which("ruff")
 
-    def test_frontend_suite_selected_only_when_toolchain_present(self):
-        without = [
-            s.name for s in select_suites(Path("/repo"), cargo=False, frontend=False)
-        ]
-        assert "frontend" not in without
-
-        with_fe = [
-            s.name for s in select_suites(Path("/repo"), cargo=False, frontend=True)
-        ]
-        assert "frontend" in with_fe
-
     def test_frontend_suite_runs_in_the_frontend_directory(self):
-        suite = next(
-            s
-            for s in select_suites(Path("/repo"), cargo=False, frontend=True)
-            if s.name == "frontend"
+        assert suites.build_suite(Path("/repo"), "frontend").cwd == (
+            Path("/repo") / "frontend"
         )
-        assert suite.cwd == Path("/repo") / "frontend"
 
-    def test_lint_runs_before_the_suites_it_can_explain(self):
-        """A syntax-level break should read as a lint failure, not as a
-        pytest collection error further down the run."""
-        names = [
-            s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)
-        ]
-        assert names[:3] == ["ruff", "ruff-format", "ty"]
-        # conformance is pytest too, so it needs the tree to parse just as much
-        assert names.index("ty") < names.index("conformance")
-        assert names.index("conformance") < names.index("pytest")
-        assert names.index("pytest") < names.index("cargo")
+    def test_an_unknown_suite_is_rejected(self):
+        with pytest.raises(ValueError, match="sideways"):
+            suites.build_suite(Path("/repo"), "sideways")
+
+
+class TestMissingPytestMessage:
+    def test_names_the_fix_so_a_ci_agent_can_be_repaired(self):
+        """A bare ModuleNotFoundError doesn't say what to run."""
+        msg = missing_pytest_message()
+        assert "uv sync" in msg
+        assert "uv run" in msg
 
 
 class TestDefaultRunner:
@@ -243,11 +121,7 @@ class TestDefaultRunner:
         )
 
         repo_root = Path(__file__).resolve().parents[2]
-        suite = next(
-            s
-            for s in select_suites(repo_root, cargo=True, frontend=False)
-            if s.name == "cargo"
-        )
+        suite = suites.build_suite(repo_root, "cargo")
         assert suites.default_runner(suite) == 0
         assert calls == [(suite.argv, repo_root)]
 
@@ -294,13 +168,6 @@ class TestConformanceSuite:
             in suites.build_suite(Path("/repo"), "pytest").argv
         )
 
-    def test_a_group_names_conformance_or_nothing_runs_it(self):
-        """The pytest suite ignores tests/conformance. If no group names the
-        conformance suite either, those tests run nowhere and the gate is green
-        having skipped a fifth of the suite."""
-        grouped = {name for group in SUITE_GROUPS.values() for name in group}
-        assert "conformance" in grouped
-
     def test_conformance_needs_nothing_pytest_does_not(self):
         probe = suites.default_availability(Path("/repo"))
         assert probe("conformance") == probe("pytest")
@@ -328,27 +195,52 @@ class TestExecutingTier:
         assert (test_tier.REPO_ROOT / "pyproject.toml").is_file()
 
 
+class TestTheSplit:
+    """`check` narrows to the static half now that `test` runs the rest."""
+
+    def test_the_static_tier_runs_nothing_that_executes_the_code(self):
+
+        assert not {"pytest", "cargo", "frontend"} & set(check_tier.SUITES)
+
+    def test_the_two_tiers_together_cover_every_suite_that_used_to_run(self):
+        """The one that matters: it fails if narrowing dropped a suite instead
+        of moving it, which would leave the gate green having run less."""
+        from tests.tiers import test as test_tier
+
+        was = {
+            "ruff",
+            "ruff-format",
+            "ty",
+            "conformance",
+            "pytest",
+            "cargo-fmt",
+            "cargo",
+            "frontend-lint",
+            "frontend-typecheck",
+            "frontend",
+        }
+        assert was == set(check_tier.SUITES) | set(test_tier.SUITES)
+
+    def test_neither_tier_claims_a_suite_the_other_runs(self):
+        from tests.tiers import test as test_tier
+
+        assert not set(check_tier.SUITES) & set(test_tier.SUITES)
+
+    def test_lint_runs_before_the_pytest_based_conformance_suite(self):
+        """A syntax-level break should read as ruff's complaint, not as a
+        collection error three suites later."""
+
+        order = list(check_tier.SUITES)
+        assert order.index("ruff") < order.index("conformance")
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__]))
 
 
-class TestGroupsAndSelectionAgree:
-    """The local gate and the CI stages must cover the same suites.
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__]))
 
-    A suite added to a group but forgotten in `select_suites` would run in CI
-    and silently not run locally - the false-green this module exists to stop.
-    """
 
-    def test_every_grouped_suite_is_selectable_locally(self):
-        grouped = {name for group in SUITE_GROUPS.values() for name in group}
-        selected = {
-            s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)
-        }
-        assert grouped == selected
-
-    def test_selection_runs_in_group_order(self):
-        expected = [name for group in SUITE_GROUPS.values() for name in group]
-        actual = [
-            s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)
-        ]
-        assert actual == expected
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__]))
