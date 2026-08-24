@@ -2,7 +2,7 @@
 uuid: 2aeefd95-cd11-431e-9b6c-b7dd54f3bbae
 name: pdf
 icon: icon.svg
-description: "PDF - vygeneruj PDF, vyplň formulář, slouč/rozděl/orazítkuj, přečti naskenovanou smlouvu, rozsudek, fakturu (kde záleží na vzhledu). Ne pro čistý text - na ten stačí ocr."
+description: "PDF - vygeneruj PDF, vyplň formulář, slouč/rozděl/orazítkuj, přečti naskenovanou smlouvu, rozsudek, fakturu (kde záleží na vzhledu). Ne pro čistý text - ten přečteš rovnou ze souboru."
 version: 1.0.0
 allowed-tools: shell
 i18n:
@@ -42,23 +42,17 @@ Text extraction is exact but blind: it cannot tell you that a clause is struck t
 a stamp covers the signature, or that a table has merged cells. The page image shows all of
 that but is unreliable for long numbers, spisové značky and URLs. **Use both, page by page.**
 
-```bash
-# 1. Text
-ocr /home/codexis/rozsudek.pdf
-unzip -o /home/codexis/rozsudek.pdf-ocr.zip -d /tmp/rozsudek-text
+Reading the file gives you both halves at once: per-page markdown next to the page image.
+Scanned pages come through OCR, so a PDF with no text layer reads too. One read covers at
+most 20 pages and carries the images only when the window is 10 pages or fewer - pass a page
+range (`1-5`, `3`) for anything longer.
 
-# 2. Pages as images
-cdx-render -i /home/codexis/rozsudek.pdf
-```
+When the two disagree about a number or a name, **the image wins for layout, the text wins
+for exact strings** - go back to the image and read the value off it. OCR silently mangles
+diacritics and handwritten annotations, so never take a scanned value on trust.
 
-Then `Read` the page PNGs alongside the extracted markdown and cross-check them. When they
-disagree about a number or a name, **the image wins for layout, the text wins for exact
-strings** - go back to the image and read the value off it.
-
-A scanned PDF has no text layer at all; `ocr` handles the OCR, but always look at the pages
-too - OCR silently mangles diacritics and handwritten annotations.
-
-Long documents: render selectively rather than burning tokens on 200 pages.
+For a wider window at once, or for more detail than the inline images carry, render the pages
+yourself - `cdx-render` runs at 150 dpi against the inline 100.
 
 ```bash
 cdx-render -i rozsudek.pdf -f 1 -l 3      # first three pages
@@ -154,7 +148,6 @@ U+2011 renders as a box in several PDF viewers.
 ## Dependencies
 
 - `cdx-render` - PDF → page PNGs (poppler)
-- `ocr` - text extraction, including scanned pages
 - `pdf-lib` (Node, preinstalled) - page ops, forms, stamping
 - `qpdf`, `pdftoppm` - shell-side page operations
 - LibreOffice - docx → pdf

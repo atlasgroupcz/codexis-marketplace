@@ -42,7 +42,6 @@ with a hand-rolled conversion that skips the visual check.
 ## Reading a deck
 
 ```bash
-ocr /home/codexis/prezentace.pptx        # text and speaker notes
 cdx-render -i /home/codexis/prezentace.pptx   # one PNG per slide
 ```
 
@@ -116,14 +115,9 @@ AI-generated deck. Use whitespace or a background colour instead.
 **Assume there are problems. Your job is to find them.** Your first render is almost never
 correct. If you found zero issues on the first pass, you were not looking.
 
-**1. Content check.**
-
-```bash
-ocr /home/codexis/prezentace.pptx
-unzip -p /home/codexis/prezentace.pptx-ocr.zip | grep -iE 'lorem|ipsum|xxxx|TODO|\{\{|doplnit'
-```
-
-Any hit is a bug. Fix it before going further.
+**1. Content check.** Read the rendered slides and hunt for placeholders nobody replaced -
+`lorem`, `ipsum`, `xxxx`, `TODO`, `{{`, `doplnit`. Any hit is a bug. Fix it before going
+further.
 
 **2. Visual check - use a subagent, even for three slides.** You have been staring at the
 coordinates and will see what you meant, not what rendered. A subagent has fresh eyes.
@@ -163,4 +157,3 @@ Do not declare success until you have completed at least one full fix-and-verify
 
 - `pptxgenjs` (Node, preinstalled) - creating decks
 - `cdx-render` - deck → slide PNGs
-- `ocr` - text and speaker notes
