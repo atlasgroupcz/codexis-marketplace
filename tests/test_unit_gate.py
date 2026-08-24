@@ -99,6 +99,42 @@ class TestMissingPytestMessage:
         assert "uv run" in msg
 
 
+class TestStrictGate:
+    """`--strict` is the pipeline's promise that the agent was provisioned.
+
+    A bare run skips what the machine lacks, which is right locally and wrong in
+    CI: a stage that ran less than it should still reports green. `--suite`
+    already carried that promise per stage; `--strict` carries it for a caller
+    that runs the whole gate in one.
+    """
+
+    def test_strict_runs_every_suite_in_every_group(self):
+        suites = _unit_gate.all_suites_strict(Path("/repo"), available=lambda n: True)
+        names = [suite.name for suite in suites]
+        for group in SUITE_GROUPS.values():
+            for name in group:
+                assert name in names, name
+
+    def test_strict_refuses_to_skip_a_missing_toolchain(self):
+        with pytest.raises(UnavailableToolchain, match="cargo"):
+            _unit_gate.all_suites_strict(
+                Path("/repo"), available=lambda n: n != "cargo"
+            )
+
+    def test_a_bare_run_still_skips_what_the_machine_lacks(self):
+        """The local default is untouched. Strictness is opt-in."""
+        names = [
+            s.name for s in select_suites(Path("/repo"), cargo=False, frontend=False)
+        ]
+        assert "cargo" not in names
+
+    def test_suite_and_strict_cannot_both_be_given(self):
+        """--suite already carries the promise for its group. Two ways to say
+        the same thing is one too many."""
+        with pytest.raises(SystemExit):
+            _unit_gate.main(["--suite", "backend", "--strict"])
+
+
 class TestSelectSuites:
     def test_pytest_suite_is_always_selected(self):
         suites = select_suites(Path("/repo"), cargo=False, frontend=False)
