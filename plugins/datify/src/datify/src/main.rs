@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use datify_core::client::UploadTarget;
-use datify_core::{settings, DatifyClient, DatifyError, Result};
+use datify_core::{download, settings, DatifyClient, DatifyError, Result};
 use serde_json::Value;
 
 #[derive(Parser)]
@@ -45,6 +45,16 @@ enum Command {
     },
     /// Attachment metadata
     Attachment { attachment_id: String },
+    /// Save an attachment's file into a directory
+    Download {
+        attachment_id: String,
+        /// Directory to save into; created when missing
+        ///
+        /// A directory, not a file path: the name comes from Datify, so the
+        /// extension matches what the file really is.
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
     /// Upload a file as an attachment
     Upload {
         /// File to upload
@@ -124,6 +134,8 @@ enum RecordCmd {
         #[arg(long)]
         replace: bool,
     },
+    /// Every attachment on a record, across all its attachment properties
+    Attachments { record_id: String },
     /// Delete one record. Irreversible.
     Delete { record_id: String },
     /// Delete several records in one call. Irreversible.
@@ -171,6 +183,13 @@ fn run() -> Result<()> {
         Command::Attachment { attachment_id } => {
             emit(DatifyClient::new()?.get_attachment(&attachment_id)?)
         }
+        Command::Download {
+            attachment_id,
+            output_dir,
+        } => {
+            let content = DatifyClient::new()?.attachment_content(&attachment_id)?;
+            emit(download::save(&content, &output_dir, &attachment_id)?)
+        }
         Command::Upload {
             file,
             record,
@@ -216,6 +235,7 @@ fn run_records(cmd: RecordCmd) -> Result<()> {
             sort.as_deref(),
         )?),
         RecordCmd::Get { record_id } => emit(client.get_record(&record_id)?),
+        RecordCmd::Attachments { record_id } => emit(client.record_attachments(&record_id)?),
         RecordCmd::Create { dataset_id, data } => {
             emit(client.create_records(&dataset_id, read_json_arg(&data, "--data")?)?)
         }
