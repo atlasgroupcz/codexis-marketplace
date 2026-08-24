@@ -261,14 +261,32 @@ def suites_for_group(
     for name in names:
         if not available(name):
             raise UnavailableToolchain(
-                f"check: suite {name!r} was requested via --suite {group}, "
-                f"but its toolchain is not installed.\n"
+                f"check: suite {name!r} was requested, but its toolchain is "
+                f"not installed.\n"
                 f"  Refusing to skip it: a green stage that ran nothing is worse "
                 f"than a red one.\n"
                 f"  Install it on this machine (the CI agent provisions "
                 f"uv/rustup/bun in the pipeline's Init stage)."
             )
     return [_build_suite(repo_root, name) for name in names]
+
+
+def all_suites_strict(
+    repo_root: Path,
+    available: Callable[[str], bool] | None = None,
+) -> list[Suite]:
+    """Every suite in every group, refusing to skip a missing toolchain.
+
+    What `--suite <group>` promises for one stage, for a caller that runs the
+    whole gate in one. [`select_suites`] skips what the machine lacks, which is
+    right locally and wrong in a pipeline that provisions the toolchains: the
+    stage would go green having run less than it was asked to.
+    """
+    return [
+        suite
+        for group in SUITE_GROUPS
+        for suite in suites_for_group(repo_root, group, available)
+    ]
 
 
 def run_gate(
@@ -328,27 +346,42 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entry point.
 
     Bare invocation runs every suite the machine can, which is what you want
-    locally. `--suite` runs exactly one group and fails when its toolchain is
-    absent - the pipeline provisions them, so a gap there is a broken agent,
-    not something to skip past.
+    locally. `--suite` and `--strict` both refuse to skip an absent toolchain -
+    the pipeline provisions them, so a gap there is a broken agent, not
+    something to skip past. They differ only in scope: one group, or all of
+    them.
     """
     parser = argparse.ArgumentParser(description="Run the repo's check suites.")
-    parser.add_argument(
+    # Mutually exclusive: both say "this environment was provisioned, do not
+    # skip", one per stage and one for the whole gate. Accepting both would
+    # leave two ways to say the same thing.
+    promise = parser.add_mutually_exclusive_group()
+    promise.add_argument(
         "--suite",
         choices=sorted(SUITE_GROUPS),
         help="Run one group instead of auto-detecting (one per pipeline stage).",
     )
+    promise.add_argument(
+        "--strict",
+        action="store_true",
+        help="Run every suite and fail if any toolchain is missing, instead of "
+        "skipping it. For CI, which provisions them.",
+    )
     args = parser.parse_args(argv)
     repo_root = Path(__file__).resolve().parent.parent
 
-    if args.suite is None:
+    if args.suite is None and not args.strict:
         return run_default_gate(repo_root)
 
     if not pytest_available():
         print(missing_pytest_message(), file=sys.stderr, flush=True)
         return 1
     try:
-        suites = suites_for_group(repo_root, args.suite)
+        suites = (
+            all_suites_strict(repo_root)
+            if args.strict
+            else suites_for_group(repo_root, args.suite)
+        )
     except UnavailableToolchain as exc:
         print(exc, file=sys.stderr, flush=True)
         return 1
