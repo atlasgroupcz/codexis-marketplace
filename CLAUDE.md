@@ -90,11 +90,10 @@ Add `--strict` in CI, where the toolchains are provisioned: without it a missing
 one is skipped rather than failing, and a stage that ran less than it should
 still reports green. `test` is always strict, having nothing to auto-detect for.
 
-`check` and `test` also take `--lane backend|frontend`. A lane is the set of
-suites that can run at the same time as the other lane, because they reach for a
-different toolchain and a different part of the tree - so a pipeline can give
-each its own stage and see which half broke. Without the flag a tier runs
-everything, which is what you want locally.
+`check` and `test` also take `--only backend|frontend`, which runs that part of
+the tier alone. The split follows the toolchain, so a pipeline can give each
+part its own stage, see which half broke, and run the two at the same time if it
+wants. Without the flag a tier runs everything, which is what you want locally.
 
 ### Coverage
 

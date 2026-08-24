@@ -234,11 +234,10 @@ class TestTheSplit:
         assert order.index("ruff") < order.index("conformance")
 
 
-class TestLanes:
-    """A lane is a set of suites that can run at the same time as another lane,
-    because they reach for a different toolchain and a different part of the
-    tree. Not "one pipeline stage": that was the old grouping, and it existed
-    only so `bun install` could happen between two of them.
+class TestParts:
+    """A part is what `--only` selects: a subset of a tier's suites that a
+    pipeline can give its own stage. The split follows the toolchain, which is
+    what lets two parts run at the same time.
     """
 
     TIERS = ("check", "test")
@@ -248,35 +247,35 @@ class TestLanes:
 
         return importlib.import_module(f"tests.tiers.{name}")
 
-    def test_the_lanes_of_a_tier_add_up_to_everything_it_runs(self):
+    def test_the_parts_of_a_tier_add_up_to_everything_it_runs(self):
         for name in self.TIERS:
             tier = self._tier(name)
-            flat = [s for lane in tier.LANES.values() for s in lane]
+            flat = [s for part in tier.PARTS.values() for s in part]
             assert tuple(flat) == tier.SUITES, name
 
-    def test_no_suite_sits_in_two_lanes(self):
+    def test_no_suite_sits_in_two_parts(self):
         for name in self.TIERS:
             tier = self._tier(name)
-            flat = [s for lane in tier.LANES.values() for s in lane]
+            flat = [s for part in tier.PARTS.values() for s in part]
             assert len(flat) == len(set(flat)), name
 
-    def test_a_lane_holds_only_suites_the_tier_owns(self):
+    def test_a_part_holds_only_suites_the_tier_owns(self):
         for name in self.TIERS:
             tier = self._tier(name)
-            for lane, names in tier.LANES.items():
-                assert set(names) <= set(tier.SUITES), (name, lane)
+            for part, names in tier.PARTS.items():
+                assert set(names) <= set(tier.SUITES), (name, part)
 
-    def test_the_frontend_lane_is_the_turbo_suites_and_nothing_else(self):
-        """The split has to follow the toolchain, or the lanes cannot run
+    def test_the_frontend_part_is_the_turbo_suites_and_nothing_else(self):
+        """The split has to follow the toolchain, or the parts cannot run
         concurrently without fighting over it."""
         for name in self.TIERS:
             tier = self._tier(name)
-            assert all(s.startswith("frontend") for s in tier.LANES["frontend"]), name
-            assert not any(s.startswith("frontend") for s in tier.LANES["backend"]), (
+            assert all(s.startswith("frontend") for s in tier.PARTS["frontend"]), name
+            assert not any(s.startswith("frontend") for s in tier.PARTS["backend"]), (
                 name
             )
 
-    def test_lane_runs_only_that_lane(self, monkeypatch):
+    def test_only_runs_that_part_and_nothing_else(self, monkeypatch):
         for name in self.TIERS:
             tier = self._tier(name)
             ran: list[list[str]] = []
@@ -285,13 +284,13 @@ class TestLanes:
                 "run_gate",
                 lambda t, s, _r=ran: _r.append([x.name for x in s]) or 0,
             )
-            tier.main(["--lane", "frontend"])
-            assert ran[-1] == list(tier.LANES["frontend"]), name
+            tier.main(["--only", "frontend"])
+            assert ran[-1] == list(tier.PARTS["frontend"]), name
 
-    def test_an_unknown_lane_is_rejected(self):
+    def test_an_unknown_part_is_rejected(self):
         for name in self.TIERS:
             with pytest.raises(SystemExit):
-                self._tier(name).main(["--lane", "sideways"])
+                self._tier(name).main(["--only", "sideways"])
 
 
 if __name__ == "__main__":
