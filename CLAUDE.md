@@ -28,8 +28,14 @@ normalized to hyphens - keep it that way.
 | --- | --- | --- |
 | unit | Python: `plugins/<name>/tests/unit/` (pytest); Rust: inline `#[cfg(test)]` in `src/<crate>/src/` | pytest / cargo |
 | integration | Rust: `plugins/<name>/src/<crate>/tests/*.rs`; Python: `tests/integration/` if needed | cargo / pytest |
+| contract | the GraphQL documents a CLI sends (`plugins/<name>/src/<crate>/src/queries/*.graphql`) | central harness |
 | install | `plugins/<name>/tests/install/expected.json` (just the `skills` a plugin registers) | central harness |
 | behavioral | `plugins/<name>/tests/promptfoo/*.config.yaml` (one config per scenario) | promptfoo |
+
+The contract tier holds a CLI's GraphQL documents against the schema a live
+daemon serves, so a field the daemon renames is caught before a user runs the
+command. It asks for the schema once and validates locally, which is why it runs
+ahead of the marketplace tier rather than inside it.
 
 promptfoo is the single behavioral tier (the old homegrown e2e runner was
 removed once every scenario had a promptfoo equivalent). Configs live per-plugin;
@@ -55,7 +61,9 @@ promptfoo). Same name, different scope.
 
 ### Running tests
 
-Use the single entry point: `python tests/run.py <check|marketplace|eval|all>`.
+Use the single entry point:
+`python tests/run.py <check|contract|marketplace|eval|all>`. Tiers run
+cheapest first, and `contract` needs a daemon but answers in one request.
 
 `check` is the fast tier and covers more than tests: ruff, ruff-format, ty,
 pytest, `cargo fmt --check`, `cargo test`, plus `turbo lint`, `turbo typecheck`
