@@ -35,8 +35,3 @@ Třeba: *„Připrav desetislajdovou prezentaci pro klienta z tohohle reportu."*
   pár minut. Je to záměr - cílem je dokument, který můžete rovnou poslat, ne draft k přepisování.
 - **Hotové soubory najdete mezi svými soubory**, můžete si je stáhnout a otevřít ve Wordu, Excelu
   nebo PowerPointu.
-
-## Doporučená kombinace
-
-Nainstalujte si k tomu i doplněk **OCR dokumentů**. Ten se stará o vytěžení textu z dokumentů -
-společně pak asistent dokument přečte, uvidí i vytvoří.
