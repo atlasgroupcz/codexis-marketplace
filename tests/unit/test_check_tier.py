@@ -234,8 +234,64 @@ class TestTheSplit:
         assert order.index("ruff") < order.index("conformance")
 
 
-if __name__ == "__main__":
-    sys.exit(pytest.main([__file__]))
+class TestLanes:
+    """A lane is a set of suites that can run at the same time as another lane,
+    because they reach for a different toolchain and a different part of the
+    tree. Not "one pipeline stage": that was the old grouping, and it existed
+    only so `bun install` could happen between two of them.
+    """
+
+    TIERS = ("check", "test")
+
+    def _tier(self, name):
+        import importlib
+
+        return importlib.import_module(f"tests.tiers.{name}")
+
+    def test_the_lanes_of_a_tier_add_up_to_everything_it_runs(self):
+        for name in self.TIERS:
+            tier = self._tier(name)
+            flat = [s for lane in tier.LANES.values() for s in lane]
+            assert tuple(flat) == tier.SUITES, name
+
+    def test_no_suite_sits_in_two_lanes(self):
+        for name in self.TIERS:
+            tier = self._tier(name)
+            flat = [s for lane in tier.LANES.values() for s in lane]
+            assert len(flat) == len(set(flat)), name
+
+    def test_a_lane_holds_only_suites_the_tier_owns(self):
+        for name in self.TIERS:
+            tier = self._tier(name)
+            for lane, names in tier.LANES.items():
+                assert set(names) <= set(tier.SUITES), (name, lane)
+
+    def test_the_frontend_lane_is_the_turbo_suites_and_nothing_else(self):
+        """The split has to follow the toolchain, or the lanes cannot run
+        concurrently without fighting over it."""
+        for name in self.TIERS:
+            tier = self._tier(name)
+            assert all(s.startswith("frontend") for s in tier.LANES["frontend"]), name
+            assert not any(s.startswith("frontend") for s in tier.LANES["backend"]), (
+                name
+            )
+
+    def test_lane_runs_only_that_lane(self, monkeypatch):
+        for name in self.TIERS:
+            tier = self._tier(name)
+            ran: list[list[str]] = []
+            monkeypatch.setattr(
+                tier,
+                "run_gate",
+                lambda t, s, _r=ran: _r.append([x.name for x in s]) or 0,
+            )
+            tier.main(["--lane", "frontend"])
+            assert ran[-1] == list(tier.LANES["frontend"]), name
+
+    def test_an_unknown_lane_is_rejected(self):
+        for name in self.TIERS:
+            with pytest.raises(SystemExit):
+                self._tier(name).main(["--lane", "sideways"])
 
 
 if __name__ == "__main__":
