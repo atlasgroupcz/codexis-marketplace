@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tests._script_loader import load_script
+from tests.harness.script_loader import load_script
 
 BIN = Path(__file__).resolve().parents[3] / "bin" / "cdx-sledovane-dokumenty"
 LIB = Path(__file__).resolve().parents[3] / "lib"

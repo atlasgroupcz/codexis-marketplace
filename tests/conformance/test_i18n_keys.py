@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 APPS_DIR = REPO / "frontend" / "apps"
 LANGUAGES = ("cs", "en", "sk")
 # `t('some.key')` / `t("some.key")`, ignoring anything interpolated.

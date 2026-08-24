@@ -51,12 +51,10 @@ from typing import Any
 
 import yaml
 
+from tests.harness.daemon_client import DaemonClient
+
 THIS = Path(__file__).resolve()
 REPO_ROOT = THIS.parent.parent.parent
-# Run as a script, so the repo root has to be put on sys.path before the
-# `tests` package can be imported.
-sys.path.insert(0, str(REPO_ROOT))
-from tests._daemon_client import DaemonClient  # noqa: E402
 
 # Filename → plugin name override. Empty by default - most config files are
 # named after their plugin (cdx-at.config.yaml → cdx-at). Use a YAML-level
@@ -200,7 +198,7 @@ def run_setup(cfg_path: Path) -> tuple[bool, str]:
         # No fixtures to upload - just mint a run_id for template rendering.
         return True, secrets.token_hex(2)
     rc = subprocess.run(
-        ["python3", str(THIS.parent / "setup.py"), str(cfg_path)]
+        [sys.executable, "-m", "tests.promptfoo.setup", str(cfg_path)]
     ).returncode
     if rc != 0:
         return False, ""

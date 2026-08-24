@@ -10,7 +10,7 @@ import os
 
 import pytest
 
-from tests._script_loader import load_script
+from tests.harness.script_loader import load_script
 
 
 def _load_http():

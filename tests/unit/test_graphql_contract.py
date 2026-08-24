@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from graphql import build_schema, graphql_sync
 
-from tests._graphql_contract import (
+from tests.harness.graphql_contract import (
     CDXCTL_GRAPHQL_SOURCE,
     Document,
     extract,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-from tests._skills import skills_of_plugin
+from tests.harness.skills import skills_of_plugin
 
 OUR = "id-our-codexis"
 OTHER = "id-onboarding-codexis"

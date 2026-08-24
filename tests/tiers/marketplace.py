@@ -24,16 +24,11 @@ import os
 import sys
 from pathlib import Path
 
-# Run as a script, so the repo root is not on sys.path yet and the `tests`
-# package cannot be imported without it. pytest gets the same root from
-# pythonpath in pyproject.toml.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from tests._daemon_client import DaemonClient
-from tests._output import Results
-from tests._plugin_runner import run_plugins
-from tests._skills import skills_of_plugin
-from tests._unit_gate import run_default_gate
+from tests.harness.daemon_client import DaemonClient
+from tests.harness.output import Results
+from tests.harness.plugin_runner import run_plugins
+from tests.harness.preflight import ensure_ready
+from tests.harness.skills import skills_of_plugin
 
 
 # ---------------------------------------------------------------------------
@@ -58,24 +53,11 @@ def preflight(client: DaemonClient, marketplace_path: Path, r: Results) -> dict:
         sys.exit(1)
     r.ok("Marketplace manifest found")
 
-    # Before the health check, not after: the daemon runs inside this VM, so on a
-    # stopped account it never reports UP and the wait would time out reporting an
-    # unreachable daemon - true, but not the reason.
-    r.log("Ensuring the VM is running...")
     try:
-        client.ensure_vm_running(log=r.log)
+        ensure_ready(client, r)
     except RuntimeError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
-    r.ok("VM is running")
-
-    if not client.wait_healthy():
-        print(
-            "ERROR: Daemon not reachable or healthy within the startup window",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    r.ok("Daemon is healthy")
 
     manifest = json.loads(manifest_path.read_text())
     r.log(f"Marketplace: {manifest['name']} (uuid={manifest.get('uuid', 'N/A')})")
@@ -254,11 +236,6 @@ def main() -> int:
         help="oauth2-proxy URL (default: http://localhost:4182)",
     )
     parser.add_argument(
-        "--skip-unit-tests",
-        action="store_true",
-        help="Skip the local unit-test gate and go straight to the daemon.",
-    )
-    parser.add_argument(
         "--workers",
         type=int,
         default=1,
@@ -271,21 +248,11 @@ def main() -> int:
     if not args.token:
         parser.error("a token is required: pass --token or set CDX_DAEMON_TOKEN")
 
-    marketplace_path = Path(__file__).resolve().parent.parent
+    marketplace_path = Path(__file__).resolve().parents[2]
 
-    # Local unit suites first: they need no daemon and finish in seconds, so a
-    # broken commit fails here rather than after the ~2min install/uninstall run.
-    if not args.skip_unit_tests:
-        gate = run_default_gate(marketplace_path)
-        if gate != 0:
-            print(
-                "Unit tests failed - not proceeding to the daemon test.",
-                file=sys.stderr,
-            )
-            return gate
     refresher = None
     if args.cookie:
-        from tests._daemon_client import make_oauth2_proxy_refresher
+        from tests.harness.daemon_client import make_oauth2_proxy_refresher
 
         refresher = make_oauth2_proxy_refresher(args.cookie, args.oauth2_proxy)
     client = DaemonClient(args.daemon, args.token, token_refresher=refresher)

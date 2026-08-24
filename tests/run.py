@@ -3,6 +3,7 @@
 
 Usage:
   python tests/run.py check         # fast gate: lint, format, types, tests
+  python tests/run.py test          # pytest, cargo test, turbo test
   python tests/run.py contract      # cdxctl GraphQL documents vs the daemon schema
   python tests/run.py marketplace   # daemon install/marketplace acceptance
   python tests/run.py eval          # promptfoo behavioral evals (the one tier)
@@ -21,12 +22,17 @@ from pathlib import Path
 
 TESTS_DIR = Path(__file__).resolve().parent
 
-# subcommand -> script path (relative to tests/), invoked as `python <script> ...`.
+REPO_ROOT = TESTS_DIR.parent
+
+# subcommand -> module path, invoked as `python -m <module>` from the repo root.
+# Not a file path: a script run by path gets its own directory on sys.path and
+# not the root, which every tier used to work around by hand.
 COMMANDS: dict[str, str] = {
-    "check": "_unit_gate.py",
-    "contract": "test-cdxctl-contract.py",
-    "marketplace": "test-marketplace.py",
-    "eval": "promptfoo/run.py",
+    "check": "tests.tiers.check",
+    "test": "tests.tiers.test",
+    "contract": "tests.tiers.contract",
+    "marketplace": "tests.tiers.marketplace",
+    "eval": "tests.promptfoo.run",
 }
 
 # Order for `all`: the tiers run in COMMANDS order, cheapest first. `check` needs
@@ -35,16 +41,21 @@ COMMANDS: dict[str, str] = {
 # spends two minutes finding out the same thing the hard way.
 ORDER: list[str] = list(COMMANDS)
 
+# The tiers that talk to a daemon, and so the only ones the passthrough
+# arguments (--daemon, --token, --git-url) mean anything to. The static tiers'
+# argparse rejects an unknown flag rather than ignoring it.
+DAEMON_TIERS = frozenset({"contract", "marketplace", "eval"})
+
 
 def build_argv(command: str, passthrough: list[str]) -> list[str]:
     """The full argv for one subcommand, including passthrough args."""
-    return [sys.executable, str(TESTS_DIR / COMMANDS[command]), *passthrough]
+    return [sys.executable, "-m", COMMANDS[command], *passthrough]
 
 
 def _run_one(command: str, passthrough: list[str]) -> int:
     argv = build_argv(command, passthrough)
     print(f"\n=== tests/run.py: {command} ===", flush=True)
-    return subprocess.run(argv).returncode
+    return subprocess.run(argv, cwd=REPO_ROOT).returncode
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -57,11 +68,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if command == "all":
         # `all` fans out to every tier in ORDER, stopping at the first failure so
-        # a broken check tier does not burn ~2 minutes on the daemon suites. The
-        # check tier takes no daemon args and its argparse rejects unknown flags, so
-        # passthrough (--daemon/--token/...) goes only to the daemon-backed tiers.
+        # a broken gate does not burn ~2 minutes on the daemon suites.
         for name in ORDER:
-            code = _run_one(name, [] if name == "check" else passthrough)
+            code = _run_one(name, passthrough if name in DAEMON_TIERS else [])
             if code != 0:
                 print(f"tests/run.py: {name} failed - stopping.", file=sys.stderr)
                 return code

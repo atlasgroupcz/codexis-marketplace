@@ -22,21 +22,17 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from pathlib import Path
 
-# Run as a script, so the repo root is not on sys.path yet and the `tests`
-# package cannot be imported without it.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from tests._daemon_client import DaemonClient
-from tests._graphql_contract import (
+from tests.harness.daemon_client import DaemonClient
+from tests.harness.graphql_contract import (
     CDXCTL_GRAPHQL_SOURCE,
     extract,
     introspection_query,
     schema_from_introspection,
     validate_documents,
 )
-from tests._output import Results
+from tests.harness.output import Results
+from tests.harness.preflight import ensure_ready
 
 
 def check_contract(client: DaemonClient, r: Results) -> None:
@@ -88,25 +84,13 @@ def main() -> int:
     r = Results()
     r.log(f"Daemon: {args.daemon}")
 
-    # The daemon runs inside this user's VM, so on a stopped account it answers
-    # nothing at all and the failure would name introspection rather than the VM.
-    r.log("Ensuring the VM is running...")
+    # Without this a cold boot ends in "could not fetch the daemon schema",
+    # which is true and the wrong thing to fix.
     try:
-        client.ensure_vm_running(log=r.log)
+        ensure_ready(client, r)
     except RuntimeError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
-    r.ok("VM is running")
-
-    # RUNNING is the VM, not the daemon inside it. Without this, a cold boot ends
-    # in "could not fetch the daemon schema" - true, and the wrong thing to fix.
-    if not client.wait_healthy():
-        print(
-            "ERROR: Daemon not reachable or healthy within the startup window",
-            file=sys.stderr,
-        )
-        return 1
-    r.ok("Daemon is healthy")
 
     check_contract(client, r)
     return r.summary()

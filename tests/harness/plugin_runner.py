@@ -20,7 +20,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
-from tests._output import Results
+from tests.harness.output import Results
 
 # One plugin's check, given the plugin dict and the Results to report into.
 RunOne = Callable[[dict, Results], None]

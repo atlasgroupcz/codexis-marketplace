@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from tests import _unit_gate
-from tests._unit_gate import (
+from tests.harness import suites
+from tests.tiers import check as check_tier
+from tests.tiers.check import (
     SUITE_GROUPS,
     Suite,
     UnavailableToolchain,
@@ -28,6 +29,7 @@ class TestSuiteGroups:
             "ruff",
             "ruff-format",
             "ty",
+            "conformance",
             "pytest",
             "cargo-fmt",
             "cargo",
@@ -52,6 +54,7 @@ class TestSuitesForGroup:
             "ruff",
             "ruff-format",
             "ty",
+            "conformance",
             "pytest",
             "cargo-fmt",
             "cargo",
@@ -109,7 +112,7 @@ class TestStrictGate:
     """
 
     def test_strict_runs_every_suite_in_every_group(self):
-        suites = _unit_gate.all_suites_strict(Path("/repo"), available=lambda n: True)
+        suites = check_tier.all_suites_strict(Path("/repo"), available=lambda n: True)
         names = [suite.name for suite in suites]
         for group in SUITE_GROUPS.values():
             for name in group:
@@ -117,7 +120,7 @@ class TestStrictGate:
 
     def test_strict_refuses_to_skip_a_missing_toolchain(self):
         with pytest.raises(UnavailableToolchain, match="cargo"):
-            _unit_gate.all_suites_strict(
+            check_tier.all_suites_strict(
                 Path("/repo"), available=lambda n: n != "cargo"
             )
 
@@ -132,7 +135,7 @@ class TestStrictGate:
         """--suite already carries the promise for its group. Two ways to say
         the same thing is one too many."""
         with pytest.raises(SystemExit):
-            _unit_gate.main(["--suite", "backend", "--strict"])
+            check_tier.main(["--suite", "backend", "--strict"])
 
 
 class TestSelectSuites:
@@ -185,10 +188,10 @@ class TestSelectSuites:
         venv_ruff = tmp_path / ".venv" / "bin" / "ruff"
         venv_ruff.parent.mkdir(parents=True)
         venv_ruff.touch()
-        assert _unit_gate._tool(tmp_path, "ruff") == str(venv_ruff)
+        assert suites._tool(tmp_path, "ruff") == str(venv_ruff)
 
     def test_a_tool_with_no_project_copy_falls_back_to_path(self, tmp_path):
-        assert _unit_gate._tool(tmp_path, "ruff") == shutil.which("ruff")
+        assert suites._tool(tmp_path, "ruff") == shutil.which("ruff")
 
     def test_frontend_suite_selected_only_when_toolchain_present(self):
         without = [
@@ -215,7 +218,10 @@ class TestSelectSuites:
         names = [
             s.name for s in select_suites(Path("/repo"), cargo=True, frontend=True)
         ]
-        assert names[:4] == ["ruff", "ruff-format", "ty", "pytest"]
+        assert names[:3] == ["ruff", "ruff-format", "ty"]
+        # conformance is pytest too, so it needs the tree to parse just as much
+        assert names.index("ty") < names.index("conformance")
+        assert names.index("conformance") < names.index("pytest")
         assert names.index("pytest") < names.index("cargo")
 
 
@@ -231,29 +237,31 @@ class TestDefaultRunner:
             returncode = 0
 
         monkeypatch.setattr(
-            _unit_gate.subprocess,
+            suites.subprocess,
             "run",
             lambda argv, cwd: calls.append((argv, cwd)) or _Completed(),
         )
 
-        repo_root = Path(__file__).resolve().parent.parent
+        repo_root = Path(__file__).resolve().parents[2]
         suite = next(
             s
             for s in select_suites(repo_root, cargo=True, frontend=False)
             if s.name == "cargo"
         )
-        assert _unit_gate._default_runner(suite) == 0
+        assert suites.default_runner(suite) == 0
         assert calls == [(suite.argv, repo_root)]
 
 
 class TestRunGate:
     def test_returns_zero_when_every_suite_passes(self):
         suites = [Suite("a", ["true"], Path(".")), Suite("b", ["true"], Path("."))]
-        assert run_gate(suites, runner=lambda s: 0) == 0
+        assert run_gate("check", suites, runner=lambda s: 0) == 0
 
     def test_returns_one_when_any_suite_fails(self):
         suites = [Suite("a", ["true"], Path(".")), Suite("b", ["false"], Path("."))]
-        assert run_gate(suites, runner=lambda s: 0 if s.name == "a" else 1) == 1
+        assert (
+            run_gate("check", suites, runner=lambda s: 0 if s.name == "a" else 1) == 1
+        )
 
     def test_runs_every_suite_even_after_a_failure(self):
         """A failing pytest run must not hide a broken cargo suite."""
@@ -264,11 +272,60 @@ class TestRunGate:
             return 1
 
         suites = [Suite("a", ["x"], Path(".")), Suite("b", ["y"], Path("."))]
-        run_gate(suites, runner=runner)
+        run_gate("check", suites, runner=runner)
         assert seen == ["a", "b"]
 
     def test_empty_suite_list_passes(self):
-        assert run_gate([], runner=lambda s: 1) == 0
+        assert run_gate("check", [], runner=lambda s: 1) == 0
+
+
+class TestConformanceSuite:
+    """The repo's own conventions become a suite of their own, so a broken
+    manifest reports under its own name instead of inside the pytest run."""
+
+    def test_conformance_runs_only_the_conformance_tree(self):
+        assert suites.build_suite(Path("/repo"), "conformance").argv[-1] == (
+            "tests/conformance"
+        )
+
+    def test_pytest_skips_what_the_conformance_suite_already_ran(self):
+        assert (
+            "--ignore=tests/conformance"
+            in suites.build_suite(Path("/repo"), "pytest").argv
+        )
+
+    def test_a_group_names_conformance_or_nothing_runs_it(self):
+        """The pytest suite ignores tests/conformance. If no group names the
+        conformance suite either, those tests run nowhere and the gate is green
+        having skipped a fifth of the suite."""
+        grouped = {name for group in SUITE_GROUPS.values() for name in group}
+        assert "conformance" in grouped
+
+    def test_conformance_needs_nothing_pytest_does_not(self):
+        probe = suites.default_availability(Path("/repo"))
+        assert probe("conformance") == probe("pytest")
+
+
+class TestExecutingTier:
+    """`test` is the half that runs the code. While `check` still runs
+    everything the two overlap; that is deliberate, so nothing is uncovered at
+    any point between here and the narrowing."""
+
+    def test_it_is_exactly_the_three_that_execute_something(self):
+        from tests.tiers import test as test_tier
+
+        assert test_tier.SUITES == ("pytest", "cargo", "frontend")
+
+    def test_every_suite_it_names_can_be_built(self):
+        from tests.tiers import test as test_tier
+
+        for name in test_tier.SUITES:
+            assert suites.build_suite(Path("/repo"), name).name == name
+
+    def test_it_resolves_the_repo_root_not_the_tests_directory(self):
+        from tests.tiers import test as test_tier
+
+        assert (test_tier.REPO_ROOT / "pyproject.toml").is_file()
 
 
 if __name__ == "__main__":

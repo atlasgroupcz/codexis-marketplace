@@ -320,7 +320,7 @@ def assert_state_file(output: str, context: dict) -> dict:
         }
     kind = vars_.get("type", "file")
 
-    from tests._daemon_client import DaemonClient
+    from tests.harness.daemon_client import DaemonClient
 
     graphql_url = os.environ.get(
         "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
@@ -398,7 +398,7 @@ def assert_state_graphql(output: str, context: dict) -> dict:
             "reason": "assert_state_graphql: missing 'graphql' var",
         }
 
-    from tests._daemon_client import DaemonClient
+    from tests.harness.daemon_client import DaemonClient
 
     graphql_url = os.environ.get(
         "CDX_EVAL_GRAPHQL_URL", "http://localhost:8086/graphql"
