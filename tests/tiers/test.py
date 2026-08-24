@@ -26,30 +26,33 @@ from tests.harness.suites import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Lanes: sets of suites that can run at the same time as each other, because
-# they reach for a different toolchain and a different part of the tree. Not
-# "one pipeline stage" - that was the old grouping, and it existed only so
-# `bun install` could happen between two of them. A pipeline may run the lanes
-# in parallel or one after the other; either way each reports its own result.
-LANES: dict[str, tuple[str, ...]] = {
+# The parts a pipeline may ask for one at a time, so each gets its own stage and
+# its own result. The split follows the toolchain: these two reach for different
+# ones and write to different corners of the tree, which is what lets a pipeline
+# run them at the same time if it wants to.
+#
+# Not the old suite grouping brought back. That existed so `bun install` could
+# happen between two stages, which was a workaround and left with it.
+PARTS: dict[str, tuple[str, ...]] = {
     "backend": ("pytest", "cargo"),
     "frontend": ("frontend",),
 }
 
-# Derived, so the two cannot drift.
-SUITES: tuple[str, ...] = tuple(name for lane in LANES.values() for name in lane)
+# Derived, so the two cannot drift: a suite added to a part runs, and a suite
+# added to none is a name this tier does not know.
+SUITES: tuple[str, ...] = tuple(name for part in PARTS.values() for name in part)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the repo's test suites.")
     parser.add_argument(
-        "--lane",
-        choices=sorted(LANES),
-        help="Run one lane instead of all of them, for a pipeline that gives "
+        "--only",
+        choices=sorted(PARTS),
+        help="Run one part instead of all of them, for a pipeline that gives "
         "each its own stage.",
     )
     args = parser.parse_args(argv)
-    wanted = LANES[args.lane] if args.lane else SUITES
+    wanted = PARTS[args.only] if args.only else SUITES
 
     if not pytest_available():
         print(missing_pytest_message(), file=sys.stderr, flush=True)
