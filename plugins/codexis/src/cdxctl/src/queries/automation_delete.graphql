@@ -1,0 +1,6 @@
+mutation DeleteAutomation($id: ID!) {
+    deleteNode(id: $id) {
+        id
+        ... on Automation { title }
+    }
+}

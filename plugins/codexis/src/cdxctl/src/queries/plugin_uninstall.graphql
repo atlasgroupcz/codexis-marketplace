@@ -1,0 +1,9 @@
+mutation UninstallPlugin($input: PluginInstallInput!) {
+    uninstallPlugin(input: $input) {
+        id
+        name
+        version
+        description
+        marketplace { id name }
+    }
+}

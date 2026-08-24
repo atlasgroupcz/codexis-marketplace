@@ -1,0 +1,7 @@
+mutation AddNumberTabularColumn($id: ID!, $name: String!, $description: String) {
+    addNumberTabularColumn(id: $id, name: $name, description: $description) {
+        id
+        columns { id name description __typename }
+        status
+    }
+}

@@ -1,0 +1,8 @@
+mutation StartTabularExtraction($id: ID!) {
+    startTabularExtraction(id: $id) {
+        id
+        status
+        progress { totalFiles extractedFiles startedAt elapsedSeconds }
+        columns { id name description __typename }
+    }
+}

@@ -1,0 +1,7 @@
+mutation SetAutomationEnabled($id: ID!, $enabled: Boolean!) {
+    setAutomationEnabled(id: $id, enabled: $enabled) {
+        id
+        title
+        enabled
+    }
+}

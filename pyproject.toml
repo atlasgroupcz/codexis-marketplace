@@ -15,6 +15,9 @@ dev = [
     "pyyaml>=6",
     # … and addresses into their results with JSONPath expressions.
     "jsonpath-ng>=1.6",
+    # Validates cdxctl's GraphQL documents against the daemon's schema. Test-only:
+    # cdxctl ships the documents as plain strings and never parses them at runtime.
+    "graphql-core>=3.2,<4",
     # Lint + format. Pinned to a minor: the default rule set widens between
     # releases, and `select` below only holds if the rule names it lists exist.
     "ruff>=0.16,<0.17",

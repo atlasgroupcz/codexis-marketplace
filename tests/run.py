@@ -3,6 +3,7 @@
 
 Usage:
   python tests/run.py check         # fast gate: lint, format, types, tests
+  python tests/run.py contract      # cdxctl GraphQL documents vs the daemon schema
   python tests/run.py marketplace   # daemon install/marketplace acceptance
   python tests/run.py eval          # promptfoo behavioral evals (the one tier)
   python tests/run.py all           # every tier in order, fail-fast on the gate
@@ -23,12 +24,15 @@ TESTS_DIR = Path(__file__).resolve().parent
 # subcommand -> script path (relative to tests/), invoked as `python <script> ...`.
 COMMANDS: dict[str, str] = {
     "check": "_unit_gate.py",
+    "contract": "test-cdxctl-contract.py",
     "marketplace": "test-marketplace.py",
     "eval": "promptfoo/run.py",
 }
 
-# Order for `all`: the tiers run in COMMANDS order - the check tier is defined first
-# because it needs no daemon and fails fastest.
+# Order for `all`: the tiers run in COMMANDS order, cheapest first. `check` needs
+# no daemon at all; `contract` needs one but answers in a single request, so a
+# client that drifted from the schema is reported before the install lifecycle
+# spends two minutes finding out the same thing the hard way.
 ORDER: list[str] = list(COMMANDS)
 
 

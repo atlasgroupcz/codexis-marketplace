@@ -1,0 +1,14 @@
+query GetAvailablePlugins {
+    marketplaces {
+        id
+        name
+        plugins {
+            id
+            name
+            version
+            description
+            category
+            tags
+        }
+    }
+}

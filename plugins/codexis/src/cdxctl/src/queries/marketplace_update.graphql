@@ -1,0 +1,10 @@
+mutation UpdateMarketplace($id: ID!) {
+    updateMarketplace(id: $id) {
+        marketplace
+        previousCommit
+        newCommit
+        status
+        error
+        updatedPlugins { id name version marketplace { id name } }
+    }
+}

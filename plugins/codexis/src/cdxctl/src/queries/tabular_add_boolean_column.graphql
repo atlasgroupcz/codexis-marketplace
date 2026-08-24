@@ -1,0 +1,7 @@
+mutation AddBooleanTabularColumn($id: ID!, $name: String!, $description: String) {
+    addBooleanTabularColumn(id: $id, name: $name, description: $description) {
+        id
+        columns { id name description __typename }
+        status
+    }
+}

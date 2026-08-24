@@ -1,0 +1,6 @@
+mutation TriggerAutomation($id: ID!) {
+    triggerAutomation(id: $id) {
+        id
+        lastRun { id status startedAt trigger }
+    }
+}
