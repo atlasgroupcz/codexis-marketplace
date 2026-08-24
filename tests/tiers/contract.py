@@ -64,7 +64,7 @@ def check_contract(client: DaemonClient, r: Results) -> None:
         r.ok(f"{len(extraction.documents)} documents match the daemon schema")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="cdxctl GraphQL Contract Test")
     parser.add_argument(
         "--daemon", required=True, help="Daemon URL (e.g. http://localhost:8086)"
@@ -76,7 +76,7 @@ def main() -> int:
         "should pass it: an argument is visible in the process "
         "list and in any shell trace.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if not args.token:
         parser.error("a token is required: pass --token or set CDX_DAEMON_TOKEN")
 

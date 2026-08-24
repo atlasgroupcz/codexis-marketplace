@@ -6,10 +6,10 @@ Tests the marketplace against a running cdx-daemon by cloning via GIT source,
 then validating the full lifecycle: install/uninstall each plugin, skills, hooks.
 
 Usage:
-  python3 tests/test-marketplace.py --daemon URL --token JWT --git-url URL --git-ref REF
+  python3 tests/tiers/marketplace.py --daemon URL --token JWT --git-url URL --git-ref REF
 
 Example:
-  python3 tests/test-marketplace.py \\
+  python3 tests/tiers/marketplace.py \\
     --daemon http://localhost:8086 \\
     --token eyJhbGci... \\
     --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \\
@@ -210,7 +210,7 @@ def remove_marketplace(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Codexis Marketplace Acceptance Test")
     parser.add_argument(
         "--daemon", required=True, help="Daemon URL (e.g. http://localhost:8086)"
@@ -244,7 +244,7 @@ def main() -> int:
         "phase when the daemon serves plugins in parallel; the "
         "log stays in manifest order regardless.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if not args.token:
         parser.error("a token is required: pass --token or set CDX_DAEMON_TOKEN")
 

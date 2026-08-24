@@ -2,16 +2,21 @@
 """Single front door for the marketplace test suites.
 
 Usage:
-  python tests/run.py check         # fast gate: lint, format, types, tests
-  python tests/run.py test          # pytest, cargo test, turbo test
-  python tests/run.py contract      # cdxctl GraphQL documents vs the daemon schema
-  python tests/run.py marketplace   # daemon install/marketplace acceptance
-  python tests/run.py eval          # promptfoo behavioral evals (the one tier)
-  python tests/run.py all           # every tier in order, fail-fast on the gate
+  python tests/run.py check         # static: lint, format, types, repo conventions
+  python tests/run.py test          # executing: pytest, cargo test, turbo test
+  python tests/run.py contract      # GraphQL documents vs a live daemon's schema
+  python tests/run.py marketplace   # plugin install/uninstall acceptance
+  python tests/run.py eval          # promptfoo behavioral evals
+  python tests/run.py all           # every tier in order, stopping at the first failure
 
-Anything after the subcommand is passed straight through to the underlying
-script, so `python tests/run.py eval --only ares` works. This is a thin
-dispatcher; each tier's real logic stays in its own module.
+Each tier runs as a subprocess rather than an import. That keeps the contract to
+an exit code, lets a tier call sys.exit() without taking the dispatcher with it,
+and stops one tier's failure from ending the rest of an `all` run. Tiers stay
+runnable on their own: `python -m tests.tiers.check` works from the repo root.
+
+Anything after the subcommand is passed through to the tier, so
+`python tests/run.py eval --only ares` works. Only the daemon-backed tiers get
+it; the static two reject an unknown flag rather than ignoring it.
 """
 
 from __future__ import annotations

@@ -97,7 +97,7 @@ def test_plugin_has_install_contract(name: str):
 def test_install_contract_names_every_skill_on_disk(name: str):
     """The contract must be exact, not a subset.
 
-    tests/test-marketplace.py iterates the contract and fails on skills it cannot
+    the marketplace tier iterates the contract and fails on skills it cannot
     find after install; it never compares back the other way. A skill the contract
     omits is therefore never install- or uninstall-tested at all, and nothing else
     in the suite notices - codexis-dane and codexis-ucetnictvi shipped untested

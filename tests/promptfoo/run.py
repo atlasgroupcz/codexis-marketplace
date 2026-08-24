@@ -20,7 +20,7 @@ Configs not listed in `BATCHES` get their own solo batch - useful for
 mutation-heavy plugins where shared state would interfere (e.g. the cdxctl
 battery once it comes back).
 
-Marketplace lifecycle mirrors `tests/test-marketplace.py`:
+Marketplace lifecycle mirrors `tests/tiers/marketplace.py`:
   - At startup: `add_marketplace_idempotent` removes any pre-existing copy
     (matched on the local manifest's name) and adds the requested ref fresh.
   - At end (try/finally): `remove_marketplace` deletes it. The daemon ends
@@ -460,7 +460,7 @@ def assign_batches(cfgs: list[Path]) -> list[list[Path]]:
 def add_marketplace(client: DaemonClient, git_url: str, git_ref: str) -> dict:
     """Add (or replace) the local repo's marketplace at the given git ref.
 
-    Mirrors `tests/test-marketplace.py::add_marketplace`: removes any existing
+    Mirrors `tests/tiers/marketplace.py::add_marketplace`: removes any existing
     marketplace whose name matches `.claude-plugin/marketplace.json`, then
     adds against the requested ref.
     """

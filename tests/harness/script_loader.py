@@ -1,8 +1,8 @@
 """Import a plugin's bin/ entry point as a module, for tests to poke at.
 
 Those entry points ship without a .py extension - they are installed onto PATH
-and run as commands - so a plain import cannot find them and every suite that
-wants one has to go through importlib by hand.
+and run as commands - so a plain import cannot find them. This is only for them:
+the tiers are importable modules and reach each other by name.
 """
 
 from __future__ import annotations

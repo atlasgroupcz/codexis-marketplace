@@ -191,6 +191,41 @@ def default_availability(repo_root: Path) -> Callable[[str], bool]:
     return probe
 
 
+def select(
+    repo_root: Path,
+    names: Iterable[str],
+    *,
+    strict: bool,
+    available: Callable[[str], bool] | None = None,
+) -> list[Suite]:
+    """The suites to run, in the order given.
+
+    `strict` is the caller's promise that the environment was provisioned, so a
+    missing toolchain raises instead of being skipped: a green run that ran
+    nothing is worse than a red one. Without it, what the machine lacks is left
+    out, which is what you want on a laptop with no Rust installed.
+    """
+    if available is None:
+        available = default_availability(repo_root)
+    wanted = list(names)
+
+    if strict:
+        missing = [name for name in wanted if not available(name)]
+        if missing:
+            raise UnavailableToolchain(
+                f"{', '.join(repr(n) for n in missing)} cannot run here, "
+                f"their toolchains are not installed.\n"
+                f"  Refusing to skip them: a green run that ran nothing is worse "
+                f"than a red one.\n"
+                f"  Install them on this machine (the CI agent provisions "
+                f"uv/rustup/bun in the pipeline's Init stage)."
+            )
+    else:
+        wanted = [name for name in wanted if available(name)]
+
+    return [build_suite(repo_root, name) for name in wanted]
+
+
 def run_gate(
     tier: str,
     suites: Iterable[Suite],
