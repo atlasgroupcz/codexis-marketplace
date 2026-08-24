@@ -15,8 +15,8 @@ import urllib.request
 
 import pytest
 
-from tests import _daemon_client
-from tests._daemon_client import _MAX_ATTEMPTS, _TRANSIENT_STATUS, DaemonClient
+from tests.harness import daemon_client
+from tests.harness.daemon_client import _MAX_ATTEMPTS, _TRANSIENT_STATUS, DaemonClient
 
 
 def _http_error(code: int) -> urllib.error.HTTPError:
@@ -28,7 +28,7 @@ def _http_error(code: int) -> urllib.error.HTTPError:
 @pytest.fixture(autouse=True)
 def _no_sleep(monkeypatch):
     """Retries must not actually sleep during the unit tests."""
-    monkeypatch.setattr(_daemon_client.time, "sleep", lambda *_a: None)
+    monkeypatch.setattr(daemon_client.time, "sleep", lambda *_a: None)
 
 
 def _patch_urlopen(monkeypatch, responses):

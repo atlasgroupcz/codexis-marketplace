@@ -16,8 +16,8 @@ import urllib.error
 
 import pytest
 
-from tests._output import Results
-from tests._plugin_runner import RunOne, run_plugins
+from tests.harness.output import Results
+from tests.harness.plugin_runner import RunOne, run_plugins
 
 
 class TestSerial:

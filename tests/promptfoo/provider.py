@@ -33,8 +33,8 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # Reuse the legacy runner's tested daemon abstractions. They already
 # speak the latest schema (Chat / AiChatMessage / typed *ToolMessagePart).
-from tests._chat_runner import ChatRunner
-from tests._daemon_client import DaemonClient
+from tests.harness.chat_runner import ChatRunner
+from tests.harness.daemon_client import DaemonClient
 
 # Sentinel markers used to smuggle structured data from provider to
 # Python assertion through promptfoo's Python wrapper. The wrapper

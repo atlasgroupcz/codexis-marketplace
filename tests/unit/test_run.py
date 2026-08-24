@@ -11,15 +11,16 @@ from tests import run
 
 class TestDispatchTable:
     def test_every_tier_has_a_command(self):
-        assert set(run.COMMANDS) == {"check", "contract", "marketplace", "eval"}
+        assert set(run.COMMANDS) == {"check", "test", "contract", "marketplace", "eval"}
 
     @pytest.mark.parametrize(
         "tier,script",
         [
-            ("check", "_unit_gate.py"),
-            ("contract", "test-cdxctl-contract.py"),
-            ("marketplace", "test-marketplace.py"),
-            ("eval", "promptfoo/run.py"),
+            ("check", "tests.tiers.check"),
+            ("test", "tests.tiers.test"),
+            ("contract", "tests.tiers.contract"),
+            ("marketplace", "tests.tiers.marketplace"),
+            ("eval", "tests.promptfoo.run"),
         ],
     )
     def test_tier_maps_to_its_script(self, tier, script):
@@ -35,11 +36,38 @@ class TestAllOrdering:
 
 
 class TestBuildArgv:
-    def test_prefixes_python_and_the_script_path(self):
+    def test_runs_the_tier_as_a_module_under_this_interpreter(self):
+        """`-m`, not a path: a script run by path gets its own directory on
+        sys.path and not the repo root, which is what every tier used to work
+        around with a bootstrap of its own."""
         argv = run.build_argv("check", ["--suite", "backend"])
         assert argv[0] == sys.executable
-        assert argv[1].endswith("tests/_unit_gate.py")
+        assert argv[1:3] == ["-m", "tests.tiers.check"]
         assert argv[-2:] == ["--suite", "backend"]
+
+    def test_every_command_names_an_importable_module(self):
+        import importlib.util
+
+        for name, module in run.COMMANDS.items():
+            assert importlib.util.find_spec(module) is not None, name
+
+    def test_static_tiers_get_no_daemon_arguments(self):
+        """Their argparse rejects an unknown flag, so handing them --daemon
+        would turn a passthrough into a crash."""
+        assert not run.DAEMON_TIERS & {"check", "test"}
+
+    def test_no_tier_runs_another_tier(self):
+        """The marketplace tier used to run the whole check gate before touching
+        the daemon, skippable with --skip-unit-tests. A pipeline that verifies an
+        install has no reason to own the frontend toolchain, and one that dropped
+        the flag went red on a turbo it could not find."""
+        from pathlib import Path
+
+        from tests.tiers import marketplace
+
+        source = Path(marketplace.__file__).read_text()
+        assert "run_default_gate" not in source
+        assert "skip-unit-tests" not in source
 
     def test_unknown_command_raises(self):
         with pytest.raises(KeyError):

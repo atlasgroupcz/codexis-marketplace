@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 
-from tests._daemon_client import DaemonClient
+from tests.harness.daemon_client import DaemonClient
 
 
 class FakeClock:

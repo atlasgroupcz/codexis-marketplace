@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 
-from tests._output import Results
+from tests.harness.output import Results
 
 
 class TestRecordMode:

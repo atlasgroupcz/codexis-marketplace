@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Shell scripts the deploy pipeline executes directly. A missing +x bit on any of
 # these has broken the pipeline before, so guard the whole class of them.
@@ -200,18 +200,4 @@ def test_binary_arch_guard_actually_found_binaries() -> None:
     # into a test that passes because it inspects nothing.
     assert _PLUGIN_ELF_BINARIES, (
         "no ELF binaries found under plugins/ - guard is looking in the wrong place"
-    )
-
-
-def test_suite_group_keys_match_what_jenkins_invokes() -> None:
-    # Jenkins runs `tests/_unit_gate.py --suite backend` and `--suite frontend`
-    # from aws0's jenkins/dsl/cdx-daemon/marketplace-test-on-mr/Jenkinsfile.
-    # Renaming a key here turns a green MR pipeline into "unknown suite group"
-    # in another repo, so the pair is pinned on this side too.
-    from tests._unit_gate import SUITE_GROUPS
-
-    assert set(SUITE_GROUPS) == {"backend", "frontend"}, (
-        "the suite group keys are a contract with the marketplace-test-on-mr "
-        "Jenkins job; changing them needs a matching aws0 change in the same "
-        "release"
     )

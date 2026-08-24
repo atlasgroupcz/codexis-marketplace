@@ -34,7 +34,7 @@ from graphql import (
     validate,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 CDXCTL_GRAPHQL_SOURCE = REPO_ROOT / "plugins/codexis/src/cdxctl/src/graphql.rs"
 
 # The declaration is the index, not the content: it names the .graphql file and,

@@ -11,7 +11,7 @@ import sys
 
 import pytest
 
-from tests._daemon_client import DaemonClient
+from tests.harness.daemon_client import DaemonClient
 
 
 class FakeClock:

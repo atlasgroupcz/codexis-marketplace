@@ -15,7 +15,7 @@ Judge transport is provider-agnostic: any OpenAI-compatible `/chat/completions` 
 (the org LiteLLM proxy, OpenAI, a gateway). Mirrors cdx-daemon `codexis-eval-ops`'s
 holistic-grader (`OPENAI_BASE_URL` / `OPENAI_API_KEY` / `CDX_GRADER_MODEL`,
 `response_format: json_object`, `temperature: 0`), implemented with stdlib urllib to
-match this repo's HTTP convention (`_daemon_client.py`).
+match this repo's HTTP convention (`harness/daemon_client.py`).
 """
 
 from __future__ import annotations

@@ -12,7 +12,7 @@ import os
 import pytest
 from sledovana_judikatura_core import notify_settings
 
-from tests._script_loader import load_script
+from tests.harness.script_loader import load_script
 
 
 def _load_component():
