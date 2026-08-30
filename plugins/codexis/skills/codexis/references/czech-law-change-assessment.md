@@ -13,7 +13,6 @@ Use this guide when the task is not only to find a Czech amendment, but to deter
 - Start with the first task-serving `cdx-cli` request. Do not run `which cdx-cli`, inspect env vars, or call bare `cdx-cli` as a preflight step.
 - If the law number and year are known, skip search and go straight to `cdx://cz_law/{lawNumber}/{lawYear}/...`.
 - For change questions, start with `/versions`, not `/text`, not broad keyword search, and not web lookup.
-- Sweeping a curated list of acts is one `script` call over `/versions`, returning only the acts with a boundary at the target date; open historical wording for those alone. See `references/script-research.md`.
 - Use `cdx://cz_law/{lawNumber}/{lawYear}/meta` to obtain both the base CR id (`.cr.main.docId`) and the currently resolved version id (`.docId`).
 - Use the base CR id for `/related` and `/related/counts`.
 - Use version ids for `/text` and `/toc`.
