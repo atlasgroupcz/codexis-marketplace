@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tests._script_loader import load_script
+from tests.harness.script_loader import load_script
 
 BIN = Path(__file__).resolve().parents[2] / "bin" / "insolvence-cli"
 

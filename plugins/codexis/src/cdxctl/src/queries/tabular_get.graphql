@@ -1,0 +1,29 @@
+query GetTabularExtraction($id: ID!) {
+    tabularExtraction(id: $id) {
+        id
+        status
+        progress { totalFiles extractedFiles startedAt elapsedSeconds }
+        columns {
+            id
+            name
+            description
+            __typename
+        }
+        rows {
+            fileName
+            status
+            error
+            cells {
+                column { id name }
+                ... on TextCellValue { text }
+                ... on DateCellValue { date }
+                ... on BooleanCellValue { checked }
+                ... on NumberCellValue { number }
+                ... on CurrencyCellValue { amount currencyCode }
+                ... on ListCellValue { items }
+                ... on TagCellValue { tag }
+                ... on TagsCellValue { tags }
+            }
+        }
+    }
+}

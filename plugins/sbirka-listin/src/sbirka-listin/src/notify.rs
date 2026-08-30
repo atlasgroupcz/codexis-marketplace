@@ -136,7 +136,6 @@ pub fn dispatch(results: &[CheckResult<Change>]) -> Value {
         if send_inapp(
             &change_subject(&changed),
             NOTIFICATION_TYPE,
-            None,
             link.as_deref(),
         ) {
             "odesláno"

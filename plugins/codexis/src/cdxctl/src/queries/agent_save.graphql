@@ -1,0 +1,24 @@
+mutation SaveAgent($id: ID, $input: AgentInput!) {
+    saveAgent(id: $id, input: $input) {
+        agent {
+            id
+            name
+            fullName
+            description
+            plugin { id name }
+            tools { toolName displayName kind source }
+            skills
+            jurisdictions
+            model
+            maxTurns
+            instructions
+            disallowedTools { toolName displayName kind source }
+            sourceKind
+            editable
+            deletable
+            path { absolutePath displayPath }
+            sourcePath { absolutePath displayPath }
+        }
+        errors { field message allowedValues }
+    }
+}

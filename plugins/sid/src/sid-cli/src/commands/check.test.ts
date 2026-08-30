@@ -95,7 +95,6 @@ describe("odkaz ve zvonku", () => {
   it("s čekajícím potvrzením vede rovnou na seznam potvrzení", async () => {
     const input = await bellInput([], [{ id: "c1" }])
     expect(input.link).toBe("http://s/confirmations")
-    expect(input.action).toBe("Otevřít v SID")
   })
 
   it("bez čekajících potvrzení vede na SID, ne na prázdný seznam potvrzení", async () => {

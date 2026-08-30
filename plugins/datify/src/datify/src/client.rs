@@ -24,6 +24,16 @@ pub struct DatifyClient {
     http: reqwest::blocking::Client,
 }
 
+/// An attachment's bytes plus the two headers that decide what it is called and
+/// how it is read. Kept raw so `download` owns naming and this module owns HTTP.
+#[derive(Debug)]
+pub struct AttachmentContent {
+    pub bytes: Vec<u8>,
+    /// Raw `Content-Disposition`, when the reply carried one.
+    pub disposition: Option<String>,
+    pub content_type: Option<String>,
+}
+
 /// Where an uploaded file lands.
 #[derive(Clone, Copy)]
 pub enum UploadTarget<'a> {
@@ -206,6 +216,61 @@ impl DatifyClient {
             &[],
             None,
         )
+    }
+
+    /// Every attachment on a record, across all of its attachment properties.
+    ///
+    /// Each entry adds the `propertyId` it hangs under, which the record's own
+    /// values cannot tell apart - there they are bare id arrays per property.
+    pub fn record_attachments(&self, record_id: &str) -> Result<Value> {
+        self.request(
+            reqwest::Method::GET,
+            &format!("/records/{record_id}/attachments"),
+            &[],
+            None,
+        )
+    }
+
+    /// An attachment's bytes, with the name and media type Datify reports.
+    ///
+    /// Separate from `request` because the body is a file rather than JSON:
+    /// `send` parses every reply, which on a PDF fails on the first byte.
+    pub fn attachment_content(&self, attachment_id: &str) -> Result<AttachmentContent> {
+        let path = format!("/attachments/{attachment_id}/content");
+        let response = self
+            .http
+            .request(reqwest::Method::GET, self.url(&path))
+            .header("Authorization", format!("Bearer {}", self.token))
+            // Not `application/json` - that is what every other call asks for,
+            // and here it would be asking for the wrong thing.
+            .header("Accept", "*/*")
+            .send()
+            .map_err(|e| DatifyError::Network(e.to_string()))?;
+
+        let status = response.status().as_u16();
+        let header = |name: &str| {
+            response
+                .headers()
+                .get(name)
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_string)
+        };
+        let disposition = header("content-disposition");
+        let content_type = header("content-type");
+
+        if !(200..300).contains(&status) {
+            let body = response.text().unwrap_or_default();
+            return Err(classify(status, &body, &path));
+        }
+        let bytes = response
+            .bytes()
+            .map_err(|e| DatifyError::Network(e.to_string()))?
+            .to_vec();
+        Ok(AttachmentContent {
+            bytes,
+            disposition,
+            content_type,
+        })
     }
 
     /// Upload a file. Datify exposes three targets, differing only in where the
@@ -405,7 +470,7 @@ fn error_message(body: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::stub;
+    use crate::test_support::{stub, stub_raw};
 
     fn client() -> DatifyClient {
         DatifyClient::build("https://api.datify.cz".into(), "t".into()).unwrap()
@@ -654,6 +719,16 @@ mod tests {
                 "/v0/attachments/a1",
                 Box::new(|c| drop(c.get_attachment("a1"))),
             ),
+            (
+                "GET",
+                "/v0/records/r1/attachments",
+                Box::new(|c| drop(c.record_attachments("r1"))),
+            ),
+            (
+                "GET",
+                "/v0/attachments/a1/content",
+                Box::new(|c| drop(c.attachment_content("a1"))),
+            ),
             ("GET", "/v0/users/u1", Box::new(|c| drop(c.user("u1")))),
         ];
         for (method, target, call) in calls {
@@ -701,6 +776,73 @@ mod tests {
             assert_eq!(seen.method, "POST");
             assert_eq!(seen.target, expected);
         }
+    }
+
+    // ── attachment content ───────────────────────────────────────────────────
+
+    #[test]
+    fn a_download_returns_the_raw_bytes_with_the_naming_headers() {
+        let (base, seen) = stub_raw(
+            200,
+            &[
+                ("Content-Type", "image/png"),
+                (
+                    "Content-Disposition",
+                    "attachment; filename=\"AAA 1234 foto1.png\"",
+                ),
+            ],
+            b"\x89PNG\r\n\x1a\n\xff\x00",
+        );
+        let client = DatifyClient::build(base, "secret-token".into()).unwrap();
+
+        let content = client.attachment_content("a1").unwrap();
+
+        assert_eq!(seen.recv().unwrap().target, "/v0/attachments/a1/content");
+        // Byte-for-byte - the point of not going through the JSON path.
+        assert_eq!(content.bytes, b"\x89PNG\r\n\x1a\n\xff\x00");
+        assert_eq!(content.content_type.as_deref(), Some("image/png"));
+        assert!(
+            content
+                .disposition
+                .as_deref()
+                .is_some_and(|d| d.contains("AAA 1234 foto1.png")),
+            "{:?}",
+            content.disposition
+        );
+    }
+
+    /// The download path does its own status handling, so it needs its own
+    /// proof that a failure still becomes the actionable variant.
+    #[test]
+    fn a_download_of_a_missing_attachment_is_classified_like_any_other_call() {
+        let (base, _seen) = stub_raw(404, &[("Content-Type", "application/json")], b"{}");
+        let client = DatifyClient::build(base, "t".into()).unwrap();
+
+        let err = client.attachment_content("nope").unwrap_err();
+        assert!(
+            err.to_string().contains("/attachments/nope/content"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn a_download_of_a_rejected_token_is_an_auth_error() {
+        let (base, _seen) = stub_raw(401, &[], b"nope");
+        let client = DatifyClient::build(base, "t".into()).unwrap();
+        assert!(matches!(
+            client.attachment_content("a1").unwrap_err(),
+            DatifyError::Auth
+        ));
+    }
+
+    #[test]
+    fn a_download_survives_a_reply_that_names_nothing() {
+        let (base, _seen) = stub_raw(200, &[], b"bytes");
+        let client = DatifyClient::build(base, "t".into()).unwrap();
+
+        let content = client.attachment_content("a1").unwrap();
+        assert_eq!(content.bytes, b"bytes");
+        assert_eq!(content.disposition, None);
     }
 
     #[test]

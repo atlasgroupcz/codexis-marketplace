@@ -1,0 +1,6 @@
+mutation DeleteAgent($id: ID!) {
+    deleteNode(id: $id) {
+        id
+        ... on Agent { name }
+    }
+}

@@ -117,6 +117,21 @@ describe("žádný e-mail", () => {
     expect(urls.some((u) => u.includes("/rest/"))).toBe(false)
   })
 
+  it("odmítnutou mutaci nehlásí jako doručenou - HTTP 200 nese errors v těle", async () => {
+    writeSecret("t")
+    const f = (async () =>
+      new Response(JSON.stringify({ errors: [{ message: "Field 'action' in type 'Notification' is undefined" }] }), {
+        status: 200,
+      })) as unknown as typeof fetch
+    expect(await sendDigest("s", f)).toBe(false)
+  })
+
+  it("odpověď, která není JSON, je selhání - proxy chybová stránka není doručení", async () => {
+    writeSecret("t")
+    const f = (async () => new Response("<html>502 Bad Gateway</html>", { status: 200 })) as unknown as typeof fetch
+    expect(await sendDigest("s", f)).toBe(false)
+  })
+
   it("neptá se daemona na adresu přihlášeného uživatele", async () => {
     writeSecret("t")
     let calls = 0
@@ -138,15 +153,19 @@ describe("cíl zvonku", () => {
       if (String(u).endsWith("/graphql")) gqlBody = String(init.body)
       return new Response("{}", { status: 200 })
     }) as unknown as typeof fetch
-    await sendDigest("Předmět", f, target)
+    await sendDigest("Předmět", f, target as { link?: string })
     return JSON.parse(gqlBody).variables.input
   }
 
-  it("předá odkaz i popisek akce do createNotification", async () => {
+  it("předá odkaz do createNotification", async () => {
     // Without this the bell is a dead end: a count with nothing to click.
-    const input = await bellInput({ link: "https://sid.test/confirmations", action: "Otevřít v SID" })
+    const input = await bellInput({ link: "https://sid.test/confirmations" })
     expect(input.link).toBe("https://sid.test/confirmations")
-    expect(input.action).toBe("Otevřít v SID")
+  })
+
+  it("action neposílá ani když ho volající předá - vstupní typ to pole nemá", async () => {
+    const input = await bellInput({ link: "https://sid.test/confirmations", action: "Otevřít v SID" })
+    expect(input).not.toHaveProperty("action")
   })
 
   it("bez cíle pole vůbec neposílá (ne jako null)", async () => {

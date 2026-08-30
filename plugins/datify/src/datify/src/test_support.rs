@@ -19,12 +19,29 @@ pub struct Seen {
     pub body: String,
 }
 
-/// Serve exactly one request with the given reply, then stop.
+/// Serve exactly one JSON request with the given reply, then stop.
 ///
 /// Returns the base URL to point a client at and the channel the request
 /// arrives on. Nothing is mocked: the request really crosses a socket, so the
 /// method, URL, headers and body are the ones that would go to Datify.
 pub fn stub(status: u16, body: &'static str) -> (String, mpsc::Receiver<Seen>) {
+    stub_raw(
+        status,
+        &[("Content-Type", "application/json")],
+        body.as_bytes(),
+    )
+}
+
+/// Same, with the reply's headers and raw bytes chosen by the caller.
+///
+/// The attachment download needs both: its body is binary rather than text, and
+/// the file name comes from a `Content-Disposition` header, so a stub that
+/// always says `application/json` cannot exercise it.
+pub fn stub_raw(
+    status: u16,
+    headers: &'static [(&'static str, &'static str)],
+    body: &'static [u8],
+) -> (String, mpsc::Receiver<Seen>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let (tx, rx) = mpsc::channel();
@@ -81,11 +98,14 @@ pub fn stub(status: u16, body: &'static str) -> (String, mpsc::Receiver<Seen>) {
         });
 
         let mut stream = reader.into_inner();
-        let _ = write!(
-            stream,
-            "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
-            body.len()
-        );
+        let mut head = format!("HTTP/1.1 {status} X\r\n");
+        for (name, value) in headers {
+            head.push_str(&format!("{name}: {value}\r\n"));
+        }
+        head.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
+        // Headers as text, body as bytes - a download's body is not valid UTF-8.
+        let _ = stream.write_all(head.as_bytes());
+        let _ = stream.write_all(body);
     });
 
     (format!("http://127.0.0.1:{port}"), rx)

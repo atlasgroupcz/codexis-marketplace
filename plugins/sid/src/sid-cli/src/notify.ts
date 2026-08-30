@@ -51,13 +51,17 @@ function daemonAuth(): string | null {
 }
 
 /**
- * Where the bell takes the reader, and what the button says.
+ * Where the bell takes the reader.
  *
  * The notification centre renders `link` as a plain anchor, so an absolute
  * SID URL is fine (and is what we want - the plugin's own panel is a
  * settings screen, not a place to act on a document).
+ *
+ * There is deliberately no call-to-action field: `CreateNotificationInput`
+ * defines `message`, `content`, `link`, `type` and `vars`, and the daemon
+ * rejects the whole mutation over an input field it does not know.
  */
-export type BellTarget = { link?: string; action?: string }
+export type BellTarget = { link?: string }
 
 async function sendBell(
   message: string,
@@ -71,7 +75,6 @@ async function sendBell(
   // schema and the peer plugins leave them out when there is no target.
   const input: Record<string, string> = { message, type: "sid-update" }
   if (target.link) input.link = target.link
-  if (target.action) input.action = target.action
   try {
     const res = await f(graphqlUrl(daemonUrl), {
       method: "POST",
@@ -79,7 +82,14 @@ async function sendBell(
       headers: { authorization: auth, "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify({ query, variables: { input } }),
     })
-    return res.ok
+    if (!res.ok) return false
+    // The status alone does not say whether the mutation ran: a rejected one
+    // comes back as HTTP 200 with the reason in `errors`, so reading only the
+    // status reports every rejection as a delivery. `res.json()` throwing on a
+    // body that is not JSON at all - a proxy error page - lands in the catch.
+    const payload: unknown = await res.json()
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return false
+    return !(payload as { errors?: unknown }).errors
   } catch {
     return false
   }

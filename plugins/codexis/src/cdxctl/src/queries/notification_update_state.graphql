@@ -1,0 +1,8 @@
+mutation UpdateNotificationState($input: UpdateNotificationStateInput!) {
+    updateNotificationState(input: $input) {
+        id
+        message
+        seen
+        confirmed
+    }
+}

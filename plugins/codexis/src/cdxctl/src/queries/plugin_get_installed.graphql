@@ -1,0 +1,14 @@
+query GetInstalledPlugins {
+    marketplaces(filter: { installState: INSTALLED }) {
+        id
+        name
+        plugins {
+            id
+            name
+            version
+            description
+            marketplace { id name }
+            installation { installedAt installedVersion }
+        }
+    }
+}

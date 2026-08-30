@@ -44,13 +44,10 @@ with a hand-rolled conversion that skips the visual check.
 Text and images answer different questions. Text gives you exact wording; the render gives
 you layout, stamps, signatures and tables that text extraction flattens or loses.
 
-```bash
-# 1. Text - via the ocr skill's command
-ocr /home/codexis/smlouva.docx      # → {"path": ".../smlouva.docx-ocr.zip"}
-unzip -o /home/codexis/smlouva.docx-ocr.zip -d /tmp/smlouva-text
-cat /tmp/smlouva-text/*.md
+Reading the file gives you the wording as markdown. It does not give you the pages, so
+render those as well:
 
-# 2. Pages as images
+```bash
 cdx-render -i /home/codexis/smlouva.docx
 ```
 
@@ -58,8 +55,8 @@ Then `Read` the PNGs. Do not skip this for documents where the layout carries me
 a signature block, a stamp, a two-column annex or a table with merged cells is invisible
 in the markdown but obvious in the image.
 
-For tracked changes, `ocr` flattens them. When the user asks about revisions, read the raw
-markup instead:
+Tracked changes are flattened in the markdown. When the user asks about revisions, read the
+raw markup instead:
 
 ```bash
 pandoc --track-changes=all smlouva.docx -o /tmp/smlouva-revisions.md
@@ -161,7 +158,7 @@ For each page, list every issue, including minor ones.
 **3. Grep for leftovers.**
 
 ```bash
-ocr /home/codexis/smlouva.docx && unzip -p /home/codexis/smlouva.docx-ocr.zip |
+pandoc /home/codexis/smlouva.docx -t plain |
   grep -iE 'lorem|ipsum|xxxx|TODO|\[doplnit\]|\{\{'
 ```
 
@@ -233,5 +230,4 @@ soffice -env:UserInstallation="file:///tmp/lo_profile_$$" --headless \
 
 - `docx-js` (Node, preinstalled) - creating documents
 - `cdx-render` - document → page PNGs (LibreOffice + poppler)
-- `ocr` - text extraction (from the ocr plugin)
 - `pandoc` - tracked changes

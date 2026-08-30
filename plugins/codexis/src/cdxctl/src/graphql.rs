@@ -1,578 +1,107 @@
 // ==================== Automations ====================
 
-pub const GET_AUTOMATIONS: &str = r#"
-query GetAutomations {
-    automations {
-        id
-        type
-        command
-        title
-        description
-        agent { id fullName }
-        skills { id fullName }
-        schedule { repeat dayPart daysOfWeek dayOfMonth }
-        prompt
-        enabled
-        maxTurns
-        model
-        modelConfiguration { key value }
-        jurisdictions
-        workDirPath { absolutePath displayPath }
-        lastRun {
-            id
-            status
-            startedAt
-            finishedAt
-            trigger
-            errorMessage
-        }
-    }
-}
-"#;
+pub const GET_AUTOMATIONS: &str = include_str!("queries/automation_get.graphql");
 
-pub const SAVE_AUTOMATION: &str = r#"
-mutation SaveAutomation($id: ID, $input: AutomationInput!) {
-    saveAutomation(id: $id, input: $input) {
-        automation {
-            id
-            type
-            command
-            title
-            description
-            agent { id fullName }
-            skills { id fullName }
-            schedule { repeat dayPart daysOfWeek dayOfMonth }
-            prompt
-            enabled
-            maxTurns
-            model
-            modelConfiguration { key value }
-            jurisdictions
-            workDirPath { absolutePath displayPath }
-        }
-        errors { field message allowedValues }
-    }
-}
-"#;
+pub const SAVE_AUTOMATION: &str = include_str!("queries/automation_save.graphql");
 
 // Toggle only the `enabled` flag. Unlike `saveAutomation` (USER-only, rejects
 // read-only carried/plugin automations), the daemon's `setAutomationEnabled`
 // works for both USER and carried automations - for carried ones it persists a
 // per-user enabled override. This is how a shipped plugin automation is disabled.
-pub const SET_AUTOMATION_ENABLED: &str = r#"
-mutation SetAutomationEnabled($id: ID!, $enabled: Boolean!) {
-    setAutomationEnabled(id: $id, enabled: $enabled) {
-        id
-        title
-        enabled
-    }
-}
-"#;
+pub const SET_AUTOMATION_ENABLED: &str = include_str!("queries/automation_set_enabled.graphql");
 
-pub const DELETE_AUTOMATION: &str = r#"
-mutation DeleteAutomation($id: ID!) {
-    deleteNode(id: $id) {
-        id
-        ... on Automation { title }
-    }
-}
-"#;
+pub const DELETE_AUTOMATION: &str = include_str!("queries/automation_delete.graphql");
 
-pub const TRIGGER_AUTOMATION: &str = r#"
-mutation TriggerAutomation($id: ID!) {
-    triggerAutomation(id: $id) {
-        id
-        lastRun { id status startedAt trigger }
-    }
-}
-"#;
+pub const TRIGGER_AUTOMATION: &str = include_str!("queries/automation_trigger.graphql");
 
 // ==================== Codexis 1.0 sync ====================
 
-pub const START_CODEXIS_IMPORT: &str = r#"
-mutation StartCodexisImport {
-    startCodexisImport {
-        runId
-        status
-        snapshotId
-        chatsImported
-        chatsSkipped
-        messagesImported
-        agentsImported
-        agentsSkipped
-        filesImported
-        error
-    }
-}
-"#;
+pub const START_CODEXIS_IMPORT: &str = include_str!("queries/codexis_import_start.graphql");
 
-pub const CODEXIS_IMPORT_STATUS: &str = r#"
-query CodexisImportStatus {
-    codexisImportStatus {
-        runId
-        status
-        snapshotId
-        chatsImported
-        chatsSkipped
-        messagesImported
-        agentsImported
-        agentsSkipped
-        filesImported
-        error
-    }
-}
-"#;
+pub const CODEXIS_IMPORT_STATUS: &str = include_str!("queries/codexis_import_status.graphql");
 
 // ==================== Marketplaces ====================
 
-pub const GET_MARKETPLACES: &str = r#"
-query GetMarketplaces {
-    marketplaces {
-        id
-        name
-        description
-        source { source url path ref }
-        installLocation { absolutePath displayPath }
-        lastUpdated
-        pluginCount
-        error
-        plugins {
-            id
-            name
-            description
-            version
-            category
-            tags
-        }
-    }
-}
-"#;
+pub const GET_MARKETPLACES: &str = include_str!("queries/marketplace_get.graphql");
 
-pub const ADD_MARKETPLACE: &str = r#"
-mutation AddMarketplace($input: MarketplaceSourceInput!) {
-    addMarketplace(input: $input) {
-        id
-        name
-        description
-        source { source url path ref }
-        pluginCount
-        error
-    }
-}
-"#;
+pub const ADD_MARKETPLACE: &str = include_str!("queries/marketplace_add.graphql");
 
-pub const REMOVE_MARKETPLACE: &str = r#"
-mutation RemoveMarketplace($id: ID!) {
-    deleteNode(id: $id) {
-        id
-        ... on Marketplace { name }
-    }
-}
-"#;
+pub const REMOVE_MARKETPLACE: &str = include_str!("queries/marketplace_remove.graphql");
 
-pub const UPDATE_MARKETPLACE: &str = r#"
-mutation UpdateMarketplace($id: ID!) {
-    updateMarketplace(id: $id) {
-        marketplace
-        previousCommit
-        newCommit
-        status
-        error
-        updatedPlugins { id name version marketplace { id name } }
-    }
-}
-"#;
+pub const UPDATE_MARKETPLACE: &str = include_str!("queries/marketplace_update.graphql");
 
 // ==================== Plugins ====================
 
-pub const GET_INSTALLED_PLUGINS: &str = r#"
-query GetInstalledPlugins {
-    marketplaces(filter: { installState: INSTALLED }) {
-        id
-        name
-        plugins {
-            id
-            name
-            version
-            description
-            marketplace { id name }
-            installation { installedAt installedVersion }
-        }
-    }
-}
-"#;
+pub const GET_INSTALLED_PLUGINS: &str = include_str!("queries/plugin_get_installed.graphql");
 
-pub const GET_AVAILABLE_PLUGINS: &str = r#"
-query GetAvailablePlugins {
-    marketplaces {
-        id
-        name
-        plugins {
-            id
-            name
-            version
-            description
-            category
-            tags
-        }
-    }
-}
-"#;
+pub const GET_AVAILABLE_PLUGINS: &str = include_str!("queries/plugin_get_available.graphql");
 
-pub const INSTALL_PLUGIN: &str = r#"
-mutation InstallPlugin($input: PluginInstallInput!) {
-    installPlugin(input: $input) {
-        id
-        name
-        version
-        description
-        marketplace { id name }
-        installation { installedAt installedVersion }
-    }
-}
-"#;
+pub const INSTALL_PLUGIN: &str = include_str!("queries/plugin_install.graphql");
 
-pub const UNINSTALL_PLUGIN: &str = r#"
-mutation UninstallPlugin($input: PluginInstallInput!) {
-    uninstallPlugin(input: $input) {
-        id
-        name
-        version
-        description
-        marketplace { id name }
-    }
-}
-"#;
+pub const UNINSTALL_PLUGIN: &str = include_str!("queries/plugin_uninstall.graphql");
 
 // ==================== Agents ====================
 
-pub const GET_AGENTS: &str = r#"
-query GetAgents {
-    agents {
-        id
-        name
-        fullName
-        description
-        plugin { id name marketplace { id name } }
-        tools { toolName displayName kind source }
-        skills
-        jurisdictions
-        model
-        maxTurns
-        instructions
-        disallowedTools { toolName displayName kind source }
-        sourceKind
-        editable
-        deletable
-        path { absolutePath displayPath }
-        sourcePath { absolutePath displayPath }
-    }
-}
-"#;
+pub const GET_AGENTS: &str = include_str!("queries/agent_get.graphql");
 
 // The chat the shell runs in carries the model and jurisdictions actually in use, which
 // is per chat -- unlike a stored preference, which two concurrent chats would share.
-pub const GET_CHAT_CONTEXT: &str = r#"
-query GetChatContext($id: ID!) {
-    node(id: $id) {
-        ... on Chat {
-            id
-            model
-            modelConfiguration { key value }
-            jurisdictions
-        }
-    }
-}
-"#;
+pub const GET_CHAT_CONTEXT: &str = include_str!("queries/chat_context_get.graphql");
 
-pub const SAVE_AGENT: &str = r#"
-mutation SaveAgent($id: ID, $input: AgentInput!) {
-    saveAgent(id: $id, input: $input) {
-        agent {
-            id
-            name
-            fullName
-            description
-            plugin { id name }
-            tools { toolName displayName kind source }
-            skills
-            jurisdictions
-            model
-            maxTurns
-            instructions
-            disallowedTools { toolName displayName kind source }
-            sourceKind
-            editable
-            deletable
-            path { absolutePath displayPath }
-            sourcePath { absolutePath displayPath }
-        }
-        errors { field message allowedValues }
-    }
-}
-"#;
+pub const SAVE_AGENT: &str = include_str!("queries/agent_save.graphql");
 
-pub const DELETE_AGENT: &str = r#"
-mutation DeleteAgent($id: ID!) {
-    deleteNode(id: $id) {
-        id
-        ... on Agent { name }
-    }
-}
-"#;
+pub const DELETE_AGENT: &str = include_str!("queries/agent_delete.graphql");
 
 // ==================== Skills ====================
 
-pub const GET_SKILLS: &str = r#"
-query GetSkills {
-    skills {
-        id
-        name
-        fullName
-        description
-        plugin { id name marketplace { id name } }
-        allowedTools
-        sourceKind
-        editable
-        deletable
-        path { absolutePath displayPath }
-        sourcePath { absolutePath displayPath }
-    }
-}
-"#;
+pub const GET_SKILLS: &str = include_str!("queries/skill_get.graphql");
 
-pub const SAVE_SKILL: &str = r#"
-mutation SaveSkill($id: ID, $input: SkillInput!) {
-    saveSkill(id: $id, input: $input) {
-        skill {
-            id
-            name
-            fullName
-            description
-            allowedTools
-            sourceKind
-            editable
-            deletable
-            displayName
-            summary
-            path { absolutePath displayPath }
-            sourcePath { absolutePath displayPath }
-        }
-        errors { field message allowedValues }
-    }
-}
-"#;
+pub const SAVE_SKILL: &str = include_str!("queries/skill_save.graphql");
 
-pub const DELETE_SKILL: &str = r#"
-mutation DeleteSkill($id: ID!) {
-    deleteNode(id: $id) {
-        id
-        ... on Skill { name }
-    }
-}
-"#;
+pub const DELETE_SKILL: &str = include_str!("queries/skill_delete.graphql");
 
 // ==================== Notifications ====================
 
-pub const NOTIFICATIONS_QUERY: &str = r#"
-query Notifications($offset: Int, $limit: Int) {
-    notifications(offset: $offset, limit: $limit) {
-        items {
-            id
-            message
-            link
-            seen
-            confirmed
-            createdAt
-        }
-        totalItems
-        unseenCount
-    }
-}
-"#;
+pub const NOTIFICATIONS_QUERY: &str = include_str!("queries/notification_list.graphql");
 
-pub const CREATE_NOTIFICATION_MUTATION: &str = r#"
-mutation CreateNotification($input: CreateNotificationInput!) {
-    createNotification(input: $input) {
-        id
-        message
-        link
-        seen
-        confirmed
-        createdAt
-    }
-}
-"#;
+pub const CREATE_NOTIFICATION_MUTATION: &str = include_str!("queries/notification_create.graphql");
 
-pub const UPDATE_NOTIFICATION_STATE_MUTATION: &str = r#"
-mutation UpdateNotificationState($input: UpdateNotificationStateInput!) {
-    updateNotificationState(input: $input) {
-        id
-        message
-        seen
-        confirmed
-    }
-}
-"#;
+pub const UPDATE_NOTIFICATION_STATE_MUTATION: &str =
+    include_str!("queries/notification_update_state.graphql");
 
 // ==================== Tabular Extraction ====================
 //
 // All tabular ops take a `TabularExtraction` Node id (encoded from the folder
 // path) - see commands::tabular::folder_to_node_id.
 
-pub const GET_TABULAR_EXTRACTION: &str = r#"
-query GetTabularExtraction($id: ID!) {
-    tabularExtraction(id: $id) {
-        id
-        status
-        progress { totalFiles extractedFiles startedAt elapsedSeconds }
-        columns {
-            id
-            name
-            description
-            __typename
-        }
-        rows {
-            fileName
-            status
-            error
-            cells {
-                column { id name }
-                ... on TextCellValue { text }
-                ... on DateCellValue { date }
-                ... on BooleanCellValue { checked }
-                ... on NumberCellValue { number }
-                ... on CurrencyCellValue { amount currencyCode }
-                ... on ListCellValue { items }
-                ... on TagCellValue { tag }
-                ... on TagsCellValue { tags }
-            }
-        }
-    }
-}
-"#;
+pub const GET_TABULAR_EXTRACTION: &str = include_str!("queries/tabular_get.graphql");
 
-pub const ADD_TEXT_COLUMN: &str = r#"
-mutation AddTextTabularColumn($id: ID!, $name: String!, $description: String) {
-    addTextTabularColumn(id: $id, name: $name, description: $description) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_TEXT_COLUMN: &str = include_str!("queries/tabular_add_text_column.graphql");
 
-pub const ADD_BOOLEAN_COLUMN: &str = r#"
-mutation AddBooleanTabularColumn($id: ID!, $name: String!, $description: String) {
-    addBooleanTabularColumn(id: $id, name: $name, description: $description) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_BOOLEAN_COLUMN: &str = include_str!("queries/tabular_add_boolean_column.graphql");
 
-pub const ADD_DATE_COLUMN: &str = r#"
-mutation AddDateTabularColumn($id: ID!, $name: String!, $description: String) {
-    addDateTabularColumn(id: $id, name: $name, description: $description) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_DATE_COLUMN: &str = include_str!("queries/tabular_add_date_column.graphql");
 
-pub const ADD_NUMBER_COLUMN: &str = r#"
-mutation AddNumberTabularColumn($id: ID!, $name: String!, $description: String) {
-    addNumberTabularColumn(id: $id, name: $name, description: $description) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_NUMBER_COLUMN: &str = include_str!("queries/tabular_add_number_column.graphql");
 
-pub const ADD_CURRENCY_COLUMN: &str = r#"
-mutation AddCurrencyTabularColumn($id: ID!, $name: String!, $description: String) {
-    addCurrencyTabularColumn(id: $id, name: $name, description: $description) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_CURRENCY_COLUMN: &str = include_str!("queries/tabular_add_currency_column.graphql");
 
-pub const ADD_LIST_COLUMN: &str = r#"
-mutation AddListTabularColumn($id: ID!, $name: String!, $description: String) {
-    addListTabularColumn(id: $id, name: $name, description: $description) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_LIST_COLUMN: &str = include_str!("queries/tabular_add_list_column.graphql");
 
-pub const ADD_TAG_COLUMN: &str = r#"
-mutation AddTagTabularColumn($id: ID!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
-    addTagTabularColumn(id: $id, name: $name, description: $description, options: $options) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_TAG_COLUMN: &str = include_str!("queries/tabular_add_tag_column.graphql");
 
-pub const ADD_TAGS_COLUMN: &str = r#"
-mutation AddTagsTabularColumn($id: ID!, $name: String!, $description: String, $options: [TagOptionInput!]!) {
-    addTagsTabularColumn(id: $id, name: $name, description: $description, options: $options) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const ADD_TAGS_COLUMN: &str = include_str!("queries/tabular_add_tags_column.graphql");
 
-pub const REMOVE_TABULAR_COLUMN: &str = r#"
-mutation RemoveTabularColumn($id: ID!, $columnId: ID!) {
-    removeTabularColumn(id: $id, columnId: $columnId) {
-        id
-        columns { id name description __typename }
-        status
-    }
-}
-"#;
+pub const REMOVE_TABULAR_COLUMN: &str = include_str!("queries/tabular_remove_column.graphql");
 
-pub const START_TABULAR_EXTRACTION: &str = r#"
-mutation StartTabularExtraction($id: ID!) {
-    startTabularExtraction(id: $id) {
-        id
-        status
-        progress { totalFiles extractedFiles startedAt elapsedSeconds }
-        columns { id name description __typename }
-    }
-}
-"#;
+pub const START_TABULAR_EXTRACTION: &str = include_str!("queries/tabular_start.graphql");
 
 #[cfg(test)]
 mod tests {
     use super::{
-        CREATE_NOTIFICATION_MUTATION, DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT,
-        GET_SKILLS, NOTIFICATIONS_QUERY, REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION,
-        SET_AUTOMATION_ENABLED,
+        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_SKILLS,
+        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SET_AUTOMATION_ENABLED,
     };
-
-    #[test]
-    fn notification_documents_do_not_select_the_dropped_action_field() {
-        // The daemon's `Notification` carries no `action` - the call-to-action
-        // button is gone and the whole card is the link. Selecting it fails the
-        // whole document at validation, so neither query may ask for it.
-        for document in [NOTIFICATIONS_QUERY, CREATE_NOTIFICATION_MUTATION] {
-            assert!(
-                !document.contains("action"),
-                "selects a dropped field:\n{document}"
-            );
-        }
-    }
 
     #[test]
     fn agent_queries_target_canonical_agent_api() {
@@ -612,7 +141,6 @@ mod tests {
         // carried/plugin automations), NOT `saveAutomation` (USER-only guard).
         assert!(SET_AUTOMATION_ENABLED.contains("setAutomationEnabled(id: $id, enabled: $enabled)"));
         assert!(SET_AUTOMATION_ENABLED.contains("$enabled: Boolean!"));
-        assert!(!SET_AUTOMATION_ENABLED.contains("saveAutomation"));
     }
 
     #[test]
@@ -628,8 +156,6 @@ mod tests {
         for query in [GET_AUTOMATIONS, SAVE_AUTOMATION] {
             assert!(query.contains("agent { id fullName }"));
             assert!(query.contains("skills { id fullName }"));
-            assert!(!query.contains("agentFullName"));
-            assert!(!query.contains("skillFullNames"));
             assert!(query.contains("model"));
             assert!(query.contains("modelConfiguration { key value }"));
             assert!(query.contains("jurisdictions"));

@@ -103,11 +103,10 @@ fn inapp_change_summary(changed: &[&CheckResult]) -> bool {
     }
     // Only the subject is needed here - no HTML body is built, unlike e-mail.
     let subject = summary_subject(changed);
-    // cdx-notify's send_inapp takes an optional `action` before the deep link;
-    // katastr has no action button, only the app link. Resolution is
-    // best-effort - an unresolvable link is omitted rather than sent broken.
+    // Resolution is best-effort - an unresolvable link is omitted rather than
+    // sent broken.
     let link = resolve_app_link(PLUGIN_NAME, crate::state::APP_ID);
-    send_inapp(&subject, NOTIFICATION_TYPE, None, link.as_deref())
+    send_inapp(&subject, NOTIFICATION_TYPE, link.as_deref())
 }
 
 // ── dispatch ──────────────────────────────────────────────────────────────────

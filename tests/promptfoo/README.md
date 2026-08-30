@@ -60,7 +60,7 @@ loosen the cap. Prompts should sound like real users; do **not** add
   npx --yes promptfoo --version
   ```
 - A running cdx-daemon at `$CDX_EVAL_GRAPHQL_URL` with the `cdx-at`
-  plugin installed (the legacy `test-marketplace.py` is the easiest
+  plugin installed (the marketplace tier is the easiest
   way to set that up one-off).
 
 ## Run

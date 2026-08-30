@@ -1,0 +1,7 @@
+mutation AddListTabularColumn($id: ID!, $name: String!, $description: String) {
+    addListTabularColumn(id: $id, name: $name, description: $description) {
+        id
+        columns { id name description __typename }
+        status
+    }
+}

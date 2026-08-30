@@ -15,6 +15,9 @@ dev = [
     "pyyaml>=6",
     # … and addresses into their results with JSONPath expressions.
     "jsonpath-ng>=1.6",
+    # Validates cdxctl's GraphQL documents against the daemon's schema. Test-only:
+    # cdxctl ships the documents as plain strings and never parses them at runtime.
+    "graphql-core>=3.2,<4",
     # Lint + format. Pinned to a minor: the default rule set widens between
     # releases, and `select` below only holds if the rule names it lists exist.
     "ruff>=0.16,<0.17",
@@ -60,7 +63,7 @@ select = ["E4", "E7", "E9", "F", "I", "UP", "RUF"]
 # brace in the query doubled. The marker cannot go per-line either: ruff reports
 # the expression on the line that opens the triple-quoted string, where a
 # trailing comment would land inside the string.
-"tests/_daemon_client.py" = ["UP031"]
+"tests/harness/daemon_client.py" = ["UP031"]
 
 [tool.ty.src]
 # Same reason as ruff's extend-exclude: a git worktree inside the repo is a
@@ -83,6 +86,6 @@ testpaths = ["plugins", "tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --import-mode=importlib"
 # The repo root, so the suites reach their helpers by package name
-# (`tests._daemon_client`, `tests.promptfoo.assertions`). Declared once here
+# (`tests.harness.daemon_client`, `tests.promptfoo.assertions`). Declared once here
 # rather than inserted onto sys.path by each test file at import time.
 pythonpath = ["."]

@@ -38,8 +38,7 @@ downloads one, and watches a subject for new filings.
 
 **IMPORTANT:** The only tool in this skill is `sbirka-listin-cli`. Do NOT call
 `curl`, `cdx-cli`, or any other tool to reach the register directly. Assume
-`sbirka-listin-cli` is installed and available in `PATH`. The one exception is
-`ocr` (below), used to read a document this tool has already downloaded.
+`sbirka-listin-cli` is installed and available in `PATH`.
 
 **IMPORTANT:** This skill is **only** the Sbírka listin - the *documents* a
 company files. It does NOT return the register entry itself (name, sídlo,
@@ -121,12 +120,11 @@ older statements of listed companies (ČEZ, banks) are XHTML/ESEF - the extensio
 follows the actual file.
 
 **To answer a question about a document's *contents*** (e.g. "what was the
-profit?", "may this director sign alone?"): download it, then read it with the
-`ocr` tool, which converts PDF/XHTML to Markdown:
+profit?", "may this director sign alone?"): download it, then read the file at
+the path it prints. A scanned PDF reads too - it goes through OCR.
 
 ```bash
-path=$(sbirka-listin-cli dokument 27082440 "B 8573/SL91/MSPH" | jq -r .path)
-ocr "$path"     # → Markdown you can then read
+sbirka-listin-cli dokument 27082440 "B 8573/SL91/MSPH" | jq -r .path
 ```
 
 Do this only when the user asks about contents; for "show me the documents" the
@@ -163,7 +161,7 @@ listin?" and add only on confirmation.
 - "jaké dokumenty / listiny má firma X" → `listiny <ICO>`, present the list + dates
 - "dej mi účetní závěrku firmy X za rok R" → `listiny`, filter the type, take its `cislo`
 - "kolik firma X vydělala / co je v té závěrce" → `listiny` to find the `cislo`, then
-  `dokument <ICO> "<cislo>"` + `ocr`, then read
+  `dokument <ICO> "<cislo>"`, then read the file
 - "kdo je jednatel / sídlo / plátce DPH firmy X" → **not this skill - use `ares`**
 - "dej mi vědět, když firma X něco založí" → offer, then `sledovani add <ICO>`
 

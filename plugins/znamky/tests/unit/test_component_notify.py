@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 from znamky_core import notify_settings as ns
 
-from tests._script_loader import load_script
+from tests.harness.script_loader import load_script
 
 _COMPONENT_PATH = (
     Path(__file__).resolve().parents[2] / "components" / "znamky" / "znamky-cgi"

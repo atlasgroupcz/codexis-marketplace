@@ -1,0 +1,6 @@
+mutation DeleteSkill($id: ID!) {
+    deleteNode(id: $id) {
+        id
+        ... on Skill { name }
+    }
+}
