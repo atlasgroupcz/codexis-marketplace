@@ -1,5 +1,6 @@
 ---
 template: case-law-research
+script: case-law-research.js
 description: >
   A question that has to be answered from what the courts actually decide: what the settled
   practice is, which decision carries it, whether it still holds under today's wording, and
