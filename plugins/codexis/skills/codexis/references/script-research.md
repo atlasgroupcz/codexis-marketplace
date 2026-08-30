@@ -1,6 +1,6 @@
 # Retrieval scripts for CODEXIS
 
-Six programs for the `script` tool. Each one is complete: fan out, dedupe, open only what
+Five programs for the `script` tool. Each one is complete: fan out, dedupe, open only what
 survives, and return an evidence package instead of the haystack.
 
 ## Ground rules these examples follow
@@ -154,38 +154,7 @@ Walk the relation graph out from decisions you already trust, and keep only what
 Anything cited by more than one seed is the line of case law worth reading; a single citation
 is a lead, not authority.
 
-## 3. Wording at a date
-
-Which of these statutes actually changed around the day that matters.
-
-    export default async function () {
-      const EVENT_DATE = "2018-06-15"
-      const ACTS = [["89", "2012"], ["262", "2006"], ["90", "2012"]]
-
-      const checked = await parallel(ACTS.map(([num, year]) => async () => {
-        const versions = await json('get', `cdx://cz_law/${num}/${year}/versions`)
-        const inForce = versions.find((v) =>
-          v.validFrom <= EVENT_DATE && (!v.validTo || v.validTo >= EVENT_DATE))
-        const later = versions.filter((v) => v.validFrom > EVENT_DATE)
-        return {
-          act: `${num}/${year} Sb.`,
-          versionAtEvent: inForce?.versionId ?? null,
-          validFrom: inForce?.validFrom ?? null,
-          amendedSince: later.length,
-          nextBoundary: later[0]?.validFrom ?? null,
-          amendmentDocIds: (later[0]?.amendmentDocIds ?? []).slice(0, 5)
-        }
-      }))
-
-      const changed = checked.filter(Boolean).filter((act) => act.amendedSince > 0)
-      return { eventDate: EVENT_DATE, changed, unchanged: checked.filter(Boolean)
-        .filter((act) => act.amendedSince === 0).map((act) => act.act) }
-    }
-
-Only the acts in `changed` need the historical wording opened; hand them to
-`references/czech-law-change-assessment.md`.
-
-## 4. Contrarian search
+## 3. Contrarian search
 
 Two query sets, two buckets. Never hand the synthesis only the confirming half.
 
@@ -231,7 +200,7 @@ Two query sets, two buckets. Never hand the synthesis only the confirming half.
 A decision that answers both query sets is usually the one that draws the line - read it first.
 Finding no opposing authority is not proof there is none; say so in the opinion.
 
-## 5. One statute, everything about it at once
+## 4. One statute, everything about it at once
 
 Versions, table of contents and the provisions you care about are four independent fetches. Doing
 them in sequence from the chat costs four turns and pulls every byte into the context; one program
@@ -272,7 +241,7 @@ issues them together and returns the wording plus where it sits.
 The same shape works across acts: put several `base` values in the outer `parallel` and you have the
 whole regime - wording, dates and structure - in one call instead of a dozen.
 
-## 6. Commentary sweep
+## 5. Commentary sweep
 
 Commentary tied to the provisions an earlier phase actually identified.
 

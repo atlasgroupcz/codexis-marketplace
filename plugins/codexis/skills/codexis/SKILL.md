@@ -78,7 +78,6 @@ Reach for `script` when any of these holds:
 - results from several queries must be merged and deduped by `docId`,
 - full text is needed for a handful of candidates out of many,
 - relations must be chased across several documents (`/related`),
-- a provision's wording at a date must be checked across several acts (`/versions`),
 - one act's `/versions`, `/toc` and several `/text?part=` are all wanted - fetch them together, not one turn each.
 
 One query, one `get`, one check stays a plain `shell` call.
@@ -98,7 +97,7 @@ Rules for a retrieval script:
    argued, see `references/judikatura.md` - is judged by you or by a verifying subagent, over the
    passages the script returned.
 
-Worked programs for all six shapes: `references/script-research.md`.
+Worked programs for these shapes: `references/script-research.md`.
 
 Build user-facing links from the `【src_xxx】 url: https://…` blocks attached to the tool call,
 never from `docId`.
