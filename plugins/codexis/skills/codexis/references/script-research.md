@@ -3,6 +3,22 @@
 Five programs for the `script` tool. Each one is complete: fan out, dedupe, open only what
 survives, and return an evidence package instead of the haystack.
 
+## When retrieval belongs in a program
+
+Run wide retrieval as ONE `script` call, not as a sequence of `shell` calls and not as one
+subagent per query. The program fans the searches out, merges and dedupes them, opens only the
+best candidates, and returns an evidence package; the raw hits never reach the context.
+
+Reach for `script` when any of these holds:
+
+- three or more queries are needed (reworded phrasings, or several of CR/JD/ES/EU/COMMENT/LT),
+- results from several queries must be merged and deduped by `docId`,
+- full text is needed for a handful of candidates out of many,
+- relations must be chased across several documents (`/related`),
+- one act's `/versions`, `/toc` and several `/text?part=` are all wanted - fetch them together, not one turn each.
+
+One query, one `get`, one check stays a plain `shell` call.
+
 ## Ground rules these examples follow
 
 - **Search gives you `docId`. Everything you cite comes from `/meta`.** A search item is
@@ -20,6 +36,13 @@ survives, and return an evidence package instead of the haystack.
   `--current`, `--valid-at`. `ALL` rejects `--with-facets`.
 - **Report the misses.** A candidate whose text carries no matching passage is a fact about the
   query, not something to hide.
+- **Searches under `parallel`, document opening under `pipeline`.** One failure then costs one
+  branch, not the run.
+- **Rank by agreement.** Dedupe by `docId` and rank a document by how many queries found it.
+- **Return the evidence, not the haystack.** Per document: `docId`, court, case number, date, one
+  to three verbatim passages, and the query that found it. Never whole texts or whole API responses.
+- **The program does no legal assessment.** Attribution - what the court held versus what a party
+  argued, see `judikatura.md` - is judged over the passages the program returned, not inside it.
 
 **Pass values as `args`, never as a quoted command string.** `shell` takes an optional `args`
 array; when it is present the program is run directly, with no shell in between, so a query with

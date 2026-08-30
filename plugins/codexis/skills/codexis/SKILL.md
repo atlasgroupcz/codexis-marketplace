@@ -54,53 +54,14 @@ Use CODEXIS first for Czech and EU legal work. Route fast with `cdx-cli`.
 2. Prefer source-specific search (`CR`, `EU`, `JD`, `ES`, `COMMENT`, `LT`, `VS`) over `ALL` whenever the likely source is known.
 3. Use `ALL` only to orient source selection, then rerun in the specific source before citing or extracting.
 4. Decide HOW to run the retrieval before you run it. A real legal question is almost never one
-   query: the same rule hides behind several formulations, and the answer needs the best few
-   documents out of dozens. Whenever the honest plan is three or more searches, or the same fetch
-   repeated over a list of documents, run it as ONE `script` program - not as a chain of `shell`
-   calls. Do this even when the user asked a plain question and said nothing about how to search;
-   deciding the retrieval shape is your job, not theirs. See "Broad retrieval goes through
-   `script`" below.
+   query, and three or more searches - or the same fetch repeated over a list of documents - is
+   ONE `script` program, not a chain of `shell` calls. Deciding that is your job, not the user's;
+   they asked about the law, not about a search plan. See `references/script-research.md`.
 5. Add non-CODEXIS sources for targeted official context.
 
 ### External Sources
 
 Use external sources only for official institutional material, current operational info, or original-language / multilingual EU text. Use only official institutional sources. Do not use blogs, law firms, commercial explainers, forums, or generic search hits when CODEXIS can answer.
-
-### Broad retrieval goes through `script`
-
-Run wide retrieval as ONE `script` call, not as a sequence of `shell` calls and not as one
-subagent per query. The program fans the searches out, merges and dedupes them, opens only the
-best candidates, and returns an evidence package; the raw hits never reach the context.
-
-Reach for `script` when any of these holds:
-
-- three or more queries are needed (reworded phrasings, or several of CR/JD/ES/EU/COMMENT/LT),
-- results from several queries must be merged and deduped by `docId`,
-- full text is needed for a handful of candidates out of many,
-- relations must be chased across several documents (`/related`),
-- one act's `/versions`, `/toc` and several `/text?part=` are all wanted - fetch them together, not one turn each.
-
-One query, one `get`, one check stays a plain `shell` call.
-
-Rules for a retrieval script:
-
-1. Searches under `parallel`, document opening under `pipeline` - one failure then costs one
-   branch, not the run.
-2. `--limit` at most 50 (the CLI rejects more). No `ALL`: send more queries into specific sources.
-3. Dedupe by `docId`; rank by how many queries found the same document.
-4. Take only `docId` from a search hit. Every citation field comes from `/meta`.
-5. Open full text only for the top candidates, write it to a file and read it with `node:fs` - a
-   decision easily exceeds the shell tool's output cap.
-6. Return per document: `docId`, court, case number, date, one to three verbatim passages, and
-   the query that found it. Never return whole texts or whole API responses.
-7. The script does no legal assessment. Attribution - what the court held versus what a party
-   argued, see `references/judikatura.md` - is judged by you or by a verifying subagent, over the
-   passages the script returned.
-
-Worked programs for these shapes: `references/script-research.md`.
-
-Build user-facing links from the `【src_xxx】 url: https://…` blocks attached to the tool call,
-never from `docId`.
 
 ## Data Sources
 
@@ -123,7 +84,7 @@ All CODEXIS documents are in Czech.
 
 - User-facing document links MUST use the resolved `https://` URL from the source block. Each cited document is appended to tool output as a `【src_xxx】 url: https://…` block - use that `https://` URL as the link target: `[title](https://…)` or `[title](https://…#elementId)` (append the same `#elementId` anchor you would have used). The `cdx://` scheme is ONLY an addressing scheme for `cdx-cli get cdx://...` fetch arguments - never put a `cdx://` link in output shown to the user. Never expose raw IDs, source codes, relation enums, or API suffixes like `/text`, `/meta`, `/toc` as user has no way to access it.
 - Use the search-result title as link text, stripping `<mark>` tags. If title is unavailable, use `docNumber` or a short descriptive fallback, raw ID as last resort.
-- For court decisions (`JD`, `ES`), the visible link text MUST be a compact legal citation, not the raw or generic title: `COURT - Č. J. / SP. ZN. - DD.MM.YYYY` (e.g. `ÚS - Pl. ÚS 1/26 - 20.05.2026`, `NSS - 1 As 123/2026 - 13.05.2026`). Compose it from metadata (search result or `/meta`): map `court` to its abbreviation per the table in `references/judikatura.md` (Czech courts plus the EU `ES` sources SDEU/ESLP), take the reference from `cislaJednaci[0]` (else `spZns[0]`, then `ecli`/`sbirkoveCislo`), and append ` - DD.MM.YYYY` from `releaseDate` only when a date exists - never invent one. The generic title (`docType` + long court name) may appear only as secondary text, never as the primary label; for an unrecognised court keep its official short name verbatim.
+- For court decisions (`JD`, `ES`), the visible link text MUST be a compact legal citation, not the raw or generic title. Format, court abbreviations and which metadata field wins: `references/judikatura.md`.
 - For relation labels, use the `name` field from `/related/counts`, never the `type` enum.
 - When citing a legal section, make the section itself the clickable reference instead of splitting title and link.
 
@@ -151,8 +112,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 - Stop early if `/versions` shows no boundary at the target date. Answer that directly.
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
 - For broad domain sweeps, use a curated statute list plus `/versions`; do not diff every law in the set.
-- Never issue the same kind of `cdx-cli` call three or more times in a row from the chat. That is a `script` program: it runs them in parallel, deduplicates, and returns only the passages. Reading the raw hits yourself spends the context the answer needs.
-- This covers opening documents, not just searching. Once you have several `docId`s worth reading, fetch all of their `/text` in one `script` run and return the matching passages - a decision is long, and pulling four of them into the chat one `get` at a time is the single most expensive thing you can do with the context.
+- Never issue the same kind of `cdx-cli` call three or more times in a row from the chat - searching or opening documents alike. That is a `script` program; see `references/script-research.md`.
 - Do not run broad fallback searches after a decisive `/versions` sweep unless ambiguity remains.
 - Do not jump to the web when CODEXIS already answers the legal question.
 - Treat `ALL` as source-selection help, not as a final citation target.
