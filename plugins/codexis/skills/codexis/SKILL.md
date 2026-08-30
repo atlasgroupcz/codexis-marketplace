@@ -3,7 +3,7 @@ uuid: 272cbab6-4deb-4b1b-8595-279b6c6923d9
 name: codexis
 icon: icon.svg
 description: This skill should be invoked whenever user needs Czech or European legal research - legislation changes, case law / judikatura lookup, legal commentaries, professional literature, contract templates, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
-version: 2.2.2
+version: 2.3.0
 jurisdictions: [CZ, EU]
 jurisdiction-required: true
 i18n:
@@ -53,7 +53,13 @@ Use CODEXIS first for Czech and EU legal work. Route fast with `cdx-cli`.
 1. Start in CODEXIS.
 2. Prefer source-specific search (`CR`, `EU`, `JD`, `ES`, `COMMENT`, `LT`, `VS`) over `ALL` whenever the likely source is known.
 3. Use `ALL` only to orient source selection, then rerun in the specific source before citing or extracting.
-4. Add non-CODEXIS sources for targeted official context.
+4. Decide HOW to run the retrieval before you run it. A real legal question is almost never one
+   query, and three or more searches - or the same fetch repeated over a list of documents - is
+   ONE `script` program, not a chain of `shell` calls. Deciding that is your job, not the user's;
+   they asked about the law, not about a search plan. Worked programs live with the domain that
+   needs them - `references/judikatura.md` for case law, `references/czech-law-change-assessment.md`
+   for statutes.
+5. Add non-CODEXIS sources for targeted official context.
 
 ### External Sources
 
@@ -80,7 +86,7 @@ All CODEXIS documents are in Czech.
 
 - User-facing document links MUST use the resolved `https://` URL from the source block. Each cited document is appended to tool output as a `【src_xxx】 url: https://…` block - use that `https://` URL as the link target: `[title](https://…)` or `[title](https://…#elementId)` (append the same `#elementId` anchor you would have used). The `cdx://` scheme is ONLY an addressing scheme for `cdx-cli get cdx://...` fetch arguments - never put a `cdx://` link in output shown to the user. Never expose raw IDs, source codes, relation enums, or API suffixes like `/text`, `/meta`, `/toc` as user has no way to access it.
 - Use the search-result title as link text, stripping `<mark>` tags. If title is unavailable, use `docNumber` or a short descriptive fallback, raw ID as last resort.
-- For court decisions (`JD`, `ES`), the visible link text MUST be a compact legal citation, not the raw or generic title: `COURT - Č. J. / SP. ZN. - DD.MM.YYYY` (e.g. `ÚS - Pl. ÚS 1/26 - 20.05.2026`, `NSS - 1 As 123/2026 - 13.05.2026`). Compose it from metadata (search result or `/meta`): map `court` to its abbreviation per the table in `references/judikatura.md` (Czech courts plus the EU `ES` sources SDEU/ESLP), take the reference from `cislaJednaci[0]` (else `spZns[0]`, then `ecli`/`sbirkoveCislo`), and append ` - DD.MM.YYYY` from `releaseDate` only when a date exists - never invent one. The generic title (`docType` + long court name) may appear only as secondary text, never as the primary label; for an unrecognised court keep its official short name verbatim.
+- For court decisions (`JD`, `ES`), the visible link text MUST be a compact legal citation, not the raw or generic title. Format, court abbreviations and which metadata field wins: `references/judikatura.md`.
 - For relation labels, use the `name` field from `/related/counts`, never the `type` enum.
 - When citing a legal section, make the section itself the clickable reference instead of splitting title and link.
 
@@ -107,6 +113,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 - Stop early if `/versions` shows no boundary at the target date. Answer that directly.
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
 - For broad domain sweeps, use a curated statute list plus `/versions`; do not diff every law in the set.
+- Never issue the same kind of `cdx-cli` call three or more times in a row from the chat - searching or opening documents alike. That is a `script` program.
 - Do not run broad fallback searches after a decisive `/versions` sweep unless ambiguity remains.
 - Do not jump to the web when CODEXIS already answers the legal question.
 - Treat `ALL` as source-selection help, not as a final citation target.
@@ -132,3 +139,18 @@ Whenever legal references appear in user text, tool output, or extracts, resolve
 - Filter early with `--current`, `--valid-at`, `--type`, source-specific date flags, `--with-facets` when discovery is needed, and low `--limit` values.
 - Fetch large text once, extract locally, and validate the heading before relying on it.
 - Use `jq` to filter and shape responses instead of extra requests.
+- Retrieval spanning three or more queries goes through `script`, not a chain of `shell` calls.
+
+## Shaping a retrieval program
+
+Whatever the domain, a `script` that drives `cdx-cli` follows the same rules:
+
+- Values go into `args`, never into a command string - no shell means no quoting, no word splitting, and no `2>/dev/null`.
+- Searches under `parallel`, document opening under `pipeline`; one failure then costs one branch, not the run. Both keep positions and put `null` where a branch failed, so filter before use.
+- `--limit` tops out at 50. Send more queries rather than a bigger one, and never `ALL`.
+- Take only `docId` from a search hit. Every citation field comes from `/meta`, where the schema guarantees it.
+- Dedupe by `docId` and rank a document by how many queries found it.
+- Open full text only for the top candidates. A document easily exceeds the shell tool's output cap, so write it to a file and read it with `node:fs` rather than parsing a truncated string.
+- Return the evidence, not the haystack: per kept document its `docId`, the few fields you will cite, one to three verbatim passages, and the query that found it.
+- Report the misses. A candidate whose text carries no matching passage is a fact about the query, not something to hide.
+- The program does no legal assessment. Attribution - what a court held versus what a party argued - is judged over the passages it returned, not inside it.
