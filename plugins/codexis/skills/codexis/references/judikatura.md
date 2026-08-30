@@ -25,6 +25,186 @@ Some phrases meaning case law research - `najdi judikaturu`, `najdi rozsudek`, `
 
 To get specific information from a concrete case law use a subagent instead of retrieving the whole text into this chat. Instruct it to read the metadata first, then the decision text, and to return only the passages that answer the question. A decision easily exceeds the shell tool's output cap, so tell it to write the text to a file and search it there - parsing it straight out of a command's output hands it a silently truncated string.
 
+## Running the discovery as a program
+
+Three or more rewordings, or the same fetch repeated over a list of decisions, is one
+`script` program - the hits then cost neither your context nor the agent's. Shape rules for
+any such program are in `SKILL.md`; what follows is what case law needs.
+
+Values go into `args`, never into a command string, and the two helpers below are assumed:
+
+    const cdx = async (...args) => {
+      const out = await shell({ command: 'cdx-cli', args, timeoutSeconds: 180 })
+      return out.trim()
+    }
+    const json = async (...args) => JSON.parse(await cdx(...args))
+
+`JD` has `--court`, `--city` and `--type`; `ES` has `--type` and `--issued-from/--issued-to` but
+**no** `--court`. `--limit` tops out at 50 - send more queries rather than a bigger one.
+
+### 1. Parallel multi-source sweep
+
+The workhorse: many phrasings, merged, ranked by agreement, opened only at the top.
+
+    export default async function () {
+      const NS = ['--court', 'Nejvyšší soud']
+      const QUERIES = [
+        ["JD", "moderační právo soudu náhrada škody zaměstnance", NS],
+        ["JD", "snížení náhrady škody zaměstnancem zákoník práce", []],
+        ["JD", "odpovědnost zaměstnance za schodek na svěřených hodnotách", NS],
+        ["JD", "přiměřené snížení náhrady škody pracovněprávní vztah", ['--type', 'Rozsudek']],
+        ["ES", "odpovědnost zaměstnance za škodu způsobenou zaměstnavateli", []]
+      ]
+      const PASSAGE = /moderac|moderač|snížen[íi] náhrady|přiměřen[éeě] snížen/i
+      const TOP = 20
+
+      const found = await parallel(QUERIES.map(([source, query, filters]) => async () => {
+        const body = await json('search', source, '--query', query, ...filters, '--limit', '50')
+        return { source, query, results: body.results || [] }
+      }))
+
+      const byId = new Map()
+      for (const hit of found.filter(Boolean)) {
+        for (const item of hit.results) {
+          if (!item.docId) continue
+          const seen = byId.get(item.docId) ?? { docId: item.docId, source: hit.source, queries: [] }
+          seen.queries.push(hit.query)
+          byId.set(item.docId, seen)
+        }
+      }
+      const candidates = [...byId.values()]
+        .sort((a, b) => b.queries.length - a.queries.length)
+        .slice(0, TOP)
+
+      const documents = await pipeline(candidates,
+        async (candidate) => {
+          const meta = await json('get', `cdx://doc/${candidate.docId}/meta`)
+          const facts = meta.jd ?? meta.es ?? {}
+          return {
+            ...candidate,
+            court: facts.court,
+            reference: (facts.cislaJednaci ?? [])[0] ?? (facts.spZns ?? [])[0]
+                       ?? facts.ecli ?? facts.sbirkoveCislo,
+            date: facts.releaseDate,
+            docType: facts.docType,
+            derogated: facts.derogated
+          }
+        },
+        async (doc) => {
+          const text = await cdx('get', `cdx://doc/${doc.docId}/text`)
+          const passages = text.split(/\n\s*\n/)
+            .filter((block) => PASSAGE.test(block))
+            .slice(0, 3)
+            .map((block) => block.replace(/\s+/g, " ").trim().slice(0, 700))
+          return passages.length ? { ...doc, passages } : null
+        })
+
+      const kept = documents.filter(Boolean)
+      return {
+        queries: QUERIES.map(([source, query]) => `${source}: ${query}`),
+        deduped: byId.size,
+        opened: candidates.length,
+        documents: kept.map((doc) => ({
+          docId: doc.docId, court: doc.court, reference: doc.reference, date: doc.date,
+          docType: doc.docType, derogated: doc.derogated, foundBy: doc.queries, passages: doc.passages
+        })),
+        withoutPassage: candidates
+          .filter((c) => !kept.some((k) => k.docId === c.docId))
+          .map((c) => c.docId)
+      }
+    }
+
+Roughly 250 raw hits are read; about twenty documents and sixty passages come back.
+
+### 2. Citation chasing
+
+Walk the relation graph out from decisions you already trust, and keep only what is new.
+
+    export default async function () {
+      const SEEDS = ["JD123456", "JD654321"]
+      const RELATION = "SOUVISEJICI_JUDIKATURA"
+
+      const rings = await parallel(SEEDS.map((docId) => async () => {
+        const body = await json('get', `cdx://doc/${docId}/related?type=${RELATION}&limit=50`)
+        return { seed: docId, related: body.results ?? [] }
+      }))
+
+      const seeds = new Set(SEEDS)
+      const byId = new Map()
+      for (const ring of rings.filter(Boolean)) {
+        for (const item of ring.related) {
+          if (!item.docId || seeds.has(item.docId)) continue
+          const seen = byId.get(item.docId)
+            ?? { docId: item.docId, source: item.source, title: item.title, citedBy: [] }
+          seen.citedBy.push(ring.seed)
+          byId.set(item.docId, seen)
+        }
+      }
+
+      const shared = [...byId.values()].sort((a, b) => b.citedBy.length - a.citedBy.length).slice(0, 25)
+      const enriched = await pipeline(shared, async (candidate) => {
+        const meta = await json('get', `cdx://doc/${candidate.docId}/meta`)
+        const facts = meta.jd ?? meta.es ?? {}
+        return {
+          ...candidate,
+          court: facts.court,
+          reference: (facts.cislaJednaci ?? [])[0] ?? (facts.spZns ?? [])[0] ?? facts.ecli,
+          date: facts.releaseDate
+        }
+      })
+
+      return { seeds: SEEDS, relation: RELATION, related: enriched.filter(Boolean) }
+    }
+
+Anything cited by more than one seed is the line of case law worth reading; a single citation
+is a lead, not authority.
+
+### 3. Contrarian search
+
+Two query sets, two buckets. Never hand the synthesis only the confirming half.
+
+    export default async function () {
+      const SUPPORTING = [
+        "jednatel odpovídá za neprověření obchodního partnera",
+        "porušení péče řádného hospodáře bonita smluvního partnera"
+      ]
+      const OPPOSING = [
+        "jednatel neodpovídá úpadek obchodního partnera",
+        "podnikatelské riziko bez odpovědnosti jednatele",
+        "pravidlo podnikatelského úsudku insolvence partnera",
+        "nepředvídatelný úpadek smluvního partnera"
+      ]
+
+      const sweep = (queries) => parallel(queries.map((query) => async () => {
+        const body = await json('search', 'JD', '--query', query, '--court', 'Nejvyšší soud', '--limit', '50')
+        return { query, ids: (body.results ?? []).map((r) => r.docId).filter(Boolean) }
+      }))
+
+      const [supporting, opposing] = await Promise.all([sweep(SUPPORTING), sweep(OPPOSING)])
+
+      const collect = (batches) => {
+        const byId = new Map()
+        for (const batch of batches.filter(Boolean)) {
+          for (const docId of batch.ids) {
+            const seen = byId.get(docId) ?? { docId, queries: [] }
+            seen.queries.push(batch.query)
+            byId.set(docId, seen)
+          }
+        }
+        return [...byId.values()].sort((a, b) => b.queries.length - a.queries.length).slice(0, 12)
+      }
+
+      const forClaim = collect(supporting)
+      const againstClaim = collect(opposing)
+      const bothSides = forClaim.filter((doc) => againstClaim.some((other) => other.docId === doc.docId))
+
+      return { supporting: forClaim, opposing: againstClaim,
+        appearsInBoth: bothSides.map((doc) => doc.docId) }
+    }
+
+A decision that answers both query sets is usually the one that draws the line - read it first.
+Finding no opposing authority is not proof there is none; say so in the opinion.
+
 ## Attribution: what the COURT held vs. what a PARTY argued
 
 **The rule:** treat as the holding only the `výrok` and those parts of the `odůvodnění` where the **deciding court itself adopts** a factual or legal conclusion. Recapitulated party arguments, a lower court's conclusions the deciding court did NOT adopt, and dissenting opinions are always a *foreign voice* - never present them as the court's conclusion. This is the single most common extraction error - guard against it explicitly.

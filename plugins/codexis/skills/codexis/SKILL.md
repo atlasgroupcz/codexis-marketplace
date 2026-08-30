@@ -56,7 +56,9 @@ Use CODEXIS first for Czech and EU legal work. Route fast with `cdx-cli`.
 4. Decide HOW to run the retrieval before you run it. A real legal question is almost never one
    query, and three or more searches - or the same fetch repeated over a list of documents - is
    ONE `script` program, not a chain of `shell` calls. Deciding that is your job, not the user's;
-   they asked about the law, not about a search plan. See `references/script-research.md`.
+   they asked about the law, not about a search plan. Worked programs live with the domain that
+   needs them - `references/judikatura.md` for case law, `references/czech-law-change-assessment.md`
+   for statutes.
 5. Add non-CODEXIS sources for targeted official context.
 
 ### External Sources
@@ -91,7 +93,6 @@ All CODEXIS documents are in Czech.
 ## Common workflows
 - deep-dive Czech LAW change assessment workflow: `references/czech-law-change-assessment.md`
 - for caselaw/judikatura research see `references/judikatura.md`
-- for retrieval programs driving `cdx-cli` see `references/script-research.md`
 
 ## Governing Regime First
 
@@ -112,7 +113,7 @@ For questions that can plausibly fall under multiple legal regimes, determine th
 - Stop early if `/versions` shows no boundary at the target date. Answer that directly.
 - Use base IDs for `/versions` and amendment provenance. Use version IDs for `/text` and `/toc`.
 - For broad domain sweeps, use a curated statute list plus `/versions`; do not diff every law in the set.
-- Never issue the same kind of `cdx-cli` call three or more times in a row from the chat - searching or opening documents alike. That is a `script` program; see `references/script-research.md`.
+- Never issue the same kind of `cdx-cli` call three or more times in a row from the chat - searching or opening documents alike. That is a `script` program.
 - Do not run broad fallback searches after a decisive `/versions` sweep unless ambiguity remains.
 - Do not jump to the web when CODEXIS already answers the legal question.
 - Treat `ALL` as source-selection help, not as a final citation target.
@@ -139,3 +140,17 @@ Whenever legal references appear in user text, tool output, or extracts, resolve
 - Fetch large text once, extract locally, and validate the heading before relying on it.
 - Use `jq` to filter and shape responses instead of extra requests.
 - Retrieval spanning three or more queries goes through `script`, not a chain of `shell` calls.
+
+## Shaping a retrieval program
+
+Whatever the domain, a `script` that drives `cdx-cli` follows the same rules:
+
+- Values go into `args`, never into a command string - no shell means no quoting, no word splitting, and no `2>/dev/null`.
+- Searches under `parallel`, document opening under `pipeline`; one failure then costs one branch, not the run. Both keep positions and put `null` where a branch failed, so filter before use.
+- `--limit` tops out at 50. Send more queries rather than a bigger one, and never `ALL`.
+- Take only `docId` from a search hit. Every citation field comes from `/meta`, where the schema guarantees it.
+- Dedupe by `docId` and rank a document by how many queries found it.
+- Open full text only for the top candidates. A document easily exceeds the shell tool's output cap, so write it to a file and read it with `node:fs` rather than parsing a truncated string.
+- Return the evidence, not the haystack: per kept document its `docId`, the few fields you will cite, one to three verbatim passages, and the query that found it.
+- Report the misses. A candidate whose text carries no matching passage is a fact about the query, not something to hide.
+- The program does no legal assessment. Attribution - what a court held versus what a party argued - is judged over the passages it returned, not inside it.
