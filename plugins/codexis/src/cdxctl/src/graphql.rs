@@ -14,12 +14,6 @@ pub const DELETE_AUTOMATION: &str = include_str!("queries/automation_delete.grap
 
 pub const TRIGGER_AUTOMATION: &str = include_str!("queries/automation_trigger.graphql");
 
-// ==================== Codexis 1.0 sync ====================
-
-pub const START_CODEXIS_IMPORT: &str = include_str!("queries/codexis_import_start.graphql");
-
-pub const CODEXIS_IMPORT_STATUS: &str = include_str!("queries/codexis_import_status.graphql");
-
 // ==================== Marketplaces ====================
 
 pub const GET_MARKETPLACES: &str = include_str!("queries/marketplace_get.graphql");

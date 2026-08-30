@@ -36,11 +36,6 @@ enum Commands {
         #[command(subcommand)]
         command: MarketplaceCommands,
     },
-    /// Sync data from Codexis 1.0
-    Codexis {
-        #[command(subcommand)]
-        command: CodexisCommands,
-    },
     /// Manage plugins
     Plugin {
         #[command(subcommand)]
@@ -242,16 +237,6 @@ enum MarketplaceCommands {
     Update {
         /// Marketplace ID (omit to update all)
         id: Option<String>,
-    },
-}
-
-#[derive(Subcommand)]
-enum CodexisCommands {
-    /// Import your chats and files from Codexis 1.0 into this workspace
-    Sync {
-        /// Download and report what would be imported without writing anything
-        #[arg(long, default_value = "false")]
-        dry_run: bool,
     },
 }
 
@@ -790,9 +775,6 @@ fn main() {
             MarketplaceCommands::Update { id } => {
                 commands::marketplace::update(&client, id.as_deref(), format)
             }
-        },
-        Commands::Codexis { command } => match command {
-            CodexisCommands::Sync { dry_run } => commands::codexis::sync(&client, dry_run, format),
         },
         Commands::Plugin { command } => match command {
             PluginCommands::List {

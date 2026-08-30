@@ -1,7 +1,6 @@
 pub mod agent;
 pub mod automation;
 pub mod bug;
-pub mod codexis;
 pub mod marketplace;
 pub mod notification;
 pub mod notification_email;
