@@ -1,12 +1,3 @@
-// @template case-law-research
-// @use-when A question that has to be answered from what the courts actually decide: what the settled
-//   practice is, which decision carries it, whether it still holds under today's wording, and where
-//   the courts disagree. Not for reading the client's file and not for writing the client opinion.
-// @jurisdictions CZ SK EU
-// @args question (required) - the legal question, in the user's own words
-// @args jurisdiction - CZ, SK or EU; defaults to CZ
-// @args asOf - the date the answer must be true for; defaults to today
-
 export const meta = {
   name: "case-law-research",
   description: "Rešerše judikatury: rozbor otázky → vyhledání rozhodnutí → ověření a zpráva.",
