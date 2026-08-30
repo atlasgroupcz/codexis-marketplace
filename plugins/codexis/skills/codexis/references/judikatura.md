@@ -5,9 +5,9 @@ Some phrases meaning case law research - `najdi judikaturu`, `najdi rozsudek`, `
 
 1. Start in `JD`, not `ALL`, when the user is asking for Czech court decisions.
 2. Use `cdx-cli search JD --help` if you need to confirm available filters.
-3. Candidate discovery goes through the `script` tool: several reworded JD queries under `parallel`, deduped by `docId`, ranked by how many queries found the same decision, with citation fields read from `/meta` and one to three verbatim passages per kept decision. Hundreds of hits then cost no context at all. See `references/script-research.md`.
-4. Read what the script returned yourself before spending an agent on it. A candidate list is cheap to re-run with better queries; a verification agent is not.
-5. Verification is the subagent's job, not discovery's. Hand it the passages the script returned and have it reopen the decision text and metadata. Pay attention to:
+3. When doing case law research ALWAYS delegate JD candidate discovery to a subagent if available, and instruct it to run the sweep as ONE `script` program: several reworded JD queries under `parallel`, deduped by `docId`, ranked by how many queries found the same decision, citation fields read from `/meta`, and one to three verbatim passages per kept decision. Hundreds of hits then cost neither your context nor the agent's. It reports back those passages and the `https://` document links (the resolved URL from the source block). See `references/script-research.md`.
+4. Wait for agents first, then verify. Do not run your own search in parallel with the agent; it will likely be redundant and less effective than the agent's targeted sweep.
+5. After collecting promising candidates use a subagent to verify the actual content of the decision text and the metadata. Hand it the passages discovery returned. Pay attention to:
    - what conduct actually was at issue in the case,
    - whether the cited statement is ratio, context, or only quoted argument,
    - whether the higher court affirmed, reversed, remanded, or decided only a procedural issue.
@@ -17,7 +17,7 @@ Some phrases meaning case law research - `najdi judikaturu`, `najdi rozsudek`, `
 
 ### Extracting information from specific case law document
 
-To pull specific information out of one decision, have the script write its full text to a file and extract the matching passages there - a decision easily exceeds the shell tool's output cap, so parsing it straight from a command's output hands you a silently truncated string. Reserve a subagent for reading the passages in context and judging attribution; that is judgement, not extraction.
+To get specific information from a concrete case law use a subagent instead of retrieving the whole text into this chat, and have it pull the text through `script`: the program writes the full text to a file and extracts the matching passages there. A decision easily exceeds the shell tool's output cap, so parsing it straight from a command's output hands the agent a silently truncated string. The agent then reads those passages in context and judges attribution - that is judgement, not extraction.
 
 ## Attribution: what the COURT held vs. what a PARTY argued
 
