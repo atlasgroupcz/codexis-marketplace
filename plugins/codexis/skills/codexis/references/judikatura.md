@@ -5,8 +5,14 @@ Some phrases meaning case law research - `najdi judikaturu`, `najdi rozsudek`, `
 
 1. Start in `JD`, not `ALL`, when the user is asking for Czech court decisions.
 2. Use `cdx-cli search JD --help` if you need to confirm available filters.
-3. When doing case law research ALWAYS delegate JD candidate discovery to a subagent if available, and instruct it to run the sweep as ONE `script` program: several reworded JD queries under `parallel`, deduped by `docId`, ranked by how many queries found the same decision, citation fields read from `/meta`, and one to three verbatim passages per kept decision. Hundreds of hits then cost neither your context nor the agent's. It reports back those passages and the `https://` document links (the resolved URL from the source block). See `references/script-research.md`.
-4. Wait for agents first, then verify. Do not run your own search in parallel with the agent; it will likely be redundant and less effective than the agent's targeted sweep.
+3. When doing case law research ALWAYS delegate JD candidate discovery to a subagent if available. Write the brief so the agent never has to come back and ask:
+   - the user's question in their own words, and which legal concepts you have already ruled in or out,
+   - three to eight rewordings to try - one phrasing finds one line of case law,
+   - the source (`JD`) and any filter you already know holds (court, type, date range),
+   - what to bring back: `docId`, the citation fields read from `/meta`, one to three verbatim passages per decision, and the `https://` document link (the resolved URL from the source block),
+   - what not to do: no attribution calls, no summarising, and never a citation taken from a search hit.
+   Tell it to run the rewordings together rather than one after another, dedupe by `docId`, and rank a decision by how many rewordings found it - surfacing under three phrasings makes it the line of case law, a single hit is only a lead.
+4. Wait for agents first, then verify. Do not run your own search in parallel with the agent; it will likely be redundant and less effective than the agent's targeted search.
 5. After collecting promising candidates use a subagent to verify the actual content of the decision text and the metadata. Hand it the passages discovery returned. Pay attention to:
    - what conduct actually was at issue in the case,
    - whether the cited statement is ratio, context, or only quoted argument,
@@ -17,7 +23,7 @@ Some phrases meaning case law research - `najdi judikaturu`, `najdi rozsudek`, `
 
 ### Extracting information from specific case law document
 
-To get specific information from a concrete case law use a subagent instead of retrieving the whole text into this chat, and have it pull the text through `script`: the program writes the full text to a file and extracts the matching passages there. A decision easily exceeds the shell tool's output cap, so parsing it straight from a command's output hands the agent a silently truncated string. The agent then reads those passages in context and judges attribution - that is judgement, not extraction.
+To get specific information from a concrete case law use a subagent instead of retrieving the whole text into this chat. Instruct it to read the metadata first, then the decision text, and to return only the passages that answer the question. A decision easily exceeds the shell tool's output cap, so tell it to write the text to a file and search it there - parsing it straight out of a command's output hands it a silently truncated string.
 
 ## Attribution: what the COURT held vs. what a PARTY argued
 
