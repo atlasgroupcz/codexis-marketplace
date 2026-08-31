@@ -59,8 +59,8 @@ Standalone skill pro českou bezpečnost a ochranu zdraví při práci.
 | vyhláška č. 79/2013 Sb. | `cz_law/79/2013` | pracovnělékařské prohlídky |
 | nařízení vlády č. 361/2007 Sb. | `cz_law/361/2007` | podmínky ochrany zdraví při práci |
 | nařízení vlády č. 101/2005 Sb. | `cz_law/101/2005` | pracoviště a pracovní prostředí |
-| nařízení vlády č. 495/2001 Sb. | `cz_law/495/2001` | osobní ochranné pracovní prostředky |
-| nařízení vlády č. 201/2010 Sb. | `cz_law/201/2010` | evidence a hlášení pracovních úrazů |
+| nařízení vlády č. 390/2021 Sb. | `cz_law/390/2021` | osobní ochranné pracovní prostředky |
+| nařízení vlády č. 322/2025 Sb. | `cz_law/322/2025` | evidence a hlášení pracovních úrazů od 1. 1. 2026 |
 
 ## Hard Rules
 
