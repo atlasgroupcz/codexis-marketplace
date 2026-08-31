@@ -1,7 +1,7 @@
 {
   "id": "katastr",
   "title": "Katastr - Sledovaná řízení",
-  "icon": "icon.svg",
+  "icon": "icon.webp",
   "route": "katastr",
   "description": "Sledujte stav katastrálních řízení s automatickou kontrolou změn.",
   "entrypoint": "index.html",

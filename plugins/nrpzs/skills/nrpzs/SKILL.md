@@ -1,7 +1,7 @@
 ---
 uuid: 7c1e2a90-5b34-4d21-9f08-3a6e2d4c8b15
 name: nrpzs
-icon: icon.svg
+icon: icon.webp
 jurisdictions: [CZ]
 description: Národní registr poskytovatelů zdravotních služeb (NRPZS, ÚZIS). Use for Czech healthcare-provider lookups by IČO, name, or obor péče - provider profile, places of care (adresa, kontakt, GPS, datová schránka), departments and office hours. Triggers on "NRPZS", "poskytovatel zdravotních služeb", "zdravotnické zařízení", "ordinace", "najdi lékaře/nemocnici", "obor péče", "ÚZIS", and IČO + zdravotnictví.
 version: 1.0.1

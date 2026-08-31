@@ -1,6 +1,6 @@
 {
   "name": "register-zmluv",
-  "iconPath": "icon.svg",
+  "iconPath": "icon.webp",
   "version": "1.2.0",
   "description": "Slovak Register of Contracts (Centrálny register zmlúv, crz.gov.sk) - search public-sector contracts by subject, contracting parties, IČO, value, and contract date",
   "author": {

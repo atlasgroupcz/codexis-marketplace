@@ -1,7 +1,7 @@
 ---
 uuid: 399947b3-821e-4b60-8777-931e7e138bce
 name: sbirka-listin
-icon: icon.svg
+icon: icon.webp
 description: Sbírka listin veřejných rejstříků ČR (obchodní/spolkový/nadační/… rejstřík, Ministerstvo spravedlnosti). Use to list a subject's filed documents by IČO - účetní závěrky, rozvahy, výkazy zisku a ztráty, výroční zprávy, stanovy, společenské/zakladatelské smlouvy, notářské zápisy - to download one of those documents, and to watch a company for newly filed documents. NOT company identification (name, statutory bodies, VAT) - that is the ares skill. Triggers on "sbírka listin", "účetní závěrka", "výroční zpráva", "rozvaha", "výkaz zisku a ztráty", "společenská smlouva", "zakladatelská listina", "stanovy firmy", "dokumenty firmy", "listiny firmy", "sleduj sbírku listin", "hlídat nové dokumenty firmy". Czech (CZ) jurisdiction only.
 version: 1.0.0
 jurisdictions: [CZ]

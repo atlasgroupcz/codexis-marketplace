@@ -1,7 +1,7 @@
 {
   "id": "sid",
   "title": "SID - API klíč",
-  "icon": "icon.svg",
+  "icon": "icon.webp",
   "route": "sid",
   "description": "Nastavení osobního API klíče pro přístup k SID.",
   "entrypoint": "index.html",

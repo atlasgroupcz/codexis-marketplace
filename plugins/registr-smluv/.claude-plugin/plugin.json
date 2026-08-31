@@ -1,6 +1,6 @@
 {
   "name": "registr-smluv",
-  "iconPath": "icon.svg",
+  "iconPath": "icon.webp",
   "version": "1.2.0",
   "description": "Czech Register of Contracts (smlouvy.gov.cz) API access - search public-sector contracts by subject, contracting parties, IČO, value, and conclusion date",
   "author": {

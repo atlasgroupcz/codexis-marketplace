@@ -1,7 +1,7 @@
 ---
 uuid: 9a4c1f72-6b8e-4d03-a5f1-2c7b0e9d6a48
 name: rzpro
-icon: icon.svg
+icon: icon.webp
 description: Registr zdravotnických prostředků (RZPRO, KSRZIS). Use for Czech medical device lookups by device name or evidence number - manufacturer, device kind, risk class, intended purpose, notified body, variants/catalogue numbers, and registered persons and their activities. Triggers on "zdravotnický prostředek", "RZPRO", "evidenční číslo", "notifikovaný prostředek", "výrobce zdravotnických prostředků", "registr ZP", "najdi prostředek", "diagnostický prostředek", "IVD".
 version: 1.2.0
 jurisdictions: [CZ]

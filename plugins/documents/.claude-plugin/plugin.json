@@ -1,6 +1,6 @@
 {
   "name": "documents",
-  "iconPath": "icon.svg",
+  "iconPath": "icon.webp",
   "version": "1.0.0",
   "description": "Create, edit and visually verify Word, PDF, Excel and PowerPoint documents - renders every deliverable to page images so the AI can inspect the layout before handing it over",
   "author": {

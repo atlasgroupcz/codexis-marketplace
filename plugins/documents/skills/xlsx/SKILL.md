@@ -1,7 +1,7 @@
 ---
 uuid: e99d4d14-570c-433b-870d-4a146fb02019
 name: xlsx
-icon: icon.svg
+icon: icon.webp
 description: "Excel (.xlsx, .csv) - tabulka, sešit, vzorce, výpočet, rozpočet, cash flow, finanční model, úklid rozbitých dat. Vytvoř či uprav sešit a ověř vzorce. Ne pro Word ani grafy."
 version: 1.0.0
 allowed-tools: shell

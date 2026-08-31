@@ -1,6 +1,6 @@
 {
   "name": "sid",
-  "iconPath": "icon.svg",
+  "iconPath": "icon.webp",
   "version": "1.0.1",
   "description": "SID internal document system access - search, read and download managed documents, track read-confirmations and notifications via a personal API key",
   "author": {

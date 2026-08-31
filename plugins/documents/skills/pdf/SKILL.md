@@ -1,7 +1,7 @@
 ---
 uuid: 2aeefd95-cd11-431e-9b6c-b7dd54f3bbae
 name: pdf
-icon: icon.svg
+icon: icon.webp
 description: "PDF - vygeneruj PDF, vyplň formulář, slouč/rozděl/orazítkuj, přečti naskenovanou smlouvu, rozsudek, fakturu (kde záleží na vzhledu). Ne pro čistý text - ten přečteš rovnou ze souboru."
 version: 1.0.0
 allowed-tools: shell
