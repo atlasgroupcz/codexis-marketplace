@@ -1,7 +1,7 @@
 {
   "id": "sbirka-listin",
   "title": "Sbírka listin - sledované subjekty",
-  "icon": "icon.webp",
+  "icon": "icon.svg",
   "route": "sbirka-listin",
   "description": "Sledujte nové listiny subjektů ve sbírce listin veřejných rejstříků ČR.",
   "entrypoint": "index.html",

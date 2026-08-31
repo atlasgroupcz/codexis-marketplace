@@ -1,6 +1,6 @@
 {
   "name": "ocr",
-  "iconPath": "icon.webp",
+  "iconPath": "icon.svg",
   "version": "1.0.2",
   "description": "Document to Markdown conversion via OCR - supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
   "author": {

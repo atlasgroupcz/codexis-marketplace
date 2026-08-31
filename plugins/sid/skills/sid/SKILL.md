@@ -1,7 +1,7 @@
 ---
 uuid: 62923a9a-9e6d-4803-a9a8-c005049eeb71
 name: sid
-icon: icon.webp
+icon: icon.svg
 description: "This skill should be invoked whenever the user asks about internal company documents managed in SID (Systém interních dokumentů) - searching directives, guidelines or regulations, reading or downloading them, checking what they are required to confirm having read, or checking SID notifications and news. Triggers on: \"SID\", \"směrnice\", \"vnitřní předpis\", \"interní dokument\", \"spisový řád\", \"co mám potvrdit\", \"nepotvrzené dokumenty\"."
 version: 1.0.0
 i18n:

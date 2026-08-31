@@ -1,7 +1,7 @@
 ---
 uuid: af41bf2b-3172-48e3-a47f-f2b2aa5e5a67
 name: register-zmluv
-icon: icon.webp
+icon: icon.svg
 description: This skill should be invoked whenever the user needs Slovak public-sector contracts from the Central Register of Contracts (Centrálny register zmlúv, crz.gov.sk) - search by subject, contracting parties, IČO, contract value, or contract date. Triggers on "zmluva", "register zmlúv", "centrálny register zmlúv", "crz.gov.sk", "verejná zmluva", "dodávateľ", "objednávateľ", "obstarávateľ", "hodnota zmluvy", "kto podpísal zmluvu s", "slovenské zmluvy".
 version: 1.2.0
 jurisdictions: [SK]

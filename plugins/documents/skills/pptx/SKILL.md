@@ -1,7 +1,7 @@
 ---
 uuid: 6c7ba16b-f527-4dd3-b71d-0d627eae4198
 name: pptx
-icon: icon.webp
+icon: icon.svg
 description: "PowerPoint (.pptx) - prezentace, slidy, deck, pitch, školení. Připrav nebo uprav prezentaci, shrň obsah do slidů a zkontroluj, jak slidy vypadají."
 version: 1.0.0
 allowed-tools: shell

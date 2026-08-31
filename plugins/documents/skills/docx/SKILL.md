@@ -1,7 +1,7 @@
 ---
 uuid: 30a77323-ca87-415f-b4de-d8c5f166a11d
 name: docx
-icon: icon.webp
+icon: icon.svg
 description: "Word dokumenty (.docx) - smlouva, podání, memo, dopis, report, šablona. Vytvoř, uprav či přeformátuj Word a zkontroluj, jak vypadá. Ne pro Excel, PDF ani prezentace."
 version: 1.0.0
 allowed-tools: shell
