@@ -1,7 +1,7 @@
 ---
 uuid: 6a3301ef-581b-45ce-af55-50234bffa5f8
 name: codexis-verejne-zakazky
-icon: icon.webp
+icon: icon.png
 version: 1.0.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns public procurement, contracting authorities, estimated value, procurement procedures, tender conditions, qualification, bids, clarification, evaluation, deadlines, site visits, objections, review, contract award or modification under ZZVZ. Standalone procurement methodology using CODEXIS.

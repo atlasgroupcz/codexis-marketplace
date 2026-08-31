@@ -1,7 +1,7 @@
 ---
 uuid: 5a416920-3f3e-4075-83cf-5db20ae55800
 name: codexis-personalistika
-icon: icon.webp
+icon: icon.png
 version: 1.0.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns employment, HR, hiring, contracts, termination, redundancy, working time, leave, wages, payroll, health or social insurance, discrimination, employee representation, remote work, obstacles to work or personnel records. Standalone employment-law methodology using CODEXIS.

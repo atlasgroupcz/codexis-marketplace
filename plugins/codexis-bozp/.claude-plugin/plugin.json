@@ -1,6 +1,6 @@
 {
   "name": "codexis-bozp",
-  "iconPath": "skills/codexis-bozp/icon.webp",
+  "iconPath": "skills/codexis-bozp/icon.png",
   "version": "1.0.0",
   "description": "Czech occupational health and safety law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
