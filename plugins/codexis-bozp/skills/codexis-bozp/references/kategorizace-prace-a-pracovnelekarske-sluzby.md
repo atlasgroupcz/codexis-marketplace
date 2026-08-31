@@ -6,7 +6,7 @@ Použij pro dotazy na kategorii práce, rizikové faktory, měření expozice, i
 
 ## Výzkumný podklad
 
-Reference vychází z pozitivně hodnocených chatů monitoru BOZP od 1. 1. 2026. Opakovala se v nich kategorizace prací, pravomoc hygienické stanice, sdělení kategorie zaměstnanci, zvláštní vyšetření, periodicita prohlídek a odpovědnost za pracovníky dodavatele. Právní pravidla byla ověřena v aktuálních zněních zákona č. 258/2000 Sb., zákoníku práce a zákona č. 373/2011 Sb.
+Reference vychází z pozitivně hodnocených chatů monitoru BOZP z období 1. 1.–31. 8. 2026. Opakovala se v nich kategorizace prací, pravomoc hygienické stanice, sdělení kategorie zaměstnanci, zvláštní vyšetření, periodicita prohlídek a odpovědnost za pracovníky dodavatele. Právní pravidla byla ověřena ve zněních účinných k 31. 8. 2026.
 
 ## Rozhodovací workflow
 

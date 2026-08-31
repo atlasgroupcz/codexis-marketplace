@@ -6,7 +6,7 @@ Použij pro nákup a vývoj software, OEM a předplatné třetích stran, dlouho
 
 ## Výzkumný podklad
 
-Reference vychází z tematického korpusu chatů monitoru Ochrana duševního vlastnictví od 1. 1. 2026. Opakovala se dodávka software s licencemi výrobce, dlouhodobý servis při ročním předplatném, zaměstnanecké programy a databáze, dizertační a zaměstnanecká díla, podlicence technických specifikací, AI ve smlouvách a rozsah licence na dobu trvání majetkových práv.
+Reference vychází z tematického korpusu chatů monitoru Ochrana duševního vlastnictví z období 1. 1.–31. 8. 2026. Opakovala se dodávka software s licencemi výrobce, dlouhodobý servis při ročním předplatném, zaměstnanecké programy a databáze, dizertační a zaměstnanecká díla, podlicence technických specifikací, AI ve smlouvách a rozsah licence na dobu trvání majetkových práv.
 
 ## Inventura předmětu plnění
 
@@ -38,7 +38,7 @@ Pro každou položku určuj autora nebo výrobce, nositele a vykonavatele práv,
 - Vědecká publikace vytvořená při zaměstnání a dizertační práce vytvořená jako studijní výstup se neposuzují automaticky stejně.
 - Pro zaměstnanecké dílo otevři § 58 autorského zákona; pro školní dílo § 60; pro počítačové programy a databáze také zvláštní pravidla autorského zákona.
 - Osobnostní autorská práva, majetková práva a výkon majetkových práv jsou rozdílné kategorie.
-- Trojstranná dohoda musí popsat konkrétní budoucí užití, publikaci, licenci, odměnu, embargo, otevřený přístup, podkladová data a vztah k povinnostem školy.
+- Podle relevance v trojstranné dohodě uprav konkrétní budoucí užití, publikaci, licenci, odměnu, embargo, otevřený přístup, podkladová data a vztah k povinnostem školy.
 - Neuzavírej závěr o převoditelnosti nebo kogentnosti jen podle názoru smluvních stran; ověř přesné zákonné pravidlo pro daný typ výstupu.
 
 ## AI ve smlouvě
