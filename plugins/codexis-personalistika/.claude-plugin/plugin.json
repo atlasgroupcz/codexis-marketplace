@@ -1,6 +1,6 @@
 {
   "name": "codexis-personalistika",
-  "iconPath": "skills/codexis-personalistika/icon.png",
+  "iconPath": "skills/codexis-personalistika/icon.svg",
   "version": "1.0.0",
   "description": "Czech employment and HR law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },

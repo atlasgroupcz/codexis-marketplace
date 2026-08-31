@@ -1,7 +1,7 @@
 ---
 uuid: 80d7a381-c4e3-41d4-9d08-fc148762d845
 name: codexis-dusevni-vlastnictvi
-icon: icon.png
+icon: icon.svg
 version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns copyright, software, databases, patents, utility models, employee inventions, trademarks, designs, trade secrets, know-how, licences, collective management, unfair competition or enforcement of intellectual property rights. Standalone IP methodology using CODEXIS.

@@ -1,5 +1,5 @@
 {
-  "name": "codexis-stavebnictvi", "iconPath": "skills/codexis-stavebnictvi/icon.png", "version": "1.0.0",
+  "name": "codexis-stavebnictvi", "iconPath": "skills/codexis-stavebnictvi/icon.svg", "version": "1.0.0",
   "description": "Czech construction and building law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "construction", "building-law", "stavebnictvi", "czech"], "license": "PROPRIETARY",

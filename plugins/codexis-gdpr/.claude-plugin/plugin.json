@@ -1,6 +1,6 @@
 {
   "name": "codexis-gdpr",
-  "iconPath": "skills/codexis-gdpr/icon.png",
+  "iconPath": "skills/codexis-gdpr/icon.svg",
   "version": "1.0.0",
   "description": "Czech and EU data protection law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },

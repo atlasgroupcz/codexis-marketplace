@@ -20,29 +20,29 @@ PLUGINS = REPO / "plugins"
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
 
 MONITOR_PLUGINS = {
-    "codexis-bozp": ("Monitor - BOZP", "MONITOR_BOZP_AI"),
-    "codexis-cirkev": ("Monitor - Církev", "MONITOR_CIRKEV_AI"),
-    "codexis-dane": ("Monitor - Daně", "MONITOR_DANE_AI"),
+    "codexis-bozp": ("BOZP AI", "MONITOR_BOZP_AI"),
+    "codexis-cirkev": ("Církev AI", "MONITOR_CIRKEV_AI"),
+    "codexis-dane": ("Daně AI", "MONITOR_DANE_AI"),
     "codexis-dusevni-vlastnictvi": (
-        "Monitor - Ochrana duševního vlastnictví",
+        "Ochrana duševního vlastnictví AI",
         "MONITOR_DUSEVNI_VLASTNICTVI_AI",
     ),
-    "codexis-gdpr": ("Monitor - Ochrana osobních údajů", "MONITOR_GDPR_AI"),
+    "codexis-gdpr": ("Ochrana osobních údajů AI", "MONITOR_GDPR_AI"),
     "codexis-obecni-samosprava": (
-        "Monitor - Obecní samospráva",
+        "Obecní samospráva AI",
         "MONITOR_OBECNI_SAMOSPRAVA_AI",
     ),
-    "codexis-personalistika": ("Monitor - Personalistika", "MONITOR_PERSONALISTIKA_AI"),
-    "codexis-rekodifikace": ("Monitor - Rekodifikace", "MONITOR_REKODIFIKACE_AI"),
-    "codexis-skolstvi": ("Monitor - Školství", "MONITOR_SKOLSTVI_AI"),
-    "codexis-stavebnictvi": ("Monitor - Stavebnictví", "MONITOR_STAVEBNICTVI_AI"),
-    "codexis-ucetnictvi": ("Monitor - Účetnictví", "MONITOR_UCETNICTVI_AI"),
+    "codexis-personalistika": ("Personalistika AI", "MONITOR_PERSONALISTIKA_AI"),
+    "codexis-rekodifikace": ("Rekodifikace AI", "MONITOR_REKODIFIKACE_AI"),
+    "codexis-skolstvi": ("Školství AI", "MONITOR_SKOLSTVI_AI"),
+    "codexis-stavebnictvi": ("Stavebnictví AI", "MONITOR_STAVEBNICTVI_AI"),
+    "codexis-ucetnictvi": ("Účetnictví AI", "MONITOR_UCETNICTVI_AI"),
     "codexis-verejne-zakazky": (
-        "Monitor - Veřejné zakázky",
+        "Veřejné zakázky AI",
         "MONITOR_VEREJNE_ZAKAZKY_AI",
     ),
     "codexis-zivotni-prostredi": (
-        "Monitor - Životní prostředí",
+        "Životní prostředí AI",
         "MONITOR_ZIVOTNI_PROSTREDI_AI",
     ),
 }
