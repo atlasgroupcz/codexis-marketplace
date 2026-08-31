@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns occupational health and safety, prevention of workplace risks, work accidents, remote-work injuries, safety training, protective equipment, occupational medical services, work categories, shared workplaces, inspections or employer liability. Standalone BOZP methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - BOZP"
+    displayName: "Monitor - BOZP"
     summary: "České právo bezpečnosti a ochrany zdraví při práci, prevence rizik a pracovní úrazy."
     examplePrompts:
       - "Posuď, zda může být úraz při práci z domova pracovním úrazem a jaké podklady jsou rozhodné."
       - "Jaké povinnosti má zaměstnavatel při souběhu více firem na jednom pracovišti?"
       - "Prověř, zda naše evidence, školení a poskytování OOPP odpovídají aktuálním předpisům."
   en:
-    displayName: "CODEXIS - Czech OHS"
+    displayName: "Monitor - OHS"
     summary: "Czech occupational health and safety law, risk prevention and workplace accidents."
     examplePrompts:
       - "Assess whether an injury while working from home can be a workplace accident and which facts matter."
       - "What duties apply when employees of several companies share one workplace?"
       - "Check whether our records, safety training and protective equipment comply with current Czech law."
   sk:
-    displayName: "CODEXIS - BOZP ČR"
+    displayName: "Monitor - BOZP ČR"
     summary: "České právo bezpečnosti a ochrany zdravia pri práci, prevencia rizík a pracovné úrazy."
     examplePrompts:
       - "Posúď, či môže byť úraz pri práci z domu pracovným úrazom a ktoré skutočnosti sú rozhodujúce."
@@ -29,7 +29,7 @@ i18n:
       - "Over, či naša evidencia, školenia a poskytovanie OOPP zodpovedajú aktuálnym českým predpisom."
 ---
 
-# CODEXIS - BOZP
+# Monitor - BOZP
 
 Use `cdx-cli` as the primary source for Czech and EU legal research. Assume it is installed and authenticated. Use `search`, `get` and `schema`; do not run setup probes before the first real request.
 

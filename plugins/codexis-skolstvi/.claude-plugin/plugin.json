@@ -4,9 +4,9 @@
   "keywords": ["codexis", "education", "school", "skolstvi", "czech"], "license": "PROPRIETARY",
   "accessible-part": "MONITOR_SKOLSTVI_AI", "tags": ["legal", "czech", "education"],
   "i18n": {
-    "cs": { "displayName": "Školství AI", "description": "Analýza českého školského práva, rozhodování škol a práv žáků s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "education": "Školství" } },
-    "en": { "displayName": "Education AI", "description": "Analysis of Czech education law, school decisions and student rights using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "education": "Education" } },
-    "sk": { "displayName": "Školstvo AI", "description": "Analýza českého školského práva, rozhodovania škôl a práv žiakov s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "education": "Školstvo" } }
+    "cs": { "displayName": "Monitor - Školství", "description": "Analýza českého školského práva, rozhodování škol a práv žáků s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "education": "Školství" } },
+    "en": { "displayName": "Monitor - Education", "description": "Analysis of Czech education law, school decisions and student rights using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "education": "Education" } },
+    "sk": { "displayName": "Monitor - Školstvo", "description": "Analýza českého školského práva, rozhodovania škôl a práv žiakov s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "education": "Školstvo" } }
   },
   "dependencies": ["codexis"], "skills": "./skills"
 }

@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns churches, religious societies, registered church legal persons, clergy, religious freedom, church property, internal church rules, state registration, financing, restitution or the civil effects of canonical and other religious norms. Standalone church-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Církev"
+    displayName: "Monitor - Církev"
     summary: "České církevní a náboženské právo, právnické osoby, majetek a duchovní služba."
     examplePrompts:
       - "Jak ověřit, že církevní právnická osoba může prodat konkrétní nemovitost a kdo za ni jedná?"
       - "Posuď právní vztah duchovního k církvi a hranice přezkumu civilními soudy."
       - "Jaké podmínky platí pro evidenci církevní právnické osoby a změnu jejích údajů?"
   en:
-    displayName: "CODEXIS - Czech Church Law"
+    displayName: "Monitor - Church Law"
     summary: "Czech church and religious law, legal persons, property and clergy service."
     examplePrompts:
       - "How can I verify that a church legal person may sell a particular property and who may act for it?"
       - "Assess the legal relationship between clergy and a church and the limits of civil-court review."
       - "What conditions apply to registering a church legal person and changing its registered data?"
   sk:
-    displayName: "CODEXIS - Cirkevné právo ČR"
+    displayName: "Monitor - Cirkev"
     summary: "České cirkevné a náboženské právo, právnické osoby, majetok a duchovná služba."
     examplePrompts:
       - "Ako overiť, že cirkevná právnická osoba môže predať konkrétnu nehnuteľnosť a kto za ňu koná?"
@@ -29,7 +29,7 @@ i18n:
       - "Aké podmienky platia pre evidenciu cirkevnej právnickej osoby a zmenu jej údajov?"
 ---
 
-# CODEXIS - Církev
+# Monitor - Církev
 
 Use `cdx-cli` as the primary legal source. Add official registry data from the Ministry of Culture or another competent authority when identity, registration or representation must be verified.
 

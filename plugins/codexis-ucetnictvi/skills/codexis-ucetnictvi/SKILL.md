@@ -6,21 +6,21 @@ version: 2.2.0
 jurisdictions: [CZ]
 i18n:
   cs:
-    displayName: "CODEXIS - Účetnictví ČR"
+    displayName: "Monitor - Účetnictví"
     summary: "České účetní předpisy a praxe - závěrky, rozvaha, výsledovka, oceňování, odpisy, ČÚS i IFRS."
     examplePrompts:
       - "Jak se určuje kategorie účetní jednotky a co z ní plyne pro rozsah účetní závěrky?"
       - "Koupili jsme nové výrobní zařízení - kdy ho dát rovnou do nákladů a kdy zařadit do majetku a odpisovat?"
       - "Co musí obsahovat příloha k účetní závěrce u malé účetní jednotky?"
   en:
-    displayName: "CODEXIS - Czech Accounting"
+    displayName: "Monitor - Czech Accounting"
     summary: "Czech accounting regulations and practice - financial statements, balance sheet, income statement, valuation, ČÚS and IFRS."
     examplePrompts:
       - "How is the accounting-entity category determined in Czechia and what does it mean for the scope of the financial statements?"
       - "We bought new production equipment - when is it an outright expense and when an asset to be depreciated?"
       - "What must the notes to the financial statements contain for a small accounting entity?"
   sk:
-    displayName: "CODEXIS - Účtovníctvo ČR"
+    displayName: "Monitor - Účtovníctvo"
     summary: "České účtovné predpisy a prax - závierky, súvaha, výsledovka, oceňovanie, odpisy, ČÚS i IFRS."
     examplePrompts:
       - "Ako sa v ČR určuje kategória účtovnej jednotky a čo z nej vyplýva pre rozsah účtovnej závierky?"
@@ -29,7 +29,7 @@ i18n:
 description: Use when the user's question relates to Czech accounting, or when the answer may depend on an accounting rule even if framed around something else - účetnictví, účetní jednotka, závěrka, rozvaha, výsledovka, příloha závěrky, vybraná účetní jednotka, účetní období, kategorie účetních jednotek (mikro/malá/střední/velká), oceňování, odpisy, rezervy, opravné položky, inventarizace, daňová evidence, archivace, účetní doklad, kniha, zákon č. 563/1991 Sb., vyhláška 500/2002 / 501/2002 / 502/2002 / 504/2002 / 410/2009 Sb., ČÚS, IFRS, or any Czech accounting standard. Activate also when the user does not name účetnictví explicitly but their situation requires accounting treatment (reporting, valuation, period-end, capitalization vs. expense, recognition, record-keeping). Standalone authoritative skill - bundles general CODEXIS methodology with Czech accounting reasoning; no need to load general codexis.
 ---
 
-# CODEXIS - Czech Accounting
+# Monitor - Účetnictví
 
 Standalone skill for Czech accounting questions. Domain methodology for analyzing any accounting question - not a catalogue of answers.
 

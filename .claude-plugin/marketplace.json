@@ -1058,7 +1058,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "BOZP AI",
+          "displayName": "Monitor - BOZP",
           "description": "Právní analýza bezpečnosti a ochrany zdraví při práci.",
           "tagLabels": {
             "legal": "Právo",
@@ -1067,7 +1067,7 @@
           }
         },
         "en": {
-          "displayName": "OHS AI",
+          "displayName": "Monitor - OHS",
           "description": "Czech occupational health and safety legal analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1076,7 +1076,7 @@
           }
         },
         "sk": {
-          "displayName": "BOZP AI",
+          "displayName": "Monitor - BOZP",
           "description": "Právna analýza bezpečnosti a ochrany zdravia pri práci.",
           "tagLabels": {
             "legal": "Právo",
@@ -1094,7 +1094,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Církev AI",
+          "displayName": "Monitor - Církev",
           "description": "Právní analýza církví, náboženských společností a jejich právnických osob.",
           "tagLabels": {
             "legal": "Právo",
@@ -1103,7 +1103,7 @@
           }
         },
         "en": {
-          "displayName": "Church Law AI",
+          "displayName": "Monitor - Church Law",
           "description": "Czech church and religious law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1112,7 +1112,7 @@
           }
         },
         "sk": {
-          "displayName": "Cirkev AI",
+          "displayName": "Monitor - Cirkev",
           "description": "Právna analýza cirkví, náboženských spoločností a ich právnických osôb.",
           "tagLabels": {
             "legal": "Právo",
@@ -1130,7 +1130,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Daně AI",
+          "displayName": "Monitor - Daně",
           "description": "Analýza českých daňových předpisů, praxe a judikatury.",
           "tagLabels": {
             "legal": "Právo",
@@ -1139,7 +1139,7 @@
           }
         },
         "en": {
-          "displayName": "Tax AI",
+          "displayName": "Monitor - Tax",
           "description": "Czech tax law, practice and case-law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1148,7 +1148,7 @@
           }
         },
         "sk": {
-          "displayName": "Dane AI",
+          "displayName": "Monitor - Dane",
           "description": "Analýza českých daňových predpisov, praxe a judikatúry.",
           "tagLabels": {
             "legal": "Právo",
@@ -1166,7 +1166,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Obecní samospráva AI",
+          "displayName": "Monitor - Obecní samospráva",
           "description": "Analýza práva obcí, jejich orgánů, majetku a veřejné správy.",
           "tagLabels": {
             "legal": "Právo",
@@ -1175,7 +1175,7 @@
           }
         },
         "en": {
-          "displayName": "Municipal Government AI",
+          "displayName": "Monitor - Municipal Government",
           "description": "Czech municipal government law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1184,7 +1184,7 @@
           }
         },
         "sk": {
-          "displayName": "Obecná samospráva AI",
+          "displayName": "Monitor - Obecná samospráva",
           "description": "Analýza práva obcí, ich orgánov, majetku a verejnej správy.",
           "tagLabels": {
             "legal": "Právo",
@@ -1202,7 +1202,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Ochrana duševního vlastnictví AI",
+          "displayName": "Monitor - Ochrana duševního vlastnictví",
           "description": "Analýza autorského, patentového, známkového a dalšího práva duševního vlastnictví.",
           "tagLabels": {
             "legal": "Právo",
@@ -1211,7 +1211,7 @@
           }
         },
         "en": {
-          "displayName": "Intellectual Property AI",
+          "displayName": "Monitor - Intellectual Property",
           "description": "Czech and EU intellectual property law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1220,7 +1220,7 @@
           }
         },
         "sk": {
-          "displayName": "Ochrana duševného vlastníctva AI",
+          "displayName": "Monitor - Ochrana duševného vlastníctva",
           "description": "Analýza autorského, patentového, známkového a ďalšieho práva duševného vlastníctva.",
           "tagLabels": {
             "legal": "Právo",
@@ -1238,7 +1238,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Ochrana osobních údajů AI",
+          "displayName": "Monitor - Ochrana osobních údajů",
           "description": "Analýza GDPR a českého práva ochrany osobních údajů.",
           "tagLabels": {
             "legal": "Právo",
@@ -1247,7 +1247,7 @@
           }
         },
         "en": {
-          "displayName": "Data Protection AI",
+          "displayName": "Monitor - Data Protection",
           "description": "GDPR and Czech data protection law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1256,7 +1256,7 @@
           }
         },
         "sk": {
-          "displayName": "Ochrana osobných údajov AI",
+          "displayName": "Monitor - Ochrana osobných údajov",
           "description": "Analýza GDPR a českého práva ochrany osobných údajov.",
           "tagLabels": {
             "legal": "Právo",
@@ -1274,7 +1274,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Personalistika AI",
+          "displayName": "Monitor - Personalistika",
           "description": "Analýza pracovního práva, mezd, odvodů a personální agendy.",
           "tagLabels": {
             "legal": "Právo",
@@ -1283,7 +1283,7 @@
           }
         },
         "en": {
-          "displayName": "HR AI",
+          "displayName": "Monitor - HR",
           "description": "Czech employment, payroll and HR law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1292,7 +1292,7 @@
           }
         },
         "sk": {
-          "displayName": "Personalistika AI",
+          "displayName": "Monitor - Personalistika",
           "description": "Analýza pracovného práva, miezd, odvodov a personálnej agendy.",
           "tagLabels": {
             "legal": "Právo",
@@ -1310,7 +1310,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Rekodifikace AI",
+          "displayName": "Monitor - Rekodifikace",
           "description": "Analýza přechodných ustanovení a rekodifikace českého soukromého práva.",
           "tagLabels": {
             "legal": "Právo",
@@ -1319,7 +1319,7 @@
           }
         },
         "en": {
-          "displayName": "Recodification AI",
+          "displayName": "Monitor - Recodification",
           "description": "Czech private-law recodification and transitional-law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1328,7 +1328,7 @@
           }
         },
         "sk": {
-          "displayName": "Rekodifikácia AI",
+          "displayName": "Monitor - Rekodifikácia",
           "description": "Analýza prechodných ustanovení a rekodifikácie českého súkromného práva.",
           "tagLabels": {
             "legal": "Právo",
@@ -1346,7 +1346,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Stavebnictví AI",
+          "displayName": "Monitor - Stavebnictví",
           "description": "Analýza stavebního práva, povolování a souvisejících postupů.",
           "tagLabels": {
             "legal": "Právo",
@@ -1355,7 +1355,7 @@
           }
         },
         "en": {
-          "displayName": "Construction AI",
+          "displayName": "Monitor - Construction",
           "description": "Czech construction and permitting law analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1364,7 +1364,7 @@
           }
         },
         "sk": {
-          "displayName": "Stavebníctvo AI",
+          "displayName": "Monitor - Stavebníctvo",
           "description": "Analýza stavebného práva, povoľovania a súvisiacich postupov.",
           "tagLabels": {
             "legal": "Právo",
@@ -1382,7 +1382,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Veřejné zakázky AI",
+          "displayName": "Monitor - Veřejné zakázky",
           "description": "Analýza veřejných zakázek, zadávacích postupů a změn smluv.",
           "tagLabels": {
             "legal": "Právo",
@@ -1391,7 +1391,7 @@
           }
         },
         "en": {
-          "displayName": "Public Procurement AI",
+          "displayName": "Monitor - Public Procurement",
           "description": "Czech public procurement law and procedure analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1400,7 +1400,7 @@
           }
         },
         "sk": {
-          "displayName": "Verejné obstarávanie AI",
+          "displayName": "Monitor - Verejné obstarávanie",
           "description": "Analýza verejného obstarávania, postupov a zmien zmlúv.",
           "tagLabels": {
             "legal": "Právo",
@@ -1418,7 +1418,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Účetnictví AI",
+          "displayName": "Monitor - Účetnictví",
           "description": "Analýza účetních předpisů, standardů a daňových vazeb.",
           "tagLabels": {
             "legal": "Právo",
@@ -1427,7 +1427,7 @@
           }
         },
         "en": {
-          "displayName": "Accounting AI",
+          "displayName": "Monitor - Accounting",
           "description": "Czech accounting law, standards and tax-link analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1436,7 +1436,7 @@
           }
         },
         "sk": {
-          "displayName": "Účtovníctvo AI",
+          "displayName": "Monitor - Účtovníctvo",
           "description": "Analýza účtovných predpisov, štandardov a daňových väzieb.",
           "tagLabels": {
             "legal": "Právo",
@@ -1454,7 +1454,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Školství AI",
+          "displayName": "Monitor - Školství",
           "description": "Analýza školského práva, rozhodování škol a práv žáků.",
           "tagLabels": {
             "legal": "Právo",
@@ -1463,7 +1463,7 @@
           }
         },
         "en": {
-          "displayName": "Education AI",
+          "displayName": "Monitor - Education",
           "description": "Czech education law and school-decision analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1472,7 +1472,7 @@
           }
         },
         "sk": {
-          "displayName": "Školstvo AI",
+          "displayName": "Monitor - Školstvo",
           "description": "Analýza školského práva, rozhodovania škôl a práv žiakov.",
           "tagLabels": {
             "legal": "Právo",
@@ -1490,7 +1490,7 @@
       "category": "legal",
       "i18n": {
         "cs": {
-          "displayName": "Životní prostředí AI",
+          "displayName": "Monitor - Životní prostředí",
           "description": "Analýza práva životního prostředí, EIA, JES a povolování.",
           "tagLabels": {
             "legal": "Právo",
@@ -1499,7 +1499,7 @@
           }
         },
         "en": {
-          "displayName": "Environment AI",
+          "displayName": "Monitor - Environment",
           "description": "Czech and EU environmental law, EIA and permitting analysis.",
           "tagLabels": {
             "legal": "Law",
@@ -1508,7 +1508,7 @@
           }
         },
         "sk": {
-          "displayName": "Životné prostredie AI",
+          "displayName": "Monitor - Životné prostredie",
           "description": "Analýza práva životného prostredia, EIA, JES a povoľovania.",
           "tagLabels": {
             "legal": "Právo",

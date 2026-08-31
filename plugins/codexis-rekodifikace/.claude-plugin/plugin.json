@@ -5,9 +5,9 @@
   "keywords": ["codexis", "recodification", "transitional-law", "private-law", "czech"], "license": "PROPRIETARY",
   "accessible-part": "MONITOR_REKODIFIKACE_AI", "tags": ["legal", "czech", "private-law"],
   "i18n": {
-    "cs": { "displayName": "Rekodifikace AI", "description": "Analýza rekodifikace českého soukromého práva a přechodných ustanovení s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "private-law": "Rekodifikace" } },
-    "en": { "displayName": "Recodification AI", "description": "Analysis of Czech private-law recodification and transitional provisions using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "private-law": "Recodification" } },
-    "sk": { "displayName": "Rekodifikácia AI", "description": "Analýza rekodifikácie českého súkromného práva a prechodných ustanovení s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "private-law": "Rekodifikácia" } }
+    "cs": { "displayName": "Monitor - Rekodifikace", "description": "Analýza rekodifikace českého soukromého práva a přechodných ustanovení s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "private-law": "Rekodifikace" } },
+    "en": { "displayName": "Monitor - Recodification", "description": "Analysis of Czech private-law recodification and transitional provisions using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "private-law": "Recodification" } },
+    "sk": { "displayName": "Monitor - Rekodifikácia", "description": "Analýza rekodifikácie českého súkromného práva a prechodných ustanovení s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "private-law": "Rekodifikácia" } }
   },
   "dependencies": ["codexis"], "skills": "./skills"
 }

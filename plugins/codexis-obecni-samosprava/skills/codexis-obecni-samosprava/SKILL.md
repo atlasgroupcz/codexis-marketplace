@@ -7,21 +7,21 @@ jurisdictions: [CZ]
 description: Use when a Czech legal question concerns municipalities, municipal councils, boards, mayors, municipal offices, independent or delegated powers, municipal property, local ordinances, elections, access to information, contributory organizations or municipal administrative procedure. Standalone municipal-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Obecní samospráva"
+    displayName: "Monitor - Obecní samospráva"
     summary: "Právo obcí, jejich orgánů, majetku a výkonu samostatné i přenesené působnosti."
     examplePrompts:
       - "Který orgán obce musí schválit převod obecního pozemku a jaké kroky tomu předcházejí?"
       - "Prověř platnost usnesení rady obce a navazující smlouvy."
       - "Jaké povinnosti má obec a registrační úřad před komunálními volbami?"
   en:
-    displayName: "CODEXIS - Czech Municipal Law"
+    displayName: "Monitor - Municipal Government"
     summary: "Czech municipal bodies, property and independent or delegated government powers."
     examplePrompts:
       - "Which municipal body must approve the transfer of municipal land and what steps come first?"
       - "Review the validity of a municipal board resolution and the resulting contract."
       - "What duties apply to a municipality and registration office before local elections?"
   sk:
-    displayName: "CODEXIS - Obecná samospráva ČR"
+    displayName: "Monitor - Obecná samospráva"
     summary: "České právo obcí, ich orgánov, majetku a samostatnej aj prenesenej pôsobnosti."
     examplePrompts:
       - "Ktorý orgán obce musí schváliť prevod obecného pozemku a aké kroky tomu predchádzajú?"
@@ -29,7 +29,7 @@ i18n:
       - "Aké povinnosti má obec a registračný úrad pred komunálnymi voľbami?"
 ---
 
-# CODEXIS - Obecní samospráva
+# Monitor - Obecní samospráva
 
 Use `cdx-cli` for legal sources and official public-administration sources for current forms or operational instructions.
 

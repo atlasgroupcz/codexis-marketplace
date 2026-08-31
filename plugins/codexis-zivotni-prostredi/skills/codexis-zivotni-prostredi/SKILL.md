@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns environmental impact assessment, EIA, JES, nature protection, water, air, waste, soil, forests, integrated permitting, environmental damage, public participation, environmental liability or environmental aspects of project authorization. Standalone environmental-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Životní prostředí"
+    displayName: "Monitor - Životní prostředí"
     summary: "České a evropské právo životního prostředí, EIA, JES a složková povolení."
     examplePrompts:
       - "Jak se EIA promítá do navazujícího povolení a účasti veřejnosti?"
       - "Urči, které složky ochrany životního prostředí pokryje JES pro tento záměr."
       - "Posuď, zda změna projektu vyžaduje nové zjišťovací řízení nebo ověření stanoviska EIA."
   en:
-    displayName: "CODEXIS - Environmental Law"
+    displayName: "Monitor - Environment"
     summary: "Czech and EU environmental law, EIA, JES and sector permits."
     examplePrompts:
       - "How does EIA affect follow-up authorization and public participation?"
       - "Determine which environmental components JES covers for this project."
       - "Assess whether a project change requires new screening or verification of the EIA opinion."
   sk:
-    displayName: "CODEXIS - Životné prostredie ČR"
+    displayName: "Monitor - Životné prostredie"
     summary: "České a európske právo životného prostredia, EIA, JES a zložkové povolenia."
     examplePrompts:
       - "Ako sa EIA premieta do nadväzujúceho povolenia a účasti verejnosti?"
@@ -29,7 +29,7 @@ i18n:
       - "Posúď, či zmena projektu vyžaduje nové zisťovacie konanie alebo overenie stanoviska EIA."
 ---
 
-# CODEXIS - Životní prostředí
+# Monitor - Životní prostředí
 
 Use `cdx-cli` for Czech and EU law and case law. Add only official ministry, authority and EU material for operational or interpretive context.
 

@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns public procurement, contracting authorities, estimated value, procurement procedures, tender conditions, qualification, bids, clarification, evaluation, deadlines, site visits, objections, review, contract award or modification under ZZVZ. Standalone procurement methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Veřejné zakázky"
+    displayName: "Monitor - Veřejné zakázky"
     summary: "České a evropské právo veřejných zakázek, zadávací postupy a změny smluv."
     examplePrompts:
       - "Lze po lhůtě doplnit kvalifikaci nebo novou referenční zakázku?"
       - "Prověř lhůtu pro podání nabídek a termín prohlídky místa plnění."
       - "Posuď, zda lze po zadání změnit cenu nebo rozsah smlouvy."
   en:
-    displayName: "CODEXIS - Public Procurement"
+    displayName: "Monitor - Public Procurement"
     summary: "Czech and EU public procurement law, tender procedures and contract changes."
     examplePrompts:
       - "Can qualification or a new reference contract be supplemented after the bid deadline?"
       - "Review the bid deadline and scheduled site visit."
       - "Assess whether the price or scope of an awarded contract may be changed."
   sk:
-    displayName: "CODEXIS - Verejné obstarávanie ČR"
+    displayName: "Monitor - Verejné obstarávanie"
     summary: "České a európske právo verejného obstarávania, postupy a zmeny zmlúv."
     examplePrompts:
       - "Možno po lehote doplniť kvalifikáciu alebo novú referenčnú zákazku?"
@@ -29,7 +29,7 @@ i18n:
       - "Posúď, či možno po zadaní zmeniť cenu alebo rozsah zmluvy."
 ---
 
-# CODEXIS - Veřejné zakázky
+# Monitor - Veřejné zakázky
 
 Use `cdx-cli` for legislation, Czech and EU case law and commentary. Use official ÚOHS, TED and procurement-portal material only as complementary sources.
 

@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns employment, HR, hiring, contracts, termination, redundancy, working time, leave, wages, payroll, health or social insurance, discrimination, employee representation, remote work, obstacles to work or personnel records. Standalone employment-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Personalistika"
+    displayName: "Monitor - Personalistika"
     summary: "České pracovní právo, mzdy, odvody a personální agenda."
     examplePrompts:
       - "Prověř výpověď pro nadbytečnost a rizika při výběru konkrétního zaměstnance."
       - "Musí invalidní zaměstnanec při neplaceném volnu doplatit zdravotní pojištění do minima?"
       - "Navrhni správný postup při změně pracovní doby a místa výkonu práce."
   en:
-    displayName: "CODEXIS - Czech HR"
+    displayName: "Monitor - HR"
     summary: "Czech employment law, payroll, insurance and HR administration."
     examplePrompts:
       - "Review a redundancy dismissal and the risks in selecting a particular employee."
       - "Must an employee with a disability top up health insurance during unpaid leave?"
       - "Propose a compliant process for changing working time and place of work."
   sk:
-    displayName: "CODEXIS - Personalistika ČR"
+    displayName: "Monitor - Personalistika ČR"
     summary: "České pracovné právo, mzdy, odvody a personálna agenda."
     examplePrompts:
       - "Prever výpoveď pre nadbytočnosť a riziká pri výbere konkrétneho zamestnanca."
@@ -29,7 +29,7 @@ i18n:
       - "Navrhni správny postup pri zmene pracovného času a miesta výkonu práce."
 ---
 
-# CODEXIS - Personalistika
+# Monitor - Personalistika
 
 Use `cdx-cli` for legislation, case law and commentary. Use official labour, social-security and health-insurance sources only for complementary operational information.
 

@@ -9,9 +9,9 @@
   "accessible-part": "MONITOR_GDPR_AI",
   "tags": ["legal", "czech", "privacy"],
   "i18n": {
-    "cs": { "displayName": "Ochrana osobních údajů AI", "description": "Analýza ochrany osobních údajů, GDPR a české navazující úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobní údaje" } },
-    "en": { "displayName": "Data Protection AI", "description": "Analysis of GDPR and Czech data protection law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "privacy": "Data Protection" } },
-    "sk": { "displayName": "Ochrana osobných údajov AI", "description": "Analýza ochrany osobných údajov, GDPR a českej nadväzujúcej úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobné údaje" } }
+    "cs": { "displayName": "Monitor - Ochrana osobních údajů", "description": "Analýza ochrany osobních údajů, GDPR a české navazující úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobní údaje" } },
+    "en": { "displayName": "Monitor - Data Protection", "description": "Analysis of GDPR and Czech data protection law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "privacy": "Data Protection" } },
+    "sk": { "displayName": "Monitor - Ochrana osobných údajov", "description": "Analýza ochrany osobných údajov, GDPR a českej nadväzujúcej úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobné údaje" } }
   },
   "dependencies": ["codexis"],
   "skills": "./skills"

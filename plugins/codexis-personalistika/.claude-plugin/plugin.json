@@ -9,9 +9,9 @@
   "accessible-part": "MONITOR_PERSONALISTIKA_AI",
   "tags": ["legal", "czech", "employment"],
   "i18n": {
-    "cs": { "displayName": "Personalistika AI", "description": "Analýza českého pracovního práva, mezd a personální agendy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "employment": "Personalistika" } },
-    "en": { "displayName": "HR AI", "description": "Analysis of Czech employment law, payroll and HR matters using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "employment": "Employment" } },
-    "sk": { "displayName": "Personalistika AI", "description": "Analýza českého pracovného práva, miezd a personálnej agendy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "employment": "Personalistika" } }
+    "cs": { "displayName": "Monitor - Personalistika", "description": "Analýza českého pracovního práva, mezd a personální agendy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "employment": "Personalistika" } },
+    "en": { "displayName": "Monitor - HR", "description": "Analysis of Czech employment law, payroll and HR matters using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "employment": "Employment" } },
+    "sk": { "displayName": "Monitor - Personalistika", "description": "Analýza českého pracovného práva, miezd a personálnej agendy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "employment": "Personalistika" } }
   },
   "dependencies": ["codexis"],
   "skills": "./skills"

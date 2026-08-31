@@ -7,21 +7,21 @@ jurisdictions: [CZ]
 description: Use when a Czech private-law question turns on recodification, transitional provisions, old versus new Civil Code, legal relationships created before a reform, continuing effects, later legal facts, limitation periods, transformed legal persons or retroactivity. Standalone temporal-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Rekodifikace"
+    displayName: "Monitor - Rekodifikace"
     summary: "Přechodná ustanovení a časové účinky rekodifikace českého soukromého práva."
     examplePrompts:
       - "Které právo se použije na smlouvu uzavřenou před rekodifikací a její pozdější porušení?"
       - "Posuď promlčení nároku vzniklého před změnou občanského zákoníku."
       - "Jak se rekodifikace dotkla právní formy a jednání starší právnické osoby?"
   en:
-    displayName: "CODEXIS - Czech Recodification"
+    displayName: "Monitor - Recodification"
     summary: "Transitional provisions and temporal effects of Czech private-law recodification."
     examplePrompts:
       - "Which law governs a contract made before recodification and a later breach?"
       - "Assess limitation of a claim created before the Civil Code changed."
       - "How did recodification affect an older legal person's form and representation?"
   sk:
-    displayName: "CODEXIS - Rekodifikácia ČR"
+    displayName: "Monitor - Rekodifikácia"
     summary: "Prechodné ustanovenia a časové účinky rekodifikácie českého súkromného práva."
     examplePrompts:
       - "Ktoré právo sa použije na zmluvu uzavretú pred rekodifikáciou a jej neskoršie porušenie?"
@@ -29,7 +29,7 @@ i18n:
       - "Ako rekodifikácia ovplyvnila právnu formu a konanie staršej právnickej osoby?"
 ---
 
-# CODEXIS - Rekodifikace
+# Monitor - Rekodifikace
 
 Use `cdx-cli` to retrieve every relevant historic version, amendment and transitional provision.
 

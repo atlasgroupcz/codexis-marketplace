@@ -5,9 +5,9 @@
   "keywords": ["codexis", "construction", "building-law", "stavebnictvi", "czech"], "license": "PROPRIETARY",
   "accessible-part": "MONITOR_STAVEBNICTVI_AI", "tags": ["legal", "czech", "construction"],
   "i18n": {
-    "cs": { "displayName": "Stavebnictví AI", "description": "Analýza českého stavebního práva, povolování a souvisejících environmentálních postupů s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "construction": "Stavebnictví" } },
-    "en": { "displayName": "Construction AI", "description": "Analysis of Czech construction, permitting and related environmental law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "construction": "Construction" } },
-    "sk": { "displayName": "Stavebníctvo AI", "description": "Analýza českého stavebného práva, povoľovania a súvisiacich environmentálnych postupov s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "construction": "Stavebníctvo" } }
+    "cs": { "displayName": "Monitor - Stavebnictví", "description": "Analýza českého stavebního práva, povolování a souvisejících environmentálních postupů s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "construction": "Stavebnictví" } },
+    "en": { "displayName": "Monitor - Construction", "description": "Analysis of Czech construction, permitting and related environmental law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "construction": "Construction" } },
+    "sk": { "displayName": "Monitor - Stavebníctvo", "description": "Analýza českého stavebného práva, povoľovania a súvisiacich environmentálnych postupov s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "construction": "Stavebníctvo" } }
   },
   "dependencies": ["codexis"], "skills": "./skills"
 }

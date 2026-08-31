@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns schools, education, admissions, pupils, students, assessment, school directors, founders, school boards, special educational needs, educational records, administrative decisions or employment links in education. Standalone education-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Školství"
+    displayName: "Monitor - Školství"
     summary: "České školské právo, rozhodování škol, práva žáků a role zřizovatelů."
     examplePrompts:
       - "Musí přijetí žáka do ZUŠ proběhnout ve správním řízení?"
       - "Jaký proces platí při odvolání ředitele školy z funkce?"
       - "Prověř pravidla hodnocení, přezkoumání výsledku a opravné zkoušky."
   en:
-    displayName: "CODEXIS - Czech Education Law"
+    displayName: "Monitor - Education"
     summary: "Czech education law, school decisions, student rights and founders' roles."
     examplePrompts:
       - "Must admission to a Czech art school follow administrative procedure?"
       - "What process applies when removing a school director from office?"
       - "Review the rules for assessment, review of results and resit examinations."
   sk:
-    displayName: "CODEXIS - Školstvo ČR"
+    displayName: "Monitor - Školstvo"
     summary: "České školské právo, rozhodovanie škôl, práva žiakov a úlohy zriaďovateľov."
     examplePrompts:
       - "Musí prijatie žiaka do českej ZUŠ prebehnúť v správnom konaní?"
@@ -29,7 +29,7 @@ i18n:
       - "Prever pravidlá hodnotenia, preskúmania výsledku a opravnej skúšky."
 ---
 
-# CODEXIS - Školství
+# Monitor - Školství
 
 Use `cdx-cli` for legal sources. Use official MŠMT or inspection material only after verifying its date and legal basis.
 

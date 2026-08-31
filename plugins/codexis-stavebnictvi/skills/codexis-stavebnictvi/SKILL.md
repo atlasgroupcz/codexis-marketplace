@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns construction, building permits, project authorization, occupancy approval, additional permitting, zoning, building authorities, affected authorities, JES, project documentation, unauthorized structures, changes before completion or construction-law transitional provisions. Standalone construction-law methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Stavebnictví"
+    displayName: "Monitor - Stavebnictví"
     summary: "České stavební právo, povolování, kolaudace, dokumentace a dotčené orgány."
     examplePrompts:
       - "Jak se kolauduje stavba povolená podle starého stavebního zákona?"
       - "Posuď, jaké podklady a stanoviska jsou nutné pro dodatečné povolení stavby."
       - "Který orgán má v tomto řízení požádat o JES a jak se postup eviduje?"
   en:
-    displayName: "CODEXIS - Czech Construction Law"
+    displayName: "Monitor - Construction"
     summary: "Czech construction law, permitting, occupancy, documentation and affected authorities."
     examplePrompts:
       - "How is a building authorized under the former Building Act approved for use?"
       - "Assess the documents and opinions required for additional authorization of a structure."
       - "Which authority must request JES in this proceeding and how is the process recorded?"
   sk:
-    displayName: "CODEXIS - Stavebníctvo ČR"
+    displayName: "Monitor - Stavebníctvo"
     summary: "České stavebné právo, povoľovanie, kolaudácia, dokumentácia a dotknuté orgány."
     examplePrompts:
       - "Ako sa kolauduje stavba povolená podľa starého stavebného zákona?"
@@ -29,7 +29,7 @@ i18n:
       - "Ktorý orgán má v tomto konaní požiadať o JES a ako sa postup eviduje?"
 ---
 
-# CODEXIS - Stavebnictví
+# Monitor - Stavebnictví
 
 Use `cdx-cli` for legislation, case law and commentary. Use official ministry methodology only after matching it to the exact legal version and procedure.
 

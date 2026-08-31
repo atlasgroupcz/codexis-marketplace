@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns GDPR, personal data, privacy, controllers, processors, employee monitoring, cameras, cookies, data-subject rights, DPIA, data breaches, security, retention, profiling, automated decisions or international transfers. Standalone data-protection methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Ochrana osobních údajů"
+    displayName: "Monitor - Ochrana osobních údajů"
     summary: "GDPR a české právo ochrany osobních údajů, zpracování, bezpečnost a práva subjektů."
     examplePrompts:
       - "Posuď právní přípustnost kamerového monitoringu zaměstnanců."
       - "Musíme tento bezpečnostní incident oznámit ÚOOÚ a dotčeným osobám?"
       - "Prověř smlouvu se zpracovatelem a předávání osobních údajů mimo EHP."
   en:
-    displayName: "CODEXIS - Data Protection"
+    displayName: "Monitor - Data Protection"
     summary: "GDPR and Czech data protection law, processing, security and data-subject rights."
     examplePrompts:
       - "Assess whether employee camera monitoring is legally permissible."
       - "Must we report this personal-data breach to the authority and affected people?"
       - "Review our processor agreement and transfer of personal data outside the EEA."
   sk:
-    displayName: "CODEXIS - Ochrana osobných údajov"
+    displayName: "Monitor - Ochrana osobných údajov"
     summary: "GDPR a české právo ochrany osobných údajov, spracúvanie, bezpečnosť a práva dotknutých osôb."
     examplePrompts:
       - "Posúď právnu prípustnosť kamerového monitorovania zamestnancov."
@@ -29,7 +29,7 @@ i18n:
       - "Prever zmluvu so sprostredkovateľom a prenos osobných údajov mimo EHP."
 ---
 
-# CODEXIS - Ochrana osobních údajů
+# Monitor - Ochrana osobních údajů
 
 Use `cdx-cli` for Czech and EU law. Use only official EDPB, EU, ÚOOÚ and other competent-authority material as complementary interpretation.
 

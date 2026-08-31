@@ -7,21 +7,21 @@ jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns copyright, software, databases, patents, utility models, employee inventions, trademarks, designs, trade secrets, know-how, licences, collective management, unfair competition or enforcement of intellectual property rights. Standalone IP methodology using CODEXIS.
 i18n:
   cs:
-    displayName: "CODEXIS - Ochrana duševního vlastnictví"
+    displayName: "Monitor - Ochrana duševního vlastnictví"
     summary: "Autorské, patentové, známkové a další právo duševního vlastnictví v ČR a EU."
     examplePrompts:
       - "Rozliš zaměstnanecké dílo a zaměstnanecký vynález a popiš práva zaměstnavatele."
       - "Prověř, zda naše licence pokrývá úpravy a další distribuci softwaru."
       - "Jaké nároky lze uplatnit při neoprávněném užití ochranné známky?"
   en:
-    displayName: "CODEXIS - Intellectual Property"
+    displayName: "Monitor - Intellectual Property"
     summary: "Czech and EU copyright, patent, trademark and other intellectual property law."
     examplePrompts:
       - "Distinguish an employee work from an employee invention and explain the employer's rights."
       - "Check whether our licence covers modifying and redistributing the software."
       - "What remedies are available for unauthorized use of a trademark?"
   sk:
-    displayName: "CODEXIS - Ochrana duševného vlastníctva"
+    displayName: "Monitor - Ochrana duševného vlastníctva"
     summary: "České a európske autorské, patentové, známkové a ďalšie právo duševného vlastníctva."
     examplePrompts:
       - "Rozlíš zamestnanecké dielo a zamestnanecký vynález a opíš práva zamestnávateľa."
@@ -29,7 +29,7 @@ i18n:
       - "Aké nároky možno uplatniť pri neoprávnenom použití ochrannej známky?"
 ---
 
-# CODEXIS - Ochrana duševního vlastnictví
+# Monitor - Ochrana duševního vlastnictví
 
 Use `cdx-cli` for legal sources and official Czech, EU and international IP registers when the existence or status of a registered right matters.
 
