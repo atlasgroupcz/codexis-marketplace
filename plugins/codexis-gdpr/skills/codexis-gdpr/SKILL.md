@@ -2,7 +2,7 @@
 uuid: acec0787-0c11-43f7-b43d-95d046f73c07
 name: codexis-gdpr
 icon: icon.svg
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns GDPR, personal data, privacy, controllers, processors, employee monitoring, cameras, cookies, data-subject rights, DPIA, data breaches, security, retention, profiling, automated decisions or international transfers. Standalone data-protection methodology using CODEXIS.
 i18n:
@@ -80,6 +80,15 @@ Standalone skill pro GDPR a českou ochranu osobních údajů.
 6. **Security and breach.** Riziko, opatření, detekce, lhůta, ÚOOÚ a informování osob.
 7. **Transfer.** EHP, rozhodnutí o odpovídající ochraně, záruka a doplňková opatření.
 
+## Minimalizace v konkrétních agendách
+
+Při kopii osobního dokladu, personální evidenci, výživovém poradenství, zdravotních údajích nebo školním profilu na sociální síti načti `references/minimalizace-a-zvlastni-kategorie.md`.
+
+- Reference vychází z pozitivně hodnocených chatů monitoru od 1. 1. 2026.
+- Odděl zákonnou potřebu konkrétního údaje od uchovávání kopie celého dokumentu.
+- Povahu údaje o zdraví neurčuje jen to, zda službu poskytuje zdravotnický poskytovatel.
+- Skutečné nastavení komentářů, zpráv, statistik a publikovaného obsahu musí odpovídat textu transparentnosti sociální sítě.
+
 ## Časté pasti
 
 - Jediný právní titul pro více odlišných účelů.
@@ -98,3 +107,7 @@ Standalone skill pro GDPR a českou ochranu osobních údajů.
 4. Transparentnost a práva osob.
 5. Zabezpečení, DPIA, incident a předávání.
 6. Praktické kroky a ověřené odkazy.
+
+## Related references
+
+- Minimalizace údajů a zvláštní kategorie v praxi: `references/minimalizace-a-zvlastni-kategorie.md`.

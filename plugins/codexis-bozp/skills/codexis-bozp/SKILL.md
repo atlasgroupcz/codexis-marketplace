@@ -2,7 +2,7 @@
 uuid: 2f9253f9-2a72-4e95-ac25-1699f5f940ed
 name: codexis-bozp
 icon: icon.svg
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns occupational health and safety, prevention of workplace risks, work accidents, remote-work injuries, safety training, protective equipment, occupational medical services, work categories, shared workplaces, inspections or employer liability. Standalone BOZP methodology using CODEXIS.
 i18n:
@@ -82,6 +82,14 @@ Standalone skill pro českou bezpečnost a ochranu zdraví při práci.
 6. **Liability.** Příčinná souvislost, rozsah újmy, možné zproštění a jednotlivé nároky.
 7. **Output.** Odpovědná osoba, dokument, lhůta a kontrolovatelný další krok.
 
+## Kategorizace a pracovnělékařské služby
+
+Při dotazu na kategorii práce, měření rizikových faktorů, lékařskou prohlídku nebo pracovníka dodavatele načti `references/kategorizace-prace-a-pracovnelekarske-sluzby.md`. Reference vychází z pozitivně hodnocených chatů monitoru BOZP od 1. 1. 2026.
+
+- Kategorie se váže na skutečnou práci, pracoviště a expozici, ne jen na název pozice.
+- Odděl rozhodnutí o kategorii, informování zaměstnance, zajištění prohlídky a předání rizik na sdíleném pracovišti.
+- Periodicitu prohlídky ověř podle kategorie, profesního rizika, věku a zvláštního předpisu; nepoužij jediný parametr izolovaně.
+
 ## Pracovní úraz
 
 - Zapiš činnost bezprostředně před úrazem, pokyn, místo, čas, svědky a mechanismus zranění.
@@ -106,3 +114,7 @@ Standalone skill pro českou bezpečnost a ochranu zdraví při práci.
 4. Dokumentace, školení, zdravotní a technické požadavky.
 5. Incidentní postup, hlášení, náhrady a odpovědnost.
 6. Nevyjasněná fakta a další krok.
+
+## Related references
+
+- Kategorizace práce a pracovnělékařské služby: `references/kategorizace-prace-a-pracovnelekarske-sluzby.md`.

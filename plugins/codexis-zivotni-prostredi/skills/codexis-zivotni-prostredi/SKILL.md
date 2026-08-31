@@ -2,7 +2,7 @@
 uuid: 5c0f6fe9-3b90-421f-ad5d-28935721f6a4
 name: codexis-zivotni-prostredi
 icon: icon.svg
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns environmental impact assessment, EIA, JES, nature protection, water, air, waste, soil, forests, integrated permitting, environmental damage, public participation, environmental liability or environmental aspects of project authorization. Standalone environmental-law methodology using CODEXIS.
 i18n:
@@ -69,7 +69,7 @@ Standalone skill pro české a evropské právo životního prostředí.
 - Veřejnost, dotčená veřejnost, účastník řízení a spolek nemají automaticky totožná procesní práva.
 - Příslušnost orgánu ověř podle konkrétní složky, území a typu záměru.
 - U odpadu nejdřív klasifikuj materiál a nakládání; vlastníkovo označení není rozhodující.
-- Při absenci negativního feedbacku nevytvářej speciální výjimku bez ověřeného zdroje.
+- Pozitivně hodnocenou odpověď používej jako zdroj tématu a workflow; speciální výjimku vždy znovu ověř v účinném předpisu.
 
 ## Workflow environmentálního právníka
 
@@ -92,6 +92,15 @@ Standalone skill pro české a evropské právo životního prostředí.
 
 Každé téma nejprve přiřaď ke konkrétnímu složkovému zákonu; seznam není katalog hotových závěrů.
 
+## Praktické agendy z chatů 2026
+
+Při dotazu na hranici výrobku a odpadu, obalovou výjimku, katalogové číslo odpadu, bezodtokovou jímku nebo výjimku z povolení ke kácení načti `references/odpady-obaly-vody-a-dreviny.md`.
+
+- Reference vychází z pozitivně hodnocených chatů monitoru od 1. 1. 2026.
+- Klasifikaci věci proveď před řešením evidence, prodeje nebo odstranění.
+- U obalové výjimky ověř současně hmotnostní i obratovou podmínku a rozsah povinností, kterých se týká.
+- U obce nejprve ověř konkrétní přenesenou působnost příslušného úřadu.
+
 ## Časté pasti
 
 - Jediné „environmentální povolení“ pro celý záměr.
@@ -109,3 +118,7 @@ Každé téma nejprve přiřaď ke konkrétnímu složkovému zákonu; seznam ne
 4. Podmínky, limity, evidence a lhůty.
 5. Navazující povolení, provozní povinnosti a změny.
 6. Přezkum, odpovědnost a praktický další krok.
+
+## Related references
+
+- Odpady, obaly, odpadní vody a dřeviny: `references/odpady-obaly-vody-a-dreviny.md`.

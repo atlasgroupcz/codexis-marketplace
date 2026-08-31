@@ -2,7 +2,7 @@
 uuid: 826a0cd8-d9e5-4607-9ba1-62b733df865d
 name: codexis-cirkev
 icon: icon.svg
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns churches, religious societies, registered church legal persons, clergy, religious freedom, church property, internal church rules, state registration, financing, restitution or the civil effects of canonical and other religious norms. Standalone church-law methodology using CODEXIS.
 i18n:
@@ -66,7 +66,7 @@ Standalone skill pro české právo církví a náboženských společností.
 - Církevní autonomie není absolutní a současně ji nelze redukovat na běžnou korporační samosprávu.
 - Duchovenská služba nemusí mít stejný režim jako pracovní poměr; kvalifikuj konkrétní vztah.
 - Majetkové vyrovnání podle zákona č. 428/2012 Sb. nepřenášej na jiný majetkový spor bez zvláštního testu.
-- Při absenci doménového feedbacku nepřidávej konkrétní pravidla bez ověřeného zdroje.
+- Tematický chatový korpus bez ratingu používej pro volbu workflow a zdrojů, ne jako důkaz správnosti právního závěru.
 
 ## Workflow církevního práva
 
@@ -76,6 +76,14 @@ Standalone skill pro české právo církví a náboženských společností.
 4. **Osoby.** Duchovní, zaměstnanec, člen, dobrovolník nebo jiný služební vztah.
 5. **Autonomie.** Interní věc víry a správy versus civilně přezkoumatelný zásah do práv.
 6. **Remedy.** Interní prostředek, správní přezkum, civilní soud, ústavní nebo evropská ochrana.
+
+## Rejstříky a vnitřní právo
+
+Při otázce na právní formu, charitu, farnost, sbor, eparchii, statutární jednání, kanonické právo nebo interní církevní předpis načti `references/pravni-osobnost-rejstriky-a-vnitrni-pravo.md`.
+
+- Reference vychází z tematického korpusu chatů monitoru Církev od 1. 1. 2026; v období nebyl žádný uživatelský rating.
+- Vždy odděl státní právní osobnost, vnější jednání, vnitřní oprávnění a právní následek porušení interního pravidla.
+- Konkrétní církevní předpis aplikuj jen na subjekt a osobu, na které skutečně dopadá.
 
 ## Časté pasti
 
@@ -93,3 +101,7 @@ Standalone skill pro české právo církví a náboženských společností.
 4. Vnitřní pravidlo a jeho vnější účinek.
 5. Registr, vlastnictví, oprávnění jednat a důkazy.
 6. Dostupný přezkum a otevřené otázky.
+
+## Related references
+
+- Právní osobnost, rejstříky a vnitřní církevní právo: `references/pravni-osobnost-rejstriky-a-vnitrni-pravo.md`.

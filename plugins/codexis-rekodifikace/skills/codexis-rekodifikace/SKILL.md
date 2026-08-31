@@ -2,9 +2,9 @@
 uuid: 6caec9ec-a2ec-4e10-bb21-acf94cc7df54
 name: codexis-rekodifikace
 icon: icon.svg
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ]
-description: Use when a Czech private-law question turns on recodification, transitional provisions, old versus new Civil Code, legal relationships created before a reform, continuing effects, later legal facts, limitation periods, transformed legal persons or retroactivity. Standalone temporal-law methodology using CODEXIS.
+description: Use when a Czech question concerns the recodified private law in the Civil Code, including ownership, servitudes, obligations, defective performance, damages, comparison of former and current law, transitional provisions, limitation periods or retroactivity. Standalone private-law and temporal methodology using CODEXIS.
 i18n:
   cs:
     displayName: "Monitor - Rekodifikace"
@@ -31,7 +31,7 @@ i18n:
 
 # CODEXIS — Rekodifikace
 
-Standalone skill pro časové střety starého a nového českého soukromého práva.
+Standalone skill pro rekodifikované české soukromé právo a časové střety staré a nové úpravy.
 
 ## Operating Assumptions
 
@@ -42,11 +42,12 @@ Standalone skill pro časové střety starého a nového českého soukromého p
 
 ## Research Strategy
 
-1. Vytvoř časovou osu vzniku vztahu, nabytí práva, pokračujících účinků, porušení, uplatnění nároku, řízení a rozhodnutí.
-2. Každou událost klasifikuj samostatně.
-3. Identifikuj starou normu, novou normu, obecné přechodné ustanovení a zvláštní přechodné pravidlo.
-4. Použij zvláštní přechodné pravidlo před obecným.
-5. Odděl hmotné právo, právní účinky, promlčení, proces, důkazy a rejstříkové následky.
+1. Nejprve určuj, zda dotaz skutečně obsahuje časový střet, nebo jde o současný institut občanského zákoníku.
+2. U současného vztahu klasifikuj osoby, věc nebo plnění, smluvní titul, porušení, nárok a důkazy.
+3. U časového střetu vytvoř osu vzniku vztahu, nabytí práva, pokračujících účinků, porušení, uplatnění nároku, řízení a rozhodnutí.
+4. Identifikuj starou normu, novou normu, obecné přechodné ustanovení a zvláštní přechodné pravidlo.
+5. Použij zvláštní přechodné pravidlo před obecným.
+6. Odděl hmotné právo, právní účinky, promlčení, proces, důkazy a rejstříkové následky.
 
 ## Klíčové předpisy
 
@@ -67,7 +68,8 @@ Standalone skill pro časové střety starého a nového českého soukromého p
 - Pravou a nepravou retroaktivitu rozliš až po identifikaci zákonného přechodu.
 - Promlčení a prekluzi řeš odděleně od vzniku a obsahu práva.
 - Terminologickou náhradu neprezentuj jako věcnou kontinuitu bez srovnání skutkových podstat.
-- Při absenci doménového feedbacku nevytvářej kategorický výklad bez dohledaného přechodného pravidla a judikatury.
+- Nevnucuj přechodná ustanovení případu, jehož rozhodné skutečnosti celé spadají pod občanský zákoník z roku 2012.
+- Pozitivně hodnocenou odpověď používej jako zdroj tématu a workflow; konkrétní pravidlo vždy znovu ověř v účinném právu.
 
 ## Workflow temporal analysis
 
@@ -78,6 +80,16 @@ Standalone skill pro časové střety starého a nového českého soukromého p
 5. **Constitutional check.** Nabytá práva, legitimní očekávání a zákaz pravé retroaktivity.
 6. **Procedure.** Zahájení řízení, příslušnost, dokazování a opravné prostředky.
 7. **Case law.** Rozhodnutí k přesnému přechodnému ustanovení.
+
+Pokud nejde o časový střet, nahraď kroky Old law, New law a Transition klasifikací současného institutu, smluvního nebo věcného titulu, nároku a obrany.
+
+## Služebnosti a vadné plnění
+
+Při otázce na přístup vlastníka při služebnosti užívání nebo na náklady opravy vady třetí osobou načti `references/sluzebnosti-a-vadne-plneni.md`.
+
+- Reference vychází ze tří pozitivně hodnocených odpovědí monitoru od 1. 1. 2026.
+- U služebnosti rozhoduje nabývací titul, účel, rozsah a skutečný výkon, ne abstraktní vlastnictví samotné.
+- U vadného servisu odděl odstranění téže vady, samostatnou následnou škodu a případné smluvní oprávnění k náhradnímu plnění.
 
 ## Časté pasti
 
@@ -96,3 +108,7 @@ Standalone skill pro časové střety starého a nového českého soukromého p
 4. Konkrétní přechodné ustanovení.
 5. Hmotněprávní, promlčecí, procesní a rejstříkový následek odděleně.
 6. Judikatura, ústavní limit a zbývající nejistota.
+
+## Related references
+
+- Služebnosti a vadné plnění: `references/sluzebnosti-a-vadne-plneni.md`.

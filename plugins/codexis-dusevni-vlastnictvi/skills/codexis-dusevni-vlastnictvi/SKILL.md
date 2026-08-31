@@ -2,7 +2,7 @@
 uuid: 80d7a381-c4e3-41d4-9d08-fc148762d845
 name: codexis-dusevni-vlastnictvi
 icon: icon.svg
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns copyright, software, databases, patents, utility models, employee inventions, trademarks, designs, trade secrets, know-how, licences, collective management, unfair competition or enforcement of intellectual property rights. Standalone IP methodology using CODEXIS.
 i18n:
@@ -83,6 +83,14 @@ Standalone skill pro české a evropské právo duševního vlastnictví.
 
 Při rešerši judikatury nebo web/data scrapingu načti `references/judikatura-a-web-scraping.md`.
 
+## Software a výsledky výzkumu
+
+Při nákupu nebo vývoji software, licenci třetí strany, zaměstnaneckém programu či databázi, školním díle, podlicenci nebo smluvní práci s AI načti `references/software-licence-a-vysledky-vyzkumu.md`.
+
+- Reference vychází z tematického korpusu chatů monitoru od 1. 1. 2026.
+- Složený systém vždy rozpadni na vlastní vývoj, předexistující komponenty, třetí licence, open source, data, dokumentaci a AI výstupy.
+- U zaměstnance-studenta klasifikuj každý výstup podle okolností jeho vzniku; nepřenášej automaticky režim publikace na dizertaci nebo opačně.
+
 ## Časté pasti
 
 - Závěr jen podle autorského zákona bez testu databázového práva, smlouvy a nekalé soutěže.
@@ -104,3 +112,4 @@ Při rešerši judikatury nebo web/data scrapingu načti `references/judikatura-
 ## Related references
 
 - Judikatura a web scraping: `references/judikatura-a-web-scraping.md`.
+- Software, licence třetích stran a výsledky výzkumu: `references/software-licence-a-vysledky-vyzkumu.md`.
