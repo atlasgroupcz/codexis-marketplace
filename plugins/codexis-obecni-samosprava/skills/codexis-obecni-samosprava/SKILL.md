@@ -29,7 +29,7 @@ i18n:
       - "Aké povinnosti má obec a registračný úrad pred komunálnymi voľbami?"
 ---
 
-# CODEXIS — Obecní samospráva
+# CODEXIS - Obecní samospráva
 
 Standalone skill pro české obecní právo. Řeší kompetence orgánů obce, samostatnou a přenesenou působnost, majetek, místní normotvorbu, volby a správní postupy.
 

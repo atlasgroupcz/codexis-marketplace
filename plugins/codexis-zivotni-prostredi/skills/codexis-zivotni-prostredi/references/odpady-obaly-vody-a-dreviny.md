@@ -6,7 +6,7 @@ Použij pro praktické dotazy obcí a podniků na hranici výrobku a odpadu, oba
 
 ## Výzkumný podklad
 
-Reference vychází z pozitivně hodnocených chatů monitoru Životní prostředí z období 1. 1.–31. 8. 2026. Opakovala se prodejnost použitelných a poškozených palet, obalová výjimka pro malé množství, katalogové zařazení obuvi, kontrola odvozu odpadních vod z jímek, kompetence městských částí a kácení v ochranném pásmu energetického zařízení.
+Reference vychází z pozitivně hodnocených chatů monitoru Životní prostředí z období 1. 1.-31. 8. 2026. Opakovala se prodejnost použitelných a poškozených palet, obalová výjimka pro malé množství, katalogové zařazení obuvi, kontrola odvozu odpadních vod z jímek, kompetence městských částí a kácení v ochranném pásmu energetického zařízení.
 
 ## Výrobek, obal nebo odpad
 

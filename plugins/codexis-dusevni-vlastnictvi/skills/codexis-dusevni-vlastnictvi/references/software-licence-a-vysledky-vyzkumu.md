@@ -6,7 +6,7 @@ Použij pro nákup a vývoj software, OEM a předplatné třetích stran, dlouho
 
 ## Výzkumný podklad
 
-Reference vychází z tematického korpusu chatů monitoru Ochrana duševního vlastnictví z období 1. 1.–31. 8. 2026. Opakovala se dodávka software s licencemi výrobce, dlouhodobý servis při ročním předplatném, zaměstnanecké programy a databáze, dizertační a zaměstnanecká díla, podlicence technických specifikací, AI ve smlouvách a rozsah licence na dobu trvání majetkových práv.
+Reference vychází z tematického korpusu chatů monitoru Ochrana duševního vlastnictví z období 1. 1.-31. 8. 2026. Opakovala se dodávka software s licencemi výrobce, dlouhodobý servis při ročním předplatném, zaměstnanecké programy a databáze, dizertační a zaměstnanecká díla, podlicence technických specifikací, AI ve smlouvách a rozsah licence na dobu trvání majetkových práv.
 
 ## Inventura předmětu plnění
 

@@ -29,7 +29,7 @@ i18n:
       - "Navrhni správny postup pri zmene pracovného času a miesta výkonu práce."
 ---
 
-# CODEXIS — Personalistika
+# CODEXIS - Personalistika
 
 Standalone skill pro české pracovní právo, personální agendu, mzdy a pojistné.
 

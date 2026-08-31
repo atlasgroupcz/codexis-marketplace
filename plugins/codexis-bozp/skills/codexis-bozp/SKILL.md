@@ -29,7 +29,7 @@ i18n:
       - "Over, či naša evidencia, školenia a poskytovanie OOPP zodpovedajú aktuálnym českým predpisom."
 ---
 
-# CODEXIS — BOZP
+# CODEXIS - BOZP
 
 Standalone skill pro českou bezpečnost a ochranu zdraví při práci.
 
@@ -84,7 +84,7 @@ Standalone skill pro českou bezpečnost a ochranu zdraví při práci.
 
 ## Kategorizace a pracovnělékařské služby
 
-Při dotazu na kategorii práce, měření rizikových faktorů, lékařskou prohlídku nebo pracovníka dodavatele načti `references/kategorizace-prace-a-pracovnelekarske-sluzby.md`. Reference vychází z pozitivně hodnocených chatů monitoru BOZP z období 1. 1.–31. 8. 2026.
+Při dotazu na kategorii práce, měření rizikových faktorů, lékařskou prohlídku nebo pracovníka dodavatele načti `references/kategorizace-prace-a-pracovnelekarske-sluzby.md`. Reference vychází z pozitivně hodnocených chatů monitoru BOZP z období 1. 1.-31. 8. 2026.
 
 - Kategorie se váže na skutečnou práci, pracoviště a expozici, ne jen na název pozice.
 - Odděl rozhodnutí o kategorii, informování zaměstnance, zajištění prohlídky a předání rizik na sdíleném pracovišti.

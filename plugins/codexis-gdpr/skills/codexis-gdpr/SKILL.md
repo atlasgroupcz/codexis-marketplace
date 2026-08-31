@@ -29,7 +29,7 @@ i18n:
       - "Prever zmluvu so sprostredkovateľom a prenos osobných údajov mimo EHP."
 ---
 
-# CODEXIS — Ochrana osobních údajů
+# CODEXIS - Ochrana osobních údajů
 
 Standalone skill pro GDPR a českou ochranu osobních údajů.
 
@@ -84,7 +84,7 @@ Standalone skill pro GDPR a českou ochranu osobních údajů.
 
 Při kopii osobního dokladu, personální evidenci, výživovém poradenství, zdravotních údajích nebo školním profilu na sociální síti načti `references/minimalizace-a-zvlastni-kategorie.md`.
 
-- Reference vychází z pozitivně hodnocených chatů monitoru z období 1. 1.–31. 8. 2026.
+- Reference vychází z pozitivně hodnocených chatů monitoru z období 1. 1.-31. 8. 2026.
 - Odděl zákonnou potřebu konkrétního údaje od uchovávání kopie celého dokumentu.
 - Povahu údaje o zdraví neurčuje jen to, zda službu poskytuje zdravotnický poskytovatel.
 - Skutečné nastavení komentářů, zpráv, statistik a publikovaného obsahu musí odpovídat textu transparentnosti sociální sítě.

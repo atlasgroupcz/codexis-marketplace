@@ -29,7 +29,7 @@ i18n:
       - "Posúď, či možno po zadaní zmeniť cenu alebo rozsah zmluvy."
 ---
 
-# CODEXIS — Veřejné zakázky
+# CODEXIS - Veřejné zakázky
 
 Standalone skill pro české a evropské právo veřejných zakázek.
 

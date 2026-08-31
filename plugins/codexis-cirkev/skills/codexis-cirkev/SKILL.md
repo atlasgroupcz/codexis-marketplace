@@ -29,7 +29,7 @@ i18n:
       - "Aké podmienky platia pre evidenciu cirkevnej právnickej osoby a zmenu jej údajov?"
 ---
 
-# CODEXIS — Církev
+# CODEXIS - Církev
 
 Standalone skill pro české právo církví a náboženských společností.
 
@@ -81,7 +81,7 @@ Standalone skill pro české právo církví a náboženských společností.
 
 Při otázce na právní formu, charitu, farnost, sbor, eparchii, statutární jednání, kanonické právo nebo interní církevní předpis načti `references/pravni-osobnost-rejstriky-a-vnitrni-pravo.md`.
 
-- Reference vychází z tematického korpusu chatů monitoru Církev z období 1. 1.–31. 8. 2026; v tomto období nebyl žádný uživatelský rating.
+- Reference vychází z tematického korpusu chatů monitoru Církev z období 1. 1.-31. 8. 2026; v tomto období nebyl žádný uživatelský rating.
 - Vždy odděl státní právní osobnost, vnější jednání, vnitřní oprávnění a právní následek porušení interního pravidla.
 - Konkrétní církevní předpis aplikuj jen na subjekt a osobu, na které skutečně dopadá.
 

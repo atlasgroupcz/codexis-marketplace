@@ -29,7 +29,7 @@ i18n:
       - "Posúď, či zmena projektu vyžaduje nové zisťovacie konanie alebo overenie stanoviska EIA."
 ---
 
-# CODEXIS — Životní prostředí
+# CODEXIS - Životní prostředí
 
 Standalone skill pro české a evropské právo životního prostředí.
 
@@ -96,7 +96,7 @@ Každé téma nejprve přiřaď ke konkrétnímu složkovému zákonu; seznam ne
 
 Při dotazu na hranici výrobku a odpadu, obalovou výjimku, katalogové číslo odpadu, bezodtokovou jímku nebo výjimku z povolení ke kácení načti `references/odpady-obaly-vody-a-dreviny.md`.
 
-- Reference vychází z pozitivně hodnocených chatů monitoru z období 1. 1.–31. 8. 2026.
+- Reference vychází z pozitivně hodnocených chatů monitoru z období 1. 1.-31. 8. 2026.
 - Klasifikaci věci proveď před řešením evidence, prodeje nebo odstranění.
 - U obalové výjimky ověř současně hmotnostní i obratovou podmínku a rozsah povinností, kterých se týká.
 - U obce nejprve ověř konkrétní přenesenou působnost příslušného úřadu.

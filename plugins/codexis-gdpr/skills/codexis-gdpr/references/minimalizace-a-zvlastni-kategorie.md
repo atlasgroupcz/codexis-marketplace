@@ -6,7 +6,7 @@ Použij pro kopie osobních dokladů, personální evidenci, zdravotní a výži
 
 ## Výzkumný podklad
 
-Reference vychází z pozitivně hodnocených chatů monitoru Ochrana osobních údajů z období 1. 1.–31. 8. 2026 a z tematického korpusu stejného období. Hodnocené případy řešily školní profily na sociálních sítích, kopii průkazu zdravotního pojištění cizince a rozdíl mezi výživovým poradenstvím a zdravotní službou.
+Reference vychází z pozitivně hodnocených chatů monitoru Ochrana osobních údajů z období 1. 1.-31. 8. 2026 a z tematického korpusu stejného období. Hodnocené případy řešily školní profily na sociálních sítích, kopii průkazu zdravotního pojištění cizince a rozdíl mezi výživovým poradenstvím a zdravotní službou.
 
 ## Test nezbytnosti
 

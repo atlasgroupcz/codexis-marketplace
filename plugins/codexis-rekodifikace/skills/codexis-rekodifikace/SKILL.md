@@ -29,7 +29,7 @@ i18n:
       - "Ako rekodifikácia ovplyvnila právnu formu a konanie staršej právnickej osoby?"
 ---
 
-# CODEXIS — Rekodifikace
+# CODEXIS - Rekodifikace
 
 Standalone skill pro rekodifikované české soukromé právo a časové střety staré a nové úpravy.
 
@@ -87,7 +87,7 @@ Pokud nejde o časový střet, nahraď kroky Old law, New law a Transition klasi
 
 Při otázce na přístup vlastníka při služebnosti užívání nebo na náklady opravy vady třetí osobou načti `references/sluzebnosti-a-vadne-plneni.md`.
 
-- Reference vychází ze tří pozitivně hodnocených odpovědí monitoru z období 1. 1.–31. 8. 2026.
+- Reference vychází ze tří pozitivně hodnocených odpovědí monitoru z období 1. 1.-31. 8. 2026.
 - U služebnosti rozhoduje nabývací titul, účel, rozsah a skutečný výkon, ne abstraktní vlastnictví samotné.
 - U vadného servisu odděl odstranění téže vady, samostatnou následnou škodu a případné smluvní oprávnění k náhradnímu plnění.
 

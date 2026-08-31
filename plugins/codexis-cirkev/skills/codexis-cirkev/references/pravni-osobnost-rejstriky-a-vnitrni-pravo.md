@@ -6,7 +6,7 @@ Použij pro otázky na právní formu církevní organizace, evidovanou právnic
 
 ## Výzkumný podklad
 
-Reference vychází z tematického korpusu chatů monitoru Církev z období 1. 1.–31. 8. 2026. Monitor v tomto období neměl žádný uživatelský rating. Opakovala se právní forma církevní charity, rejstřík konkrétní církevní osoby, trestní odpovědnost duchovních podle kanonického práva, archivace sboru, správa církevního majetku, konkordátní judikatura a užití označení odkazujícího na církev.
+Reference vychází z tematického korpusu chatů monitoru Církev z období 1. 1.-31. 8. 2026. Monitor v tomto období neměl žádný uživatelský rating. Opakovala se právní forma církevní charity, rejstřík konkrétní církevní osoby, trestní odpovědnost duchovních podle kanonického práva, archivace sboru, správa církevního majetku, konkordátní judikatura a užití označení odkazujícího na církev.
 
 ## Čtyři oddělené vrstvy
 

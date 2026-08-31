@@ -29,7 +29,7 @@ i18n:
       - "Aké nároky možno uplatniť pri neoprávnenom použití ochrannej známky?"
 ---
 
-# CODEXIS — Ochrana duševního vlastnictví
+# CODEXIS - Ochrana duševního vlastnictví
 
 Standalone skill pro české a evropské právo duševního vlastnictví.
 
@@ -87,7 +87,7 @@ Při rešerši judikatury nebo web/data scrapingu načti `references/judikatura-
 
 Při nákupu nebo vývoji software, licenci třetí strany, zaměstnaneckém programu či databázi, školním díle, podlicenci nebo smluvní práci s AI načti `references/software-licence-a-vysledky-vyzkumu.md`.
 
-- Reference vychází z tematického korpusu chatů monitoru z období 1. 1.–31. 8. 2026.
+- Reference vychází z tematického korpusu chatů monitoru z období 1. 1.-31. 8. 2026.
 - Složený systém vždy rozpadni na vlastní vývoj, předexistující komponenty, třetí licence, open source, data, dokumentaci a AI výstupy.
 - U zaměstnance-studenta klasifikuj každý výstup podle okolností jeho vzniku; nepřenášej automaticky režim publikace na dizertaci nebo opačně.
 

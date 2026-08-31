@@ -6,7 +6,7 @@ Použij pro vlastnické spory kolem služebnosti užívání a pro smlouvy o dí
 
 ## Výzkumný podklad
 
-Reference vychází ze tří pozitivně hodnocených odpovědí monitoru Rekodifikace z období 1. 1.–31. 8. 2026. Jeden chat řešil přístup vlastníka a klíče při služebnosti užívání. Dva navazující chaty řešily nekvalitní pozáruční servis, opožděné vytknutí vady, opravu třetí osobou a § 1925 občanského zákoníku.
+Reference vychází ze tří pozitivně hodnocených odpovědí monitoru Rekodifikace z období 1. 1.-31. 8. 2026. Jeden chat řešil přístup vlastníka a klíče při služebnosti užívání. Dva navazující chaty řešily nekvalitní pozáruční servis, opožděné vytknutí vady, opravu třetí osobou a § 1925 občanského zákoníku.
 
 ## Proč nejde jen o přechodná ustanovení
 

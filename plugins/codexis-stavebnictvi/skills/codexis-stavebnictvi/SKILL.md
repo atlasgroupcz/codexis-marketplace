@@ -29,7 +29,7 @@ i18n:
       - "Ktorý orgán má v tomto konaní požiadať o JES a ako sa postup eviduje?"
 ---
 
-# CODEXIS — Stavebnictví
+# CODEXIS - Stavebnictví
 
 Standalone skill pro české stavební právo, povolování, kolaudaci, JES a související environmentální postupy.
 

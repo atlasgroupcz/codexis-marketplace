@@ -29,7 +29,7 @@ i18n:
       - "Prever pravidlá hodnotenia, preskúmania výsledku a opravnej skúšky."
 ---
 
-# CODEXIS — Školství
+# CODEXIS - Školství
 
 Standalone skill pro české školské právo a související správní a pracovněprávní otázky.
 
