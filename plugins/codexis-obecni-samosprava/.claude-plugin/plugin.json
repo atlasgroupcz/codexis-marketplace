@@ -1,6 +1,6 @@
 {
   "name": "codexis-obecni-samosprava",
-  "iconPath": "skills/codexis-obecni-samosprava/icon.png",
+  "iconPath": "skills/codexis-obecni-samosprava/icon.webp",
   "version": "1.0.0",
   "description": "Czech municipal government law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },

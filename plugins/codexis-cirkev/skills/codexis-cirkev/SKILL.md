@@ -1,7 +1,7 @@
 ---
 uuid: 826a0cd8-d9e5-4607-9ba1-62b733df865d
 name: codexis-cirkev
-icon: icon.png
+icon: icon.webp
 version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns churches, religious societies, registered church legal persons, clergy, religious freedom, church property, internal church rules, state registration, financing, restitution or the civil effects of canonical and other religious norms. Standalone church-law methodology using CODEXIS.

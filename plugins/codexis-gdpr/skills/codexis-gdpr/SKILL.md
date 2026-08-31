@@ -1,7 +1,7 @@
 ---
 uuid: acec0787-0c11-43f7-b43d-95d046f73c07
 name: codexis-gdpr
-icon: icon.png
+icon: icon.webp
 version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns GDPR, personal data, privacy, controllers, processors, employee monitoring, cameras, cookies, data-subject rights, DPIA, data breaches, security, retention, profiling, automated decisions or international transfers. Standalone data-protection methodology using CODEXIS.

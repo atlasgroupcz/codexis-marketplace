@@ -1,7 +1,7 @@
 ---
 uuid: 5c0f6fe9-3b90-421f-ad5d-28935721f6a4
 name: codexis-zivotni-prostredi
-icon: icon.png
+icon: icon.webp
 version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech or EU legal question concerns environmental impact assessment, EIA, JES, nature protection, water, air, waste, soil, forests, integrated permitting, environmental damage, public participation, environmental liability or environmental aspects of project authorization. Standalone environmental-law methodology using CODEXIS.

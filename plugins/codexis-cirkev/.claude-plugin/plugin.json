@@ -1,6 +1,6 @@
 {
   "name": "codexis-cirkev",
-  "iconPath": "skills/codexis-cirkev/icon.png",
+  "iconPath": "skills/codexis-cirkev/icon.webp",
   "version": "1.0.0",
   "description": "Czech church and religious law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },

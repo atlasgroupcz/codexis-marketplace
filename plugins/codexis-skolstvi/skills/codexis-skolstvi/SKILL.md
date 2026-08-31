@@ -1,7 +1,7 @@
 ---
 uuid: b2400c7f-edab-4722-8222-dbf6722850b0
 name: codexis-skolstvi
-icon: icon.png
+icon: icon.webp
 version: 1.0.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns schools, education, admissions, pupils, students, assessment, school directors, founders, school boards, special educational needs, educational records, administrative decisions or employment links in education. Standalone education-law methodology using CODEXIS.
