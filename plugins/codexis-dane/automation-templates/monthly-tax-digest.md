@@ -4,7 +4,7 @@ type: AGENT
 title: Monthly Czech tax digest
 description: Each month, summarize recent Czech tax-law changes and upcoming filing deadlines.
 skill-full-names:
-  - codexis:codexis-dane
+  - codexis-dane:codexis-dane
 cron: 0 7 1 * *
 max-turns: 20
 enabled: false

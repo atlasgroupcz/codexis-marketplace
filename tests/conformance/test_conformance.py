@@ -9,6 +9,7 @@ without a signal (see CLAUDE.md)."""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -148,6 +149,38 @@ def test_marketplace_has_exact_monitor_plugin_contracts():
         assert manifest["i18n"]["cs"]["displayName"] == display_name
         assert (PLUGINS / name / manifest["iconPath"]).is_file()
         assert len(list((PLUGINS / name / "skills").glob("*/SKILL.md"))) == 1
+
+
+@pytest.mark.parametrize("name", sorted(MONITOR_PLUGINS))
+def test_monitor_skill_reference_paths_exist(name: str):
+    skill_root = PLUGINS / name / "skills" / name
+    for document in skill_root.rglob("*.md"):
+        references = set(
+            re.findall(
+                r"`((?:references/)?[A-Za-z0-9][A-Za-z0-9._/-]*\.md)`",
+                document.read_text(),
+            )
+        )
+        for reference in references:
+            target = (
+                skill_root / reference
+                if reference.startswith("references/") or reference == "SKILL.md"
+                else document.parent / reference
+            )
+            assert target.is_file(), (
+                f"{document.relative_to(skill_root)}: missing {reference}"
+            )
+
+
+@pytest.mark.parametrize(
+    "template",
+    sorted(PLUGINS.glob("*/automation-templates/*.md")),
+    ids=lambda path: f"{path.parents[1].name}:{path.name}",
+)
+def test_automation_template_skills_belong_to_owning_plugin(template: Path):
+    owner = template.parents[1].name
+    for full_name in _frontmatter(template).get("skill-full-names", []):
+        assert full_name in _skills_on_disk(owner)
 
 
 @pytest.mark.parametrize("name", _PLUGINS)

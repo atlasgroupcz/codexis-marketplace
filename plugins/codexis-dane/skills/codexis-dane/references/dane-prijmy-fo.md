@@ -2,7 +2,7 @@
 
 ## Scope
 
-Použij tuto metodiku, když uživatel řeší zdanění fyzických osob - kombinaci příjmů (zaměstnání, OSVČ, nájem, investice, ostatní), volbu mezi paušálními a skutečnými výdaji, podání daňového přiznání, slevy a odpočty, sazby daně FO. Nepoužívej pro DPH, daň z nemovitostí, spotřební daně ani procesní otázky nenavázané na DPFO (pro procesní vrstvu viz `dane.md`).
+Použij tuto metodiku, když uživatel řeší zdanění fyzických osob - kombinaci příjmů (zaměstnání, OSVČ, nájem, investice, ostatní), volbu mezi paušálními a skutečnými výdaji, podání daňového přiznání, slevy a odpočty, sazby daně FO. Nepoužívej pro DPH, daň z nemovitostí, spotřební daně ani procesní otázky nenavázané na DPFO (pro procesní vrstvu viz `SKILL.md`).
 
 Výchozí hmotný předpis: **ZDP** (č. 586/1992 Sb.). Procesní nadstavbu řeší **daňový řád** (č. 280/2009 Sb.).
 
@@ -44,7 +44,7 @@ Při parafrázi statutární definice zachovej právně operativní kvalifikáto
 
 ## Poznámka k procesní vrstvě
 
-Povinnost podat přiznání je pouze jedna strana mince. I když podací povinnost z § 38g nevzniká, fakultativní podání zůstává otevřené (viz `dane.md`) a může přinést uplatnění slev/odpočtů a vratku přeplatku. Kdykoli závěr u DPFO zní „povinnost nevzniká", doplň krátkou větev o fakultativním podání, pokud má pro uživatele praktický smysl.
+Povinnost podat přiznání je pouze jedna strana mince. I když podací povinnost z § 38g nevzniká, fakultativní podání zůstává otevřené (viz `SKILL.md`) a může přinést uplatnění slev/odpočtů a vratku přeplatku. Kdykoli závěr u DPFO zní „povinnost nevzniká", doplň krátkou větev o fakultativním podání, pokud má pro uživatele praktický smysl.
 
 ## cdx-cli tipy
 
