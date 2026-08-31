@@ -1,6 +1,6 @@
 {
   "name": "codexis-dusevni-vlastnictvi",
-  "iconPath": "skills/codexis-dusevni-vlastnictvi/icon.svg",
+  "iconPath": "skills/codexis-dusevni-vlastnictvi/icon.png",
   "version": "1.0.0",
   "description": "Czech intellectual property law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },

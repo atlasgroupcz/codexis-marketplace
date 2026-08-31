@@ -1,7 +1,7 @@
 ---
 uuid: 18b20f5f-1ec5-40e2-959b-591a9a48e1ae
 name: codexis-stavebnictvi
-icon: icon.svg
+icon: icon.png
 version: 1.0.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns construction, building permits, project authorization, occupancy approval, additional permitting, zoning, building authorities, affected authorities, JES, project documentation, unauthorized structures, changes before completion or construction-law transitional provisions. Standalone construction-law methodology using CODEXIS.

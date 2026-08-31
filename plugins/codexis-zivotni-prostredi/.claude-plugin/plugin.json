@@ -1,5 +1,5 @@
 {
-  "name": "codexis-zivotni-prostredi", "iconPath": "skills/codexis-zivotni-prostredi/icon.svg", "version": "1.0.0",
+  "name": "codexis-zivotni-prostredi", "iconPath": "skills/codexis-zivotni-prostredi/icon.png", "version": "1.0.0",
   "description": "Czech environmental law analysis with CODEXIS", "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "environment", "eia", "jes", "zivotni-prostredi", "czech"], "license": "PROPRIETARY",
   "accessible-part": "MONITOR_ZIVOTNI_PROSTREDI_AI", "tags": ["legal", "czech", "environment"],
