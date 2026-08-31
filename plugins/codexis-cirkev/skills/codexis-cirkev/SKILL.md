@@ -29,59 +29,67 @@ i18n:
       - "Aké podmienky platia pre evidenciu cirkevnej právnickej osoby a zmenu jej údajov?"
 ---
 
-# Monitor - Církev
+# CODEXIS — Církev
 
-Use `cdx-cli` as the primary legal source. Add official registry data from the Ministry of Culture or another competent authority when identity, registration or representation must be verified.
+Standalone skill pro české právo církví a náboženských společností.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Identify the exact entity, its registration category, identifier, governing church and the relevant date.
-2. Separate five questions: legal personality, ownership, authority to act, power of attorney and any required internal approval.
-3. Resolve the effective statute version and all transitional rules. Read the operative provision with constitutional and human-rights protections.
-4. Determine whether an internal religious rule has civil effect, evidentiary relevance or only internal consequences. Never assume one from the other.
-5. Verify the official register, title register or other authoritative record needed for the specific conclusion.
-6. Search case law when autonomy, clergy status, employment, property, restitution, discrimination or judicial review is disputed.
-7. State which conclusion follows from public law, private law and internal church law separately.
+- Pro legislativu, judikaturu a komentáře používej `cdx-cli`.
+- Ústavní, zákonnou, soukromoprávní a vnitrocírkevní vrstvu vždy rozliš.
+- Údaje o registraci a statutárním jednání ověř v příslušném veřejném registru.
+- Církevní dokument označ podle toho, zda má civilní účinek, důkazní význam nebo jen interní působnost.
 
-## Source stack
+## Research Strategy
 
-| Layer | Use |
-|---|---|
-| Constitutional order and human-rights law | Freedom of religion, autonomy, equality and limits of state interference |
-| Act on churches and religious societies | Registration, recorded legal persons, special rights and public registers |
-| Civil Code and registry law | Legal personality, representation, property and transactions |
-| Labour and anti-discrimination law | Employment and service relationships where applicable |
-| Restitution and financing legislation | Historic property claims, settlements and state funding |
-| Internal church rules | Internal competence and approval, only with the civil effect proven |
+1. Identifikuj přesný subjekt, jeho kategorii, identifikátor, nadřízenou církev a rozhodné datum.
+2. Odděl právní osobnost, vlastnictví, oprávnění jednat, plnou moc a interní schválení.
+3. Otevři ústavní ochranu, zákon č. 3/2002 Sb. a zvláštní soukromoprávní nebo pracovněprávní předpis.
+4. Ověř registr, listiny subjektu a případně katastr nemovitostí.
+5. U autonomie, duchovních, majetku nebo diskriminace projdi českou i evropskou judikaturu.
 
-## Entity and property verification
+## Klíčové předpisy
 
-- Match the legal name, identifier, registered seat and legal form across current and historic records.
-- If the public register may be stale, verify the office-holder through the underlying registry file, appointment instrument or other authoritative document.
-- Do not treat entry in the church register as proof of ownership.
-- Do not treat a land-register entry as proof that the signatory may act for the owner.
-- Verify the acquisition title, current ownership, co-ownership, encumbrances, pending registry proceedings and any historic succession issue separately. Trace historic succession through registry files, filed instruments, archived land-register records, transformation acts and restitution decisions as relevant.
-- Verify the registered manner of representation, the actual office-holder, the grantor's authority, and the form, scope, substitution, revocation and expiry of any power of attorney.
-- For internal approval, verify the hierarchy and relevant version of internal rules, the approving body's competence and the form and date of its decision.
-- Explain whether absence of internal approval affects external validity, internal responsibility or both; do not speculate.
-- Test whether the internal restriction is incorporated by statute, publicized toward third parties, compatible with third-party protection and interpreted in relevant case law.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| Listina základních práv a svobod | `CR` | náboženská svoboda a autonomie |
+| zákon č. 3/2002 Sb. | `cz_law/3/2002` | registrace a postavení církví |
+| zákon č. 428/2012 Sb. | `cz_law/428/2012` | majetkové vyrovnání |
+| zákon č. 89/2012 Sb. | `cz_law/89/2012` | právnické osoby, vlastnictví a smlouvy |
+| zákon č. 262/2006 Sb. | `cz_law/262/2006` | pracovněprávní vztahy |
+| zákon č. 198/2009 Sb. | `cz_law/198/2009` | rovné zacházení a diskriminace |
 
-## Autonomy and civil review
+## Hard Rules
 
-- Identify the protected sphere of religious autonomy and the civil right or obligation asserted against it.
-- Distinguish doctrinal questions from employment, property, personality and procedural rights that civil authorities can assess.
-- When clergy are involved, classify the relationship from its legal features rather than its religious title.
-- Check Czech constitutional case law and relevant European human-rights case law before stating the reach of judicial review.
+- Název farnosti, sboru, řádu nebo jiné jednotky sám neprokazuje právní osobnost.
+- Interní souhlas a oprávnění jednat navenek nejsou totéž.
+- Církevní autonomie není absolutní a současně ji nelze redukovat na běžnou korporační samosprávu.
+- Duchovenská služba nemusí mít stejný režim jako pracovní poměr; kvalifikuj konkrétní vztah.
+- Majetkové vyrovnání podle zákona č. 428/2012 Sb. nepřenášej na jiný majetkový spor bez zvláštního testu.
+- Při absenci doménového feedbacku nepřidávej konkrétní pravidla bez ověřeného zdroje.
 
-## Common mistakes
+## Workflow církevního práva
 
-- Conflating a church, religious society, parish, congregation, diocese and a separately recorded legal person.
-- Assuming canonical or internal authority automatically equals civil authority to sign.
-- Using one current register extract to resolve historic identity or succession.
-- Treating religious autonomy as either absolute immunity or legally irrelevant.
-- Omitting constitutional and European human-rights law.
-- Giving a property conclusion without verifying both ownership and representation.
+1. **Subjekt.** Registrace, právní osobnost a vztah k zakládající nebo nadřízené církvi.
+2. **Jednání.** Statutární orgán, interní omezení, plná moc a účinek vůči třetím osobám.
+3. **Majetek.** Vlastník, nabývací titul, zvláštní omezení, restituční historie a katastr.
+4. **Osoby.** Duchovní, zaměstnanec, člen, dobrovolník nebo jiný služební vztah.
+5. **Autonomie.** Interní věc víry a správy versus civilně přezkoumatelný zásah do práv.
+6. **Remedy.** Interní prostředek, správní přezkum, civilní soud, ústavní nebo evropská ochrana.
 
-## Output
+## Časté pasti
 
-Lead with a conditional conclusion naming the entity and act assessed. Then show the identity chain, ownership evidence, representation evidence, internal approvals, governing legal layers and remaining uncertainties. Use resolved `https://` links from CODEXIS and official registers; never expose raw `cdx://` identifiers.
+- Přiznání právní osobnosti organizační jednotce jen podle názvu.
+- Podpis smlouvy bez ověření registru a interního schválení.
+- Automatické použití zákoníku práce na každou službu duchovního.
+- Označení interního církevního předpisu za obecně závazný právní předpis.
+- Přehlédnutí majetkové historie a zvláštního restitučního režimu.
+
+## Struktura odpovědi
+
+1. Identifikace subjektu a právní osobnosti.
+2. Ústavní a zákonný rámec.
+3. Civilní nebo pracovní režim.
+4. Vnitřní pravidlo a jeho vnější účinek.
+5. Registr, vlastnictví, oprávnění jednat a důkazy.
+6. Dostupný přezkum a otevřené otázky.

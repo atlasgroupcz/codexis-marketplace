@@ -29,52 +29,82 @@ i18n:
       - "Ktorý orgán má v tomto konaní požiadať o JES a ako sa postup eviduje?"
 ---
 
-# Monitor - Stavebnictví
+# CODEXIS — Stavebnictví
 
-Use `cdx-cli` for legislation, case law and commentary. Use official ministry methodology only after matching it to the exact legal version and procedure.
+Standalone skill pro české stavební právo, povolování, kolaudaci, JES a související environmentální postupy.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Identify the user's role, competent authority, project type, location, procedural stage and every decisive date.
-2. Build separate timelines for planning, project authorization, environmental acts, construction, change, completion, occupancy and enforcement.
-3. Resolve which Building Act and which transitional provision governs each step. Do not choose the regime only from the application or answer date.
-4. Classify the procedure precisely: new authorization, change before completion, occupancy, additional authorization, removal, remedy or review.
-5. Map every required document, owner consent, binding opinion, JES component, network statement and public-interest assessment to the actor responsible for obtaining or issuing it.
-6. Separate the building authority's procedure from affected-authority and environmental procedures even when systems or documents overlap.
-7. Verify official methodology against the cited provision, facts and date; quote its actual condition before relying on it.
+- Pro právní předpisy, judikaturu a komentáře používej `cdx-cli`.
+- Známý předpis otevři přes `/versions`; konkrétní část přes `/toc` a `/text?part=`.
+- Metodiku ministerstva použij až po ověření jejího data, právního režimu a přesné skutkové podmínky.
+- Dokumentové systémy ISSŘ, interní spisová služba a datová schránka nejsou právně zaměnitelné.
 
-## Transitional regime
+## Research Strategy
 
-- Record dates of the original application, commencement, permit, legal force, changes, completion and new request.
-- Read the complete transitional provision and any special transition for JES or replaced environmental acts.
-- Determine the regime separately for the underlying building proceeding and for each later or parallel act.
-- Do not assume that a proceeding under the former Building Act automatically keeps every environmental act under the old regime.
-- Do not assume the new regime applies merely because a later document was filed after the reform.
+1. Identifikuj roli uživatele, orgán, typ záměru, místo, fázi a všechny rozhodné dny.
+2. Sestav samostatné časové osy pro povolení, environmentální akty, výstavbu, změnu, dokončení, kolaudaci a nápravu.
+3. Pro každý krok zvlášť určuj použitelný stavební zákon a přechodné ustanovení.
+4. Klasifikuj postup jako nový záměr, změnu před dokončením, kolaudaci, dodatečné povolení, odstranění nebo přezkum.
+5. Vytvoř matici aktérů a podkladů: kdo žádá, obstarává, vydává, doručuje, eviduje a přezkoumává.
+6. Odděl stavební řízení od JES a jednotlivých složkových environmentálních postupů.
 
-## Procedure and roles
+## Klíčové předpisy
 
-- Confirm whether the user acts for the applicant, building authority, JES authority, another affected authority, owner or participant before drafting advice.
-- Name who requests, supplements, issues, serves, records and reviews each document.
-- Distinguish a new project from additional authorization of an existing unauthorized structure before allocating a request for opinions or JES.
-- For electronic files, distinguish ISSŘ, the authority's records service, data-box delivery and the legally authoritative case file. Do not infer a transfer duty without a source.
-- When reviewing a submission, assess its content, signatory, representation, destination, file reference and procedural effect separately.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| zákon č. 283/2021 Sb., stavební zákon | `cz_law/283/2021` | nový stavební režim |
+| zákon č. 183/2006 Sb. | `cz_law/183/2006` | dřívější stavební režim |
+| zákon č. 148/2023 Sb., o JES | `cz_law/148/2023` | jednotné environmentální stanovisko |
+| zákon č. 500/2004 Sb. | `cz_law/500/2004` | správní řízení a spis |
+| zákon č. 334/1992 Sb. | `cz_law/334/1992` | ochrana ZPF |
+| zákon č. 541/2020 Sb. | `cz_law/541/2020` | odpady a zeminy |
+| zákon č. 254/2001 Sb. | `cz_law/254/2001` | vodní právo |
+| zákon č. 114/1992 Sb. | `cz_law/114/1992` | ochrana přírody a krajiny |
 
-## Materials and site issues
+## Hard Rules
 
-- Distinguish reuse in the place of excavation, temporary storage within the construction site, movement to another parcel, by-product and waste.
-- Identify whether another owner's parcel is legally part of the construction site and document consent, duration, restoration and safety.
-- Separate soil-protection, waste, water, nature-protection and construction requirements.
+- Jedno datum podání neurčuje automaticky právní režim všech navazujících úkonů.
+- Nový záměr a dodatečné povolení existující stavby neposuzuj stejným postupem.
+- Před návrhem podání nebo sdělení potvrď, zda uživatel jedná jako žadatel, stavební úřad, orgán JES nebo jiný dotčený orgán.
+- U metodiky cituj přesnou podmínku a porovnej ji s časovou osou případu.
+- Přijetí dokumentu ve spisové službě samo neprokazuje povinnost jeho vložení do ISSŘ ani opačně.
+- Dočasná mezideponie, použití zeminy v místě stavby, vedlejší produkt a odpad jsou různé kvalifikace.
+- Při práci s přílohou prohledej celý dokument; nevytvářej závěr z jedné strany.
 
-## Common mistakes
+## Workflow stavebního právníka
 
-- Applying only one legal regime to every phase of a project.
-- Missing a special environmental transitional rule.
-- Answering from the applicant's perspective when the user is the authority.
-- Treating ministry guidance as a substitute for the statute or misreading its factual condition.
-- Confusing additional authorization with a new project.
-- Concluding that temporary storage automatically creates waste or a by-product.
-- Mixing receipt in a records service with storage in ISSŘ.
+1. **Role a kompetence.** Urči orgán a procesní postavení uživatele.
+2. **Záměr.** Popiš stavbu, pozemky, povolený a skutečný stav a požadovanou změnu.
+3. **Timeline.** Podání, zahájení, vydání, právní moc, změna, dokončení a nový úkon.
+4. **Přechod.** Aplikuj obecné i zvláštní přechodné pravidlo na každý proces zvlášť.
+5. **Podklady.** Dokumentace, vlastnické tituly, souhlasy, JES, závazná stanoviska a vyjádření sítí.
+6. **Evidence.** Autoritativní spis, doručení, ISSŘ a interní spisová služba.
+7. **Výstup.** Kompetentní aktér, forma úkonu, adresát, lhůta a další krok.
 
-## Output
+## JES, role, přechody a spis
 
-Lead with the governing regime and user's procedural role. Then show the dated timeline, procedure, competent actors, required documents and opinions, electronic-file path, deadlines, defects and next action. Cite resolved `https://` sources and never raw CODEXIS identifiers.
+Při JES, dodatečném povolení, přechodných ustanoveních, ISSŘ nebo zemině načti `references/jes-role-prechody-a-spis.md`.
+
+## Časté pasti
+
+- Automatické použití jediného stavebního režimu na celý životní cyklus stavby.
+- Přehlédnutí zvláštního přechodného pravidla environmentálního aktu.
+- Odpověď z perspektivy žadatele, ačkoli uživatel je orgán JES.
+- Směšování dodatečného povolení s povolením nového záměru.
+- Nesprávné přenesení dokumentu mezi ISSŘ a interní spisovou službou.
+- Označení dočasně uložené zeminy za vedlejší produkt bez testu skutečného dalšího použití.
+- Neúplná anonymizace nebo review přílohy kvůli kontrole pouze poslední strany.
+
+## Struktura odpovědi
+
+1. Použitelný režim a role uživatele.
+2. Dated timeline.
+3. Druh postupu a kompetentní aktéři.
+4. Podklady, stanoviska, dokumentace a evidence.
+5. Lhůty, adresáti, vady a praktický další krok.
+6. Předpoklady a přesné citace.
+
+## Related references
+
+- JES, role, přechody, spis a zemina: `references/jes-role-prechody-a-spis.md`.

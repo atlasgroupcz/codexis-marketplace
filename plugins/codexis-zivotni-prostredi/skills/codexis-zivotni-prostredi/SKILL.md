@@ -29,51 +29,83 @@ i18n:
       - "Posúď, či zmena projektu vyžaduje nové zisťovacie konanie alebo overenie stanoviska EIA."
 ---
 
-# Monitor - Životní prostředí
+# CODEXIS — Životní prostředí
 
-Use `cdx-cli` for Czech and EU law and case law. Add only official ministry, authority and EU material for operational or interpretive context.
+Standalone skill pro české a evropské právo životního prostředí.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Define the project, activity, operator, location, protected receptors, capacity, timeline, changes and user's role.
-2. Build a permit matrix across EIA, JES and each environmental component. Do not assume one act replaces every other permit or duty.
-3. Resolve Czech and EU rules effective for each procedural step, including transitional provisions.
-4. Identify competent authorities, applicants, affected authorities, participants and public-participation rights separately.
-5. Trace every condition from screening, EIA opinion or sector act into the follow-up permit and compliance stage.
-6. Test project changes, cumulative impacts, alternatives, validity, extensions and repeated assessment before relying on an earlier conclusion.
-7. Search Czech and EU case law for participation, assessment scope, binding effect, project splitting and effective judicial protection.
+- Pro právní předpisy, judikaturu, komentáře a literaturu používej `cdx-cli`.
+- EIA, JES a složkové akty analyzuj jako samostatné vrstvy.
+- Limity, seznamy záměrů, chráněná území a kompetence ověř k datu a místu.
+- Oficiální mapy a registry používej pro skutkové ověření, ne jako náhradu právní normy.
 
-## EIA and follow-up authorization
+## Research Strategy
 
-- Determine whether the project is subject to mandatory assessment, screening or neither, using verified category and capacity facts.
-- Identify the assessed project and compare it with the project now authorized. Record every material change.
-- Verify the EIA opinion's validity, extension, verification and conditions.
-- Identify each follow-up proceeding and how the EIA information, opinion and public participation enter it.
-- Do not treat EIA as a permit or as a one-time step immune from later project changes.
-- Check cross-border assessment, Natura 2000 and cumulative effects independently where plausible.
+1. Definuj záměr nebo činnost, provozovatele, místo, chráněné složky, kapacitu, změny, čas a roli uživatele.
+2. Vytvoř matici EIA, JES, stavebního postupu a každého složkového povolení nebo povinnosti.
+3. Ověř české a unijní znění pro každý procesní krok včetně přechodů.
+4. Identifikuj příslušné orgány, žadatele, dotčené orgány, účastníky a veřejnost.
+5. U změny záměru testuj kumulativní vlivy, dělení, kapacitní práh a potřebu nového posouzení.
 
-## JES and sector rules
+## Klíčové předpisy
 
-- List each environmental act potentially integrated into JES and each act, exception or operational duty that remains separate.
-- Match the JES regime and transitional rule to the underlying procedure and application date.
-- Separate nature, water, air, waste, soil, forest and integrated-permit tests even when one document combines the result.
-- For each component, identify trigger, authority, evidence, conditions, duration, reporting and review.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| zákon č. 17/1992 Sb. | `cz_law/17/1992` | obecné principy ochrany životního prostředí |
+| zákon č. 100/2001 Sb. | `cz_law/100/2001` | EIA |
+| zákon č. 148/2023 Sb. | `cz_law/148/2023` | JES |
+| zákon č. 114/1992 Sb. | `cz_law/114/1992` | příroda a krajina |
+| zákon č. 254/2001 Sb. | `cz_law/254/2001` | vody |
+| zákon č. 541/2020 Sb. | `cz_law/541/2020` | odpady |
+| zákon č. 201/2012 Sb. | `cz_law/201/2012` | ochrana ovzduší |
+| zákon č. 334/1992 Sb. | `cz_law/334/1992` | ochrana ZPF |
 
-## Compliance and liability
+## Hard Rules
 
-- Distinguish permit breach, administrative offence, environmental damage, civil liability and criminal exposure.
-- Identify monitoring, records, reporting, emergency action, remediation and authority-notification duties.
-- For waste or excavated material, classify the material and intended handling from facts before applying waste, by-product or reuse rules.
+- JES nenahrazuje automaticky každý environmentální souhlas, povolení nebo provozní povinnost.
+- EIA závěr, závazné stanovisko, povolení a průběžná compliance jsou samostatné fáze.
+- Prahovou hodnotu testuj spolu s kategorií záměru, změnou, kumulací a umístěním.
+- Veřejnost, dotčená veřejnost, účastník řízení a spolek nemají automaticky totožná procesní práva.
+- Příslušnost orgánu ověř podle konkrétní složky, území a typu záměru.
+- U odpadu nejdřív klasifikuj materiál a nakládání; vlastníkovo označení není rozhodující.
+- Při absenci negativního feedbacku nevytvářej speciální výjimku bez ověřeného zdroje.
 
-## Common mistakes
+## Workflow environmentálního právníka
 
-- Treating EIA, JES and the final project permit as interchangeable.
-- Ignoring a project change or cumulative impact after an earlier EIA.
-- Missing participation rights in a follow-up proceeding.
-- Applying only Czech law where an EU directive and CJEU case law shape the rule.
-- Assuming JES absorbs every environmental permission or ongoing duty.
-- Mixing legal conditions from different effective dates.
+1. **Project map.** Činnost, kapacita, změna, pozemky, citlivé území a dotčené složky.
+2. **Assessment.** Screening, EIA, Natura a další předběžná hodnocení.
+3. **JES matrix.** Které složkové akty jsou nahrazeny a které zůstávají samostatné.
+4. **Authorization.** Navazující povolení, podmínky a přenos závěrů posouzení.
+5. **Participation.** Oznámení, zveřejnění, připomínky, účastenství a soudní ochrana.
+6. **Operation.** Evidence, měření, ohlašování, změny provozu a havárie.
+7. **Liability.** Nápravná opatření, přestupky, ekologická újma a soukromoprávní nároky.
 
-## Output
+## Typické monitorové otázky
 
-Lead with the required assessment and permit path. Then show the project definition, dated procedure map, EIA and JES status, sector layers, actors, public participation, conditions, compliance duties, remedies and open facts. Cite resolved user-facing `https://` sources and never raw CODEXIS identifiers.
+- kácení dřevin a výjimky,
+- spalovací zdroje a emisní povinnosti,
+- elektroodpad a obecní odpadové systémy,
+- nebezpečný odpad obce,
+- nakládání s vodami a rybářský režim,
+- místní regulace hlučných nebo obtěžujících činností.
+
+Každé téma nejprve přiřaď ke konkrétnímu složkovému zákonu; seznam není katalog hotových závěrů.
+
+## Časté pasti
+
+- Jediné „environmentální povolení“ pro celý záměr.
+- Přehlédnutí změny záměru nebo kumulativního vlivu.
+- Přenos podmínky EIA bez ověření navazujícího řízení.
+- Zaměnění odpadu, vedlejšího produktu a opětovného použití.
+- Odpověď obci podle pravidla pro soukromou osobu nebo opačně.
+- Použití obecné metodiky bez místních skutkových dat.
+
+## Struktura odpovědi
+
+1. Záměr, místo, role a dotčené složky.
+2. Povinná posouzení a matice povolení.
+3. Kompetentní orgány, účast a veřejnost.
+4. Podmínky, limity, evidence a lhůty.
+5. Navazující povolení, provozní povinnosti a změny.
+6. Přezkum, odpovědnost a praktický další krok.

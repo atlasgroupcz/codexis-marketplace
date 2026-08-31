@@ -29,57 +29,79 @@ i18n:
       - "Navrhni správny postup pri zmene pracovného času a miesta výkonu práce."
 ---
 
-# Monitor - Personalistika
+# CODEXIS — Personalistika
 
-Use `cdx-cli` for legislation, case law and commentary. Use official labour, social-security and health-insurance sources only for complementary operational information.
+Standalone skill pro české pracovní právo, personální agendu, mzdy a pojistné.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Identify the parties, actual work arrangement, legal relationship, relevant dates and the user's role.
-2. Separate employment-law, wage, income-tax, social-insurance and health-insurance tracks. Do not infer one from another.
-3. Resolve the effective version of each statute and implementing rule. Verify every monetary amount, interval and threshold from the current source.
-4. Map formation, required form, substantive conditions, process, delivery, evidence, deadlines and consequences of invalidity.
-5. Check collective agreements, internal rules, employee-representative duties and protected status where relevant.
-6. Search case law for termination, redundancy, discrimination, working-time classification, wage claims and evidentiary disputes.
-7. Provide the employer and employee actions separately, including documents and dates.
+- Právní zdroje získávej přes `cdx-cli`.
+- U známého zákona začni `/versions`, u konkrétního ustanovení pokračuj přes `/toc` a `/text?part=`.
+- Částky, limity, redukční hranice a minimální základy vždy ověř k rozhodnému období.
+- Materiály MPSV, ČSSZ a zdravotních pojišťoven označ jako provozní výklad.
 
-## Termination and redundancy
+## Research Strategy
 
-- Identify the exact statutory ground and factual event before drafting language.
-- For redundancy, verify a real prior organizational decision, competent decision-maker, timing and causal connection to the employee's redundancy.
-- Separate the employer's business choice from unlawful selection criteria. Check discrimination, retaliation, abuse of rights, protected periods, union-office protection and collective-dismissal rules.
-- Define the comparable employee group, document neutral selection criteria and verify their consistent application.
-- Verify that the abolished work does not continue under another title, with a replacement or divided among others in a way that contradicts the asserted organizational change.
-- Verify specificity, signature, delivery, notice-period calculation, severance and the preclusive period for challenging invalid termination.
-- Do not state that a court can never review employee selection; explain the actual review boundaries.
+1. Identifikuj strany, skutečný typ práce, pracovněprávní vztah, roli uživatele a rozhodná data.
+2. Rozděl dotaz na pracovní právo, mzdu, daň, sociální pojištění a zdravotní pojištění.
+3. Pro každou vrstvu otevři zvláštní předpis a jeho prováděcí úpravu.
+4. Ověř vznik povinnosti, výjimky, proces, dokument, lhůtu a následek vady.
+5. U skončení, diskriminace, úrazu nebo sporu doplň judikaturu a důkazní otázky.
 
-## Payroll and insurance
+## Klíčové předpisy
 
-- Determine the person's exact insurance status for every relevant day, including disability degree, state-insured status, concurrent work and exceptions.
-- Distinguish minimum wage, guaranteed pay where applicable, minimum assessment base and actual assessment base.
-- For unpaid leave or low income, calculate health and social insurance separately and identify who pays any difference.
-- Distinguish a full from partial calendar month and verify any proportional adjustment of the minimum base.
-- Verify the document establishing state-insured status, its duration, notification to the insurer, the responsible notifier and deadline.
-- Distinguish agreed unpaid leave from an obstacle attributable to the employer before allocating a top-up.
-- If payroll was closed on an incorrect status, identify the corrected payroll and insurance filings required.
-- Verify whether an exception applies before asserting a top-up obligation. Do not infer state-insured status from a generic disability label.
-- Separate payroll reporting, tax withholding, insurance reporting and employment documentation.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| zákon č. 262/2006 Sb., zákoník práce | `cz_law/262/2006` | pracovní poměr, DPP/DPČ, mzda, doba, dovolená, skončení |
+| zákon č. 435/2004 Sb. | `cz_law/435/2004` | zaměstnanost a cizinci |
+| zákon č. 187/2006 Sb. | `cz_law/187/2006` | nemocenské pojištění |
+| zákon č. 589/1992 Sb. | `cz_law/589/1992` | pojistné na sociální zabezpečení |
+| zákon č. 592/1992 Sb. | `cz_law/592/1992` | pojistné na veřejné zdravotní pojištění |
+| zákon č. 48/1997 Sb. | `cz_law/48/1997` | veřejné zdravotní pojištění a státní pojištěnci |
+| zákon č. 586/1992 Sb. | `cz_law/586/1992` | zdanění mzdy a benefitů |
+| zákon č. 373/2011 Sb. | `cz_law/373/2011` | pracovnělékařské služby |
 
-## Working time and leave
+## Hard Rules
 
-- Classify shift, overtime, on-call duty, travel, rest, obstacle to work, leave or remote work from the actual facts.
-- Verify scheduling, notice, records, compensation and maximum limits separately.
-- Distinguish an agreed contractual change from a unilateral instruction and identify the required form.
+- Pracovněprávní, daňový, sociální a zdravotněpojistný výsledek odvozuj samostatně.
+- „Invalidní“ není totéž jako „příjemce invalidního důchodu“; ověř právně rozhodný status.
+- U zdravotního pojištění nejdřív prověř výjimky z minimálního vyměřovacího základu.
+- U skončení pracovního poměru rozliš důvod, formu, skutkové vymezení, doručení, ochrannou dobu a nároky.
+- U benefitů ověř současně daň zaměstnance, náklad zaměstnavatele a pojistné.
+- Neuvedený limit nebo částku nedoplňuj z paměti.
 
-## Common mistakes
+## Workflow personalisty
 
-- Treating an employment title or contract label as decisive despite different actual work.
-- Mixing employment validity with tax or insurance classification.
-- Giving a termination answer without delivery, protected-period or severance analysis.
-- Treating invalidity of one degree as equivalent to every disability or state-insured category.
-- Applying a current monetary threshold to an earlier payroll period.
-- Omitting discrimination and retaliation from an otherwise valid management decision.
+1. **Vztah.** Pracovní poměr, DPP, DPČ, agenturní práce, statutární funkce nebo samostatná činnost.
+2. **Čas.** Vznik, změna, rozhodné období, doručení, konec a navazující lhůty.
+3. **Pracovní právo.** Povinnosti, forma dokumentu, projednání a následky vady.
+4. **Mzda a náhrady.** Základ, příplatky, náhrady, překážky a dovolená.
+5. **Daň a pojistné.** Každý režim posuď podle vlastního zákona a výjimek.
+6. **Evidence.** Osobní spis, mzdové podklady, hlášení a retenční povinnosti.
+7. **Praktický výstup.** Odděl kroky zaměstnavatele, zaměstnance a příslušné instituce.
 
-## Output
+## Zdravotní pojištění a invalidní důchod
 
-Lead with the employment-law conclusion. Then show decisive facts, effective version, separate wage and insurance effects, required procedure, documents, deadlines, risks and unresolved facts. Use resolved user-facing `https://` sources and never expose raw CODEXIS identifiers.
+Při dotazu na minimum zdravotního pojištění načti `references/invalidni-duchod-a-minimum-zdravotniho-pojisteni.md`.
+
+## Časté pasti
+
+- Závěr podle výše mzdy bez ověření statusu státního pojištěnce.
+- Směšování invalidity s pobíráním invalidního důchodu.
+- Zaměnění účetního, daňového a pojistného zachycení benefitu.
+- Výpověď bez přesného skutkového důvodu nebo bez kontroly ochranné doby.
+- Odpověď jen zaměstnavateli bez kroků a nároků zaměstnance.
+- Použití aktuálního limitu na starší mzdové období.
+
+## Struktura odpovědi
+
+1. Přímý závěr.
+2. Typ vztahu, role a rozhodné období.
+3. Pracovněprávní pravidlo a dokumenty.
+4. Mzdový, daňový, sociální a zdravotní dopad odděleně.
+5. Lhůty, evidence a praktické kroky každé strany.
+6. Předpoklady, které mohou závěr změnit.
+
+## Related references
+
+- Invalidní důchod a minimum zdravotního pojištění: `references/invalidni-duchod-a-minimum-zdravotniho-pojisteni.md`.

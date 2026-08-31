@@ -29,54 +29,78 @@ i18n:
       - "Prever pravidlá hodnotenia, preskúmania výsledku a opravnej skúšky."
 ---
 
-# Monitor - Školství
+# CODEXIS — Školství
 
-Use `cdx-cli` for legal sources. Use official MŠMT or inspection material only after verifying its date and legal basis.
+Standalone skill pro české školské právo a související správní a pracovněprávní otázky.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Identify the school type, legal form, founder, education level, person affected, user's role and decisive dates.
-2. Resolve ambiguous terminology before research, especially appeal versus removal from office and school decision versus employment act.
-3. Build the source stack: Education Act, school-specific decree, Administrative Procedure Code, founder rules, employment law and special regulation.
-4. Resolve the effective version and transitional provisions of every layer.
-5. Determine the actor, public or private function, form, required findings, notice or publication, appeal and judicial protection.
-6. Read connected provisions together. Never infer the absence of administrative procedure solely because one item is not explicit in one list.
-7. Separate the education-law effect from enrolment records, funding and employment consequences.
+- Právní zdroje získávej přes `cdx-cli`.
+- U školského zákona a prováděcí vyhlášky vždy resolve verzi k rozhodnému školnímu roku a datu úkonu.
+- Metodiky MŠMT používej po ověření, že odpovídají typu školy a aktuálnímu znění.
+- Nezaměňuj školské rozhodnutí, interní pedagogické opatření a pracovněprávní úkon.
 
-## Admission and school decisions
+## Research Strategy
 
-- Identify the specific admission rule for the school type, selection or talent-test conditions and the director's decision-making authority.
-- For ZUŠ, read Decree No. 71/2005 Coll. together with sections 165 and 183 of the Education Act and the Administrative Procedure Code.
-- Determine whether a formal administrative decision is issued, how a favourable and unfavourable result is announced, when it is served and which appeal is available.
-- Distinguish publication under registration numbers from an informal publication of results.
-- Preserve the application, criteria, commission record, factual findings, file record and proof of notice.
+1. Urči druh školy, právní formu, zřizovatele, úroveň vzdělávání, dotčenou osobu a roli uživatele.
+2. Rozliš školské, správní, pracovněprávní, antidiskriminační a ochranné vrstvy.
+3. Sestav stack: školský zákon, druhová vyhláška, správní řád, úprava pedagogických pracovníků a zřizovatelská pravidla.
+4. Ověř aktéra, pravomoc, formu, podklady, oznámení, opravný prostředek a soudní ochranu.
+5. Navazující evidenci, financování a personální důsledky řeš odděleně.
 
-## School directors
+## Klíčové předpisy
 
-- Distinguish appointment, removal from office, expiry of term, waiver, employment change and termination of employment.
-- Start the director-removal analysis with section 166 of the Education Act and verify its effective version.
-- Identify school type, founder, competent body, statutory ground, required supporting facts, consultation or proposal and relevant period.
-- Do not equate removal from office with automatic end of employment.
-- Determine the required form, reasoning, delivery, effective date and judicial remedy.
-- Verify the legal role of inspection findings, school-board acts and founder documents instead of treating each as automatically decisive.
-- Do not assume the founder and the appellate administrative authority are the same actor; establish each competence independently.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| zákon č. 561/2004 Sb., školský zákon | `cz_law/561/2004` | vzdělávání, školy, rozhodování a zřizovatelé |
+| zákon č. 563/2004 Sb. | `cz_law/563/2004` | pedagogičtí pracovníci |
+| zákon č. 500/2004 Sb. | `cz_law/500/2004` | správní řízení |
+| vyhláška č. 71/2005 Sb. | `cz_law/71/2005` | základní umělecké vzdělávání |
+| vyhláška č. 48/2005 Sb. | `cz_law/48/2005` | základní vzdělávání |
+| vyhláška č. 13/2005 Sb. | `cz_law/13/2005` | střední vzdělávání |
+| vyhláška č. 27/2016 Sb. | `cz_law/27/2016` | podpůrná opatření |
+| zákon č. 262/2006 Sb. | `cz_law/262/2006` | zaměstnanci školy a ředitel |
 
-## Assessment and support
+## Hard Rules
 
-- Link grading, non-assessment, review, resit and remedial measures to the exact school and study type.
-- Distinguish statutory duties, decree requirements, school rules and recommended pedagogy.
-- For special educational needs, identify the support level, recommendation, consent, provider and funding track.
-- Verify deadlines and competence for review or examination from current sources.
+- Absence konkrétního typu školy v jednom výčtu sama neprokazuje absenci správní pravomoci.
+- Čti obecnou pravomoc ředitele, zvláštní úpravu věci a pravidlo oznamování společně.
+- Rozhodnutí vyhovující, rozhodnutí nevyhovující a zveřejnění seznamu mají odlišný procesní režim.
+- U ředitele rozliš odvolání z funkce, odvolání proti rozhodnutí a skončení pracovního poměru.
+- U žáka odděl školské opatření, správní rozhodnutí, ochranu osobních údajů a bezpečnostní postup.
+- Odpověď musí odpovídat přesnému typu školy; pravidlo pro ZŠ nelze automaticky přenést na ZUŠ nebo SŠ.
 
-## Common mistakes
+## Workflow školského právníka
 
-- Applying rules for one school type to another.
-- Reading section 165 in isolation and missing a special admission or notification rule.
-- Confusing removal of a director with an administrative appeal or employment termination.
-- Treating ministry methodology as law or using a current method for a historic case.
-- Omitting service, publication, appeal and file documentation.
-- Presenting optional good practice as a mandatory school duty.
+1. **Instituce.** Typ školy, zápis v rejstříku, právní forma a zřizovatel.
+2. **Osoba a role.** Uchazeč, žák, zákonný zástupce, ředitel, učitel nebo zřizovatel.
+3. **Úkon.** Přijetí, hodnocení, kázeň, podpůrné opatření, personální rozhodnutí nebo interní pravidlo.
+4. **Pravomoc a režim.** Obecná i zvláštní ustanovení, správní řád a druhová vyhláška.
+5. **Oznámení a obrana.** Zveřejnění, doručení, odůvodnění, poučení, odvolání a přezkum.
+6. **Navazující dopad.** Evidence žáka, matrika, financování, pracovněprávní a ochranné důsledky.
 
-## Output
+## Přijetí do ZUŠ
 
-Lead with the school type, competent actor and procedural classification. Then show the effective source stack, conditions, evidence, form, notice, deadlines, remedies, employment effects and open facts. Use resolved `https://` citations and never raw CODEXIS identifiers.
+Při přijetí nebo nepřijetí do základní umělecké školy načti `references/prijeti-do-zus.md`.
+
+## Časté pasti
+
+- Izolované čtení § 165 odst. 2 školského zákona.
+- Kategorické vyloučení správního řízení jen proto, že ZUŠ není v jednom výčtu.
+- Zveřejnění kladného výsledku bez individuálního rozhodnutí u nepřijatého uchazeče.
+- Přenos pravidla z jiného druhu školy.
+- Směšování pravomoci ředitele a pravomoci zřizovatele.
+- Neúplná odpověď na navazující stručné „ano“, protože nebyl zachován kontext konverzace.
+
+## Struktura odpovědi
+
+1. Přímý závěr a typ školy.
+2. Pravomoc a procesní režim.
+3. Podklady, forma a rozhodná ustanovení.
+4. Oznámení nebo doručení a délka zveřejnění.
+5. Odůvodnění, poučení a opravný prostředek.
+6. Navazující evidence a praktický postup školy.
+
+## Related references
+
+- Přijetí do ZUŠ: `references/prijeti-do-zus.md`.

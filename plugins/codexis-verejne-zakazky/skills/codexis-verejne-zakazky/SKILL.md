@@ -29,60 +29,96 @@ i18n:
       - "Posúď, či možno po zadaní zmeniť cenu alebo rozsah zmluvy."
 ---
 
-# Monitor - Veřejné zakázky
+# CODEXIS — Veřejné zakázky
 
-Use `cdx-cli` for legislation, Czech and EU case law and commentary. Use official ÚOHS, TED and procurement-portal material only as complementary sources.
+Standalone skill pro české a evropské právo veřejných zakázek.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Identify the contracting entity, subject, estimated value, aggregation, procurement regime, procedure, current phase and decisive dates.
-2. Separate a statutory duty, permitted option, reserved choice, best-practice recommendation and contractual requirement. Label each conclusion.
-3. Resolve the applicable ZZVZ and EU-law version. Check transitional rules for the procedure and contract.
-4. Build the complete rule stack for the issue: principles, general provision, phase-specific provision, exception, publication and remedy.
-5. Read cited case law for its facts, procedural setting and holding. Record the research date, verify procedural status or finality, and check whether later authority overruled, limited or distinguished it. Do not generalize a rule from a different phase or procurement regime.
-6. Check equal treatment, transparency, proportionality, non-discrimination and material comparability after the specific statutory test.
-7. State what the authority must do, may do and should document separately.
+- Pro CODEXIS používej `cdx-cli search`, `cdx-cli get` a `cdx-cli schema`.
+- Známý předpis otevři přes `/versions`; konkrétní paragraf přes `/toc` a `/text?part=`.
+- ÚOHS, VVZ, TED a metodiky používej jako doplňkové oficiální zdroje.
+- Nehádej procesní fázi, druh řízení, limit ani účinek uveřejnění.
 
-## Qualification and clarification
+## Research Strategy
 
-- Distinguish qualification facts from bid content and evaluation criteria.
-- Read sections 46 and 79 together with the exact tender condition and relevant case law.
-- Determine whether a fact may arise after the bid deadline, whether the authority may request clarification and whether the change alters evaluated bid content.
-- Do not conclude that a new reference or subcontractor is always prohibited or always allowed. Match the holding to the exact change.
-- Verify whether the authority reserved a stricter lawful requirement and whether applying it remains transparent and equal.
+1. Urči zadavatele, předmět, předpokládanou hodnotu, režim, druh řízení, fázi a rozhodná data.
+2. Označ každý závěr jako povinnost, možnost, vyhrazenou volbu zadavatele, doporučení nebo smluvní požadavek.
+3. Sestav normativní stack: zásady, obecné pravidlo, zvláštní pravidlo fáze, výjimka, uveřejnění a přezkum.
+4. Ověř aktuální nebo historické znění ZZVZ a odpovídající unijní úpravy.
+5. U judikatury porovnej skutkový stav, fázi řízení, výrok a pozdější vývoj.
 
-## Deadlines and site visits
+## Data Sources
 
-- Calculate the statutory minimum for the exact procedure and every reduction or extension condition.
-- When a site visit is offered, always test the special rule in section 97, including the interval before the bid deadline and the requirement that the bid period exceed the minimum.
-- For corrected notices, distinguish publication in VVZ or TED, the profile update and the legally effective new deadline.
-- Verify that the effective deadline is synchronized across every applicable notice, profile field, procurement document and attachment.
-- Use exact calendar dates, working days and public holidays. Do not rely on approximate weeks.
+| Code | Použití |
+|---|---|
+| `CR` | ZZVZ, správní a procesní předpisy |
+| `EU` | zadávací směrnice a přímo použitelné předpisy |
+| `JD` | NSS, správní soudy, ÚS a SDEU |
+| `COMMENT` | systematický výklad ZZVZ |
+| `LT` | odborné rozbory praxe a rozhodovací činnosti |
 
-## Contract modifications
+## Klíčové předpisy
 
-- Identify the original contract, reservation clause, nature and cumulative value of every prior and proposed change.
-- Test the general material-change rule and each statutory exception separately.
-- Do not say that a percentage threshold alone makes a change lawful. Check subject, cumulative calculation, overall cap, nature and whether the change alters competition.
-- Separate price indexation already reserved in the tender from a later unreserved modification.
-- Check publication, written reasoning and review risk after the substantive test.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| zákon č. 134/2016 Sb., ZZVZ | `cz_law/134/2016` | celý zadávací proces |
+| zákon č. 500/2004 Sb. | `cz_law/500/2004` | řízení před ÚOHS |
+| zákon č. 250/2016 Sb. | `cz_law/250/2016` | odpovědnost za přestupky |
+| zákon č. 99/1963 Sb. | `cz_law/99/1963` | civilní spory ze smluv |
+| směrnice 2014/24/EU | `EU` | klasické veřejné zakázky |
+| směrnice 2014/25/EU | `EU` | sektorové zakázky |
+| směrnice 2014/23/EU | `EU` | koncese |
 
-## Document review
+## Hard Rules
 
-- Review internal consistency before proposing extra forms or duplicate information.
-- Do not present a defensible drafting preference as a legal defect.
-- Tie every required edit to a statute, tender choice or concrete inconsistency.
-- Preserve the user's requested structure unless changing it is necessary and explain that necessity.
+- Hodnotový režim, volba druhu řízení a pravidla lhůt jsou tři oddělené otázky.
+- Kvalifikaci, obsah nabídky a hodnoticí kritérium neposuzuj stejným testem.
+- Neoznač doporučenou úpravu zadávací dokumentace jako povinnou bez zákonné nebo vnitřně dokumentové opory.
+- U prohlídky místa plnění vždy otevři § 97 ZZVZ.
+- U doplnění kvalifikace čti § 46 a § 79 společně s přesnou zadávací podmínkou a judikaturou.
+- U změny smlouvy nestačí procentní limit; prověř povahu změny, kumulaci a dopad na soutěž.
+- Při kontrole dokumentace čti všechny přílohy jako jeden celek.
 
-## Common mistakes
+## Workflow specialisty na veřejné zakázky
 
-- Mixing value regime, procedure choice and deadline rules.
-- Missing a phase-specific provision such as section 97.
-- Treating all post-deadline qualification changes alike.
-- Calling an optional improvement legally mandatory.
-- Applying a percentage exception for contract changes without cumulative and qualitative tests.
-- Reviewing one attachment in isolation from the rest of the tender documents.
+1. **Scope.** Urči veřejného, sektorového či dotovaného zadavatele a zda jde o zadávání nebo plnění smlouvy.
+2. **Hodnota.** Prověř funkční celek, pravidelná plnění, části a zákaz účelového dělení.
+3. **Režim a postup.** Odděl zákonný režim od zadavatelem zvoleného řízení.
+4. **Fáze.** Příprava, lhůta, podání, objasnění, hodnocení, výběr, námitky, ÚOHS nebo změna smlouvy.
+5. **Speciální pravidlo.** Vyhledej ustanovení přesně pro danou fázi; obecné zásady jsou až kontrolní vrstva.
+6. **Dokumentace.** Porovnej formuláře, krycí list, návrh smlouvy, přílohy a uveřejněné údaje.
+7. **Remedy.** Uveď dokumentaci rozhodnutí, námitky, přezkum a konkrétní procesní riziko.
 
-## Output
+## Feedback-derived deep dive
 
-Lead with a direct answer labeled mandatory, permitted or recommended. Then show regime and phase, effective sources, complete statutory test, facts, calculation, case-law fit, required documentation and risk. Cite resolved `https://` URLs and never raw CODEXIS identifiers.
+Pro kvalifikaci, lhůty, prohlídku místa a review dokumentace načti `references/kvalifikace-lhuty-a-kontrola-dokumentace.md`.
+
+## Změny smlouvy
+
+- Identifikuj původní závazek, vyhrazenou změnu a všechny dřívější změny.
+- Testuj obecné pravidlo podstatné změny a každou výjimku samostatně.
+- Odděl předem vyhrazenou indexaci od pozdější nevyhrazené změny.
+- Uveď výpočet kumulace, kvalitativní test a povinnost uveřejnění.
+
+## Časté pasti
+
+- Přehlédnutí § 97 při prohlídce místa plnění.
+- Automatický zákaz nebo automatické připuštění nové reference po lhůtě.
+- Směšování uveřejnění opravného formuláře s následnou změnou údaje na profilu.
+- Požadavek na duplicitní přílohu, přestože údaje už dokumentace propojuje.
+- Označení defensivní drafting preference jako porušení zákona.
+- Generalizace judikátu z jiné fáze nebo jiného režimu.
+
+## Struktura odpovědi
+
+1. Přímý závěr s označením povinné, možné nebo doporučené.
+2. Zadavatel, režim, druh řízení a fáze.
+3. Rozhodné znění a úplný zákonný test.
+4. Aplikace na fakta a přesný výpočet lhůty nebo hodnoty.
+5. Vhodnost judikatury a případné odlišení.
+6. Dokumentace, uveřejnění, námitky a riziko.
+
+## Related references
+
+- Kvalifikace, lhůty a kontrola dokumentace: `references/kvalifikace-lhuty-a-kontrola-dokumentace.md`.

@@ -29,57 +29,72 @@ i18n:
       - "Prever zmluvu so sprostredkovateľom a prenos osobných údajov mimo EHP."
 ---
 
-# Monitor - Ochrana osobních údajů
+# CODEXIS — Ochrana osobních údajů
 
-Use `cdx-cli` for Czech and EU law. Use only official EDPB, EU, ÚOOÚ and other competent-authority material as complementary interpretation.
+Standalone skill pro GDPR a českou ochranu osobních údajů.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Map the concrete processing: data, people, source, purpose, operations, recipients, systems, locations, retention and consequences.
-2. Assign controller, joint-controller and processor roles from actual decisions and functions, not contract labels.
-3. Test scope, principles and a legal basis for every purpose. Test special-category and criminal-offence data separately.
-4. Determine whether another legal regime independently restricts the processing, including labour, communications, health or surveillance law.
-5. Test transparency, rights, security, records, DPIA, processor terms, transfers and breach duties as separate layers.
-6. Resolve current legislation and relevant CJEU, Czech court and authority decisions. Explain the legal weight of guidelines.
-7. Conclude only for the processing actually mapped; list missing facts that could change the result.
+- Pro právní zdroje používej `cdx-cli` v kolekcích `EU`, `CR`, `JD`, `COMMENT` a `LT`.
+- Pokyny EDPB a dozorových úřadů označ podle jejich právní váhy.
+- Odkaz na rozhodnutí musí být funkční a odpověď musí obsahovat finální syntézu, ne raw tool output.
+- Právní titul neurčuj podle názvu formuláře nebo smlouvy, ale podle skutečného účelu a rolí.
 
-## Employee monitoring
+## Research Strategy
 
-- Identify the technology, exact purpose, monitored persons, place, time, content captured and degree of continuous observation.
-- Test the Labour Code restriction independently from the GDPR legal basis. Passing one test does not pass the other.
-- Do not default to employee consent where the employment imbalance prevents a freely given choice.
-- If consent is proposed exceptionally, verify a genuine choice, no adverse consequence, granularity, proof and effective withdrawal.
-- For legitimate interests, document purpose, necessity and balancing. Compare less intrusive alternatives and residual safeguards.
-- Distinguish GDPR notice content and timing from the separate Labour Code information duty.
-- Limit access by role, keep audit logs and review permissions regularly.
-- Set retention per purpose with a deletion trigger and a documented rule for records preserved as evidence.
-- Apply the DPIA threshold test, required content and prior-consultation test.
-- For disciplinary or performance use, distinguish the original monitoring purpose from secondary use, retest legal basis and purpose compatibility, and preserve a way for the employee to contest the evidence.
-- Mere notice does not legalize monitoring that lacks necessity or a permissible purpose.
+1. Namapuj konkrétní zpracování: údaje, osoby, zdroj, účel, operace, příjemce, systém, místo, dobu a důsledky.
+2. Urči správce, společné správce a zpracovatele podle skutečného rozhodování.
+3. Pro každý účel samostatně ověř působnost, zásady a právní titul.
+4. Zvlášť testuj citlivé údaje, trestní údaje, děti, zaměstnance a elektronické komunikace.
+5. Projdi transparentnost, práva, zabezpečení, záznamy, DPIA, smlouvy, předávání a incidenty.
 
-## Breaches and rights
+## Klíčové předpisy
 
-- Distinguish a security incident from a personal-data breach and assess confidentiality, integrity and availability.
-- Record the risk analysis even when notification is not required. Check authority and data-subject notification separately.
-- For access, erasure, objection or portability, identify the requester, scope, exemptions, third-party rights, identity verification and response deadline.
-- For profiling or automated decisions, test whether there is a solely automated decision with legal or similarly significant effect and which safeguard applies.
+| Předpis | Zdroj | Použití |
+|---|---|---|
+| nařízení (EU) 2016/679, GDPR | `EU` | obecný rámec zpracování |
+| zákon č. 110/2019 Sb. | `cz_law/110/2019` | česká adaptační úprava |
+| zákon č. 480/2004 Sb. | `cz_law/480/2004` | obchodní sdělení a online služby |
+| zákon č. 127/2005 Sb. | `cz_law/127/2005` | elektronické komunikace |
+| zákon č. 262/2006 Sb. | `cz_law/262/2006` | zaměstnanecké vztahy a monitoring |
+| zákon č. 372/2011 Sb. | `cz_law/372/2011` | zdravotní údaje a dokumentace |
+| zákon č. 106/1999 Sb. | `cz_law/106/1999` | střet informací a soukromí |
 
-## International transfers
+## Hard Rules
 
-- Identify every exporter, importer, onward recipient, country and remote-access path.
-- Separate disclosure, processor access and Chapter V transfer analysis.
-- Verify adequacy, safeguards, transfer-impact assessment, supplementary measures, derogations and onward transfers.
+- Právní titul přiřaď každému účelu, ne celé databázi jedním štítkem.
+- Souhlas nepoužívej jako default, pokud zpracování stojí na smlouvě, zákonu nebo oprávněném zájmu.
+- U oprávněného zájmu proveď účel, nezbytnost a vyvažování.
+- Minimalizace, retenční doba, přístup a zabezpečení jsou samostatné testy.
+- Veřejně dostupný údaj není automaticky volně použitelný pro jiný účel.
+- Smluvní označení „zpracovatel“ neprokazuje roli podle GDPR.
+- U seznamu judikatury ověř datum, spisovou značku, účastníky, relevance a odkaz každé položky.
 
-## Common mistakes
+## Workflow DPO
 
-- Treating consent as the universal legal basis.
-- Treating a privacy notice as proof that processing is lawful.
-- Selecting one legal basis for several incompatible purposes.
-- Omitting the independent labour-law test for employee monitoring.
-- Saying data are anonymized when re-identification remains reasonably possible.
-- Treating pseudonymized data as outside GDPR.
-- Quoting an authority guideline as binding legislation.
+1. **Processing map.** Datový tok od získání po výmaz.
+2. **Roles.** Kdo určuje účel a prostředky, kdo jedná podle pokynů a kdo je příjemce.
+3. **Lawfulness.** Čl. 6, případně čl. 9 nebo 10, a zvláštní český předpis.
+4. **Information and rights.** Čl. 12 až 22 a ověřené výjimky.
+5. **Accountability.** Záznamy, zpracovatelská smlouva, DPIA, DPO a interní důkazy.
+6. **Security and breach.** Riziko, opatření, detekce, lhůta, ÚOOÚ a informování osob.
+7. **Transfer.** EHP, rozhodnutí o odpovídající ochraně, záruka a doplňková opatření.
 
-## Output
+## Časté pasti
 
-Lead with the conclusion per processing purpose. Then provide the mapped roles, data and flow; legal basis and special conditions; necessity and proportionality; transparency and rights; security, DPIA and retention; transfers; required actions and unresolved facts. Use user-accessible `https://` citations and never expose raw CODEXIS identifiers.
+- Jediný právní titul pro více odlišných účelů.
+- Souhlas zaměstnance bez testu svobodnosti.
+- Oznámení každého incidentu bez vyhodnocení rizika nebo naopak automatické neoznámení.
+- Cookie analýza jen podle GDPR bez předpisu elektronických komunikací.
+- Anonymizace bez ověření možnosti zpětné identifikace.
+- Dlouhý seznam rozhodnutí s nefunkčními odkazy a bez odpovědi na požadovaný formát.
+- Převzetí feedbacku tematicky mimo GDPR jako doménového právního pravidla.
+
+## Struktura odpovědi
+
+1. Popis zpracování a role.
+2. Účel, právní titul a zvláštní kategorie.
+3. Nezbytnost, minimalizace, retence a přístup.
+4. Transparentnost a práva osob.
+5. Zabezpečení, DPIA, incident a předávání.
+6. Praktické kroky a ověřené odkazy.

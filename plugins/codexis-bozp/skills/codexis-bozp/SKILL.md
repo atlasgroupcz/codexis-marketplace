@@ -29,67 +29,80 @@ i18n:
       - "Over, či naša evidencia, školenia a poskytovanie OOPP zodpovedajú aktuálnym českým predpisom."
 ---
 
-# Monitor - BOZP
+# CODEXIS — BOZP
 
-Use `cdx-cli` as the primary source for Czech and EU legal research. Assume it is installed and authenticated. Use `search`, `get` and `schema`; do not run setup probes before the first real request.
+Standalone skill pro českou bezpečnost a ochranu zdraví při práci.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Fix the relevant date, workplace, activity, employment relationship and every actor before stating a rule.
-2. Classify the issue as prevention, technical operation, occupational health, accident, inspection, liability or compensation. Handle each applicable track separately.
-3. Resolve the effective version of every statute with `/versions`. For a known statute, fetch it directly instead of starting with a broad search.
-4. Read the operative provision together with definitions, delegated regulations, cross-references and transitional provisions.
-5. Search case law when the issue turns on causal connection, the meaning of fulfilling work tasks, release from liability, evidentiary standards or compensation.
-6. Stress-test the conclusion against a private activity, a break, a contractor, a shared workplace, remote work and a special-risk operation when plausible.
-7. State the conclusion, decisive facts, duties, evidence, deadlines, responsible actor and unresolved assumptions separately.
+- Pro právní zdroje používej `cdx-cli`.
+- U známého předpisu otevři `/versions`, potom `/toc` a konkrétní `/text?part=`.
+- Technickou normu, návod výrobce, kategorizaci práce a místní provozní pravidlo vždy označ podle jejich právní váhy.
+- Hodnoty hygienických limitů a formuláře hlášení ověř v aktuální prováděcí úpravě.
 
-## Source stack
+## Research Strategy
 
-| Layer | Typical sources | Purpose |
+1. Urči pracoviště, činnost, pracovní vztah, zařízení, nebezpečí, škodní událost a všechny aktéry.
+2. Rozděl věc na prevenci, technickou bezpečnost, pracovnělékařské služby, úraz, inspekci a náhradu újmy.
+3. Sestav stack zákoník práce, zákon č. 309/2006 Sb., prováděcí předpis, technické požadavky a návod výrobce.
+4. U úrazu vytvoř časovou osu a důkazní matici.
+5. U sporu doplň judikaturu k plnění pracovních úkolů, příčinné souvislosti a zproštění odpovědnosti.
+
+## Klíčové předpisy
+
+| Předpis | CODEXIS base | Použití |
 |---|---|---|
-| Employment | Labour Code | Prevention, employee duties, workplace accidents and compensation |
-| Safety organization | Act No. 309/2006 Coll. | Further safety requirements, shared workplaces and coordinators |
-| Health protection | Public health legislation and implementing rules | Work categories, exposure limits and occupational health |
-| Technical safety | Reserved technical equipment and sector rules | Equipment-specific duties and professional competence |
-| Procedure | Inspection and administrative procedure rules | Inspection, remedial measures, offences and appeals |
-| Interpretation | Czech and EU case law, official guidance, commentary | Ambiguous concepts and evidentiary questions |
+| zákon č. 262/2006 Sb. | `cz_law/262/2006` | prevence, povinnosti, úrazy a náhrady |
+| zákon č. 309/2006 Sb. | `cz_law/309/2006` | další požadavky BOZP |
+| zákon č. 251/2005 Sb. | `cz_law/251/2005` | inspekce práce a přestupky |
+| zákon č. 373/2011 Sb. | `cz_law/373/2011` | pracovnělékařské služby |
+| vyhláška č. 79/2013 Sb. | `cz_law/79/2013` | pracovnělékařské prohlídky |
+| nařízení vlády č. 361/2007 Sb. | `cz_law/361/2007` | podmínky ochrany zdraví při práci |
+| nařízení vlády č. 101/2005 Sb. | `cz_law/101/2005` | pracoviště a pracovní prostředí |
+| nařízení vlády č. 495/2001 Sb. | `cz_law/495/2001` | osobní ochranné pracovní prostředky |
+| nařízení vlády č. 201/2010 Sb. | `cz_law/201/2010` | evidence a hlášení pracovních úrazů |
 
-Do not present an internal policy, technical standard or official guidance as a statute. Explain its legal role.
+## Hard Rules
 
-## Decision checks
+- Nejdřív identifikuj konkrétní nebezpečí a teprve potom kontrolní opatření.
+- Pracovní úraz neposuzuj jen podle místa; ověř plnění pracovních úkolů, přímou souvislost, příčinu a výjimky.
+- Školení, OOPP, zdravotní způsobilost a technický stav zařízení jsou samostatné povinnosti.
+- Interní směrnice nemůže snížit zákonný standard.
+- U sdíleného pracoviště určuj povinnosti každého zaměstnavatele a koordinaci zvlášť.
+- U home office popiš, co zaměstnavatel reálně může kontrolovat a dokumentovat.
+- Feedback přiřazený monitoru, ale tematicky mimo BOZP, nepoužívej jako doménové pravidlo.
 
-### Workplace accident
+## Workflow BOZP specialisty
 
-- Identify the exact activity at the moment of injury and its temporal, local and substantive connection to work.
-- Compare the declared remote-work arrangement with the actual work schedule and working-time records.
-- Separate reporting and recording from the legal conclusion that an event is a workplace accident.
-- Check breaks, commuting, private deviations, remote-work arrangements and evidence available to both sides.
-- Assign the burden of allegation and proof for each disputed fact and distinguish the roles of the employer, statutory insurer and court.
-- Analyze employer liability and every claimed ground for full or partial release independently.
-- Cover the accident record, notifications, investigation, corrective action and heads of compensation.
+1. **Scope.** Zaměstnanec, dohodář, OSVČ, dodavatel, návštěva nebo jiná osoba.
+2. **Hazard.** Stroj, chemická látka, práce ve výšce, doprava, ergonomie, násilí, klima nebo vzdálené pracoviště.
+3. **Risk controls.** Eliminace, technické opatření, organizace práce, školení a OOPP v tomto pořadí.
+4. **Competence.** Odborná způsobilost, oprávnění, zdravotní způsobilost a návod.
+5. **Incident.** První pomoc, zajištění místa, evidence, hlášení, šetření a nápravná opatření.
+6. **Liability.** Příčinná souvislost, rozsah újmy, možné zproštění a jednotlivé nároky.
+7. **Output.** Odpovědná osoba, dokument, lhůta a kontrolovatelný další krok.
 
-### Prevention and shared workplaces
+## Pracovní úraz
 
-- Identify who controls the workplace and which employers, contractors and self-employed persons are present.
-- Allocate information, coordination and prevention duties to named actors instead of saying only that everyone is responsible.
-- Link each proposed measure to an identified risk and verify whether a stricter sector rule applies.
+- Zapiš činnost bezprostředně před úrazem, pokyn, místo, čas, svědky a mechanismus zranění.
+- Odděl uznání pracovního úrazu od evidence, hlášení a výpočtu náhrady.
+- U možného zproštění ověř poučení, kontrolu, příčinu a skutečný vliv porušení.
+- Nezaměň pracovní úraz s úrazem na cestě do zaměstnání a zpět.
 
-### Training, equipment and occupational health
+## Časté pasti
 
-- Distinguish training content, frequency, documentation and verification of knowledge.
-- Distinguish collective protection from personal protective equipment and explain why the selected measure is necessary.
-- Determine the work category, relevant risk factor and medical-service regime before giving an examination schedule.
-- Verify every interval, limit and threshold in the effective text. Never supply one from memory.
+- Univerzální checklist bez vazby na konkrétní riziko.
+- Závěr o úrazu jen podle toho, že nastal na pracovišti.
+- OOPP jako první a jediné opatření.
+- Školení bez ověření srozumitelnosti, konkrétnosti a dokumentace.
+- Přehlédnutí jiného zaměstnavatele na sdíleném pracovišti.
+- Uvedení zastaralého formuláře nebo hygienického limitu.
 
-## Common mistakes
+## Struktura odpovědi
 
-- Treating an injury during scheduled remote work as automatically occupational.
-- Citing only the Labour Code while omitting implementing or technical rules.
-- Confusing evidence of an accident with the substantive test for employer liability.
-- Giving a generic checklist without assigning duties to the employer, employee, contractor or coordinator.
-- Mixing versions from different dates or ignoring a transitional provision.
-- Relying on the title of a provision without reading its conditions and exceptions.
-
-## Output
-
-Lead with a short conditional conclusion. Then provide the legal classification, verified source stack, duties by actor, practical procedure, evidence and open factual questions. Link cited sources with the resolved `https://` URL returned by `cdx-cli`; never expose `cdx://` identifiers or raw document IDs to the user.
+1. Přímý závěr a klasifikace rizika nebo události.
+2. Rozhodné osoby, pracoviště a činnost.
+3. Povinnosti podle hierarchie kontrolních opatření.
+4. Dokumentace, školení, zdravotní a technické požadavky.
+5. Incidentní postup, hlášení, náhrady a odpovědnost.
+6. Nevyjasněná fakta a další krok.

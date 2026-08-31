@@ -29,52 +29,78 @@ i18n:
       - "Aké nároky možno uplatniť pri neoprávnenom použití ochrannej známky?"
 ---
 
-# Monitor - Ochrana duševního vlastnictví
+# CODEXIS — Ochrana duševního vlastnictví
 
-Use `cdx-cli` for legal sources and official Czech, EU and international IP registers when the existence or status of a registered right matters.
+Standalone skill pro české a evropské právo duševního vlastnictví.
 
-## Mandatory analysis
+## Operating Assumptions
 
-1. Identify the concrete result, its creators, commissioning or employment context, creation date, territory, use and contractual chain.
-2. Classify each possible protection separately: copyright, software, database right, invention, utility model, design, trademark, trade secret or unfair competition.
-3. For each applicable regime, determine creation or registration, ownership, exercise of rights, duration, territory, limitations and enforcement.
-4. Resolve the effective Czech and EU rules at the relevant date. Check international instruments only where territory or priority makes them relevant.
-5. Verify registry status, priority, classes, proprietor and procedural state for registered rights.
-6. Read every licence or assignment against mandatory rules, scope, exclusivity, territory, duration, sublicensing, modifications and termination.
-7. Analyze overlaps without assuming that one form of protection excludes another.
+- Pro legislativu, judikaturu, komentáře a literaturu používej `cdx-cli`.
+- Registrovaná práva ověřuj v příslušném českém, unijním nebo mezinárodním registru.
+- U online užití vždy ověř území, platformu, smluvní podmínky a přeshraniční prvek.
+- Tool calls jsou interní práce; uživatel musí dostat dokončenou odpověď, ne serializovaný nástrojový payload.
 
-For copyright, test originality and authorship. For inventions, test novelty, inventive step, industrial applicability and exclusions. Where several people or employers are involved, map co-authorship, co-inventorship and every employment relationship separately.
+## Research Strategy
 
-## Employee-created results
+1. Identifikuj výsledek, tvůrce, objednatele nebo zaměstnavatele, datum, území, užití a smluvní řetězec.
+2. Klasifikuj samostatně autorské právo, software, databázi, patent, užitný vzor, design, ochrannou známku, obchodní tajemství a nekalou soutěž.
+3. U každého režimu určuj vznik nebo registraci, nositele, výkon práv, trvání, území, omezení a nároky.
+4. Ověř českou, unijní a případně mezinárodní vrstvu k rozhodnému datu.
+5. U licence nebo převodu projdi rozsah, výhradnost, území, dobu, podlicenci, změny a ukončení.
 
-| Result | Starting regime | Required checks |
+## Klíčové předpisy
+
+| Předpis | CODEXIS base | Použití |
 |---|---|---|
-| Copyright work or software | Copyright Act | Work duties, author, employer's exercise of economic rights, personal rights and special software rules |
-| Invention | Inventions and Rationalisation Proposals Act | Technical solution, work task, notification, employer's exercise, statutory period and remuneration |
-| Design | Design legislation | Creation in employment, entitlement to registration and contractual allocation |
-| Trade secret or know-how | Civil Code, labour duties and contract | Secrecy, value, protective measures, access and permitted disclosure |
+| zákon č. 121/2000 Sb. | `cz_law/121/2000` | autorské právo, software a databáze |
+| zákon č. 527/1990 Sb. | `cz_law/527/1990` | vynálezy a patenty |
+| zákon č. 478/1992 Sb. | `cz_law/478/1992` | užitné vzory |
+| zákon č. 207/2000 Sb. | `cz_law/207/2000` | průmyslové vzory |
+| zákon č. 441/2003 Sb. | `cz_law/441/2003` | ochranné známky |
+| zákon č. 452/2001 Sb. | `cz_law/452/2001` | označení původu a zeměpisná označení |
+| zákon č. 89/2012 Sb. | `cz_law/89/2012` | licence, obchodní tajemství a nekalá soutěž |
+| nařízení (EU) 2017/1001 | `EU` | ochranná známka EU |
 
-Never merge an employee work with an employee invention. Determine whether the creator is an employee, contractor, officer, student or another person. For inventions, verify the form, required content, delivery and proof of notification; the employer's timely exercise; consequences of inaction; and the basis, maturity, limitation period and contractual limits of fair or additional remuneration. For software, test the required technical effect and audit applicable open-source licences alongside copyright, patent, database and trade-secret layers.
+## Hard Rules
 
-For know-how, distinguish information that meets every trade-secret condition from knowledge protected only by contract or labour duties. Check permitted whistleblowing, employee mobility and post-employment use. For cross-border creation, separate governing employment law, entitlement to file, each national or regional application and the territorial acquisition of rights.
+- Jeden výsledek může být chráněn více režimy současně.
+- Autor, nositel majetkových práv, vykonavatel práv a vlastník nosiče nejsou automaticky tatáž osoba.
+- Vlastnictví kopie nedává právo dílo rozmnožovat, sdělovat nebo měnit.
+- U zaměstnaneckého nebo objednaného výsledku nejdřív klasifikuj typ práva; pravidla se liší pro dílo, software a průmyslové právo.
+- Výjimku nebo zákonnou licenci vykládej pro konkrétní způsob užití, ne podle uživatelova označení.
+- Při požadavku na „veškerou judikaturu“ dolož vyhledávací strategii, duplicity a hranici úplnosti.
 
-## Infringement and remedies
+## Workflow IP specialisty
 
-- Identify the protected subject matter and compare legally relevant features, not just overall similarity.
-- Check consent, licence scope, exhaustion, statutory exceptions, prior rights and territorial reach.
-- Separate injunction, removal, information, damages, unjust enrichment, publication and interim relief.
-- Preserve evidence and identify the party entitled to sue before quantifying a claim.
-- For online uses, distinguish the direct user, intermediary and platform and assess each legal basis separately.
+1. **Předmět.** Co přesně vzniklo a které prvky jsou chránitelné.
+2. **Vznik a priorita.** Automatická ochrana, přihláška, registrace, zveřejnění a novost.
+3. **Nositel.** Autor, zaměstnavatel, objednatel, nabyvatel nebo společný nositel.
+4. **Užití.** Rozmnožení, rozšiřování, sdělování, zpracování, těžba databáze nebo označení v obchodním styku.
+5. **Oprávnění.** Licence, výjimka, vyčerpání, souhlas nebo zákonné omezení.
+6. **Zásah a nároky.** Aktivní legitimace, důkazy, zákaz, informace, odstranění následků, peněžité nároky a předběžné opatření.
 
-## Common mistakes
+## Judikatura a web scraping
 
-- Calling every creative or technical output a copyright work.
-- Treating registration as necessary for copyright or irrelevant for patents and trademarks.
-- Assuming the employer owns every employee-created result under one uniform rule.
-- Omitting notification periods, priority, renewal, additional remuneration or territorial scope.
-- Treating a contractual permission as broader than its proven licence terms.
-- Ignoring cumulative protection, open-source conditions or trade-secret loss through disclosure.
+Při rešerši judikatury nebo web/data scrapingu načti `references/judikatura-a-web-scraping.md`.
 
-## Output
+## Časté pasti
 
-Lead with the classification and rights holder for each regime. Then show creation or registration, chain of title, permitted use, limitations, deadlines, evidence and remedies. Link CODEXIS sources and official registry records with user-accessible `https://` URLs; never expose raw internal identifiers.
+- Závěr jen podle autorského zákona bez testu databázového práva, smlouvy a nekalé soutěže.
+- Převod vlastnictví nosiče zaměněný za licenci.
+- Ochranná známka ověřená jen podle názvu bez registru a tříd.
+- Licence bez územního a časového rozsahu.
+- Seznam judikatury bez odstranění duplicit a ověření, proč je každé rozhodnutí relevantní.
+- Vrácení raw tool calls místo odpovědi.
+
+## Struktura odpovědi
+
+1. Klasifikace všech možných práv.
+2. Nositel a řetězec oprávnění.
+3. Chráněné jednání a aplikovaná výjimka nebo licence.
+4. Doba, území a registrace.
+5. Zásah, důkazy, obrany a nároky.
+6. Limity rešerše a přesné citace.
+
+## Related references
+
+- Judikatura a web scraping: `references/judikatura-a-web-scraping.md`.

@@ -29,48 +29,70 @@ i18n:
       - "Ako rekodifikácia ovplyvnila právnu formu a konanie staršej právnickej osoby?"
 ---
 
-# Monitor - Rekodifikace
+# CODEXIS — Rekodifikace
 
-Use `cdx-cli` to retrieve every relevant historic version, amendment and transitional provision.
+Standalone skill pro časové střety starého a nového českého soukromého práva.
 
-## Mandatory temporal analysis
+## Operating Assumptions
 
-1. Build a dated timeline of formation, acquired rights, continuing effects, breach, exercise of rights, proceedings and decision.
-2. Classify each event separately. Do not assign one governing law to the whole relationship without testing later facts.
-3. Identify the old rule, new rule, general transitional provision and every subject-specific transitional rule.
-4. Apply the specific transitional rule before the general one. Trace every cross-reference to the act it names.
-5. Separate substantive rights, legal effects, limitation, procedure, evidence and registry consequences.
-6. Test vested rights, legitimate expectations, true and apparent retroactivity and constitutional limits where relevant.
-7. Verify current case law interpreting the exact transitional provision and state any unresolved conflict.
+- Pro každou starou a novou normu používej `cdx-cli get .../versions`.
+- Neporovnávej jen současný a poslední starý text; načti i přechodná a doprovodná ustanovení.
+- Starý a nový právní pojem nepovažuj za totožný jen kvůli podobnému názvu.
+- U judikatury ověř, který časový režim a který konkrétní přechod řešila.
 
-## Timeline matrix
+## Research Strategy
 
-| Layer | Question |
-|---|---|
-| Formation | Which law governed creation and validity? |
-| Continuing relationship | Does the old regime continue or does the new regime govern future effects? |
-| Later legal fact | Which law governs a later breach, notice, death, transfer or modification? |
-| Limitation | When did the period start, which transition applies and did a long-stop rule intervene? |
-| Procedure | Which procedural law applies when proceedings begin or continue? |
-| Registry | Was transformation, adaptation or registration required and by when? |
+1. Vytvoř časovou osu vzniku vztahu, nabytí práva, pokračujících účinků, porušení, uplatnění nároku, řízení a rozhodnutí.
+2. Každou událost klasifikuj samostatně.
+3. Identifikuj starou normu, novou normu, obecné přechodné ustanovení a zvláštní přechodné pravidlo.
+4. Použij zvláštní přechodné pravidlo před obecným.
+5. Odděl hmotné právo, právní účinky, promlčení, proces, důkazy a rejstříkové následky.
 
-## Required checks
+## Klíčové předpisy
 
-- For Civil Code recodification, read the relevant part of sections 3028 through 3079 and any special act instead of citing the range generally.
-- For property, companies, leases, consumers, family matters or legal persons, search for a special transitional provision before using a general formula.
-- Distinguish the creation of a right from its exercise and from a remedy for later breach.
-- Calculate every period from verified statutory language and dated facts. Preserve qualifiers such as earliest, latest and continuously.
-- Do not infer impermissible retroactivity merely because a new rule affects future consequences of an existing relationship.
+| Předpis | CODEXIS base | Použití |
+|---|---|---|
+| zákon č. 89/2012 Sb. | `cz_law/89/2012` | občanský zákoník a jeho přechody |
+| zákon č. 90/2012 Sb. | `cz_law/90/2012` | obchodní korporace |
+| zákon č. 292/2013 Sb. | `cz_law/292/2013` | zvláštní řízení soudní |
+| zákon č. 304/2013 Sb. | `cz_law/304/2013` | veřejné rejstříky |
+| zákon č. 303/2013 Sb. | `cz_law/303/2013` | doprovodné změny rekodifikace |
+| zákon č. 40/1964 Sb. | `cz_law/40/1964` | dřívější občanský zákoník |
+| zákon č. 513/1991 Sb. | `cz_law/513/1991` | dřívější obchodní zákoník |
 
-## Common mistakes
+## Hard Rules
 
-- Applying only the date of contract formation to every later event.
-- Quoting a general transitional provision while missing a special one.
-- Mixing historical and current versions in one conclusion.
-- Treating substantive and procedural temporal rules as identical.
-- Labeling every retrospective effect unconstitutional without the proper test.
-- Omitting limitation, registry adaptation or protection of third parties.
+- Jediný právní vztah může mít vznik, obsah, porušení i proces podle různých časových pravidel.
+- § 3028 až 3079 občanského zákoníku necituj jako blok; najdi konkrétní použitelné ustanovení.
+- Pravou a nepravou retroaktivitu rozliš až po identifikaci zákonného přechodu.
+- Promlčení a prekluzi řeš odděleně od vzniku a obsahu práva.
+- Terminologickou náhradu neprezentuj jako věcnou kontinuitu bez srovnání skutkových podstat.
+- Při absenci doménového feedbacku nevytvářej kategorický výklad bez dohledaného přechodného pravidla a judikatury.
 
-## Output
+## Workflow temporal analysis
 
-Lead with a one-sentence choice-of-law conclusion for each event. Then show the timeline, old and new rules, specific and general transition, constitutional check, calculations and uncertainties. Use resolved `https://` citations and never raw CODEXIS identifiers.
+1. **Events.** Každá právně relevantní událost s přesným datem.
+2. **Old law.** Starý institut, jeho podmínky a účinky.
+3. **New law.** Nový institut a rozdíl proti starému.
+4. **Transition.** Zvláštní a obecné přechodné ustanovení.
+5. **Constitutional check.** Nabytá práva, legitimní očekávání a zákaz pravé retroaktivity.
+6. **Procedure.** Zahájení řízení, příslušnost, dokazování a opravné prostředky.
+7. **Case law.** Rozhodnutí k přesnému přechodnému ustanovení.
+
+## Časté pasti
+
+- Jedno datum a jeden zákon pro celý dlouhodobý vztah.
+- Použití § 3028 jako univerzální odpovědi.
+- Směšování staré a nové terminologie bez věcného srovnání.
+- Automatický restart promlčecí doby k 1. 1. 2014.
+- Použití dnešní judikatury bez ověření, že vykládá rozhodné staré právo.
+- Přehlédnutí zvláštního přechodu v jiném zákoně.
+
+## Struktura odpovědi
+
+1. Dated timeline.
+2. Právní kvalifikace každé události.
+3. Staré a nové pravidlo.
+4. Konkrétní přechodné ustanovení.
+5. Hmotněprávní, promlčecí, procesní a rejstříkový následek odděleně.
+6. Judikatura, ústavní limit a zbývající nejistota.
