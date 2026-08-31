@@ -1,0 +1,18 @@
+{
+  "name": "codexis-dusevni-vlastnictvi",
+  "iconPath": "skills/codexis-dusevni-vlastnictvi/icon.svg",
+  "version": "1.0.0",
+  "description": "Czech intellectual property law analysis with CODEXIS",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["codexis", "copyright", "patent", "trademark", "intellectual-property", "czech"],
+  "license": "PROPRIETARY",
+  "accessible-part": "MONITOR_DUSEVNI_VLASTNICTVI_AI",
+  "tags": ["legal", "czech", "intellectual-property"],
+  "i18n": {
+    "cs": { "displayName": "Ochrana duševního vlastnictví AI", "description": "Analýza autorského, patentového, známkového a dalšího práva duševního vlastnictví s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "intellectual-property": "Duševní vlastnictví" } },
+    "en": { "displayName": "Intellectual Property AI", "description": "Analysis of Czech copyright, patent, trademark and other intellectual property law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "intellectual-property": "Intellectual Property" } },
+    "sk": { "displayName": "Ochrana duševného vlastníctva AI", "description": "Analýza autorského, patentového, známkového a ďalšieho práva duševného vlastníctva s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "intellectual-property": "Duševné vlastníctvo" } }
+  },
+  "dependencies": ["codexis"],
+  "skills": "./skills"
+}

@@ -1,0 +1,18 @@
+{
+  "name": "codexis-cirkev",
+  "iconPath": "skills/codexis-cirkev/icon.svg",
+  "version": "1.0.0",
+  "description": "Czech church and religious law analysis with CODEXIS",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["codexis", "church", "religion", "cirkev", "czech"],
+  "license": "PROPRIETARY",
+  "accessible-part": "MONITOR_CIRKEV_AI",
+  "tags": ["legal", "czech", "religion"],
+  "i18n": {
+    "cs": { "displayName": "Církev AI", "description": "Analýza českého církevního a náboženského práva s využitím databáze CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "religion": "Církve" } },
+    "en": { "displayName": "Church Law AI", "description": "Analysis of Czech church and religious law using the CODEXIS database.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "religion": "Religion" } },
+    "sk": { "displayName": "Cirkev AI", "description": "Analýza českého cirkevného a náboženského práva s využitím databázy CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "religion": "Cirkvi" } }
+  },
+  "dependencies": ["codexis"],
+  "skills": "./skills"
+}

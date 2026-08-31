@@ -18,6 +18,34 @@ REPO = Path(__file__).resolve().parents[2]
 PLUGINS = REPO / "plugins"
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
 
+MONITOR_PLUGINS = {
+    "codexis-bozp": ("BOZP AI", "MONITOR_BOZP_AI"),
+    "codexis-cirkev": ("Církev AI", "MONITOR_CIRKEV_AI"),
+    "codexis-dane": ("Daně AI", "MONITOR_DANE_AI"),
+    "codexis-dusevni-vlastnictvi": (
+        "Ochrana duševního vlastnictví AI",
+        "MONITOR_DUSEVNI_VLASTNICTVI_AI",
+    ),
+    "codexis-gdpr": ("Ochrana osobních údajů AI", "MONITOR_GDPR_AI"),
+    "codexis-obecni-samosprava": (
+        "Obecní samospráva AI",
+        "MONITOR_OBECNI_SAMOSPRAVA_AI",
+    ),
+    "codexis-personalistika": ("Personalistika AI", "MONITOR_PERSONALISTIKA_AI"),
+    "codexis-rekodifikace": ("Rekodifikace AI", "MONITOR_REKODIFIKACE_AI"),
+    "codexis-skolstvi": ("Školství AI", "MONITOR_SKOLSTVI_AI"),
+    "codexis-stavebnictvi": ("Stavebnictví AI", "MONITOR_STAVEBNICTVI_AI"),
+    "codexis-ucetnictvi": ("Účetnictví AI", "MONITOR_UCETNICTVI_AI"),
+    "codexis-verejne-zakazky": (
+        "Veřejné zakázky AI",
+        "MONITOR_VEREJNE_ZAKAZKY_AI",
+    ),
+    "codexis-zivotni-prostredi": (
+        "Životní prostředí AI",
+        "MONITOR_ZIVOTNI_PROSTREDI_AI",
+    ),
+}
+
 
 def _marketplace_plugins() -> list[str]:
     data = json.loads(MARKETPLACE.read_text())
@@ -82,6 +110,44 @@ def _skills_on_disk(name: str) -> set[str]:
 def test_marketplace_lists_plugins():
     # Guard against the guard matching nothing (e.g. a moved manifest).
     assert _PLUGINS, "marketplace.json lists no plugins - is the manifest path right?"
+
+
+def test_marketplace_has_exact_monitor_plugin_contracts():
+    marketplace = json.loads(MARKETPLACE.read_text())
+    marketplace_names = {entry["name"] for entry in marketplace["plugins"]}
+    marketplace_uuids = [entry["uuid"] for entry in marketplace["plugins"]]
+    manifests = {
+        path.parents[1].name: json.loads(path.read_text())
+        for path in PLUGINS.glob("*/.claude-plugin/plugin.json")
+    }
+    actual = {
+        name: manifest["accessible-part"]
+        for name, manifest in manifests.items()
+        if str(manifest.get("accessible-part", "")).startswith("MONITOR_")
+    }
+    expected = {
+        name: license_part for name, (_, license_part) in MONITOR_PLUGINS.items()
+    }
+
+    assert actual == expected
+
+    assert len(marketplace_uuids) == len(set(marketplace_uuids))
+
+    for name, (display_name, license_part) in MONITOR_PLUGINS.items():
+        manifest = manifests[name]
+        marketplace_entry = next(
+            entry for entry in marketplace["plugins"] if entry["name"] == name
+        )
+        assert name in marketplace_names
+        assert marketplace_entry["uuid"]
+        assert marketplace_entry["source"] == f"./plugins/{name}"
+        assert manifest["name"] == name
+        assert manifest["version"] == "1.0.0"
+        assert manifest["accessible-part"] == license_part
+        assert manifest["dependencies"] == ["codexis"]
+        assert manifest["i18n"]["cs"]["displayName"] == display_name
+        assert (PLUGINS / name / manifest["iconPath"]).is_file()
+        assert len(list((PLUGINS / name / "skills").glob("*/SKILL.md"))) == 1
 
 
 @pytest.mark.parametrize("name", _PLUGINS)
