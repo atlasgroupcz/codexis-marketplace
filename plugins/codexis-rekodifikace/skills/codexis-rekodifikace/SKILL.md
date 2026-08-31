@@ -1,7 +1,7 @@
 ---
 uuid: 6caec9ec-a2ec-4e10-bb21-acf94cc7df54
 name: codexis-rekodifikace
-icon: icon.svg
+icon: icon.webp
 version: 1.1.0
 jurisdictions: [CZ]
 description: Use when a Czech question concerns the recodified private law in the Civil Code, including ownership, servitudes, obligations, defective performance, damages, comparison of former and current law, transitional provisions, limitation periods or retroactivity. Standalone private-law and temporal methodology using CODEXIS.

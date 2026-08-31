@@ -1,5 +1,5 @@
 {
-  "name": "codexis-verejne-zakazky", "iconPath": "skills/codexis-verejne-zakazky/icon.svg", "version": "1.0.0",
+  "name": "codexis-verejne-zakazky", "iconPath": "skills/codexis-verejne-zakazky/icon.webp", "version": "1.0.0",
   "description": "Czech public procurement law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "public-procurement", "zzvz", "verejne-zakazky", "czech"], "license": "PROPRIETARY",

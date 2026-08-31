@@ -1,6 +1,6 @@
 {
   "name": "codexis-dane",
-  "iconPath": "skills/codexis-dane/icon.svg",
+  "iconPath": "skills/codexis-dane/icon.webp",
   "version": "1.0.0",
   "description": "Czech tax law analysis with CODEXIS",
   "author": {

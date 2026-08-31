@@ -1,7 +1,7 @@
 ---
 uuid: a892e30a-aa51-4e58-8b13-979d9bd897c1
 name: codexis-obecni-samosprava
-icon: icon.svg
+icon: icon.webp
 version: 1.0.0
 jurisdictions: [CZ]
 description: Use when a Czech legal question concerns municipalities, municipal councils, boards, mayors, municipal offices, independent or delegated powers, municipal property, local ordinances, elections, access to information, contributory organizations or municipal administrative procedure. Standalone municipal-law methodology using CODEXIS.

@@ -1,7 +1,7 @@
 ---
 uuid: 2f9253f9-2a72-4e95-ac25-1699f5f940ed
 name: codexis-bozp
-icon: icon.svg
+icon: icon.webp
 version: 1.1.0
 jurisdictions: [CZ, EU]
 description: Use when a Czech legal question concerns occupational health and safety, prevention of workplace risks, work accidents, remote-work injuries, safety training, protective equipment, occupational medical services, work categories, shared workplaces, inspections or employer liability. Standalone BOZP methodology using CODEXIS.

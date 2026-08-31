@@ -1,5 +1,5 @@
 {
-  "name": "codexis-rekodifikace", "iconPath": "skills/codexis-rekodifikace/icon.svg", "version": "1.0.0",
+  "name": "codexis-rekodifikace", "iconPath": "skills/codexis-rekodifikace/icon.webp", "version": "1.0.0",
   "description": "Czech private-law recodification and transitional-law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "recodification", "transitional-law", "private-law", "czech"], "license": "PROPRIETARY",
