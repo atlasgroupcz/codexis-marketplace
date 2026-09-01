@@ -1,0 +1,15 @@
+{
+  "name": "codexis-verejne-zakazky", "iconPath": "skills/codexis-verejne-zakazky/icon.webp", "version": "1.0.0",
+  "description": "Czech public procurement law analysis with CODEXIS",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["codexis", "public-procurement", "zzvz", "verejne-zakazky", "czech"], "license": "PROPRIETARY",
+  "accessible-part": "MONITOR_VEREJNE_ZAKAZKY_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-verejne-zakazky" },
+  "tags": ["legal", "czech", "public-procurement"],
+  "i18n": {
+    "cs": { "displayName": "Monitor - Veřejné zakázky", "description": "Analýza českého práva veřejných zakázek, zadávacích postupů a smluvních změn s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "public-procurement": "Veřejné zakázky" } },
+    "en": { "displayName": "Monitor - Public Procurement", "description": "Analysis of Czech public procurement procedures and contract changes using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "public-procurement": "Public Procurement" } },
+    "sk": { "displayName": "Monitor - Verejné obstarávanie", "description": "Analýza českého práva verejného obstarávania, postupov a zmien zmlúv s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "public-procurement": "Verejné obstarávanie" } }
+  },
+  "dependencies": ["codexis"], "skills": "./skills"
+}

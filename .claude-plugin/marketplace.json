@@ -1049,6 +1049,474 @@
           }
         }
       }
+    },
+    {
+      "uuid": "fe9ba7bf-bc62-4093-af9e-c017b6d4fbc9",
+      "name": "codexis-bozp",
+      "description": "Occupational health and safety law analysis with CODEXIS",
+      "source": "./plugins/codexis-bozp",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - BOZP",
+          "description": "Právní analýza bezpečnosti a ochrany zdraví při práci.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "occupational-safety": "BOZP"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - OHS",
+          "description": "Czech occupational health and safety legal analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "occupational-safety": "OHS"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - BOZP",
+          "description": "Právna analýza bezpečnosti a ochrany zdravia pri práci.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "occupational-safety": "BOZP"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "1f437c15-6ab7-436b-83b4-8c388313f1b8",
+      "name": "codexis-cirkev",
+      "description": "Church and religious law analysis with CODEXIS",
+      "source": "./plugins/codexis-cirkev",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Církev",
+          "description": "Právní analýza církví, náboženských společností a jejich právnických osob.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "religion": "Církve"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Church Law",
+          "description": "Czech church and religious law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "religion": "Religion"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Cirkev",
+          "description": "Právna analýza cirkví, náboženských spoločností a ich právnických osôb.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "religion": "Cirkvi"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "eaba4559-d5e5-4d47-a8b5-ab45fe4569f3",
+      "name": "codexis-dane",
+      "description": "Czech tax law analysis with CODEXIS",
+      "source": "./plugins/codexis-dane",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Daně",
+          "description": "Analýza českých daňových předpisů, praxe a judikatury.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "tax": "Daně"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Tax",
+          "description": "Czech tax law, practice and case-law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "tax": "Tax"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Dane",
+          "description": "Analýza českých daňových predpisov, praxe a judikatúry.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "tax": "Dane"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "c6ac5887-6794-41c9-8cbd-cdbb083210e8",
+      "name": "codexis-obecni-samosprava",
+      "description": "Municipal government law analysis with CODEXIS",
+      "source": "./plugins/codexis-obecni-samosprava",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Obecní samospráva",
+          "description": "Analýza práva obcí, jejich orgánů, majetku a veřejné správy.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "municipality": "Obce"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Municipal Government",
+          "description": "Czech municipal government law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "municipality": "Municipalities"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Obecná samospráva",
+          "description": "Analýza práva obcí, ich orgánov, majetku a verejnej správy.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "municipality": "Obce"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "a4fb599e-42e2-423b-a873-c61013c2ba28",
+      "name": "codexis-dusevni-vlastnictvi",
+      "description": "Intellectual property law analysis with CODEXIS",
+      "source": "./plugins/codexis-dusevni-vlastnictvi",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Ochrana duševního vlastnictví",
+          "description": "Analýza autorského, patentového, známkového a dalšího práva duševního vlastnictví.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "intellectual-property": "Duševní vlastnictví"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Intellectual Property",
+          "description": "Czech and EU intellectual property law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "intellectual-property": "Intellectual Property"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Ochrana duševného vlastníctva",
+          "description": "Analýza autorského, patentového, známkového a ďalšieho práva duševného vlastníctva.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "intellectual-property": "Duševné vlastníctvo"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "49a2f5fd-88b4-4339-99f9-b988d2e1611e",
+      "name": "codexis-gdpr",
+      "description": "Data protection law analysis with CODEXIS",
+      "source": "./plugins/codexis-gdpr",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Ochrana osobních údajů",
+          "description": "Analýza GDPR a českého práva ochrany osobních údajů.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "privacy": "Osobní údaje"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Data Protection",
+          "description": "GDPR and Czech data protection law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "privacy": "Data Protection"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Ochrana osobných údajov",
+          "description": "Analýza GDPR a českého práva ochrany osobných údajov.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "privacy": "Osobné údaje"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "b65f4ae7-64c9-4ba2-a4f3-24dc924b7cc2",
+      "name": "codexis-personalistika",
+      "description": "Employment and HR law analysis with CODEXIS",
+      "source": "./plugins/codexis-personalistika",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Personalistika",
+          "description": "Analýza pracovního práva, mezd, odvodů a personální agendy.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "employment": "Personalistika"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - HR",
+          "description": "Czech employment, payroll and HR law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "employment": "Employment"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Personalistika",
+          "description": "Analýza pracovného práva, miezd, odvodov a personálnej agendy.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "employment": "Personalistika"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "6548f4f4-adee-4fcb-8d61-0d20890f958e",
+      "name": "codexis-rekodifikace",
+      "description": "Private-law recodification analysis with CODEXIS",
+      "source": "./plugins/codexis-rekodifikace",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Rekodifikace",
+          "description": "Analýza přechodných ustanovení a rekodifikace českého soukromého práva.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "private-law": "Rekodifikace"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Recodification",
+          "description": "Czech private-law recodification and transitional-law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "private-law": "Recodification"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Rekodifikácia",
+          "description": "Analýza prechodných ustanovení a rekodifikácie českého súkromného práva.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "private-law": "Rekodifikácia"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "a8ad66ac-2be4-4f1d-9421-ddc916c633b2",
+      "name": "codexis-stavebnictvi",
+      "description": "Construction law analysis with CODEXIS",
+      "source": "./plugins/codexis-stavebnictvi",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Stavebnictví",
+          "description": "Analýza stavebního práva, povolování a souvisejících postupů.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "construction": "Stavebnictví"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Construction",
+          "description": "Czech construction and permitting law analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "construction": "Construction"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Stavebníctvo",
+          "description": "Analýza stavebného práva, povoľovania a súvisiacich postupov.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "construction": "Stavebníctvo"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "66fb46e1-f76e-49ed-8081-a60254e1a2ae",
+      "name": "codexis-verejne-zakazky",
+      "description": "Public procurement law analysis with CODEXIS",
+      "source": "./plugins/codexis-verejne-zakazky",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Veřejné zakázky",
+          "description": "Analýza veřejných zakázek, zadávacích postupů a změn smluv.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "public-procurement": "Veřejné zakázky"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Public Procurement",
+          "description": "Czech public procurement law and procedure analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "public-procurement": "Public Procurement"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Verejné obstarávanie",
+          "description": "Analýza verejného obstarávania, postupov a zmien zmlúv.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "public-procurement": "Verejné obstarávanie"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "40548d30-a1c1-4fe9-93d2-4bf8e2421515",
+      "name": "codexis-ucetnictvi",
+      "description": "Accounting law and practice analysis with CODEXIS",
+      "source": "./plugins/codexis-ucetnictvi",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Účetnictví",
+          "description": "Analýza účetních předpisů, standardů a daňových vazeb.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "accounting": "Účetnictví"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Accounting",
+          "description": "Czech accounting law, standards and tax-link analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "accounting": "Accounting"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Účtovníctvo",
+          "description": "Analýza účtovných predpisov, štandardov a daňových väzieb.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "accounting": "Účtovníctvo"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "a60eac76-5dfc-435b-8315-c11cb4f59af1",
+      "name": "codexis-skolstvi",
+      "description": "Education law analysis with CODEXIS",
+      "source": "./plugins/codexis-skolstvi",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Školství",
+          "description": "Analýza školského práva, rozhodování škol a práv žáků.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "education": "Školství"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Education",
+          "description": "Czech education law and school-decision analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "education": "Education"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Školstvo",
+          "description": "Analýza školského práva, rozhodovania škôl a práv žiakov.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "education": "Školstvo"
+          }
+        }
+      }
+    },
+    {
+      "uuid": "695028ef-b4b7-4e82-9939-0772a2a79be3",
+      "name": "codexis-zivotni-prostredi",
+      "description": "Environmental law analysis with CODEXIS",
+      "source": "./plugins/codexis-zivotni-prostredi",
+      "category": "legal",
+      "i18n": {
+        "cs": {
+          "displayName": "Monitor - Životní prostředí",
+          "description": "Analýza práva životního prostředí, EIA, JES a povolování.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "environment": "Životní prostředí"
+          }
+        },
+        "en": {
+          "displayName": "Monitor - Environment",
+          "description": "Czech and EU environmental law, EIA and permitting analysis.",
+          "tagLabels": {
+            "legal": "Law",
+            "czech": "Czech Republic",
+            "environment": "Environment"
+          }
+        },
+        "sk": {
+          "displayName": "Monitor - Životné prostredie",
+          "description": "Analýza práva životného prostredia, EIA, JES a povoľovania.",
+          "tagLabels": {
+            "legal": "Právo",
+            "czech": "Česko",
+            "environment": "Životné prostredie"
+          }
+        }
+      }
     }
   ]
 }

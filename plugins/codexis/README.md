@@ -22,7 +22,7 @@ Odborné publikace a komentáře LIBERIS k jednotlivým zákonům - pro hlubší
 ## K čemu se to hodí v praxi?
 
 - **Právní rešerše** - rychle ověříte, co říká zákon, jak ho vykládají soudy a co k tomu píší odborníci.
-- **Daně a účetnictví** - daňové a účetní dotazy řeší samostatné odborné části pluginu, které kombinují předpisy, judikaturu a výkladovou praxi.
+- **Daně a účetnictví** - volitelné monitorové pluginy pro daňové a účetní dotazy kombinují předpisy, judikaturu a výkladovou praxi.
 - **Příprava dokumentů** - při tvorbě smluv nebo právních podání máte okamžitý přístup k aktuálnímu znění předpisů.
 - **Kontrola souladu** - ověříte, zda váš postup nebo dokument odpovídá platné legislativě.
 - **Sledování změn legislativy** - komponenta „Sledované dokumenty" vám umožní sledovat změny u vybraných právních předpisů, nebo si nechat hlídat celou složku vlastních smluv a legislativu, na kterou odkazují.
@@ -32,12 +32,6 @@ Odborné publikace a komentáře LIBERIS k jednotlivým zákonům - pro hlubší
 
 ### Vyhledávání v právní databázi
 Hlavní funkce - fulltextové vyhledávání napříč všemi zdroji CODEXIS. Výsledky obsahují přímé odkazy do databáze.
-
-### Daně ČR
-Odborná část pro české daňové právo - daň z příjmů, DPH, spotřební daně, daň z nemovitých věcí, daňový řád. Nejde jen o vyhledávání: postupuje jako daňový poradce, hlídá časovou působnost předpisů a hierarchii pramenů. Zapne se i tehdy, když daň v dotazu nezmíníte, ale situace má daňové dopady (prodej nemovitosti nebo podílu, příjmy ze zahraničí, kryptoměny, dědění, darování).
-
-### Účetnictví ČR
-Odborná část pro české účetní předpisy - závěrka, rozvaha, výsledovka, oceňování, odpisy, rezervy a opravné položky, inventarizace, kategorie účetních jednotek, ČÚS i IFRS.
 
 ### Sledované dokumenty
 Interaktivní komponenta se dvěma režimy:

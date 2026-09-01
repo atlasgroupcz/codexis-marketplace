@@ -9,6 +9,8 @@ without a signal (see CLAUDE.md)."""
 from __future__ import annotations
 
 import json
+import re
+import struct
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,34 @@ import yaml
 REPO = Path(__file__).resolve().parents[2]
 PLUGINS = REPO / "plugins"
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
+
+MONITOR_PLUGINS = {
+    "codexis-bozp": ("Monitor - BOZP", "MONITOR_BOZP_AI"),
+    "codexis-cirkev": ("Monitor - Církev", "MONITOR_CIRKEV_AI"),
+    "codexis-dane": ("Monitor - Daně", "MONITOR_DANE_AI"),
+    "codexis-dusevni-vlastnictvi": (
+        "Monitor - Ochrana duševního vlastnictví",
+        "MONITOR_DUSEVNI_VLASTNICTVI_AI",
+    ),
+    "codexis-gdpr": ("Monitor - Ochrana osobních údajů", "MONITOR_GDPR_AI"),
+    "codexis-obecni-samosprava": (
+        "Monitor - Obecní samospráva",
+        "MONITOR_OBECNI_SAMOSPRAVA_AI",
+    ),
+    "codexis-personalistika": ("Monitor - Personalistika", "MONITOR_PERSONALISTIKA_AI"),
+    "codexis-rekodifikace": ("Monitor - Rekodifikace", "MONITOR_REKODIFIKACE_AI"),
+    "codexis-skolstvi": ("Monitor - Školství", "MONITOR_SKOLSTVI_AI"),
+    "codexis-stavebnictvi": ("Monitor - Stavebnictví", "MONITOR_STAVEBNICTVI_AI"),
+    "codexis-ucetnictvi": ("Monitor - Účetnictví", "MONITOR_UCETNICTVI_AI"),
+    "codexis-verejne-zakazky": (
+        "Monitor - Veřejné zakázky",
+        "MONITOR_VEREJNE_ZAKAZKY_AI",
+    ),
+    "codexis-zivotni-prostredi": (
+        "Monitor - Životní prostředí",
+        "MONITOR_ZIVOTNI_PROSTREDI_AI",
+    ),
+}
 
 
 def _marketplace_plugins() -> list[str]:
@@ -82,6 +112,95 @@ def _skills_on_disk(name: str) -> set[str]:
 def test_marketplace_lists_plugins():
     # Guard against the guard matching nothing (e.g. a moved manifest).
     assert _PLUGINS, "marketplace.json lists no plugins - is the manifest path right?"
+
+
+def test_marketplace_has_exact_monitor_plugin_contracts():
+    marketplace = json.loads(MARKETPLACE.read_text())
+    marketplace_names = {entry["name"] for entry in marketplace["plugins"]}
+    marketplace_uuids = [entry["uuid"] for entry in marketplace["plugins"]]
+    manifests = {
+        path.parents[1].name: json.loads(path.read_text())
+        for path in PLUGINS.glob("*/.claude-plugin/plugin.json")
+    }
+    actual = {
+        name: manifest["accessible-part"]
+        for name, manifest in manifests.items()
+        if str(manifest.get("accessible-part", "")).startswith("MONITOR_")
+    }
+    expected = {
+        name: license_part for name, (_, license_part) in MONITOR_PLUGINS.items()
+    }
+
+    assert actual == expected
+
+    assert len(marketplace_uuids) == len(set(marketplace_uuids))
+
+    for name, (display_name, license_part) in MONITOR_PLUGINS.items():
+        manifest = manifests[name]
+        marketplace_entry = next(
+            entry for entry in marketplace["plugins"] if entry["name"] == name
+        )
+        assert name in marketplace_names
+        assert marketplace_entry["uuid"]
+        assert marketplace_entry["source"] == f"./plugins/{name}"
+        assert manifest["name"] == name
+        assert manifest["version"] == "1.0.0"
+        assert manifest["accessible-part"] == license_part
+        assert manifest["dependencies"] == ["codexis"]
+        assert manifest["i18n"]["cs"]["displayName"] == display_name
+        assert (PLUGINS / name / manifest["iconPath"]).is_file()
+        assert len(list((PLUGINS / name / "skills").glob("*/SKILL.md"))) == 1
+
+
+@pytest.mark.parametrize("name", sorted(MONITOR_PLUGINS))
+def test_monitor_paywall_contract(name: str):
+    manifest_path = PLUGINS / name / ".claude-plugin" / "plugin.json"
+    manifest = json.loads(manifest_path.read_text())
+    paywall = manifest["paywall"]
+    illustration_path = PLUGINS / name / paywall["illustrationPath"]
+    expected_contact_url = (
+        "https://codexis.ai/poptavka?produkt=monitor-" + name.removeprefix("codexis-")
+    )
+
+    assert paywall["illustrationPath"] == "assets/paywall.png"
+    assert paywall["contactUrl"] == expected_contact_url
+    assert illustration_path.is_file()
+
+    header = illustration_path.read_bytes()[:24]
+    assert header.startswith(b"\x89PNG\r\n\x1a\n")
+    assert struct.unpack(">II", header[16:24]) == (768, 768)
+
+
+@pytest.mark.parametrize("name", sorted(MONITOR_PLUGINS))
+def test_monitor_skill_reference_paths_exist(name: str):
+    skill_root = PLUGINS / name / "skills" / name
+    for document in skill_root.rglob("*.md"):
+        references = set(
+            re.findall(
+                r"`((?:references/)?[A-Za-z0-9][A-Za-z0-9._/-]*\.md)`",
+                document.read_text(),
+            )
+        )
+        for reference in references:
+            target = (
+                skill_root / reference
+                if reference.startswith("references/") or reference == "SKILL.md"
+                else document.parent / reference
+            )
+            assert target.is_file(), (
+                f"{document.relative_to(skill_root)}: missing {reference}"
+            )
+
+
+@pytest.mark.parametrize(
+    "template",
+    sorted(PLUGINS.glob("*/automation-templates/*.md")),
+    ids=lambda path: f"{path.parents[1].name}:{path.name}",
+)
+def test_automation_template_skills_belong_to_owning_plugin(template: Path):
+    owner = template.parents[1].name
+    for full_name in _frontmatter(template).get("skill-full-names", []):
+        assert full_name in _skills_on_disk(owner)
 
 
 @pytest.mark.parametrize("name", _PLUGINS)
