@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import struct
 from pathlib import Path
 
 import pytest
@@ -149,6 +150,25 @@ def test_marketplace_has_exact_monitor_plugin_contracts():
         assert manifest["i18n"]["cs"]["displayName"] == display_name
         assert (PLUGINS / name / manifest["iconPath"]).is_file()
         assert len(list((PLUGINS / name / "skills").glob("*/SKILL.md"))) == 1
+
+
+@pytest.mark.parametrize("name", sorted(MONITOR_PLUGINS))
+def test_monitor_paywall_contract(name: str):
+    manifest_path = PLUGINS / name / ".claude-plugin" / "plugin.json"
+    manifest = json.loads(manifest_path.read_text())
+    paywall = manifest["paywall"]
+    illustration_path = PLUGINS / name / paywall["illustrationPath"]
+    expected_contact_url = (
+        "https://codexis.ai/poptavka?produkt=monitor-" + name.removeprefix("codexis-")
+    )
+
+    assert paywall["illustrationPath"] == "assets/paywall.png"
+    assert paywall["contactUrl"] == expected_contact_url
+    assert illustration_path.is_file()
+
+    header = illustration_path.read_bytes()[:24]
+    assert header.startswith(b"\x89PNG\r\n\x1a\n")
+    assert struct.unpack(">II", header[16:24]) == (768, 768)
 
 
 @pytest.mark.parametrize("name", sorted(MONITOR_PLUGINS))
