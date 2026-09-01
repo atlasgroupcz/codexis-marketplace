@@ -1,0 +1,23 @@
+{
+  "id": "sbirka-listin",
+  "title": "Sbírka listin - sledované subjekty",
+  "icon": "icon.svg",
+  "route": "sbirka-listin",
+  "description": "Sledujte nové listiny subjektů ve sbírce listin veřejných rejstříků ČR.",
+  "entrypoint": "index.html",
+  "binary": "sbirka-listin-cgi",
+  "i18n": {
+    "cs": {
+      "displayName": "Sbírka listin - sledované subjekty",
+      "description": "Sledujte nové listiny subjektů (účetní závěrky, stanovy a další) ve sbírce listin veřejných rejstříků ČR s automatickou kontrolou přírůstků."
+    },
+    "en": {
+      "displayName": "Collection of Deeds - Tracked Subjects",
+      "description": "Track newly filed documents (financial statements, articles and more) in the Czech public registers' Collection of Deeds, with automatic new-filing detection."
+    },
+    "sk": {
+      "displayName": "Zbierka listín - sledované subjekty",
+      "description": "Sledujte nové listiny subjektov (účtovné závierky, stanovy a ďalšie) v zbierke listín verejných registrov ČR s automatickou kontrolou prírastkov."
+    }
+  }
+}

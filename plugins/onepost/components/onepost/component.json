@@ -1,0 +1,23 @@
+{
+  "id": "onepost",
+  "title": "ONEPOST API klíč",
+  "icon": "icon.svg",
+  "route": "onepost",
+  "description": "Nastavení API klíče pro propojení agenta s ONEPOSTem.",
+  "entrypoint": "index.html",
+  "binary": "onepost-cgi",
+  "i18n": {
+    "cs": {
+      "displayName": "ONEPOST API klíč",
+      "description": "Vygenerujte API klíč v ONEPOSTu a uložte ho pro použití agentem."
+    },
+    "en": {
+      "displayName": "ONEPOST API Key",
+      "description": "Generate a ONEPOST API key and save it for agent access."
+    },
+    "sk": {
+      "displayName": "ONEPOST API kľúč",
+      "description": "Vygenerujte API kľúč v ONEPOSTe a uložte ho pre použitie agentom."
+    }
+  }
+}

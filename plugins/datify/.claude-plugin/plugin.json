@@ -1,0 +1,58 @@
+{
+  "name": "datify",
+  "iconPath": "icon.svg",
+  "version": "1.1.0",
+  "description": "Datify API access - collections, datasets, records, filtered queries, attachments and users",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "datify",
+    "datasets",
+    "records",
+    "collections",
+    "attachments",
+    "database"
+  ],
+  "license": "PROPRIETARY",
+  "env": {
+    "CODEXIS_PLUGIN_DATIFY_API_URL": "https://api.datify.cz",
+    "CODEXIS_PLUGIN_DATIFY_API_KEY_URL": "https://app.datify.cz/tokens"
+  },
+  "tags": [
+    "data",
+    "database"
+  ],
+  "i18n": {
+    "cs": {
+      "displayName": "Datify - digitální AI kancelář",
+      "description": "Přístup k Datify API - kolekce, datasety, záznamy, filtrované dotazy, přílohy a uživatelé.",
+      "tagLabels": {
+        "data": "Data",
+        "database": "Databáze"
+      }
+    },
+    "en": {
+      "displayName": "Datify - Digital AI Office",
+      "description": "Access the Datify API - collections, datasets, records, filtered queries, attachments and users.",
+      "tagLabels": {
+        "data": "Data",
+        "database": "Database"
+      }
+    },
+    "sk": {
+      "displayName": "Datify - digitálna AI kancelária",
+      "description": "Prístup k Datify API - kolekcie, datasety, záznamy, filtrované dotazy, prílohy a používatelia.",
+      "tagLabels": {
+        "data": "Dáta",
+        "database": "Databáza"
+      }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills",
+  "components": "./components"
+}

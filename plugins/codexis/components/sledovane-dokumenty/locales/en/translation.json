@@ -1,0 +1,154 @@
+{
+  "followedDocs": {
+    "title": "Followed documents",
+    "empty": "No followed documents.",
+    "back": "Back",
+    "trackedSince": "Tracked since {{date}}",
+    "trackedParts": "Tracked parts",
+    "changes": "Changes ({{count}})",
+    "total": "{{count}} total",
+    "unconfirmed": "{{count}} unconfirmed",
+    "noChanges": "No changes detected yet.",
+    "retry": "Try again",
+    "confirmed": "Confirmed {{date}}",
+    "notConfirmed": "Unconfirmed",
+    "detected": "Detected: {{date}}",
+    "effective": "Effective: {{date}}",
+    "sourceDocuments": "Source documents:",
+    "amendments": "Amendments:",
+    "changeType": {
+      "documentChange": "Document change",
+      "relatedChange": "Related change"
+    },
+    "confirm": "Confirm",
+    "confirming": "Confirming...",
+    "removeTracking": "Remove tracking",
+    "removeConfirmButton": "Really remove?",
+    "cancel": "Cancel",
+    "viewInCodexis": "View changes in CODEXIS",
+    "showMore": "+{{count}} more",
+    "showLess": "show less",
+    "trackingType": {
+      "all": "All",
+      "documentChanges": "Document changes",
+      "relatedDocumentsChanges": "Related changes"
+    },
+    "groups": "Groups",
+    "allDocuments": "All",
+    "ungrouped": "Ungrouped",
+    "addToGroup": "Add to group",
+    "removeFromGroup": "Remove from group",
+    "createGroup": "Create group",
+    "deleteGroup": "Delete group",
+    "deleteGroupHint": "Click a group to delete it",
+    "done": "Done",
+    "manageGroups": "Groups",
+    "deleteGroupConfirm": "Delete group \"{{name}}\"? Documents will not be deleted.",
+    "groupName": "Group name",
+    "noGroups": "No groups yet",
+    "notes": "Notes",
+    "notesHint": "AI change summaries take your notes into account",
+    "addNote": "Add note",
+    "notePlaceholder": "What interests you about this document?",
+    "saveNote": "Save note",
+    "noteSaved": "Note saved",
+    "tagline": "We watch the legislation you care about",
+    "refresh": "Refresh",
+    "addMonitoring": "Add another watch",
+    "removed": "Tracking removed",
+    "tabs": {
+      "changes": "Changes",
+      "documents": "Documents"
+    },
+    "feed": {
+      "searchPlaceholder": "Search changes…",
+      "onlyUnconfirmed": "Unconfirmed only",
+      "empty": "No changes yet",
+      "emptyHint": "When one of your tracked documents changes, you'll see it here.",
+      "emptyFiltered": "No change matches your filter."
+    },
+    "stats": {
+      "tracked": "Tracked",
+      "totalChanges": "Total changes",
+      "unconfirmed": "Unconfirmed"
+    },
+    "landing": {
+      "title": "Your laws under watch",
+      "text": "Add a document to tracking and we'll flag every amendment and related change.",
+      "chatLead": "Start from the CODEXIS chat:",
+      "chatPrompt": "Track changes in the Labour Code"
+    }
+  },
+  "folders": {
+    "section": {
+      "label": "What we watch",
+      "documents": "Acts",
+      "folders": "Folders"
+    },
+    "add": "Add folder",
+    "back": "Back",
+    "cancel": "Cancel",
+    "added": "Folder added, starting extraction…",
+    "removed": "Folder removed",
+    "confirmed": "Changes confirmed",
+    "refresh": "Re-extract",
+    "remove": "Remove folder",
+    "checkNow": "Check now",
+    "refreshStarted": "Starting a fresh extraction…",
+    "checkStarted": "Checking legislation…",
+    "changed": "New change",
+    "tracked": "Tracked",
+    "untracked": "Unverified",
+    "confirm": "Confirm",
+    "viewInCodexis": "View in CODEXIS",
+    "effectiveFrom": "Effective from {{date}}",
+    "extractingProgress": "Extracting references ({{done}}/{{total}})",
+    "legislationExtracting": "Extracting legislation references…",
+    "noLegislation": "No legislation found in this folder yet.",
+    "extracted": "Processed",
+    "pending": "Pending",
+    "refCount": "{{count}} legislation references",
+    "tabs": {
+      "legislation": "Legislation",
+      "documents": "Documents"
+    },
+    "card": {
+      "documents": "{{count}} documents",
+      "legislation": "{{count}} acts",
+      "extracting": "extracting {{count}}"
+    },
+    "landing": {
+      "title": "Watch the legislation in your documents",
+      "text": "Pick a folder of contracts or documents. AI extracts the laws they reference, and we alert you when any of them changes."
+    },
+    "picker": {
+      "title": "Choose a folder to watch",
+      "watchThis": "Watch this folder",
+      "noSubfolders": "No sub-folders",
+      "home": "Home",
+      "up": "Up one level"
+    }
+  },
+  "notify": {
+    "title": "Document settings",
+    "description": "How we notify you about changes.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "emailLabel": "E-mail on change",
+    "emailDescription": "A summary of changes arrives by e-mail.",
+    "yourAddressLabel": "Your address",
+    "copyToLabel": "Copy to",
+    "addRecipient": "Add recipient",
+    "removeRecipient": "Remove",
+    "addPlaceholder": "name@company.com",
+    "invalidEmail": "Invalid e-mail address.",
+    "inAppLabel": "In the notification center",
+    "inAppDescription": "",
+    "saved": "Settings saved",
+    "ownAddress": "That's your address - you always get the e-mail.",
+    "duplicate": "That address is already in the list."
+  },
+  "help": {
+    "docs": "How does it work?"
+  }
+}

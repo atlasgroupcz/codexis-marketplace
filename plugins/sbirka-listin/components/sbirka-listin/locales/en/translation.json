@@ -1,0 +1,71 @@
+{
+  "subjekty": {
+    "title": "Collection of Deeds",
+    "subtitle": "Tracked subjects",
+    "add": "Add",
+    "adding": "Adding…",
+    "checkAll": "Refresh",
+    "icoPlaceholder": "IČO, e.g. 27082440",
+    "noUnconfirmed": "No unread changes.",
+    "emptyTitle": "You're not tracking any subject yet",
+    "emptyText": "Add a company by its IČO and we'll watch for new documents filed into its Collection of Deeds.",
+    "selectHint": "Pick a subject on the left to see its filings and change history.",
+    "chatLead": "Or ask the assistant:",
+    "chatPrompt": "Watch the Collection of Deeds for company IČO 27082440",
+    "lastCheck": "Last check",
+    "spisLabel": "File reference",
+    "sidloLabel": "Registered office",
+    "openRegister": "Open in the public register",
+    "remove": "Remove",
+    "confirmRemove": "Remove for real?",
+    "listinyTab": "Documents",
+    "changeHistory": "Change history",
+    "noListiny": "No documents",
+    "noListinyHint": "This subject has filed nothing into the Collection of Deeds yet.",
+    "zalozeno": "Filed",
+    "download": "Download",
+    "downloading": "Downloading…",
+    "downloadDone": "Document saved.",
+    "open": "Open",
+    "saved": "downloaded",
+    "noChanges": "No changes yet",
+    "noChangesHint": "As soon as the company files a new document, it shows up here.",
+    "markAllRead": "Mark all read ({{count}})",
+    "markRead": "Read",
+    "vanishedListina": "vanished document",
+    "checkResultErrors": "Found {{newChanges}} new changes; {{errors}} subjects errored.",
+    "checkResultChanges": "Found {{count}} new changes.",
+    "checkResultNone": "No changes."
+  },
+  "filter": {
+    "all": "All",
+    "unconfirmed": "Unread"
+  },
+  "common": {
+    "back": "Back",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "notify": {
+    "title": "Notification settings",
+    "description": "Alerts on newly filed documents.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "emailLabel": "E-mail on new filing",
+    "emailDescription": "A summary of new filings arrives by e-mail.",
+    "yourAddressLabel": "Your address",
+    "copyToLabel": "Copy to",
+    "addRecipient": "Add recipient",
+    "removeRecipient": "Remove",
+    "addPlaceholder": "name@company.com",
+    "invalidEmail": "Invalid e-mail address.",
+    "inAppLabel": "In the notification center",
+    "inAppDescription": "",
+    "section": "Notifications",
+    "ownAddress": "That's your address - you always get the e-mail.",
+    "duplicate": "That address is already in the list."
+  },
+  "help": {
+    "docs": "How does it work?"
+  }
+}
