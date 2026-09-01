@@ -1,10 +1,11 @@
 from pathlib import Path
 
+from tests.harness.daemon_client import DaemonClient
 from tests.harness.output import Results
 from tests.tiers.marketplace import test_plugin as run_plugin_test
 
 
-class LockedPluginClient:
+class LockedPluginClient(DaemonClient):
     def __init__(self, installation_error: RuntimeError | None):
         self.installation_error = installation_error
         self.install_calls: list[str] = []
