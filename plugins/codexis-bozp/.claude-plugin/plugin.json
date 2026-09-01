@@ -7,6 +7,7 @@
   "keywords": ["codexis", "bozp", "occupational-safety", "employment", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_BOZP_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-bozp" },
   "tags": ["legal", "czech", "occupational-safety"],
   "i18n": {
     "cs": {

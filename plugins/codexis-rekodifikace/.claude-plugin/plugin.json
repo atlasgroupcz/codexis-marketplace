@@ -3,7 +3,9 @@
   "description": "Czech private-law recodification and transitional-law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "recodification", "transitional-law", "private-law", "czech"], "license": "PROPRIETARY",
-  "accessible-part": "MONITOR_REKODIFIKACE_AI", "tags": ["legal", "czech", "private-law"],
+  "accessible-part": "MONITOR_REKODIFIKACE_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-rekodifikace" },
+  "tags": ["legal", "czech", "private-law"],
   "i18n": {
     "cs": { "displayName": "Monitor - Rekodifikace", "description": "Analýza rekodifikace českého soukromého práva a přechodných ustanovení s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "private-law": "Rekodifikace" } },
     "en": { "displayName": "Monitor - Recodification", "description": "Analysis of Czech private-law recodification and transitional provisions using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "private-law": "Recodification" } },

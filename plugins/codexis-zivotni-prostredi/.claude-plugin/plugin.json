@@ -2,7 +2,9 @@
   "name": "codexis-zivotni-prostredi", "iconPath": "skills/codexis-zivotni-prostredi/icon.webp", "version": "1.0.0",
   "description": "Czech environmental law analysis with CODEXIS", "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "environment", "eia", "jes", "zivotni-prostredi", "czech"], "license": "PROPRIETARY",
-  "accessible-part": "MONITOR_ZIVOTNI_PROSTREDI_AI", "tags": ["legal", "czech", "environment"],
+  "accessible-part": "MONITOR_ZIVOTNI_PROSTREDI_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-zivotni-prostredi" },
+  "tags": ["legal", "czech", "environment"],
   "i18n": {
     "cs": { "displayName": "Monitor - Životní prostředí", "description": "Analýza českého a evropského práva životního prostředí, EIA a povolování s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "environment": "Životní prostředí" } },
     "en": { "displayName": "Monitor - Environment", "description": "Analysis of Czech and EU environmental law, EIA and permitting using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "environment": "Environment" } },

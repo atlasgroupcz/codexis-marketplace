@@ -7,6 +7,7 @@
   "keywords": ["codexis", "copyright", "patent", "trademark", "intellectual-property", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_DUSEVNI_VLASTNICTVI_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-dusevni-vlastnictvi" },
   "tags": ["legal", "czech", "intellectual-property"],
   "i18n": {
     "cs": { "displayName": "Monitor - Ochrana duševního vlastnictví", "description": "Analýza autorského, patentového, známkového a dalšího práva duševního vlastnictví s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "intellectual-property": "Duševní vlastnictví" } },

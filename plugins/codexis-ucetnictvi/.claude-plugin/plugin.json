@@ -10,6 +10,7 @@
   "keywords": ["codexis", "accounting", "ucetnictvi", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_UCETNICTVI_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-ucetnictvi" },
   "tags": ["legal", "czech", "accounting"],
   "i18n": {
     "cs": {

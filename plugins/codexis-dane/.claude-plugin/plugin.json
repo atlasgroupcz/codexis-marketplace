@@ -10,6 +10,7 @@
   "keywords": ["codexis", "tax", "dane", "dph", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_DANE_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-dane" },
   "tags": ["legal", "czech", "tax"],
   "i18n": {
     "cs": {

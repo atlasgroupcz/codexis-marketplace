@@ -7,6 +7,7 @@
   "keywords": ["codexis", "municipality", "obec", "samosprava", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_OBECNI_SAMOSPRAVA_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-obecni-samosprava" },
   "tags": ["legal", "czech", "municipality"],
   "i18n": {
     "cs": { "displayName": "Monitor - Obecní samospráva", "description": "Analýza českého práva obcí a obecní samosprávy s využitím databáze CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "municipality": "Obce" } },

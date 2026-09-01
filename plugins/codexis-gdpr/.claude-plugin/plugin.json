@@ -7,6 +7,7 @@
   "keywords": ["codexis", "gdpr", "privacy", "personal-data", "czech", "eu"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_GDPR_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-gdpr" },
   "tags": ["legal", "czech", "privacy"],
   "i18n": {
     "cs": { "displayName": "Monitor - Ochrana osobních údajů", "description": "Analýza ochrany osobních údajů, GDPR a české navazující úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobní údaje" } },

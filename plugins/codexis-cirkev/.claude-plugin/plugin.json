@@ -7,6 +7,7 @@
   "keywords": ["codexis", "church", "religion", "cirkev", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_CIRKEV_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-cirkev" },
   "tags": ["legal", "czech", "religion"],
   "i18n": {
     "cs": { "displayName": "Monitor - Církev", "description": "Analýza českého církevního a náboženského práva s využitím databáze CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "religion": "Církve" } },

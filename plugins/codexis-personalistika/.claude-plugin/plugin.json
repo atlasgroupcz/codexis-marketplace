@@ -7,6 +7,7 @@
   "keywords": ["codexis", "employment", "hr", "personalistika", "czech"],
   "license": "PROPRIETARY",
   "accessible-part": "MONITOR_PERSONALISTIKA_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-personalistika" },
   "tags": ["legal", "czech", "employment"],
   "i18n": {
     "cs": { "displayName": "Monitor - Personalistika", "description": "Analýza českého pracovního práva, mezd a personální agendy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "employment": "Personalistika" } },

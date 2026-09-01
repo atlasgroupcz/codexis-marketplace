@@ -3,7 +3,9 @@
   "description": "Czech construction and building law analysis with CODEXIS",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["codexis", "construction", "building-law", "stavebnictvi", "czech"], "license": "PROPRIETARY",
-  "accessible-part": "MONITOR_STAVEBNICTVI_AI", "tags": ["legal", "czech", "construction"],
+  "accessible-part": "MONITOR_STAVEBNICTVI_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-stavebnictvi" },
+  "tags": ["legal", "czech", "construction"],
   "i18n": {
     "cs": { "displayName": "Monitor - Stavebnictví", "description": "Analýza českého stavebního práva, povolování a souvisejících environmentálních postupů s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "construction": "Stavebnictví" } },
     "en": { "displayName": "Monitor - Construction", "description": "Analysis of Czech construction, permitting and related environmental law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "construction": "Construction" } },
