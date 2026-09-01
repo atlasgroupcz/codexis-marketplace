@@ -58,6 +58,7 @@ mutation AddMarketplace($input: MarketplaceSourceInput!) {
         id name pluginCount error
         plugins {
             id name description
+            access { locked requiredPart }
             skills { name fullName }
         }
     }

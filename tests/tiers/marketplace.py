@@ -126,6 +126,18 @@ def test_plugin(
     if skills:
         r.log(f"  Skills: {', '.join(s['fullName'] for s in skills)}")
 
+    access = plugin.get("access") or {}
+    if access.get("locked"):
+        required_part = access.get("requiredPart") or "unknown"
+        r.log(f"  Required licence part: {required_part}")
+        try:
+            client.install_plugin(plugin_id)
+        except RuntimeError:
+            r.ok("Locked plugin rejects installation")
+            return
+        r.fail("Locked plugin was installed without its required licence")
+        return
+
     # --- Install ---
     r.log("Installing...")
     try:
