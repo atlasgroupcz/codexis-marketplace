@@ -1,8 +1,3 @@
-# Port of plugins/codexis/acceptance/e2e/cdxctl-automation-update.yaml
-# Partial-field update of an existing automation: rename + cron change,
-# then disable, then delete. Verifies cdxctl correctly applies the
-# subset of fields the user names without touching the rest.
-
 description: codexis cdxctl - automation partial update
 target_plugin: codexis
 
@@ -17,7 +12,7 @@ providers:
 tests:
   - description: automation create-command (initial state for the update sequence)
     vars:
-      prompt: "Vytvoř automatizaci e2e-upd-{{ run_id }}, která 1. ledna jednou ročně spustí 'echo initial'."
+      prompt: "Vytvoř automatizaci e2e-upd-{{ run_id }}, která první den každého měsíce v noci spustí 'echo initial'."
       tool_name: shell
       input_regex: 'automation\s+create-command'
       tool_calls_min: 1
@@ -31,11 +26,14 @@ tests:
         incorrect:
           - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
-      graphql: "{ automations { title cron command enabled } }"
+      graphql: "{ automations { title schedule { repeat dayPart dayOfMonth } command enabled } }"
       jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}')]"
       count: 1
       subset:
-        cron: "0 0 1 1 *"
+        schedule:
+          repeat: "MONTHLY"
+          dayPart: "NIGHT"
+          dayOfMonth: 1
         command: "echo initial"
         enabled: true
     assert:
@@ -50,9 +48,9 @@ tests:
       - type: python
         value: file://../../../../tests/promptfoo/assertions.py:assert_state_graphql
 
-  - description: automation update - rename + change cron, command preserved
+  - description: automation update - rename + change schedule, command preserved
     vars:
-      prompt: "U automatizace e2e-upd-{{ run_id }} změň název na e2e-upd-{{ run_id }}-v2 a cron na '0 0 2 2 *'."
+      prompt: "U automatizace e2e-upd-{{ run_id }} změň název na e2e-upd-{{ run_id }}-v2 a plán na druhý den každého měsíce v noci."
       tool_name: shell
       input_regex: 'automation\s+update'
       tool_calls_min: 1
@@ -66,15 +64,14 @@ tests:
         incorrect:
           - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
-      # State check: the new title exists with new cron, original command preserved.
-      # (Legacy had a 2nd check that old title is gone; with a single state check
-      # we trust the rename was atomic - count==1 of v2 with these fields is
-      # enough evidence.)
-      graphql: "{ automations { title cron command enabled } }"
+      graphql: "{ automations { title schedule { repeat dayPart dayOfMonth } command enabled } }"
       jsonpath: "$.automations[?(@.title == 'e2e-upd-{{ run_id }}-v2')]"
       count: 1
       subset:
-        cron: "0 0 2 2 *"
+        schedule:
+          repeat: "MONTHLY"
+          dayPart: "NIGHT"
+          dayOfMonth: 2
         command: "echo initial"
         enabled: true
     assert:

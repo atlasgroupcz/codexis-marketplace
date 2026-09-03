@@ -15,9 +15,9 @@ providers:
     config: {}
 
 tests:
-  - description: automation create-command stores cron + command + enabled
+  - description: automation create-command stores schedule + command + enabled
     vars:
-      prompt: "Vytvoř automatizaci e2e-{{ run_id }}, která 1. ledna jednou ročně spustí 'echo hello'."
+      prompt: "Vytvoř automatizaci e2e-{{ run_id }}, která první den každého měsíce v noci spustí 'echo hello'."
       tool_name: shell
       input_regex: 'automation\s+create-command.{0,500}e2e-'
       tool_calls_min: 1
@@ -32,11 +32,14 @@ tests:
         incorrect:
           - "Bypassing cdxctl to call the daemon API directly via curl/wget/requests to http://localhost:8086."
           - "Creating, updating or deleting daemon state by any route other than cdxctl."
-      graphql: "{ automations { title cron command enabled } }"
+      graphql: "{ automations { title schedule { repeat dayPart dayOfMonth } command enabled } }"
       jsonpath: "$.automations[?(@.title == 'e2e-{{ run_id }}')]"
       count: 1
       subset:
-        cron: "0 0 1 1 *"
+        schedule:
+          repeat: "MONTHLY"
+          dayPart: "NIGHT"
+          dayOfMonth: 1
         command: "echo hello"
         enabled: true
     assert:
