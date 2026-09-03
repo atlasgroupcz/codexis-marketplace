@@ -4,7 +4,9 @@ type: COMMAND
 title: Hlídač ochranných známek
 description: Pravidelná kontrola podobných ochranných známek (ÚPV, EUIPO přes TMview).
 command: znamky-cli sledovani check
-cron: 0 7 * * *
+schedule:
+  repeat: DAILY
+  dayPart: MORNING
 enabled: true
 notify-on-success: false
 notify-on-failure: false

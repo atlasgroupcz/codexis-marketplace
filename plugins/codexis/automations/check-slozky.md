@@ -4,7 +4,9 @@ type: COMMAND
 title: Sledované složky - kontrola legislativy
 description: Denní deterministická kontrola změn legislativy odkazované ve sledovaných složkách.
 command: cdx-sledovane-dokumenty folder check
-cron: 0 6 * * *
+schedule:
+  repeat: DAILY
+  dayPart: MORNING
 enabled: true
 notify-on-success: false
 notify-on-failure: false

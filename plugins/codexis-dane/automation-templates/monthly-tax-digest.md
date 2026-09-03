@@ -5,7 +5,10 @@ title: Monthly Czech tax digest
 description: Each month, summarize recent Czech tax-law changes and upcoming filing deadlines.
 skill-full-names:
   - codexis-dane:codexis-dane
-cron: 0 7 1 * *
+schedule:
+  repeat: MONTHLY
+  dayPart: MORNING
+  dayOfMonth: 1
 max-turns: 20
 enabled: false
 notify-on-success: true

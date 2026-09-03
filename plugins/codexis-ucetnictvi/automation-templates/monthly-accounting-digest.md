@@ -5,7 +5,10 @@ title: Monthly Czech accounting digest
 description: Each month, summarize recent changes in Czech accounting rules and their practical impact.
 skill-full-names:
   - codexis-ucetnictvi:codexis-ucetnictvi
-cron: 0 7 1 * *
+schedule:
+  repeat: MONTHLY
+  dayPart: MORNING
+  dayOfMonth: 1
 max-turns: 20
 enabled: false
 notify-on-success: true

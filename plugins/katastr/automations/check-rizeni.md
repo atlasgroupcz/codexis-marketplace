@@ -4,7 +4,10 @@ type: COMMAND
 title: Hlídač katastrálních řízení
 description: Pravidelná kontrola sledovaných katastrálních řízení.
 command: katastr-cli tracking check
-cron: 0 8 * * 1
+schedule:
+  repeat: WEEKLY
+  dayPart: MORNING
+  daysOfWeek: [1]
 enabled: true
 notify-on-success: false
 notify-on-failure: false
