@@ -4,7 +4,9 @@ type: COMMAND
 title: Hlídač SID dokumentů
 description: Denní kontrola nových notifikací a čekajících potvrzení v SID.
 command: sid-cli check --notify
-cron: 0 7 * * *
+schedule:
+  repeat: DAILY
+  dayPart: MORNING
 enabled: true
 notify-on-success: false
 notify-on-failure: false

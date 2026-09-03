@@ -5,7 +5,10 @@ title: Weekly Slovak legal digest on a topic
 description: Every week, summarize new Slovak legislation and case law on a topic of your choice.
 skill-full-names:
   - cdx-sk:cdx-sk
-cron: 0 7 * * 1
+schedule:
+  repeat: WEEKLY
+  dayPart: MORNING
+  daysOfWeek: [1]
 max-turns: 20
 enabled: false
 notify-on-success: true

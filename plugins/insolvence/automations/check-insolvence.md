@@ -4,7 +4,9 @@ type: COMMAND
 title: Hlídač insolvencí
 description: Pravidelná kontrola sledovaných subjektů v insolvenčním rejstříku (ISIR).
 command: insolvence-cli sledovani check
-cron: 0 7 * * *
+schedule:
+  repeat: DAILY
+  dayPart: MORNING
 enabled: true
 notify-on-success: false
 notify-on-failure: false

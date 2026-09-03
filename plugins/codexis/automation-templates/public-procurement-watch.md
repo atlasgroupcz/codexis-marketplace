@@ -5,7 +5,10 @@ title: Public procurement regulation watch
 description: Each month, summarize changes in public-procurement law, ÚOHS decisions and MMR methodology.
 skill-full-names:
   - codexis:codexis
-cron: 0 7 1 * *
+schedule:
+  repeat: MONTHLY
+  dayPart: MORNING
+  dayOfMonth: 1
 max-turns: 20
 enabled: false
 notify-on-success: true
