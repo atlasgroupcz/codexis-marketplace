@@ -248,7 +248,7 @@ def search_payload(query: str, extra_fields: dict[str, Any]) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "query": query,
         "limit": 1,
-        "offset": 1,
+        "offset": 0,
         "sort": "RELEVANCE",
         "sortOrder": "DESC",
     }
