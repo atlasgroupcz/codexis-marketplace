@@ -53,10 +53,10 @@ cdx-cli search [JD|CR|EU|ES|SK|LT|VS|COMMENT|ALL] --help
 Search requests are translated into:
 
 ```text
-POST {CODEXIS_PLUGIN_API_URL}/rest/cdx-api/search/<SOURCE>
+POST {CODEXIS_PLUGIN_API_URL}/rest/cdx-api/v2/search/<SOURCE>
 ```
 
-`get` requests translate `cdx://...` to `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/...`.
+`get` requests translate `cdx://...` to `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/v2/...`.
 Responses are streamed to stdout. The top-level `schema` command prints concise
 endpoint schemas from the `cdx-cli` caller perspective: query parameters plus
 the output shape you get back. For source-specific searches, `availableFilters`
@@ -136,8 +136,8 @@ cdx-cli get --help
 Rules:
 
 - `get` accepts only `cdx://...` URLs and translates them to
-  `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/...`
-- `cdx://` maps to `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api`
+  `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/v2/...`
+- `cdx://` maps to `{CODEXIS_PLUGIN_API_URL}/rest/cdx-api/v2`
 - a leading slash after `cdx://` is ignored, so `cdx:///doc/CR10/text` works
 - `/versions` is supported for CR documents only
 - `cdx://cz_law/.../text` supports repeated `part` query parameters
@@ -153,7 +153,7 @@ Rules:
 - convenience flags are translated into JSON fields
 - if both flags and `JSON_PAYLOAD` are provided, matching keys from JSON win
 - source-native flags still work as aliases for the friendlier names
-- search defaults are `limit=10`, `offset=1`, `--sort RELEVANCE`, and
+- search defaults are `limit=10`, `offset=0` (zero-based), `--sort RELEVANCE`, and
   `--sort-order DESC`
 - date filters use `YYYY-MM-DD`
 - JSON boolean filters use `true` / `false`
