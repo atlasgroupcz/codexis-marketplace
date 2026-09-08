@@ -338,10 +338,16 @@ fn set_key_stores_the_token_only_after_datify_accepts_it() {
     );
 
     assert!(output.status.success(), "{}", stderr(&output));
-    // It verifies by listing collections before writing anything.
+    // It verifies by listing collections before asking for anything to be stored.
     assert_eq!(seen.recv().unwrap().target, "/v0/collections");
-    let stored = std::fs::read_to_string(sandbox.env_file()).unwrap();
-    assert!(stored.contains("tok-123456789"), "{stored}");
+    assert_eq!(
+        sandbox.cdxctl_calls(),
+        vec!["appenv datify set DATIFY_API_KEY tok-123456789"]
+    );
+    assert!(
+        !sandbox.env_file().exists(),
+        "the CLI wrote the credential file itself"
+    );
 }
 
 #[test]
@@ -357,19 +363,18 @@ fn set_key_writes_nothing_when_datify_rejects_the_token() {
     );
 
     assert!(!output.status.success());
-    assert!(!sandbox.env_file().exists(), "a rejected token was stored");
+    assert!(
+        sandbox.cdxctl_calls().is_empty(),
+        "a rejected token was stored: {:?}",
+        sandbox.cdxctl_calls()
+    );
 }
 
 #[test]
 fn show_masks_the_token_and_names_its_source() {
     let sandbox = Sandbox::new();
     let (api, _seen) = stub(200, "[]");
-    sandbox.run(
-        CLI,
-        &["settings", "set-key", "abcdefghijkl"],
-        Some(&api),
-        None,
-    );
+    sandbox.store_key("abcdefghijkl");
 
     let output = sandbox.run(CLI, &["settings", "show"], Some(&api), None);
 
@@ -387,22 +392,41 @@ fn show_masks_the_token_and_names_its_source() {
 }
 
 #[test]
-fn clear_key_forgets_a_stored_token() {
+fn clear_key_asks_the_platform_to_remove_the_token() {
     let sandbox = Sandbox::new();
     let (api, _seen) = stub(200, "[]");
-    sandbox.run(
+    sandbox.store_key("abcdefghijkl");
+
+    let output = sandbox.run(CLI, &["settings", "clear-key"], Some(&api), None);
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert_eq!(
+        sandbox.cdxctl_calls(),
+        vec!["appenv datify delete DATIFY_API_KEY"]
+    );
+}
+
+/// The platform refusing the write must reach the user, not be swallowed into a
+/// success that stores nothing.
+#[test]
+fn a_failing_platform_write_fails_set_key() {
+    let sandbox = Sandbox::new();
+    let (api, _seen) = stub(200, "[]");
+    sandbox.fail_cdxctl(7);
+
+    let output = sandbox.run(
         CLI,
-        &["settings", "set-key", "abcdefghijkl"],
+        &["settings", "set-key", "tok-123456789"],
         Some(&api),
         None,
     );
 
-    let output = sandbox.run(CLI, &["settings", "clear-key"], Some(&api), None);
-    assert!(output.status.success(), "{}", stderr(&output));
-
-    let shown = sandbox.run(CLI, &["settings", "show"], Some(&api), None);
-    let parsed: serde_json::Value = serde_json::from_str(&stdout(&shown)).unwrap();
-    assert_eq!(parsed["configured"], false);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("Uložení API tokenu selhalo"),
+        "{}",
+        stderr(&output)
+    );
 }
 
 /// The one command whose result is a file rather than stdout, so nothing else

@@ -17,24 +17,77 @@ use std::process::{Command, Output};
 pub use datify_core::test_support::{stub, stub_raw};
 
 /// A scratch home, so the settings file a test writes cannot reach the real one.
+///
+/// It also carries a fake `cdxctl` on the child's `PATH`: the binaries no longer
+/// write the credential file themselves, they ask the platform to, so what a
+/// test can observe is the command line they asked with.
 pub struct Sandbox {
     dir: tempfile::TempDir,
 }
 
 impl Sandbox {
     pub fn new() -> Self {
-        Self {
+        let sandbox = Self {
             dir: tempfile::tempdir().unwrap(),
-        }
+        };
+        sandbox.install_fake_cdxctl();
+        sandbox
     }
 
     pub fn home(&self) -> &Path {
         self.dir.path()
     }
 
-    /// Where `settings set-key` stores the token.
+    /// Where the daemon stores the token, and where the binaries read it from.
     pub fn env_file(&self) -> PathBuf {
         self.dir.path().join(".cdx/apps/datify/.env")
+    }
+
+    /// Seed the credential file the way the daemon would, so the read side has
+    /// something to report.
+    pub fn store_key(&self, key: &str) {
+        let path = self.env_file();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, format!("DATIFY_API_KEY={key}\n")).unwrap();
+    }
+
+    /// One line per `cdxctl` invocation: the argv joined by spaces.
+    pub fn cdxctl_calls(&self) -> Vec<String> {
+        std::fs::read_to_string(self.dir.path().join("bin/cdxctl-calls.log"))
+            .map(|s| s.lines().map(str::to_string).collect())
+            .unwrap_or_default()
+    }
+
+    /// Make the next `cdxctl` run fail with `code`, the way a daemon that
+    /// refused the write would.
+    pub fn fail_cdxctl(&self, code: i32) {
+        std::fs::write(self.dir.path().join("bin/cdxctl-exit"), code.to_string()).unwrap();
+    }
+
+    /// The child's `PATH`, with the fake `cdxctl` ahead of anything real.
+    fn path_with_fake_cdxctl(&self) -> std::ffi::OsString {
+        let mut dirs = vec![self.bin_dir()];
+        if let Ok(path) = std::env::var("PATH") {
+            dirs.extend(std::env::split_paths(&path));
+        }
+        std::env::join_paths(dirs).unwrap()
+    }
+
+    fn bin_dir(&self) -> PathBuf {
+        self.dir.path().join("bin")
+    }
+
+    fn install_fake_cdxctl(&self) {
+        use std::os::unix::fs::PermissionsExt;
+        let bin = self.bin_dir();
+        std::fs::create_dir_all(&bin).unwrap();
+        let script = bin.join("cdxctl");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nhere=\"$(dirname \"$0\")\"\nprintf '%s\\n' \"$*\" >> \"$here/cdxctl-calls.log\"\ncode=$(cat \"$here/cdxctl-exit\" 2>/dev/null || echo 0)\n[ \"$code\" -eq 0 ] || echo \"fake failure\" >&2\nexit \"$code\"\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
 
     /// Run a binary with this sandbox as its home. `api_url` and `token`, when
@@ -47,7 +100,7 @@ impl Sandbox {
         token: Option<&str>,
     ) -> Output {
         let mut command = sandboxed_command(binary, self.home());
-        command.args(args);
+        command.env("PATH", self.path_with_fake_cdxctl()).args(args);
         if let Some(api_url) = api_url {
             command.env("DATIFY_API_URL", api_url);
         }
@@ -71,6 +124,7 @@ impl Sandbox {
         use std::io::Write as _;
         let mut command = sandboxed_command(binary, self.home());
         command
+            .env("PATH", self.path_with_fake_cdxctl())
             .args(args)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped());
