@@ -37,8 +37,8 @@ class FakeCdxctl:
 
 
 @pytest.fixture
-def settings(tmp_path, monkeypatch):
-    """`onepost_core.settings` with a scratch home and a fake `cdxctl` on PATH."""
+def cdxctl(tmp_path, monkeypatch):
+    """A fake `cdxctl` on PATH, and a scratch home for the credential file."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     log = bin_dir / "calls.log"
@@ -54,42 +54,46 @@ def settings(tmp_path, monkeypatch):
     monkeypatch.delenv("ONEPOST_API_KEY", raising=False)
     monkeypatch.delenv("CODEXIS_USER_ONEPOST_API_KEY", raising=False)
 
-    import onepost_core.settings as module
-
-    module = importlib.reload(module)
-    module.fake = FakeCdxctl(str(log), str(exit_file))
-    return module
+    return FakeCdxctl(str(log), str(exit_file))
 
 
-def test_saving_a_key_sets_it_and_clears_the_legacy_name(settings):
+@pytest.fixture
+def settings(cdxctl):
+    """`onepost_core.settings`, re-imported so it picks up the scratch home."""
+    import onepost_core.settings
+
+    return importlib.reload(onepost_core.settings)
+
+
+def test_saving_a_key_sets_it_and_clears_the_legacy_name(settings, cdxctl):
     settings.write_api_key("  tok-123456789  ")
 
-    assert settings.fake.calls == [
+    assert cdxctl.calls == [
         "appenv onepost set ONEPOST_API_KEY tok-123456789",
         "appenv onepost delete API_KEY",
     ]
     assert not os.path.exists(settings.ENV_FILE), "the plugin wrote the credential file"
 
 
-def test_saving_an_empty_key_deletes_both_names(settings):
+def test_saving_an_empty_key_deletes_both_names(settings, cdxctl):
     settings.write_api_key("")
 
-    assert settings.fake.calls == [
+    assert cdxctl.calls == [
         "appenv onepost delete ONEPOST_API_KEY",
         "appenv onepost delete API_KEY",
     ]
 
 
-def test_saving_the_url_normalizes_it_before_storing(settings):
+def test_saving_the_url_normalizes_it_before_storing(settings, cdxctl):
     settings.write_api_url("https://app.onepost.cz/")
 
-    assert settings.fake.calls == [
-        "appenv onepost set ONEPOST_API_URL https://app.onepost.cz"
-    ]
+    assert cdxctl.calls == ["appenv onepost set ONEPOST_API_URL https://app.onepost.cz"]
 
 
-def test_a_failing_cdxctl_raises_with_the_exit_code_and_a_czech_message(settings):
-    settings.fake.fail_with(7)
+def test_a_failing_cdxctl_raises_with_the_exit_code_and_a_czech_message(
+    settings, cdxctl
+):
+    cdxctl.fail_with(7)
 
     with pytest.raises(settings.AppEnvError) as raised:
         settings.write_api_key("tok-123456789")
@@ -99,7 +103,7 @@ def test_a_failing_cdxctl_raises_with_the_exit_code_and_a_czech_message(settings
     assert "fake failure" in str(raised.value)
 
 
-def test_reading_still_comes_from_the_credential_file(settings):
+def test_reading_still_comes_from_the_credential_file(settings, cdxctl):
     os.makedirs(settings.ENV_DIR, exist_ok=True)
     with open(settings.ENV_FILE, "w", encoding="utf-8") as f:
         f.write("ONEPOST_API_KEY=from-the-file\n")
