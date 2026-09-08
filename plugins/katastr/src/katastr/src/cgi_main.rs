@@ -132,7 +132,7 @@ fn post_save_api_key(body: &Value) -> ExitCode {
 }
 
 fn post_delete_api_key() -> ExitCode {
-    match settings::write_api_key("") {
+    match settings::delete_api_key() {
         Ok(_) => emit_json(&serde_json::json!({"ok": true})),
         Err(e) => emit_katastr_error(&e),
     }
@@ -317,6 +317,7 @@ fn emit_katastr_error(err: &KatastrError) -> ExitCode {
         KatastrError::ProceedingNotFound(m) => (404, m.as_str()),
         KatastrError::ProceedingNotTracked(m) => (404, m.as_str()),
         KatastrError::ProceedingAlreadyTracked(m) => (409, m.as_str()),
+        KatastrError::AppEnv(m) => (500, m.as_str()),
         KatastrError::Notify(_) | KatastrError::Io(_) | KatastrError::Json(_) => {
             (500, "Internal error")
         }

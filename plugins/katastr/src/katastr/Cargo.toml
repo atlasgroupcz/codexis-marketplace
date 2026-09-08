@@ -1,6 +1,6 @@
 [package]
 name = "katastr"
-version = "1.6.1"
+version = "1.7.0"
 edition = "2021"
 license = "PROPRIETARY"
 
@@ -39,7 +39,7 @@ clap = { version = "4", features = ["derive"] }
 # the watcher domain (check loop + change-log confirm). cdx-notify: notify
 # transport + layered settings. cdx-cgi: the CGI runtime (query parsing, body
 # reading, JSON/error emission).
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["url", "fs", "store", "time", "env-file", "http-client"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["url", "fs", "store", "time", "env-file", "http-client", "app-env"] }
 cdx-watch = { path = "../../../../shared/rust/cdx-watch" }
 cdx-notify = { path = "../../../../shared/rust/cdx-notify" }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }

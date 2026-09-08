@@ -909,7 +909,7 @@ fn run_settings(cmd: SettingsCmd) -> CliResult {
         SettingsCmd::Set { key } => {
             settings::set_api_key(&key)?;
             eprintln!(
-                "OK: API klíč byl ověřen u ČÚZK a uložen ({}).",
+                "OK: API klíč byl ověřen u ČÚZK a uložen přes cdxctl ({}).",
                 settings::mask_key(key.trim())
             );
             Ok(())
