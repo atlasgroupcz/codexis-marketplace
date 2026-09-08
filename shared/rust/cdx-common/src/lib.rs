@@ -14,6 +14,9 @@ pub mod daemon_rest;
 pub mod error;
 pub mod paths;
 
+#[cfg(feature = "app-env")]
+pub mod app_env;
+
 #[cfg(feature = "curl")]
 pub mod curl;
 
@@ -88,5 +91,56 @@ pub mod test_support {
         std::env::set_var("CDX_USER_HOME", home);
         std::env::set_var("HOME", home);
         HomeGuard { _guard: guard }
+    }
+
+    /// A fake `cdxctl` on `PATH` that records its argv into `<dir>/cdxctl-calls.log`
+    /// and exits with the code in `<dir>/cdxctl-exit` (default 0). Takes the
+    /// `HomeGuard` so PATH is only changed under the same lock.
+    pub struct FakeCdxctl {
+        dir: std::path::PathBuf,
+        previous_path: Option<std::ffi::OsString>,
+    }
+
+    pub fn fake_cdxctl(_home: &HomeGuard, dir: &Path) -> FakeCdxctl {
+        use std::os::unix::fs::PermissionsExt;
+        let script = dir.join("cdxctl");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nhere=\"$(dirname \"$0\")\"\nprintf '%s\\n' \"$*\" >> \"$here/cdxctl-calls.log\"\ncode=$(cat \"$here/cdxctl-exit\" 2>/dev/null || echo 0)\n[ \"$code\" -eq 0 ] || echo \"fake failure\" >&2\nexit \"$code\"\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let previous_path = std::env::var_os("PATH");
+        let mut paths = vec![dir.to_path_buf()];
+        if let Some(ref previous) = previous_path {
+            paths.extend(std::env::split_paths(previous));
+        }
+        std::env::set_var("PATH", std::env::join_paths(paths).unwrap());
+        FakeCdxctl {
+            dir: dir.to_path_buf(),
+            previous_path,
+        }
+    }
+
+    impl FakeCdxctl {
+        /// One line per invocation: the argv joined by spaces.
+        pub fn calls(&self) -> Vec<String> {
+            std::fs::read_to_string(self.dir.join("cdxctl-calls.log"))
+                .map(|s| s.lines().map(str::to_string).collect())
+                .unwrap_or_default()
+        }
+
+        pub fn set_exit(&self, code: i32) {
+            std::fs::write(self.dir.join("cdxctl-exit"), code.to_string()).unwrap();
+        }
+    }
+
+    impl Drop for FakeCdxctl {
+        fn drop(&mut self) {
+            match &self.previous_path {
+                Some(path) => std::env::set_var("PATH", path),
+                None => std::env::remove_var("PATH"),
+            }
+        }
     }
 }

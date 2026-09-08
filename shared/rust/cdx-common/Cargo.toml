@@ -51,6 +51,8 @@ fs = ["dep:serde", "dep:serde_json"]
 # The `env-file` module (KEY=VALUE credential files, atomic 0600 writes). For
 # watcher plugins storing a user-provided API credential.
 env-file = ["fs"]
+# The `app_env` module (store a plugin secret through `cdxctl appenv`). std-only.
+app-env = []
 # The `settings` module (layered defaults + sparse-override settings store, the
 # generic mechanism behind cdx-notify's NotifySettings).
 settings = ["fs"]
