@@ -82,7 +82,7 @@ fn validate_name(name: &str) -> Result<(), CdxctlError> {
 }
 
 fn validate_value(value: &str) -> Result<(), CdxctlError> {
-    if value.chars().count() > VALUE_LIMIT {
+    if value.encode_utf16().count() > VALUE_LIMIT {
         return Err(CdxctlError::Parse(format!(
             "value is longer than {VALUE_LIMIT} characters"
         )));
@@ -216,6 +216,8 @@ mod tests {
         assert!(validate_value("a\rb").is_err());
         assert!(validate_value(&"x".repeat(4097)).is_err());
         assert!(validate_value(&"x".repeat(4096)).is_ok());
+        assert!(validate_value(&"\u{1F600}".repeat(2048)).is_ok());
+        assert!(validate_value(&"\u{1F600}".repeat(2049)).is_err());
         assert!(validate_value("").is_ok());
     }
 }

@@ -63,8 +63,10 @@ cdxctl appenv katastr set API_KEY <value>   # add or replace API_KEY=<value>
 cdxctl appenv katastr delete API_KEY        # drop the line; other lines stay
 ```
 
-Use it when a plugin's own CLI or UI tells the user a key is missing and the user hands you
-the key, or when the user asks to remove a stored key. Names are env var names
+Use it when a plugin has no settings command of its own and the user hands you the key, or
+when the user asks to remove a stored key. When the plugin ships one
+(`katastr-cli settings set <KEY>`), call that instead, because it validates the key before
+storing it. Names are env var names
 (`API_KEY`, not `api-key`); a value must be one line. The command prints `{"success",
 "output"}` and exits 7 with the script output when the write fails, 6 when the daemon has no
 such endpoint. Never `cat` or edit the `.env` file by hand.

@@ -68,9 +68,11 @@ fn cdxctl_program() -> PathBuf {
     if on_path {
         return PathBuf::from("cdxctl");
     }
-    std::env::var("HOME")
-        .map(|home| PathBuf::from(home).join(".local/bin/cdxctl"))
-        .unwrap_or_else(|_| PathBuf::from("cdxctl"))
+    let home = match std::env::var("HOME") {
+        Ok(home) if !home.trim().is_empty() => PathBuf::from(home),
+        _ => crate::paths::user_home(),
+    };
+    home.join(".local/bin/cdxctl")
 }
 
 #[cfg(test)]
@@ -112,6 +114,39 @@ mod tests {
         assert_eq!(error.exit_code, Some(7));
         assert!(error.message.contains("fake failure"), "{}", error.message);
         assert!(error.to_string().starts_with("cdxctl appenv exited with 7"));
+    }
+
+    #[test]
+    fn empty_home_falls_back_to_the_user_home_install_location() {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let _home = home_guard(tmp.path());
+        let bin = tmp.path().join(".local/bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let script = bin.join("cdxctl");
+        let log = bin.join("calls.log");
+        std::fs::write(
+            &script,
+            format!("#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\n", log.display()),
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let previous_path = std::env::var_os("PATH");
+        std::env::set_var("PATH", tmp.path().join("no-such-dir"));
+        std::env::set_var("HOME", "");
+
+        let result = set("katastr", "API_KEY", "s3cr3t");
+
+        std::env::set_var("HOME", tmp.path());
+        match previous_path {
+            Some(path) => std::env::set_var("PATH", path),
+            None => std::env::remove_var("PATH"),
+        }
+        result.unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&log).unwrap(),
+            "appenv katastr set API_KEY s3cr3t\n"
+        );
     }
 
     #[test]
