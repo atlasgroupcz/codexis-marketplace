@@ -2,8 +2,8 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.6.0
+description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+version: 2.7.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -33,6 +33,24 @@ i18n:
 `cdxctl` manages agents, skills, automations, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
 
 Always go through `cdxctl` for these platform objects - never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
+
+## VM packages
+
+Use `cdxctl package` when a task needs an Ubuntu package on the VM. A change applies to the
+whole VM and every chat sandbox of this user. Packages survive reboots but not a replacement of
+the VM system image, so install again when a tool is missing.
+
+```bash
+cdxctl package show ffmpeg      # installed?, installed and candidate version
+cdxctl package install ffmpeg   # apt-get update, then apt-get install
+cdxctl package remove ffmpeg
+cdxctl package update           # apt-get update only
+```
+
+`install`, `remove` and `update` wait for apt to finish and print `{"success", "output"}`;
+when apt fails the command exits with code 7 and the apt output on stderr. `show` exits nonzero
+when apt does not know the package. Use exact package names; versions, APT flags, local
+`.deb` files, repositories, and keys are not accepted.
 
 ## Automations
 

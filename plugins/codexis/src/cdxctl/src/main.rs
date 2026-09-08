@@ -26,6 +26,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(about = "Manage Ubuntu packages on the underlying VM")]
+    Package {
+        #[command(subcommand)]
+        command: commands::package::PackageCommands,
+    },
     /// Manage automations
     Automation {
         #[command(subcommand)]
@@ -632,6 +637,7 @@ fn main() {
     let format = OutputFormat::from_flag(cli.table);
 
     let result = match cli.command {
+        Commands::Package { command } => commands::package::execute(&client, command, format),
         Commands::Automation { command } => match command {
             AutomationCommands::List => commands::automation::list(&client, format),
             AutomationCommands::Create {

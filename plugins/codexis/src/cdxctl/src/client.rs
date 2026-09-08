@@ -1,6 +1,7 @@
 use crate::error::CdxctlError;
 use reqwest::blocking::multipart::Form;
 use serde_json::{json, Value};
+use std::time::Duration;
 
 const DEFAULT_API_URL: &str = "http://localhost:8086/graphql";
 
@@ -78,6 +79,52 @@ impl GraphQLClient {
             .post(&url)
             .header("Authorization", &self.auth)
             .header("Accept", "application/json")
+            .json(body)
+            .send()?;
+        let status = response.status();
+        let text = response.text()?;
+        if status == reqwest::StatusCode::NOT_FOUND {
+            return Err(CdxctlError::Unsupported(format!(
+                "this daemon has no {path} endpoint"
+            )));
+        }
+        if !status.is_success() {
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
+        }
+        serde_json::from_str(&text).map_err(CdxctlError::from)
+    }
+
+    /// GET a JSON document from a REST endpoint (used for /rest/v1/vm/packages/{name}).
+    pub fn rest_get_json(&self, path: &str) -> Result<Value, CdxctlError> {
+        let response = self
+            .client
+            .get(format!("{}{}", self.rest_base_url(), path))
+            .header("Authorization", &self.auth)
+            .header("Accept", "application/json")
+            .timeout(Duration::from_secs(30))
+            .send()?;
+        let status = response.status();
+        let text = response.text()?;
+        if !status.is_success() {
+            return Err(CdxctlError::Network(format!("HTTP {status}: {text}")));
+        }
+        serde_json::from_str(&text).map_err(CdxctlError::from)
+    }
+
+    /// POST a JSON body and wait up to `timeout` for the daemon to finish the work
+    /// (used for /rest/v1/vm/packages, where the daemon runs apt synchronously).
+    pub fn rest_post_json_waiting(
+        &self,
+        path: &str,
+        body: &Value,
+        timeout: Duration,
+    ) -> Result<Value, CdxctlError> {
+        let response = self
+            .client
+            .post(format!("{}{}", self.rest_base_url(), path))
+            .header("Authorization", &self.auth)
+            .header("Accept", "application/json")
+            .timeout(timeout)
             .json(body)
             .send()?;
         let status = response.status();

@@ -54,6 +54,12 @@ sledovaných témat judikatury.
 ### Správa platformy (cdxctl)
 Nástroj pro pokročilé uživatele - správa automatizací (pravidelné úlohy), marketplace pluginů a extrakce dat z dokumentů do strukturované tabulky.
 
+### Balíčky ve virtuálním počítači
+
+Agent může pomocí `cdxctl package` zjistit stav, nainstalovat nebo odebrat balíčky Ubuntu
+a aktualizovat jejich seznam. Změny platí pro celý virtuální počítač uživatele; přežijí restart,
+ale ne výměnu jeho systémového obrazu.
+
 ## Kdo za tím stojí?
 
 Plugin vyvíjí **ATLAS GROUP** - tvůrce systému CODEXIS, který je standardem v oblasti přístupu k českému právu.
