@@ -36,7 +36,7 @@ impl fmt::Display for CdxctlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CdxctlError::Network(msg) => write!(f, "Network error: {msg}"),
-            CdxctlError::OperationFailed(msg) => write!(f, "Package operation failed: {msg}"),
+            CdxctlError::OperationFailed(msg) => write!(f, "Operation failed: {msg}"),
             CdxctlError::GraphQL(errors) => {
                 write!(f, "GraphQL error: {}", errors.join("; "))
             }

@@ -190,7 +190,7 @@ mod tests {
         assert_eq!(error.exit_code(), 7);
         assert_eq!(
             error.to_string(),
-            "Package operation failed: E: Unable to locate package nope"
+            "Operation failed: E: Unable to locate package nope"
         );
     }
 
