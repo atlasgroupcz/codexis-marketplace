@@ -1,15 +1,20 @@
-import { describe, it, expect, beforeEach } from "bun:test"
+import { describe, it, expect, beforeEach, afterEach } from "bun:test"
 import { mkdtempSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { run } from "./settings"
 import { getApiKey } from "../config"
+import { FakeCdxctl } from "../test-support"
 import type { CliError } from "../http"
 
+let cdxctl: FakeCdxctl
 beforeEach(() => {
-  process.env.SID_ENV_FILE = join(mkdtempSync(join(tmpdir(), "sid-set-")), ".env")
+  const d = mkdtempSync(join(tmpdir(), "sid-set-"))
+  process.env.SID_ENV_FILE = join(d, ".env")
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
+  cdxctl = new FakeCdxctl(d)
 })
+afterEach(() => cdxctl.restore())
 
 const okUsersMe = (async () =>
   new Response(JSON.stringify({ id: "u1", email: "a@b.cz" }), { status: 200 })) as unknown as typeof fetch
@@ -20,7 +25,10 @@ describe("settings", () => {
       verified: boolean
       start: string
     }
-    expect(getApiKey()).toBe("sid_novy_klic")
+    expect(cdxctl.calls()).toEqual([
+      "appenv sid set SID_API_KEY sid_novy_klic",
+      "appenv sid set SID_USER_ROLE USER",
+    ])
     expect(out.verified).toBe(true)
     // the output must carry only the prefix, never the whole key
     expect(JSON.stringify(out)).not.toContain("sid_novy_klic")
@@ -42,19 +50,27 @@ describe("settings", () => {
       (e: unknown) => e,
     )) as CliError
     expect(err.exitCode).toBe(2)
-    expect(getApiKey()).toBe("")
+    expect(cdxctl.calls()).toEqual([])
     expect(called).toBe(false) // rejected before even verifying against SID
   })
 
-  it("po delete-key status nehlásí starou roli/isAdmin", async () => {
-    const adminMe = (async () =>
-      new Response(JSON.stringify({ id: "u1", email: "a@b.cz", role: "ADMIN" }), {
-        status: 200,
-      })) as unknown as typeof fetch
-    await run(["set-key"], adminMe, async () => "sid_admin_key")
+  it("delete-key zahodí i nacacheovanou roli, ne jen klíč", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_admin_key\nSID_USER_ROLE=ADMIN\n", {
+      mode: 0o600,
+    })
+
     await run(["delete-key"])
+
+    expect(cdxctl.calls()).toEqual([
+      "appenv sid delete SID_API_KEY",
+      "appenv sid delete SID_USER_ROLE",
+    ])
+  })
+
+  it("status nehlásí roli, když ji .env nenese", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
     const out = (await run(["status"])) as Record<string, unknown>
-    expect(out.configured).toBe(false)
+    expect(out.configured).toBe(true)
     expect(out.role).toBeUndefined()
     expect(out.isAdmin).toBeUndefined()
   })
@@ -63,7 +79,7 @@ describe("settings", () => {
     const reject = (async () => new Response("nope", { status: 401 })) as unknown as typeof fetch
     const err = (await run(["set-key"], reject, async () => "sid_spatny").catch((e: unknown) => e)) as CliError
     expect(err.exitCode).toBe(3)
-    expect(getApiKey()).toBe("")
+    expect(cdxctl.calls()).toEqual([])
   })
 
   it("test bez klíče → AUTH s návodem", async () => {
@@ -82,10 +98,12 @@ describe("settings", () => {
     expect(out).toEqual({ configured: false, baseUrl: "https://sid.onprem.agrp.dev" })
   })
 
-  it("delete-key smaže klíč", async () => {
+  it("delete-key požádá platformu o smazání klíče", async () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
+
     await run(["delete-key"])
-    expect(getApiKey()).toBe("")
+
+    expect(cdxctl.calls()).toEqual(["appenv sid delete SID_API_KEY"])
   })
 
   it("neznámý podpříkaz → USAGE", async () => {
@@ -101,7 +119,8 @@ describe("set-key - neničí funkční klíč", () => {
       throw new Error("ECONNREFUSED")
     }) as unknown as typeof fetch
     const err = (await run(["set-key"], down, async () => "sid_novy").catch((e: unknown) => e)) as CliError
-    // A working key must survive a network outage.
+    // A working key must survive a network outage: nothing was even asked for.
+    expect(cdxctl.calls()).toEqual([])
     expect(getApiKey()).toBe("sid_puvodni")
     // The message must not claim rejection when SID was simply unreachable.
     expect(err.message).not.toMatch(/odmítl/i)
@@ -111,6 +130,7 @@ describe("set-key - neničí funkční klíč", () => {
     writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_puvodni\n", { mode: 0o600 })
     const reject = (async () => new Response("nope", { status: 401 })) as unknown as typeof fetch
     await run(["set-key"], reject, async () => "sid_spatny").catch(() => undefined)
+    expect(cdxctl.calls()).toEqual([])
     expect(getApiKey()).toBe("sid_puvodni")
   })
 })

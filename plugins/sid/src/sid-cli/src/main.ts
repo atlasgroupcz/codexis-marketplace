@@ -36,7 +36,8 @@ Příkazy:
   settings whoami                          kdo jsem a jestli jsem admin
 
 Klíč: vygenerujte v SID na /api-klice, vložte v panelu pluginu.
-Ukládá se do ~/.cdx/apps/sid/.env - nikdy ho nevkládejte do chatu.`
+Ukládá ho platforma, plugin ho jen čte z ~/.cdx/apps/sid/.env.
+Nikdy ho nevkládejte do chatu.`
 
 async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2)

@@ -1,17 +1,21 @@
-import { describe, it, expect, beforeEach } from "bun:test"
-import { mkdtempSync } from "node:fs"
+import { describe, it, expect, beforeEach, afterEach } from "bun:test"
+import { mkdtempSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { handle, renderCgi } from "./cgi"
 import { getApiKey } from "./config"
+import { FakeCdxctl } from "./test-support"
 
+let cdxctl: FakeCdxctl
 beforeEach(() => {
   const d = mkdtempSync(join(tmpdir(), "sid-cgi-"))
   process.env.SID_ENV_FILE = join(d, ".env")
   process.env.CODEXIS_PUBLIC_USER_HOME = d
   process.env.SID_DEFAULTS_FILE = join(d, "nic.json")
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
+  cdxctl = new FakeCdxctl(d)
 })
+afterEach(() => cdxctl.restore())
 
 const okMe = (async () =>
   new Response(JSON.stringify({ id: "u1", email: "a@b.cz" }), { status: 200 })) as unknown as typeof fetch
@@ -23,7 +27,10 @@ describe("cgi handle", () => {
       start?: string
     }
     expect(out.ok).toBe(true)
-    expect(getApiKey()).toBe("sid_klic123")
+    expect(cdxctl.calls()).toEqual([
+      "appenv sid set SID_API_KEY sid_klic123",
+      "appenv sid set SID_USER_ROLE USER",
+    ])
     expect(JSON.stringify(out)).not.toContain("sid_klic123")
     expect(out.start).toBe("sid_kli")
   })
@@ -32,6 +39,7 @@ describe("cgi handle", () => {
     const reject = (async () => new Response("nope", { status: 401 })) as unknown as typeof fetch
     const out = (await handle({ action: "save_config", api_key: "sid_spatny" }, reject)) as { ok: boolean }
     expect(out.ok).toBe(false)
+    expect(cdxctl.calls()).toEqual([])
     expect(getApiKey()).toBe("")
   })
 
@@ -54,10 +62,12 @@ describe("cgi handle", () => {
     expect(out).toMatchObject({ ok: true, configured: false })
   })
 
-  it("delete_config smaže klíč", async () => {
-    await handle({ action: "save_config", api_key: "sid_x" }, okMe)
+  it("delete_config požádá platformu o smazání klíče", async () => {
+    writeFileSync(process.env.SID_ENV_FILE!, "SID_API_KEY=sid_x\n", { mode: 0o600 })
+
     await handle({ action: "delete_config" }, okMe)
-    expect(getApiKey()).toBe("")
+
+    expect(cdxctl.calls()).toEqual(["appenv sid delete SID_API_KEY"])
   })
 
   it("neznámá akce → ok:false", async () => {

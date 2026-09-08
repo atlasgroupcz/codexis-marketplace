@@ -11,17 +11,64 @@ var __export = (target, all) => {
 };
 var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
 
+// src/app-env.ts
+function cdxctlProgram() {
+  if (process.env.SID_CDXCTL)
+    return process.env.SID_CDXCTL;
+  for (const home of [process.env.HOME, process.env.CODEXIS_PUBLIC_USER_HOME]) {
+    if (!home)
+      continue;
+    const candidate = import_node_path.join(home, ".local", "bin", "cdxctl");
+    if (import_node_fs.existsSync(candidate))
+      return candidate;
+  }
+  return "cdxctl";
+}
+function run(args) {
+  const result = import_node_child_process.spawnSync(cdxctlProgram(), args, {
+    stdio: ["ignore", "ignore", "pipe"],
+    encoding: "utf8"
+  });
+  if (result.error) {
+    throw new AppEnvError(`cdxctl se nepodařilo spustit: ${result.error.message}`, null);
+  }
+  if (result.status === 0)
+    return;
+  const detail = (result.stderr ?? "").trim();
+  throw new AppEnvError(`cdxctl appenv skončil s kódem ${result.status}: ${detail}`, result.status);
+}
+function setAppEnv(app, name, value) {
+  run(["appenv", app, "set", name, value]);
+}
+function deleteAppEnv(app, name) {
+  run(["appenv", app, "delete", name]);
+}
+var import_node_child_process, import_node_fs, import_node_path, AppEnvError;
+var init_app_env = __esm(() => {
+  import_node_child_process = require("node:child_process");
+  import_node_fs = require("node:fs");
+  import_node_path = require("node:path");
+  AppEnvError = class AppEnvError extends Error {
+    exitCode;
+    constructor(message, exitCode) {
+      super(message);
+      this.name = "AppEnvError";
+      this.exitCode = exitCode;
+    }
+  };
+});
+
 // src/config.ts
 function userHome() {
   return process.env.CODEXIS_PUBLIC_USER_HOME || import_node_os.homedir();
 }
 function envFilePath() {
-  return process.env.SID_ENV_FILE || import_node_path.join(userHome(), ".cdx", "apps", "sid", ".env");
+  return process.env.SID_ENV_FILE || import_node_path2.join(userHome(), ".cdx", "apps", "sid", ".env");
 }
 function readEnvFile() {
   const out = {};
   try {
-    for (const line of import_node_fs.readFileSync(envFilePath(), "utf8").split(`
+    for (const line of import_node_fs2.readFileSync(envFilePath(), "utf8").split(`
 `)) {
       const t = line.trim();
       if (!t || t.startsWith("#") || !t.includes("="))
@@ -42,43 +89,30 @@ function getBaseUrl() {
   const raw = process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL;
   return raw.trim().replace(/\/+$/, "");
 }
-function writeEnvFile(entries) {
-  for (const [k, v] of Object.entries(entries)) {
-    if (/[\r\n]/.test(k) || /[\r\n]/.test(v)) {
-      throw new Error(`Odmítnut zápis do .env: hodnota '${k}' obsahuje konec řádku.`);
-    }
+function rejectNewlines(key, value) {
+  if (/[\r\n]/.test(key) || /[\r\n]/.test(value)) {
+    throw new Error(`Odmítnuto uložení: hodnota '${key}' obsahuje konec řádku.`);
   }
-  const path = envFilePath();
-  import_node_fs.mkdirSync(import_node_path.dirname(path), { recursive: true, mode: 448 });
-  const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join(`
-`) + `
-`;
-  const tmp = `${path}.tmp-${process.pid}`;
-  import_node_fs.writeFileSync(tmp, body, { mode: 384 });
-  import_node_fs.renameSync(tmp, path);
 }
 function writeEnvValue(key, value) {
-  writeEnvFile({ ...readEnvFile(), [key]: value });
+  rejectNewlines(key, value);
+  setAppEnv(APP_ID, key, value);
 }
 function writeApiKey(key) {
-  writeEnvFile({ ...readEnvFile(), SID_API_KEY: key });
+  writeEnvValue("SID_API_KEY", key);
 }
 function deleteApiKey() {
-  const rest = readEnvFile();
-  delete rest.SID_API_KEY;
-  delete rest.SID_USER_ROLE;
-  delete rest.SID_USER_EMAIL;
-  if (Object.keys(rest).length === 0) {
-    if (import_node_fs.existsSync(envFilePath()))
-      import_node_fs.rmSync(envFilePath());
-    return;
+  const stored = readEnvFile();
+  for (const name of ["SID_API_KEY", "SID_USER_ROLE", "SID_USER_EMAIL"]) {
+    if (name in stored)
+      deleteAppEnv(APP_ID, name);
   }
-  writeEnvFile(rest);
 }
-var import_node_fs, import_node_path, import_node_os, EXIT, DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev";
+var import_node_fs2, import_node_path2, import_node_os, APP_ID = "sid", EXIT, DEFAULT_BASE_URL = "https://sid.onprem.agrp.dev";
 var init_config = __esm(() => {
-  import_node_fs = require("node:fs");
-  import_node_path = require("node:path");
+  init_app_env();
+  import_node_fs2 = require("node:fs");
+  import_node_path2 = require("node:path");
   import_node_os = require("node:os");
   EXIT = {
     OK: 0,
@@ -218,9 +252,9 @@ var init_links = __esm(() => {
 // src/commands/search.ts
 var exports_search = {};
 __export(exports_search, {
-  run: () => run
+  run: () => run2
 });
-async function run(argv, f) {
+async function run2(argv, f) {
   const { values, positionals } = import_node_util.parseArgs({
     args: argv,
     allowPositionals: true,
@@ -255,9 +289,9 @@ var init_search = __esm(() => {
 // src/commands/docs.ts
 var exports_docs = {};
 __export(exports_docs, {
-  run: () => run2
+  run: () => run3
 });
-async function run2(argv, f) {
+async function run3(argv, f) {
   const [sub, ...rest] = argv;
   if (sub === "get") {
     const id = rest[0];
@@ -382,7 +416,7 @@ var init_docs = __esm(() => {
 // src/commands/folders.ts
 var exports_folders = {};
 __export(exports_folders, {
-  run: () => run3
+  run: () => run4
 });
 function pathOf(folder, byId) {
   const names = [];
@@ -395,7 +429,7 @@ function pathOf(folder, byId) {
   }
   return names.join(" / ");
 }
-async function run3(argv, f) {
+async function run4(argv, f) {
   if (argv[0] !== "list")
     throw new CliError(USAGE2, EXIT.USAGE);
   const folders = await apiGet("/api/v1/folders", f);
@@ -415,7 +449,7 @@ var init_folders = __esm(() => {
 // src/commands/access.ts
 var exports_access = {};
 __export(exports_access, {
-  run: () => run4
+  run: () => run5
 });
 function matchAll(items, pick, needle) {
   const n = needle.trim().toLowerCase();
@@ -451,7 +485,7 @@ async function resolveGroup(needle, f) {
 function folderLabel(x) {
   return x.folderPath.map((p) => p.name).join(" / ") || x.folderName;
 }
-async function run4(argv, f) {
+async function run5(argv, f) {
   const [sub] = argv;
   const needle = argv.slice(1).join(" ").trim();
   if (sub !== "user" && sub !== "group" || !needle)
@@ -497,9 +531,9 @@ var init_access = __esm(() => {
 // src/commands/attributes.ts
 var exports_attributes = {};
 __export(exports_attributes, {
-  run: () => run5
+  run: () => run6
 });
-async function run5(argv, f) {
+async function run6(argv, f) {
   const [sub, ...rest] = argv;
   if (sub !== "list")
     throw new CliError(USAGE4, EXIT.USAGE);
@@ -528,14 +562,14 @@ var init_attributes = __esm(() => {
 // src/commands/download.ts
 var exports_download = {};
 __export(exports_download, {
-  run: () => run6
+  run: () => run7
 });
 function filenameFrom(res, fileId) {
   const cd = res.headers.get("content-disposition") ?? "";
   const m = /filename="?([^";]+)"?/.exec(cd);
   const raw = m?.[1] ?? fileId;
-  const safe = import_node_path2.basename(raw.trim().replace(/\\/g, "/"));
-  return safe && safe !== "." && safe !== ".." ? safe : import_node_path2.basename(fileId) || "stazeny-soubor";
+  const safe = import_node_path3.basename(raw.trim().replace(/\\/g, "/"));
+  return safe && safe !== "." && safe !== ".." ? safe : import_node_path3.basename(fileId) || "stazeny-soubor";
 }
 async function currentFileIdOf(documentId, f) {
   try {
@@ -563,7 +597,7 @@ async function fetchFile(id, f) {
     };
   }
 }
-async function run6(argv, f) {
+async function run7(argv, f) {
   const { values, positionals } = import_node_util4.parseArgs({
     args: argv,
     allowPositionals: true,
@@ -574,30 +608,30 @@ async function run6(argv, f) {
     throw new CliError("Použití: sid-cli download <fileId|documentId> [--out CESTA]", EXIT.USAGE);
   }
   const { res, fileId } = await fetchFile(id, f);
-  const target = import_node_path2.resolve(values.out ?? filenameFrom(res, fileId));
+  const target = import_node_path3.resolve(values.out ?? filenameFrom(res, fileId));
   if (!res.body)
     throw new CliError("Prázdná odpověď serveru.", EXIT.ERROR);
-  import_node_fs2.mkdirSync(import_node_path2.dirname(target), { recursive: true });
-  await import_promises.pipeline(import_node_stream.Readable.fromWeb(res.body), import_node_fs2.createWriteStream(target));
-  return { savedTo: target, bytes: import_node_fs2.statSync(target).size };
+  import_node_fs3.mkdirSync(import_node_path3.dirname(target), { recursive: true });
+  await import_promises.pipeline(import_node_stream.Readable.fromWeb(res.body), import_node_fs3.createWriteStream(target));
+  return { savedTo: target, bytes: import_node_fs3.statSync(target).size };
 }
-var import_node_util4, import_node_fs2, import_node_stream, import_promises, import_node_path2;
+var import_node_util4, import_node_fs3, import_node_stream, import_promises, import_node_path3;
 var init_download = __esm(() => {
   init_http();
   init_config();
   import_node_util4 = require("node:util");
-  import_node_fs2 = require("node:fs");
+  import_node_fs3 = require("node:fs");
   import_node_stream = require("node:stream");
   import_promises = require("node:stream/promises");
-  import_node_path2 = require("node:path");
+  import_node_path3 = require("node:path");
 });
 
 // src/commands/confirmations.ts
 var exports_confirmations = {};
 __export(exports_confirmations, {
-  run: () => run7
+  run: () => run8
 });
-async function run7(argv, f) {
+async function run8(argv, f) {
   const [sub, ...rest] = argv;
   if (sub === "confirm") {
     throw new CliError("Potvrzení se provádí v aplikaci SID, ne z příkazové řádky - " + "otevřete dokument v SID a potvrďte ho tam. " + `Seznam čekajících: ${confirmationsUrl(await resolveRole(f))}`, EXIT.USAGE);
@@ -628,9 +662,9 @@ var init_confirmations = __esm(() => {
 // src/commands/notifications.ts
 var exports_notifications = {};
 __export(exports_notifications, {
-  run: () => run8
+  run: () => run9
 });
-async function run8(argv, f) {
+async function run9(argv, f) {
   const { values } = import_node_util6.parseArgs({
     args: argv,
     options: { all: { type: "boolean", default: false }, limit: { type: "string", default: "50" } }
@@ -652,14 +686,14 @@ var init_notifications = __esm(() => {
 
 // src/notify-settings.ts
 function defaultsPath() {
-  return process.env.SID_DEFAULTS_FILE || import_node_path3.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
+  return process.env.SID_DEFAULTS_FILE || import_node_path4.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
 }
 function userSettingsPath() {
-  return import_node_path3.join(userHome(), ".cdx", "apps", "sid", "settings.json");
+  return import_node_path4.join(userHome(), ".cdx", "apps", "sid", "settings.json");
 }
 function readJson(path) {
   try {
-    const parsed = JSON.parse(import_node_fs3.readFileSync(path, "utf8"));
+    const parsed = JSON.parse(import_node_fs4.readFileSync(path, "utf8"));
     return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     return null;
@@ -679,11 +713,11 @@ function getNotifySettings() {
     ...notifyBlock(readJson(userSettingsPath()))
   };
 }
-var import_node_fs3, import_node_path3, import_node_os2, BUILTIN;
+var import_node_fs4, import_node_path4, import_node_os2, BUILTIN;
 var init_notify_settings = __esm(() => {
   init_config();
-  import_node_fs3 = require("node:fs");
-  import_node_path3 = require("node:path");
+  import_node_fs4 = require("node:fs");
+  import_node_path4 = require("node:path");
   import_node_os2 = require("node:os");
   BUILTIN = { inApp: true };
 });
@@ -695,7 +729,7 @@ function graphqlUrl(daemonUrl) {
 }
 function daemonAuth() {
   try {
-    let t = import_node_fs4.readFileSync(import_node_path4.join(userHome(), ".cdx", "env", "secret"), "utf8").trim();
+    let t = import_node_fs5.readFileSync(import_node_path5.join(userHome(), ".cdx", "env", "secret"), "utf8").trim();
     if (!t)
       return null;
     if (t.toLowerCase().startsWith("authorization:"))
@@ -739,20 +773,20 @@ async function sendDigest(message, f = fetch, target = {}) {
     return false;
   return sendBell(message, auth, daemonUrl, f, target);
 }
-var import_node_fs4, import_node_path4, GRAPHQL_PATH = "/graphql", DAEMON_TIMEOUT_MS = 30000;
+var import_node_fs5, import_node_path5, GRAPHQL_PATH = "/graphql", DAEMON_TIMEOUT_MS = 30000;
 var init_notify = __esm(() => {
   init_config();
   init_notify_settings();
-  import_node_fs4 = require("node:fs");
-  import_node_path4 = require("node:path");
+  import_node_fs5 = require("node:fs");
+  import_node_path5 = require("node:path");
 });
 
 // src/commands/check.ts
 var exports_check = {};
 __export(exports_check, {
-  run: () => run9
+  run: () => run10
 });
-async function run9(argv, f) {
+async function run10(argv, f) {
   const { values } = import_node_util7.parseArgs({ args: argv, options: { notify: { type: "boolean", default: false } } });
   const [notifications, confirmations] = await Promise.all([
     apiGet("/api/notifications?unreadOnly=true&limit=50", f),
@@ -786,7 +820,7 @@ var init_check = __esm(() => {
 // src/commands/settings.ts
 var exports_settings = {};
 __export(exports_settings, {
-  run: () => run10
+  run: () => run11
 });
 function isAdmin(role) {
   return role === "ADMIN";
@@ -807,7 +841,7 @@ async function verifyKey(key, f) {
     throw new CliError(`${reason} Původní nastavení zůstalo beze změny.`, code);
   }
 }
-async function run10(argv, f, stdin = readStdin) {
+async function run11(argv, f, stdin = readStdin) {
   const [sub] = argv;
   if (sub === "set-key") {
     const key = (await stdin()).trim();
@@ -893,7 +927,8 @@ Příkazy:
   settings whoami                          kdo jsem a jestli jsem admin
 
 Klíč: vygenerujte v SID na /api-klice, vložte v panelu pluginu.
-Ukládá se do ~/.cdx/apps/sid/.env - nikdy ho nevkládejte do chatu.`;
+Ukládá ho platforma, plugin ho jen čte z ~/.cdx/apps/sid/.env.
+Nikdy ho nevkládejte do chatu.`;
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   if (!cmd || cmd === "--help" || cmd === "help") {
