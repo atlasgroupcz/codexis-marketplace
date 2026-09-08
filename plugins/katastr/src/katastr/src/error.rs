@@ -51,6 +51,11 @@ pub enum KatastrError {
     #[error("{0}")]
     Notify(String),
 
+    /// `cdxctl appenv` failed to store or remove the key. Maps to HTTP 500 on
+    /// the CGI side with the reason, so the settings dialog can show it.
+    #[error("{0}")]
+    AppEnv(String),
+
     /// Filesystem / IO failure (reading state, writing atomically).
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),

@@ -31,6 +31,13 @@ enum Commands {
         #[command(subcommand)]
         command: commands::package::PackageCommands,
     },
+    #[command(about = "Set or delete a plugin's env values (~/.cdx/apps/<app>/.env)")]
+    Appenv {
+        /// Plugin name, e.g. katastr
+        app: String,
+        #[command(subcommand)]
+        command: commands::appenv::AppEnvCommands,
+    },
     /// Manage automations
     Automation {
         #[command(subcommand)]
@@ -638,6 +645,9 @@ fn main() {
 
     let result = match cli.command {
         Commands::Package { command } => commands::package::execute(&client, command, format),
+        Commands::Appenv { app, command } => {
+            commands::appenv::execute(&client, &app, command, format)
+        }
         Commands::Automation { command } => match command {
             AutomationCommands::List => commands::automation::list(&client, format),
             AutomationCommands::Create {
@@ -1033,6 +1043,26 @@ fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_appenv_set_and_delete() {
+        let cli =
+            Cli::try_parse_from(["cdxctl", "appenv", "katastr", "set", "API_KEY", "abc"]).unwrap();
+        match cli.command {
+            Commands::Appenv { app, command } => {
+                assert_eq!(app, "katastr");
+                assert!(matches!(
+                    command,
+                    commands::appenv::AppEnvCommands::Set { ref name, ref value }
+                        if name == "API_KEY" && value == "abc"
+                ));
+            }
+            _ => panic!("expected appenv"),
+        }
+        assert!(Cli::try_parse_from(["cdxctl", "appenv", "katastr", "delete", "API_KEY"]).is_ok());
+        assert!(Cli::try_parse_from(["cdxctl", "appenv", "katastr", "set", "API_KEY"]).is_err());
+        assert!(Cli::try_parse_from(["cdxctl", "appenv", "set", "API_KEY", "abc"]).is_err());
+    }
 
     #[test]
     fn notification_list_pages_instead_of_filtering_by_age() {

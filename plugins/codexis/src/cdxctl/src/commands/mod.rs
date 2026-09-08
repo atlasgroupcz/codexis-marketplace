@@ -1,4 +1,5 @@
 pub mod agent;
+pub mod appenv;
 pub mod automation;
 pub mod bug;
 pub mod marketplace;

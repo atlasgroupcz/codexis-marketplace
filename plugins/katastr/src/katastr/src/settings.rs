@@ -2,7 +2,9 @@
 //!
 //! The key lives in `$HOME/.cdx/apps/katastr/.env` as a single line
 //! `API_KEY=<value>\n`, mode 0600. Shared with the legacy `kn` CLI tool -
-//! either runtime can read what the other wrote.
+//! either runtime can read what the other wrote. The file is read-only inside
+//! the plugin's isolation, so it is written by `cdxctl appenv` on the
+//! plugin's behalf; katastr only reads it.
 
 use cdx_common::env_file;
 
@@ -31,13 +33,19 @@ pub fn read_api_key() -> String {
     env_file::read_env_var(&paths::env_file(), "API_KEY").unwrap_or_default()
 }
 
-/// Write the API key to disk atomically with mode 0600.
-/// No validation here - use [`set_api_key`] for the validated path.
-pub fn write_api_key(key: &str) -> Result<()> {
-    Ok(env_file::write_env_file(
-        &paths::env_file(),
-        &[("API_KEY", key)],
-    )?)
+/// Store the API key through `cdxctl appenv`; the file is read-only inside the
+/// isolation, so the daemon writes it. No validation here - use [`set_api_key`].
+pub fn store_api_key(key: &str) -> Result<()> {
+    cdx_common::app_env::set("katastr", "API_KEY", key).map_err(app_env_error)
+}
+
+/// Remove the stored key through `cdxctl appenv`.
+pub fn delete_api_key() -> Result<()> {
+    cdx_common::app_env::delete("katastr", "API_KEY").map_err(app_env_error)
+}
+
+fn app_env_error(e: cdx_common::app_env::AppEnvError) -> KatastrError {
+    KatastrError::AppEnv(format!("Uložení API klíče selhalo: {e}"))
 }
 
 /// Mask the key for display: `ABCD****WXYZ`. Anything shorter than 12
@@ -127,14 +135,14 @@ pub fn validate_key(key: &str) -> Result<()> {
 }
 
 /// Validate + store the API key. Trims whitespace, rejects empty input,
-/// calls ČÚZK to confirm the key works, then writes it atomically.
+/// calls ČÚZK to confirm the key works, then stores it through `cdxctl appenv`.
 pub fn set_api_key(key: &str) -> Result<()> {
     let trimmed = key.trim();
     if trimmed.is_empty() {
         return Err(KatastrError::ApiKeyInvalid("API klíč je prázdný.".into()));
     }
     validate_key(trimmed)?;
-    write_api_key(trimmed)
+    store_api_key(trimmed)
 }
 
 // ── tests ────────────────────────────────────────────────────────────────────
@@ -167,22 +175,53 @@ mod tests {
     }
 
     #[test]
-    fn write_then_read_roundtrips() {
+    fn store_api_key_delegates_to_cdxctl_appenv() {
         let tmp = tempfile::tempdir().unwrap();
-        let _g = cdx_common::test_support::home_guard(tmp.path());
-        write_api_key("SECRET123").unwrap();
-        assert_eq!(read_api_key(), "SECRET123");
-        assert!(is_configured());
+        let home = cdx_common::test_support::home_guard(tmp.path());
+        let fake = cdx_common::test_support::fake_cdxctl(&home, tmp.path());
+
+        store_api_key("SECRET123").unwrap();
+
+        assert_eq!(fake.calls(), vec!["appenv katastr set API_KEY SECRET123"]);
+        assert!(
+            !paths::env_file().exists(),
+            "katastr must not write .env itself"
+        );
     }
 
     #[test]
-    fn write_sets_mode_0600() {
-        use std::os::unix::fs::PermissionsExt;
+    fn delete_api_key_delegates_to_cdxctl_appenv() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = cdx_common::test_support::home_guard(tmp.path());
+        let fake = cdx_common::test_support::fake_cdxctl(&home, tmp.path());
+
+        delete_api_key().unwrap();
+
+        assert_eq!(fake.calls(), vec!["appenv katastr delete API_KEY"]);
+    }
+
+    #[test]
+    fn cdxctl_failure_surfaces_as_app_env_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = cdx_common::test_support::home_guard(tmp.path());
+        let fake = cdx_common::test_support::fake_cdxctl(&home, tmp.path());
+        fake.set_exit(7);
+
+        let error = store_api_key("SECRET123").unwrap_err();
+
+        assert!(matches!(error, KatastrError::AppEnv(_)));
+        assert!(error.to_string().contains("Uložení API klíče selhalo"));
+    }
+
+    #[test]
+    fn read_still_uses_the_env_file() {
         let tmp = tempfile::tempdir().unwrap();
         let _g = cdx_common::test_support::home_guard(tmp.path());
-        write_api_key("SECRET").unwrap();
-        let perms = std::fs::metadata(paths::env_file()).unwrap().permissions();
-        assert_eq!(perms.mode() & 0o777, 0o600);
+        std::fs::create_dir_all(paths::app_dir()).unwrap();
+        std::fs::write(paths::env_file(), "API_KEY=FROMFILE\n").unwrap();
+
+        assert_eq!(read_api_key(), "FROMFILE");
+        assert!(is_configured());
     }
 
     #[test]
