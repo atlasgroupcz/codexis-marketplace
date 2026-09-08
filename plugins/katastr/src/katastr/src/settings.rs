@@ -135,7 +135,7 @@ pub fn validate_key(key: &str) -> Result<()> {
 }
 
 /// Validate + store the API key. Trims whitespace, rejects empty input,
-/// calls ČÚZK to confirm the key works, then writes it atomically.
+/// calls ČÚZK to confirm the key works, then stores it through `cdxctl appenv`.
 pub fn set_api_key(key: &str) -> Result<()> {
     let trimmed = key.trim();
     if trimmed.is_empty() {
@@ -183,7 +183,10 @@ mod tests {
         store_api_key("SECRET123").unwrap();
 
         assert_eq!(fake.calls(), vec!["appenv katastr set API_KEY SECRET123"]);
-        assert!(!paths::env_file().exists(), "katastr must not write .env itself");
+        assert!(
+            !paths::env_file().exists(),
+            "katastr must not write .env itself"
+        );
     }
 
     #[test]

@@ -36,6 +36,7 @@ Vklad nebo záznam si necháte hlídat a změnu stavu se dozvíte automaticky.
 Doplněk potřebuje API klíč ze zákaznického portálu ČÚZK (zdarma, přihlášení Identitou
 občana nebo účtem pro dálkový přístup). Klíč vložíte v aplikaci **Katastr - sledovaná
 řízení** pod ikonou ozubeného kola, nebo o to požádáte asistenta v konverzaci.
+Klíč se ukládá přes platformu (`cdxctl`), aplikace ani asistent do souboru s klíčem nezapisují přímo.
 
 ## Součásti pluginu
 
