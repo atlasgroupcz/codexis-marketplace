@@ -6,10 +6,12 @@ pub const EXIT_GRAPHQL: i32 = 3;
 pub const EXIT_PARSE: i32 = 4;
 pub const EXIT_REFUSED: i32 = 5;
 pub const EXIT_UNSUPPORTED: i32 = 6;
+pub const EXIT_OPERATION_FAILED: i32 = 7;
 
 #[derive(Debug)]
 pub enum CdxctlError {
     Network(String),
+    OperationFailed(String),
     GraphQL(Vec<String>),
     Parse(String),
     Refused(String),
@@ -21,6 +23,7 @@ impl CdxctlError {
     pub fn exit_code(&self) -> i32 {
         match self {
             CdxctlError::Network(_) => EXIT_NETWORK,
+            CdxctlError::OperationFailed(_) => EXIT_OPERATION_FAILED,
             CdxctlError::GraphQL(_) => EXIT_GRAPHQL,
             CdxctlError::Parse(_) => EXIT_PARSE,
             CdxctlError::Refused(_) => EXIT_REFUSED,
@@ -33,6 +36,7 @@ impl fmt::Display for CdxctlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CdxctlError::Network(msg) => write!(f, "Network error: {msg}"),
+            CdxctlError::OperationFailed(msg) => write!(f, "Package operation failed: {msg}"),
             CdxctlError::GraphQL(errors) => {
                 write!(f, "GraphQL error: {}", errors.join("; "))
             }
