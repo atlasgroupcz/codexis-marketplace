@@ -28,6 +28,13 @@ podobnost a překryv tříd výrobků a služeb.
 - **Rozhodnutí o námitce** - podklad k úvaze, jestli kolize stojí za spor.
 - **Portfolio známek** - více značek hlídaných na jednom místě.
 
+## Nastavení
+
+Doplněk potřebuje přístupové údaje k EUIPO (client_id a client_secret), které si
+zdarma vygenerujete na vývojářském portálu EUIPO. Vložíte je v aplikaci **Hlídač
+ochranných známek** pod ikonou ozubeného kola. Údaje se ukládají přes platformu
+(`cdxctl`), aplikace ani asistent do souboru s nimi nezapisují přímo.
+
 ## Součásti pluginu
 
 ### Hlídač ochranných známek (aplikace)

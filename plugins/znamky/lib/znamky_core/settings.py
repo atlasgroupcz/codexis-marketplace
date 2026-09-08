@@ -1,9 +1,10 @@
 """EUIPO API credential management (user-provided).
 
 The official EUIPO trademark-search API is OAuth2-protected, so the user brings
-their own free credentials from dev.euipo.europa.eu. They are stored in
-$CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/.env (KEY=VALUE, mode 0600), the same
-self-contained pattern the katastr plugin uses for its ČÚZK key.
+their own free credentials from dev.euipo.europa.eu. They live in
+$CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/.env (KEY=VALUE, mode 0600). That file
+is read-only inside the plugin's isolation, so `cdxctl appenv` (see
+:mod:`app_env`) asks the daemon to rewrite it; this module only reads it.
 """
 
 import base64
@@ -11,8 +12,9 @@ import os
 import urllib.error
 import urllib.request
 
+from . import app_env
+from .app_env import AppEnvError
 from .exceptions import ApiHttpError, ApiNetworkError, CredentialsInvalidError
-from .fs import atomic_replace
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
 ENV_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "znamky")
@@ -40,15 +42,33 @@ def _read_env() -> dict:
     return out
 
 
+APP_ID = "znamky"
+CLIENT_ID_VAR = "EUIPO_CLIENT_ID"
+CLIENT_SECRET_VAR = "EUIPO_CLIENT_SECRET"
+
+
 def read_credentials() -> tuple:
     """Return (client_id, client_secret); empty strings if not configured."""
     env = _read_env()
-    return env.get("EUIPO_CLIENT_ID", ""), env.get("EUIPO_CLIENT_SECRET", "")
+    return env.get(CLIENT_ID_VAR, ""), env.get(CLIENT_SECRET_VAR, "")
 
 
 def write_credentials(client_id: str, client_secret: str) -> None:
-    body = f"EUIPO_CLIENT_ID={client_id}\nEUIPO_CLIENT_SECRET={client_secret}\n"
-    atomic_replace(ENV_FILE, lambda f: f.write(body), mode=0o600)
+    """Store both credentials through the platform, or remove both when empty.
+
+    One `cdxctl` call per name, in a fixed order, so a failure halfway leaves the
+    id written and the secret not - `is_configured` needs both, so that state
+    still reads as unconfigured.
+    """
+    try:
+        if client_id and client_secret:
+            app_env.set_value(APP_ID, CLIENT_ID_VAR, client_id)
+            app_env.set_value(APP_ID, CLIENT_SECRET_VAR, client_secret)
+        else:
+            app_env.delete_value(APP_ID, CLIENT_ID_VAR)
+            app_env.delete_value(APP_ID, CLIENT_SECRET_VAR)
+    except AppEnvError as e:
+        raise AppEnvError(f"Uložení EUIPO klíčů selhalo: {e}", e.exit_code) from e
 
 
 def is_configured() -> bool:
