@@ -44,6 +44,12 @@ onepost-cli settings set "<ONEPOST_API_KEY>"
 onepost-cli settings test
 ```
 
+`settings set` validates the key against ONEPOST and stores it through the
+platform (`cdxctl appenv onepost set ONEPOST_API_KEY <KEY>`); every command and
+the app read it from `~/.cdx/apps/onepost/.env`. Do not write that file by hand
+and do not call `cdxctl appenv` for the key directly - `settings set` does the
+validation first.
+
 Users generate keys in ONEPOST at `https://app.onepost.cz/profil/codexis-ai-agent`.
 `READ` keys can use read commands. `READ_WRITE` keys are required for `receive`,
 attachment upload, concept save, and concept send.

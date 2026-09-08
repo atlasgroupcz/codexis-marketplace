@@ -13,7 +13,8 @@ Nastavte API klíč přes aplikaci **ONEPOST API klíč**:
 3. Zvolte typ přístupu - **Pouze čtení** pro prohlížení dat, nebo **Čtení a akce** pro operace jménem uživatele.
 4. Vložte klíč do pole a uložte - agent ho ihned ověří.
 
-Klíč se ukládá lokálně do konfigurace pluginu a kdykoli ho můžete přepsat nebo smazat.
+Klíč se ukládá přes platformu (`cdxctl`) do konfigurace pluginu, doplněk sám do souboru
+s klíčem nezapisuje. Kdykoli ho můžete přepsat nebo smazat.
 
 ## Co plugin umí
 
