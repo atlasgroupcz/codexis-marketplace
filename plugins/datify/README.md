@@ -25,7 +25,8 @@ Volitelně nad ním Datify spustí extrakci.
 ## Než začnete
 
 Doplněk potřebuje API token. Vygenerujete ho v Datify a uložíte v nastavení
-aplikace - token se před uložením ověří, takže překlep poznáte hned.
+aplikace - token se před uložením ověří, takže překlep poznáte hned. Token se
+ukládá přes platformu (`cdxctl`), doplněk sám do souboru s tokenem nezapisuje.
 
 ## Na co si dát pozor
 

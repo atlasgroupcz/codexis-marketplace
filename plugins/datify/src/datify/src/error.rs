@@ -48,6 +48,11 @@ pub enum DatifyError {
     #[error("Datify API vrátilo chybu (HTTP {status}): {message}")]
     Http { status: u16, message: String },
 
+    /// `cdxctl appenv` failed to store or remove the token. Maps to HTTP 500 on
+    /// the CGI side with the reason, so the settings page can show it.
+    #[error("{0}")]
+    AppEnv(String),
+
     #[error("{0}")]
     Io(#[from] std::io::Error),
 
@@ -68,6 +73,7 @@ impl DatifyError {
             DatifyError::RateLimit => 429,
             DatifyError::Network(_) => 503,
             DatifyError::Http { status, .. } => *status,
+            DatifyError::AppEnv(_) => 500,
             DatifyError::Io(_) | DatifyError::Json(_) => 500,
         }
     }
@@ -104,6 +110,7 @@ mod tests {
                 },
                 502,
             ),
+            (DatifyError::AppEnv("cdxctl selhalo".into()), 500),
             (DatifyError::Io(std::io::Error::other("io")), 500),
             (
                 DatifyError::Json(serde_json::from_str::<i32>("nope").unwrap_err()),

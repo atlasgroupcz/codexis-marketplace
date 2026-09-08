@@ -42,8 +42,11 @@ start with the first real request.
 
 **IMPORTANT:** The API key must never travel through the conversation. It is
 entered in the SID plugin panel in the Codexis app, or piped in with
-`echo KEY | sid-cli settings set-key`. Never ask the user to paste the key
-into the chat and never print it back.
+`echo KEY | sid-cli settings set-key`, which validates it and then stores it
+through the platform (`cdxctl appenv sid set SID_API_KEY <KEY>`). Do not write
+`~/.cdx/apps/sid/.env` by hand and do not call `cdxctl appenv` for the key
+directly - `set-key` validates first. Never ask the user to paste the key into
+the chat and never print it back.
 
 **IMPORTANT:** SID is where this work belongs - the plugin brings people to
 it, it does not stand in for it. Every result carries a `url`; **always put

@@ -80,9 +80,14 @@ fn saving_a_token_verifies_it_against_datify_first() {
     let (_, body) = parse_cgi(&raw);
     assert_eq!(body["ok"], true);
     assert_eq!(body["collectionCount"], 2);
-    assert!(std::fs::read_to_string(sandbox.env_file())
-        .unwrap()
-        .contains("tok-123456789"));
+    assert_eq!(
+        sandbox.cdxctl_calls(),
+        vec!["appenv datify set DATIFY_API_KEY tok-123456789"]
+    );
+    assert!(
+        !sandbox.env_file().exists(),
+        "the CGI wrote the credential file itself"
+    );
 }
 
 #[test]
@@ -100,7 +105,11 @@ fn a_token_datify_rejects_is_not_stored_and_the_status_says_why() {
     let (headers, body) = parse_cgi(&raw);
     assert!(headers.contains("401"), "{headers}");
     assert!(body["error"].is_string(), "{body}");
-    assert!(!sandbox.env_file().exists(), "a rejected token was stored");
+    assert!(
+        sandbox.cdxctl_calls().is_empty(),
+        "a rejected token was stored: {:?}",
+        sandbox.cdxctl_calls()
+    );
 }
 
 #[test]
@@ -123,15 +132,9 @@ fn an_empty_token_is_refused_without_calling_datify() {
 }
 
 #[test]
-fn delete_forgets_the_stored_token() {
+fn delete_asks_the_platform_to_remove_the_token() {
     let sandbox = Sandbox::new();
-    let (api, _seen) = stub(200, "[]");
-    post(
-        &sandbox,
-        r#"{"action":"save_api_key","apiKey":"tok-123456789"}"#,
-        Some(&api),
-        None,
-    );
+    sandbox.store_key("tok-123456789");
 
     let (_, body) = parse_cgi(&post(
         &sandbox,
@@ -139,10 +142,37 @@ fn delete_forgets_the_stored_token() {
         None,
         None,
     ));
-    assert_eq!(body["ok"], true);
 
-    let (_, state) = parse_cgi(&stdout(&sandbox.run(CGI, &[], None, None)));
-    assert_eq!(state["configured"], false);
+    assert_eq!(body["ok"], true);
+    assert_eq!(
+        sandbox.cdxctl_calls(),
+        vec!["appenv datify delete DATIFY_API_KEY"]
+    );
+}
+
+/// A platform write the daemon refuses is a server error, so the settings dialog
+/// shows the reason instead of reporting a save that did not happen.
+#[test]
+fn a_failing_platform_write_is_reported_as_a_server_error() {
+    let sandbox = Sandbox::new();
+    let (api, _seen) = stub(200, "[]");
+    sandbox.fail_cdxctl(7);
+
+    let (headers, body) = parse_cgi(&post(
+        &sandbox,
+        r#"{"action":"save_api_key","apiKey":"tok-123456789"}"#,
+        Some(&api),
+        None,
+    ));
+
+    assert!(headers.contains("500"), "{headers}");
+    assert!(
+        body["error"]
+            .as_str()
+            .unwrap()
+            .contains("Uložení API tokenu selhalo"),
+        "{body}"
+    );
 }
 
 #[test]

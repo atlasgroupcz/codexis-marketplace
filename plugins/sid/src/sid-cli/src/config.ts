@@ -1,6 +1,11 @@
-import { readFileSync, writeFileSync, mkdirSync, renameSync, rmSync, existsSync } from "node:fs"
-import { join, dirname } from "node:path"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { homedir } from "node:os"
+
+import { setAppEnv, deleteAppEnv } from "./app-env"
+
+/** The app the settings belong to, as `cdxctl appenv` names it. */
+const APP_ID = "sid"
 
 /**
  * Stable contract - SKILL.md documents these and the automation relies on them.
@@ -74,42 +79,31 @@ export function getBaseUrl(): string {
   return raw.trim().replace(/\/+$/, "")
 }
 
-/** Atomic write, mode 0600. Keys already in the file are preserved. */
-function writeEnvFile(entries: Record<string, string>): void {
-  // A newline in any value would forge extra `.env` lines on the next read.
-  // Callers validate their inputs; this is the last-line backstop.
-  for (const [k, v] of Object.entries(entries)) {
-    if (/[\r\n]/.test(k) || /[\r\n]/.test(v)) {
-      throw new Error(`Odmítnut zápis do .env: hodnota '${k}' obsahuje konec řádku.`)
-    }
+/**
+ * A value that would forge extra `.env` lines once the daemon writes it.
+ * Callers validate their inputs; this is the last-line backstop.
+ */
+function rejectNewlines(key: string, value: string): void {
+  if (/[\r\n]/.test(key) || /[\r\n]/.test(value)) {
+    throw new Error(`Odmítnuto uložení: hodnota '${key}' obsahuje konec řádku.`)
   }
-  const path = envFilePath()
-  mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
-  const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join("\n") + "\n"
-  const tmp = `${path}.tmp-${process.pid}`
-  writeFileSync(tmp, body, { mode: 0o600 })
-  renameSync(tmp, path)
 }
 
-/** Sets a single key in the env file, leaving the others untouched. */
+/** Sets a single key through the platform, leaving the others untouched. */
 export function writeEnvValue(key: string, value: string): void {
-  writeEnvFile({ ...readEnvFile(), [key]: value })
+  rejectNewlines(key, value)
+  setAppEnv(APP_ID, key, value)
 }
 
 export function writeApiKey(key: string): void {
-  writeEnvFile({ ...readEnvFile(), SID_API_KEY: key })
+  writeEnvValue("SID_API_KEY", key)
 }
 
 export function deleteApiKey(): void {
-  const rest = readEnvFile()
-  delete rest.SID_API_KEY
+  const stored = readEnvFile()
   // The cached role/e-mail belong to the removed key - leaving them would let
   // `settings status` report a stale role/isAdmin for a config that is gone.
-  delete rest.SID_USER_ROLE
-  delete rest.SID_USER_EMAIL
-  if (Object.keys(rest).length === 0) {
-    if (existsSync(envFilePath())) rmSync(envFilePath())
-    return
+  for (const name of ["SID_API_KEY", "SID_USER_ROLE", "SID_USER_EMAIL"]) {
+    if (name in stored) deleteAppEnv(APP_ID, name)
   }
-  writeEnvFile(rest)
 }

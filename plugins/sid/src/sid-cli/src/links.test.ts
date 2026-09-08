@@ -1,15 +1,19 @@
-import { describe, it, expect, beforeEach } from "bun:test"
-import { mkdtempSync, writeFileSync, readFileSync } from "node:fs"
+import { describe, it, expect, beforeEach, afterEach } from "bun:test"
+import { mkdtempSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { documentUrl, homeUrl, resolveRole } from "./links"
+import { FakeCdxctl } from "./test-support"
 
+let cdxctl: FakeCdxctl
 beforeEach(() => {
   const d = mkdtempSync(join(tmpdir(), "sid-links-"))
   process.env.SID_ENV_FILE = join(d, ".env")
   writeFileSync(process.env.SID_ENV_FILE, "SID_API_KEY=k\nSID_API_URL=https://sid.test\n", { mode: 0o600 })
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
+  cdxctl = new FakeCdxctl(d)
 })
+afterEach(() => cdxctl.restore())
 
 describe("documentUrl", () => {
   it("regular user gets the /files route", () => {
@@ -51,7 +55,7 @@ describe("resolveRole", () => {
     const f = (async () =>
       new Response(JSON.stringify({ role: "ADMIN" }), { status: 200 })) as unknown as typeof fetch
     expect(await resolveRole(f)).toBe("ADMIN")
-    expect(readFileSync(process.env.SID_ENV_FILE!, "utf8")).toContain("SID_USER_ROLE=ADMIN")
+    expect(cdxctl.calls()).toEqual(["appenv sid set SID_USER_ROLE ADMIN"])
   })
 
   it("a failed lookup yields null instead of throwing", async () => {

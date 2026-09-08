@@ -32,7 +32,7 @@ pub fn payload() -> Value {
 /// of on the agent's next call.
 pub fn set_key(token: &str) -> Result<Value> {
     let collections = DatifyClient::with_token(token)?.collections()?;
-    config::write_api_key(token)?;
+    config::store_api_key(token)?;
     Ok(json!({
         "ok": true,
         "maskedKey": config::mask_key(token.trim()),
@@ -41,7 +41,7 @@ pub fn set_key(token: &str) -> Result<Value> {
 }
 
 pub fn clear_key() -> Result<Value> {
-    config::write_api_key("")?;
+    config::clear_api_key()?;
     Ok(json!({ "ok": true }))
 }
 
@@ -61,13 +61,20 @@ fn collection_count(collections: &Value) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cdx_common::test_support::home_guard;
+    use cdx_common::env_file::write_env_file;
+    use cdx_common::test_support::{fake_cdxctl, home_guard};
+
+    /// Seed the credential file the way the daemon would, so the read side has
+    /// something to report.
+    fn store_key(key: &str) {
+        write_env_file(&config::env_path(), &[("DATIFY_API_KEY", key)]).unwrap();
+    }
 
     #[test]
     fn the_payload_never_contains_the_token_itself() {
         let tmp = tempfile::tempdir().unwrap();
         let _home = home_guard(tmp.path());
-        config::write_api_key("abcdefghijkl").unwrap();
+        store_key("abcdefghijkl");
 
         let payload = payload();
 
@@ -91,23 +98,19 @@ mod tests {
     fn a_malformed_stored_url_falls_back_instead_of_failing() {
         let tmp = tempfile::tempdir().unwrap();
         let _home = home_guard(tmp.path());
-        cdx_common::env_file::write_env_file(
-            &config::env_path(),
-            &[("DATIFY_API_URL", "not-a-url")],
-        )
-        .unwrap();
+        write_env_file(&config::env_path(), &[("DATIFY_API_URL", "not-a-url")]).unwrap();
 
         assert_eq!(payload()["apiUrl"], config::DEFAULT_API_URL);
     }
 
     #[test]
-    fn clearing_the_key_leaves_nothing_configured() {
+    fn clearing_the_key_asks_cdxctl_to_remove_it() {
         let tmp = tempfile::tempdir().unwrap();
-        let _home = home_guard(tmp.path());
-        config::write_api_key("abcdefghijkl").unwrap();
+        let home = home_guard(tmp.path());
+        let fake = fake_cdxctl(&home, tmp.path());
 
         assert_eq!(clear_key().unwrap()["ok"], true);
 
-        assert_eq!(payload()["configured"], false);
+        assert_eq!(fake.calls(), vec!["appenv datify delete DATIFY_API_KEY"]);
     }
 }

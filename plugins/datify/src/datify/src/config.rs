@@ -1,9 +1,11 @@
 //! Where the Datify API token and base URL come from.
 //!
-//! The token is user-supplied, so it is stored in the per-app credential file
-//! (`~/.cdx/apps/datify/.env`, mode 0600) that the settings component writes.
-//! Lookup order lets an automation override stored state without touching it:
-//! host-injected `CODEXIS_USER_*`, then a plain env var, then the file.
+//! The token is user-supplied, so it lives in the per-app credential file
+//! (`~/.cdx/apps/datify/.env`, mode 0600). That file is read-only inside the
+//! plugin's isolation, so `cdxctl appenv` asks the daemon to rewrite it; this
+//! plugin only reads it. Lookup order lets an automation override stored state
+//! without touching it: host-injected `CODEXIS_USER_*`, then a plain env var,
+//! then the file.
 //!
 //! The file mechanics live in `cdx_common::env_file`; only what the keys mean
 //! and how they are validated is here.
@@ -11,7 +13,7 @@
 use std::path::PathBuf;
 
 use cdx_common::config::read_env;
-use cdx_common::env_file::{read_env_var, write_env_file};
+use cdx_common::env_file::read_env_var;
 use cdx_common::paths::app_dir;
 
 use crate::error::{DatifyError, Result};
@@ -113,23 +115,19 @@ pub fn read_api_key_source() -> String {
     String::new()
 }
 
-/// Persist the token, or clear it when `key` is empty.
-pub fn write_api_key(key: &str) -> Result<()> {
-    let path = env_path();
-    let key = key.trim();
-    let mut pairs: Vec<(String, String)> = cdx_common::env_file::read_env_file(&path)
-        .into_iter()
-        .filter(|(k, _)| k != KEY_VAR)
-        .collect();
-    if !key.is_empty() {
-        pairs.push((KEY_VAR.to_string(), key.to_string()));
-    }
-    let borrowed: Vec<(&str, &str)> = pairs
-        .iter()
-        .map(|(k, v)| (k.as_str(), v.as_str()))
-        .collect();
-    write_env_file(&path, &borrowed)?;
-    Ok(())
+/// Persist the token through `cdxctl appenv`. No validation here - the callers
+/// in [`crate::settings`] check the token against Datify first.
+pub fn store_api_key(key: &str) -> Result<()> {
+    cdx_common::app_env::set(APP_ID, KEY_VAR, key.trim()).map_err(app_env_error)
+}
+
+/// Remove the stored token through `cdxctl appenv`.
+pub fn clear_api_key() -> Result<()> {
+    cdx_common::app_env::delete(APP_ID, KEY_VAR).map_err(app_env_error)
+}
+
+fn app_env_error(e: cdx_common::app_env::AppEnvError) -> DatifyError {
+    DatifyError::AppEnv(format!("Uložení API tokenu selhalo: {e}"))
 }
 
 /// `abcd****wxyz`, or `****` when the token is too short to reveal any of it.
@@ -150,7 +148,8 @@ pub fn is_configured() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cdx_common::test_support::home_guard;
+    use cdx_common::env_file::write_env_file;
+    use cdx_common::test_support::{fake_cdxctl, home_guard};
 
     #[test]
     fn normalize_rejects_relative_and_hostless_urls() {
@@ -175,13 +174,13 @@ mod tests {
     }
 
     #[test]
-    fn key_roundtrips_through_the_credential_file() {
+    fn a_key_stored_in_the_credential_file_is_read_back() {
         let tmp = tempfile::tempdir().unwrap();
         let _home = home_guard(tmp.path());
         assert_eq!(read_api_key(), "");
         assert!(!is_configured());
 
-        write_api_key("  token-value-1234  ").unwrap();
+        write_env_file(&env_path(), &[(KEY_VAR, "token-value-1234")]).unwrap();
 
         assert_eq!(read_api_key(), "token-value-1234");
         assert!(is_configured());
@@ -189,28 +188,43 @@ mod tests {
     }
 
     #[test]
-    fn writing_an_empty_key_clears_it() {
+    fn storing_the_key_runs_cdxctl_appenv_set() {
         let tmp = tempfile::tempdir().unwrap();
-        let _home = home_guard(tmp.path());
-        write_api_key("token-value-1234").unwrap();
-        write_api_key("").unwrap();
-        assert_eq!(read_api_key(), "");
-        assert_eq!(read_api_key_source(), "");
+        let home = home_guard(tmp.path());
+        let fake = fake_cdxctl(&home, tmp.path());
+
+        store_api_key("  token-value-1234  ").unwrap();
+
+        assert_eq!(
+            fake.calls(),
+            vec!["appenv datify set DATIFY_API_KEY token-value-1234"]
+        );
+        assert!(!env_path().exists(), "datify must not write .env itself");
     }
 
     #[test]
-    fn writing_the_key_preserves_other_entries() {
+    fn clearing_the_key_runs_cdxctl_appenv_delete() {
         let tmp = tempfile::tempdir().unwrap();
-        let _home = home_guard(tmp.path());
-        write_env_file(&env_path(), &[("DATIFY_API_URL", "https://other.example")]).unwrap();
+        let home = home_guard(tmp.path());
+        let fake = fake_cdxctl(&home, tmp.path());
 
-        write_api_key("token-value-1234").unwrap();
+        clear_api_key().unwrap();
 
-        assert_eq!(
-            read_env_var(&env_path(), "DATIFY_API_URL").as_deref(),
-            Some("https://other.example")
-        );
-        assert_eq!(read_api_key(), "token-value-1234");
+        assert_eq!(fake.calls(), vec!["appenv datify delete DATIFY_API_KEY"]);
+    }
+
+    #[test]
+    fn a_failing_cdxctl_becomes_an_app_env_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = home_guard(tmp.path());
+        let fake = fake_cdxctl(&home, tmp.path());
+        fake.set_exit(7);
+
+        let error = store_api_key("token-value-1234").unwrap_err();
+
+        assert!(matches!(error, DatifyError::AppEnv(_)), "{error:?}");
+        assert_eq!(error.http_status(), 500);
+        assert!(error.to_string().contains("Uložení API tokenu selhalo"));
     }
 
     #[test]

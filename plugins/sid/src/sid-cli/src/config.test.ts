@@ -1,16 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test"
-import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { envFilePath, readEnvFile, getApiKey, getBaseUrl, writeApiKey, deleteApiKey, isPlausibleApiKey, EXIT } from "./config"
+import { FakeCdxctl } from "./test-support"
 
 let dir: string
+let cdxctl: FakeCdxctl
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "sid-cli-test-"))
   process.env.SID_ENV_FILE = join(dir, ".env")
   delete process.env.CODEXIS_PLUGIN_SID_API_URL
+  cdxctl = new FakeCdxctl(dir)
 })
-afterEach(() => rmSync(dir, { recursive: true, force: true }))
+afterEach(() => {
+  cdxctl.restore()
+  rmSync(dir, { recursive: true, force: true })
+})
 
 describe("config", () => {
   it("EXIT kódy jsou stabilní kontrakt", () => {
@@ -33,21 +39,29 @@ describe("config", () => {
     expect(getBaseUrl()).toBe("https://sid.onprem.agrp.dev")
   })
 
-  it("writeApiKey zapíše 0600 a getApiKey ho přečte", () => {
+  it("writeApiKey požádá platformu o uložení a sám .env nezapíše", () => {
     writeApiKey("sid_tajny123")
-    expect(getApiKey()).toBe("sid_tajny123")
-    const mode = statSync(envFilePath()).mode & 0o777
-    expect(mode).toBe(0o600)
+    expect(cdxctl.calls()).toEqual(["appenv sid set SID_API_KEY sid_tajny123"])
+    expect(existsSync(envFilePath())).toBe(false)
   })
 
-  it("writeApiKey zachová SID_API_URL, deleteApiKey smaže jen klíč", () => {
-    writeFileSync(envFilePath(), "SID_API_URL=http://localhost:3000\n")
-    writeApiKey("sid_abc")
-    expect(readEnvFile().SID_API_URL).toBe("http://localhost:3000")
-    expect(getBaseUrl()).toBe("http://localhost:3000")
+  it("getApiKey čte klíč ze souboru, který zapsal démon", () => {
+    writeFileSync(envFilePath(), "SID_API_KEY=sid_tajny123\n")
+    expect(getApiKey()).toBe("sid_tajny123")
+  })
+
+  it("deleteApiKey maže jen klíč, SID_API_URL nechá být", () => {
+    writeFileSync(envFilePath(), "SID_API_KEY=sid_abc\nSID_API_URL=http://localhost:3000\n")
+
     deleteApiKey()
-    expect(getApiKey()).toBe("")
+
+    expect(cdxctl.calls()).toEqual(["appenv sid delete SID_API_KEY"])
     expect(getBaseUrl()).toBe("http://localhost:3000")
+  })
+
+  it("selhání cdxctl vyplave jako chyba s kódem a stderr", () => {
+    cdxctl.failWith(7)
+    expect(() => writeApiKey("sid_abc")).toThrow(/7/)
   })
 
   it("env proměnná CODEXIS_PLUGIN_SID_API_URL má přednost před .env", () => {
@@ -64,10 +78,9 @@ describe("config", () => {
     expect(isPlausibleApiKey("sid_a\nSID_API_URL=http://evil")).toBe(false)
   })
 
-  it("writeApiKey odmítne klíč s newlinem - žádná .env injection", () => {
+  it("writeApiKey odmítne klíč s newlinem dřív, než sáhne na platformu", () => {
     expect(() => writeApiKey("sid_a\nSID_API_URL=http://evil")).toThrow()
-    // Nothing was written.
-    expect(getApiKey()).toBe("")
+    expect(cdxctl.calls()).toEqual([])
   })
 
   it("deleteApiKey smaže i nacacheovanou roli a e-mail, ostatní nechá", () => {
@@ -75,12 +88,15 @@ describe("config", () => {
       envFilePath(),
       "SID_API_KEY=sid_a\nSID_USER_ROLE=ADMIN\nSID_USER_EMAIL=a@b.cz\nSID_API_URL=http://s\n",
     )
+
     deleteApiKey()
-    const env = readEnvFile()
-    expect(env.SID_API_KEY).toBeUndefined()
-    expect(env.SID_USER_ROLE).toBeUndefined()
-    expect(env.SID_USER_EMAIL).toBeUndefined()
-    expect(env.SID_API_URL).toBe("http://s")
+
+    expect(cdxctl.calls()).toEqual([
+      "appenv sid delete SID_API_KEY",
+      "appenv sid delete SID_USER_ROLE",
+      "appenv sid delete SID_USER_EMAIL",
+    ])
+    expect(readEnvFile().SID_API_URL).toBe("http://s")
   })
 })
 

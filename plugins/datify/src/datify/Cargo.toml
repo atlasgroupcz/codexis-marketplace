@@ -1,6 +1,6 @@
 [package]
 name = "datify"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 license = "PROPRIETARY"
 
@@ -36,7 +36,7 @@ reqwest = { version = "0.13", default-features = false, features = ["blocking", 
 clap = { version = "4", features = ["derive"] }
 # cdx-common: atomic fs + the KEY=VALUE credential file the settings component
 # writes. cdx-cgi: the CGI runtime (query parsing, body reading, JSON emission).
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "fs", "env-file"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "fs", "env-file", "app-env"] }
 cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
 
 [features]
@@ -51,4 +51,4 @@ datify = { path = ".", features = ["test-support"] }
 tempfile = "3"
 # The shared HomeGuard test helper (redirects $HOME to a scratch dir) instead of
 # a copy-pasted per-crate one.
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "test-support"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "test-support", "app-env"] }
