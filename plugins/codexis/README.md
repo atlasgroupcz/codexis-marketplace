@@ -60,6 +60,12 @@ Agent může pomocí `cdxctl package` zjistit stav, nainstalovat nebo odebrat ba
 a aktualizovat jejich seznam. Změny platí pro celý virtuální počítač uživatele; přežijí restart,
 ale ne výměnu jeho systémového obrazu.
 
+### Klíče a nastavení pluginů
+
+Přes `cdxctl appenv` může asistent uložit nebo smazat hodnotu, kterou si plugin čte ze svého
+souboru `.env` (typicky API klíč k datovému zdroji). Plugin do souboru sám nezapisuje, o zápis
+se stará platforma.
+
 ## Kdo za tím stojí?
 
 Plugin vyvíjí **ATLAS GROUP** - tvůrce systému CODEXIS, který je standardem v oblasti přístupu k českému právu.

@@ -2,8 +2,8 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.7.0
+description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+version: 2.8.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -51,6 +51,23 @@ cdxctl package update           # apt-get update only
 when apt fails the command exits with code 7 and the apt output on stderr. `show` exits nonzero
 when apt does not know the package. Use exact package names; versions, APT flags, local
 `.deb` files, repositories, and keys are not accepted.
+
+## App env
+
+A plugin that needs a user-provided secret (an API key for its data source) keeps it in
+`~/.cdx/apps/<app>/.env`. The plugin reads that file itself; only `cdxctl appenv` writes it,
+because the file sits outside the sandbox. `<app>` is the plugin name (`katastr`, `cdx-sk`).
+
+```bash
+cdxctl appenv katastr set API_KEY <value>   # add or replace API_KEY=<value>
+cdxctl appenv katastr delete API_KEY        # drop the line; other lines stay
+```
+
+Use it when a plugin's own CLI or UI tells the user a key is missing and the user hands you
+the key, or when the user asks to remove a stored key. Names are env var names
+(`API_KEY`, not `api-key`); a value must be one line. The command prints `{"success",
+"output"}` and exits 7 with the script output when the write fails, 6 when the daemon has no
+such endpoint. Never `cat` or edit the `.env` file by hand.
 
 ## Automations
 
