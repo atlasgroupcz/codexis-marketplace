@@ -18,7 +18,7 @@ function writeDefaults(obj: unknown): void {
 }
 
 function writeUser(obj: unknown): void {
-  const dir = join(home, ".cdx", "apps", "sid")
+  const dir = join(home, ".cdx", "app-state", "sid")
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, "settings.json"), JSON.stringify(obj))
 }

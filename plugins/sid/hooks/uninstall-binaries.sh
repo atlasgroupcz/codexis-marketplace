@@ -14,7 +14,8 @@ remove_path() {
 remove_path "${TARGET_BIN_DIR}/sid-cli"
 remove_path "${SHARE_DIR}/sid"
 
-# The user's API key and setting overrides in ~/.cdx/apps/sid/ are deliberately
+# The user's API key (~/.cdx/apps/sid/) and setting overrides
+# (~/.cdx/app-state/sid/) are deliberately
 # left alone - a reinstall would otherwise force issuing a new key in SID.
 
 # Sweep leftover temp files from an interrupted install (e.g. power loss).

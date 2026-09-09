@@ -2,7 +2,7 @@
 
 Adds znamky_core to sys.path and isolates filesystem state per test by
 monkeypatching tracking.APP_DIR to a tmp_path - no test touches the real
-~/.cdx/apps/znamky/ directory.
+~/.cdx/app-state/znamky/ directory.
 """
 
 import os

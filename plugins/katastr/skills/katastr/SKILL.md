@@ -84,7 +84,7 @@ raw lookup.
 
 ## `katastr-cli tracking` - proceeding monitoring
 
-Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
+Stateful tracker. State lives in `~/.cdx/app-state/katastr/rizeni/`; the API key stays in `~/.cdx/apps/katastr/.env`. A central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
 
 ```bash
 katastr-cli tracking add V-123/2026-701 [--label "Novákovi"]       # verify in ČÚZK + save baseline

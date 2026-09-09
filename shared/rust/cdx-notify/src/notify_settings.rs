@@ -3,7 +3,7 @@
 //!
 //! - default → `~/.local/share/<app_id>/settings/defaults.json` (delivered by the
 //!   install hook, sibling of the plugin's binaries)
-//! - user    → `${CODEXIS_PUBLIC_USER_HOME|~}/.cdx/apps/<app_id>/settings.json`
+//! - user    → `${CODEXIS_PUBLIC_USER_HOME|~}/.cdx/app-state/<app_id>/settings.json`
 //!   (only changed keys)
 //!
 //! The effective config is computed at read time; nothing is merged back into
@@ -97,7 +97,7 @@ fn is_valid_email(addr: &str) -> bool {
 /// generic [`cdx_common::settings::SettingsStore`]. Defaults come from the
 /// installed `~/.local/share/<app_id>/settings/defaults.json` (written by the
 /// install hook, under the real `$HOME`); the sparse user override lives in
-/// `<user_home>/.cdx/apps/<app_id>/settings.json`.
+/// `<user_home>/.cdx/app-state/<app_id>/settings.json`.
 pub struct NotifySettings {
     store: SettingsStore,
 }

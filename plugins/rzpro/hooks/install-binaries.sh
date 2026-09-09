@@ -34,3 +34,7 @@ if [[ -e "${USER_HOME}/.cdx/apps/rzpro" ]]; then
   rm -rf "${USER_HOME}/.cdx/apps/rzpro" 2>/dev/null || true
   echo "Removed legacy local index: ${USER_HOME}/.cdx/apps/rzpro" >&2
 fi
+if [[ -e "${USER_HOME}/.cdx/app-state/rzpro" ]]; then
+  rm -rf "${USER_HOME}/.cdx/app-state/rzpro" 2>/dev/null || true
+  echo "Removed legacy local index: ${USER_HOME}/.cdx/app-state/rzpro" >&2
+fi

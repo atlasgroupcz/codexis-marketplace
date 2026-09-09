@@ -1,7 +1,7 @@
 """Per-app notify settings: shipped defaults merged with a sparse user override.
 
 - default -> ~/.local/share/<APP_ID>/settings/defaults.json (delivered by install hook, sibling of the plugin's lib/)
-- user    -> ${CODEXIS_PUBLIC_USER_HOME|~}/.cdx/apps/<APP_ID>/settings.json (only changed keys)
+- user    -> ${CODEXIS_PUBLIC_USER_HOME|~}/.cdx/app-state/<APP_ID>/settings.json (only changed keys)
 
 Effective config is computed at read time; nothing is merged into the user file.
 """
@@ -55,7 +55,7 @@ def defaults_path():
 
 
 def user_path():
-    return os.path.join(_user_home(), ".cdx", "apps", APP_ID, "settings.json")
+    return os.path.join(_user_home(), ".cdx", "app-state", APP_ID, "settings.json")
 
 
 def _read_json(path):

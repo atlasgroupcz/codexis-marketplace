@@ -276,5 +276,7 @@ When running a periodic check:
 
 ## Storage
 
-Topic files: `~/.cdx/apps/sledovana-judikatura/<uuid>/topic.json`
-Reports: `~/.cdx/apps/sledovana-judikatura/<uuid>/reports/<report_id>.json`
+All state lives under `~/.cdx/app-state/sledovana-judikatura/`.
+
+Topic files: `~/.cdx/app-state/sledovana-judikatura/<uuid>/topic.json`
+Reports: `~/.cdx/app-state/sledovana-judikatura/<uuid>/reports/<report_id>.json`

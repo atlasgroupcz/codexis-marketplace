@@ -14,7 +14,6 @@ query GetAutomations {
         model
         modelConfiguration { key value }
         jurisdictions
-        workDirPath { absolutePath displayPath }
         lastRun {
             id
             status

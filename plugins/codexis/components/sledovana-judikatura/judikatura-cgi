@@ -6,7 +6,7 @@ GET returns JSON data; POST dispatches JSON actions. The HTML shell
 `entrypoint` in component.json, so this module only runs for JSON
 requests.
 
-State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sledovana-judikatura/ (managed by
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/app-state/sledovana-judikatura/ (managed by
 sledovana_judikatura_core).
 """
 

@@ -1,7 +1,7 @@
 //! Keyed, atomic, corruption-tolerant JSON item store.
 //!
 //! Every watcher plugin persists its tracked items the same way: one directory
-//! per item under `$HOME/.cdx/apps/<app>/<collection>/<slug>/`, holding a single
+//! per item under `$HOME/.cdx/app-state/<app>/<collection>/<slug>/`, holding a single
 //! pretty-printed JSON file (`state.json` by default). This is the port of the
 //! Python watchers' `state.py`/`fs.py` layer - the mechanism is identical across
 //! apps; only the stored value type differs, so it is generic over `T`.
@@ -26,7 +26,7 @@ pub struct ItemStore {
 }
 
 impl ItemStore {
-    /// Store items under `$HOME/.cdx/apps/<app_id>/<collection>/`, one
+    /// Store items under `$HOME/.cdx/app-state/<app_id>/<collection>/`, one
     /// `state.json` per item.
     pub fn new(app_id: impl Into<String>, collection: impl Into<String>) -> Self {
         Self {
@@ -42,9 +42,9 @@ impl ItemStore {
         self
     }
 
-    /// `$HOME/.cdx/apps/<app>/<collection>`.
+    /// `$HOME/.cdx/app-state/<app>/<collection>`.
     pub fn dir(&self) -> PathBuf {
-        crate::paths::app_dir(&self.app_id).join(&self.collection)
+        crate::paths::app_state_dir(&self.app_id).join(&self.collection)
     }
 
     /// The directory holding one item.
@@ -85,7 +85,7 @@ impl ItemStore {
             if name.contains(TRASH_MARKER) {
                 continue;
             }
-            // Reuse the DirEntry's path instead of re-deriving app_dir/collection
+            // Reuse the DirEntry's path instead of re-deriving app_state_dir/collection
             // per item; read the file directly (missing/dir → skip).
             let path = entry.path().join(&self.file_name);
             if let Some(item) = fs::read(&path)

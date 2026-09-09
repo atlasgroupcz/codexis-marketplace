@@ -5,7 +5,7 @@ GET returns JSON data; POST dispatches JSON actions. The HTML shell
 (index.html) is served by the daemon's SpaCgi runtime directly from
 `entrypoint` in component.json, so this module only runs for JSON requests.
 
-State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/insolvence/ (managed by insolvence_core).
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/app-state/insolvence/ (managed by insolvence_core).
 """
 
 import json

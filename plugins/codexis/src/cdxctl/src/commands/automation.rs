@@ -17,7 +17,6 @@ pub struct CreateArgs<'a> {
     pub max_turns: Option<u32>,
     pub model: Option<&'a str>,
     pub jurisdictions: Option<&'a [String]>,
-    pub work_dir: Option<&'a str>,
     pub disabled: bool,
 }
 
@@ -33,7 +32,6 @@ pub struct UpdateArgs<'a> {
     pub max_turns: Option<u32>,
     pub model: Option<&'a str>,
     pub jurisdictions: Option<&'a [String]>,
-    pub work_dir: Option<&'a str>,
 }
 
 pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
@@ -65,7 +63,6 @@ pub fn create(
         max_turns,
         model,
         jurisdictions,
-        work_dir,
         disabled,
     } = args;
     let mut input = json!({
@@ -92,9 +89,6 @@ pub fn create(
     }
     if let Some(list) = jurisdictions {
         input["jurisdictions"] = json!(list);
-    }
-    if let Some(dir) = work_dir {
-        input["workDir"] = json!(dir);
     }
     if let Some(object) = input.as_object_mut() {
         apply_chat_context(client, object);
@@ -239,19 +233,6 @@ fn build_update_input(
                 .map(|v| v as u32))
             .unwrap_or(20));
     }
-
-    input["workDir"] = args
-        .work_dir
-        .map(String::from)
-        .or_else(|| {
-            current
-                .get("workDirPath")
-                .and_then(|p| p.get("absolutePath"))
-                .and_then(|v| v.as_str())
-                .map(String::from)
-        })
-        .map(|s| json!(s))
-        .unwrap_or(Value::Null);
 
     input["model"] = match args.model {
         Some(m) => json!(m),
@@ -532,7 +513,6 @@ mod tests {
             max_turns: None,
             model: None,
             jurisdictions: None,
-            work_dir: None,
         }
     }
 

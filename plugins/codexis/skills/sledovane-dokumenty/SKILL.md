@@ -256,14 +256,16 @@ read it as the integration boundary. Never hand-edit it; use the CLI.
 
 ## Storage
 
+All state lives under `~/.cdx/app-state/sledovane-dokumenty/`.
+
 CODEXIS-id tracking:
-- State files: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/state.json`
-- Related baselines: `~/.cdx/apps/sledovane-dokumenty/<codexisId>/related_<TYPE>.json`
-- Groups file: `~/.cdx/apps/sledovane-dokumenty/groups.json`
+- State files: `~/.cdx/app-state/sledovane-dokumenty/<codexisId>/state.json`
+- Related baselines: `~/.cdx/app-state/sledovane-dokumenty/<codexisId>/related_<TYPE>.json`
+- Groups file: `~/.cdx/app-state/sledovane-dokumenty/groups.json`
 
 Watched folders:
-- Index of watched roots: `~/.cdx/apps/sledovane-dokumenty/watched-folders.json`
-- Notification settings: `~/.cdx/apps/sledovane-dokumenty/folder-watch-settings.json`
+- Index of watched roots: `~/.cdx/app-state/sledovane-dokumenty/watched-folders.json`
+- Notification settings: `~/.cdx/app-state/sledovane-dokumenty/folder-watch-settings.json`
 - Per-folder contract: `<root>/.watched/watched.json` (+ `tracking-state.json`)
 
 The Sledované dokumenty UI component reads from these locations automatically.

@@ -1,11 +1,13 @@
 //! Resolve on-disk paths for the katastr plugin. The app-dir root comes from
 //! `cdx_common::paths`; the proceeding slug rule and the `.env` path stay here.
 //! The tracked-proceeding state files themselves live under `cdx-common`'s
-//! `ItemStore` (see `state::store`), which owns that layout.
+//! `ItemStore` (see `state::store`), which puts them in
+//! `~/.cdx/app-state/katastr/rizeni/`. Only the API key stays in
+//! `~/.cdx/apps/katastr/.env`, which the chat isolation mounts read-only.
 
 use std::path::PathBuf;
 
-/// `$HOME/.cdx/apps/katastr`.
+/// `$HOME/.cdx/apps/katastr` - the secret dir, holding only `.env`.
 pub fn app_dir() -> PathBuf {
     cdx_common::paths::app_dir("katastr")
 }

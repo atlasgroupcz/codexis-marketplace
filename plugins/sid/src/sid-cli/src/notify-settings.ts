@@ -9,7 +9,7 @@ import { userHome } from "./config"
  *
  *   shipped defaults → ~/.local/share/sid/settings/defaults.json
  *                      (placed there by the install hook)
- *   user override    → $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sid/settings.json
+ *   user override    → $CODEXIS_PUBLIC_USER_HOME/.cdx/app-state/sid/settings.json
  *                      (sparse - only the changed keys)
  *
  * The effective config is composed at read time; nothing is merged back into
@@ -33,7 +33,7 @@ function defaultsPath(): string {
 }
 
 export function userSettingsPath(): string {
-  return join(userHome(), ".cdx", "apps", "sid", "settings.json")
+  return join(userHome(), ".cdx", "app-state", "sid", "settings.json")
 }
 
 /**

@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.8.0
+version: 2.8.1
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -73,13 +73,13 @@ such endpoint. Never `cat` or edit the `.env` file by hand.
 
 ## Automations
 
-An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
+An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, and in the chat's current working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
 
 ```bash
 # List all automations
 cdxctl automation list
 
-# Create an automation (inherits model + jurisdiction + skills + work dir from this chat)
+# Create an automation (inherits model + jurisdiction + skills from this chat)
 cdxctl automation create \
     --title "Daily Report" \
     --repeat DAILY --day-part MORNING \
@@ -91,7 +91,7 @@ cdxctl automation create \
     --repeat DAILY --day-part MORNING \
     --prompt "Report new Supreme Court rulings on notice periods" \
     --model CLAUDE_SONNET_5 --jurisdiction CZ \
-    --skill "<id>" --work-dir "/home/codexis/judikatura"
+    --skill "<id>"
 
 # Create a COMMAND automation
 cdxctl automation create-command \

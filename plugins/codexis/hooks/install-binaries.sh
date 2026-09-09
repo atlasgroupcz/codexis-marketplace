@@ -77,7 +77,7 @@ install_settings() {
   # half-copied tree at the real path. These are the read-only shipped
   # defaults consumed by settings.defaults_path(); overwriting them on every
   # install/update is intended (refresh-on-update), and user overrides live
-  # elsewhere under ~/.cdx/apps/, which this never touches.
+  # elsewhere under ~/.cdx/app-state/, which this never touches.
   local source_path app_name dest tmp_dest old_dest
   for source_path in "${source_root}"/*; do
     [[ -d "${source_path}" ]] || continue

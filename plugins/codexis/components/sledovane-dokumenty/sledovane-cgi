@@ -6,7 +6,7 @@ notes / groups). The HTML shell (index.html) is served by the daemon's
 SpaCgi runtime directly from `entrypoint` in component.json, so this
 module only runs for JSON requests.
 
-State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/apps/sledovane-dokumenty/ (managed by
+State lives in $CODEXIS_PUBLIC_USER_HOME/.cdx/app-state/sledovane-dokumenty/ (managed by
 sledovane_dokumenty_core).
 """
 

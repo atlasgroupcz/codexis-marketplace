@@ -5,7 +5,7 @@
 //! - defaults → `$HOME/.local/share/<app_id>/settings/defaults.json` (delivered
 //!   by the install hook under the real `$HOME`, NOT the daemon-injected user
 //!   home - the hook runs outside the chat VM context)
-//! - override → `<user_home>/.cdx/apps/<app_id>/settings.json` (only changed keys)
+//! - override → `<user_home>/.cdx/app-state/<app_id>/settings.json` (only changed keys)
 //!
 //! The effective config is computed at read time; nothing is merged back into
 //! the user file.
@@ -61,7 +61,7 @@ impl SettingsStore {
 
     /// The sparse user override file.
     pub fn user_path(&self) -> PathBuf {
-        crate::paths::app_dir(&self.app_id).join("settings.json")
+        crate::paths::app_state_dir(&self.app_id).join("settings.json")
     }
 
     /// Effective settings: installed defaults (or `fallback` when the defaults
