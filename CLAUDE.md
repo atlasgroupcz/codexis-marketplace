@@ -433,6 +433,8 @@ Plugins support three lifecycle hooks executed as shell commands by the harness:
 
 The variable `${PLUGIN_DIR}` is available in hook commands and resolves to the plugin's installation directory.
 
+A migration of user data in the VM (moving or rewriting files under `~/.cdx`) never lives in a plugin or its hooks: it is a cdx-daemon guest provision migration (`cdx-daemon-app/src/main/resources/provisioning/migrations/NNN-name.sh`), which runs once per VM start.
+
 ### Executables / Binaries
 
 Plugin executables must be placed in a `bin/` folder inside the plugin directory. Lifecycle hooks are typically used to install these binaries into the user-local `${HOME}/.local/bin/` location on install/update and remove them on uninstall. The cdx guest VM has `${HOME}/.local/bin` on `PATH` (both for interactive login shells and for the `cdx-remote-exec` service), so no `sudo` and no system-wide writes are needed.
