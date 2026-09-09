@@ -855,7 +855,7 @@ dependencies = [
 
 [[package]]
 name = "katastr"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "cdx-cgi",
  "cdx-common",
@@ -1284,7 +1284,7 @@ dependencies = [
 
 [[package]]
 name = "sbirka-listin"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "cdx-cgi",

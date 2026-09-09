@@ -1,7 +1,7 @@
 //! On-disk state representation for a tracked proceeding.
 //!
 //! The JSON schema here matches what the Python version writes - so an
-//! existing user's `~/.cdx/apps/katastr/rizeni/<num>/state.json` loads
+//! existing user's `~/.cdx/app-state/katastr/rizeni/<num>/state.json` loads
 //! fine into Rust and vice versa. Keys are snake_case (Python style) for
 //! our own fields; ČÚZK API shape leaks into `Operace` (mixed camelCase).
 
@@ -99,7 +99,7 @@ pub struct ProceedingState {
     pub changes: Vec<Change>,
 }
 
-/// The per-item state store: `$HOME/.cdx/apps/katastr/rizeni/<slug>/state.json`,
+/// The per-item state store: `$HOME/.cdx/app-state/katastr/rizeni/<slug>/state.json`,
 /// one directory per tracked proceeding. Same layout the Python version used, so
 /// existing state files load unchanged. `cdx-watch` drives its load/save/remove.
 pub const APP_ID: &str = "katastr";

@@ -2,7 +2,7 @@
 //! reach it.
 //!
 //! Files live under
-//! `$HOME/.cdx/apps/sbirka-listin/dokumenty/<ico>/<typ-slug>__<cislo>.<ext>`, where
+//! `$HOME/.cdx/app-state/sbirka-listin/dokumenty/<ico>/<typ-slug>__<cislo>.<ext>`, where
 //! `<cislo>` is the číslo listiny made filesystem-safe (`B-8573-SL95-MSPH`) and
 //! `<typ-slug>` is the document type slugified (`ucetni-zaverka-2024`); an empty
 //! typ falls back to the bare `<cislo>.<ext>`. This is the app's own directory,
@@ -28,9 +28,9 @@ use crate::parse;
 
 pub const COLLECTION: &str = "dokumenty";
 
-/// `$HOME/.cdx/apps/sbirka-listin/dokumenty`.
+/// `$HOME/.cdx/app-state/sbirka-listin/dokumenty`.
 pub fn dir() -> PathBuf {
-    cdx_common::paths::app_dir(crate::watch::APP_ID).join(COLLECTION)
+    cdx_common::paths::app_state_dir(crate::watch::APP_ID).join(COLLECTION)
 }
 
 /// The per-subject folder `dokumenty/<ico>`.
