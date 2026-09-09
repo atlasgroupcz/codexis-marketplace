@@ -179,7 +179,7 @@ function defaultsPath() {
   return process.env.SID_DEFAULTS_FILE || import_node_path3.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
 }
 function userSettingsPath() {
-  return import_node_path3.join(userHome(), ".cdx", "apps", "sid", "settings.json");
+  return import_node_path3.join(userHome(), ".cdx", "app-state", "sid", "settings.json");
 }
 function writeNotifyOverride(patch) {
   const path = userSettingsPath();

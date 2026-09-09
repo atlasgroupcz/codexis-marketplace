@@ -179,7 +179,9 @@ Settings follow the same convention as the znamky/katastr plugins:
 | File | Role |
 |------|------|
 | `~/.local/share/sid/settings/defaults.json` | shipped defaults, installed by the hook |
-| `~/.cdx/apps/sid/settings.json` | user override, only the changed keys |
+| `~/.cdx/app-state/sid/settings.json` | user override, only the changed keys |
+
+State goes under `~/.cdx/app-state/sid`; the API key stays in `~/.cdx/apps/sid/.env`.
 
 ```json
 { "version": 1, "notify": { "inApp": true } }
