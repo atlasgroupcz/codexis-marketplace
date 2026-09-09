@@ -13,6 +13,7 @@ remove_path() {
 
 remove_path "${TARGET_BIN_DIR}/rzpro-cli"
 remove_path "${USER_HOME}/.cdx/apps/rzpro"
+remove_path "${USER_HOME}/.cdx/app-state/rzpro"
 
 # Sweep leftover temp files from an interrupted install (e.g. power loss).
 rm -f "${TARGET_BIN_DIR}"/.rzpro-cli.tmp.* 2>/dev/null || true

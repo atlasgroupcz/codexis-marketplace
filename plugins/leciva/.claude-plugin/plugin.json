@@ -1,7 +1,7 @@
 {
   "name": "leciva",
   "iconPath": "icon.svg",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Czech medicines registry (SÚKL DLP) - drug lookup by name or SÚKL code, strength, form, active substances, ATC.",
   "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
   "keywords": ["leciva", "leky", "sukl", "dlp", "registr", "czech", "medicines", "drugs", "api"],
