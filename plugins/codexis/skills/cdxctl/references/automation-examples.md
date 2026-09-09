@@ -1,8 +1,8 @@
 # Automation examples
 
 Worked `cdxctl automation create` calls. Copy the shape, swap the content. An automation runs
-the way the chat it is created in is set up (model, jurisdiction, skills, work dir), so pass a
-flag only to override the chat.
+the way the chat it is created in is set up (model, jurisdiction, skills) and in the chat's
+current working directory, so pass a flag only to override the chat.
 
 ## Daily legal monitoring (inherits the chat setup)
 
@@ -24,8 +24,7 @@ cdxctl automation create \
   --prompt "Report new Supreme Court rulings on employment notice periods from the last day." \
   --model CLAUDE_SONNET_5 \
   --jurisdiction CZ \
-  --skill sledovana-judikatura \
-  --work-dir /home/codexis/judikatura
+  --skill sledovana-judikatura
 ```
 
 ## Weekly command automation

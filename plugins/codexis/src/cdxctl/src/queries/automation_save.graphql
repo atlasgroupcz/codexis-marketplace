@@ -15,7 +15,6 @@ mutation SaveAutomation($id: ID, $input: AutomationInput!) {
             model
             modelConfiguration { key value }
             jurisdictions
-            workDirPath { absolutePath displayPath }
         }
         errors { field message allowedValues }
     }

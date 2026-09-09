@@ -125,9 +125,6 @@ enum AutomationCommands {
         /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable. Defaults to the active chat's jurisdictions
         #[arg(long = "jurisdiction")]
         jurisdiction: Vec<String>,
-        /// Working directory path
-        #[arg(long)]
-        work_dir: Option<String>,
         /// Create in disabled state
         #[arg(long, default_value = "false")]
         disabled: bool,
@@ -199,8 +196,6 @@ enum AutomationCommands {
         /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable; replaces the stored set
         #[arg(long = "jurisdiction")]
         jurisdiction: Vec<String>,
-        #[arg(long)]
-        work_dir: Option<String>,
     },
     /// Enable an automation (works for shipped plugin automations too)
     Enable {
@@ -664,7 +659,6 @@ fn main() {
                 max_turns,
                 model,
                 jurisdiction,
-                work_dir,
                 disabled,
             } => commands::automation::create(
                 &client,
@@ -688,7 +682,6 @@ fn main() {
                     } else {
                         Some(&jurisdiction)
                     },
-                    work_dir: work_dir.as_deref(),
                     disabled,
                 },
                 format,
@@ -733,7 +726,6 @@ fn main() {
                 max_turns,
                 model,
                 jurisdiction,
-                work_dir,
             } => commands::automation::update(
                 &client,
                 commands::automation::UpdateArgs {
@@ -757,7 +749,6 @@ fn main() {
                     } else {
                         Some(&jurisdiction)
                     },
-                    work_dir: work_dir.as_deref(),
                 },
                 format,
             ),
@@ -1258,6 +1249,30 @@ mod tests {
             }
             _ => panic!("expected automation create command"),
         }
+    }
+
+    #[test]
+    fn rejects_the_removed_automation_work_dir_flag() {
+        // The daemon dropped the automation's working directory: it now runs in
+        // the chat's current working directory, carried from shell history.
+        assert!(Cli::try_parse_from([
+            "cdxctl",
+            "automation",
+            "create",
+            "--title",
+            "Judikatura watch",
+            "--repeat",
+            "DAILY",
+            "--prompt",
+            "Report new rulings",
+            "--work-dir",
+            "/x",
+        ])
+        .is_err());
+        assert!(
+            Cli::try_parse_from(["cdxctl", "automation", "update", "a1", "--work-dir", "/x",])
+                .is_err()
+        );
     }
 
     #[test]
