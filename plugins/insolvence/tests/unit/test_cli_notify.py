@@ -31,14 +31,14 @@ def test_notify_show_then_set(tmp_path):
     set_out = _run(["notify", "set", "--email"], tmp_path)
     assert set_out.returncode == 0
     data = json.loads(
-        (tmp_path / ".cdx" / "apps" / "insolvence" / "settings.json").read_text()
+        (tmp_path / ".cdx" / "app-state" / "insolvence" / "settings.json").read_text()
     )
     assert data["notify"]["email"] is True
 
 
 def _recipients(home):
     data = json.loads(
-        (home / ".cdx" / "apps" / "insolvence" / "settings.json").read_text()
+        (home / ".cdx" / "app-state" / "insolvence" / "settings.json").read_text()
     )
     return data["notify"]["recipients"]
 

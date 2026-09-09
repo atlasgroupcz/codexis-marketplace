@@ -12,7 +12,7 @@ import tempfile
 import unicodedata
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
-APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "sledovane-dokumenty")
+APP_DIR = os.path.join(_USER_HOME, ".cdx", "app-state", "sledovane-dokumenty")
 GROUPS_PATH = os.path.join(APP_DIR, "groups.json")
 
 

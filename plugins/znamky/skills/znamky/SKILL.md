@@ -136,7 +136,7 @@ is an informational assessment, not legal advice.
 
 ## `znamky-cli sledovani` - protected-mark monitoring
 
-Stateful watchdog. State is stored in `~/.cdx/apps/znamky/sledovane/`. A single central cron
+Stateful watchdog. State is stored in `~/.cdx/app-state/znamky/sledovane/`; the EUIPO credentials stay in `~/.cdx/apps/znamky/.env`. A single central cron
 automation (`0 7 * * *`) runs `znamky-cli sledovani check` daily to re-search the registers and
 record newly appeared similar marks.
 

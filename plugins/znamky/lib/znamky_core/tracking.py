@@ -8,7 +8,7 @@ above the mark's threshold as *collisions*. New collisions appearing on a later
 check are what the watchdog alerts on.
 
 State is one JSON file per mark under
-$CODEXIS_PUBLIC_USER_HOME/.cdx/apps/znamky/sledovane/<uuid>/state.json, with any
+$CODEXIS_PUBLIC_USER_HOME/.cdx/app-state/znamky/sledovane/<uuid>/state.json, with any
 stored logos beside it - kept on disk so AI tools can read them as context.
 """
 
@@ -30,7 +30,7 @@ from .exceptions import (
 from .fs import atomic_write_bytes, atomic_write_json
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
-APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "znamky", "sledovane")
+APP_DIR = os.path.join(_USER_HOME, ".cdx", "app-state", "znamky", "sledovane")
 
 VALID_KINDS = ("word", "figurative", "combined")
 VALID_TERRITORIES = ("CZ", "EU")

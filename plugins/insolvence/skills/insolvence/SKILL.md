@@ -127,7 +127,7 @@ insolvence-cli sledovani confirm <ID> --all
 
 ## `insolvence-cli sledovani` - subject monitoring
 
-Stateful watchdog. State is stored in `~/.cdx/apps/insolvence/subjekty/`. A single central cron
+Stateful watchdog. State is stored in `~/.cdx/app-state/insolvence/subjekty/`, the directory a plugin writes to. A single central cron
 automation (`0 7 * * *`) runs `insolvence-cli sledovani check` daily to refresh all tracked
 subjects and record changes.
 

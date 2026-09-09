@@ -30,7 +30,9 @@ def _run(args, home):
 
 def _recipients(home):
     data = json.loads(
-        (home / ".cdx" / "apps" / "sledovane-dokumenty" / "settings.json").read_text()
+        (
+            home / ".cdx" / "app-state" / "sledovane-dokumenty" / "settings.json"
+        ).read_text()
     )
     return data["notify"]["recipients"]
 

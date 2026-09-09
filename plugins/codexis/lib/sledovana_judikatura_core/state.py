@@ -14,7 +14,7 @@ import os
 import tempfile
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
-APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "sledovana-judikatura")
+APP_DIR = os.path.join(_USER_HOME, ".cdx", "app-state", "sledovana-judikatura")
 
 
 def now_utc():
