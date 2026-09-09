@@ -20,9 +20,19 @@ pub fn user_home() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from("/"))
 }
 
-/// `$HOME/.cdx/apps/<app_id>` - parent dir for a plugin's per-user state.
+/// `$HOME/.cdx/apps/<app_id>` - the app's secret dir, holding only `.env`.
+/// The chat isolation mounts `~/.cdx/apps` read-only: plugins read the key from
+/// here, and only the daemon writes it (through `cdxctl appenv`). Anything a
+/// plugin writes itself belongs under [`app_state_dir`].
 pub fn app_dir(app_id: &str) -> PathBuf {
     user_home().join(".cdx/apps").join(app_id)
+}
+
+/// `$HOME/.cdx/app-state/<app_id>` - parent dir for a plugin's per-user state
+/// (settings, tracked items, caches). The chat isolation mounts
+/// `~/.cdx/app-state` read-write.
+pub fn app_state_dir(app_id: &str) -> PathBuf {
+    user_home().join(".cdx/app-state").join(app_id)
 }
 
 /// True when `path` exists and is a regular file (not a dir / dangling symlink).
@@ -40,6 +50,15 @@ mod tests {
         assert_eq!(
             app_dir("katastr"),
             PathBuf::from("/tmp/x-home/.cdx/apps/katastr")
+        );
+    }
+
+    #[test]
+    fn app_state_dir_is_under_user_home_cdx_app_state() {
+        let _g = crate::test_support::home_guard(Path::new("/tmp/x-home"));
+        assert_eq!(
+            app_state_dir("katastr"),
+            PathBuf::from("/tmp/x-home/.cdx/app-state/katastr")
         );
     }
 
