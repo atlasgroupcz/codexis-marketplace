@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import {
-  browseResponseSchema,
-  folderResponseSchema,
-  foldersResponseSchema,
+  availableProjectsResponseSchema,
   notifyResponseSchema,
+  projectResponseSchema,
+  projectsResponseSchema,
 } from '@/lib/schemas'
 
-describe('folder schemas', () => {
-  it('parses a folders overview response', () => {
-    const parsed = foldersResponseSchema.parse({
-      mode: 'folders',
+describe('project schemas', () => {
+  it('parses a projects overview response', () => {
+    const parsed = projectsResponseSchema.parse({
+      mode: 'projects',
       generated_at: '2026-06-01T12:00:00Z',
-      folders: [
+      projects: [
         {
-          root: '/home/u/c',
+          projectId: 'p1',
           name: 'C',
           documents: 2,
           pending_harvest: 0,
@@ -23,17 +23,17 @@ describe('folder schemas', () => {
       ],
       settings: { email: true, inApp: false },
     })
-    expect(parsed.folders[0]?.name).toBe('C')
+    expect(parsed.projects[0]?.name).toBe('C')
     // recipients defaults to an empty array
     expect(parsed.settings.recipients).toEqual([])
   })
 
-  it('parses a folder detail and applies legislation/changes defaults', () => {
-    const parsed = folderResponseSchema.parse({
-      mode: 'folder',
+  it('parses a project detail and applies legislation/changes defaults', () => {
+    const parsed = projectResponseSchema.parse({
+      mode: 'project',
       generated_at: '2026-06-01T12:00:00Z',
-      folder: {
-        root: '/home/u/c',
+      project: {
+        projectId: 'p1',
         name: 'C',
         documents: [
           {
@@ -53,24 +53,20 @@ describe('folder schemas', () => {
       },
     })
     // document.legislation defaulted to []
-    expect(parsed.folder.documents[0]?.legislation).toEqual([])
+    expect(parsed.project.documents[0]?.legislation).toEqual([])
     // tracked legislation defaults
-    expect(parsed.folder.legislation[0]?.changes).toEqual([])
-    expect(parsed.folder.legislation[0]?.tracked).toBe(false)
-    expect(parsed.folder.legislation[0]?.unconfirmed_changes).toBe(0)
+    expect(parsed.project.legislation[0]?.changes).toEqual([])
+    expect(parsed.project.legislation[0]?.tracked).toBe(false)
+    expect(parsed.project.legislation[0]?.unconfirmed_changes).toBe(0)
   })
 
-  it('parses a browse response', () => {
-    const parsed = browseResponseSchema.parse({
-      mode: 'browse',
+  it('parses the projects still available to watch', () => {
+    const parsed = availableProjectsResponseSchema.parse({
+      mode: 'available',
       generated_at: '2026-06-01T12:00:00Z',
-      path: '/home/u',
-      parent: null,
-      home: '/home/u',
-      entries: [{ name: 'docs', path: '/home/u/docs', isDir: true }],
+      projects: [{ projectId: 'p2', name: 'Audit' }],
     })
-    expect(parsed.entries[0]?.name).toBe('docs')
-    expect(parsed.parent).toBeNull()
+    expect(parsed.projects[0]?.name).toBe('Audit')
   })
 
   it('parses a notify response, including an empty userEmail outside a CDX daemon', () => {

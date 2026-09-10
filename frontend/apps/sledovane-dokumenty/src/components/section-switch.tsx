@@ -1,12 +1,12 @@
-import { BookMarked, FolderClock } from 'lucide-react'
+import { BookMarked, FolderKanban } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-type Section = 'documents' | 'folders'
+type Section = 'documents' | 'projects'
 
 /** Unconfirmed changes waiting in each watchdog. */
 export interface SectionCounts {
   documents: number
-  folders: number
+  projects: number
 }
 
 interface SectionSwitchProps {
@@ -49,20 +49,20 @@ export function SectionSwitch({ section, onChange, counts }: SectionSwitchProps)
   const items = [
     {
       key: 'documents' as const,
-      label: t('folders.section.documents'),
+      label: t('projects.section.documents'),
       icon: BookMarked,
       badge: counts.documents,
     },
     {
-      key: 'folders' as const,
-      label: t('folders.section.folders'),
-      icon: FolderClock,
-      badge: counts.folders,
+      key: 'projects' as const,
+      label: t('projects.section.projects'),
+      icon: FolderKanban,
+      badge: counts.projects,
     },
   ]
   return (
     <nav
-      aria-label={t('folders.section.label')}
+      aria-label={t('projects.section.label')}
       className="bg-secondary/40 flex w-[72px] shrink-0 flex-col gap-1 border-r p-2 md:w-[300px] md:p-3"
       data-testid="section-switch"
     >
@@ -70,7 +70,7 @@ export function SectionSwitch({ section, onChange, counts }: SectionSwitchProps)
         aria-hidden
         className="text-muted-foreground hidden px-3 pt-1 pb-2 text-[11px] font-semibold tracking-wider uppercase md:block"
       >
-        {t('folders.section.label')}
+        {t('projects.section.label')}
       </p>
       {items.map(({ key, label, icon: Icon, badge }) => {
         const active = section === key

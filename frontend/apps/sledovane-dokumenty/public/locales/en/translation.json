@@ -79,20 +79,20 @@
       "chatPrompt": "Track changes in the Labour Code"
     }
   },
-  "folders": {
+  "projects": {
     "section": {
       "label": "What we watch",
       "documents": "Acts",
-      "folders": "Folders"
+      "projects": "Projects"
     },
-    "add": "Add folder",
+    "add": "Add project",
     "back": "Back",
     "cancel": "Cancel",
-    "added": "Folder added, starting extraction…",
-    "removed": "Folder removed",
+    "added": "Project added, starting extraction…",
+    "removed": "Project no longer watched",
     "confirmed": "Changes confirmed",
     "refresh": "Re-extract",
-    "remove": "Remove folder",
+    "remove": "Stop watching project",
     "checkNow": "Check now",
     "refreshStarted": "Starting a fresh extraction…",
     "checkStarted": "Checking legislation…",
@@ -104,7 +104,8 @@
     "effectiveFrom": "Effective from {{date}}",
     "extractingProgress": "Extracting references ({{done}}/{{total}})",
     "legislationExtracting": "Extracting legislation references…",
-    "noLegislation": "No legislation found in this folder yet.",
+    "noLegislation": "No legislation found in this project's documents yet.",
+    "noDocuments": "The project has no documents yet. Upload some to the project and run the extraction again.",
     "extracted": "Processed",
     "pending": "Pending",
     "refCount": "{{count}} legislation references",
@@ -115,18 +116,19 @@
     "card": {
       "documents": "{{count}} documents",
       "legislation": "{{count}} acts",
-      "extracting": "extracting {{count}}"
+      "extracting": "extracting {{count}}",
+      "lastCheck": "Last check {{date}}",
+      "neverChecked": "Not checked yet"
     },
     "landing": {
-      "title": "Watch the legislation in your documents",
-      "text": "Pick a folder of contracts or documents. AI extracts the laws they reference, and we alert you when any of them changes."
+      "title": "Watch the legislation in your projects",
+      "text": "Pick a project with documents. AI extracts the laws they reference, and we alert you when any of them changes."
     },
     "picker": {
-      "title": "Choose a folder to watch",
-      "watchThis": "Watch this folder",
-      "noSubfolders": "No sub-folders",
-      "home": "Home",
-      "up": "Up one level"
+      "title": "Choose a project to watch",
+      "description": "Any of your projects can be watched. We track the documents it holds.",
+      "watchThis": "Watch this project",
+      "none": "No other project to watch. Create a project in the sidebar and upload documents to it."
     }
   },
   "notify": {

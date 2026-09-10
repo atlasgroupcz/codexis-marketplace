@@ -18,25 +18,25 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useFolderDetail } from '@/hooks/use-folder-detail'
-import { postFolderAction } from '@/lib/api'
+import { useProjectDetail } from '@/hooks/use-project-detail'
+import { postProjectAction } from '@/lib/api'
 import type { TrackedLegislation, WatchedDocument } from '@/lib/schemas'
 import { ErrorMessage } from './error-message'
 import { DetailSkeleton } from './loading-skeleton'
 
-interface FolderDetailProps {
-  root: string
+interface ProjectDetailProps {
+  projectId: string
   onBack: () => void
   onOpenSettings: () => void
 }
 
-export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps) {
+export function ProjectDetail({ projectId, onBack, onOpenSettings }: ProjectDetailProps) {
   const { t } = useTranslation()
-  const { data, loading, error, refetch } = useFolderDetail(root)
+  const { data, loading, error, refetch } = useProjectDetail(projectId)
   const [busy, setBusy] = useState<string | null>(null)
 
-  const folder = data?.folder
-  const pending = folder?.pending_harvest ?? 0
+  const project = data?.project
+  const pending = project?.pending_harvest ?? 0
 
   // While extraction is running, poll for progress.
   useEffect(() => {
@@ -47,9 +47,9 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
     return () => window.clearInterval(id)
   }, [pending, refetch])
 
-  const run = (action: 'folder_refresh' | 'folder_check', successKey: string) => {
+  const run = (action: 'project_refresh' | 'project_check', successKey: string) => {
     setBusy(action)
-    postFolderAction(action, { root })
+    postProjectAction(action, { project: projectId })
       .then(() => {
         toast.success(t(successKey))
         window.setTimeout(refetch, 800)
@@ -60,9 +60,9 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
 
   const remove = () => {
     setBusy('remove')
-    postFolderAction('folder_remove', { root })
+    postProjectAction('project_remove', { project: projectId })
       .then(() => {
-        toast.success(t('folders.removed'))
+        toast.success(t('projects.removed'))
         onBack()
       })
       .catch((err: unknown) => toast.error(err instanceof Error ? err.message : String(err)))
@@ -70,37 +70,36 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
   }
 
   const confirm = (codexisId: string | null | undefined) => {
-    postFolderAction('folder_confirm', { root, codexisId: codexisId ?? undefined })
+    postProjectAction('project_confirm', { project: projectId, codexisId: codexisId ?? undefined })
       .then(() => {
-        toast.success(t('folders.confirmed'))
+        toast.success(t('projects.confirmed'))
         refetch()
       })
       .catch((err: unknown) => toast.error(err instanceof Error ? err.message : String(err)))
   }
 
-  const extracted = (folder?.documents_count ?? 0) - pending
+  const extracted = (project?.documents_count ?? 0) - pending
   const progress =
-    folder && folder.documents_count > 0 ? (extracted / folder.documents_count) * 100 : 0
+    project && project.documents_count > 0 ? (extracted / project.documents_count) * 100 : 0
 
   return (
     <div
       className="bg-background text-foreground flex h-screen flex-col"
-      data-testid="folder-detail-root"
+      data-testid="project-detail-root"
     >
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('folders.back')}>
+          <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('projects.back')}>
             <ArrowLeft className="size-4" />
           </Button>
           <div className="min-w-0">
             <h1 className="font-display truncate text-[15px] leading-tight">
-              {folder?.name ?? '…'}
+              {project?.name ?? '…'}
             </h1>
-            <p
-              className="text-muted-foreground truncate font-mono text-[11px]"
-              title={folder?.root}
-            >
-              {folder?.root ?? root}
+            <p className="text-muted-foreground truncate text-[11px]">
+              {project?.last_check_at
+                ? t('projects.card.lastCheck', { date: project.last_check_at.slice(0, 10) })
+                : t('projects.card.neverChecked')}
             </p>
           </div>
         </div>
@@ -108,27 +107,27 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => run('folder_check', 'folders.checkStarted')}
+            onClick={() => run('project_check', 'projects.checkStarted')}
             disabled={busy !== null}
-            aria-label={t('folders.checkNow')}
+            aria-label={t('projects.checkNow')}
           >
             <ScanSearch className="size-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => run('folder_refresh', 'folders.refreshStarted')}
+            onClick={() => run('project_refresh', 'projects.refreshStarted')}
             disabled={busy !== null}
-            aria-label={t('folders.refresh')}
+            aria-label={t('projects.refresh')}
           >
-            <RefreshCw className={`size-4 ${busy === 'folder_refresh' ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 ${busy === 'project_refresh' ? 'animate-spin' : ''}`} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={remove}
             disabled={busy !== null}
-            aria-label={t('folders.remove')}
+            aria-label={t('projects.remove')}
           >
             <Trash2 className="size-4" />
           </Button>
@@ -145,16 +144,16 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
           <div className="p-6">
             <ErrorMessage message={error.message} onRetry={refetch} />
           </div>
-        ) : folder ? (
+        ) : project ? (
           <ScrollArea className="h-full">
             <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
               {pending > 0 && (
                 <div className="bg-secondary/50 space-y-2 rounded-xl border p-4">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Loader2 className="text-primary size-4 animate-spin" />
-                    {t('folders.extractingProgress', {
+                    {t('projects.extractingProgress', {
                       done: extracted,
-                      total: folder.documents_count,
+                      total: project.documents_count,
                     })}
                   </div>
                   <Progress value={progress} />
@@ -164,30 +163,30 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
               <Tabs defaultValue="legislation">
                 <TabsList variant="line" className="w-full justify-start gap-4">
                   <TabsTrigger value="legislation" className="flex-none px-0">
-                    {t('folders.tabs.legislation')}
+                    {t('projects.tabs.legislation')}
                     <span className="bg-secondary text-secondary-foreground ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold">
-                      {folder.legislation.length}
+                      {project.legislation.length}
                     </span>
                   </TabsTrigger>
                   <TabsTrigger value="documents" className="flex-none px-0">
-                    {t('folders.tabs.documents')}
+                    {t('projects.tabs.documents')}
                     <span className="bg-secondary text-secondary-foreground ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold">
-                      {folder.documents_count}
+                      {project.documents_count}
                     </span>
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="legislation" className="space-y-2 pt-4">
-                  {folder.legislation.length === 0 ? (
+                  {project.legislation.length === 0 ? (
                     <EmptyHint
                       text={
                         pending > 0
-                          ? t('folders.legislationExtracting')
-                          : t('folders.noLegislation')
+                          ? t('projects.legislationExtracting')
+                          : t('projects.noLegislation')
                       }
                     />
                   ) : (
-                    folder.legislation.map((leg, i) => (
+                    project.legislation.map((leg, i) => (
                       <LegislationItem
                         key={leg.codexisId ?? leg.uri ?? i}
                         leg={leg}
@@ -198,7 +197,7 @@ export function FolderDetail({ root, onBack, onOpenSettings }: FolderDetailProps
                 </TabsContent>
 
                 <TabsContent value="documents" className="space-y-2 pt-4">
-                  {folder.documents.map((doc) => (
+                  {project.documents.map((doc) => (
                     <DocumentItem key={doc.path} doc={doc} />
                   ))}
                 </TabsContent>
@@ -243,14 +242,14 @@ function LegislationItem({ leg, onConfirm }: { leg: TrackedLegislation; onConfir
           </div>
         </div>
         {unconfirmed.length > 0 ? (
-          <Badge className="shrink-0">{t('folders.changed')}</Badge>
+          <Badge className="shrink-0">{t('projects.changed')}</Badge>
         ) : leg.tracked ? (
           <Badge variant="secondary" className="shrink-0">
-            {t('folders.tracked')}
+            {t('projects.tracked')}
           </Badge>
         ) : (
           <Badge variant="outline" className="shrink-0">
-            {t('folders.untracked')}
+            {t('projects.untracked')}
           </Badge>
         )}
       </div>
@@ -259,7 +258,7 @@ function LegislationItem({ leg, onConfirm }: { leg: TrackedLegislation; onConfir
         <div className="bg-secondary/40 space-y-2 rounded-lg p-2.5 text-xs">
           {latest.effective_on && (
             <p className="text-muted-foreground">
-              {t('folders.effectiveFrom', { date: latest.effective_on })}
+              {t('projects.effectiveFrom', { date: latest.effective_on })}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-2">
@@ -270,13 +269,13 @@ function LegislationItem({ leg, onConfirm }: { leg: TrackedLegislation; onConfir
                 rel="noreferrer"
                 className="text-primary inline-flex items-center gap-1 font-medium"
               >
-                {t('folders.viewInCodexis')}
+                {t('projects.viewInCodexis')}
                 <ExternalLink className="size-3" />
               </a>
             )}
             <Button size="sm" variant="outline" className="h-7" onClick={onConfirm}>
               <CheckCircle2 className="size-3.5" />
-              {t('folders.confirm')}
+              {t('projects.confirm')}
             </Button>
           </div>
         </div>
@@ -295,18 +294,18 @@ function DocumentItem({ doc }: { doc: WatchedDocument }) {
         <div className="min-w-0">
           <p className="truncate font-mono text-xs">{doc.path}</p>
           <p className="text-muted-foreground text-xs">
-            {t('folders.refCount', { count: doc.legislation.length })}
+            {t('projects.refCount', { count: doc.legislation.length })}
           </p>
         </div>
       </div>
       {extracted ? (
         <Badge variant="secondary" className="shrink-0">
           <CheckCircle2 className="size-3" />
-          {t('folders.extracted')}
+          {t('projects.extracted')}
         </Badge>
       ) : (
         <Badge variant="outline" className="text-muted-foreground shrink-0">
-          {t('folders.pending')}
+          {t('projects.pending')}
         </Badge>
       )}
     </div>

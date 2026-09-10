@@ -474,13 +474,19 @@ enum SkillCommands {
 enum TabularCommands {
     /// Show extraction status, columns, and progress for a folder
     Status {
-        /// Folder path (sandbox path)
+        /// Folder path inside the isolation (sandbox path)
         folder: String,
+        /// Read the folder in this project's files instead of the current chat
+        #[arg(long)]
+        project: Option<String>,
     },
     /// Add a column to the extraction
     AddColumn {
-        /// Folder path (sandbox path)
+        /// Folder path inside the isolation (sandbox path)
         folder: String,
+        /// Read the folder in this project's files instead of the current chat
+        #[arg(long)]
+        project: Option<String>,
         /// Column name
         #[arg(long)]
         name: String,
@@ -496,24 +502,33 @@ enum TabularCommands {
     },
     /// Remove a column from the extraction
     RemoveColumn {
-        /// Folder path (sandbox path)
+        /// Folder path inside the isolation (sandbox path)
         folder: String,
+        /// Read the folder in this project's files instead of the current chat
+        #[arg(long)]
+        project: Option<String>,
         /// Column ID
         #[arg(long)]
         column_id: String,
     },
     /// Start the extraction process
     Start {
-        /// Folder path (sandbox path)
+        /// Folder path inside the isolation (sandbox path)
         folder: String,
+        /// Read the folder in this project's files instead of the current chat
+        #[arg(long)]
+        project: Option<String>,
         /// Block until the extraction reaches DONE or FAILED instead of returning immediately
         #[arg(long, default_value = "false")]
         wait: bool,
     },
     /// Get extraction results (flattened rows)
     Results {
-        /// Folder path (sandbox path)
+        /// Folder path inside the isolation (sandbox path)
         folder: String,
+        /// Read the folder in this project's files instead of the current chat
+        #[arg(long)]
+        project: Option<String>,
     },
 }
 
@@ -931,35 +946,51 @@ fn main() {
             ),
             SkillCommands::Delete { id } => commands::skill::delete(&client, &id, format),
         },
-        Commands::Tabular { command } => match command {
-            TabularCommands::Status { folder } => {
-                commands::tabular::status(&client, &folder, format)
+        Commands::Tabular { command } => {
+            match command {
+                TabularCommands::Status { folder, project } => {
+                    commands::tabular::Folder::resolve(&folder, project.as_deref())
+                        .and_then(|folder| commands::tabular::status(&client, &folder, format))
+                }
+                TabularCommands::AddColumn {
+                    folder,
+                    project,
+                    name,
+                    col_type,
+                    description,
+                    option,
+                } => commands::tabular::Folder::resolve(&folder, project.as_deref()).and_then(
+                    |folder| {
+                        commands::tabular::add_column(
+                            &client,
+                            &folder,
+                            &name,
+                            &col_type,
+                            description.as_deref(),
+                            &option,
+                            format,
+                        )
+                    },
+                ),
+                TabularCommands::RemoveColumn {
+                    folder,
+                    project,
+                    column_id,
+                } => commands::tabular::Folder::resolve(&folder, project.as_deref()).and_then(
+                    |folder| commands::tabular::remove_column(&client, &folder, &column_id, format),
+                ),
+                TabularCommands::Start {
+                    folder,
+                    project,
+                    wait,
+                } => commands::tabular::Folder::resolve(&folder, project.as_deref())
+                    .and_then(|folder| commands::tabular::start(&client, &folder, wait, format)),
+                TabularCommands::Results { folder, project } => {
+                    commands::tabular::Folder::resolve(&folder, project.as_deref())
+                        .and_then(|folder| commands::tabular::results(&client, &folder, format))
+                }
             }
-            TabularCommands::AddColumn {
-                folder,
-                name,
-                col_type,
-                description,
-                option,
-            } => commands::tabular::add_column(
-                &client,
-                &folder,
-                &name,
-                &col_type,
-                description.as_deref(),
-                &option,
-                format,
-            ),
-            TabularCommands::RemoveColumn { folder, column_id } => {
-                commands::tabular::remove_column(&client, &folder, &column_id, format)
-            }
-            TabularCommands::Start { folder, wait } => {
-                commands::tabular::start(&client, &folder, wait, format)
-            }
-            TabularCommands::Results { folder } => {
-                commands::tabular::results(&client, &folder, format)
-            }
-        },
+        }
         Commands::Notification { command } => match command {
             NotificationCommands::Create {
                 message,

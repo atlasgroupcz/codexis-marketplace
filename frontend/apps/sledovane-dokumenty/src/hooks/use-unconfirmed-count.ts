@@ -1,5 +1,5 @@
 import { useFetch } from '@workspace/ui/hooks/use-fetch'
-import { fetchFolders, fetchOverview } from '@/lib/api'
+import { fetchOverview, fetchProjects } from '@/lib/api'
 import { sumUnconfirmed } from '@/lib/counts'
 
 /**
@@ -14,12 +14,12 @@ import { sumUnconfirmed } from '@/lib/counts'
  * nothing, and the number refreshes whenever you cross between watchdogs -
  * switching sections unmounts one home and mounts the other.
  */
-export function useUnconfirmedCount(watchdog: 'documents' | 'folders'): number {
+export function useUnconfirmedCount(watchdog: 'documents' | 'projects'): number {
   const { data } = useFetch(
     () =>
       watchdog === 'documents'
         ? fetchOverview().then((r) => sumUnconfirmed(r.tracked_documents))
-        : fetchFolders().then((r) => sumUnconfirmed(r.folders)),
+        : fetchProjects().then((r) => sumUnconfirmed(r.projects)),
     [watchdog],
   )
   return data ?? 0

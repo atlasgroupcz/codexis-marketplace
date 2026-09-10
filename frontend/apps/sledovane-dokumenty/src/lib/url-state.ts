@@ -10,10 +10,10 @@ export const tabParser = parseAsStringLiteral(['changes', 'documents'] as const)
   'changes',
 )
 
-// Top-level section: track CODEXIS acts by id, or watch folders of own documents.
-export const sectionParser = parseAsStringLiteral(['documents', 'folders'] as const).withDefault(
+// Top-level section: track CODEXIS acts by id, or watch the documents of own projects.
+export const sectionParser = parseAsStringLiteral(['documents', 'projects'] as const).withDefault(
   'documents',
 )
 
-// Absolute path of the watched folder open in the detail view.
-export const rootParser = parseAsString
+// Id of the watched project open in the detail view.
+export const projectParser = parseAsString

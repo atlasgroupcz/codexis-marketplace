@@ -1,4 +1,4 @@
-"""Notify the user (from the daemon) when watched-folder legislation changes.
+"""Notify the user (from the daemon) when watched-project legislation changes.
 
 Two daemon-native, user-configurable channels:
 - e-mail  → POST /rest/v1/plugin/email/send (recipient defaults to the user)
@@ -12,30 +12,27 @@ so a scheduled check never fails because of notifications.
 """
 
 import json
-import os
 import urllib.error
 import urllib.request
 from html import escape
 from uuid import uuid4
 
+from ._daemon import daemon_url as _daemon_url
+from ._daemon import graphql as _graphql
+from ._daemon import graphql_url as _graphql_url
 from ._daemon import load_auth, rest_base
 
 _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
-_GRAPHQL_PATH = "/graphql"
 
-# Deep link into the Sledované dokumenty app (folders tab).
+# Deep link into the Sledované dokumenty app (projects section).
 # Identifies this plugin's app so the bell's deep link can be resolved to the
 # daemon's /apps/<applicationId> route; see _resolve_app_link below.
 _PLUGIN_NAME = "codexis"
 _COMPONENT_ID = "sledovane-dokumenty"
-_LINK_QUERY = "?tab=folders"
+_LINK_QUERY = "?section=projects"
 
 
 # ── transport ────────────────────────────────────────────────────────────────
-
-
-def _daemon_url():
-    return os.environ.get("CODEXIS_PUBLIC_DAEMON_URL")
 
 
 def _send_email(subject, body_text, body_html, recipients=None):
@@ -71,34 +68,6 @@ def _send_email(subject, body_text, body_html, recipients=None):
         return True
     except (urllib.error.URLError, OSError):
         return False
-
-
-def _graphql_url():
-    base = (_daemon_url() or "").rstrip("/")
-    if base.endswith(_GRAPHQL_PATH):
-        return base
-    return base + _GRAPHQL_PATH
-
-
-def _graphql(query):
-    """POST a query to the daemon's GraphQL endpoint and return its `data` object.
-
-    Best-effort: missing config or any transport/parse error yields None, so
-    callers can treat "no daemon" and "bad answer" alike."""
-    daemon_url, auth = _daemon_url(), load_auth()
-    if not daemon_url or not auth:
-        return None
-    try:
-        req = urllib.request.Request(
-            _graphql_url(),
-            data=json.dumps({"query": query}).encode("utf-8"),
-            headers={"Content-Type": "application/json", "Authorization": auth},
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.load(resp)
-    except Exception:
-        return None
-    return data.get("data") if isinstance(data, dict) else None
 
 
 def _query_me_email():
@@ -257,13 +226,13 @@ def _accepted(req):
 # ── summaries ────────────────────────────────────────────────────────────────
 
 
-def _changed_folders(results):
+def _changed_projects(results):
     return [r for r in results if r.get("changes")]
 
 
 def build_summary(results):
-    """Build (subject, body_text, body_html) for folders with new changes, or None."""
-    changed = _changed_folders(results)
+    """Build (subject, body_text, body_html) for projects with new changes, or None."""
+    changed = _changed_projects(results)
     total = sum(len(r["changes"]) for r in changed)
     if total == 0:
         return None
@@ -273,10 +242,10 @@ def build_summary(results):
     else:
         subject = f"Sledované dokumenty: {total} změn v odkazované legislativě"
 
-    text_lines = ["Kontrola sledovaných složek zaznamenala změny:", ""]
+    text_lines = ["Kontrola sledovaných projektů zaznamenala změny:", ""]
     html_rows = []
     for r in changed:
-        text_lines.append(f"Složka „{r['name']}“ - {len(r['changes'])} změn:")
+        text_lines.append(f"Projekt „{r['name']}“ - {len(r['changes'])} změn:")
         for c in r["changes"]:
             eff = f" (účinné od {c['effective_on']})" if c.get("effective_on") else ""
             text_lines.append(f"  • {c.get('text') or c.get('codexisId')}{eff}")
@@ -293,7 +262,7 @@ def build_summary(results):
         )
         html_rows.append(
             f'<h3 style="margin:18px 0 6px;font:600 15px sans-serif;color:#0a0a0a">'
-            f"Složka „{escape(r['name'])}“</h3>"
+            f"Projekt „{escape(r['name'])}“</h3>"
             f'<ul style="margin:0;padding-left:18px;font:14px/1.5 sans-serif;color:#333">{items}</ul>'
         )
     text_lines.append("Otevřete aplikaci Sledované dokumenty v CODEXIS pro detail.")
@@ -323,7 +292,7 @@ def notify_changes(results, settings=None):
     as a failure, and a refused notification must not read as a delivery.
     """
     summary = build_summary(results)
-    total = sum(len(r["changes"]) for r in _changed_folders(results))
+    total = sum(len(r["changes"]) for r in _changed_projects(results))
     if summary is None:
         return {"email": False, "inApp": None, "changes": 0}
 
@@ -353,7 +322,7 @@ def notify_changes(results, settings=None):
 def _email_shell(heading, inner_html):
     """Wrap inner HTML in the branded e-mail envelope shared by document notices.
 
-    Mirrors the inline styling `build_summary` uses for folder-change e-mails.
+    Mirrors the inline styling `build_summary` uses for project-change e-mails.
     """
     return (
         '<div style="max-width:560px;font:14px sans-serif;color:#0a0a0a">'

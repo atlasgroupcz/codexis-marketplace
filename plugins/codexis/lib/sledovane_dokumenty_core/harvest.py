@@ -13,7 +13,7 @@ AI is used here and ONLY here. The daily check never calls a model.
 import json
 import re
 
-from . import clients, folders
+from . import clients, projects
 
 # Object root (strict structured output needs an object, not a bare array).
 HARVEST_SCHEMA = json.dumps(
@@ -132,15 +132,19 @@ def _parse_references(response):
     return [r for r in refs if isinstance(r, dict)]
 
 
-def harvest_document(root, rel_path, printer=None):
+def harvest_document(project_id, rel_path, session_id, printer=None):
     """Harvest one document. Returns the number of references written, or None
-    on extract failure (document left pending)."""
-    abs_path = folders.to_abs(root, rel_path)
+    on extract failure (document left pending).
+
+    The daemon reads the document inside the environment of `session_id`, a
+    chat of the project, so the path is the in-chat one whatever this process
+    can see itself."""
     response = clients.llm_extract_file(
-        abs_path,
+        projects.harvest_path(rel_path),
         HARVEST_QUERY,
         schema=HARVEST_SCHEMA,
         schema_name="legislation_references",
+        session_id=session_id,
     )
     refs = _parse_references(response)
     if refs is None:
@@ -150,25 +154,37 @@ def harvest_document(root, rel_path, printer=None):
 
     legislation = [build_legislation_entry(r) for r in refs]
     legislation = [e for e in legislation if e.get("text")]
-    folders.set_references(root, rel_path, legislation)
+    projects.set_references(project_id, rel_path, legislation)
     if printer:
         printer(f"  {rel_path}: {len(legislation)} odkazů")
     return len(legislation)
 
 
-def harvest_folder(root, printer=None):
+def harvest_project(project_id, printer=None):
     """Harvest every document that needs it. Returns a summary dict.
 
     {"documents": n, "references": m, "failed": k}
-    """
-    abs_root = folders.normalize_root(root)
-    if folders.read_watched(abs_root) is None:
-        folders.sync_watched(abs_root)
 
-    pending = folders.docs_needing_harvest(abs_root)
+    Scans first when the project's files are reachable from here, so a run
+    from a project chat picks up new files by itself. Raises when the project
+    has no chat the daemon could read the documents through.
+    """
+    if projects.files_dir(project_id) is not None:
+        projects.sync_watched(project_id)
+
+    pending = projects.docs_needing_harvest(project_id)
+    if not pending:
+        return {"documents": 0, "references": 0, "failed": 0}
+
+    session_id = projects.harvest_session(project_id)
+    if session_id is None:
+        raise projects.WatchedProjectError(
+            "Projekt zatím nemá žádný chat - otevřete v něm chat a spusťte extrakci znovu."
+        )
+
     documents = references = failed = 0
     for rel_path in pending:
-        count = harvest_document(abs_root, rel_path, printer=printer)
+        count = harvest_document(project_id, rel_path, session_id, printer=printer)
         if count is None:
             failed += 1
         else:

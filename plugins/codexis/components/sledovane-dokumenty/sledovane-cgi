@@ -2,7 +2,7 @@
 """JSON CGI handler for the sledovane-dokumenty plugin component.
 
 GET returns JSON data; POST dispatches JSON actions (confirm / remove /
-notes / groups). The HTML shell (index.html) is served by the daemon's
+notes / groups / watched projects). The HTML shell (index.html) is served by the daemon's
 SpaCgi runtime directly from `entrypoint` in component.json, so this
 module only runs for JSON requests.
 
@@ -24,9 +24,9 @@ sys.path.insert(0, str(LIB_DIR))
 
 try:
     from sledovane_dokumenty_core import (
-        folder_check,
-        folders,
         notify,
+        project_check,
+        projects,
         settings,
         state,
         tracking,
@@ -38,7 +38,7 @@ try:
         DocumentNotTrackedError,
         GroupNotFoundError,
     )
-    from sledovane_dokumenty_core.folders import WatchedFolderError
+    from sledovane_dokumenty_core.projects import WatchedProjectError
 except ImportError as e:
     sys.stdout.write("Status: 500 Internal Server Error\r\n")
     sys.stdout.write("Content-Type: application/json; charset=utf-8\r\n\r\n")
@@ -59,7 +59,7 @@ def emit_json(payload, status=None):
 
 def now_utc():
     import datetime
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(
+    return datetime.datetime.now(datetime.UTC).isoformat(
         timespec="seconds"
     ).replace("+00:00", "Z")
 
@@ -67,7 +67,7 @@ def now_utc():
 def error_status(exc):
     if isinstance(exc, DocumentAlreadyTrackedError):
         return "409 Conflict"
-    if isinstance(exc, WatchedFolderError):
+    if isinstance(exc, WatchedProjectError):
         return "400 Bad Request"
     if isinstance(exc, (DocumentNotTrackedError, DocumentNotFoundError, GroupNotFoundError)):
         return "404 Not Found"
@@ -172,7 +172,7 @@ def to_overview_entry(document, groups):
     }
 
 
-# ── watched folders ─────────────────────────────────────────────────────────
+# ── watched projects ────────────────────────────────────────────────────────
 
 
 def _spawn_cli(cli_args):
@@ -180,7 +180,7 @@ def _spawn_cli(cli_args):
     import subprocess
     try:
         subprocess.Popen(
-            ["cdx-sledovane-dokumenty"] + cli_args,
+            ["cdx-sledovane-dokumenty", *cli_args],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             stdin=subprocess.DEVNULL,
@@ -196,16 +196,15 @@ def _signed_in_email():
     return notify._query_me_email() or ""
 
 
-def folder_to_fe(root):
-    """Reshape one watched folder (watched.json + tracking) for the FE."""
-    abs_root = os.path.abspath(os.path.expanduser(root))
-    entry = folders.find_in_index(abs_root) or {
-        "root": abs_root,
-        "name": os.path.basename(abs_root.rstrip("/")) or abs_root,
+def project_to_fe(project_id):
+    """Reshape one watched project (watched.json + tracking) for the FE."""
+    entry = projects.find_in_index(project_id) or {
+        "projectId": project_id,
+        "name": project_id,
         "added_on": None,
     }
-    data = folders.read_watched(abs_root) or folders.empty_watched()
-    tracking_state = folders.read_tracking(abs_root) or {"legislation": {}, "lastCheckAt": None}
+    data = projects.read_watched(project_id) or projects.empty_watched(project_id)
+    tracking_state = projects.read_tracking(project_id) or {"legislation": {}, "lastCheckAt": None}
     leg_state = tracking_state.get("legislation", {})
 
     documents = []
@@ -223,7 +222,7 @@ def folder_to_fe(root):
         })
 
     legislation = []
-    for ref in folders.unique_legislation(abs_root):
+    for ref in projects.unique_legislation(project_id):
         cid = ref.get("codexisId")
         st = leg_state.get(cid, {}) if cid else {}
         changes = st.get("changes", [])
@@ -239,7 +238,7 @@ def folder_to_fe(root):
         })
 
     return {
-        "root": abs_root,
+        "projectId": project_id,
         "name": entry.get("name"),
         "added_on": entry.get("added_on"),
         "documents": documents,
@@ -250,25 +249,42 @@ def folder_to_fe(root):
     }
 
 
-def handle_folder_get(view, params):
-    if view == "folders":
+def _required_project(params_or_body, key="project"):
+    value = params_or_body.get(key)
+    if isinstance(value, list):
+        value = value[0] if value else ""
+    value = (value or "").strip()
+    if not value:
+        emit_json({"ok": False, "error": f"'{key}' is required"}, status="400 Bad Request")
+        return None
+    return value
+
+
+def handle_project_get(view, params):
+    if view == "projects":
         emit_json({
-            "mode": "folders",
+            "mode": "projects",
             "generated_at": now_utc(),
-            "folders": folders.list_watches(),
+            "projects": projects.list_watches(),
             "settings": settings.get_notify(),
         })
         return
-    if view == "folder":
-        root = (params.get("root", [""])[0] or "").strip()
-        if not root:
-            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
+    if view == "project":
+        project_id = _required_project(params)
+        if project_id is None:
             return
-        emit_json({"mode": "folder", "generated_at": now_utc(), "folder": folder_to_fe(root)})
+        emit_json({
+            "mode": "project",
+            "generated_at": now_utc(),
+            "project": project_to_fe(project_id),
+        })
         return
-    if view == "browse":
-        path = (params.get("path", [""])[0] or "").strip() or None
-        emit_json({"mode": "browse", "generated_at": now_utc(), **folders.browse(path)})
+    if view == "available":
+        emit_json({
+            "mode": "available",
+            "generated_at": now_utc(),
+            "projects": projects.available_to_watch(),
+        })
         return
     if view == "notify":
         emit_json({
@@ -280,58 +296,12 @@ def handle_folder_get(view, params):
     emit_json({"ok": False, "error": f"unknown view: {view}"}, status="400 Bad Request")
 
 
-def handle_folder_action(action, body):
-    root = (body.get("root") or "").strip()
+def _rescan_if_visible(project_id):
+    if projects.files_dir(project_id) is not None:
+        projects.sync_watched(project_id)
 
-    if action == "folder_add":
-        if not root:
-            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
-            return
-        res = folders.add_watch(root, name=(body.get("name") or None))
-        _spawn_cli(["folder", "harvest", res["root"]])
-        emit_json({"ok": True, "folder": res, "extracting": True})
-        return
 
-    if action in ("start_extraction", "folder_harvest"):
-        if not root:
-            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
-            return
-        _spawn_cli(["folder", "harvest", os.path.abspath(os.path.expanduser(root))])
-        emit_json({"ok": True, "started": True})
-        return
-
-    if action == "folder_refresh":
-        if not root:
-            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
-            return
-        _spawn_cli(["folder", "refresh", os.path.abspath(os.path.expanduser(root))])
-        emit_json({"ok": True, "started": True})
-        return
-
-    if action == "folder_check":
-        args = ["folder", "check"]
-        if root:
-            args.append(os.path.abspath(os.path.expanduser(root)))
-        _spawn_cli(args)
-        emit_json({"ok": True, "started": True})
-        return
-
-    if action == "folder_remove":
-        if not root:
-            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
-            return
-        folders.remove_watch(root, purge=bool(body.get("purge")))
-        emit_json({"ok": True})
-        return
-
-    if action == "folder_confirm":
-        if not root:
-            emit_json({"ok": False, "error": "'root' is required"}, status="400 Bad Request")
-            return
-        marked = folder_check.confirm_folder(root, body.get("codexisId"))
-        emit_json({"ok": True, "confirmed": marked})
-        return
-
+def handle_project_action(action, body):
     if action == "save_notify_settings":
         # Drop the signed-in user's own address (they always receive it); guard
         # None so a save that omits `recipients` leaves the stored list untouched.
@@ -350,7 +320,54 @@ def handle_folder_action(action, body):
         emit_json({"ok": True, "settings": settings.get_notify()})
         return
 
-    emit_json({"ok": False, "error": f"unknown folder action: {action}"}, status="400 Bad Request")
+    if action == "project_check" and not (body.get("project") or "").strip():
+        _spawn_cli(["project", "check"])
+        emit_json({"ok": True, "started": True})
+        return
+
+    project_ref = _required_project(body)
+    if project_ref is None:
+        return
+
+    if action == "project_add":
+        res = projects.add_watch(project_ref)
+        extracting = res["files_available"] and bool(res.get("total"))
+        if extracting:
+            _spawn_cli(["project", "harvest", res["projectId"]])
+        emit_json({"ok": True, "project": res, "extracting": extracting})
+        return
+
+    project_id = projects.resolve(project_ref)["projectId"]
+
+    if action in ("start_extraction", "project_harvest"):
+        _rescan_if_visible(project_id)
+        _spawn_cli(["project", "harvest", project_id])
+        emit_json({"ok": True, "started": True})
+        return
+
+    if action == "project_refresh":
+        _rescan_if_visible(project_id)
+        projects.mark_all_for_reharvest(project_id)
+        _spawn_cli(["project", "harvest", project_id])
+        emit_json({"ok": True, "started": True})
+        return
+
+    if action == "project_check":
+        _spawn_cli(["project", "check", project_id])
+        emit_json({"ok": True, "started": True})
+        return
+
+    if action == "project_remove":
+        projects.remove_watch(project_id, purge=bool(body.get("purge")))
+        emit_json({"ok": True})
+        return
+
+    if action == "project_confirm":
+        marked = project_check.confirm_project(project_id, body.get("codexisId"))
+        emit_json({"ok": True, "confirmed": marked})
+        return
+
+    emit_json({"ok": False, "error": f"unknown project action: {action}"}, status="400 Bad Request")
 
 
 # ── POST dispatch ───────────────────────────────────────────────────────────
@@ -363,8 +380,8 @@ def handle_post(body):
         handle_group_action(action, body)
         return
 
-    if action.startswith("folder_") or action in ("start_extraction", "save_notify_settings"):
-        handle_folder_action(action, body)
+    if action.startswith("project_") or action in ("start_extraction", "save_notify_settings"):
+        handle_project_action(action, body)
         return
 
     target_uuid = body.get("uuid", "")
@@ -498,7 +515,7 @@ def handle_get(query_string):
 
     view = (params.get("view", [""])[0] or "").strip()
     if view:
-        handle_folder_get(view, params)
+        handle_project_get(view, params)
         return
 
     requested_uuid = (params.get("uuid", [""])[0] or "").strip()
@@ -570,7 +587,7 @@ def main():
             handle_get(query_string)
     except DocumentError as e:
         emit_json({"ok": False, "error": str(e)}, status=error_status(e))
-    except Exception as e:  # noqa: BLE001 - last-resort guard
+    except Exception as e:
         emit_json(
             {"ok": False, "error": f"Internal error: {e}"},
             status="500 Internal Server Error",

@@ -6,10 +6,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DocumentDetail } from '@/components/document-detail'
 import { DocumentsHome } from '@/components/documents-home'
-import { FolderDetail } from '@/components/folder-detail'
-import { FoldersHome } from '@/components/folders-home'
+import { ProjectDetail } from '@/components/project-detail'
+import { ProjectsHome } from '@/components/projects-home'
 import { fetchNotify, saveNotify } from '@/lib/api'
-import { rootParser, sectionParser, uuidParser, viewParser } from '@/lib/url-state'
+import { projectParser, sectionParser, uuidParser, viewParser } from '@/lib/url-state'
 
 const defaultNotify: NotifyValues = { email: true, inApp: true, recipients: [] }
 
@@ -18,7 +18,7 @@ export function App() {
   const [section, setSection] = useQueryState('section', sectionParser)
   const [view, setView] = useQueryState('view', viewParser)
   const [uuid, setUuid] = useQueryState('uuid', uuidParser)
-  const [root, setRoot] = useQueryState('root', rootParser)
+  const [project, setProject] = useQueryState('project', projectParser)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notify, setNotify] = useState<NotifyValues>(defaultNotify)
@@ -36,7 +36,7 @@ export function App() {
       })
   }, [])
 
-  const changeSection = (next: 'documents' | 'folders') => {
+  const changeSection = (next: 'documents' | 'projects') => {
     void setSection(next)
   }
 
@@ -79,13 +79,13 @@ export function App() {
     />
   )
 
-  if (section === 'folders') {
-    if (root) {
+  if (section === 'projects') {
+    if (project) {
       return (
         <>
-          <FolderDetail
-            root={root}
-            onBack={() => void setRoot(null)}
+          <ProjectDetail
+            projectId={project}
+            onBack={() => void setProject(null)}
             onOpenSettings={openSettings}
           />
           {settingsDialog}
@@ -94,10 +94,10 @@ export function App() {
     }
     return (
       <>
-        <FoldersHome
+        <ProjectsHome
           section={section}
           onChangeSection={changeSection}
-          onSelectFolder={(r) => void setRoot(r)}
+          onSelectProject={(id) => void setProject(id)}
           onOpenSettings={openSettings}
         />
         {settingsDialog}

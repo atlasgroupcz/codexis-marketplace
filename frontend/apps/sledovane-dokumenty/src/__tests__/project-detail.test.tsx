@@ -1,22 +1,22 @@
 import { screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FolderDetail } from '@/components/folder-detail'
-import type { FolderResponse, TrackedLegislation } from '@/lib/schemas'
+import { ProjectDetail } from '@/components/project-detail'
+import type { ProjectResponse, TrackedLegislation } from '@/lib/schemas'
 import { renderApp } from '@/test/render-app'
 
-function stubFolder(payload: FolderResponse) {
+function stubProject(payload: ProjectResponse) {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(payload) }),
   )
 }
 
-function folderWith(legislation: Array<TrackedLegislation>): FolderResponse {
+function projectWith(legislation: Array<TrackedLegislation>): ProjectResponse {
   return {
-    mode: 'folder',
+    mode: 'project',
     generated_at: '2026-06-01T12:00:00Z',
-    folder: {
-      root: '/home/u/my-contracts',
+    project: {
+      projectId: '5b1c1c4e-0000-4000-8000-000000000001',
       name: 'Smlouvy',
       added_on: '2026-06-01T12:00:00Z',
       documents: [],
@@ -28,9 +28,13 @@ function folderWith(legislation: Array<TrackedLegislation>): FolderResponse {
   }
 }
 
-function renderFolder() {
+function renderProject() {
   return renderApp(
-    <FolderDetail root="/home/u/my-contracts" onBack={vi.fn()} onOpenSettings={vi.fn()} />,
+    <ProjectDetail
+      projectId="5b1c1c4e-0000-4000-8000-000000000001"
+      onBack={vi.fn()}
+      onOpenSettings={vi.fn()}
+    />,
     { searchParams: { lang: 'en' } },
   )
 }
@@ -57,18 +61,18 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('FolderDetail legislation link', () => {
+describe('ProjectDetail legislation link', () => {
   it('links a resolved act to its CODEXIS document', async () => {
-    stubFolder(folderWith([resolvedAct]))
-    renderFolder()
+    stubProject(projectWith([resolvedAct]))
+    renderProject()
 
     const link = await screen.findByRole('link')
     expect(link).toHaveAttribute('href', 'https://next.codexis.cz/doc/CR26785')
   })
 
   it('never links legislation to zakonyprolidi', async () => {
-    stubFolder(folderWith([resolvedAct]))
-    renderFolder()
+    stubProject(projectWith([resolvedAct]))
+    renderProject()
 
     await screen.findByText(resolvedAct.text)
     const hrefs = screen.queryAllByRole('link').map((a) => a.getAttribute('href') ?? '')
@@ -76,8 +80,8 @@ describe('FolderDetail legislation link', () => {
   })
 
   it('renders no external link for an act without a CODEXIS id', async () => {
-    stubFolder(folderWith([unresolvedAct]))
-    renderFolder()
+    stubProject(projectWith([unresolvedAct]))
+    renderProject()
 
     await screen.findByText(unresolvedAct.text)
     expect(screen.queryAllByRole('link')).toHaveLength(0)

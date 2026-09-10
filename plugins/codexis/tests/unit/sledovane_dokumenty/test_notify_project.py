@@ -1,4 +1,4 @@
-"""Notification settings + summary building for watched folders."""
+"""Notification settings + summary building for watched projects."""
 
 import json
 
@@ -8,7 +8,7 @@ from sledovane_dokumenty_core import settings as settings_mod
 
 
 def _results(changes):
-    return [{"root": "/r", "name": "Smlouvy", "changes": changes, "errors": []}]
+    return [{"projectId": "p1", "name": "Smlouvy", "changes": changes, "errors": []}]
 
 
 def test_build_summary_none_without_changes():
@@ -143,12 +143,12 @@ def test_email_returns_false_without_secret(monkeypatch, tmp_path):
     assert notify._send_email("subj", "body", None) is False
 
 
-# Folder results shape that build_summary/_changed_folders already consume
+# Project results shape that build_summary/_changed_projects already consume
 # (see the existing _results() helper at the top of this test file).
-def _folder_results():
+def _project_results():
     return [
         {
-            "root": "/r",
+            "projectId": "p1",
             "name": "Smlouvy",
             "errors": [],
             "changes": [
@@ -181,7 +181,7 @@ def test_notify_changes_reads_unified_setting(dokumenty_app_dir, monkeypatch):
     )
 
     notify.notify_changes(
-        _folder_results()
+        _project_results()
     )  # settings=None -> reads the unified setting
 
     assert calls["email"] == 1
@@ -363,7 +363,7 @@ def test_notify_changes_forwards_resolved_recipients(dokumenty_app_dir, monkeypa
         lambda: {"email": True, "inApp": False, "recipients": ["a@x.cz"]},
     )
 
-    notify.notify_changes(_folder_results())
+    notify.notify_changes(_project_results())
 
     assert captured.get("recipients") == ["resolved@x.cz"]
 
@@ -388,7 +388,7 @@ def test_notify_document_changes_forwards_resolved_recipients(
     assert captured.get("recipients") == ["resolved@x.cz"]
 
 
-_EXPECTED_LINK_QUERY = "?tab=folders"
+_EXPECTED_LINK_QUERY = "?section=projects"
 # ── app deep link ─────────────────────────────────────────────────────────────
 
 # A real application id, captured from a running instance's /apps/... URL. It is
@@ -523,7 +523,7 @@ def test_change_notification_sends_no_action_field(dokumenty_app_dir, monkeypatc
         lambda: {"email": False, "inApp": True, "recipients": []},
     )
 
-    notify.notify_changes(_folder_results())
+    notify.notify_changes(_project_results())
 
     assert sent, "the in-app notification was not attempted"
     assert "action" not in sent[0], f"still sends a dropped field: {sent[0]}"

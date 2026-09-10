@@ -47,44 +47,101 @@ _CHAT_NODE_RE = re.compile(
 # assertion encode it before sending the GraphQL request.
 _NODE_ID_TEMPLATE_RE = re.compile(r"\$\{([A-Za-z][A-Za-z0-9]*):([^}]+)\}")
 
+# Entities the daemon keys inside an isolation scope rather than at the root:
+# their node id is the scope's segment followed by their own. The scope is the
+# chat the eval ran in, read from the provider output.
+_SCOPED_TYPES = frozenset({"TabularExtraction"})
 
-def _encode_node_id(type_name: str, inner: str) -> str:
-    """Mirror commands::encode_node_id from cdxctl.
 
-    URL-safe base64 (no padding) of `varint(len(typename)) || typename ||
-    varint(len(inner)) || inner`.
+def _varint(n: int) -> bytes:
+    out = bytearray()
+    while True:
+        b = n & 0x7F
+        n >>= 7
+        if n:
+            out.append(b | 0x80)
+        else:
+            out.append(b)
+            return bytes(out)
+
+
+def _encode_node_path(segments: list[tuple[str, str]]) -> str:
+    """Mirror commands::encode_node_path from cdxctl.
+
+    URL-safe base64 (no padding) of one `varint(len(typename)) || typename ||
+    varint(len(id)) || id` chunk per segment, root first.
     """
-
-    def varint(n: int) -> bytes:
-        out = bytearray()
-        while True:
-            b = n & 0x7F
-            n >>= 7
-            if n:
-                out.append(b | 0x80)
-            else:
-                out.append(b)
-                return bytes(out)
-
-    body = (
-        varint(len(type_name))
+    body = b"".join(
+        _varint(len(type_name))
         + type_name.encode()
-        + varint(len(inner))
+        + _varint(len(inner))
         + inner.encode()
+        for type_name, inner in segments
     )
     return base64.urlsafe_b64encode(body).decode().rstrip("=")
+
+
+def _encode_node_id(type_name: str, inner: str) -> str:
+    """A single-segment node id - see _encode_node_path."""
+    return _encode_node_path([(type_name, inner)])
+
+
+def _decode_node_id(encoded: str) -> list[tuple[str, str]] | None:
+    """The `(typename, id)` segments of a node id, root first; None if not one."""
+    if not encoded:
+        return None
+    try:
+        data = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+    except (ValueError, TypeError):
+        return None
+    segments: list[tuple[str, str]] = []
+    idx = 0
+
+    def read_varint() -> int:
+        nonlocal idx
+        result = shift = 0
+        while True:
+            if idx >= len(data):
+                raise ValueError("truncated")
+            byte = data[idx]
+            idx += 1
+            result |= (byte & 0x7F) << shift
+            if byte & 0x80 == 0:
+                return result
+            shift += 7
+
+    def read_chunk() -> str:
+        nonlocal idx
+        length = read_varint()
+        if idx + length > len(data):
+            raise ValueError("truncated")
+        chunk = data[idx : idx + length].decode()
+        idx += length
+        return chunk
+
+    try:
+        while idx < len(data):
+            segments.append((read_chunk(), read_chunk()))
+    except (ValueError, UnicodeDecodeError):
+        return None
+    return segments or None
 
 
 _NUNJUCKS_VAR_RE = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 
 
-def _resolve_node_id_template(value, vars_: dict | None = None):
+def _resolve_node_id_template(
+    value, vars_: dict | None = None, scope: str | None = None
+):
     """Substitute every ${TypeName:innerId} in a string value with its NodeId.
 
     Promptfoo's Nunjucks pass substitutes `{{ run_id }}` in top-level prompts
     but does NOT recurse into `vars.variables`, so we re-do that substitution
     here using `vars_` as the lookup dict. Run before the NodeId match so the
     outer `}` of `${…:…}` is not confused with the closing `}` of `{{ x }}`.
+
+    `scope` is the encoded node id of the chat the eval ran in; a type the
+    daemon keys inside an isolation (see _SCOPED_TYPES) is nested under it.
     """
     if not isinstance(value, str):
         return value
@@ -92,9 +149,15 @@ def _resolve_node_id_template(value, vars_: dict | None = None):
         value = _NUNJUCKS_VAR_RE.sub(
             lambda m: str(vars_.get(m.group(1), m.group(0))), value
         )
-    return _NODE_ID_TEMPLATE_RE.sub(
-        lambda m: _encode_node_id(m.group(1), m.group(2)), value
-    )
+    scope_segments = _decode_node_id(scope) if scope else None
+
+    def encode(m: re.Match) -> str:
+        type_name, inner = m.group(1), m.group(2)
+        if type_name in _SCOPED_TYPES and scope_segments:
+            return _encode_node_path([*scope_segments, (type_name, inner)])
+        return _encode_node_id(type_name, inner)
+
+    return _NODE_ID_TEMPLATE_RE.sub(encode, value)
 
 
 def _extract_tool_calls(output: str) -> list[dict]:
@@ -440,7 +503,10 @@ def assert_state_graphql(output: str, context: dict) -> dict:
     client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
 
     raw_vars = vars_.get("variables") or {}
-    gql_vars = {k: _resolve_node_id_template(v, vars_) for k, v in raw_vars.items()}
+    scope = _chat_node_id(output)
+    gql_vars = {
+        k: _resolve_node_id_template(v, vars_, scope) for k, v in raw_vars.items()
+    }
     try:
         data = client.gql_data(query, gql_vars)
     except Exception as e:
