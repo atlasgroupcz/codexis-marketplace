@@ -5,6 +5,8 @@ query GetChatContext($id: ID!) {
             model
             modelConfiguration { key value }
             jurisdictions
+            project { id }
+            connections { id }
         }
     }
 }

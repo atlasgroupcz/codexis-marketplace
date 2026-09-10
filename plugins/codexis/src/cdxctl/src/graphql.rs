@@ -38,9 +38,17 @@ pub const UNINSTALL_PLUGIN: &str = include_str!("queries/plugin_uninstall.graphq
 
 pub const GET_AGENTS: &str = include_str!("queries/agent_get.graphql");
 
-// The chat the shell runs in carries the model and jurisdictions actually in use, which
-// is per chat -- unlike a stored preference, which two concurrent chats would share.
+// The chat the shell runs in carries the model, jurisdictions, project and connections
+// actually in use, which is per chat -- unlike a stored preference, which two concurrent
+// chats would share.
 pub const GET_CHAT_CONTEXT: &str = include_str!("queries/chat_context_get.graphql");
+
+// ==================== Projects and connections ====================
+
+pub const GET_PROJECTS: &str = include_str!("queries/project_get.graphql");
+
+// Every source a chat or an automation can mount: cloud drives plus own and shared drives.
+pub const GET_CONNECTIONS: &str = include_str!("queries/connection_get.graphql");
 
 pub const SAVE_AGENT: &str = include_str!("queries/agent_save.graphql");
 
