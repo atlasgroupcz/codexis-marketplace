@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from tests.promptfoo.assertions import (
     CHAT_NODE_END,
     CHAT_NODE_SENTINEL,
@@ -102,11 +104,14 @@ def test_state_file_reads_the_isolation_of_the_chat_that_ran(monkeypatch):
     assert asked == [(CHAT_NODE_ID, "/home/codexis/chart.html")]
 
 
-def test_state_file_fails_when_the_output_carries_no_chat():
+@pytest.mark.parametrize(
+    "output",
+    [f"answer\n\n{TOOL_CALLS_SENTINEL}[]{TOOL_CALLS_END}", None],
+    ids=["no sentinel", "not text at all"],
+)
+def test_state_file_fails_when_the_output_carries_no_chat(output):
     # Better a named failure than a request to the daemon that cannot say which
     # files it means.
-    output = f"answer\n\n{TOOL_CALLS_SENTINEL}[]{TOOL_CALLS_END}"
-
     result = assert_state_file(output, _ctx(file="/home/codexis/chart.html"))
 
     assert result["pass"] is False
