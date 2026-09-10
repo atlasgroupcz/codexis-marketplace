@@ -29,7 +29,7 @@ pub fn publish_from_body(
     if entries.is_empty() {
         return Ok(());
     }
-    let body = build_publish_body(entries, daemon.working_directory())?;
+    let body = build_publish_body(entries)?;
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
 }
 
@@ -42,20 +42,14 @@ pub fn publish_entries(
     if entries.is_empty() {
         return Ok(());
     }
-    let body = build_publish_body(entries, daemon.working_directory())?;
+    let body = build_publish_body(entries)?;
     post_to_daemon(&daemon.sources_url(), daemon.auth_header(), &body)
 }
 
 /// Entries are forwarded to the daemon verbatim - every upstream field, including
 /// ones this crate does not know about (e.g. `previewUrl`), must survive publish.
-fn build_publish_body(
-    entries: &[serde_json::Value],
-    working_directory: Option<&str>,
-) -> Result<String, SourcesError> {
-    let mut body = serde_json::json!({ "sources": entries });
-    if let Some(dir) = working_directory {
-        body["workingDirectory"] = serde_json::Value::String(dir.to_string());
-    }
+fn build_publish_body(entries: &[serde_json::Value]) -> Result<String, SourcesError> {
+    let body = serde_json::json!({ "sources": entries });
     serde_json::to_string(&body).map_err(|e| SourcesError::Parse(e.to_string()))
 }
 
@@ -167,7 +161,7 @@ mod tests {
             serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" }),
         ];
 
-        let body = build_publish_body(&entries, None).unwrap();
+        let body = build_publish_body(&entries).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
 
         assert_eq!(
@@ -179,33 +173,14 @@ mod tests {
     }
 
     #[test]
-    fn should_include_working_directory_when_the_daemon_injected_it() {
-        // given
+    fn publish_body_carries_nothing_but_the_sources() {
         let entries =
             vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
 
-        // when
-        let body = build_publish_body(&entries, Some("/home/codexis/project")).unwrap();
+        let body = build_publish_body(&entries).unwrap();
 
-        // then
         let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert_eq!(
-            parsed["workingDirectory"],
-            serde_json::json!("/home/codexis/project")
-        );
-    }
-
-    #[test]
-    fn should_omit_working_directory_when_absent() {
-        // given
-        let entries =
-            vec![serde_json::json!({ "__kind": "url", "url": "https://example.com/doc" })];
-
-        // when
-        let body = build_publish_body(&entries, None).unwrap();
-
-        // then
-        let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert!(parsed.get("workingDirectory").is_none());
+        let keys: Vec<&String> = parsed.as_object().unwrap().keys().collect();
+        assert_eq!(keys, vec!["sources"]);
     }
 }

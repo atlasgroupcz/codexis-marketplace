@@ -113,8 +113,8 @@ _Q_VM_STATUS = """
 """
 
 _Q_GET_ENTRY = """
-query GetEntry($path: String!) {
-    getEntry(path: $path) {
+query GetEntry($isolationId: ID!, $path: String!) {
+    getEntry(isolationId: $isolationId, path: $path) {
         name type permissions
     }
 }
@@ -207,6 +207,25 @@ query GetToolChain($id: ID!) {
 """
     % _PART_FIELDS
 )
+
+# Documents the VM gateway serves, not the daemon: they go to
+# `gateway_graphql_url` and the daemon's schema has neither of them.
+GATEWAY_DOCUMENTS = frozenset({"_Q_START_VM", "_Q_VM_STATUS"})
+
+
+def daemon_documents() -> dict[str, str]:
+    """Every GraphQL document this client sends to the daemon, by constant name.
+
+    Read out of the module's own globals so a document added above is held
+    against the daemon's schema by the contract tier without anyone remembering
+    to register it. A new gateway document is the one case that needs a line,
+    in GATEWAY_DOCUMENTS.
+    """
+    return {
+        name: value
+        for name, value in globals().items()
+        if name.startswith("_Q_") and name not in GATEWAY_DOCUMENTS
+    }
 
 
 # HTTP statuses worth retrying. The shared dev daemon redeploys under long runs,
@@ -432,8 +451,12 @@ class DaemonClient:
         return result["data"]
 
     # -------------------------------------------------- filesystem introspection
-    def get_entry(self, path: str) -> dict | None:
+    def get_entry(self, isolation_id: str, path: str) -> dict | None:
         """Returns {name, isFile, isDirectory, isSymlink} or None.
+
+        `isolation_id` is the node id of the isolation the file lives in - the
+        chat that wrote it, for an eval - because the daemon's file API is
+        scoped to one isolated environment rather than to the VM as a whole.
 
         The daemon's FileEntry now exposes a single `type: EntryType` enum
         instead of the legacy boolean flags; we translate back. The exec
@@ -441,7 +464,7 @@ class DaemonClient:
         plugin install hooks (which fail loudly on a chmod error) instead
         of asserting on file mode.
         """
-        data = self.gql_data(_Q_GET_ENTRY, {"path": path})
+        data = self.gql_data(_Q_GET_ENTRY, {"isolationId": isolation_id, "path": path})
         entry = data.get("getEntry")
         if not entry:
             return None

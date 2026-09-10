@@ -42,6 +42,11 @@ from tests.harness.daemon_client import DaemonClient
 # reliable channel is the `output` string itself.
 TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
 TOOL_CALLS_END = "<<CDX_EVAL_END>>"
+# The chat travels the same way: the daemon's file API is scoped to an
+# isolation, so an assertion that reads a file the AI wrote needs the node id
+# of the chat it wrote it in.
+CHAT_NODE_SENTINEL = "<<CDX_EVAL_CHAT_NODE>>"
+CHAT_NODE_END = "<<CDX_EVAL_CHAT_NODE_END>>"
 
 
 def _daemon_base_from_graphql(url: str) -> str:
@@ -87,6 +92,7 @@ def call_api(prompt: str, options: dict | None, context: dict | None) -> dict[st
         f"\n\n{TOOL_CALLS_SENTINEL}"
         f"{json.dumps(tool_calls, ensure_ascii=False)}"
         f"{TOOL_CALLS_END}"
+        f"{CHAT_NODE_SENTINEL}{runner.chat_node_id or ''}{CHAT_NODE_END}"
     )
     return {
         "output": text + suffix,
