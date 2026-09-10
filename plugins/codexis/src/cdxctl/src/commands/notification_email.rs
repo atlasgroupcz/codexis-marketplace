@@ -95,7 +95,7 @@ fn normalize_env_value(value: String) -> Option<String> {
     }
 }
 
-fn attachment_part(path_str: &str) -> Result<Part, CdxctlError> {
+pub(crate) fn attachment_part(path_str: &str) -> Result<Part, CdxctlError> {
     let path = Path::new(path_str);
     let mut file = fs::File::open(path)
         .map_err(|e| CdxctlError::Parse(format!("Failed to open attachment {path_str}: {e}")))?;

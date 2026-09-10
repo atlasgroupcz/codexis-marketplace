@@ -15,6 +15,9 @@ mutation SaveAutomation($id: ID, $input: AutomationInput!) {
             model
             modelConfiguration { key value }
             jurisdictions
+            project { id name }
+            connections { id name }
+            files
         }
         errors { field message allowedValues }
     }
