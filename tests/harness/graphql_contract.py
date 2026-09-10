@@ -1,4 +1,4 @@
-"""Hold cdxctl's GraphQL documents against the daemon's schema.
+"""Hold this repo's GraphQL documents against the daemon's schema.
 
 cdxctl talks to the daemon through 36 GraphQL documents that live beside its
 Rust source as .graphql files. Nothing has ever compared them to the schema they are
@@ -7,9 +7,15 @@ runs the command and gets a validation error back. That has happened three
 times: `marketplace` and `plugin` on Agent and Skill, `agentFullName` on
 Automation, and `action` on Notification.
 
-This module is the machinery: read the documents out of the Rust source, turn a
-daemon introspection response into a schema, and validate one against the other.
-The tier that owns a daemon calls it - see tests/tiers/contract.py.
+The Python harness is the second client and drifts the same way: `getEntry`
+gained a required `isolationId` argument and `assert_state_file` kept sending
+the document without it, so every promptfoo suite asserting on a written file
+would have failed at the daemon. Its documents are checked here too.
+
+This module is the machinery: read the documents out of the Rust source and out
+of the harness, turn a daemon introspection response into a schema, and validate
+one against the other. The tier that owns a daemon calls it - see
+tests/tiers/contract.py.
 
 What it does NOT see: the variables. `mutation($input: CreateNotificationInput!)`
 is a legal document whatever the client later puts in `$input`, so a dropped
@@ -34,8 +40,11 @@ from graphql import (
     validate,
 )
 
+from tests.harness.daemon_client import daemon_documents
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CDXCTL_GRAPHQL_SOURCE = REPO_ROOT / "plugins/codexis/src/cdxctl/src/graphql.rs"
+HARNESS_GRAPHQL_SOURCE = REPO_ROOT / "tests/harness/daemon_client.py"
 
 # The declaration is the index, not the content: it names the .graphql file and,
 # by being an include_str!, proves that file reaches the binary. A file nothing
@@ -84,6 +93,23 @@ def extract(rust_file: Path) -> Extraction:
     return Extraction(
         documents=sorted(documents, key=lambda document: document.name),
         unreadable=[name for name in _DECLARED.findall(source) if name not in read],
+    )
+
+
+def harness_documents() -> list[Document]:
+    """Every GraphQL document the Python harness sends to the daemon.
+
+    Taken from the harness itself rather than parsed out of it: two of its
+    documents are assembled at import time from a shared selection set, and a
+    reader would have to redo that substitution to see what actually goes on the
+    wire. Names carry the file so a failure says which client to fix.
+    """
+    return sorted(
+        (
+            Document(f"{HARNESS_GRAPHQL_SOURCE.name}:{name}", body)
+            for name, body in daemon_documents().items()
+        ),
+        key=lambda document: document.name,
     )
 
 

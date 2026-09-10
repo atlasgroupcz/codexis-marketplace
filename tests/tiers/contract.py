@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-cdxctl GraphQL Contract Test
+GraphQL Contract Test
 
-Holds every GraphQL document cdxctl sends against the schema a live daemon
-serves. One read-only introspection request, no mutations, seconds to run.
+Holds every GraphQL document this repo sends against the schema a live daemon
+serves: cdxctl's, and the ones the Python harness sends on behalf of the
+promptfoo assertions. One read-only introspection request, no mutations,
+seconds to run.
 
 Its own tier rather than a step of the marketplace test: this has nothing to do
-with installing plugins, so a red run here means one thing only - the client
+with installing plugins, so a red run here means one thing only - a client
 drifted from the daemon - and it says so before the two-minute lifecycle suite
 starts.
 
@@ -27,6 +29,7 @@ from tests.harness.daemon_client import DaemonClient
 from tests.harness.graphql_contract import (
     CDXCTL_GRAPHQL_SOURCE,
     extract,
+    harness_documents,
     introspection_query,
     schema_from_introspection,
     validate_documents,
@@ -36,8 +39,8 @@ from tests.harness.preflight import ensure_ready
 
 
 def check_contract(client: DaemonClient, r: Results) -> None:
-    """Report every way cdxctl's documents disagree with the daemon's schema."""
-    r.section("cdxctl GraphQL contract")
+    """Report every way this repo's documents disagree with the daemon's schema."""
+    r.section("GraphQL contract")
 
     extraction = extract(CDXCTL_GRAPHQL_SOURCE)
     for name in extraction.unreadable:
@@ -54,18 +57,17 @@ def check_contract(client: DaemonClient, r: Results) -> None:
         r.fail(f"could not fetch the daemon schema: {exc}")
         return
 
-    failures = validate_documents(
-        schema_from_introspection(payload), extraction.documents
-    )
+    documents = extraction.documents + harness_documents()
+    failures = validate_documents(schema_from_introspection(payload), documents)
     for failure in failures:
         r.fail(f"{failure.name}: {failure.message}")
 
     if not failures and not extraction.unreadable:
-        r.ok(f"{len(extraction.documents)} documents match the daemon schema")
+        r.ok(f"{len(documents)} documents match the daemon schema")
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="cdxctl GraphQL Contract Test")
+    parser = argparse.ArgumentParser(description="GraphQL Contract Test")
     parser.add_argument(
         "--daemon", required=True, help="Daemon URL (e.g. http://localhost:8086)"
     )

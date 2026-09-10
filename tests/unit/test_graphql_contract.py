@@ -1,19 +1,21 @@
-"""Unit tests for the cdxctl GraphQL contract helpers.
+"""Unit tests for the GraphQL contract helpers.
 
-The contract itself - every cdxctl document validates against the daemon's
-schema - needs a daemon and runs in the contract tier. What runs here is the
-machinery that tier stands on: reading the documents out of the Rust source and
-validating them against a schema.
+The contract itself - every document this repo sends validates against the
+daemon's schema - needs a daemon and runs in the contract tier. What runs here
+is the machinery that tier stands on: collecting the documents, from the Rust
+source and from the Python harness, and validating them against a schema.
 """
 
 from __future__ import annotations
 
 from graphql import build_schema, graphql_sync
 
+from tests.harness.daemon_client import GATEWAY_DOCUMENTS
 from tests.harness.graphql_contract import (
     CDXCTL_GRAPHQL_SOURCE,
     Document,
     extract,
+    harness_documents,
     introspection_query,
     schema_from_introspection,
     validate_documents,
@@ -128,3 +130,34 @@ def test_every_cdxctl_document_is_read_from_the_real_source():
 
     assert extraction.unreadable == []
     assert extraction.documents
+
+
+def test_the_harness_documents_are_collected_from_the_client():
+    # The promptfoo state assertions reach the daemon through this client, so
+    # its documents drift like any other client's and are held to the schema
+    # the same way.
+    names = [document.name for document in harness_documents()]
+
+    assert "daemon_client.py:_Q_GET_ENTRY" in names
+
+
+def test_the_harness_documents_arrive_with_their_selection_set_filled_in():
+    # Two of them are assembled at import time from a shared selection set.
+    # Reading the file instead of the module would hand the tier a `%s`.
+    chat = next(
+        document
+        for document in harness_documents()
+        if document.name.endswith("_Q_GET_CHAT")
+    )
+
+    assert "%s" not in chat.body
+    assert "ShellToolMessagePart" in chat.body
+
+
+def test_documents_the_gateway_serves_are_left_out():
+    # They are valid against the gateway's schema and unknown to the daemon's:
+    # validating them here would report drift that does not exist.
+    names = [document.name for document in harness_documents()]
+
+    for gateway in GATEWAY_DOCUMENTS:
+        assert f"daemon_client.py:{gateway}" not in names

@@ -8,7 +8,9 @@ Two-axis test design:
 Tool calls reach this module through a sentinel-bracketed JSON suffix
 appended to the provider's `output`. Promptfoo's Python wrapper strips
 `providerResponse.metadata` from the assertion context, so the output
-string is the only reliable channel. See `provider.py`.
+string is the only reliable channel. The chat's node id rides along in a
+second sentinel: the daemon scopes its file API to one isolation, so a
+state assertion has to say which chat's files it means. See `provider.py`.
 """
 
 from __future__ import annotations
@@ -27,8 +29,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # Must match the constants in provider.py.
 TOOL_CALLS_SENTINEL = "<<CDX_EVAL_TOOL_CALLS>>"
 TOOL_CALLS_END = "<<CDX_EVAL_END>>"
+CHAT_NODE_SENTINEL = "<<CDX_EVAL_CHAT_NODE>>"
+CHAT_NODE_END = "<<CDX_EVAL_CHAT_NODE_END>>"
 _SENTINEL_RE = re.compile(
     re.escape(TOOL_CALLS_SENTINEL) + r"(.*?)" + re.escape(TOOL_CALLS_END),
+    re.DOTALL,
+)
+_CHAT_NODE_RE = re.compile(
+    re.escape(CHAT_NODE_SENTINEL) + r"(.*?)" + re.escape(CHAT_NODE_END),
     re.DOTALL,
 )
 
@@ -101,6 +109,16 @@ def _extract_tool_calls(output: str) -> list[dict]:
     except json.JSONDecodeError:
         return []
     return data if isinstance(data, list) else []
+
+
+def _chat_node_id(output: str) -> str | None:
+    """Pull the chat node id out of the output's sentinel suffix."""
+    if not isinstance(output, str):
+        return None
+    m = _CHAT_NODE_RE.search(output)
+    if not m:
+        return None
+    return m.group(1).strip() or None
 
 
 def assert_tool_call(output: str, context: dict) -> dict:
@@ -303,6 +321,10 @@ def assert_tool_count_min(output: str, context: dict) -> dict:
 def assert_state_file(output: str, context: dict) -> dict:
     """Assert on a daemon-visible filesystem entry via getEntry.
 
+    Looks inside the isolation of the chat the provider ran, which is where the
+    AI wrote the file: the daemon has no view of the VM that is not scoped to
+    one isolated environment.
+
     Configure via the test's `vars`:
         file:   str - VM-side path (templated vars already substituted by
                 promptfoo via {{ var }} in the YAML).
@@ -319,6 +341,13 @@ def assert_state_file(output: str, context: dict) -> dict:
             "reason": "assert_state_file: missing 'file' var",
         }
     kind = vars_.get("type", "file")
+    isolation_id = _chat_node_id(output)
+    if not isolation_id:
+        return {
+            "pass": False,
+            "score": 0.0,
+            "reason": "assert_state_file: the provider output carries no chat node id",
+        }
 
     from tests.harness.daemon_client import DaemonClient
 
@@ -331,7 +360,7 @@ def assert_state_file(output: str, context: dict) -> dict:
         else graphql_url.rstrip("/")
     )
     client = DaemonClient(base, os.environ.get("CDX_EVAL_AUTH_TOKEN", ""))
-    entry = client.get_entry(path)
+    entry = client.get_entry(isolation_id, path)
 
     if kind == "absent":
         if entry is None:

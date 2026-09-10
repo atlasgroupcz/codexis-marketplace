@@ -1,17 +1,27 @@
-"""Behavior: assert_sources checks the chat sources attached to a turn."""
+"""Behavior of the promptfoo assertions: chat sources, and files on the VM."""
 
 import json
 
 from tests.promptfoo.assertions import (
+    CHAT_NODE_END,
+    CHAT_NODE_SENTINEL,
     TOOL_CALLS_END,
     TOOL_CALLS_SENTINEL,
     assert_sources,
+    assert_state_file,
 )
 
+CHAT_NODE_ID = "Q2hhdDpjaGF0LTE"
 
-def _output(tool_calls: list[dict], text: str = "answer") -> str:
-    """Build a provider output string with tool_calls in the sentinel suffix."""
-    return f"{text}\n\n{TOOL_CALLS_SENTINEL}{json.dumps(tool_calls)}{TOOL_CALLS_END}"
+
+def _output(
+    tool_calls: list[dict], text: str = "answer", chat_node_id: str = CHAT_NODE_ID
+) -> str:
+    """Build a provider output string the way provider.py builds it."""
+    return (
+        f"{text}\n\n{TOOL_CALLS_SENTINEL}{json.dumps(tool_calls)}{TOOL_CALLS_END}"
+        f"{CHAT_NODE_SENTINEL}{chat_node_id}{CHAT_NODE_END}"
+    )
 
 
 def _ctx(**vars_) -> dict:
@@ -61,3 +71,43 @@ def test_sources_flattened_across_tool_calls():
         ]
     )
     assert assert_sources(out, _ctx(sources_min=2))["pass"] is True
+
+
+def test_state_file_reads_the_isolation_of_the_chat_that_ran(monkeypatch):
+    # The daemon has no view of the VM that is not scoped to an isolation, so
+    # the assertion is only looking in the right place if the chat the provider
+    # ran reaches getEntry.
+    asked = []
+
+    class _Daemon:
+        def __init__(self, base_url: str, token: str) -> None:
+            pass
+
+        def get_entry(self, isolation_id: str, path: str) -> dict:
+            asked.append((isolation_id, path))
+            return {
+                "name": "chart.html",
+                "isFile": True,
+                "isDirectory": False,
+                "isSymlink": False,
+            }
+
+    monkeypatch.setattr("tests.harness.daemon_client.DaemonClient", _Daemon)
+    monkeypatch.setenv("CDX_EVAL_GRAPHQL_URL", "http://daemon.test/graphql")
+    monkeypatch.setenv("CDX_EVAL_AUTH_TOKEN", "token")
+
+    result = assert_state_file(_output([]), _ctx(file="/home/codexis/chart.html"))
+
+    assert result["pass"] is True
+    assert asked == [(CHAT_NODE_ID, "/home/codexis/chart.html")]
+
+
+def test_state_file_fails_when_the_output_carries_no_chat():
+    # Better a named failure than a request to the daemon that cannot say which
+    # files it means.
+    output = f"answer\n\n{TOOL_CALLS_SENTINEL}[]{TOOL_CALLS_END}"
+
+    result = assert_state_file(output, _ctx(file="/home/codexis/chart.html"))
+
+    assert result["pass"] is False
+    assert "chat node id" in result["reason"]
