@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from sledovane_dokumenty_core import _daemon, nodeids, projects
+from sledovane_dokumenty_core import _daemon, nodeids, projects, state
 from sledovane_dokumenty_core.projects import WatchedProjectError
 
 from .conftest import OTHER_PROJECT_ID, PROJECT_ID
@@ -376,3 +376,19 @@ def test_nodeids_round_trip_and_daemon_sample():
         ("PublicIsolation", "marketplaces")
     ]
     assert nodeids.root_id("not base64!", "Project") is None
+
+
+def test_index_entry_without_a_folder_watches_the_root(dokumenty_app_dir):
+    state.atomic_write_json(
+        os.path.join(str(dokumenty_app_dir), "projects", PROJECT_ID, "watched.json"),
+        {"version": 2, "projectId": PROJECT_ID, "documents": []},
+    )
+    projects.save_index([{"uuid": "old", "projectId": PROJECT_ID, "name": "Smlouvy"}])
+
+    [entry] = projects.load_index()
+
+    assert entry["path"] == "."
+    assert projects.read_watched("old")["projectId"] == PROJECT_ID
+    assert not os.path.exists(
+        os.path.join(str(dokumenty_app_dir), "projects", PROJECT_ID)
+    )

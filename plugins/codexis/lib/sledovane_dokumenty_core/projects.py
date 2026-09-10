@@ -580,7 +580,25 @@ def _read_json(path):
 
 def load_index():
     data = _read_json(index_path())
-    return data if isinstance(data, list) else []
+    entries = data if isinstance(data, list) else []
+    return [_with_folder(e) for e in entries if isinstance(e, dict)]
+
+
+def _with_folder(entry):
+    """An index entry always names its folder; one written without it watched the root."""
+    if entry.get("path"):
+        return entry
+    upgraded = dict(entry)
+    upgraded["path"] = ROOT_FOLDER
+    legacy = os.path.join(state.APP_DIR, "projects", str(entry.get("projectId")))
+    if (
+        entry.get("uuid")
+        and os.path.isdir(legacy)
+        and not os.path.isdir(state_dir(entry["uuid"]))
+    ):
+        os.makedirs(state_root(), exist_ok=True)
+        os.replace(legacy, state_dir(entry["uuid"]))
+    return upgraded
 
 
 def save_index(entries):
