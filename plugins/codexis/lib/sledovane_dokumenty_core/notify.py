@@ -226,6 +226,15 @@ def _accepted(req):
 # ── summaries ────────────────────────────────────────────────────────────────
 
 
+def _watch_title(result):
+    """``Projekt „X“`` for a project root, ``Projekt „X“, složka /a/b`` otherwise."""
+    title = f"Projekt „{result['name']}“"
+    path = result.get("path")
+    if path and path != ".":
+        title += f", složka /{path}"
+    return title
+
+
 def _changed_projects(results):
     return [r for r in results if r.get("changes")]
 
@@ -245,7 +254,7 @@ def build_summary(results):
     text_lines = ["Kontrola sledovaných projektů zaznamenala změny:", ""]
     html_rows = []
     for r in changed:
-        text_lines.append(f"Projekt „{r['name']}“ - {len(r['changes'])} změn:")
+        text_lines.append(f"{_watch_title(r)} - {len(r['changes'])} změn:")
         for c in r["changes"]:
             eff = f" (účinné od {c['effective_on']})" if c.get("effective_on") else ""
             text_lines.append(f"  • {c.get('text') or c.get('codexisId')}{eff}")
@@ -262,7 +271,7 @@ def build_summary(results):
         )
         html_rows.append(
             f'<h3 style="margin:18px 0 6px;font:600 15px sans-serif;color:#0a0a0a">'
-            f"Projekt „{escape(r['name'])}“</h3>"
+            f"{escape(_watch_title(r))}</h3>"
             f'<ul style="margin:0;padding-left:18px;font:14px/1.5 sans-serif;color:#333">{items}</ul>'
         )
     text_lines.append("Otevřete aplikaci Sledované dokumenty v CODEXIS pro detail.")

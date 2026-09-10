@@ -61,7 +61,7 @@ def test_build_entry_leaves_an_eu_citation_untouched(monkeypatch):
     assert entry["uri"] == "https://eur-lex/x"
 
 
-# ── harvesting a watched project ─────────────────────────────────────────────
+# ── harvesting a watched folder ──────────────────────────────────────────────
 
 
 def _extract_ok(monkeypatch, seen):
@@ -73,75 +73,71 @@ def _extract_ok(monkeypatch, seen):
     monkeypatch.setattr(clients, "resolve_cz_law", lambda num, year: "CR26785")
 
 
-def test_harvest_project_reads_documents_through_a_chat_of_the_project(
-    watched_project, monkeypatch
+def test_harvest_watch_reads_documents_through_a_chat_of_the_project(
+    watch, monkeypatch
 ):
     from sledovane_dokumenty_core import projects
 
-    projects.add_watch(watched_project)
     monkeypatch.setattr(projects, "harvest_session", lambda pid: "chat-1")
     seen = []
     _extract_ok(monkeypatch, seen)
 
-    res = harvest.harvest_project(watched_project)
+    res = harvest.harvest_watch(watch)
 
     assert res == {"documents": 2, "references": 2, "failed": 0}
     assert seen == [
-        ("/home/codexis/project/files/dogs/buy-dog.docx", "chat-1"),
-        ("/home/codexis/project/files/readme.txt", "chat-1"),
+        ("/home/codexis/project/files/smlouvy/dogs/buy-dog.docx", "chat-1"),
+        ("/home/codexis/project/files/smlouvy/readme.txt", "chat-1"),
     ]
-    assert projects.docs_needing_harvest(watched_project) == []
+    assert projects.docs_needing_harvest(watch) == []
     doc = next(
         d
-        for d in projects.read_watched(watched_project)["documents"]
+        for d in projects.read_watched(watch)["documents"]
         if d["path"] == "./readme.txt"
     )
     assert doc["legislation"][0]["codexisId"] == "CR26785"
 
 
-def test_harvest_project_scans_first_when_the_files_are_visible(
-    watched_project, project_files, monkeypatch
+def test_harvest_watch_scans_first_when_the_files_are_visible(
+    watch, project_files, monkeypatch
 ):
     import os
 
     from sledovane_dokumenty_core import projects
 
-    projects.add_watch(watched_project)
-    with open(os.path.join(project_files, "new.txt"), "w") as f:
+    with open(os.path.join(project_files, "smlouvy", "new.txt"), "w") as f:
         f.write("odkaz na 89/2012 Sb.")
     monkeypatch.setattr(projects, "harvest_session", lambda pid: "chat-1")
     seen = []
     _extract_ok(monkeypatch, seen)
 
-    res = harvest.harvest_project(watched_project)
+    res = harvest.harvest_watch(watch)
 
     assert res["documents"] == 3
-    assert "/home/codexis/project/files/new.txt" in [p for p, _ in seen]
+    assert "/home/codexis/project/files/smlouvy/new.txt" in [p for p, _ in seen]
 
 
-def test_harvest_project_needs_a_chat_in_the_project(watched_project, monkeypatch):
+def test_harvest_watch_needs_a_chat_in_the_project(watch, monkeypatch):
     import pytest
     from sledovane_dokumenty_core import projects
     from sledovane_dokumenty_core.projects import WatchedProjectError
 
-    projects.add_watch(watched_project)
     monkeypatch.setattr(projects, "harvest_session", lambda pid: None)
     monkeypatch.setattr(
         clients, "llm_extract_file", lambda *a, **k: pytest.fail("extract reached")
     )
 
     with pytest.raises(WatchedProjectError):
-        harvest.harvest_project(watched_project)
+        harvest.harvest_watch(watch)
 
 
-def test_harvest_project_leaves_failed_documents_pending(watched_project, monkeypatch):
+def test_harvest_watch_leaves_failed_documents_pending(watch, monkeypatch):
     from sledovane_dokumenty_core import projects
 
-    projects.add_watch(watched_project)
     monkeypatch.setattr(projects, "harvest_session", lambda pid: "chat-1")
     monkeypatch.setattr(clients, "llm_extract_file", lambda *a, **k: None)
 
-    res = harvest.harvest_project(watched_project)
+    res = harvest.harvest_watch(watch)
 
     assert res == {"documents": 0, "references": 0, "failed": 2}
-    assert len(projects.docs_needing_harvest(watched_project)) == 2
+    assert len(projects.docs_needing_harvest(watch)) == 2

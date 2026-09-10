@@ -18,24 +18,25 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProjectDetail } from '@/hooks/use-project-detail'
+import { useWatchDetail } from '@/hooks/use-watch-detail'
 import { postProjectAction } from '@/lib/api'
 import type { TrackedLegislation, WatchedDocument } from '@/lib/schemas'
 import { ErrorMessage } from './error-message'
 import { DetailSkeleton } from './loading-skeleton'
+import { folderLabel } from './project-picker'
 
 interface ProjectDetailProps {
-  projectId: string
+  watchId: string
   onBack: () => void
   onOpenSettings: () => void
 }
 
-export function ProjectDetail({ projectId, onBack, onOpenSettings }: ProjectDetailProps) {
+export function ProjectDetail({ watchId, onBack, onOpenSettings }: ProjectDetailProps) {
   const { t } = useTranslation()
-  const { data, loading, error, refetch } = useProjectDetail(projectId)
+  const { data, loading, error, refetch } = useWatchDetail(watchId)
   const [busy, setBusy] = useState<string | null>(null)
 
-  const project = data?.project
+  const project = data?.watch
   const pending = project?.pending_harvest ?? 0
 
   // While extraction is running, poll for progress.
@@ -49,7 +50,7 @@ export function ProjectDetail({ projectId, onBack, onOpenSettings }: ProjectDeta
 
   const run = (action: 'project_refresh' | 'project_check', successKey: string) => {
     setBusy(action)
-    postProjectAction(action, { project: projectId })
+    postProjectAction(action, { watch: watchId })
       .then(() => {
         toast.success(t(successKey))
         window.setTimeout(refetch, 800)
@@ -60,7 +61,7 @@ export function ProjectDetail({ projectId, onBack, onOpenSettings }: ProjectDeta
 
   const remove = () => {
     setBusy('remove')
-    postProjectAction('project_remove', { project: projectId })
+    postProjectAction('project_remove', { watch: watchId })
       .then(() => {
         toast.success(t('projects.removed'))
         onBack()
@@ -70,7 +71,7 @@ export function ProjectDetail({ projectId, onBack, onOpenSettings }: ProjectDeta
   }
 
   const confirm = (codexisId: string | null | undefined) => {
-    postProjectAction('project_confirm', { project: projectId, codexisId: codexisId ?? undefined })
+    postProjectAction('project_confirm', { watch: watchId, codexisId: codexisId ?? undefined })
       .then(() => {
         toast.success(t('projects.confirmed'))
         refetch()
@@ -97,9 +98,15 @@ export function ProjectDetail({ projectId, onBack, onOpenSettings }: ProjectDeta
               {project?.name ?? '…'}
             </h1>
             <p className="text-muted-foreground truncate text-[11px]">
-              {project?.last_check_at
-                ? t('projects.card.lastCheck', { date: project.last_check_at.slice(0, 10) })
-                : t('projects.card.neverChecked')}
+              <span className="font-mono">{project ? folderLabel(project.path) : '…'}</span>
+              {project && (
+                <span>
+                  {' · '}
+                  {project.last_check_at
+                    ? t('projects.card.lastCheck', { date: project.last_check_at.slice(0, 10) })
+                    : t('projects.card.neverChecked')}
+                </span>
+              )}
             </p>
           </div>
         </div>

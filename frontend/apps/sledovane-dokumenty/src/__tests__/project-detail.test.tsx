@@ -1,22 +1,24 @@
 import { screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProjectDetail } from '@/components/project-detail'
-import type { ProjectResponse, TrackedLegislation } from '@/lib/schemas'
+import type { TrackedLegislation, WatchResponse } from '@/lib/schemas'
 import { renderApp } from '@/test/render-app'
 
-function stubProject(payload: ProjectResponse) {
+function stubWatch(payload: WatchResponse) {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(payload) }),
   )
 }
 
-function projectWith(legislation: Array<TrackedLegislation>): ProjectResponse {
+function watchWith(legislation: Array<TrackedLegislation>): WatchResponse {
   return {
-    mode: 'project',
+    mode: 'watch',
     generated_at: '2026-06-01T12:00:00Z',
-    project: {
+    watch: {
+      uuid: 'u1',
       projectId: '5b1c1c4e-0000-4000-8000-000000000001',
+      path: 'smlouvy',
       name: 'Smlouvy',
       added_on: '2026-06-01T12:00:00Z',
       documents: [],
@@ -28,15 +30,10 @@ function projectWith(legislation: Array<TrackedLegislation>): ProjectResponse {
   }
 }
 
-function renderProject() {
-  return renderApp(
-    <ProjectDetail
-      projectId="5b1c1c4e-0000-4000-8000-000000000001"
-      onBack={vi.fn()}
-      onOpenSettings={vi.fn()}
-    />,
-    { searchParams: { lang: 'en' } },
-  )
+function renderWatch() {
+  return renderApp(<ProjectDetail watchId="u1" onBack={vi.fn()} onOpenSettings={vi.fn()} />, {
+    searchParams: { lang: 'en' },
+  })
 }
 
 const resolvedAct: TrackedLegislation = {
@@ -63,16 +60,16 @@ beforeEach(() => {
 
 describe('ProjectDetail legislation link', () => {
   it('links a resolved act to its CODEXIS document', async () => {
-    stubProject(projectWith([resolvedAct]))
-    renderProject()
+    stubWatch(watchWith([resolvedAct]))
+    renderWatch()
 
     const link = await screen.findByRole('link')
     expect(link).toHaveAttribute('href', 'https://next.codexis.cz/doc/CR26785')
   })
 
   it('never links legislation to zakonyprolidi', async () => {
-    stubProject(projectWith([resolvedAct]))
-    renderProject()
+    stubWatch(watchWith([resolvedAct]))
+    renderWatch()
 
     await screen.findByText(resolvedAct.text)
     const hrefs = screen.queryAllByRole('link').map((a) => a.getAttribute('href') ?? '')
@@ -80,10 +77,18 @@ describe('ProjectDetail legislation link', () => {
   })
 
   it('renders no external link for an act without a CODEXIS id', async () => {
-    stubProject(projectWith([unresolvedAct]))
-    renderProject()
+    stubWatch(watchWith([unresolvedAct]))
+    renderWatch()
 
     await screen.findByText(unresolvedAct.text)
     expect(screen.queryAllByRole('link')).toHaveLength(0)
+  })
+
+  it('names the watched folder inside the project', async () => {
+    stubWatch(watchWith([resolvedAct]))
+    renderWatch()
+
+    expect(await screen.findByRole('heading', { name: 'Smlouvy' })).toBeInTheDocument()
+    expect(screen.getByText('/smlouvy')).toBeInTheDocument()
   })
 })

@@ -1,21 +1,23 @@
 import type {
   ActionResponse,
   AvailableProjectsResponse,
+  BrowseResponse,
   DetailResponse,
   NotifyResponse,
   NotifySettings,
   OverviewResponse,
-  ProjectResponse,
-  ProjectsResponse,
+  WatchesResponse,
+  WatchResponse,
 } from './schemas'
 import {
   actionResponseSchema,
   availableProjectsResponseSchema,
+  browseResponseSchema,
   detailResponseSchema,
   notifyResponseSchema,
   overviewResponseSchema,
-  projectResponseSchema,
-  projectsResponseSchema,
+  watchesResponseSchema,
+  watchResponseSchema,
 } from './schemas'
 
 function getApiBase(): string {
@@ -139,8 +141,8 @@ async function getJson(url: string): Promise<unknown> {
   return response.json()
 }
 
-export async function fetchProjects(): Promise<ProjectsResponse> {
-  return projectsResponseSchema.parse(await getJson(withParams({ view: 'projects' })))
+export async function fetchWatches(): Promise<WatchesResponse> {
+  return watchesResponseSchema.parse(await getJson(withParams({ view: 'projects' })))
 }
 
 export async function fetchNotify(): Promise<NotifyResponse> {
@@ -151,12 +153,20 @@ export async function saveNotify(values: NotifySettings): Promise<ActionResponse
   return postProjectAction('save_notify_settings', values)
 }
 
-export async function fetchProject(project: string): Promise<ProjectResponse> {
-  return projectResponseSchema.parse(await getJson(withParams({ view: 'project', project })))
+export async function fetchWatch(watch: string): Promise<WatchResponse> {
+  return watchResponseSchema.parse(await getJson(withParams({ view: 'watch', watch })))
 }
 
 export async function fetchAvailableProjects(): Promise<AvailableProjectsResponse> {
   return availableProjectsResponseSchema.parse(await getJson(withParams({ view: 'available' })))
+}
+
+export async function browseProject(project: string, path?: string): Promise<BrowseResponse> {
+  const params: Record<string, string> = { view: 'browse', project }
+  if (path) {
+    params.path = path
+  }
+  return browseResponseSchema.parse(await getJson(withParams(params)))
 }
 
 export type ProjectAction =

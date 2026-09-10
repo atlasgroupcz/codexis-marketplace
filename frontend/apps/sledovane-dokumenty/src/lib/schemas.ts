@@ -152,10 +152,11 @@ export const watchedDocumentSchema = z.object({
 })
 export type WatchedDocument = z.infer<typeof watchedDocumentSchema>
 
-export const projectSummarySchema = z.object({
-  uuid: z.string().optional(),
+export const watchSummarySchema = z.object({
+  uuid: z.string(),
   projectId: z.string(),
   name: z.string(),
+  path: z.string(),
   added_on: z.string().nullable().optional(),
   documents: z.number(),
   pending_harvest: z.number(),
@@ -163,19 +164,21 @@ export const projectSummarySchema = z.object({
   unconfirmed_changes: z.number(),
   last_check_at: z.string().nullable().optional(),
 })
-export type ProjectSummary = z.infer<typeof projectSummarySchema>
+export type WatchSummary = z.infer<typeof watchSummarySchema>
 
-export const projectsResponseSchema = z.object({
+export const watchesResponseSchema = z.object({
   mode: z.literal('projects'),
   generated_at: z.string(),
-  projects: z.array(projectSummarySchema),
+  watches: z.array(watchSummarySchema),
   settings: notifySettingsSchema,
 })
-export type ProjectsResponse = z.infer<typeof projectsResponseSchema>
+export type WatchesResponse = z.infer<typeof watchesResponseSchema>
 
-export const projectDetailSchema = z.object({
+export const watchDetailSchema = z.object({
+  uuid: z.string(),
   projectId: z.string(),
   name: z.string().nullable(),
+  path: z.string(),
   added_on: z.string().nullable().optional(),
   documents: z.array(watchedDocumentSchema),
   documents_count: z.number(),
@@ -183,14 +186,14 @@ export const projectDetailSchema = z.object({
   legislation: z.array(trackedLegislationSchema),
   last_check_at: z.string().nullable().optional(),
 })
-export type ProjectDetail = z.infer<typeof projectDetailSchema>
+export type WatchDetail = z.infer<typeof watchDetailSchema>
 
-export const projectResponseSchema = z.object({
-  mode: z.literal('project'),
+export const watchResponseSchema = z.object({
+  mode: z.literal('watch'),
   generated_at: z.string(),
-  project: projectDetailSchema,
+  watch: watchDetailSchema,
 })
-export type ProjectResponse = z.infer<typeof projectResponseSchema>
+export type WatchResponse = z.infer<typeof watchResponseSchema>
 
 export const availableProjectSchema = z.object({
   projectId: z.string(),
@@ -204,3 +207,20 @@ export const availableProjectsResponseSchema = z.object({
   projects: z.array(availableProjectSchema),
 })
 export type AvailableProjectsResponse = z.infer<typeof availableProjectsResponseSchema>
+
+export const browseEntrySchema = z.object({
+  name: z.string(),
+  path: z.string(),
+})
+export type BrowseEntry = z.infer<typeof browseEntrySchema>
+
+export const browseResponseSchema = z.object({
+  mode: z.literal('browse'),
+  generated_at: z.string(),
+  project: z.string(),
+  name: z.string(),
+  path: z.string(),
+  parent: z.string().nullable(),
+  entries: z.array(browseEntrySchema),
+})
+export type BrowseResponse = z.infer<typeof browseResponseSchema>

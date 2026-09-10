@@ -196,15 +196,11 @@ def _signed_in_email():
     return notify._query_me_email() or ""
 
 
-def project_to_fe(project_id):
-    """Reshape one watched project (watched.json + tracking) for the FE."""
-    entry = projects.find_in_index(project_id) or {
-        "projectId": project_id,
-        "name": project_id,
-        "added_on": None,
-    }
-    data = projects.read_watched(project_id) or projects.empty_watched(project_id)
-    tracking_state = projects.read_tracking(project_id) or {"legislation": {}, "lastCheckAt": None}
+def watch_to_fe(watch_id):
+    """Reshape one watched folder (watched.json + tracking) for the FE."""
+    entry = projects.require_watch(watch_id)
+    data = projects.read_watched(watch_id) or projects.empty_watched(entry)
+    tracking_state = projects.read_tracking(watch_id) or {"legislation": {}, "lastCheckAt": None}
     leg_state = tracking_state.get("legislation", {})
 
     documents = []
@@ -222,7 +218,7 @@ def project_to_fe(project_id):
         })
 
     legislation = []
-    for ref in projects.unique_legislation(project_id):
+    for ref in projects.unique_legislation(watch_id):
         cid = ref.get("codexisId")
         st = leg_state.get(cid, {}) if cid else {}
         changes = st.get("changes", [])
@@ -238,8 +234,10 @@ def project_to_fe(project_id):
         })
 
     return {
-        "projectId": project_id,
+        "uuid": watch_id,
+        "projectId": entry["projectId"],
         "name": entry.get("name"),
+        "path": entry["path"],
         "added_on": entry.get("added_on"),
         "documents": documents,
         "documents_count": len(documents),
@@ -249,11 +247,15 @@ def project_to_fe(project_id):
     }
 
 
-def _required_project(params_or_body, key="project"):
+def _param(params_or_body, key):
     value = params_or_body.get(key)
     if isinstance(value, list):
         value = value[0] if value else ""
-    value = (value or "").strip()
+    return (value or "").strip() if isinstance(value, str) else ""
+
+
+def _required(params_or_body, key):
+    value = _param(params_or_body, key)
     if not value:
         emit_json({"ok": False, "error": f"'{key}' is required"}, status="400 Bad Request")
         return None
@@ -265,25 +267,31 @@ def handle_project_get(view, params):
         emit_json({
             "mode": "projects",
             "generated_at": now_utc(),
-            "projects": projects.list_watches(),
+            "watches": projects.list_watches(),
             "settings": settings.get_notify(),
         })
         return
-    if view == "project":
-        project_id = _required_project(params)
-        if project_id is None:
+    if view == "watch":
+        watch_id = _required(params, "watch")
+        if watch_id is None:
             return
-        emit_json({
-            "mode": "project",
-            "generated_at": now_utc(),
-            "project": project_to_fe(project_id),
-        })
+        emit_json({"mode": "watch", "generated_at": now_utc(), "watch": watch_to_fe(watch_id)})
         return
     if view == "available":
         emit_json({
             "mode": "available",
             "generated_at": now_utc(),
-            "projects": projects.available_to_watch(),
+            "projects": projects.require_available(),
+        })
+        return
+    if view == "browse":
+        project = _required(params, "project")
+        if project is None:
+            return
+        emit_json({
+            "mode": "browse",
+            "generated_at": now_utc(),
+            **projects.browse(project, _param(params, "path") or None),
         })
         return
     if view == "notify":
@@ -296,9 +304,10 @@ def handle_project_get(view, params):
     emit_json({"ok": False, "error": f"unknown view: {view}"}, status="400 Bad Request")
 
 
-def _rescan_if_visible(project_id):
-    if projects.files_dir(project_id) is not None:
-        projects.sync_watched(project_id)
+def _rescan_if_visible(watch_id):
+    entry = projects.require_watch(watch_id)
+    if projects.folder_dir(entry["projectId"], entry["path"]) is not None:
+        projects.sync_watched(watch_id)
 
 
 def handle_project_action(action, body):
@@ -320,50 +329,53 @@ def handle_project_action(action, body):
         emit_json({"ok": True, "settings": settings.get_notify()})
         return
 
-    if action == "project_check" and not (body.get("project") or "").strip():
+    if action == "project_add":
+        project = _required(body, "project")
+        if project is None:
+            return
+        res = projects.add_watch(project, _param(body, "path") or None)
+        extracting = res["files_available"] and bool(res.get("total"))
+        if extracting:
+            _spawn_cli(["project", "harvest", res["projectId"], "--folder", res["path"]])
+        emit_json({"ok": True, "watch": res, "extracting": extracting})
+        return
+
+    if action == "project_check" and not _param(body, "watch"):
         _spawn_cli(["project", "check"])
         emit_json({"ok": True, "started": True})
         return
 
-    project_ref = _required_project(body)
-    if project_ref is None:
+    watch_id = _required(body, "watch")
+    if watch_id is None:
         return
-
-    if action == "project_add":
-        res = projects.add_watch(project_ref)
-        extracting = res["files_available"] and bool(res.get("total"))
-        if extracting:
-            _spawn_cli(["project", "harvest", res["projectId"]])
-        emit_json({"ok": True, "project": res, "extracting": extracting})
-        return
-
-    project_id = projects.resolve(project_ref)["projectId"]
+    entry = projects.require_watch(watch_id)
+    cli_target = [entry["projectId"], "--folder", entry["path"]]
 
     if action in ("start_extraction", "project_harvest"):
-        _rescan_if_visible(project_id)
-        _spawn_cli(["project", "harvest", project_id])
+        _rescan_if_visible(watch_id)
+        _spawn_cli(["project", "harvest", *cli_target])
         emit_json({"ok": True, "started": True})
         return
 
     if action == "project_refresh":
-        _rescan_if_visible(project_id)
-        projects.mark_all_for_reharvest(project_id)
-        _spawn_cli(["project", "harvest", project_id])
+        _rescan_if_visible(watch_id)
+        projects.mark_all_for_reharvest(watch_id)
+        _spawn_cli(["project", "harvest", *cli_target])
         emit_json({"ok": True, "started": True})
         return
 
     if action == "project_check":
-        _spawn_cli(["project", "check", project_id])
+        _spawn_cli(["project", "check", *cli_target])
         emit_json({"ok": True, "started": True})
         return
 
     if action == "project_remove":
-        projects.remove_watch(project_id, purge=bool(body.get("purge")))
+        projects.remove_watch(watch_id, purge=bool(body.get("purge")))
         emit_json({"ok": True})
         return
 
     if action == "project_confirm":
-        marked = project_check.confirm_project(project_id, body.get("codexisId"))
+        marked = project_check.confirm_watch(watch_id, body.get("codexisId"))
         emit_json({"ok": True, "confirmed": marked})
         return
 

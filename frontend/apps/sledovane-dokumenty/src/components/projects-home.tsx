@@ -5,41 +5,41 @@ import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { BookMarked, FileText, FolderKanban, FolderPlus, Loader2, Scale } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProjects } from '@/hooks/use-projects'
 import { useUnconfirmedCount } from '@/hooks/use-unconfirmed-count'
+import { useWatches } from '@/hooks/use-watches'
 import { postProjectAction } from '@/lib/api'
 import { sumUnconfirmed } from '@/lib/counts'
-import type { ProjectSummary } from '@/lib/schemas'
+import type { WatchSummary } from '@/lib/schemas'
 import { ErrorMessage } from './error-message'
 import { FeedSkeleton } from './loading-skeleton'
-import { ProjectPicker } from './project-picker'
+import { folderLabel, type PickedFolder, ProjectPicker } from './project-picker'
 import { SectionSwitch } from './section-switch'
 
 interface ProjectsHomeProps {
   section: 'documents' | 'projects'
   onChangeSection: (section: 'documents' | 'projects') => void
-  onSelectProject: (projectId: string) => void
+  onSelectWatch: (watchId: string) => void
   onOpenSettings: () => void
 }
 
 export function ProjectsHome({
   section,
   onChangeSection,
-  onSelectProject,
+  onSelectWatch,
   onOpenSettings,
 }: ProjectsHomeProps) {
   const { t, i18n } = useTranslation()
-  const { data, loading, error, refetch } = useProjects()
+  const { data, loading, error, refetch } = useWatches()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const actChanges = useUnconfirmedCount('documents')
 
-  const projects = data?.projects ?? []
-  const unconfirmed = sumUnconfirmed(projects)
+  const watches = data?.watches ?? []
+  const unconfirmed = sumUnconfirmed(watches)
 
-  const handleAdd = (projectId: string) => {
+  const handleAdd = (picked: PickedFolder) => {
     setAdding(true)
-    postProjectAction('project_add', { project: projectId })
+    postProjectAction('project_add', { project: picked.projectId, path: picked.path })
       .then(() => {
         toast.success(t('projects.added'))
         setPickerOpen(false)
@@ -88,16 +88,16 @@ export function ProjectsHome({
             <div className="p-6">
               <ErrorMessage message={error.message} onRetry={refetch} />
             </div>
-          ) : projects.length === 0 ? (
+          ) : watches.length === 0 ? (
             <EmptyProjects onAdd={() => setPickerOpen(true)} />
           ) : (
             <ScrollArea className="h-full">
               <div className="mx-auto grid max-w-5xl gap-3 p-4 sm:grid-cols-2 sm:p-6">
-                {projects.map((project) => (
-                  <ProjectCard
-                    key={project.projectId}
-                    project={project}
-                    onClick={() => onSelectProject(project.projectId)}
+                {watches.map((watch) => (
+                  <WatchCard
+                    key={watch.uuid}
+                    watch={watch}
+                    onClick={() => onSelectWatch(watch.uuid)}
                   />
                 ))}
               </div>
@@ -117,7 +117,7 @@ export function ProjectsHome({
   )
 }
 
-function ProjectCard({ project, onClick }: { project: ProjectSummary; onClick: () => void }) {
+function WatchCard({ watch, onClick }: { watch: WatchSummary; onClick: () => void }) {
   const { t } = useTranslation()
   return (
     <button
@@ -127,32 +127,33 @@ function ProjectCard({ project, onClick }: { project: ProjectSummary; onClick: (
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="font-display truncate text-sm">{project.name}</h3>
-          <p className="text-muted-foreground truncate text-[11px]">
-            {project.last_check_at
-              ? t('projects.card.lastCheck', { date: project.last_check_at.slice(0, 10) })
-              : t('projects.card.neverChecked')}
+          <h3 className="font-display truncate text-sm">{watch.name}</h3>
+          <p
+            className="text-muted-foreground truncate font-mono text-[11px]"
+            title={folderLabel(watch.path)}
+          >
+            {folderLabel(watch.path)}
           </p>
         </div>
-        {project.unconfirmed_changes > 0 && (
+        {watch.unconfirmed_changes > 0 && (
           <span className="bg-primary text-primary-foreground inline-flex min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold">
-            {project.unconfirmed_changes}
+            {watch.unconfirmed_changes}
           </span>
         )}
       </div>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
         <span className="inline-flex items-center gap-1.5">
           <FileText className="size-3.5" />
-          {t('projects.card.documents', { count: project.documents })}
+          {t('projects.card.documents', { count: watch.documents })}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Scale className="size-3.5" />
-          {t('projects.card.legislation', { count: project.legislation })}
+          {t('projects.card.legislation', { count: watch.legislation })}
         </span>
-        {project.pending_harvest > 0 && (
+        {watch.pending_harvest > 0 && (
           <span className="text-primary inline-flex items-center gap-1.5">
             <Loader2 className="size-3.5 animate-spin" />
-            {t('projects.card.extracting', { count: project.pending_harvest })}
+            {t('projects.card.extracting', { count: watch.pending_harvest })}
           </span>
         )}
       </div>

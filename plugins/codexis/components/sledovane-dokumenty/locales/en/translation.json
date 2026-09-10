@@ -85,14 +85,14 @@
       "documents": "Acts",
       "projects": "Projects"
     },
-    "add": "Add project",
+    "add": "Add folder",
     "back": "Back",
     "cancel": "Cancel",
-    "added": "Project added, starting extraction…",
-    "removed": "Project no longer watched",
+    "added": "Folder added, starting extraction…",
+    "removed": "Folder no longer watched",
     "confirmed": "Changes confirmed",
     "refresh": "Re-extract",
-    "remove": "Stop watching project",
+    "remove": "Stop watching folder",
     "checkNow": "Check now",
     "refreshStarted": "Starting a fresh extraction…",
     "checkStarted": "Checking legislation…",
@@ -104,8 +104,8 @@
     "effectiveFrom": "Effective from {{date}}",
     "extractingProgress": "Extracting references ({{done}}/{{total}})",
     "legislationExtracting": "Extracting legislation references…",
-    "noLegislation": "No legislation found in this project's documents yet.",
-    "noDocuments": "The project has no documents yet. Upload some to the project and run the extraction again.",
+    "noLegislation": "No legislation found in this folder's documents yet.",
+    "noDocuments": "The folder has no documents yet. Upload some to the project and run the extraction again.",
     "extracted": "Processed",
     "pending": "Pending",
     "refCount": "{{count}} legislation references",
@@ -122,13 +122,20 @@
     },
     "landing": {
       "title": "Watch the legislation in your projects",
-      "text": "Pick a project with documents. AI extracts the laws they reference, and we alert you when any of them changes."
+      "text": "Pick a project and a folder with documents. AI extracts the laws they reference, and we alert you when any of them changes."
     },
     "picker": {
-      "title": "Choose a project to watch",
-      "description": "Any of your projects can be watched. We track the documents it holds.",
-      "watchThis": "Watch this project",
-      "none": "No other project to watch. Create a project in the sidebar and upload documents to it."
+      "title": "Choose a project",
+      "description": "First the project, then a folder in it. The whole project can be watched too.",
+      "folderTitle": "Choose a folder to watch",
+      "folderDescription": "A folder inside the project's files. Pick the project root or any sub-folder.",
+      "projectsList": "Projects",
+      "foldersList": "Folders",
+      "watchThis": "Watch this folder",
+      "noProjects": "No project yet. Create a project in the sidebar and upload documents to it.",
+      "noSubfolders": "No sub-folders - this folder can be watched.",
+      "backToProjects": "Back to projects",
+      "up": "Up one level"
     }
   },
   "notify": {

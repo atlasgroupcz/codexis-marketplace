@@ -15,5 +15,5 @@ export const sectionParser = parseAsStringLiteral(['documents', 'projects'] as c
   'documents',
 )
 
-// Id of the watched project open in the detail view.
-export const projectParser = parseAsString
+// Id of the watched project folder open in the detail view.
+export const watchParser = parseAsString

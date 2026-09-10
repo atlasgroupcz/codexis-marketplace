@@ -8,7 +8,15 @@ from sledovane_dokumenty_core import settings as settings_mod
 
 
 def _results(changes):
-    return [{"projectId": "p1", "name": "Smlouvy", "changes": changes, "errors": []}]
+    return [
+        {
+            "projectId": "p1",
+            "name": "Smlouvy",
+            "path": "smlouvy",
+            "changes": changes,
+            "errors": [],
+        }
+    ]
 
 
 def test_build_summary_none_without_changes():
@@ -150,6 +158,7 @@ def _project_results():
         {
             "projectId": "p1",
             "name": "Smlouvy",
+            "path": ".",
             "errors": [],
             "changes": [
                 {

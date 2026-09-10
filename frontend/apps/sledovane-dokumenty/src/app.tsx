@@ -9,7 +9,7 @@ import { DocumentsHome } from '@/components/documents-home'
 import { ProjectDetail } from '@/components/project-detail'
 import { ProjectsHome } from '@/components/projects-home'
 import { fetchNotify, saveNotify } from '@/lib/api'
-import { projectParser, sectionParser, uuidParser, viewParser } from '@/lib/url-state'
+import { sectionParser, uuidParser, viewParser, watchParser } from '@/lib/url-state'
 
 const defaultNotify: NotifyValues = { email: true, inApp: true, recipients: [] }
 
@@ -18,7 +18,7 @@ export function App() {
   const [section, setSection] = useQueryState('section', sectionParser)
   const [view, setView] = useQueryState('view', viewParser)
   const [uuid, setUuid] = useQueryState('uuid', uuidParser)
-  const [project, setProject] = useQueryState('project', projectParser)
+  const [watch, setWatch] = useQueryState('watch', watchParser)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notify, setNotify] = useState<NotifyValues>(defaultNotify)
@@ -80,12 +80,12 @@ export function App() {
   )
 
   if (section === 'projects') {
-    if (project) {
+    if (watch) {
       return (
         <>
           <ProjectDetail
-            projectId={project}
-            onBack={() => void setProject(null)}
+            watchId={watch}
+            onBack={() => void setWatch(null)}
             onOpenSettings={openSettings}
           />
           {settingsDialog}
@@ -97,7 +97,7 @@ export function App() {
         <ProjectsHome
           section={section}
           onChangeSection={changeSection}
-          onSelectProject={(id) => void setProject(id)}
+          onSelectWatch={(id) => void setWatch(id)}
           onOpenSettings={openSettings}
         />
         {settingsDialog}

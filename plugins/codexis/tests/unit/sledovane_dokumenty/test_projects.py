@@ -1,4 +1,4 @@
-"""Project resolution, file discovery, scan + watched.json for watched projects."""
+"""Project resolution, folder discovery, scan + watched.json for watched folders."""
 
 import os
 
@@ -94,10 +94,53 @@ def test_resolve_uuid_falls_back_to_the_index_when_the_daemon_is_down(
     dokumenty_app_dir, monkeypatch
 ):
     monkeypatch.setattr(_daemon, "graphql", lambda q, v=None, timeout=10: None)
-    projects.save_index([{"uuid": "u", "projectId": PROJECT_ID, "name": "Smlouvy"}])
+    projects.save_index(
+        [{"uuid": "u", "projectId": PROJECT_ID, "name": "Smlouvy", "path": "."}]
+    )
     assert projects.resolve(PROJECT_ID)["name"] == "Smlouvy"
     with pytest.raises(WatchedProjectError):
         projects.resolve(OTHER_PROJECT_ID)
+
+
+# ── folders inside the project ───────────────────────────────────────────────
+
+
+def test_normalize_folder_keeps_paths_inside_the_project():
+    assert projects.normalize_folder(None) == "."
+    assert projects.normalize_folder("/") == "."
+    assert projects.normalize_folder("./smlouvy/") == "smlouvy"
+    assert projects.normalize_folder("smlouvy/./2026") == "smlouvy/2026"
+    assert projects.normalize_folder("/home/codexis/project/files/smlouvy") == "smlouvy"
+    for escape in ("..", "../x", "smlouvy/../../x"):
+        with pytest.raises(WatchedProjectError):
+            projects.normalize_folder(escape)
+
+
+def test_folder_label_reads_as_a_path():
+    assert projects.folder_label(".") == "/"
+    assert projects.folder_label("smlouvy/2026") == "/smlouvy/2026"
+
+
+def test_browse_lists_sub_folders_of_the_project(watched_project):
+    root = projects.browse("Smlouvy")
+    assert root["name"] == "Smlouvy" and root["path"] == "." and root["parent"] is None
+    assert [e["path"] for e in root["entries"]] == ["smlouvy"]
+
+    inner = projects.browse(PROJECT_ID, "smlouvy")
+    assert inner["parent"] == "."
+    assert [e["path"] for e in inner["entries"]] == ["smlouvy/dogs"]
+    assert projects.browse(PROJECT_ID, "smlouvy/dogs")["parent"] == "smlouvy"
+
+
+def test_browse_rejects_a_missing_folder(watched_project):
+    with pytest.raises(WatchedProjectError):
+        projects.browse("Smlouvy", "neexistuje")
+
+
+def test_browse_needs_the_files(tmp_path, monkeypatch, daemon_projects):
+    monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
+    with pytest.raises(WatchedProjectError):
+        projects.browse("Smlouvy")
 
 
 # ── where the files are ──────────────────────────────────────────────────────
@@ -107,6 +150,9 @@ def test_files_dir_prefers_the_project_home_on_the_raw_vm(
     watched_project, project_files
 ):
     assert projects.files_dir(watched_project) == project_files
+    assert projects.folder_dir(watched_project, "smlouvy") == os.path.join(
+        project_files, "smlouvy"
+    )
 
 
 def test_files_dir_uses_the_project_mount_inside_a_project_chat(
@@ -125,6 +171,7 @@ def test_files_dir_uses_the_project_mount_inside_a_project_chat(
 def test_files_dir_is_none_elsewhere(tmp_path, monkeypatch, daemon_projects):
     monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
     assert projects.files_dir(PROJECT_ID) is None
+    assert projects.folder_dir(PROJECT_ID, "smlouvy") is None
     with pytest.raises(WatchedProjectError):
         projects.require_files_dir(PROJECT_ID)
 
@@ -153,8 +200,11 @@ def test_harvest_session_is_none_for_a_project_without_chats(daemon_projects):
 
 def test_harvest_path_is_the_in_chat_mount():
     assert (
-        projects.harvest_path("./dogs/buy-dog.docx")
-        == "/home/codexis/project/files/dogs/buy-dog.docx"
+        projects.harvest_path(".", "./a.docx") == "/home/codexis/project/files/a.docx"
+    )
+    assert (
+        projects.harvest_path("smlouvy", "./dogs/buy-dog.docx")
+        == "/home/codexis/project/files/smlouvy/dogs/buy-dog.docx"
     )
 
 
@@ -162,7 +212,7 @@ def test_harvest_path_is_the_in_chat_mount():
 
 
 def test_scan_relative_paths_and_checksums(project_files):
-    files = projects.scan_files(project_files)
+    files = projects.scan_files(os.path.join(project_files, "smlouvy"))
     assert [f["path"] for f in files] == ["./dogs/buy-dog.docx", "./readme.txt"]
     assert all(len(f["sha256"]) == 64 for f in files)
 
@@ -175,78 +225,95 @@ def test_scan_skips_hidden_entries(project_files):
     assert all(".hidden" not in p for p in paths)
 
 
-def test_add_watch_writes_contract_in_app_state(watched_project, dokumenty_app_dir):
-    res = projects.add_watch("Smlouvy")
-    assert res["projectId"] == watched_project
+def test_add_watch_scans_only_the_chosen_folder(watched_project, dokumenty_app_dir):
+    res = projects.add_watch("Smlouvy", "smlouvy")
+    assert res["projectId"] == watched_project and res["path"] == "smlouvy"
     assert res["files_available"] is True
     assert res["total"] == 2 and res["added"] == 2
 
-    data = projects.read_watched(watched_project)
+    data = projects.read_watched(res["uuid"])
     assert data["version"] == projects.CONTRACT_VERSION
-    assert data["projectId"] == watched_project
+    assert data["projectId"] == watched_project and data["folder"] == "smlouvy"
     assert {d["path"] for d in data["documents"]} == {
         "./dogs/buy-dog.docx",
         "./readme.txt",
     }
-    doc = next(d for d in data["documents"] if d["path"] == "./readme.txt")
-    assert doc["extractedAt"] is None and doc["legislation"] == []
-
-    expected = os.path.join(
-        str(dokumenty_app_dir), "projects", watched_project, "watched.json"
+    assert os.path.isfile(
+        os.path.join(str(dokumenty_app_dir), "watched", res["uuid"], "watched.json")
     )
-    assert os.path.isfile(expected)
 
 
-def test_add_watch_registers_index_and_is_idempotent(watched_project):
-    projects.add_watch(watched_project)
-    index = projects.load_index()
-    assert len(index) == 1
-    assert index[0]["projectId"] == watched_project
-    assert index[0]["name"] == "Smlouvy"
-    projects.add_watch("Smlouvy")
-    assert len(projects.load_index()) == 1
+def test_add_watch_of_the_project_root_sees_everything(watched_project):
+    res = projects.add_watch("Smlouvy")
+    assert res["path"] == "."
+    assert {d["path"] for d in projects.read_watched(res["uuid"])["documents"]} == {
+        "./poznamky.md",
+        "./smlouvy/dogs/buy-dog.docx",
+        "./smlouvy/readme.txt",
+    }
+
+
+def test_add_watch_is_idempotent_per_folder(watched_project):
+    first = projects.add_watch(watched_project, "smlouvy")
+    again = projects.add_watch("Smlouvy", "./smlouvy/")
+    root = projects.add_watch("Smlouvy")
+    assert first["uuid"] == again["uuid"] != root["uuid"]
+    assert len(projects.load_index()) == 2
 
 
 def test_add_watch_without_visible_files_registers_an_empty_contract(
     tmp_path, monkeypatch, dokumenty_app_dir, daemon_projects
 ):
     monkeypatch.setenv("CODEXIS_PUBLIC_USER_HOME", str(tmp_path))
-    res = projects.add_watch("Audit")
+    res = projects.add_watch("Audit", "faktury")
     assert res["files_available"] is False and res["total"] == 0
-    assert projects.read_watched(OTHER_PROJECT_ID)["documents"] == []
-    assert projects.find_in_index(OTHER_PROJECT_ID)["name"] == "Audit"
+    assert projects.read_watched(res["uuid"])["documents"] == []
+    assert projects.find_watch_of(OTHER_PROJECT_ID, "faktury")["name"] == "Audit"
 
 
-def test_sync_detects_new_changed_removed(watched_project, project_files):
-    projects.add_watch(watched_project)
+def test_resolve_watch_finds_the_folder_of_a_project(watch):
+    assert projects.resolve_watch("Smlouvy", "smlouvy")["uuid"] == watch
+    with pytest.raises(WatchedProjectError):
+        projects.resolve_watch("Smlouvy")
+    with pytest.raises(WatchedProjectError):
+        projects.resolve_watch("Audit", "smlouvy")
 
-    with open(os.path.join(project_files, "dogs", "buy-dog.docx"), "w") as f:
+
+def test_sync_detects_new_changed_removed(watch, project_files):
+    folder = os.path.join(project_files, "smlouvy")
+    with open(os.path.join(folder, "dogs", "buy-dog.docx"), "w") as f:
         f.write("ZMENA 89/2012 Sb.")
-    with open(os.path.join(project_files, "new.txt"), "w") as f:
+    with open(os.path.join(folder, "new.txt"), "w") as f:
         f.write("novy")
-    os.remove(os.path.join(project_files, "readme.txt"))
+    os.remove(os.path.join(folder, "readme.txt"))
+    with open(os.path.join(project_files, "jinde.txt"), "w") as f:
+        f.write("mimo sledovanou složku")
 
-    _, summary = projects.sync_watched(watched_project)
+    _, summary = projects.sync_watched(watch)
     assert summary == {"added": 1, "changed": 1, "removed": 1, "total": 2}
 
 
-def test_changed_checksum_resets_extraction(watched_project, project_files):
-    projects.add_watch(watched_project)
-    projects.set_references(
-        watched_project, "./readme.txt", [{"uri": "u", "text": "t"}]
-    )
-    assert "./readme.txt" not in projects.docs_needing_harvest(watched_project)
+def test_sync_fails_when_the_folder_vanished(watch, project_files):
+    import shutil
 
-    with open(os.path.join(project_files, "readme.txt"), "w") as f:
+    shutil.rmtree(os.path.join(project_files, "smlouvy"))
+    with pytest.raises(WatchedProjectError):
+        projects.sync_watched(watch)
+
+
+def test_changed_checksum_resets_extraction(watch, project_files):
+    projects.set_references(watch, "./readme.txt", [{"uri": "u", "text": "t"}])
+    assert "./readme.txt" not in projects.docs_needing_harvest(watch)
+
+    with open(os.path.join(project_files, "smlouvy", "readme.txt"), "w") as f:
         f.write("zcela jiny obsah")
-    projects.sync_watched(watched_project)
-    assert "./readme.txt" in projects.docs_needing_harvest(watched_project)
+    projects.sync_watched(watch)
+    assert "./readme.txt" in projects.docs_needing_harvest(watch)
 
 
-def test_set_references_stamps_timestamps(watched_project):
-    projects.add_watch(watched_project)
+def test_set_references_stamps_timestamps(watch):
     doc = projects.set_references(
-        watched_project,
+        watch,
         "./dogs/buy-dog.docx",
         [{"uri": "https://x", "text": "Zákon", "codexisId": "CR1"}],
     )
@@ -254,59 +321,47 @@ def test_set_references_stamps_timestamps(watched_project):
     assert doc["legislation"][0]["codexisId"] == "CR1"
 
 
-def test_unique_legislation_dedupes(watched_project):
-    projects.add_watch(watched_project)
+def test_unique_legislation_dedupes(watch):
     ref = [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}]
-    projects.set_references(watched_project, "./dogs/buy-dog.docx", ref)
-    projects.set_references(watched_project, "./readme.txt", ref)
-    uniq = projects.unique_legislation(watched_project)
+    projects.set_references(watch, "./dogs/buy-dog.docx", ref)
+    projects.set_references(watch, "./readme.txt", ref)
+    uniq = projects.unique_legislation(watch)
     assert len(uniq) == 1 and uniq[0]["codexisId"] == "CR26785"
 
 
-def test_mark_all_for_reharvest(watched_project):
-    projects.add_watch(watched_project)
-    projects.set_references(
-        watched_project, "./readme.txt", [{"uri": "u", "text": "t"}]
-    )
-    assert projects.mark_all_for_reharvest(watched_project) == 1
-    assert sorted(projects.docs_needing_harvest(watched_project)) == [
+def test_mark_all_for_reharvest(watch):
+    projects.set_references(watch, "./readme.txt", [{"uri": "u", "text": "t"}])
+    assert projects.mark_all_for_reharvest(watch) == 1
+    assert sorted(projects.docs_needing_harvest(watch)) == [
         "./dogs/buy-dog.docx",
         "./readme.txt",
     ]
 
 
-def test_list_watches_counts(watched_project):
-    projects.add_watch(watched_project)
+def test_list_watches_counts(watch):
     projects.set_references(
-        watched_project,
-        "./readme.txt",
-        [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}],
+        watch, "./readme.txt", [{"uri": "u", "text": "OZ", "codexisId": "CR26785"}]
     )
     [entry] = projects.list_watches()
+    assert entry["uuid"] == watch and entry["path"] == "smlouvy"
     assert entry["documents"] == 2
     assert entry["pending_harvest"] == 1
     assert entry["legislation"] == 1
     assert entry["unconfirmed_changes"] == 0
 
 
-def test_remove_watch_and_purge(watched_project, dokumenty_app_dir):
-    projects.add_watch(watched_project)
-    assert projects.remove_watch(watched_project) is True
+def test_remove_watch_and_purge(watch):
+    assert projects.remove_watch(watch) is True
     assert projects.load_index() == []
-    assert projects.read_watched(watched_project) is not None
-    assert projects.remove_watch(watched_project, purge=True) is False
-    assert projects.read_watched(watched_project) is None
+    assert projects.read_watched(watch) is not None
+    assert projects.remove_watch(watch, purge=True) is False
+    assert projects.read_watched(watch) is None
 
 
-def test_available_to_watch_excludes_watched(watched_project):
-    projects.add_watch(watched_project)
-    assert [p["projectId"] for p in projects.available_to_watch()] == [OTHER_PROJECT_ID]
-
-
-def test_available_to_watch_needs_the_daemon(monkeypatch, dokumenty_app_dir):
+def test_require_available_needs_the_daemon(monkeypatch, dokumenty_app_dir):
     monkeypatch.setattr(_daemon, "graphql", lambda q, v=None, timeout=10: None)
     with pytest.raises(WatchedProjectError):
-        projects.available_to_watch()
+        projects.require_available()
 
 
 # ── node id codec ────────────────────────────────────────────────────────────

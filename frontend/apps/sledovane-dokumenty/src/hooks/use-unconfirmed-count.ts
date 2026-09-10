@@ -1,5 +1,5 @@
 import { useFetch } from '@workspace/ui/hooks/use-fetch'
-import { fetchOverview, fetchProjects } from '@/lib/api'
+import { fetchOverview, fetchWatches } from '@/lib/api'
 import { sumUnconfirmed } from '@/lib/counts'
 
 /**
@@ -19,7 +19,7 @@ export function useUnconfirmedCount(watchdog: 'documents' | 'projects'): number 
     () =>
       watchdog === 'documents'
         ? fetchOverview().then((r) => sumUnconfirmed(r.tracked_documents))
-        : fetchProjects().then((r) => sumUnconfirmed(r.projects)),
+        : fetchWatches().then((r) => sumUnconfirmed(r.watches)),
     [watchdog],
   )
   return data ?? 0

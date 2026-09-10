@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DocumentsHome } from '@/components/documents-home'
-import type { DetailResponse, ProjectsResponse } from '@/lib/schemas'
+import type { DetailResponse, WatchesResponse } from '@/lib/schemas'
 import { detailFixture, detailWithPartsFixture, overviewFixture } from '@/test/fixtures'
 import { renderApp } from '@/test/render-app'
 
@@ -33,12 +33,14 @@ function emptyDetail(uuid: string): DetailResponse {
 }
 
 /** The rail fetches the project badge itself; four unconfirmed across two projects. */
-const projectsFixture: ProjectsResponse = {
+const watchesFixture: WatchesResponse = {
   mode: 'projects',
   generated_at: '2026-06-01T12:00:00Z',
-  projects: [
+  watches: [
     {
+      uuid: 'w1',
       projectId: 'p-contracts',
+      path: '.',
       name: 'Smlouvy',
       documents: 3,
       pending_harvest: 0,
@@ -46,7 +48,9 @@ const projectsFixture: ProjectsResponse = {
       unconfirmed_changes: 3,
     },
     {
+      uuid: 'w2',
       projectId: 'p-policies',
+      path: 'smernice',
       name: 'Směrnice',
       documents: 1,
       pending_harvest: 0,
@@ -70,7 +74,7 @@ function stubRoutedFetch() {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(detail) })
       }
       if (url.includes('view=projects')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(projectsFixture) })
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(watchesFixture) })
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve(overviewFixture) })
     }),

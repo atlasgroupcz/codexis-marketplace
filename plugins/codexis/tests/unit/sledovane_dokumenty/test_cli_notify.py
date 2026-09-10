@@ -137,12 +137,14 @@ def test_project_check_ends_the_run_red_when_the_bell_is_refused(monkeypatch, ca
     # one signal that says so.
     monkeypatch.setattr(
         _cli.project_check,
-        "check_projects",
+        "check_watches",
         lambda *a, **k: _project_check_result(notify_failed=True),
     )
 
     with pytest.raises(SystemExit) as exit_info:
-        _cli.cmd_project_check(argparse.Namespace(project=None, no_notify=False))
+        _cli.cmd_project_check(
+            argparse.Namespace(project=None, folder=None, no_notify=False)
+        )
 
     assert exit_info.value.code == 1
     assert "nepodařilo" in capsys.readouterr().err
@@ -153,12 +155,14 @@ def test_project_check_stays_green_for_the_check_s_own_errors(monkeypatch, capsy
     # Turning those red is a separate decision and does not ride on this fix.
     monkeypatch.setattr(
         _cli.project_check,
-        "check_projects",
+        "check_watches",
         lambda *a, **k: _project_check_result(
             changes_found=0, errors=["projekt nedostupný"]
         ),
     )
 
-    _cli.cmd_project_check(argparse.Namespace(project=None, no_notify=False))
+    _cli.cmd_project_check(
+        argparse.Namespace(project=None, folder=None, no_notify=False)
+    )
 
     assert "nepodařilo" not in capsys.readouterr().err

@@ -1,6 +1,6 @@
-"""Deterministic legislation-change check for watched projects.
+"""Deterministic legislation-change check for watched project folders.
 
-Reads each project's ``watched.json``, collects the distinct referenced acts
+Reads each watch's ``watched.json``, collects the distinct referenced acts
 (those that resolved to a CODEXIS ``codexisId``) and compares the current
 CODEXIS version id against the stored baseline in ``tracking-state.json``.
 
@@ -45,18 +45,18 @@ def _seed_legislation(tracking, ref):
     }
 
 
-def check_project(project_id, printer=None):
-    """Check one project. Returns {projectId, name, changes:[...], errors:[...]}."""
+def check_watch(watch_id, printer=None):
+    """Check one watch. Returns {watchId, projectId, name, path, changes, errors}."""
 
     def _log(msg):
         if printer:
             printer(msg)
 
-    entry = projects.find_in_index(project_id) or {}
-    name = entry.get("name") or project_id
-    tracking = projects.read_tracking(project_id) or projects.empty_tracking(project_id)
+    entry = projects.require_watch(watch_id)
+    name = entry.get("name") or entry["projectId"]
+    tracking = projects.read_tracking(watch_id) or projects.empty_tracking(entry)
 
-    for ref in projects.unique_legislation(project_id):
+    for ref in projects.unique_legislation(watch_id):
         _seed_legislation(tracking, ref)
 
     new_changes = []
@@ -110,17 +110,19 @@ def check_project(project_id, printer=None):
         )
 
     tracking["lastCheckAt"] = now_utc()
-    projects.write_tracking(project_id, tracking)
+    projects.write_tracking(watch_id, tracking)
     return {
-        "projectId": project_id,
+        "watchId": watch_id,
+        "projectId": entry["projectId"],
         "name": name,
+        "path": entry["path"],
         "changes": new_changes,
         "errors": errors,
     }
 
 
-def check_projects(project_id=None, printer=None, send_notifications=True):
-    """Check one or all watched projects, then notify on detected changes.
+def check_watches(watch_id=None, printer=None, send_notifications=True):
+    """Check one or all watches, then notify on detected changes.
 
     Returns {checked, changes_found, errors, notify_failed, results}.
 
@@ -128,16 +130,16 @@ def check_projects(project_id=None, printer=None, send_notifications=True):
     caller can end the run non-zero for a notification the daemon refused without
     doing the same for every unrelated problem the check already collects.
     """
-    if project_id:
-        ids = [project_id]
+    if watch_id:
+        ids = [watch_id]
     else:
-        ids = [e.get("projectId") for e in projects.load_index() if e.get("projectId")]
+        ids = [e.get("uuid") for e in projects.load_index() if e.get("uuid")]
 
     results = []
     errors = []
     changes_found = 0
-    for pid in ids:
-        res = check_project(pid, printer=printer)
+    for wid in ids:
+        res = check_watch(wid, printer=printer)
         results.append(res)
         changes_found += len(res["changes"])
         errors.extend(res["errors"])
@@ -159,9 +161,9 @@ def check_projects(project_id=None, printer=None, send_notifications=True):
     }
 
 
-def confirm_project(project_id, codexis_id=None):
+def confirm_watch(watch_id, codexis_id=None):
     """Mark detected changes as read and advance the baseline(s). Returns count."""
-    tracking = projects.read_tracking(project_id)
+    tracking = projects.read_tracking(watch_id)
     if not tracking:
         return 0
     now = now_utc()
@@ -181,5 +183,5 @@ def confirm_project(project_id, codexis_id=None):
                 "lastKnownVersionId", leg.get("baselineVersionId")
             )
     if marked:
-        projects.write_tracking(project_id, tracking)
+        projects.write_tracking(watch_id, tracking)
     return marked

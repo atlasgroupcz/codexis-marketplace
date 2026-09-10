@@ -1,8 +1,9 @@
-"""Watched projects: scan a project's documents, keep the watched.json contract.
+"""Watched folders of projects: scan a folder of a project's files, keep the
+watched.json contract.
 
-A *watched project* is one of the user's daemon projects. Its documents are the
-project's files. The daemon shows them at a different place depending on where
-the caller runs:
+A *watch* is a folder inside one of the user's daemon projects - the project's
+file root (``.``) or any sub-folder of it. The daemon shows a project's files at
+a different place depending on where the caller runs:
 
 - on the raw VM (the component's CGI handler): ``~/.cdx/project-home/<id>/files``
 - in a chat that belongs to the project: ``/home/codexis/project/files``
@@ -13,24 +14,25 @@ harvesting always names the in-chat path and borrows a chat of the project as
 its session - the current chat when it belongs to the project, otherwise the
 project's newest chat.
 
-For each watched project we keep ``<APP_DIR>/projects/<projectId>/``:
+Each watch has an id and keeps ``<APP_DIR>/watched/<watchId>/``:
 
 - ``watched.json``        - the stable, documented integration contract (see
   ``skills/sledovane-dokumenty/references/watched-json-contract.md``). Holds one
-  entry per document: path relative to the project's files, SHA-256, ISO-8601
+  entry per document: path relative to the watched folder, SHA-256, ISO-8601
   timestamps and the AI-harvested ``legislation`` references.
 - ``tracking-state.json`` - deterministic change-tracking bookkeeping written by
   the daily runner (CODEXIS baseline version per referenced act). Never touched
   by AI.
 
-The list of watched projects lives in ``<APP_DIR>/watched-projects.json`` so the
-CLI, the component handler and the automation all iterate the same set.
+The list of watches lives in ``<APP_DIR>/watched-projects.json`` so the CLI, the
+component handler and the automation all iterate the same set.
 
 All writes go through ``state.atomic_write_json`` (tmp file + rename).
 """
 
 import json
 import os
+import posixpath
 import uuid as uuid_mod
 
 from . import _daemon, nodeids, state
@@ -39,9 +41,10 @@ from .state import now_utc
 
 WATCHED_JSON = "watched.json"
 TRACKING_JSON = "tracking-state.json"
-PROJECTS_DIRNAME = "projects"
+WATCHES_DIRNAME = "watched"
 INDEX_FILE = "watched-projects.json"
 CONTRACT_VERSION = 2
+ROOT_FOLDER = "."
 
 PROJECT_HOME_DIRNAME = os.path.join(".cdx", "project-home")
 FILES_DIRNAME = "files"
@@ -72,7 +75,7 @@ _PROJECT_CHATS_QUERY = (
 
 
 class WatchedProjectError(DocumentError):
-    """A watched-project operation failed (unknown project, files unreachable, …)."""
+    """A watched-folder operation failed (unknown project, files unreachable, …)."""
 
 
 # ── home / paths ─────────────────────────────────────────────────────────────
@@ -84,40 +87,59 @@ def user_home():
 
 
 def state_root():
-    return os.path.join(state.APP_DIR, PROJECTS_DIRNAME)
+    return os.path.join(state.APP_DIR, WATCHES_DIRNAME)
 
 
-def state_dir(project_id):
-    return os.path.join(state_root(), project_id)
+def state_dir(watch_id):
+    return os.path.join(state_root(), watch_id)
 
 
-def watched_json_path(project_id):
-    return os.path.join(state_dir(project_id), WATCHED_JSON)
+def watched_json_path(watch_id):
+    return os.path.join(state_dir(watch_id), WATCHED_JSON)
 
 
-def tracking_path(project_id):
-    return os.path.join(state_dir(project_id), TRACKING_JSON)
+def tracking_path(watch_id):
+    return os.path.join(state_dir(watch_id), TRACKING_JSON)
 
 
 def index_path():
     return os.path.join(state.APP_DIR, INDEX_FILE)
 
 
+def normalize_folder(folder):
+    """A folder inside the project's files as a relative POSIX path, ``.`` for the root.
+
+    Refuses anything that would leave the project's files.
+    """
+    raw = (folder or "").strip().replace(os.sep, "/") if isinstance(folder, str) else ""
+    if raw.startswith(MOUNTED_FILES_DIR):
+        raw = raw[len(MOUNTED_FILES_DIR) :]
+    raw = raw.strip("/")
+    if not raw or raw == ROOT_FOLDER:
+        return ROOT_FOLDER
+    normalized = posixpath.normpath(raw)
+    if normalized == ROOT_FOLDER:
+        return ROOT_FOLDER
+    if normalized.startswith("../") or normalized == ".." or normalized.startswith("/"):
+        raise WatchedProjectError("Složka musí ležet uvnitř souborů projektu.")
+    return normalized
+
+
 def to_rel(root, abs_path):
-    """POSIX path relative to the project's files, prefixed with ``./``."""
+    """POSIX path relative to the watched folder, prefixed with ``./``."""
     rel = os.path.relpath(abs_path, root).replace(os.sep, "/")
     return rel if rel.startswith("./") else "./" + rel
 
 
 def to_abs(root, rel_path):
-    """Resolve a ``./sub/file`` relative path against a files directory."""
+    """Resolve a ``./sub/file`` relative path against a directory."""
     rel = rel_path[2:] if rel_path.startswith("./") else rel_path
     return os.path.normpath(os.path.join(root, rel))
 
 
-def harvest_path(rel_path):
-    """The document's path inside a chat of the project - what the daemon reads."""
-    return to_abs(MOUNTED_FILES_DIR, rel_path)
+def folder_label(folder):
+    """How the watched folder reads to a human: ``/`` for the project root."""
+    return "/" if folder == ROOT_FOLDER else "/" + folder
 
 
 # ── daemon lookups ───────────────────────────────────────────────────────────
@@ -143,6 +165,15 @@ def list_available():
         return None
     projects = [_project_from_node(n) for n in data.get("projects") or []]
     return [p for p in projects if p]
+
+
+def require_available():
+    available = list_available()
+    if available is None:
+        raise WatchedProjectError(
+            "Daemon neodpovídá, seznam projektů není k dispozici."
+        )
+    return available
 
 
 def current_session_id():
@@ -194,7 +225,9 @@ def resolve(ref):
                 if p["projectId"] == project_id:
                     return p
             raise WatchedProjectError(f"Projekt {project_id} neexistuje.")
-        indexed = find_in_index(project_id)
+        indexed = next(
+            (e for e in load_index() if e.get("projectId") == project_id), None
+        )
         if indexed:
             return {"projectId": project_id, "name": indexed.get("name") or project_id}
         raise WatchedProjectError("Daemon neodpovídá, projekt nelze ověřit.")
@@ -237,6 +270,31 @@ def require_files_dir(project_id):
     return root
 
 
+def folder_dir(project_id, folder):
+    """Where this process can read the watched folder, or None if nowhere."""
+    root = files_dir(project_id)
+    if root is None:
+        return None
+    return root if folder == ROOT_FOLDER else os.path.join(root, folder)
+
+
+def require_folder_dir(project_id, folder):
+    path = os.path.join(require_files_dir(project_id), folder)
+    if not os.path.isdir(path):
+        raise WatchedProjectError(
+            f"Složka {folder_label(folder)} v projektu neexistuje."
+        )
+    return path
+
+
+def harvest_path(folder, rel_path):
+    """The document's path inside a chat of the project - what the daemon reads."""
+    base = (
+        MOUNTED_FILES_DIR if folder == ROOT_FOLDER else f"{MOUNTED_FILES_DIR}/{folder}"
+    )
+    return to_abs(base, rel_path)
+
+
 def harvest_session(project_id):
     """A chat id whose environment mounts the project's files, or None."""
     session = current_session_id()
@@ -253,6 +311,44 @@ def harvest_session(project_id):
         if chat_id:
             return chat_id
     return None
+
+
+# ── browsing a project's folders (the picker) ────────────────────────────────
+
+
+def browse(project_ref, folder=None):
+    """Sub-folders of `folder` in the project's files, for the folder picker.
+
+    Returns {project, name, path, parent, entries:[{name, path}]}; `path` values
+    are relative to the project's files, ``.`` being the root.
+    """
+    project = resolve(project_ref)
+    current = normalize_folder(folder)
+    target = require_folder_dir(project["projectId"], current)
+    entries = []
+    try:
+        for name in sorted(os.listdir(target)):
+            if name.startswith("."):
+                continue
+            if os.path.isdir(os.path.join(target, name)):
+                entries.append(
+                    {
+                        "name": name,
+                        "path": name if current == ROOT_FOLDER else f"{current}/{name}",
+                    }
+                )
+    except OSError as exc:
+        raise WatchedProjectError(f"Nelze číst složku {folder_label(current)}: {exc}")
+    parent = None
+    if current != ROOT_FOLDER:
+        parent = posixpath.dirname(current) or ROOT_FOLDER
+    return {
+        "project": project["projectId"],
+        "name": project["name"],
+        "path": current,
+        "parent": parent,
+        "entries": entries,
+    }
 
 
 # ── checksums / scanning ─────────────────────────────────────────────────────
@@ -296,20 +392,21 @@ def scan_files(root):
 # ── watched.json (the contract) ──────────────────────────────────────────────
 
 
-def read_watched(project_id):
+def read_watched(watch_id):
     """Return the watched.json dict, or None if missing/corrupt."""
-    return _read_json(watched_json_path(project_id))
+    return _read_json(watched_json_path(watch_id))
 
 
-def write_watched(project_id, data):
+def write_watched(watch_id, data):
     data["generatedAt"] = now_utc()
-    state.atomic_write_json(watched_json_path(project_id), data)
+    state.atomic_write_json(watched_json_path(watch_id), data)
 
 
-def empty_watched(project_id):
+def empty_watched(entry):
     return {
         "version": CONTRACT_VERSION,
-        "projectId": project_id,
+        "projectId": entry["projectId"],
+        "folder": entry["path"],
         "generatedAt": now_utc(),
         "documents": [],
     }
@@ -319,8 +416,8 @@ def _documents_by_path(data):
     return {d.get("path"): d for d in data.get("documents", []) if d.get("path")}
 
 
-def sync_watched(project_id):
-    """Reconcile watched.json with the project's files as they are now.
+def sync_watched(watch_id):
+    """Reconcile watched.json with the watched folder as it is now.
 
     - new file            → add entry (empty legislation, extractedAt=null)
     - same path, new hash  → update sha256, reset extractedAt (re-harvest), keep
@@ -328,20 +425,21 @@ def sync_watched(project_id):
     - removed file         → drop entry
 
     Returns (data, summary) where summary = {added, changed, removed, total}.
-    Raises when the project's files are not reachable from this process.
+    Raises when the folder is not reachable from this process.
     """
-    scanned = scan_files(require_files_dir(project_id))
-    existing = read_watched(project_id) or empty_watched(project_id)
+    entry = require_watch(watch_id)
+    scanned = scan_files(require_folder_dir(entry["projectId"], entry["path"]))
+    existing = read_watched(watch_id) or empty_watched(entry)
     old_by_path = _documents_by_path(existing)
     now = now_utc()
 
     documents: list[dict] = []
     added = changed = 0
     seen = set()
-    for entry in scanned:
-        path = entry["path"]
+    for item in scanned:
+        path = item["path"]
         seen.add(path)
-        checksum = entry["sha256"]
+        checksum = item["sha256"]
         prev = old_by_path.get(path)
         if prev is None:
             documents.append(
@@ -370,11 +468,12 @@ def sync_watched(project_id):
     documents.sort(key=lambda d: d["path"])
     data = {
         "version": CONTRACT_VERSION,
-        "projectId": project_id,
+        "projectId": entry["projectId"],
+        "folder": entry["path"],
         "generatedAt": now,
         "documents": documents,
     }
-    write_watched(project_id, data)
+    write_watched(watch_id, data)
     return data, {
         "added": added,
         "changed": changed,
@@ -383,9 +482,9 @@ def sync_watched(project_id):
     }
 
 
-def docs_needing_harvest(project_id):
+def docs_needing_harvest(watch_id):
     """Relative paths of documents whose references must be (re)harvested."""
-    data = read_watched(project_id)
+    data = read_watched(watch_id)
     if not data:
         return []
     return [
@@ -395,29 +494,29 @@ def docs_needing_harvest(project_id):
     ]
 
 
-def set_references(project_id, rel_path, legislation):
+def set_references(watch_id, rel_path, legislation):
     """Persist harvested legislation for one document; stamp extracted/updated.
 
     `legislation` is a list of ``{"uri", "text", "codexisId"?}`` dicts.
     Returns the updated document entry. Raises if the path is unknown.
     """
-    data = read_watched(project_id)
+    data = read_watched(watch_id)
     if not data:
-        raise WatchedProjectError(f"watched.json chybí pro projekt {project_id}.")
+        raise WatchedProjectError(f"watched.json chybí pro sledování {watch_id}.")
     now = now_utc()
     for doc in data.get("documents", []):
         if doc.get("path") == rel_path:
             doc["legislation"] = legislation
             doc["extractedAt"] = now
             doc["updatedAt"] = now
-            write_watched(project_id, data)
+            write_watched(watch_id, data)
             return doc
     raise WatchedProjectError(f"Dokument {rel_path} není ve watched.json.")
 
 
-def mark_all_for_reharvest(project_id):
+def mark_all_for_reharvest(watch_id):
     """Force a full re-harvest on the next run (explicit user refresh)."""
-    data = read_watched(project_id)
+    data = read_watched(watch_id)
     if not data:
         return 0
     now = now_utc()
@@ -427,13 +526,13 @@ def mark_all_for_reharvest(project_id):
             doc["extractedAt"] = None
             doc["updatedAt"] = now
             count += 1
-    write_watched(project_id, data)
+    write_watched(watch_id, data)
     return count
 
 
-def unique_legislation(project_id):
+def unique_legislation(watch_id):
     """Distinct legislation entries across all documents (dedup by codexisId|uri)."""
-    data = read_watched(project_id)
+    data = read_watched(watch_id)
     if not data:
         return []
     seen = {}
@@ -448,24 +547,25 @@ def unique_legislation(project_id):
 # ── tracking-state.json (deterministic runner bookkeeping) ───────────────────
 
 
-def read_tracking(project_id):
-    return _read_json(tracking_path(project_id))
+def read_tracking(watch_id):
+    return _read_json(tracking_path(watch_id))
 
 
-def write_tracking(project_id, data):
-    state.atomic_write_json(tracking_path(project_id), data)
+def write_tracking(watch_id, data):
+    state.atomic_write_json(tracking_path(watch_id), data)
 
 
-def empty_tracking(project_id):
+def empty_tracking(entry):
     return {
         "version": CONTRACT_VERSION,
-        "projectId": project_id,
+        "projectId": entry["projectId"],
+        "folder": entry["path"],
         "lastCheckAt": None,
         "legislation": {},
     }
 
 
-# ── watched-project index ────────────────────────────────────────────────────
+# ── watch index ──────────────────────────────────────────────────────────────
 
 
 def _read_json(path):
@@ -487,29 +587,65 @@ def save_index(entries):
     state.atomic_write_json(index_path(), entries)
 
 
-def find_in_index(project_id):
+def find_watch(watch_id):
     for entry in load_index():
-        if entry.get("projectId") == project_id:
+        if entry.get("uuid") == watch_id:
             return entry
     return None
 
 
-def add_watch(ref):
-    """Register a project, scan its files when reachable, return the entry.
+def require_watch(watch_id):
+    entry = find_watch(watch_id)
+    if entry is None:
+        raise WatchedProjectError(f"Sledování {watch_id} neexistuje.")
+    return entry
 
-    Returns {uuid, projectId, name, added_on, files_available, ...scan summary}.
-    Idempotent on the project.
+
+def find_watch_of(project_id, folder):
+    folder = normalize_folder(folder)
+    for entry in load_index():
+        if entry.get("projectId") == project_id and entry.get("path") == folder:
+            return entry
+    return None
+
+
+def resolve_watch(project_ref, folder=None):
+    """The watch of `folder` in the project `project_ref` names, or an error."""
+    project = resolve(project_ref)
+    entry = find_watch_of(project["projectId"], folder)
+    if entry is None:
+        raise WatchedProjectError(
+            f"Složka {folder_label(normalize_folder(folder))} projektu "
+            f"„{project['name']}“ není sledovaná."
+        )
+    return entry
+
+
+def add_watch(project_ref, folder=None):
+    """Register a folder of a project, scan it when reachable, return the entry.
+
+    Returns {uuid, projectId, name, path, added_on, files_available,
+    ...scan summary}. Idempotent on the project + folder.
     """
-    project = resolve(ref)
+    project = resolve(project_ref)
     project_id = project["projectId"]
+    path = normalize_folder(folder)
 
     entries = load_index()
-    entry = next((e for e in entries if e.get("projectId") == project_id), None)
+    entry = next(
+        (
+            e
+            for e in entries
+            if e.get("projectId") == project_id and e.get("path") == path
+        ),
+        None,
+    )
     if entry is None:
         entry = {
             "uuid": str(uuid_mod.uuid4()),
             "projectId": project_id,
             "name": project["name"],
+            "path": path,
             "added_on": now_utc(),
         }
         entries.append(entry)
@@ -518,29 +654,29 @@ def add_watch(ref):
     save_index(entries)
 
     result = dict(entry)
-    if files_dir(project_id) is not None:
-        _, summary = sync_watched(project_id)
+    if folder_dir(project_id, path) is not None:
+        _, summary = sync_watched(entry["uuid"])
         result.update(summary)
         result["files_available"] = True
     else:
-        if read_watched(project_id) is None:
-            write_watched(project_id, empty_watched(project_id))
+        if read_watched(entry["uuid"]) is None:
+            write_watched(entry["uuid"], empty_watched(entry))
         result.update({"added": 0, "changed": 0, "removed": 0, "total": 0})
         result["files_available"] = False
     return result
 
 
-def remove_watch(project_id, purge=False):
-    """Stop watching a project. With `purge`, also delete its state directory."""
+def remove_watch(watch_id, purge=False):
+    """Stop watching. With `purge`, also delete the watch's state directory."""
     entries = load_index()
-    remaining = [e for e in entries if e.get("projectId") != project_id]
+    remaining = [e for e in entries if e.get("uuid") != watch_id]
     removed = len(remaining) != len(entries)
     if removed:
         save_index(remaining)
     if purge:
         import shutil
 
-        shutil.rmtree(state_dir(project_id), ignore_errors=True)
+        shutil.rmtree(state_dir(watch_id), ignore_errors=True)
     return removed
 
 
@@ -548,13 +684,13 @@ def list_watches():
     """Index entries enriched with document/reference/change counts."""
     result = []
     for entry in load_index():
-        project_id = entry.get("projectId")
-        if not project_id:
+        watch_id = entry.get("uuid")
+        if not watch_id:
             continue
-        data = read_watched(project_id)
-        tracking = read_tracking(project_id)
+        data = read_watched(watch_id)
+        tracking = read_tracking(watch_id)
         documents = data.get("documents", []) if data else []
-        legislation = unique_legislation(project_id)
+        legislation = unique_legislation(watch_id)
         pending = sum(1 for d in documents if d.get("extractedAt") is None)
         unconfirmed = 0
         if tracking:
@@ -578,14 +714,3 @@ def list_watches():
         reverse=True,
     )
     return result
-
-
-def available_to_watch():
-    """Projects the user could still add: daemon projects minus the watched ones."""
-    available = list_available()
-    if available is None:
-        raise WatchedProjectError(
-            "Daemon neodpovídá, seznam projektů není k dispozici."
-        )
-    watched = {e.get("projectId") for e in load_index()}
-    return [p for p in available if p["projectId"] not in watched]

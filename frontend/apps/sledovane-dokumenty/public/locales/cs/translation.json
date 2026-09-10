@@ -85,14 +85,14 @@
       "documents": "Akty",
       "projects": "Projekty"
     },
-    "add": "Přidat projekt",
+    "add": "Přidat složku",
     "back": "Zpět",
     "cancel": "Zrušit",
-    "added": "Projekt přidán, spouštím extrakci…",
-    "removed": "Projekt odebrán ze sledování",
+    "added": "Složka přidána, spouštím extrakci…",
+    "removed": "Složka odebrána ze sledování",
     "confirmed": "Změny potvrzeny",
     "refresh": "Znovu extrahovat",
-    "remove": "Přestat sledovat projekt",
+    "remove": "Přestat sledovat složku",
     "checkNow": "Zkontrolovat teď",
     "refreshStarted": "Spouštím novou extrakci…",
     "checkStarted": "Spouštím kontrolu legislativy…",
@@ -104,8 +104,8 @@
     "effectiveFrom": "Účinné od {{date}}",
     "extractingProgress": "Extrahuji odkazy ({{done}}/{{total}})",
     "legislationExtracting": "Probíhá extrakce odkazů na legislativu…",
-    "noLegislation": "V dokumentech tohoto projektu zatím nebyla nalezena žádná legislativa.",
-    "noDocuments": "Projekt zatím nemá žádné dokumenty. Nahrajte je do projektu a spusťte extrakci znovu.",
+    "noLegislation": "V dokumentech této složky zatím nebyla nalezena žádná legislativa.",
+    "noDocuments": "Složka zatím nemá žádné dokumenty. Nahrajte je do projektu a spusťte extrakci znovu.",
     "extracted": "Zpracováno",
     "pending": "Čeká",
     "refCount": "{{count}} odkazů na legislativu",
@@ -122,13 +122,20 @@
     },
     "landing": {
       "title": "Hlídejte legislativu ve svých projektech",
-      "text": "Vyberte projekt s dokumenty. AI z nich vytáhne odkazy na zákony a my vás upozorníme, když se některý změní."
+      "text": "Vyberte projekt a složku s dokumenty. AI z nich vytáhne odkazy na zákony a my vás upozorníme, když se některý změní."
     },
     "picker": {
-      "title": "Vyberte projekt ke sledování",
-      "description": "Sledovat lze každý váš projekt. Hlídáme dokumenty, které v něm máte.",
-      "watchThis": "Sledovat tento projekt",
-      "none": "Žádný další projekt ke sledování. Založte projekt v levém panelu a nahrajte do něj dokumenty."
+      "title": "Vyberte projekt",
+      "description": "Nejdřív projekt, potom složku v něm. Sledovat lze i celý projekt.",
+      "folderTitle": "Vyberte složku ke sledování",
+      "folderDescription": "Složka uvnitř souborů projektu. Zvolte kořen projektu nebo některou podsložku.",
+      "projectsList": "Projekty",
+      "foldersList": "Složky",
+      "watchThis": "Sledovat tuto složku",
+      "noProjects": "Žádný projekt. Založte projekt v levém panelu a nahrajte do něj dokumenty.",
+      "noSubfolders": "Žádné podsložky - sledovat lze tuto složku.",
+      "backToProjects": "Zpět na projekty",
+      "up": "O úroveň výš"
     }
   },
   "notify": {

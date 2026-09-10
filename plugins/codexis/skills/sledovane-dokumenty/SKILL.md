@@ -12,21 +12,21 @@ i18n:
     examplePrompts:
       - "Sleduj zákoník práce a dej vědět, až vyjde jeho novela."
       - "Zkontroluj moje sledované dokumenty a ukaž, co se od minule změnilo."
-      - "Hlídej projekt s mými smlouvami a upozorni mě, když se změní zákon, na který odkazují."
+      - "Hlídej složku se smlouvami v mém projektu a upozorni mě, když se změní zákon, na který odkazují."
   en:
     displayName: "Document Tracker"
     summary: "Monitor changes in Czech legislation via CODEXIS - amendment alerts and version diffs."
     examplePrompts:
       - "Track the Czech Labour Code and tell me when an amendment is published."
       - "Check my tracked documents and show me what has changed since last time."
-      - "Watch the project with my contracts and alert me when a law they reference changes."
+      - "Watch the contracts folder in my project and alert me when a law they reference changes."
   sk:
     displayName: "Sledované dokumenty"
     summary: "Sledovanie zmien v českej legislatíve cez CODEXIS - upozornenia na novelizácie a porovnanie verzií."
     examplePrompts:
       - "Sleduj český zákonník práce a daj vedieť, keď vyjde jeho novela."
       - "Skontroluj moje sledované dokumenty a ukáž, čo sa od minule zmenilo."
-      - "Sleduj projekt s mojimi zmluvami a upozorni ma, keď sa zmení zákon, na ktorý odkazujú."
+      - "Sleduj priečinok so zmluvami v mojom projekte a upozorni ma, keď sa zmení zákon, na ktorý odkazujú."
 ---
 
 # Sledované dokumenty - Document Tracking
@@ -177,52 +177,61 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 ## Automations
 
-Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-projekty.md` (a plain `project check`, daily) for watched projects.
+Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-projekty.md` (a plain `project check`, daily) for watched project folders.
 
 **Don't create an automation for periodic checks** - the shipped ones already run them. A change is recorded once; a later run finds it already in the change log and skips it, so a second automation would have nothing to report and would never notify. The user reads changes in the Sledované dokumenty UI component, so an AI-prompt automation generating reports adds nothing either.
 
 Only if the user wants a different cadence: disable the shipped automation first (`cdxctl automation list`, then `cdxctl automation disable <id>`), then create the replacement - otherwise the shipped run records the change first and yours sees it as already handled.
 
-## Watched projects (legislation referenced by the user's own documents)
+## Watched project folders (legislation referenced by the user's own documents)
 
-Besides tracking individual CODEXIS acts by id, this tool can watch a **project** -
-one of the user's projects, with their own documents (contracts,
+Besides tracking individual CODEXIS acts by id, this tool can watch a **folder of
+a project** - one of the user's projects and a folder inside its files (the
+project root or any sub-folder) holding their own documents (contracts,
 `.docx`/`.pdf`/`.txt`) - and track changes in the **legislation those documents
-reference**. The user picks a project in the Sledované dokumenty app and starts
-extraction; everything below is also available from the CLI.
+reference**. The user picks the project and the folder in the Sledované
+dokumenty app and starts extraction; everything below is also available from
+the CLI.
 
-A watched folder is always a project. Never ask the user for a path: name the
-project, or omit it inside a chat that belongs to the project.
+A watched folder always lives in a project. Never ask the user for an absolute
+path: name the project (or omit it inside a chat that belongs to the project)
+and give the folder relative to the project's files; `--folder` left out means
+the whole project.
 
 ```bash
-# Projects not watched yet (JSON: projectId, name)
+# The user's projects (JSON: projectId, name)
 cdx-sledovane-dokumenty project available
 
-# Start watching a project - by name, UUID or daemon id (scans files where they are visible)
+# Sub-folders of a project folder, for picking one (JSON)
+cdx-sledovane-dokumenty project browse "Smlouvy"
+cdx-sledovane-dokumenty project browse "Smlouvy" --folder smlouvy
+
+# Start watching a folder - project by name, UUID or daemon id; scans files where they are visible
+cdx-sledovane-dokumenty project add "Smlouvy" --folder smlouvy/2026
+# The whole project, and inside a chat of the project the name can be left out
 cdx-sledovane-dokumenty project add "Smlouvy"
-# Inside a chat of the project the argument can be left out
-cdx-sledovane-dokumenty project add
+cdx-sledovane-dokumenty project add --folder smlouvy
 
 # Harvest legislative references with AI (ONE pass per document, only docs that need it)
-cdx-sledovane-dokumenty project harvest "Smlouvy"
+cdx-sledovane-dokumenty project harvest "Smlouvy" --folder smlouvy/2026
 
-# List watched projects with counts + change status
+# List watched folders with counts + change status
 cdx-sledovane-dokumenty project list
 
 # Deterministic change check (no AI) - this is what the daily automation runs
 cdx-sledovane-dokumenty project check
 
-# Force a full re-harvest of a project (e.g. user explicitly refreshes)
-cdx-sledovane-dokumenty project refresh "Smlouvy"
+# Force a full re-harvest of a folder (e.g. user explicitly refreshes)
+cdx-sledovane-dokumenty project refresh "Smlouvy" --folder smlouvy/2026
 
 # Confirm detected changes (advances the baseline); --act limits it to one act
-cdx-sledovane-dokumenty project confirm "Smlouvy"
+cdx-sledovane-dokumenty project confirm "Smlouvy" --folder smlouvy/2026
 
-# Inspect a project's contract + tracking state as JSON
-cdx-sledovane-dokumenty project show "Smlouvy"
+# Inspect a folder's contract + tracking state as JSON
+cdx-sledovane-dokumenty project show "Smlouvy" --folder smlouvy/2026
 
 # Stop watching (add --purge to also delete the stored state)
-cdx-sledovane-dokumenty project remove "Smlouvy"
+cdx-sledovane-dokumenty project remove "Smlouvy" --folder smlouvy/2026
 
 # Notification settings - a persistent app-wide setting
 cdx-sledovane-dokumenty notify show
@@ -237,33 +246,35 @@ The signed-in user always receives the notification e-mail; extra recipients are
 | User wants | Do |
 |---|---|
 | alerted when a referenced act changes | `notify set --email` - `project check` then e-mails on a real change |
-| the current status in your reply | `project show <project>` |
+| the current status in your reply | `project show <project> --folder <path>` |
 | a status e-mail right now, change or not | `cdxctl notification email send` (see the cdxctl skill) |
 
 ### Where a project's files are visible
 
 A chat sees a project's files only when it belongs to that project, mounted
-read-only at `/home/codexis/project/files`. Other chats and automations see no
+read-only at `/home/codexis/project/files`; a watched folder `smlouvy` is then
+`/home/codexis/project/files/smlouvy`. Other chats and automations see no
 project files at all; the Sledované dokumenty app does.
 
 | Command | Chat in the project | Any other chat or automation | The app |
 |---|---|---|---|
-| `project add`, `project scan` | scans the files | registers the project; the app scans later | scans |
+| `project browse` | works | fails, names the reason | works |
+| `project add`, `project scan` | scans the folder | registers the folder; the app scans later | scans |
 | `project harvest`, `project refresh` | works | works - the daemon reads the documents through a chat of the project | works |
 | `project check`, `project confirm`, `project show` | works | works | works |
 
 `project add` from a chat outside the project says so and still registers the
-project; the app scans and extracts on its next open. Harvest needs the project
+folder; the app scans and extracts on its next open. Harvest needs the project
 to have at least one chat: the daemon reads each document inside that chat's
 environment. A project without chats reports `ERROR:` naming this - tell the
 user to open a chat in the project first.
 
 ### How it works
 
-1. `project add` registers the project and, where its files are visible, scans
-   them: a SHA-256 per document goes into the project's `watched.json` (see
-   `references/watched-json-contract.md`). The daily `project check` automation
-   ships with the plugin.
+1. `project add` registers the folder and, where the project's files are
+   visible, scans it: a SHA-256 per document goes into the watch's
+   `watched.json` (see `references/watched-json-contract.md`). The daily
+   `project check` automation ships with the plugin.
 2. `project harvest` sends each document that needs it (new or changed checksum)
    to the daemon **once**, through a chat of the project, and stores the
    referenced legislation back into `watched.json`, with a canonical `uri` and -
@@ -287,10 +298,10 @@ CODEXIS-id tracking:
 - Related baselines: `~/.cdx/app-state/sledovane-dokumenty/<codexisId>/related_<TYPE>.json`
 - Groups file: `~/.cdx/app-state/sledovane-dokumenty/groups.json`
 
-Watched projects:
-- Index of watched projects: `~/.cdx/app-state/sledovane-dokumenty/watched-projects.json`
+Watched project folders:
+- Index of watches: `~/.cdx/app-state/sledovane-dokumenty/watched-projects.json` (one entry per project + folder, each with its own id)
 - Notification settings: `~/.cdx/app-state/sledovane-dokumenty/settings.json`
-- Per-project contract: `~/.cdx/app-state/sledovane-dokumenty/projects/<projectId>/watched.json` (+ `tracking-state.json`)
+- Per-watch contract: `~/.cdx/app-state/sledovane-dokumenty/watched/<watchId>/watched.json` (+ `tracking-state.json`)
 
 Nothing is written into the project's own files.
 

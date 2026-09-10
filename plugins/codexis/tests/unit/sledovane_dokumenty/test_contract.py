@@ -5,10 +5,9 @@ from sledovane_dokumenty_core import projects
 DOC_KEYS = {"path", "sha256", "discoveredAt", "extractedAt", "updatedAt", "legislation"}
 
 
-def test_watched_json_matches_documented_contract(watched_project):
-    projects.add_watch(watched_project)
+def test_watched_json_matches_documented_contract(watch, watched_project):
     projects.set_references(
-        watched_project,
+        watch,
         "./dogs/buy-dog.docx",
         [
             {
@@ -18,11 +17,18 @@ def test_watched_json_matches_documented_contract(watched_project):
             }
         ],
     )
-    data = projects.read_watched(watched_project)
+    data = projects.read_watched(watch)
 
-    assert set(data.keys()) >= {"version", "projectId", "generatedAt", "documents"}
+    assert set(data.keys()) >= {
+        "version",
+        "projectId",
+        "folder",
+        "generatedAt",
+        "documents",
+    }
     assert isinstance(data["version"], int)
     assert data["projectId"] == watched_project
+    assert data["folder"] == "smlouvy"
 
     for doc in data["documents"]:
         assert set(doc.keys()) == DOC_KEYS
