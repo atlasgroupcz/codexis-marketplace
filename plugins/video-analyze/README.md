@@ -7,8 +7,8 @@ s titulky: obraz vidí a zvuk slyší, takže umí popsat i to, co se ve videu d
 ## Co zvládne
 
 - **YouTube odkazy** - stačí vložit URL.
-- **Video soubory** - MP4, WebM, MOV, AVI, MKV.
-- **Audio soubory** - MP3, WAV, FLAC, OGG, AAC.
+- **Video soubory** - MP4, WebM, MOV, MPEG, WMV, FLV, 3GP.
+- **Audio soubory** - MP3, WAV, FLAC, OGG, AAC, M4A.
 - **Přepis** mluveného slova.
 - **Shrnutí a popis** toho, co je ve videu vidět a slyšet.
 - **Otázky nad obsahem** - „kdy se mluví o...", „co na to řekl druhý řečník".

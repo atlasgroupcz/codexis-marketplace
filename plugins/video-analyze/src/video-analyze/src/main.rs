@@ -1,360 +1,397 @@
 use std::env;
-use std::fmt::Write as FmtWrite;
-use std::fs;
+use std::io::Write;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, ExitCode, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
+use cdx_common::config::{read_env, CODEXIS_PUBLIC_DAEMON_URL_ENV, CODEXIS_PUBLIC_SESSION_ID_ENV};
 use cdx_common::daemon_rest::daemon_bearer;
+use serde_json::{json, Value};
 
-const MODEL_QUERY: &str = "gemini-3.1-flash-lite-preview";
-const MODEL_TRANSCRIPT: &str = "gemini-3.1-pro-preview";
-const VERTEX_PROJECT: &str = "gen-lang-client-0126863821";
-const VERTEX_LOCATION: &str = "global";
-// Upload endpoint is derived at runtime from CODEXIS_PUBLIC_DAEMON_URL - see upload_endpoint().
+const USAGE: &str = "Usage:
+  video-analyze transcript <source>    Transcribe media; prints the transcript file path
+  video-analyze <source> <query>       Ask a question about media; prints the answer
+  video-analyze wait <job-id>          Finish waiting for a job whose call was cut off
 
-const TRANSCRIPT_PROMPT: &str = "Transcribe this media file with full detail.\n\
-    Use this exact format:\n\n\
-    [MM:SS] Speaker text here\n\
-    [MM:SS] (scene) Description of what is shown on screen\n\n\
-    Rules:\n\
-    - One line per speech segment or scene change\n\
-    - Timestamp in [MM:SS] format at the start of each line\n\
-    - Verbatim transcription of all spoken dialogue\n\
-    - Identify speakers if distinguishable (e.g. [00:05] Moderator: ...)\n\
-    - Mark visual descriptions with (scene) prefix: on-screen text, slides, graphics, camera changes\n\
-    - Note significant audio cues with (audio) prefix: music, sound effects, silence\n\
-    - No extra commentary, headers, or formatting - just timestamped lines\n\
-    - Do not use markdown, code fences, or any wrapper";
+  <source>  Local file path or YouTube URL";
 
-fn main() {
+const POLL_INTERVAL: Duration = Duration::from_secs(2);
+const WAIT_LIMIT: Duration = Duration::from_secs(8 * 60);
+const REQUEST_TIMEOUT_SECONDS: &str = "60";
+
+#[derive(Debug, PartialEq)]
+enum Action {
+    Help,
+    Wait(String),
+    Submit {
+        source: String,
+        query: Option<String>,
+    },
+}
+
+fn main() -> ExitCode {
     let args: Vec<String> = env::args().skip(1).collect();
-
-    if args.is_empty() || args.iter().any(|a| a == "-h" || a == "--help") {
-        print_usage();
-        std::process::exit(if args.iter().any(|a| a == "-h" || a == "--help") {
-            0
-        } else {
-            1
-        });
-    }
-
-    let is_transcript = args.first().map(|a| a == "transcript").unwrap_or(false);
-
-    if is_transcript {
-        if args.len() < 2 {
-            eprintln!("error: missing source");
-            eprintln!("Usage: video-analyze transcript <source>");
-            std::process::exit(1);
+    match run(&args) {
+        Ok(output) => {
+            println!("{output}");
+            ExitCode::SUCCESS
         }
-        let source = &args[1];
-        let api_key = load_api_key();
-        let daemon_auth = daemon_bearer().unwrap_or_else(|| {
-            eprintln!("error: no daemon auth (missing ~/.cdx/env/secret)");
-            std::process::exit(2);
-        });
-        let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
-
-        let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
-        let response = query_gemini(
-            &api_key,
-            &file_uri,
-            &mime_type,
-            TRANSCRIPT_PROMPT,
-            is_youtube,
-            MODEL_TRANSCRIPT,
-        );
-        let text = extract_response_text(&response);
-        if text.is_empty() {
-            eprintln!("{}", response);
-            std::process::exit(1);
-        }
-
-        let transcript_dir = Path::new(".transcripts");
-        if !transcript_dir.exists() {
-            if let Err(e) = fs::create_dir_all(transcript_dir) {
-                eprintln!("error: failed to create .transcripts directory: {}", e);
-                std::process::exit(1);
-            }
-        }
-
-        let base_name = transcript_filename(source, is_youtube);
-        let transcript_path = transcript_dir.join(format!("{}.transcript.txt", base_name));
-        if let Err(e) = fs::write(&transcript_path, &text) {
-            eprintln!("error: failed to write transcript: {}", e);
-            std::process::exit(1);
-        }
-
-        println!("{}", transcript_path.display());
-    } else {
-        if args.len() < 2 {
-            eprintln!("error: missing query");
-            print_usage();
-            std::process::exit(1);
-        }
-
-        let source = &args[0];
-        let query = args[1..].join(" ");
-        let api_key = load_api_key();
-        let daemon_auth = daemon_bearer().unwrap_or_else(|| {
-            eprintln!("error: no daemon auth (missing ~/.cdx/env/secret)");
-            std::process::exit(2);
-        });
-        let is_youtube = source.contains("youtube.com/") || source.contains("youtu.be/");
-
-        let (file_uri, mime_type) = upload_source(source, &daemon_auth, is_youtube);
-        let response = query_gemini(
-            &api_key,
-            &file_uri,
-            &mime_type,
-            &query,
-            is_youtube,
-            MODEL_QUERY,
-        );
-        let text = extract_response_text(&response);
-        if text.is_empty() {
-            eprintln!("{}", response);
-            std::process::exit(1);
-        }
-        println!("{}", text);
-    }
-}
-
-fn upload_source(source: &str, daemon_auth: &str, is_youtube: bool) -> (String, String) {
-    if is_youtube {
-        (source.to_string(), String::new())
-    } else {
-        let upload_json = upload_file(source, daemon_auth);
-        let parsed: serde_json::Value = serde_json::from_str(&upload_json).unwrap_or_default();
-        let uri = parsed
-            .get("uri")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_string();
-        let mime = parsed
-            .get("mimeType")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_string();
-        if uri.is_empty() {
-            eprintln!("error: upload failed: {}", upload_json);
-            std::process::exit(1);
-        }
-        (uri, mime)
-    }
-}
-
-fn transcript_filename(source: &str, is_youtube: bool) -> String {
-    if is_youtube {
-        let video_id = source
-            .split("v=")
-            .nth(1)
-            .map(|s| s.split('&').next().unwrap_or(s))
-            .or_else(|| {
-                source
-                    .split("youtu.be/")
-                    .nth(1)
-                    .map(|s| s.split('?').next().unwrap_or(s))
-            })
-            .unwrap_or("unknown");
-        format!("youtube-{}", video_id)
-    } else {
-        Path::new(source)
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| "unknown".to_string())
-    }
-}
-
-fn print_usage() {
-    eprintln!("Usage:");
-    eprintln!("  video-analyze transcript <source>    Generate detailed transcript");
-    eprintln!("  video-analyze <source> <query>       Ask a question about media");
-    eprintln!();
-    eprintln!("  <source>  Local file path or YouTube URL");
-    eprintln!("  <query>   What to analyze (e.g. \"Summarize the key points\")");
-}
-
-fn load_api_key() -> String {
-    if let Ok(val) = env::var("CODEXIS_USER_LITELLM_API_KEY") {
-        if !val.is_empty() {
-            return val;
-        }
-    }
-    eprintln!("error: CODEXIS_USER_LITELLM_API_KEY not set");
-    std::process::exit(2);
-}
-
-fn litellm_base() -> String {
-    // The LiteLLM gateway base URL is injected into the VM as
-    // CODEXIS_PUBLIC_LITELLM_BASE_URL (e.g. http://litellm.cdx.internal:4000).
-    // Fall back to localhost:4000 only for local dev outside the VM.
-    env::var("CODEXIS_PUBLIC_LITELLM_BASE_URL")
-        .ok()
-        .filter(|v| !v.is_empty())
-        .map(|v| v.trim_end_matches('/').to_string())
-        .unwrap_or_else(|| "http://localhost:4000".to_string())
-}
-
-fn upload_endpoint() -> String {
-    // CODEXIS_PUBLIC_DAEMON_URL is the daemon GraphQL URL (…/graphql); the gemini
-    // upload REST endpoint is its sibling on the same host. Strip /graphql and
-    // append the REST path. Fall back to localhost:8086 only for local dev.
-    let graphql = env::var("CODEXIS_PUBLIC_DAEMON_URL")
-        .ok()
-        .filter(|v| !v.is_empty())
-        .unwrap_or_else(|| "http://localhost:8086/graphql".to_string());
-    let base = graphql.trim_end_matches('/');
-    let base = base.strip_suffix("/graphql").unwrap_or(base);
-    format!("{}/rest/llm/gemini/upload", base)
-}
-
-fn upload_file(path: &str, daemon_auth: &str) -> String {
-    let encoded_path = cdx_common::url::encode_path_value(path);
-    let url = format!("{}?path={}", upload_endpoint(), encoded_path);
-
-    let auth_header = format!("Authorization: {}", daemon_auth);
-    let output = Command::new("curl")
-        .args([
-            "-s",
-            "--fail-with-body",
-            "-X",
-            "POST",
-            &url,
-            "-H",
-            &auth_header,
-            "-H",
-            "Content-Type: application/json",
-        ])
-        .output();
-
-    match output {
-        Ok(out) => {
-            if !out.status.success() {
-                let stderr = String::from_utf8_lossy(&out.stderr);
-                let stdout = String::from_utf8_lossy(&out.stdout);
-                eprintln!("error: upload failed: {} {}", stdout, stderr);
-                std::process::exit(1);
-            }
-            String::from_utf8_lossy(&out.stdout).to_string()
-        }
-        Err(e) => {
-            eprintln!("error: failed to run curl: {}", e);
-            std::process::exit(1);
+        Err(error) => {
+            eprintln!("error: {error}");
+            ExitCode::FAILURE
         }
     }
 }
 
-fn query_gemini(
-    api_key: &str,
-    file_uri: &str,
-    mime_type: &str,
-    query: &str,
-    is_youtube: bool,
-    model: &str,
-) -> String {
-    let url = format!(
-        "{}/vertex_ai/v1/projects/{}/locations/{}/publishers/google/models/{}:generateContent",
-        litellm_base(),
-        VERTEX_PROJECT,
-        VERTEX_LOCATION,
-        model
-    );
-
-    let file_data = if is_youtube {
-        format!(
-            r#"{{"fileData":{{"fileUri":"{}","mimeType":"video/webm"}}}}"#,
-            escape_json(file_uri)
-        )
-    } else {
-        format!(
-            r#"{{"fileData":{{"fileUri":"{}","mimeType":"{}"}}}}"#,
-            escape_json(file_uri),
-            escape_json(mime_type)
-        )
+fn run(args: &[String]) -> Result<String, String> {
+    let (source, query) = match parse_args(args)? {
+        Action::Help => return Ok(USAGE.to_string()),
+        Action::Wait(id) => {
+            let daemon = Daemon::from_env()?;
+            return wait(&daemon, daemon.job(&id)?).and_then(|job| output(&job));
+        }
+        Action::Submit { source, query } => (source, query),
     };
+    let daemon = Daemon::from_env()?;
+    let directory = env::current_dir().map_err(|error| error.to_string())?;
+    let (path, body) = request(&absolute(&source, &directory)?, query.as_deref());
+    let job = daemon.submit(path, &body)?;
+    wait(&daemon, job).and_then(|job| output(&job))
+}
 
-    let body = format!(
-        r#"{{"contents":[{{"role":"user","parts":[{{"text":"{}"}},{}]}}]}}"#,
-        escape_json(query),
-        file_data
-    );
+fn parse_args(args: &[String]) -> Result<Action, String> {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        return Ok(Action::Help);
+    }
+    match args {
+        [command, id] if command == "wait" => {
+            require_job_id(id)?;
+            Ok(Action::Wait(id.clone()))
+        }
+        [command, ..] if command == "wait" => Err(format!("expected one job id\n{USAGE}")),
+        [command, source] if command == "transcript" => Ok(Action::Submit {
+            source: source.clone(),
+            query: None,
+        }),
+        [command, ..] if command == "transcript" => Err(format!("expected one source\n{USAGE}")),
+        [source, query @ ..] if !query.is_empty() => Ok(Action::Submit {
+            source: source.clone(),
+            query: Some(query.join(" ")),
+        }),
+        _ => Err(format!("source and query are required\n{USAGE}")),
+    }
+}
 
-    let auth_header = format!("Authorization: Bearer {}", api_key);
+fn require_job_id(id: &str) -> Result<(), String> {
+    let shaped = id.len() == 36
+        && id.bytes().enumerate().all(|(index, byte)| match index {
+            8 | 13 | 18 | 23 => byte == b'-',
+            _ => byte.is_ascii_hexdigit(),
+        });
+    if shaped {
+        Ok(())
+    } else {
+        Err(format!("{id} is not a media job id"))
+    }
+}
 
-    let mut args = vec![
-        "-s".to_string(),
-        "--fail-with-body".to_string(),
-        "-X".to_string(),
-        "POST".to_string(),
-        url.clone(),
-        "-H".to_string(),
-        auth_header,
-        "-H".to_string(),
-        "Content-Type: application/json".to_string(),
-    ];
-    if let Ok(chat_id) = env::var("CODEXIS_PUBLIC_SESSION_ID") {
-        if !chat_id.is_empty() {
-            args.extend([
-                "-H".to_string(),
-                format!(
-                    "x-litellm-spend-logs-metadata: {{\"sessionId\":\"{}\"}}",
-                    chat_id
-                ),
+fn absolute(source: &str, directory: &Path) -> Result<String, String> {
+    if source.contains("://") {
+        return Ok(source.to_string());
+    }
+    directory
+        .join(source)
+        .to_str()
+        .map(str::to_string)
+        .ok_or_else(|| format!("{source} is not a valid UTF-8 path"))
+}
+
+fn request(source: &str, question: Option<&str>) -> (&'static str, Value) {
+    match question {
+        None => ("transcripts", json!({"source": source})),
+        Some(question) => ("answers", json!({"source": source, "question": question})),
+    }
+}
+
+fn wait(daemon: &Daemon, first: Value) -> Result<Value, String> {
+    let id = first["id"]
+        .as_str()
+        .ok_or("the media API returned no job id")?
+        .to_string();
+    eprintln!("job {id}");
+    let started = Instant::now();
+    let mut job = first;
+    loop {
+        match job["status"].as_str() {
+            Some("SUCCEEDED") => return Ok(job),
+            Some("FAILED") => {
+                return Err(job["error"]
+                    .as_str()
+                    .unwrap_or("media analysis failed")
+                    .to_string())
+            }
+            Some("QUEUED" | "RUNNING") if started.elapsed() < WAIT_LIMIT => {}
+            Some("QUEUED" | "RUNNING") => {
+                return Err(format!(
+                    "still running after {} minutes; keep waiting with: video-analyze wait {id}",
+                    WAIT_LIMIT.as_secs() / 60
+                ))
+            }
+            _ => {
+                return Err(format!(
+                    "the media API returned an unknown job status: {job}"
+                ))
+            }
+        }
+        thread::sleep(POLL_INTERVAL);
+        job = daemon.job(&id)?;
+    }
+}
+
+fn output(job: &Value) -> Result<String, String> {
+    ["transcriptPath", "text"]
+        .iter()
+        .find_map(|field| job[*field].as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| "the finished job carries neither a transcript path nor a text".to_string())
+}
+
+struct Daemon {
+    base: String,
+    bearer: String,
+    session: String,
+}
+
+impl Daemon {
+    fn from_env() -> Result<Self, String> {
+        let base = base_url(read_env(CODEXIS_PUBLIC_DAEMON_URL_ENV).as_deref())?;
+        let session = read_env(CODEXIS_PUBLIC_SESSION_ID_ENV)
+            .ok_or(format!("{CODEXIS_PUBLIC_SESSION_ID_ENV} is required"))?;
+        let bearer = daemon_bearer().ok_or("no daemon auth (missing ~/.cdx/env/secret)")?;
+        Ok(Self {
+            base,
+            bearer,
+            session,
+        })
+    }
+
+    fn submit(&self, path: &str, body: &Value) -> Result<Value, String> {
+        let url = format!("{}/rest/v1/plugin/media/{path}", self.base);
+        self.call(&url, Some(body))
+    }
+
+    fn job(&self, id: &str) -> Result<Value, String> {
+        require_job_id(id)?;
+        let url = format!("{}/rest/v1/plugin/media/jobs/{id}", self.base);
+        self.call(&url, None)
+    }
+
+    fn call(&self, url: &str, body: Option<&Value>) -> Result<Value, String> {
+        let mut curl = Command::new("curl");
+        curl.args([
+            "--silent",
+            "--show-error",
+            "--fail-with-body",
+            "--max-time",
+            REQUEST_TIMEOUT_SECONDS,
+            "--request",
+            if body.is_some() { "POST" } else { "GET" },
+            url,
+            "--header",
+            &format!("Authorization: {}", self.bearer),
+            "--header",
+            &format!("X-CDX-Session-Id: {}", self.session),
+        ]);
+        if body.is_some() {
+            curl.args([
+                "--header",
+                "Content-Type: application/json",
+                "--data-binary",
+                "@-",
             ]);
         }
-    }
-    args.extend(["-d".to_string(), body]);
-
-    let output = Command::new("curl").args(&args).output();
-
-    match output {
-        Ok(out) => {
-            if !out.status.success() {
-                let stderr = String::from_utf8_lossy(&out.stderr);
-                let stdout = String::from_utf8_lossy(&out.stdout);
-                eprintln!("error: gemini query failed: {} {}", stdout, stderr);
-                std::process::exit(1);
-            }
-            String::from_utf8_lossy(&out.stdout).to_string()
+        let mut child = curl
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|error| format!("failed to run curl: {error}"))?;
+        if let Some(body) = body {
+            let mut stdin = child.stdin.take().ok_or("curl stdin is unavailable")?;
+            stdin
+                .write_all(body.to_string().as_bytes())
+                .map_err(|error| format!("failed to send the request: {error}"))?;
         }
-        Err(e) => {
-            eprintln!("error: failed to run curl: {}", e);
-            std::process::exit(1);
+        let output = child
+            .wait_with_output()
+            .map_err(|error| format!("failed to run curl: {error}"))?;
+        if !output.status.success() {
+            return Err(format!(
+                "media API request failed: {} {}",
+                String::from_utf8_lossy(&output.stdout).trim(),
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
         }
+        serde_json::from_slice(&output.stdout)
+            .map_err(|error| format!("the media API returned no JSON: {error}"))
     }
 }
 
-/// Extract candidates[0].content.parts[0].text from a Gemini response.
-fn extract_response_text(json: &str) -> String {
-    serde_json::from_str::<serde_json::Value>(json)
-        .ok()
-        .and_then(|v| {
-            v.get("candidates")?
-                .get(0)?
-                .get("content")?
-                .get("parts")?
-                .get(0)?
-                .get("text")?
-                .as_str()
-                .map(str::to_string)
-        })
-        .unwrap_or_default()
+fn base_url(graphql: Option<&str>) -> Result<String, String> {
+    let graphql = graphql.ok_or(format!("{CODEXIS_PUBLIC_DAEMON_URL_ENV} is required"))?;
+    let base = graphql.trim_end_matches('/');
+    let base = base.strip_suffix("/graphql").unwrap_or(base);
+    if !base.starts_with("http://") && !base.starts_with("https://") {
+        return Err(format!(
+            "{CODEXIS_PUBLIC_DAEMON_URL_ENV} must be an HTTP or HTTPS URL"
+        ));
+    }
+    Ok(base.to_string())
 }
 
-fn escape_json(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if (c as u32) < 0x20 => {
-                let _ = write!(out, "\\u{:04x}", c as u32);
-            }
-            _ => out.push(c),
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    fn submit(source: &str, query: Option<&str>) -> Action {
+        Action::Submit {
+            source: source.into(),
+            query: query.map(str::to_string),
         }
     }
-    out
+
+    #[test]
+    fn transcript_takes_one_source() {
+        assert_eq!(
+            parse_args(&args(&["transcript", "meeting.mp4"])),
+            Ok(submit("meeting.mp4", None))
+        );
+    }
+
+    #[test]
+    fn transcript_refuses_more_than_one_source() {
+        assert!(parse_args(&args(&["transcript", "a.mp4", "b.mp4"]))
+            .unwrap_err()
+            .starts_with("expected one source"));
+    }
+
+    #[test]
+    fn query_joins_the_words_after_the_source() {
+        assert_eq!(
+            parse_args(&args(&["clip.mp4", "what", "is", "shown?"])),
+            Ok(submit("clip.mp4", Some("what is shown?")))
+        );
+    }
+
+    #[test]
+    fn a_source_without_a_query_is_refused() {
+        assert!(parse_args(&args(&["clip.mp4"]))
+            .unwrap_err()
+            .starts_with("source and query are required"));
+    }
+
+    #[test]
+    fn wait_takes_a_job_id() {
+        let id = "8f1c2a4e-1b2c-4d3e-9f10-1234567890ab";
+        assert_eq!(
+            parse_args(&args(&["wait", id])),
+            Ok(Action::Wait(id.into()))
+        );
+    }
+
+    #[test]
+    fn wait_refuses_anything_but_a_uuid() {
+        assert_eq!(
+            parse_args(&args(&["wait", "../jobs"])),
+            Err("../jobs is not a media job id".into())
+        );
+    }
+
+    #[test]
+    fn help_wins_over_everything_else() {
+        assert_eq!(parse_args(&args(&["clip.mp4", "--help"])), Ok(Action::Help));
+    }
+
+    #[test]
+    fn base_url_strips_the_graphql_suffix() {
+        assert_eq!(
+            base_url(Some("http://daemon:8086/graphql")),
+            Ok("http://daemon:8086".into())
+        );
+        assert_eq!(
+            base_url(Some("https://daemon.example/")),
+            Ok("https://daemon.example".into())
+        );
+    }
+
+    #[test]
+    fn base_url_must_be_http() {
+        assert!(base_url(Some("daemon:8086")).unwrap_err().contains("HTTP"));
+    }
+
+    #[test]
+    fn a_relative_file_is_made_absolute_against_the_working_directory() {
+        assert_eq!(
+            absolute("a.mp4", Path::new("/home/codexis/meetings")),
+            Ok("/home/codexis/meetings/a.mp4".into())
+        );
+    }
+
+    #[test]
+    fn an_absolute_file_and_a_url_are_sent_as_they_are() {
+        assert_eq!(
+            absolute("/tmp/a.mp4", Path::new("/home/codexis")),
+            Ok("/tmp/a.mp4".into())
+        );
+        assert_eq!(
+            absolute("https://youtu.be/jNQXAC9IVRw", Path::new("/home/codexis")),
+            Ok("https://youtu.be/jNQXAC9IVRw".into())
+        );
+    }
+
+    #[test]
+    fn a_transcript_is_asked_for_at_the_transcripts_endpoint() {
+        assert_eq!(
+            request("/home/codexis/a.mp4", None),
+            ("transcripts", json!({"source": "/home/codexis/a.mp4"}))
+        );
+    }
+
+    #[test]
+    fn a_question_is_asked_at_the_answers_endpoint() {
+        assert_eq!(
+            request("/home/codexis/a.mp4", Some("who speaks?")),
+            (
+                "answers",
+                json!({"source": "/home/codexis/a.mp4", "question": "who speaks?"})
+            )
+        );
+    }
+
+    #[test]
+    fn output_prefers_the_transcript_path_over_the_text() {
+        let job =
+            json!({"text": "[00:01] Hello", "transcriptPath": "/home/codexis/.transcripts/a.txt"});
+        assert_eq!(output(&job), Ok("/home/codexis/.transcripts/a.txt".into()));
+    }
+
+    #[test]
+    fn output_falls_back_to_the_text_of_an_answer() {
+        assert_eq!(
+            output(&json!({"text": " answer ", "transcriptPath": null})),
+            Ok("answer".into())
+        );
+    }
+
+    #[test]
+    fn output_of_an_empty_job_is_an_error() {
+        assert!(output(&json!({"status": "SUCCEEDED"})).is_err());
+    }
 }

@@ -1,8 +1,11 @@
 [package]
 name = "video-analyze"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["url"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false }
 serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

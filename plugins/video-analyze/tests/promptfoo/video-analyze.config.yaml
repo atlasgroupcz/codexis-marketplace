@@ -3,8 +3,8 @@
 #   1. shell:   video-analyze transcript <source>  → prints transcript path
 #   2. readFile: read the printed path             → AI relays content
 #
-# We use a YouTube URL so no fixture upload is needed - the binary's
-# `is_youtube` branch hands the URL straight to Gemini's file API.
+# We use a YouTube URL so no fixture upload is needed - the binary hands the
+# URL to the daemon's media API, which passes it to Gemini.
 # "Me at the zoo" (jNQXAC9IVRw) is 19s, famous, and will not be deleted;
 # the narrator says "elephant" multiple times → a stable regex oracle.
 #
@@ -12,13 +12,13 @@
 
 description: video-analyze - transcribe a short YouTube clip and relay content
 
-# SKIPPED in CI: `video-analyze transcript` hands the YouTube URL to Gemini's
-# file API, which needs a Google API credential the test VM does not have.
-# Without it the binary errors and the run only exercises the failure path -
+# SKIPPED in CI: `video-analyze transcript` runs through the daemon's media
+# API, which needs a Google model credential the CI daemon does not have.
+# Without it the job fails and the run only exercises the failure path -
 # it would pass or fail regardless of whether transcription actually works.
-# Remove `skip` once a Gemini key is provisioned in the VM (the test below is
+# Remove `skip` once the CI daemon has a Gemini credential (the test below is
 # ready as-is). Run it locally anyway with an explicit --config/--plugin.
-skip: "needs a Gemini API credential in the CI VM (video-analyze transcript uses Gemini's file API)"
+skip: "needs a Gemini credential in the CI daemon (video-analyze transcript runs through the daemon media API)"
 
 prompts:
   - "{{ prompt }}"
