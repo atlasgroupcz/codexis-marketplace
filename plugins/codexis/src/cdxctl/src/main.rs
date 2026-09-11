@@ -125,6 +125,15 @@ enum AutomationCommands {
         /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable. Defaults to the active chat's jurisdictions
         #[arg(long = "jurisdiction")]
         jurisdiction: Vec<String>,
+        /// Project (name or Node ID) every run works in; its files are mounted at ~/project/files. Defaults to the active chat's project
+        #[arg(long)]
+        project: Option<String>,
+        /// Connection (cloud drive or drive name, or Node ID) mounted into every run, repeatable. Defaults to the active chat's connections
+        #[arg(long = "connection")]
+        connection: Vec<String>,
+        /// File from this VM to store on the automation, repeatable; every run sees it read-only under ~/automation
+        #[arg(long = "file")]
+        file: Vec<String>,
         /// Create in disabled state
         #[arg(long, default_value = "false")]
         disabled: bool,
@@ -196,6 +205,15 @@ enum AutomationCommands {
         /// Jurisdiction the run operates in (CZ, SK, EU, ...), repeatable; replaces the stored set
         #[arg(long = "jurisdiction")]
         jurisdiction: Vec<String>,
+        /// Project (name or Node ID) every run works in
+        #[arg(long)]
+        project: Option<String>,
+        /// Connection (cloud drive or drive name, or Node ID) mounted into every run, repeatable; replaces the stored set
+        #[arg(long = "connection")]
+        connection: Option<Vec<String>>,
+        /// File from this VM to add to the automation's files, repeatable
+        #[arg(long = "file")]
+        file: Vec<String>,
     },
     /// Enable an automation (works for shipped plugin automations too)
     Enable {
@@ -674,6 +692,9 @@ fn main() {
                 max_turns,
                 model,
                 jurisdiction,
+                project,
+                connection,
+                file,
                 disabled,
             } => commands::automation::create(
                 &client,
@@ -697,6 +718,9 @@ fn main() {
                     } else {
                         Some(&jurisdiction)
                     },
+                    project: project.as_deref(),
+                    connections: &connection,
+                    files: &file,
                     disabled,
                 },
                 format,
@@ -741,6 +765,9 @@ fn main() {
                 max_turns,
                 model,
                 jurisdiction,
+                project,
+                connection,
+                file,
             } => commands::automation::update(
                 &client,
                 commands::automation::UpdateArgs {
@@ -764,6 +791,9 @@ fn main() {
                     } else {
                         Some(&jurisdiction)
                     },
+                    project: project.as_deref(),
+                    connections: connection.as_deref(),
+                    files: &file,
                 },
                 format,
             ),

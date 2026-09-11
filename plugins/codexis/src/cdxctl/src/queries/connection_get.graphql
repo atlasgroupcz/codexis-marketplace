@@ -1,0 +1,5 @@
+query GetConnections {
+    cloudDrives { id name }
+    myDrives { id name }
+    sharedWithMe { id name }
+}

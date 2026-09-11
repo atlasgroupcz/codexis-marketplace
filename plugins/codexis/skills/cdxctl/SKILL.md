@@ -73,13 +73,13 @@ such endpoint. Never `cat` or edit the `.env` file by hand.
 
 ## Automations
 
-An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, and in the chat's current working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
+An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same project and connections. Every run is an isolated chat of its own: the project's files are mounted read-only at `~/project/files`, the connections under `~/<connection name>`, and the files stored on the automation read-only at `~/automation`. So create it from a chat already configured for the job, and pass only the flags you want to change.
 
 ```bash
 # List all automations
 cdxctl automation list
 
-# Create an automation (inherits model + jurisdiction + skills from this chat)
+# Create an automation (inherits model + jurisdiction + skills + project + connections from this chat)
 cdxctl automation create \
     --title "Daily Report" \
     --repeat DAILY --day-part MORNING \
@@ -92,6 +92,15 @@ cdxctl automation create \
     --prompt "Report new Supreme Court rulings on notice periods" \
     --model CLAUDE_SONNET_5 --jurisdiction CZ \
     --skill "<id>"
+
+# Give the runs a project, a connection and input files
+cdxctl automation create \
+    --title "Contract check" \
+    --repeat WEEKLY --day-part MORNING --days-of-week 1 \
+    --prompt "Compare the contracts in ~/Smlouvy with the checklist in ~/automation/checklist.md" \
+    --project "Audit" \
+    --connection "Smlouvy" \
+    --file ./checklist.md
 
 # Create a COMMAND automation
 cdxctl automation create-command \
@@ -113,6 +122,8 @@ cdxctl automation trigger <id>
 ```
 
 **Model + jurisdiction:** the model, its tuned settings, and the jurisdiction all default to the active chat, so usually you pass nothing. Override the model with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and jurisdiction with `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
+
+**Project, connections, files:** the project and the connections also default to the active chat. `--project` takes a project name or id (the run sees its files at `~/project/files`); `--connection` takes a cloud drive or drive name or id, repeatable (mounted at `~/<name>`; on `update` the list replaces the stored one). `--file <path>` uploads a file from this VM to the automation, repeatable; the runs see the stored files read-only at `~/automation/<file name>`, and `update --file` adds more. `automation list` shows `project`, `connections` and `files`.
 
 **Enable / disable vs update:** toggling on/off is its own command, not a flag on `update`. `enable`/`disable` work for your own automations and for read-only ones shipped by a plugin. `update` only edits USER automations and never changes the enabled state.
 
