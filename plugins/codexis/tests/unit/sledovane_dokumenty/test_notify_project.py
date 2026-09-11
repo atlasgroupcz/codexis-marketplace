@@ -1,4 +1,4 @@
-"""Notification settings + summary building for watched projects."""
+"""Notification settings + summary building for watched project folders."""
 
 import json
 

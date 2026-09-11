@@ -112,7 +112,7 @@ def normalize_folder(folder):
     Refuses anything that would leave the project's files.
     """
     raw = (folder or "").strip().replace(os.sep, "/") if isinstance(folder, str) else ""
-    if raw.startswith(MOUNTED_FILES_DIR):
+    if raw == MOUNTED_FILES_DIR or raw.startswith(MOUNTED_FILES_DIR + "/"):
         raw = raw[len(MOUNTED_FILES_DIR) :]
     raw = raw.strip("/")
     if not raw or raw == ROOT_FOLDER:
@@ -180,16 +180,25 @@ def current_session_id():
     return (os.environ.get("CODEXIS_PUBLIC_SESSION_ID") or "").strip() or None
 
 
+_current_chat_project_cache = {}
+
+
 def current_chat_project():
-    """The project the current chat belongs to, or None (no chat, no project)."""
+    """The project the current chat belongs to, or None (no chat, no project).
+
+    Asked once per process: the chat a command runs in does not change while
+    it runs, and one command needs the answer several times.
+    """
     session = current_session_id()
     if not session:
         return None
-    data = _daemon.graphql(
-        _CHAT_PROJECT_QUERY, {"id": nodeids.encode((CHAT_TYPE, session))}
-    )
-    node = (data or {}).get("node") or {}
-    return _project_from_node(node.get("project"))
+    if session not in _current_chat_project_cache:
+        data = _daemon.graphql(
+            _CHAT_PROJECT_QUERY, {"id": nodeids.encode((CHAT_TYPE, session))}
+        )
+        node = (data or {}).get("node") or {}
+        _current_chat_project_cache[session] = _project_from_node(node.get("project"))
+    return _current_chat_project_cache[session]
 
 
 def _is_uuid(value):
@@ -279,7 +288,8 @@ def folder_dir(project_id, folder):
 
 
 def require_folder_dir(project_id, folder):
-    path = os.path.join(require_files_dir(project_id), folder)
+    root = require_files_dir(project_id)
+    path = root if folder == ROOT_FOLDER else os.path.join(root, folder)
     if not os.path.isdir(path):
         raise WatchedProjectError(
             f"Složka {folder_label(folder)} v projektu neexistuje."
@@ -588,17 +598,7 @@ def _with_folder(entry):
     """An index entry always names its folder; one written without it watched the root."""
     if entry.get("path"):
         return entry
-    upgraded = dict(entry)
-    upgraded["path"] = ROOT_FOLDER
-    legacy = os.path.join(state.APP_DIR, "projects", str(entry.get("projectId")))
-    if (
-        entry.get("uuid")
-        and os.path.isdir(legacy)
-        and not os.path.isdir(state_dir(entry["uuid"]))
-    ):
-        os.makedirs(state_root(), exist_ok=True)
-        os.replace(legacy, state_dir(entry["uuid"]))
-    return upgraded
+    return {**entry, "path": ROOT_FOLDER}
 
 
 def save_index(entries):
@@ -648,6 +648,11 @@ def add_watch(project_ref, folder=None):
     project = resolve(project_ref)
     project_id = project["projectId"]
     path = normalize_folder(folder)
+    visible = files_dir(project_id) is not None
+    if visible:
+        # The files are readable from here, so a folder that is not there is a
+        # typo - refuse it before anything is written.
+        require_folder_dir(project_id, path)
 
     entries = load_index()
     entry = next(
@@ -672,7 +677,7 @@ def add_watch(project_ref, folder=None):
     save_index(entries)
 
     result = dict(entry)
-    if folder_dir(project_id, path) is not None:
+    if visible:
         _, summary = sync_watched(entry["uuid"])
         result.update(summary)
         result["files_available"] = True

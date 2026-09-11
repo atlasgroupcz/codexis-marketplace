@@ -1,4 +1,4 @@
-"""Notify the user (from the daemon) when watched-project legislation changes.
+"""Notify the user (from the daemon) when watched-folder legislation changes.
 
 Two daemon-native, user-configurable channels:
 - e-mail  → POST /rest/v1/plugin/email/send (recipient defaults to the user)
@@ -24,7 +24,7 @@ from ._daemon import load_auth, rest_base
 
 _EMAIL_ENDPOINT = "/rest/v1/plugin/email/send"
 
-# Deep link into the Sledované dokumenty app (projects section).
+# Deep link into the Sledované dokumenty app (watched folders section).
 # Identifies this plugin's app so the bell's deep link can be resolved to the
 # daemon's /apps/<applicationId> route; see _resolve_app_link below.
 _PLUGIN_NAME = "codexis"
@@ -235,13 +235,13 @@ def _watch_title(result):
     return title
 
 
-def _changed_projects(results):
+def _changed_watches(results):
     return [r for r in results if r.get("changes")]
 
 
 def build_summary(results):
-    """Build (subject, body_text, body_html) for projects with new changes, or None."""
-    changed = _changed_projects(results)
+    """Build (subject, body_text, body_html) for watched folders with new changes, or None."""
+    changed = _changed_watches(results)
     total = sum(len(r["changes"]) for r in changed)
     if total == 0:
         return None
@@ -251,7 +251,7 @@ def build_summary(results):
     else:
         subject = f"Sledované dokumenty: {total} změn v odkazované legislativě"
 
-    text_lines = ["Kontrola sledovaných projektů zaznamenala změny:", ""]
+    text_lines = ["Kontrola sledovaných složek zaznamenala změny:", ""]
     html_rows = []
     for r in changed:
         text_lines.append(f"{_watch_title(r)} - {len(r['changes'])} změn:")
@@ -301,7 +301,7 @@ def notify_changes(results, settings=None):
     as a failure, and a refused notification must not read as a delivery.
     """
     summary = build_summary(results)
-    total = sum(len(r["changes"]) for r in _changed_projects(results))
+    total = sum(len(r["changes"]) for r in _changed_watches(results))
     if summary is None:
         return {"email": False, "inApp": None, "changes": 0}
 
@@ -331,7 +331,7 @@ def notify_changes(results, settings=None):
 def _email_shell(heading, inner_html):
     """Wrap inner HTML in the branded e-mail envelope shared by document notices.
 
-    Mirrors the inline styling `build_summary` uses for project-change e-mails.
+    Mirrors the inline styling `build_summary` uses for folder-change e-mails.
     """
     return (
         '<div style="max-width:560px;font:14px sans-serif;color:#0a0a0a">'

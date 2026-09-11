@@ -1,4 +1,4 @@
-"""Deterministic (AI-free) legislation-change check for watched projects."""
+"""Deterministic (AI-free) legislation-change check for watched project folders."""
 
 import pytest
 from sledovane_dokumenty_core import clients, notify, project_check, projects

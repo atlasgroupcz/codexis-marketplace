@@ -121,7 +121,7 @@
       "neverChecked": "Not checked yet"
     },
     "landing": {
-      "title": "Watch the legislation in your projects",
+      "title": "Watch the legislation in your project folders",
       "text": "Pick a project and a folder with documents. AI extracts the laws they reference, and we alert you when any of them changes."
     },
     "picker": {

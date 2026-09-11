@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from sledovane_dokumenty_core import _daemon, nodeids, projects, state
+from sledovane_dokumenty_core import _daemon, nodeids, projects
 from sledovane_dokumenty_core.projects import WatchedProjectError
 
 from .conftest import OTHER_PROJECT_ID, PROJECT_ID
@@ -379,16 +379,40 @@ def test_nodeids_round_trip_and_daemon_sample():
 
 
 def test_index_entry_without_a_folder_watches_the_root(dokumenty_app_dir):
-    state.atomic_write_json(
-        os.path.join(str(dokumenty_app_dir), "projects", PROJECT_ID, "watched.json"),
-        {"version": 2, "projectId": PROJECT_ID, "documents": []},
-    )
     projects.save_index([{"uuid": "old", "projectId": PROJECT_ID, "name": "Smlouvy"}])
 
     [entry] = projects.load_index()
 
     assert entry["path"] == "."
-    assert projects.read_watched("old")["projectId"] == PROJECT_ID
-    assert not os.path.exists(
-        os.path.join(str(dokumenty_app_dir), "projects", PROJECT_ID)
+
+
+def test_add_watch_of_a_missing_folder_leaves_no_watch_behind(watched_project):
+    with pytest.raises(projects.WatchedProjectError):
+        projects.add_watch("Smlouvy", "smlouvy-typo")
+    assert projects.load_index() == []
+
+
+def test_current_chat_project_is_asked_once_per_process(monkeypatch, daemon_projects):
+    monkeypatch.setenv(
+        "CODEXIS_PUBLIC_SESSION_ID", "9a9a9a9a-0000-4000-8000-00000000000a"
     )
+    calls = []
+
+    def fake_graphql(query, variables=None, timeout=10):
+        calls.append(query)
+        return {
+            "node": {
+                "project": {
+                    "id": projects.nodeids.encode(("Project", PROJECT_ID)),
+                    "name": "Smlouvy",
+                }
+            }
+        }
+
+    monkeypatch.setattr(projects._daemon, "graphql", fake_graphql)
+
+    first = projects.current_chat_project()
+    second = projects.current_chat_project()
+
+    assert first == second and first["projectId"] == PROJECT_ID
+    assert len(calls) == 1

@@ -7,6 +7,14 @@ PROJECT_ID = "5b1c1c4e-0000-4000-8000-000000000001"
 OTHER_PROJECT_ID = "5b1c1c4e-0000-4000-8000-000000000002"
 
 
+@pytest.fixture(autouse=True)
+def fresh_chat_project_cache():
+    """Each test is its own process as far as the memoized chat project goes."""
+    projects._current_chat_project_cache.clear()
+    yield
+    projects._current_chat_project_cache.clear()
+
+
 @pytest.fixture
 def daemon_projects(monkeypatch):
     """A daemon that knows two projects and answers no other query.

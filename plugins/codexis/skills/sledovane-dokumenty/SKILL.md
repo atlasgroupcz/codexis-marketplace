@@ -177,7 +177,7 @@ If the user asks to track a law not in the table below, use the `codexis` skill 
 
 ## Automations
 
-Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-projekty.md` (a plain `project check`, daily) for watched project folders.
+Two automations ship with the plugin and run on a schedule: `automations/check-dokumenty.md` (a plain `check`, weekly) for tracked acts, and `automations/check-slozky.md` (a plain `project check`, daily) for watched project folders.
 
 **Don't create an automation for periodic checks** - the shipped ones already run them. A change is recorded once; a later run finds it already in the change log and skips it, so a second automation would have nothing to report and would never notify. The user reads changes in the Sledované dokumenty UI component, so an AI-prompt automation generating reports adds nothing either.
 

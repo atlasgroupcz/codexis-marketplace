@@ -121,7 +121,7 @@ describe('ProjectsHome', () => {
     renderHome()
 
     await waitFor(() => {
-      expect(screen.getByText('Watch the legislation in your projects')).toBeInTheDocument()
+      expect(screen.getByText('Watch the legislation in your project folders')).toBeInTheDocument()
     })
   })
 
