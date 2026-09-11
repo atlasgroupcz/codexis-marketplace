@@ -1,22 +1,24 @@
 import { screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FolderDetail } from '@/components/folder-detail'
-import type { FolderResponse, TrackedLegislation } from '@/lib/schemas'
+import { ProjectDetail } from '@/components/project-detail'
+import type { TrackedLegislation, WatchResponse } from '@/lib/schemas'
 import { renderApp } from '@/test/render-app'
 
-function stubFolder(payload: FolderResponse) {
+function stubWatch(payload: WatchResponse) {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(payload) }),
   )
 }
 
-function folderWith(legislation: Array<TrackedLegislation>): FolderResponse {
+function watchWith(legislation: Array<TrackedLegislation>): WatchResponse {
   return {
-    mode: 'folder',
+    mode: 'watch',
     generated_at: '2026-06-01T12:00:00Z',
-    folder: {
-      root: '/home/u/my-contracts',
+    watch: {
+      uuid: 'u1',
+      projectId: '5b1c1c4e-0000-4000-8000-000000000001',
+      path: 'smlouvy',
       name: 'Smlouvy',
       added_on: '2026-06-01T12:00:00Z',
       documents: [],
@@ -28,11 +30,10 @@ function folderWith(legislation: Array<TrackedLegislation>): FolderResponse {
   }
 }
 
-function renderFolder() {
-  return renderApp(
-    <FolderDetail root="/home/u/my-contracts" onBack={vi.fn()} onOpenSettings={vi.fn()} />,
-    { searchParams: { lang: 'en' } },
-  )
+function renderWatch() {
+  return renderApp(<ProjectDetail watchId="u1" onBack={vi.fn()} onOpenSettings={vi.fn()} />, {
+    searchParams: { lang: 'en' },
+  })
 }
 
 const resolvedAct: TrackedLegislation = {
@@ -57,18 +58,18 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('FolderDetail legislation link', () => {
+describe('ProjectDetail legislation link', () => {
   it('links a resolved act to its CODEXIS document', async () => {
-    stubFolder(folderWith([resolvedAct]))
-    renderFolder()
+    stubWatch(watchWith([resolvedAct]))
+    renderWatch()
 
     const link = await screen.findByRole('link')
     expect(link).toHaveAttribute('href', 'https://next.codexis.cz/doc/CR26785')
   })
 
   it('never links legislation to zakonyprolidi', async () => {
-    stubFolder(folderWith([resolvedAct]))
-    renderFolder()
+    stubWatch(watchWith([resolvedAct]))
+    renderWatch()
 
     await screen.findByText(resolvedAct.text)
     const hrefs = screen.queryAllByRole('link').map((a) => a.getAttribute('href') ?? '')
@@ -76,10 +77,18 @@ describe('FolderDetail legislation link', () => {
   })
 
   it('renders no external link for an act without a CODEXIS id', async () => {
-    stubFolder(folderWith([unresolvedAct]))
-    renderFolder()
+    stubWatch(watchWith([unresolvedAct]))
+    renderWatch()
 
     await screen.findByText(unresolvedAct.text)
     expect(screen.queryAllByRole('link')).toHaveLength(0)
+  })
+
+  it('names the watched folder inside the project', async () => {
+    stubWatch(watchWith([resolvedAct]))
+    renderWatch()
+
+    expect(await screen.findByRole('heading', { name: 'Smlouvy' })).toBeInTheDocument()
+    expect(screen.getByText('/smlouvy')).toBeInTheDocument()
   })
 })

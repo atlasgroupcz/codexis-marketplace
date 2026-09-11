@@ -73,8 +73,8 @@ pub const UPDATE_NOTIFICATION_STATE_MUTATION: &str =
 
 // ==================== Tabular Extraction ====================
 //
-// All tabular ops take a `TabularExtraction` Node id (encoded from the folder
-// path) - see commands::tabular::folder_to_node_id.
+// All tabular ops take a `TabularExtraction` Node id (the folder path nested
+// under its isolation scope) - see commands::tabular::folder_to_node_id.
 
 pub const GET_TABULAR_EXTRACTION: &str = include_str!("queries/tabular_get.graphql");
 

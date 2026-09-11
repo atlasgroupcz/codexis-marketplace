@@ -25,7 +25,7 @@ Odborné publikace a komentáře LIBERIS k jednotlivým zákonům - pro hlubší
 - **Daně a účetnictví** - volitelné monitorové pluginy pro daňové a účetní dotazy kombinují předpisy, judikaturu a výkladovou praxi.
 - **Příprava dokumentů** - při tvorbě smluv nebo právních podání máte okamžitý přístup k aktuálnímu znění předpisů.
 - **Kontrola souladu** - ověříte, zda váš postup nebo dokument odpovídá platné legislativě.
-- **Sledování změn legislativy** - komponenta „Sledované dokumenty" vám umožní sledovat změny u vybraných právních předpisů, nebo si nechat hlídat celou složku vlastních smluv a legislativu, na kterou odkazují.
+- **Sledování změn legislativy** - komponenta „Sledované dokumenty" vám umožní sledovat změny u vybraných právních předpisů, nebo si nechat hlídat složku se smlouvami ve svém projektu a legislativu, na kterou odkazují.
 - **Sledování judikatury** - komponenta „Sledovaná judikatura" hlídá nová rozhodnutí k tématu, které si zvolíte, a posílá pravidelný report o trendech.
 
 ## Součásti pluginu
@@ -37,7 +37,7 @@ Hlavní funkce - fulltextové vyhledávání napříč všemi zdroji CODEXIS. V�
 Interaktivní komponenta se dvěma režimy:
 
 - **Sledování předpisů** - vyberete konkrétní právní předpisy a dozvíte se o jejich změnách.
-- **Sledování složky** - ukážete na složku s vlastními dokumenty (smlouvy ve formátu `.docx`, `.pdf`, `.txt`). Plugin z nich vytěží, na kterou legislativu odkazují, a dál hlídá změny právě těch předpisů. Nemusíte tedy vědět dopředu, co všechno hlídat.
+- **Sledování složky v projektu** - vyberete některý ze svých projektů a v něm složku s dokumenty (nebo celý projekt). Smlouvy ve formátu `.docx`, `.pdf` či `.txt` plugin projde, vytěží z nich, na kterou legislativu odkazují, a dál hlídá změny právě těch předpisů. Nemusíte tedy vědět dopředu, co všechno hlídat, a nový dokument ve složce se přidá sám.
 
 Upozornění chodí do aplikace. E-mail je ve výchozím stavu vypnutý, zapnout ho
 a přidat další adresáty můžete v nastavení doplňku.
@@ -48,7 +48,7 @@ Interaktivní komponenta pro dlouhodobé sledování judikatury k tématu. Popí
 ### CLI nástroje
 Plugin při instalaci přidává `cdx-cli` jako hlavní CLI a instaluje také
 `cdxctl` pro správu platformy, `cdx-sledovane-dokumenty` pro správu
-sledovaných dokumentů a složek a `cdx-sledovana-judikatura` pro správu
+sledovaných dokumentů a složek projektů a `cdx-sledovana-judikatura` pro správu
 sledovaných témat judikatury.
 
 ### Správa platformy (cdxctl)

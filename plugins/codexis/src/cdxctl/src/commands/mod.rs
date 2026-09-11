@@ -54,12 +54,47 @@ pub fn flatten_plugin_marketplace(value: &mut Value) {
 ///     varint(len(typeName)) || typeName || varint(len(id)) || id
 /// then URL-safe base64 without padding.
 pub fn encode_node_id(type_name: &str, id: &str) -> String {
-    let mut buf = Vec::with_capacity(type_name.len() + id.len() + 4);
-    write_varint(&mut buf, type_name.len() as u64);
-    buf.extend_from_slice(type_name.as_bytes());
-    write_varint(&mut buf, id.len() as u64);
-    buf.extend_from_slice(id.as_bytes());
+    encode_node_path(&[(type_name, id)])
+}
+
+/// Encode a NodeId chain - `(typeName, id)` segments, root first - the way the
+/// daemon nests an entity under the isolation scope it lives in.
+pub fn encode_node_path(segments: &[(&str, &str)]) -> String {
+    let mut buf = Vec::new();
+    for (type_name, id) in segments {
+        write_varint(&mut buf, type_name.len() as u64);
+        buf.extend_from_slice(type_name.as_bytes());
+        write_varint(&mut buf, id.len() as u64);
+        buf.extend_from_slice(id.as_bytes());
+    }
     URL_SAFE_NO_PAD.encode(&buf)
+}
+
+/// The `id` of a single-segment NodeId of `type_name`, if `encoded` is one.
+pub fn root_node_id(encoded: &str, type_name: &str) -> Option<String> {
+    let bytes = URL_SAFE_NO_PAD.decode(encoded).ok()?;
+    let mut idx = 0;
+    let (found_type, id) = read_segment(&bytes, &mut idx)?;
+    if idx != bytes.len() || found_type != type_name {
+        return None;
+    }
+    Some(id)
+}
+
+fn read_segment(bytes: &[u8], idx: &mut usize) -> Option<(String, String)> {
+    let type_len = read_varint(bytes, idx)? as usize;
+    if *idx + type_len > bytes.len() {
+        return None;
+    }
+    let type_name = String::from_utf8(bytes[*idx..*idx + type_len].to_vec()).ok()?;
+    *idx += type_len;
+    let id_len = read_varint(bytes, idx)? as usize;
+    if *idx + id_len > bytes.len() {
+        return None;
+    }
+    let id = String::from_utf8(bytes[*idx..*idx + id_len].to_vec()).ok()?;
+    *idx += id_len;
+    Some((type_name, id))
 }
 
 /// Resolve an ID that may already be a daemon-encoded NodeId of `type_prefix`,
@@ -102,17 +137,7 @@ fn read_varint(bytes: &[u8], idx: &mut usize) -> Option<u64> {
 fn root_type_name(encoded: &str) -> Option<String> {
     let bytes = URL_SAFE_NO_PAD.decode(encoded).ok()?;
     let mut idx = 0;
-    let type_len = read_varint(&bytes, &mut idx)? as usize;
-    if idx + type_len > bytes.len() {
-        return None;
-    }
-    let type_bytes = bytes[idx..idx + type_len].to_vec();
-    idx += type_len;
-    let id_len = read_varint(&bytes, &mut idx)? as usize;
-    if idx + id_len > bytes.len() {
-        return None;
-    }
-    String::from_utf8(type_bytes).ok()
+    read_segment(&bytes, &mut idx).map(|(type_name, _)| type_name)
 }
 
 #[cfg(test)]
@@ -209,5 +234,41 @@ mod tests {
         let mut idx = 0;
         assert_eq!(read_varint(&buf, &mut idx), Some(300));
         assert_eq!(idx, buf.len());
+    }
+
+    #[test]
+    fn encode_node_path_nests_a_child_under_its_scope() {
+        let chat = "9a9a9a9a-0000-4000-8000-00000000000a";
+        let nested = encode_node_path(&[("Chat", chat), ("TabularExtraction", "/home/codexis/x")]);
+        let bytes = URL_SAFE_NO_PAD.decode(&nested).unwrap();
+        let mut idx = 0;
+        assert_eq!(
+            read_segment(&bytes, &mut idx),
+            Some(("Chat".to_string(), chat.to_string()))
+        );
+        assert_eq!(
+            read_segment(&bytes, &mut idx),
+            Some((
+                "TabularExtraction".to_string(),
+                "/home/codexis/x".to_string()
+            ))
+        );
+        assert_eq!(idx, bytes.len());
+        assert_eq!(root_type_name(&nested).as_deref(), Some("Chat"));
+    }
+
+    #[test]
+    fn root_node_id_reads_only_a_single_segment_of_the_asked_type() {
+        let project = "5b1c1c4e-0000-4000-8000-000000000001";
+        let encoded = encode_node_id("Project", project);
+        assert_eq!(root_node_id(&encoded, "Project").as_deref(), Some(project));
+        assert_eq!(root_node_id(&encoded, "Chat"), None);
+        let nested = encode_node_path(&[("Project", project), ("TabularExtraction", "/x")]);
+        assert_eq!(root_node_id(&nested, "Project"), None);
+        assert_eq!(root_node_id("not base64!", "Project"), None);
+        assert_eq!(
+            root_node_id("D1B1YmxpY0lzb2xhdGlvbgxtYXJrZXRwbGFjZXM", "PublicIsolation").as_deref(),
+            Some("marketplaces")
+        );
     }
 }

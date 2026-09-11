@@ -300,9 +300,14 @@ A precise trigger `--description` with the keywords and what it is not for; a co
 
 Extract structured data from files in a folder. Define columns (what to extract), then start extraction - the backend processes each file with AI.
 
+The folder is a path inside one isolation. Without `--project` it is a folder of the current chat's sandbox (`/home/codexis/...` as the chat sees it); `--project <id>` reads the folder in that project's files instead, where `~` is the project's file root. The project id comes from the app's project list or from `cdx-sledovane-dokumenty project available`.
+
 ```bash
 # Check current extraction state for a folder
 cdxctl tabular status ~/invoices
+
+# The same folder inside a project's files
+cdxctl tabular status ~/invoices --project 5b1c1c4e-0000-4000-8000-000000000001
 
 # Add columns (what data to extract from each file)
 cdxctl tabular add-column ~/invoices --name "Invoice Number" --col-type text --description "The invoice number or ID"

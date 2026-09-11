@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DocumentsHome } from '@/components/documents-home'
-import type { DetailResponse, FoldersResponse } from '@/lib/schemas'
+import type { DetailResponse, WatchesResponse } from '@/lib/schemas'
 import { detailFixture, detailWithPartsFixture, overviewFixture } from '@/test/fixtures'
 import { renderApp } from '@/test/render-app'
 
@@ -32,13 +32,15 @@ function emptyDetail(uuid: string): DetailResponse {
   }
 }
 
-/** The rail fetches the folder badge itself; four unconfirmed across two folders. */
-const foldersFixture: FoldersResponse = {
-  mode: 'folders',
+/** The rail fetches the project badge itself; four unconfirmed across two projects. */
+const watchesFixture: WatchesResponse = {
+  mode: 'projects',
   generated_at: '2026-06-01T12:00:00Z',
-  folders: [
+  watches: [
     {
-      root: '/home/u/contracts',
+      uuid: 'w1',
+      projectId: 'p-contracts',
+      path: '.',
       name: 'Smlouvy',
       documents: 3,
       pending_harvest: 0,
@@ -46,7 +48,9 @@ const foldersFixture: FoldersResponse = {
       unconfirmed_changes: 3,
     },
     {
-      root: '/home/u/policies',
+      uuid: 'w2',
+      projectId: 'p-policies',
+      path: 'smernice',
       name: 'Směrnice',
       documents: 1,
       pending_harvest: 0,
@@ -57,7 +61,7 @@ const foldersFixture: FoldersResponse = {
   settings: { email: true, inApp: true, recipients: [] },
 }
 
-/** Detail when ?uuid= is present, folders for the rail badge, overview otherwise. */
+/** Detail when ?uuid= is present, projects for the rail badge, overview otherwise. */
 function stubRoutedFetch() {
   vi.stubGlobal(
     'fetch',
@@ -69,8 +73,8 @@ function stubRoutedFetch() {
         const detail = detailByUuid[uuid] ?? emptyDetail(uuid)
         return Promise.resolve({ ok: true, json: () => Promise.resolve(detail) })
       }
-      if (url.includes('view=folders')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(foldersFixture) })
+      if (url.includes('view=projects')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(watchesFixture) })
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve(overviewFixture) })
     }),
@@ -184,7 +188,7 @@ describe('DocumentsHome', () => {
     expect(screen.queryByTestId('add-monitoring')).not.toBeInTheDocument()
   })
 
-  it('switches to the folder watchdog from the section navigation', async () => {
+  it('switches to the project watchdog from the section navigation', async () => {
     stubRoutedFetch()
     const onChangeSection = vi.fn()
     const user = userEvent.setup()
@@ -200,11 +204,11 @@ describe('DocumentsHome', () => {
     const acts = await screen.findByRole('button', { name: /Acts/ })
     expect(acts).toHaveAttribute('aria-current', 'page')
 
-    await user.click(screen.getByRole('button', { name: /Folders/ }))
-    expect(onChangeSection).toHaveBeenCalledWith('folders')
+    await user.click(screen.getByRole('button', { name: /Projects/ }))
+    expect(onChangeSection).toHaveBeenCalledWith('projects')
   })
 
-  it('badges the folder watchdog with the changes waiting there', async () => {
+  it('badges the project watchdog with the changes waiting there', async () => {
     stubRoutedFetch()
     renderApp(
       <DocumentsHome
@@ -215,9 +219,9 @@ describe('DocumentsHome', () => {
       />,
     )
 
-    // three plus one unconfirmed across the two folders it fetched for the badge
+    // three plus one unconfirmed across the two projects it fetched for the badge
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Folders/ })).toHaveTextContent('4')
+      expect(screen.getByRole('button', { name: /Projects/ })).toHaveTextContent('4')
     })
   })
 

@@ -1,14 +1,13 @@
-"""The .watched/watched.json file must match the documented public contract."""
+"""The watched.json file must match the documented public contract."""
 
-from sledovane_dokumenty_core import folders
+from sledovane_dokumenty_core import projects
 
 DOC_KEYS = {"path", "sha256", "discoveredAt", "extractedAt", "updatedAt", "legislation"}
 
 
-def test_watched_json_matches_documented_contract(watched_root):
-    folders.add_watch(watched_root)
-    folders.set_references(
-        watched_root,
+def test_watched_json_matches_documented_contract(watch, watched_project):
+    projects.set_references(
+        watch,
         "./dogs/buy-dog.docx",
         [
             {
@@ -18,11 +17,18 @@ def test_watched_json_matches_documented_contract(watched_root):
             }
         ],
     )
-    data = folders.read_watched(watched_root)
+    data = projects.read_watched(watch)
 
-    assert set(data.keys()) >= {"version", "watchedRoot", "generatedAt", "documents"}
+    assert set(data.keys()) >= {
+        "version",
+        "projectId",
+        "folder",
+        "generatedAt",
+        "documents",
+    }
     assert isinstance(data["version"], int)
-    assert data["watchedRoot"] == "."
+    assert data["projectId"] == watched_project
+    assert data["folder"] == "smlouvy"
 
     for doc in data["documents"]:
         assert set(doc.keys()) == DOC_KEYS

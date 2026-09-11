@@ -18,8 +18,8 @@ import { FeedSkeleton } from './loading-skeleton'
 import { SectionSwitch } from './section-switch'
 
 interface DocumentsHomeProps {
-  section: 'documents' | 'folders'
-  onChangeSection: (section: 'documents' | 'folders') => void
+  section: 'documents' | 'projects'
+  onChangeSection: (section: 'documents' | 'projects') => void
   onSelectDocument: (uuid: string) => void
   onOpenSettings: () => void
 }
@@ -33,7 +33,7 @@ export function DocumentsHome({
   const { t, i18n } = useTranslation()
   const { data, loading, error, refetch } = useOverview()
   const [tab, setTab] = useQueryState('tab', tabParser)
-  const folderChanges = useUnconfirmedCount('folders')
+  const projectChanges = useUnconfirmedCount('projects')
 
   const documents = data?.tracked_documents ?? []
   const groups = data?.groups ?? []
@@ -76,7 +76,7 @@ export function DocumentsHome({
         <SectionSwitch
           section={section}
           onChange={onChangeSection}
-          counts={{ documents: unconfirmed, folders: folderChanges }}
+          counts={{ documents: unconfirmed, projects: projectChanges }}
         />
 
         <main className="min-h-0 min-w-0 flex-1">

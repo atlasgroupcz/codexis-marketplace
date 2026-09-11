@@ -8,10 +8,10 @@ management, change detection) lives here so neither caller duplicates it.
 from . import (
     clients,
     diff,
-    folder_check,
-    folders,
     harvest,
     notify,
+    project_check,
+    projects,
     related,
     state,
     tracking,
@@ -26,7 +26,7 @@ from .exceptions import (
     LlmDaemonError,
     RelatedTypeNotTrackedError,
 )
-from .folders import WatchedFolderError
+from .projects import WatchedProjectError
 
 __all__ = [
     "CdxClientError",
@@ -37,13 +37,13 @@ __all__ = [
     "GroupNotFoundError",
     "LlmDaemonError",
     "RelatedTypeNotTrackedError",
-    "WatchedFolderError",
+    "WatchedProjectError",
     "clients",
     "diff",
-    "folder_check",
-    "folders",
     "harvest",
     "notify",
+    "project_check",
+    "projects",
     "related",
     "state",
     "tracking",

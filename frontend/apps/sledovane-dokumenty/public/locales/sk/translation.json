@@ -79,20 +79,20 @@
       "chatPrompt": "Sleduj zmeny v zákonníku práce"
     }
   },
-  "folders": {
+  "projects": {
     "section": {
       "label": "Čo sledujeme",
       "documents": "Akty",
-      "folders": "Priečinky"
+      "projects": "Projekty"
     },
     "add": "Pridať priečinok",
     "back": "Späť",
     "cancel": "Zrušiť",
     "added": "Priečinok pridaný, spúšťam extrakciu…",
-    "removed": "Priečinok odobraný",
+    "removed": "Priečinok už nie je sledovaný",
     "confirmed": "Zmeny potvrdené",
-    "refresh": "Znova načítať",
-    "remove": "Odobrať priečinok",
+    "refresh": "Znova extrahovať",
+    "remove": "Prestať sledovať priečinok",
     "checkNow": "Skontrolovať teraz",
     "refreshStarted": "Spúšťam novú extrakciu…",
     "checkStarted": "Kontrolujem legislatívu…",
@@ -104,7 +104,8 @@
     "effectiveFrom": "Účinné od {{date}}",
     "extractingProgress": "Extrahujem odkazy ({{done}}/{{total}})",
     "legislationExtracting": "Prebieha extrakcia odkazov na legislatívu…",
-    "noLegislation": "V tomto priečinku zatiaľ nebola nájdená žiadna legislatíva.",
+    "noLegislation": "V dokumentoch tohto priečinka zatiaľ nebola nájdená žiadna legislatíva.",
+    "noDocuments": "Priečinok zatiaľ nemá žiadne dokumenty. Nahrajte ich do projektu a spustite extrakciu znova.",
     "extracted": "Spracované",
     "pending": "Čaká",
     "refCount": "{{count}} odkazov na legislatívu",
@@ -115,17 +116,25 @@
     "card": {
       "documents": "{{count}} dokumentov",
       "legislation": "{{count}} predpisov",
-      "extracting": "extrahujem {{count}}"
+      "extracting": "extrahujem {{count}}",
+      "lastCheck": "Posledná kontrola {{date}}",
+      "neverChecked": "Zatiaľ nekontrolované"
     },
     "landing": {
-      "title": "Strážte legislatívu vo svojich dokumentoch",
-      "text": "Vyberte priečinok so zmluvami alebo dokumentmi. AI z nich vytiahne odkazy na zákony a my vás upozorníme, keď sa niektorý zmení."
+      "title": "Strážte legislatívu v priečinkoch svojich projektov",
+      "text": "Vyberte projekt a priečinok s dokumentmi. AI z nich vytiahne odkazy na zákony a my vás upozorníme, keď sa niektorý zmení."
     },
     "picker": {
-      "title": "Vyberte priečinok na sledovanie",
+      "title": "Vyberte projekt",
+      "description": "Najprv projekt, potom priečinok v ňom. Sledovať možno aj celý projekt.",
+      "folderTitle": "Vyberte priečinok na sledovanie",
+      "folderDescription": "Priečinok vnútri súborov projektu. Zvoľte koreň projektu alebo niektorý podpriečinok.",
+      "projectsList": "Projekty",
+      "foldersList": "Priečinky",
       "watchThis": "Sledovať tento priečinok",
-      "noSubfolders": "Žiadne podpriečinky",
-      "home": "Domov",
+      "noProjects": "Žiadny projekt. Založte projekt v ľavom paneli a nahrajte doň dokumenty.",
+      "noSubfolders": "Žiadne podpriečinky - sledovať možno tento priečinok.",
+      "backToProjects": "Späť na projekty",
       "up": "O úroveň vyššie"
     }
   },

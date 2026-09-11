@@ -1,7 +1,7 @@
 """HTTP-layer contract for the notify view/action in sledovane-cgi.
 
 Loads the CGI handler by file path (it lives under a hyphenated component
-directory, so it isn't an importable package) and drives its `handle_folder_*`
+directory, so it isn't an importable package) and drives its `handle_project_*`
 functions directly, capturing what would be emitted instead of going through
 CGI stdout.
 """
@@ -54,7 +54,7 @@ def test_get_notify_includes_signed_in_user_email(_isolated_home, monkeypatch):
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: "me@firma.cz")
     captured = _capture(monkeypatch)
 
-    _http.handle_folder_get("notify", {})
+    _http.handle_project_get("notify", {})
 
     assert captured["status"] is None
     assert captured["payload"]["mode"] == "notify"
@@ -66,7 +66,7 @@ def test_get_notify_user_email_empty_when_unresolved(_isolated_home, monkeypatch
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: None)
     captured = _capture(monkeypatch)
 
-    _http.handle_folder_get("notify", {})
+    _http.handle_project_get("notify", {})
 
     assert captured["payload"]["userEmail"] == ""
 
@@ -76,7 +76,9 @@ def test_save_notify_settings_invalid_recipient_returns_400(
 ):
     captured = _capture(monkeypatch)
 
-    _http.handle_folder_action("save_notify_settings", {"recipients": ["not-an-email"]})
+    _http.handle_project_action(
+        "save_notify_settings", {"recipients": ["not-an-email"]}
+    )
 
     assert captured["status"] == "400 Bad Request"
     assert captured["payload"]["ok"] is False
@@ -86,7 +88,7 @@ def test_save_notify_settings_invalid_recipient_returns_400(
 def test_save_notify_settings_valid_recipients_still_ok(_isolated_home, monkeypatch):
     captured = _capture(monkeypatch)
 
-    _http.handle_folder_action(
+    _http.handle_project_action(
         "save_notify_settings",
         {"email": True, "inApp": False, "recipients": ["a@b.cz"]},
     )
@@ -105,7 +107,7 @@ def test_save_notify_settings_drops_signed_in_user(_isolated_home, monkeypatch):
     monkeypatch.setattr(_http.notify, "_query_me_email", lambda: "me@firma.cz")
     captured = _capture(monkeypatch)
 
-    _http.handle_folder_action(
+    _http.handle_project_action(
         "save_notify_settings",
         {"email": True, "inApp": False, "recipients": ["ME@firma.cz", "a@x.cz"]},
     )
@@ -122,6 +124,6 @@ def test_save_notify_settings_absent_recipients_left_untouched(
     _http.settings.set_notify(email=True, inApp=True, recipients=["a@x.cz"])
     captured = _capture(monkeypatch)
 
-    _http.handle_folder_action("save_notify_settings", {"email": False})
+    _http.handle_project_action("save_notify_settings", {"email": False})
 
     assert captured["payload"]["settings"]["recipients"] == ["a@x.cz"]
