@@ -1,16 +1,14 @@
-"""Deterministic legislation-change check for watched folders.
+"""Deterministic legislation-change check for watched project folders.
 
-Reads each folder's ``.watched/watched.json``, collects the distinct referenced
-acts (those that resolved to a CODEXIS ``codexisId``) and compares the current
-CODEXIS version id against the stored baseline in ``.watched/tracking-state.json``.
+Reads each watch's ``watched.json``, collects the distinct referenced acts
+(those that resolved to a CODEXIS ``codexisId``) and compares the current
+CODEXIS version id against the stored baseline in ``tracking-state.json``.
 
 NO AI is involved - change detection is a version-id comparison. Reuses the same
 CODEXIS clients and compare-URL helpers as the by-id document tracker.
 """
 
-import os
-
-from . import clients, diff, folders, notify
+from . import clients, diff, notify, projects
 from .state import now_utc
 
 
@@ -47,20 +45,18 @@ def _seed_legislation(tracking, ref):
     }
 
 
-def check_folder(root, printer=None):
-    """Check one folder. Returns {root, name, changes:[...], errors:[...]}."""
+def check_watch(watch_id, printer=None):
+    """Check one watch. Returns {watchId, projectId, name, path, changes, errors}."""
 
     def _log(msg):
         if printer:
             printer(msg)
 
-    abs_root = os.path.abspath(os.path.expanduser(str(root)))
-    entry = folders.find_in_index(abs_root) or {}
-    name = entry.get("name") or os.path.basename(abs_root.rstrip(os.sep)) or abs_root
+    entry = projects.require_watch(watch_id)
+    name = entry.get("name") or entry["projectId"]
+    tracking = projects.read_tracking(watch_id) or projects.empty_tracking(entry)
 
-    tracking = folders.read_tracking(abs_root) or folders.empty_tracking()
-
-    for ref in folders.unique_legislation(abs_root):
+    for ref in projects.unique_legislation(watch_id):
         _seed_legislation(tracking, ref)
 
     new_changes = []
@@ -114,12 +110,19 @@ def check_folder(root, printer=None):
         )
 
     tracking["lastCheckAt"] = now_utc()
-    folders.write_tracking(abs_root, tracking)
-    return {"root": abs_root, "name": name, "changes": new_changes, "errors": errors}
+    projects.write_tracking(watch_id, tracking)
+    return {
+        "watchId": watch_id,
+        "projectId": entry["projectId"],
+        "name": name,
+        "path": entry["path"],
+        "changes": new_changes,
+        "errors": errors,
+    }
 
 
-def check_folders(root=None, printer=None, send_notifications=True):
-    """Check one or all watched folders, then notify on detected changes.
+def check_watches(watch_id=None, printer=None, send_notifications=True):
+    """Check one or all watches, then notify on detected changes.
 
     Returns {checked, changes_found, errors, notify_failed, results}.
 
@@ -127,16 +130,16 @@ def check_folders(root=None, printer=None, send_notifications=True):
     caller can end the run non-zero for a notification the daemon refused without
     doing the same for every unrelated problem the check already collects.
     """
-    if root:
-        roots = [os.path.abspath(os.path.expanduser(str(root)))]
+    if watch_id:
+        ids = [watch_id]
     else:
-        roots = [e.get("root") for e in folders.load_index() if e.get("root")]
+        ids = [e.get("uuid") for e in projects.load_index() if e.get("uuid")]
 
     results = []
     errors = []
     changes_found = 0
-    for r in roots:
-        res = check_folder(r, printer=printer)
+    for wid in ids:
+        res = check_watch(wid, printer=printer)
         results.append(res)
         changes_found += len(res["changes"])
         errors.extend(res["errors"])
@@ -145,14 +148,12 @@ def check_folders(root=None, printer=None, send_notifications=True):
     if send_notifications and changes_found:
         try:
             sent = notify.notify_changes(results)
-            # `is False`, not falsy: None means no notification was attempted,
-            # which is not a failure.
             notify_failed = sent["inApp"] is False
         except Exception as exc:  # notifications must never fail the run
             errors.append(f"notifikace: {exc}")
 
     return {
-        "checked": len(roots),
+        "checked": len(ids),
         "changes_found": changes_found,
         "errors": errors,
         "notify_failed": notify_failed,
@@ -160,10 +161,9 @@ def check_folders(root=None, printer=None, send_notifications=True):
     }
 
 
-def confirm_folder(root, codexis_id=None):
+def confirm_watch(watch_id, codexis_id=None):
     """Mark detected changes as read and advance the baseline(s). Returns count."""
-    abs_root = os.path.abspath(os.path.expanduser(str(root)))
-    tracking = folders.read_tracking(abs_root)
+    tracking = projects.read_tracking(watch_id)
     if not tracking:
         return 0
     now = now_utc()
@@ -183,5 +183,5 @@ def confirm_folder(root, codexis_id=None):
                 "lastKnownVersionId", leg.get("baselineVersionId")
             )
     if marked:
-        folders.write_tracking(abs_root, tracking)
+        projects.write_tracking(watch_id, tracking)
     return marked

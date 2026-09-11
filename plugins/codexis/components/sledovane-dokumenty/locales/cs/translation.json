@@ -79,20 +79,20 @@
       "chatPrompt": "Sleduj změny v zákoníku práce"
     }
   },
-  "folders": {
+  "projects": {
     "section": {
       "label": "Co sledujeme",
       "documents": "Akty",
-      "folders": "Složky"
+      "projects": "Projekty"
     },
     "add": "Přidat složku",
     "back": "Zpět",
     "cancel": "Zrušit",
     "added": "Složka přidána, spouštím extrakci…",
-    "removed": "Složka odebrána",
+    "removed": "Složka odebrána ze sledování",
     "confirmed": "Změny potvrzeny",
-    "refresh": "Znovu načíst",
-    "remove": "Odebrat složku",
+    "refresh": "Znovu extrahovat",
+    "remove": "Přestat sledovat složku",
     "checkNow": "Zkontrolovat teď",
     "refreshStarted": "Spouštím novou extrakci…",
     "checkStarted": "Spouštím kontrolu legislativy…",
@@ -104,7 +104,8 @@
     "effectiveFrom": "Účinné od {{date}}",
     "extractingProgress": "Extrahuji odkazy ({{done}}/{{total}})",
     "legislationExtracting": "Probíhá extrakce odkazů na legislativu…",
-    "noLegislation": "V této složce zatím nebyla nalezena žádná legislativa.",
+    "noLegislation": "V dokumentech této složky zatím nebyla nalezena žádná legislativa.",
+    "noDocuments": "Složka zatím nemá žádné dokumenty. Nahrajte je do projektu a spusťte extrakci znovu.",
     "extracted": "Zpracováno",
     "pending": "Čeká",
     "refCount": "{{count}} odkazů na legislativu",
@@ -115,17 +116,25 @@
     "card": {
       "documents": "{{count}} dokumentů",
       "legislation": "{{count}} předpisů",
-      "extracting": "extrahuji {{count}}"
+      "extracting": "extrahuji {{count}}",
+      "lastCheck": "Poslední kontrola {{date}}",
+      "neverChecked": "Zatím nekontrolováno"
     },
     "landing": {
-      "title": "Hlídejte legislativu ve svých dokumentech",
-      "text": "Vyberte složku se smlouvami nebo dokumenty. AI z nich vytáhne odkazy na zákony a my vás upozorníme, když se některý změní."
+      "title": "Hlídejte legislativu ve složkách svých projektů",
+      "text": "Vyberte projekt a složku s dokumenty. AI z nich vytáhne odkazy na zákony a my vás upozorníme, když se některý změní."
     },
     "picker": {
-      "title": "Vyberte složku ke sledování",
+      "title": "Vyberte projekt",
+      "description": "Nejdřív projekt, potom složku v něm. Sledovat lze i celý projekt.",
+      "folderTitle": "Vyberte složku ke sledování",
+      "folderDescription": "Složka uvnitř souborů projektu. Zvolte kořen projektu nebo některou podsložku.",
+      "projectsList": "Projekty",
+      "foldersList": "Složky",
       "watchThis": "Sledovat tuto složku",
-      "noSubfolders": "Žádné podsložky",
-      "home": "Domů",
+      "noProjects": "Žádný projekt. Založte projekt v levém panelu a nahrajte do něj dokumenty.",
+      "noSubfolders": "Žádné podsložky - sledovat lze tuto složku.",
+      "backToProjects": "Zpět na projekty",
       "up": "O úroveň výš"
     }
   },

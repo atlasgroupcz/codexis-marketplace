@@ -1,21 +1,23 @@
 import type {
   ActionResponse,
+  AvailableProjectsResponse,
   BrowseResponse,
   DetailResponse,
-  FolderResponse,
-  FoldersResponse,
   NotifyResponse,
   NotifySettings,
   OverviewResponse,
+  WatchesResponse,
+  WatchResponse,
 } from './schemas'
 import {
   actionResponseSchema,
+  availableProjectsResponseSchema,
   browseResponseSchema,
   detailResponseSchema,
-  folderResponseSchema,
-  foldersResponseSchema,
   notifyResponseSchema,
   overviewResponseSchema,
+  watchesResponseSchema,
+  watchResponseSchema,
 } from './schemas'
 
 function getApiBase(): string {
@@ -118,7 +120,7 @@ export async function postGroupAction(
   return actionResponseSchema.parse(json)
 }
 
-// ── watched folders ─────────────────────────────────────────────────────────
+// ── watched projects ────────────────────────────────────────────────────────
 
 function withParams(params: Record<string, string>): string {
   const url = new URL(getApiBase(), window.location.href)
@@ -139,8 +141,8 @@ async function getJson(url: string): Promise<unknown> {
   return response.json()
 }
 
-export async function fetchFolders(): Promise<FoldersResponse> {
-  return foldersResponseSchema.parse(await getJson(withParams({ view: 'folders' })))
+export async function fetchWatches(): Promise<WatchesResponse> {
+  return watchesResponseSchema.parse(await getJson(withParams({ view: 'projects' })))
 }
 
 export async function fetchNotify(): Promise<NotifyResponse> {
@@ -148,32 +150,36 @@ export async function fetchNotify(): Promise<NotifyResponse> {
 }
 
 export async function saveNotify(values: NotifySettings): Promise<ActionResponse> {
-  return postFolderAction('save_notify_settings', values)
+  return postProjectAction('save_notify_settings', values)
 }
 
-export async function fetchFolder(root: string): Promise<FolderResponse> {
-  return folderResponseSchema.parse(await getJson(withParams({ view: 'folder', root })))
+export async function fetchWatch(watch: string): Promise<WatchResponse> {
+  return watchResponseSchema.parse(await getJson(withParams({ view: 'watch', watch })))
 }
 
-export async function browseFolders(path?: string): Promise<BrowseResponse> {
-  const params: Record<string, string> = { view: 'browse' }
+export async function fetchAvailableProjects(): Promise<AvailableProjectsResponse> {
+  return availableProjectsResponseSchema.parse(await getJson(withParams({ view: 'available' })))
+}
+
+export async function browseProject(project: string, path?: string): Promise<BrowseResponse> {
+  const params: Record<string, string> = { view: 'browse', project }
   if (path) {
     params.path = path
   }
   return browseResponseSchema.parse(await getJson(withParams(params)))
 }
 
-export type FolderAction =
-  | 'folder_add'
-  | 'folder_remove'
-  | 'folder_refresh'
-  | 'folder_check'
-  | 'folder_confirm'
+export type ProjectAction =
+  | 'project_add'
+  | 'project_remove'
+  | 'project_refresh'
+  | 'project_check'
+  | 'project_confirm'
   | 'start_extraction'
   | 'save_notify_settings'
 
-export async function postFolderAction(
-  action: FolderAction,
+export async function postProjectAction(
+  action: ProjectAction,
   payload: Record<string, unknown>,
 ): Promise<ActionResponse> {
   const url = new URL(getApiBase(), window.location.href).toString()

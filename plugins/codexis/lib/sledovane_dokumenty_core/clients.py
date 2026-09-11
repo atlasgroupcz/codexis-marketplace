@@ -185,10 +185,13 @@ def fetch_related_counts(codexis_id):
 EXTRACT_PATH = "/rest/v1/plugin/llm/extract"
 
 
-def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
+def _post_extract(
+    file_path, query, schema=None, schema_name=None, timeout=180, session_id=None
+):
     """POST a file in the user's VM to /rest/v1/plugin/llm/extract.
 
-    The daemon reads the file itself (docx/pdf/txt + OCR) and runs one extraction
+    The daemon reads the file inside the environment of the chat named by
+    ``session_id`` (the current chat when not given) and runs one extraction
     pass. Returns the parsed ``response`` value (a dict/list when a JSON schema is
     supplied, otherwise a string), or None on any failure - callers degrade
     gracefully rather than crash a scheduled run.
@@ -217,7 +220,7 @@ def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
         cmd.extend(["-F", f"schema={schema}"])
     if schema_name:
         cmd.extend(["-F", f"schemaName={schema_name}"])
-    chat_id = os.environ.get("CODEXIS_PUBLIC_SESSION_ID")
+    chat_id = session_id or os.environ.get("CODEXIS_PUBLIC_SESSION_ID")
     if chat_id:
         cmd.extend(["-H", f"X-CDX-Session-Id: {chat_id}"])
 
@@ -236,9 +239,11 @@ def _post_extract(file_path, query, schema=None, schema_name=None, timeout=180):
     return data.get("response")
 
 
-def llm_extract_file(file_path, query, schema=None, schema_name=None):
+def llm_extract_file(file_path, query, schema=None, schema_name=None, session_id=None):
     """One extraction pass over a document on disk. See _post_extract."""
-    return _post_extract(file_path, query, schema=schema, schema_name=schema_name)
+    return _post_extract(
+        file_path, query, schema=schema, schema_name=schema_name, session_id=session_id
+    )
 
 
 def llm_extract(text, query):

@@ -1,22 +1,86 @@
-use super::encode_node_id;
+use super::{encode_node_path, root_node_id};
 use crate::client::GraphQLClient;
 use crate::error::CdxctlError;
 use crate::graphql;
 use crate::output::{print_output, OutputFormat};
 use serde_json::{json, Value};
 
-/// Wrap a sandbox folder path into the daemon-encoded `TabularExtraction` Node id.
-/// The daemon's `requireExtractionFolder` decodes this back to the underlying folder.
-fn folder_to_node_id(folder: &str) -> String {
-    encode_node_id("TabularExtraction", folder)
+const SESSION_ENV: &str = "CODEXIS_PUBLIC_SESSION_ID";
+
+/// The isolation a tabular folder is read in. The daemon keys an extraction by
+/// the folder path *inside* one isolation scope: the current chat's sandbox by
+/// default, or a project's files when the caller names the project.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FolderScope {
+    Chat(String),
+    Project(String),
+}
+
+impl FolderScope {
+    /// `--project` names a project (UUID or daemon `Project` id); without it the
+    /// folder lives in the chat this command runs from.
+    pub fn resolve(project: Option<&str>) -> Result<FolderScope, CdxctlError> {
+        Self::from_parts(project, std::env::var(SESSION_ENV).ok().as_deref())
+    }
+
+    fn from_parts(
+        project: Option<&str>,
+        session: Option<&str>,
+    ) -> Result<FolderScope, CdxctlError> {
+        if let Some(project) = project {
+            let id = root_node_id(project, "Project").unwrap_or_else(|| project.to_string());
+            return Ok(FolderScope::Project(id));
+        }
+        match session {
+            Some(session) if !session.is_empty() => {
+                let id = root_node_id(session, "Chat").unwrap_or_else(|| session.to_string());
+                Ok(FolderScope::Chat(id))
+            }
+            _ => Err(CdxctlError::Parse(format!(
+                "No isolation for the folder: run this from a chat ({SESSION_ENV} is set there) \
+                 or pass --project <id> for a project's files"
+            ))),
+        }
+    }
+
+    fn segment(&self) -> (&str, &str) {
+        match self {
+            FolderScope::Chat(id) => ("Chat", id),
+            FolderScope::Project(id) => ("Project", id),
+        }
+    }
+}
+
+/// A folder as the daemon addresses it: a path inside one isolation scope.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Folder {
+    pub scope: FolderScope,
+    pub path: String,
+}
+
+impl Folder {
+    /// `path` inside the current chat, or inside `project`'s files when given.
+    pub fn resolve(path: &str, project: Option<&str>) -> Result<Folder, CdxctlError> {
+        Ok(Folder {
+            scope: FolderScope::resolve(project)?,
+            path: path.to_string(),
+        })
+    }
+
+    /// The daemon-encoded `TabularExtraction` Node id: the folder path nested
+    /// under its isolation scope, which `requireExtractionFolder` decodes back
+    /// into both.
+    fn node_id(&self) -> String {
+        encode_node_path(&[self.scope.segment(), ("TabularExtraction", &self.path)])
+    }
 }
 
 pub fn status(
     client: &GraphQLClient,
-    folder: &str,
+    folder: &Folder,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let id = folder_to_node_id(folder);
+    let id = folder.node_id();
     let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "id": id }))?;
     let result = data
         .get("tabularExtraction")
@@ -28,14 +92,14 @@ pub fn status(
 
 pub fn add_column(
     client: &GraphQLClient,
-    folder: &str,
+    folder: &Folder,
     name: &str,
     col_type: &str,
     description: Option<&str>,
     tag_options: &[String],
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let id = folder_to_node_id(folder);
+    let id = folder.node_id();
     let (query, vars) = match col_type.to_lowercase().as_str() {
         "text" => (
             graphql::ADD_TEXT_COLUMN,
@@ -94,11 +158,11 @@ pub fn add_column(
 
 pub fn remove_column(
     client: &GraphQLClient,
-    folder: &str,
+    folder: &Folder,
     column_id: &str,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let id = folder_to_node_id(folder);
+    let id = folder.node_id();
     let data = client.execute(
         graphql::REMOVE_TABULAR_COLUMN,
         json!({ "id": id, "columnId": column_id }),
@@ -113,11 +177,11 @@ pub fn remove_column(
 
 pub fn start(
     client: &GraphQLClient,
-    folder: &str,
+    folder: &Folder,
     wait: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let id = folder_to_node_id(folder);
+    let id = folder.node_id();
     let started = client
         .execute(
             graphql::START_TABULAR_EXTRACTION,
@@ -165,10 +229,10 @@ pub fn start(
 
 pub fn results(
     client: &GraphQLClient,
-    folder: &str,
+    folder: &Folder,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
-    let id = folder_to_node_id(folder);
+    let id = folder.node_id();
     let data = client.execute(graphql::GET_TABULAR_EXTRACTION, json!({ "id": id }))?;
     let extraction = data
         .get("tabularExtraction")
@@ -260,4 +324,68 @@ fn parse_tag_options(options: &[String]) -> Result<Vec<Value>, CdxctlError> {
             Ok(json!({ "value": parts[0], "color": parts[1].to_uppercase() }))
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::encode_node_id;
+    use super::*;
+
+    #[test]
+    fn folder_scope_defaults_to_the_current_chat() {
+        let chat = "9a9a9a9a-0000-4000-8000-00000000000a";
+        assert_eq!(
+            FolderScope::from_parts(None, Some(chat)).unwrap(),
+            FolderScope::Chat(chat.to_string())
+        );
+        let encoded = encode_node_id("Chat", chat);
+        assert_eq!(
+            FolderScope::from_parts(None, Some(&encoded)).unwrap(),
+            FolderScope::Chat(chat.to_string())
+        );
+    }
+
+    #[test]
+    fn folder_scope_takes_a_project_over_the_chat() {
+        let project = "5b1c1c4e-0000-4000-8000-000000000001";
+        let encoded = encode_node_id("Project", project);
+        assert_eq!(
+            FolderScope::from_parts(Some(&encoded), Some("chat")).unwrap(),
+            FolderScope::Project(project.to_string())
+        );
+        assert_eq!(
+            FolderScope::from_parts(Some(project), None).unwrap(),
+            FolderScope::Project(project.to_string())
+        );
+    }
+
+    #[test]
+    fn folder_scope_needs_a_chat_or_a_project() {
+        assert!(matches!(
+            FolderScope::from_parts(None, None),
+            Err(CdxctlError::Parse(_))
+        ));
+        assert!(matches!(
+            FolderScope::from_parts(None, Some("")),
+            Err(CdxctlError::Parse(_))
+        ));
+    }
+
+    #[test]
+    fn folder_node_id_nests_the_path_under_its_scope() {
+        let chat = "9a9a9a9a-0000-4000-8000-00000000000a";
+        let id = Folder {
+            scope: FolderScope::Chat(chat.to_string()),
+            path: "/home/codexis/invoices".to_string(),
+        }
+        .node_id();
+        assert_eq!(
+            id,
+            encode_node_path(&[
+                ("Chat", chat),
+                ("TabularExtraction", "/home/codexis/invoices")
+            ])
+        );
+        assert_eq!(root_node_id(&id, "TabularExtraction"), None);
+    }
 }

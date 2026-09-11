@@ -99,7 +99,7 @@ export const detailResponseSchema = z.object({
 })
 export type DetailResponse = z.infer<typeof detailResponseSchema>
 
-// ── watched folders ─────────────────────────────────────────────────────────
+// ── watched projects ────────────────────────────────────────────────────────
 
 export const notifySettingsSchema = z.object({
   email: z.boolean(),
@@ -115,7 +115,7 @@ export const notifyResponseSchema = z.object({
 })
 export type NotifyResponse = z.infer<typeof notifyResponseSchema>
 
-export const folderChangeSchema = z.object({
+export const projectChangeSchema = z.object({
   detected_on: z.string(),
   effective_on: z.string().nullable().optional(),
   old_version_id: z.string().nullable().optional(),
@@ -124,7 +124,7 @@ export const folderChangeSchema = z.object({
   compare_url: z.string().optional(),
   confirmed_on: z.string().nullable().optional(),
 })
-export type FolderChange = z.infer<typeof folderChangeSchema>
+export type ProjectChange = z.infer<typeof projectChangeSchema>
 
 export const legislationRefSchema = z.object({
   uri: z.string().nullable().optional(),
@@ -137,7 +137,7 @@ export const trackedLegislationSchema = legislationRefSchema.extend({
   tracked: z.boolean().optional().default(false),
   baselineVersionId: z.string().nullable().optional(),
   lastKnownVersionId: z.string().nullable().optional(),
-  changes: z.array(folderChangeSchema).optional().default([]),
+  changes: z.array(projectChangeSchema).optional().default([]),
   unconfirmed_changes: z.number().optional().default(0),
 })
 export type TrackedLegislation = z.infer<typeof trackedLegislationSchema>
@@ -152,10 +152,11 @@ export const watchedDocumentSchema = z.object({
 })
 export type WatchedDocument = z.infer<typeof watchedDocumentSchema>
 
-export const folderSummarySchema = z.object({
-  uuid: z.string().optional(),
-  root: z.string(),
+export const watchSummarySchema = z.object({
+  uuid: z.string(),
+  projectId: z.string(),
   name: z.string(),
+  path: z.string(),
   added_on: z.string().nullable().optional(),
   documents: z.number(),
   pending_harvest: z.number(),
@@ -163,19 +164,21 @@ export const folderSummarySchema = z.object({
   unconfirmed_changes: z.number(),
   last_check_at: z.string().nullable().optional(),
 })
-export type FolderSummary = z.infer<typeof folderSummarySchema>
+export type WatchSummary = z.infer<typeof watchSummarySchema>
 
-export const foldersResponseSchema = z.object({
-  mode: z.literal('folders'),
+export const watchesResponseSchema = z.object({
+  mode: z.literal('projects'),
   generated_at: z.string(),
-  folders: z.array(folderSummarySchema),
+  watches: z.array(watchSummarySchema),
   settings: notifySettingsSchema,
 })
-export type FoldersResponse = z.infer<typeof foldersResponseSchema>
+export type WatchesResponse = z.infer<typeof watchesResponseSchema>
 
-export const folderDetailSchema = z.object({
-  root: z.string(),
+export const watchDetailSchema = z.object({
+  uuid: z.string(),
+  projectId: z.string(),
   name: z.string().nullable(),
+  path: z.string(),
   added_on: z.string().nullable().optional(),
   documents: z.array(watchedDocumentSchema),
   documents_count: z.number(),
@@ -183,28 +186,41 @@ export const folderDetailSchema = z.object({
   legislation: z.array(trackedLegislationSchema),
   last_check_at: z.string().nullable().optional(),
 })
-export type FolderDetail = z.infer<typeof folderDetailSchema>
+export type WatchDetail = z.infer<typeof watchDetailSchema>
 
-export const folderResponseSchema = z.object({
-  mode: z.literal('folder'),
+export const watchResponseSchema = z.object({
+  mode: z.literal('watch'),
   generated_at: z.string(),
-  folder: folderDetailSchema,
+  watch: watchDetailSchema,
 })
-export type FolderResponse = z.infer<typeof folderResponseSchema>
+export type WatchResponse = z.infer<typeof watchResponseSchema>
+
+export const availableProjectSchema = z.object({
+  projectId: z.string(),
+  name: z.string(),
+})
+export type AvailableProject = z.infer<typeof availableProjectSchema>
+
+export const availableProjectsResponseSchema = z.object({
+  mode: z.literal('available'),
+  generated_at: z.string(),
+  projects: z.array(availableProjectSchema),
+})
+export type AvailableProjectsResponse = z.infer<typeof availableProjectsResponseSchema>
 
 export const browseEntrySchema = z.object({
   name: z.string(),
   path: z.string(),
-  isDir: z.boolean(),
 })
 export type BrowseEntry = z.infer<typeof browseEntrySchema>
 
 export const browseResponseSchema = z.object({
   mode: z.literal('browse'),
   generated_at: z.string(),
+  project: z.string(),
+  name: z.string(),
   path: z.string(),
   parent: z.string().nullable(),
-  home: z.string(),
   entries: z.array(browseEntrySchema),
 })
 export type BrowseResponse = z.infer<typeof browseResponseSchema>
