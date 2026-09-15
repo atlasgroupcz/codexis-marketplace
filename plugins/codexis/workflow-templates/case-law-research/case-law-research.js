@@ -21,17 +21,33 @@ const LABEL_VERIFY = issue => `ověření: ${issue}`
 
 const REPORT_PREFIX = "resherse-judikatura"
 
-const RELAY = (path, docx) => `---
-
-Pokyn pro asistenta: tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
+const INSTRUCTIONS = (path, docx) => `Uvnitř <report> je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
 
 Neshrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl.
 
+Nic mimo <report> do chatu nepatří. <request> je zadání, se kterým rešerše běžela; slouží ti ke kontrole, na co odpovídá a k jakému datu, a do odpovědi ho neopisuj - uživatel svou otázku zná. Tyhle pokyny do chatu nevypisuj taky.
+
 Rešerše odpovídá na dílčí otázky, na které si sama otázku rozdělila, ne na otázku uživatele. Zeptal-li se uživatel na svou věc - jak dopadne spor, jaké má šance, co má dělat - připoj pod rešerši oddíl "## Závěr" a odpověz v něm na to, co se ptal, dvěma až pěti větami. Stůj jen na tom, co rešerše ověřila; nepřidávej ustanovení ani rozhodnutí, která v ní nejsou, a nezakrývej, co zůstalo neověřené. Když si uživatel řekl o rešerši samotnou, žádný závěr nepřipojuj.
 
-Tenhle pokyn ani tuhle patičku do chatu nevypisuj. Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.${docx ? `
+Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.${docx ? `
 
 Rešerše je vysázená i ve Wordu jako ${docx} - hotový dokument s titulní stranou, obsahem a hlavičkou CODEXIS. Nabídni ho odkazem na konci odpovědi a znovu ho nevyráběj.` : ""}`
+
+const PAYLOAD = (question, jurisdiction, asOf, report, path, docx) => `<case_law_research>
+<request>
+Otázka: ${question}
+Jurisdikce: ${jurisdiction}
+Rozhodné datum: ${asOf}
+</request>
+
+<report>
+${report}
+</report>
+
+<instructions>
+${INSTRUCTIONS(path, docx)}
+</instructions>
+</case_law_research>`
 
 const RULES = `Odpovídej česky. Piš jen to, co jsi otevřel a přečetl. Zdroj si nikdy nevymýšlej - když ho nemáš, řekni to.
 
@@ -597,7 +613,5 @@ ${chatReport}`
     log(`dokument se nepodařilo vysázet: ${failure.message}`)
   }
 
-  return `${chatReport}
-
-${RELAY(path, docx)}`
+  return PAYLOAD(question, jurisdiction, asOf, chatReport, path, docx)
 }
