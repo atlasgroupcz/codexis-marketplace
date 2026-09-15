@@ -46,11 +46,13 @@ impl GraphQLClient {
             .to_string()
     }
 
-    /// POST a multipart body (used for /rest/v1/plugin/email/send).
+    /// POST a multipart body (used for /rest/v1/plugin/email/send and for
+    /// /rest/files/upload-multiple, which takes the isolation as a query argument).
     pub fn rest_post_multipart(
         &self,
         path: &str,
         form: Form,
+        query: &[(&str, String)],
         headers: &[(&str, String)],
     ) -> Result<Value, CdxctlError> {
         let url = format!("{}{}", self.rest_base_url(), path);
@@ -59,6 +61,9 @@ impl GraphQLClient {
             .post(&url)
             .header("Authorization", &self.auth)
             .header("Accept", "application/json");
+        if !query.is_empty() {
+            request = request.query(query);
+        }
         for (name, value) in headers {
             request = request.header(*name, value);
         }

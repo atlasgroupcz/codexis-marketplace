@@ -1,0 +1,10 @@
+query ListAutomationFiles($isolationId: ID!, $path: String!) {
+    listDirectory(isolationId: $isolationId, path: $path) {
+        entries {
+            name
+            type
+            size
+            modifiedTime
+        }
+    }
+}
