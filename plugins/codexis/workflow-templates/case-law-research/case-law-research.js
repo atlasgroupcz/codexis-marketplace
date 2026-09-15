@@ -25,7 +25,7 @@ const RELAY = (path, docx) => `---
 
 Pokyn pro asistenta: tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
 
-Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl.
+Neshrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl.
 
 Rešerše odpovídá na dílčí otázky, na které si sama otázku rozdělila, ne na otázku uživatele. Zeptal-li se uživatel na svou věc - jak dopadne spor, jaké má šance, co má dělat - připoj pod rešerši oddíl "## Závěr" a odpověz v něm na to, co se ptal, dvěma až pěti větami. Stůj jen na tom, co rešerše ověřila; nepřidávej ustanovení ani rozhodnutí, která v ní nejsou, a nezakrývej, co zůstalo neověřené. Když si uživatel řekl o rešerši samotnou, žádný závěr nepřipojuj.
 
