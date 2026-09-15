@@ -34,10 +34,17 @@ for a date other than today, typically because the facts are older than the curr
 
 ## What comes back
 
-A finished research report in markdown, plus the same text as a Word document. Print the report to
-the user whole and verbatim - every heading, table, citation and quoted passage. Those quotes are
-what the user asked for; a summary of them is not the deliverable, and the file is a copy, not a
-replacement for the answer.
+A `<case_law_research>` payload holding three parts: `<request>` (the arguments it ran with),
+`<report>` (the finished research in markdown) and `<instructions>`. Only `<report>` goes to the
+user, whole and verbatim - every heading, table, citation and quoted passage. Those quotes are what
+the user asked for; a summary of them is not the deliverable. The same text is saved as a file and
+as a Word document, and a file is a copy, not a replacement for the answer.
+
+The report answers the sub-questions the workflow split the question into, not the question the
+user asked. When the user asked about their own matter - how a dispute ends, what their chances
+are, what to do - add a `## Závěr` section under the report and answer that question in two to
+five sentences, standing only on what the report verified. When the user asked for the research
+itself, the report is the whole answer.
 
 ## When not to use it
 
