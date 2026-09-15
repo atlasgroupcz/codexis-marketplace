@@ -50,6 +50,14 @@ Add another input file later:
 cdxctl automation update <id> --file ./exceptions.md
 ```
 
+See what the automation stores, add to it, and drop what it no longer needs:
+
+```bash
+cdxctl automation files list <id>
+cdxctl automation files add <id> --file ./exceptions.md
+cdxctl automation files remove <id> checklist.md
+```
+
 ## Weekly command automation
 
 Runs a shell command, not an agent turn. No model or jurisdiction needed.

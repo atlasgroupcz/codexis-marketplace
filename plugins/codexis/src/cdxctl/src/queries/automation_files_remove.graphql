@@ -1,0 +1,6 @@
+mutation RemoveAutomationFile($isolationId: ID!, $path: String!) {
+    deleteFile(isolationId: $isolationId, path: $path) {
+        name
+        path { absolutePath displayPath }
+    }
+}

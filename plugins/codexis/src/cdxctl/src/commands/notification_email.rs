@@ -64,7 +64,7 @@ pub fn send(
     for attachment_path in attachments {
         form = form.part("attachments", attachment_part(attachment_path)?);
     }
-    let data = client.rest_post_multipart(SEND_PATH, form, &thread_headers(no_thread))?;
+    let data = client.rest_post_multipart(SEND_PATH, form, &[], &thread_headers(no_thread))?;
     print_output(&data, format);
     Ok(())
 }
