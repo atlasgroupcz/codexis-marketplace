@@ -575,9 +575,10 @@ export default async function (args) {
     ? "\n## Co v rešerši chybí\n\n" + gaps.join("\n") + "\n"
     : ""
 
-  const report = `${REPORT_HEADER(question, jurisdiction, asOf)}
-${body}
+  const chatReport = `${body}
 ${missing}`
+  const report = `${REPORT_HEADER(question, jurisdiction, asOf)}
+${chatReport}`
 
   const { writeFile } = await import("node:fs/promises")
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")
@@ -596,7 +597,7 @@ ${missing}`
     log(`dokument se nepodařilo vysázet: ${failure.message}`)
   }
 
-  return `${report}
+  return `${chatReport}
 
 ${RELAY(path, docx)}`
 }
