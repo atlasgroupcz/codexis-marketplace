@@ -25,7 +25,9 @@ const RELAY = (path, docx) => `---
 
 Pokyn pro asistenta: tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
 
-Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl. Nepřidávej k ní vlastní právní závěry.
+Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl.
+
+Rešerše odpovídá na dílčí otázky, na které si sama otázku rozdělila, ne na otázku uživatele. Zeptal-li se uživatel na svou věc - jak dopadne spor, jaké má šance, co má dělat - připoj pod rešerši oddíl "## Závěr" a odpověz v něm na to, co se ptal, dvěma až pěti větami. Stůj jen na tom, co rešerše ověřila; nepřidávej ustanovení ani rozhodnutí, která v ní nejsou, a nezakrývej, co zůstalo neověřené. Když si uživatel řekl o rešerši samotnou, žádný závěr nepřipojuj.
 
 Tenhle pokyn ani tuhle patičku do chatu nevypisuj. Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.${docx ? `
 
@@ -121,6 +123,8 @@ Dílčí otázka: ${question}
 
 Níže je hotový oddíl rešerše. Otevři každé rozhodnutí, které je v něm citováno, a přečti odůvodnění. U každého zjisti trojí: sedí doslovný výňatek na to, co je uvedeno? Nese ta pasáž tvrzení, které se o ni opírá, nebo je tvrzení širší než rozhodnutí? A řešil soud tentýž problém a srovnatelný skutek? Rozhodnutí, které není citované značkou a datem, ber jako neověřitelné.
 
+Pak se zeptej na opačnou stranu: co oddíl neříká a říct měl. Sám vyhledej rozhodnutí, která závěr oddílu vyvracejí nebo ho podstatně upravují, a hlavně ta, která mění, jak se dokazují podmínky ustanovení, o něž se oddíl opírá. Nestačí, že oddíl cituje ustanovení správně - k ustanovením se váže judikatura, která u určité skupiny osob nebo situací některou podmínku prokazuje jinak nebo ji nezkoumá vůbec. Ustanovení opsané z textu zákona bez téhle judikatury vede k opačnému závěru, než jaký soudy dovozují. Hledej cíleně tam, kde by protistrana hledala.
+
 Oddíl neopisuj ani nepřepisuj - ten zůstane, jak je. Vrať jen svůj nález, v markdownu:
 
 ## Neobstálo
@@ -131,6 +135,9 @@ Oddíl neopisuj ani nepřepisuj - ten zůstane, jak je. Vrať jen svůj nález, 
 
 ## Obstálo
 Značky rozhodnutí, která jsi otevřel a potvrdil.
+
+## Chybí
+Řádek na každé nosné rozhodnutí nebo pravidlo, které v oddílu není a patří tam: značka, co z něj plyne a který závěr oddílu to mění. Tenhle oddíl nech prázdný jen tehdy, když jsi opravdu hledal a nic nenašel.
 
 ## Neověřeno
 Co se ověřit nepodařilo a proč.

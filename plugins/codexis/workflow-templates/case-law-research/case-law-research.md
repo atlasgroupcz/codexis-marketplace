@@ -39,6 +39,12 @@ the user whole and verbatim - every heading, table, citation and quoted passage.
 what the user asked for; a summary of them is not the deliverable, and the file is a copy, not a
 replacement for the answer.
 
+The report answers the sub-questions the workflow split the question into, not the question the
+user asked. When the user asked about their own matter - how a dispute ends, what their chances
+are, what to do - add a `## Závěr` section under the report and answer that question in two to
+five sentences, standing only on what the report verified. When the user asked for the research
+itself, the report is the whole answer.
+
 ## When not to use it
 
 Not for a single decision the user already named - open it and read it. Not for reading the
