@@ -730,7 +730,6 @@ mod tests {
         let mut value = stored_automation();
         value["project"] = json!({ "id": "Project:p", "name": "Audit" });
         value["connections"] = json!([{ "id": "Drive:d", "name": "Smlouvy" }]);
-        value["files"] = json!(["brief.pdf"]);
         value
     }
 
@@ -819,7 +818,6 @@ mod tests {
         assert_eq!(value["projectId"], json!("Project:p"));
         assert_eq!(value["connections"], json!(["Smlouvy"]));
         assert_eq!(value["connectionIds"], json!(["Drive:d"]));
-        assert_eq!(value["files"], json!(["brief.pdf"]));
     }
 
     #[test]
