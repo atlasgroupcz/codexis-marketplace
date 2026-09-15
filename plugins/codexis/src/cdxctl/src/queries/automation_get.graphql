@@ -16,7 +16,6 @@ query GetAutomations {
         jurisdictions
         project { id name }
         connections { id name }
-        files
         lastRun {
             id
             status
