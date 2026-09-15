@@ -235,6 +235,35 @@ enum AutomationCommands {
         /// Automation ID (Node ID or UUID)
         id: String,
     },
+    /// Files stored on an automation; every run reads them under ~/automation
+    Files {
+        #[command(subcommand)]
+        command: AutomationFileCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum AutomationFileCommands {
+    /// List the files stored on an automation
+    List {
+        /// Automation ID (Node ID or UUID)
+        id: String,
+    },
+    /// Add files from this VM to an automation
+    Add {
+        /// Automation ID (Node ID or UUID)
+        id: String,
+        /// File from this VM to add, repeatable
+        #[arg(long = "file")]
+        file: Vec<String>,
+    },
+    /// Remove one file from an automation
+    Remove {
+        /// Automation ID (Node ID or UUID)
+        id: String,
+        /// File name as `automation files list` prints it
+        name: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -807,6 +836,17 @@ fn main() {
             AutomationCommands::Trigger { id } => {
                 commands::automation::trigger(&client, &id, format)
             }
+            AutomationCommands::Files { command } => match command {
+                AutomationFileCommands::List { id } => {
+                    commands::automation::list_files(&client, &id, format)
+                }
+                AutomationFileCommands::Add { id, file } => {
+                    commands::automation::add_files(&client, &id, &file, format)
+                }
+                AutomationFileCommands::Remove { id, name } => {
+                    commands::automation::remove_file(&client, &id, &name, format)
+                }
+            },
         },
         Commands::Marketplace { command } => match command {
             MarketplaceCommands::List => commands::marketplace::list(&client, format),

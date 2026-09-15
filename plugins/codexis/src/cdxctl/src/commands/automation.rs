@@ -44,6 +44,15 @@ pub struct UpdateArgs<'a> {
 
 const ATTACHMENTS_PATH: &str = "/rest/attachments";
 
+/// The daemon's multipart endpoint for writing files into an isolation. It takes the
+/// isolation as a query argument and drops the files in its home when no destination
+/// is given - for an automation that home IS its stored files directory.
+const FILES_UPLOAD_PATH: &str = "/rest/files/upload-multiple";
+
+/// Home of the automation isolation, which the daemon mounts onto the automation's
+/// files directory. Every run sees the same files read-only under `~/automation`.
+const AUTOMATION_FILES_HOME: &str = "~";
+
 pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::GET_AUTOMATIONS, json!({}))?;
     let mut automations = data
@@ -655,7 +664,7 @@ fn upload_files(client: &GraphQLClient, paths: &[String]) -> Result<Vec<Value>, 
             crate::commands::notification_email::attachment_part(path)?,
         );
     }
-    let uploaded = client.rest_post_multipart(ATTACHMENTS_PATH, form, &[])?;
+    let uploaded = client.rest_post_multipart(ATTACHMENTS_PATH, form, &[], &[])?;
     let ids: Vec<Value> = uploaded
         .as_array()
         .map(|attachments| {
@@ -675,11 +684,111 @@ fn upload_files(client: &GraphQLClient, paths: &[String]) -> Result<Vec<Value>, 
     Ok(ids)
 }
 
+/// List the files stored on an automation. The automation is an isolation of its own and
+/// its files directory is mounted at the isolation's home, so listing that home is the
+/// file list - no automation-level GraphQL field is involved.
+pub fn list_files(
+    client: &GraphQLClient,
+    id: &str,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let data = client.execute(
+        graphql::LIST_AUTOMATION_FILES,
+        json!({ "isolationId": resolve_node_id(id, "Automation"), "path": AUTOMATION_FILES_HOME }),
+    )?;
+    let entries = data
+        .get("listDirectory")
+        .and_then(|listing| listing.get("entries"))
+        .cloned()
+        .unwrap_or(Value::Array(Vec::new()));
+    print_output(&entries, format);
+    Ok(())
+}
+
+/// Upload files from this VM into an existing automation. This writes straight into the
+/// automation's isolation; `create`/`update --file` take the other door, parking the file
+/// in the attachment store for the mutation to move, which is what a not-yet-saved
+/// automation needs.
+pub fn add_files(
+    client: &GraphQLClient,
+    id: &str,
+    paths: &[String],
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    if paths.is_empty() {
+        return Err(CdxctlError::Parse(
+            "name at least one file with --file".to_string(),
+        ));
+    }
+    let mut form = Form::new();
+    for path in paths {
+        form = form.part(
+            "files",
+            crate::commands::notification_email::attachment_part(path)?,
+        );
+    }
+    let uploaded = client.rest_post_multipart(
+        FILES_UPLOAD_PATH,
+        form,
+        &[("isolationId", resolve_node_id(id, "Automation"))],
+        &[],
+    )?;
+    let files = uploaded
+        .get("files")
+        .cloned()
+        .unwrap_or(Value::Array(Vec::new()));
+    print_output(&files, format);
+    Ok(())
+}
+
+/// Remove one file from an automation by the name `files list` prints.
+pub fn remove_file(
+    client: &GraphQLClient,
+    id: &str,
+    name: &str,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let data = client.execute(
+        graphql::REMOVE_AUTOMATION_FILE,
+        json!({
+            "isolationId": resolve_node_id(id, "Automation"),
+            "path": automation_file_path(name)
+        }),
+    )?;
+    let mut removed = data.get("deleteFile").cloned().unwrap_or(Value::Null);
+    lift_file_path(&mut removed);
+    print_output(&removed, format);
+    Ok(())
+}
+
+/// The path the daemon's files API takes for a file of this automation. The files sit at
+/// the root of the isolation, so a name becomes `~/<name>`; a name copied out of a listing
+/// with its `~/` or a leading slash resolves to the same file.
+fn automation_file_path(name: &str) -> String {
+    let name = name.trim_start_matches("~/").trim_start_matches('/');
+    format!("{AUTOMATION_FILES_HOME}/{name}")
+}
+
+/// Flatten the `path { absolutePath displayPath }` the delete mutation returns into the
+/// single `path` column the CLI prints.
+fn lift_file_path(value: &mut Value) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    if let Some(path) = object.remove("path") {
+        object.insert(
+            "path".into(),
+            path.get("displayPath").cloned().unwrap_or(Value::Null),
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_update_input, chat_context_values, context_keys_to_fill, flatten_automation,
-        lift_nested_nodes, print_automation_payload, upload_files, ResolvedInputs, ScheduleArgs,
+        add_files, automation_file_path, build_update_input, chat_context_values,
+        context_keys_to_fill, flatten_automation, lift_file_path, lift_nested_nodes, list_files,
+        print_automation_payload, remove_file, upload_files, ResolvedInputs, ScheduleArgs,
         UpdateArgs,
     };
     use crate::client::GraphQLClient;
@@ -818,6 +927,121 @@ mod tests {
         assert_eq!(value["projectId"], json!("Project:p"));
         assert_eq!(value["connections"], json!(["Smlouvy"]));
         assert_eq!(value["connectionIds"], json!(["Drive:d"]));
+    }
+
+    /// The automation whose isolation the file commands address, and the Node ID the
+    /// daemon expects for it.
+    const AUTOMATION_UUID: &str = "11111111-2222-3333-4444-555555555555";
+    const AUTOMATION_NODE_ID: &str =
+        "CkF1dG9tYXRpb24kMTExMTExMTEtMjIyMi0zMzMzLTQ0NDQtNTU1NTU1NTU1NTU1";
+
+    fn client_for(address: &str) -> GraphQLClient {
+        GraphQLClient::with_endpoint(
+            format!("http://{address}/graphql"),
+            "Bearer test-token".to_string(),
+        )
+    }
+
+    fn file_in_a_fresh_directory(name: &str) -> (std::path::PathBuf, std::path::PathBuf) {
+        let directory = std::env::temp_dir().join(format!(
+            "cdxctl-{name}-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        std::fs::create_dir_all(&directory).unwrap();
+        let path = directory.join(name);
+        std::fs::write(&path, "brief").unwrap();
+        (directory, path)
+    }
+
+    #[test]
+    fn list_files_reads_the_home_of_the_automation_isolation() {
+        let (address, requests) = stub_daemon(
+            "HTTP/1.1 200 OK",
+            r#"{"data":{"listDirectory":{"entries":[{"name":"brief.pdf","type":"FILE","size":5}]}}}"#,
+        );
+
+        list_files(&client_for(&address), AUTOMATION_UUID, OutputFormat::Json).unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(request.contains("query ListAutomationFiles"));
+        assert!(request.contains(&format!("\"isolationId\":\"{AUTOMATION_NODE_ID}\"")));
+        assert!(request.contains("\"path\":\"~\""));
+    }
+
+    #[test]
+    fn add_files_uploads_into_the_automation_isolation() {
+        let (directory, path) = file_in_a_fresh_directory("brief.txt");
+        let (address, requests) = stub_daemon(
+            "HTTP/1.1 200 OK",
+            r#"{"success":true,"message":"","files":[{"name":"brief.txt","size":5}]}"#,
+        );
+
+        add_files(
+            &client_for(&address),
+            AUTOMATION_UUID,
+            &[path.to_string_lossy().to_string()],
+            OutputFormat::Json,
+        )
+        .unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(request.starts_with(&format!(
+            "POST /rest/files/upload-multiple?isolationId={AUTOMATION_NODE_ID} HTTP/1.1"
+        )));
+        assert!(request.contains("name=\"files\""));
+        assert!(request.contains("filename=\"brief.txt\""));
+        std::fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
+    fn add_files_refuses_an_empty_file_list() {
+        let client = client_for("127.0.0.1:9");
+
+        let error = add_files(&client, AUTOMATION_UUID, &[], OutputFormat::Json).unwrap_err();
+
+        assert!(matches!(error, CdxctlError::Parse(_)));
+    }
+
+    #[test]
+    fn remove_file_deletes_the_named_file_of_the_automation() {
+        let (address, requests) = stub_daemon(
+            "HTTP/1.1 200 OK",
+            r#"{"data":{"deleteFile":{"name":"brief.pdf","path":{"absolutePath":"/home/codexis/brief.pdf","displayPath":"~/brief.pdf"}}}}"#,
+        );
+
+        remove_file(
+            &client_for(&address),
+            AUTOMATION_UUID,
+            "brief.pdf",
+            OutputFormat::Json,
+        )
+        .unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(request.contains("mutation RemoveAutomationFile"));
+        assert!(request.contains(&format!("\"isolationId\":\"{AUTOMATION_NODE_ID}\"")));
+        assert!(request.contains("\"path\":\"~/brief.pdf\""));
+    }
+
+    #[test]
+    fn a_file_name_resolves_under_the_isolation_home() {
+        assert_eq!(automation_file_path("brief.pdf"), "~/brief.pdf");
+        assert_eq!(automation_file_path("~/brief.pdf"), "~/brief.pdf");
+        assert_eq!(automation_file_path("/brief.pdf"), "~/brief.pdf");
+        assert_eq!(automation_file_path("notes/brief.pdf"), "~/notes/brief.pdf");
+    }
+
+    #[test]
+    fn lift_file_path_keeps_the_path_the_user_recognises() {
+        let mut value = json!({
+            "name": "brief.pdf",
+            "path": { "absolutePath": "/home/codexis/brief.pdf", "displayPath": "~/brief.pdf" }
+        });
+
+        lift_file_path(&mut value);
+
+        assert_eq!(value["path"], json!("~/brief.pdf"));
     }
 
     #[test]
