@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.8.1
+version: 2.9.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -297,6 +297,55 @@ See `references/skill-examples.md` for worked examples.
 A precise trigger `--description` with the keywords and what it is not for; a concrete method (steps, named sources like `§ 52`, the output shape); decision guidance for when to use it over a close sibling; and, for depth, extra files next to the SKILL.md that the body points at. Short sentences, two or three per paragraph.
 
 **IDs:** `cdxctl skill update` and `cdxctl skill delete` accept the GraphQL `id` from `cdxctl skill list`, a base64 Node ID, or a raw skill name.
+
+## Projects
+
+A project is a named container the user starts chats from. It carries instructions every chat
+under it follows, and shared folders - the drives and cloud drives mounted into those chats.
+Its own files live in the directory `project list` prints as `directoryPath`.
+
+```bash
+# List projects with their shared folders
+cdxctl project list
+
+# One project in full, by name or ID
+cdxctl project get "Audit 2026"
+
+# Create a project with two shared folders
+cdxctl project create \
+    --name "Audit 2026" \
+    --description "Roční audit dodavatelských smluv" \
+    --instructions-file ./pokyny.md \
+    --drive "Smlouvy" \
+    --drive "Judikatura"
+
+# Update (partial - only the flags you pass change)
+cdxctl project update "Audit 2026" --instructions "Vycházej jen ze smluv v projektu."
+
+# Replace the whole shared-folder list
+cdxctl project update "Audit 2026" --drive "Smlouvy 2026"
+```
+
+Name a shared folder in `--drive` by its name, as `cdxctl automation create --connection` does;
+a Node ID works too. The candidates are the user's own drives, the drives shared with them, and
+their cloud drives. An unknown name fails the command and saves nothing.
+
+`--drive` replaces the whole list rather than adding to it, so pass every folder the project
+should keep. Write long instructions to a temp file and pass `--instructions-file`.
+
+Two limits worth knowing before promising anything:
+
+- **Folders from the user's computer are read-only here.** Only the desktop app can register
+  one, because it alone knows the device. `project update` carries the ones already stored
+  forward untouched; the CLI can neither add nor remove them.
+- **Agents and skills do not belong to a project.** They are the user's own and are available in
+  every chat, so there is nothing to attach. Use `cdxctl agent` and `cdxctl skill`.
+
+Projects cannot be deleted from the CLI - the daemon has no such mutation. Point the user at the
+app.
+
+**IDs:** `cdxctl project get` and `cdxctl project update` accept the project name, the GraphQL
+`id` from `cdxctl project list`, or a raw project UUID.
 
 ## Tabular Extraction
 

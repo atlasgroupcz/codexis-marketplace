@@ -63,6 +63,11 @@ enum Commands {
         #[command(subcommand)]
         command: SkillCommands,
     },
+    /// Manage projects
+    Project {
+        #[command(subcommand)]
+        command: ProjectCommands,
+    },
     /// Tabular data extraction from files
     Tabular {
         #[command(subcommand)]
@@ -427,6 +432,55 @@ enum AgentCommands {
     Delete {
         /// Agent ID, node ID, or raw agent name
         id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ProjectCommands {
+    /// List all projects with their shared folders
+    List,
+    /// Show one project in full, including its instructions and folders
+    Get {
+        /// Project name or Node ID
+        id: String,
+    },
+    /// Create a project
+    Create {
+        /// Project name
+        #[arg(long)]
+        name: Option<String>,
+        /// What the project is about
+        #[arg(long)]
+        description: Option<String>,
+        /// Instructions the project's chats follow, inline
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the instructions from a file instead of inline --instructions
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Shared folder to attach, by drive name or Node ID; repeat for more
+        #[arg(long = "drive")]
+        drives: Vec<String>,
+    },
+    /// Update a project; unset flags keep their stored value
+    Update {
+        /// Project name or Node ID
+        id: String,
+        /// Project name
+        #[arg(long)]
+        name: Option<String>,
+        /// What the project is about
+        #[arg(long)]
+        description: Option<String>,
+        /// Instructions the project's chats follow, inline
+        #[arg(long)]
+        instructions: Option<String>,
+        /// Read the instructions from a file instead of inline --instructions
+        #[arg(long = "instructions-file")]
+        instructions_file: Option<String>,
+        /// Replaces the whole shared-folder list, by drive name or Node ID; repeat for more
+        #[arg(long = "drive")]
+        drives: Vec<String>,
     },
 }
 
@@ -1016,6 +1070,46 @@ fn main() {
             ),
             SkillCommands::Delete { id } => commands::skill::delete(&client, &id, format),
         },
+        Commands::Project { command } => match command {
+            ProjectCommands::List => commands::project::list(&client, format),
+            ProjectCommands::Get { id } => commands::project::get(&client, &id, format),
+            ProjectCommands::Create {
+                name,
+                description,
+                instructions,
+                instructions_file,
+                drives,
+            } => commands::project::create(
+                &client,
+                instructions_file.as_deref(),
+                commands::project::ProjectFields {
+                    name,
+                    description,
+                    instructions,
+                    drives: none_if_empty(drives),
+                },
+                format,
+            ),
+            ProjectCommands::Update {
+                id,
+                name,
+                description,
+                instructions,
+                instructions_file,
+                drives,
+            } => commands::project::update(
+                &client,
+                &id,
+                instructions_file.as_deref(),
+                commands::project::ProjectFields {
+                    name,
+                    description,
+                    instructions,
+                    drives: none_if_empty(drives),
+                },
+                format,
+            ),
+        },
         Commands::Tabular { command } => {
             match command {
                 TabularCommands::Status { folder, project } => {
@@ -1135,6 +1229,48 @@ fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_project_create_with_repeated_shared_folders() {
+        let cli = Cli::try_parse_from([
+            "cdxctl",
+            "project",
+            "create",
+            "--name",
+            "Audit 2026",
+            "--instructions-file",
+            "./pokyny.md",
+            "--drive",
+            "Smlouvy",
+            "--drive",
+            "Judikatura",
+        ])
+        .unwrap();
+
+        match cli.command {
+            Commands::Project {
+                command:
+                    ProjectCommands::Create {
+                        name,
+                        instructions_file,
+                        drives,
+                        ..
+                    },
+            } => {
+                assert_eq!(name.as_deref(), Some("Audit 2026"));
+                assert_eq!(instructions_file.as_deref(), Some("./pokyny.md"));
+                assert_eq!(drives, vec!["Smlouvy", "Judikatura"]);
+            }
+            _ => panic!("expected project create"),
+        }
+    }
+
+    #[test]
+    fn project_get_and_update_need_the_project_they_act_on() {
+        assert!(Cli::try_parse_from(["cdxctl", "project", "get"]).is_err());
+        assert!(Cli::try_parse_from(["cdxctl", "project", "update", "--name", "x"]).is_err());
+        assert!(Cli::try_parse_from(["cdxctl", "project", "list"]).is_ok());
+    }
 
     #[test]
     fn parses_appenv_set_and_delete() {

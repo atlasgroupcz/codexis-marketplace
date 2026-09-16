@@ -2,5 +2,12 @@ query GetProjects {
     projects {
         id
         name
+        description
+        instructions
+        directoryPath { absolutePath displayPath }
+        desktopFolders { deviceId deviceName shareName folderName relativePath }
+        driveFolders { driveId name }
+        createdAt
+        modifiedAt
     }
 }
