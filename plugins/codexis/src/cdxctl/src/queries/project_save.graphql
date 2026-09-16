@@ -1,0 +1,16 @@
+mutation SaveProject($id: ID, $input: ProjectInput!) {
+    saveProject(id: $id, input: $input) {
+        project {
+            id
+            name
+            description
+            instructions
+            directoryPath { absolutePath displayPath }
+            desktopFolders { deviceId deviceName shareName folderName relativePath }
+            driveFolders { driveId name }
+            createdAt
+            modifiedAt
+        }
+        errors { field message }
+    }
+}

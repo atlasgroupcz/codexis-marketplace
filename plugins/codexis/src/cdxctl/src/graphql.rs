@@ -55,6 +55,10 @@ pub const GET_CHAT_CONTEXT: &str = include_str!("queries/chat_context_get.graphq
 
 pub const GET_PROJECTS: &str = include_str!("queries/project_get.graphql");
 
+// saveProject replaces the whole project, so a partial update carries the stored fields
+// forward - including the desktop folders, which only the desktop app can register.
+pub const SAVE_PROJECT: &str = include_str!("queries/project_save.graphql");
+
 // Every source a chat or an automation can mount: cloud drives plus own and shared drives.
 pub const GET_CONNECTIONS: &str = include_str!("queries/connection_get.graphql");
 
@@ -109,8 +113,8 @@ pub const START_TABULAR_EXTRACTION: &str = include_str!("queries/tabular_start.g
 #[cfg(test)]
 mod tests {
     use super::{
-        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_SKILLS,
-        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SET_AUTOMATION_ENABLED,
+        DELETE_AGENT, GET_AGENTS, GET_AUTOMATIONS, GET_CHAT_CONTEXT, GET_PROJECTS, GET_SKILLS,
+        REMOVE_MARKETPLACE, SAVE_AGENT, SAVE_AUTOMATION, SAVE_PROJECT, SET_AUTOMATION_ENABLED,
     };
 
     #[test]
@@ -180,6 +184,29 @@ mod tests {
         assert!(SAVE_AUTOMATION.contains("$id: ID, $input: AutomationInput!"));
         assert!(SAVE_AUTOMATION.contains("automation {"));
         assert!(SAVE_AUTOMATION.contains("errors { field message allowedValues }"));
+    }
+
+    #[test]
+    fn save_project_reads_the_payload_wrapper() {
+        // ProjectInputError carries no allowedValues, unlike the agent and skill ones.
+        assert!(SAVE_PROJECT.contains("saveProject(id: $id, input: $input)"));
+        assert!(SAVE_PROJECT.contains("$id: ID, $input: ProjectInput!"));
+        assert!(SAVE_PROJECT.contains("project {"));
+        assert!(SAVE_PROJECT.contains("errors { field message }"));
+    }
+
+    #[test]
+    fn project_queries_select_both_folder_lists_in_full() {
+        // ProjectInput replaces the whole project, so `project update` rebuilds the input from
+        // what these documents return. A field missing here is a field the update would clear.
+        for query in [GET_PROJECTS, SAVE_PROJECT] {
+            assert!(query.contains(
+                "desktopFolders { deviceId deviceName shareName folderName relativePath }"
+            ));
+            assert!(query.contains("driveFolders { driveId name }"));
+            assert!(query.contains("instructions"));
+            assert!(query.contains("directoryPath { absolutePath displayPath }"));
+        }
     }
 
     #[test]
