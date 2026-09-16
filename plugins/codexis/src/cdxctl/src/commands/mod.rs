@@ -7,6 +7,7 @@ pub mod notification;
 pub mod notification_email;
 pub mod package;
 pub mod plugin;
+pub mod project;
 pub mod schedule;
 pub mod skill;
 pub mod tabular;
