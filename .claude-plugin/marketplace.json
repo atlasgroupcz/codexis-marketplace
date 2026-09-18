@@ -184,42 +184,6 @@
       }
     },
     {
-      "uuid": "3d8ea3de-e4cc-46cf-bc6c-faf72026a3cc",
-      "name": "ocr",
-      "description": "Document to Markdown conversion via OCR - supports PDF, DOCX, PPTX, XLSX, images, and ZIP archives",
-      "source": "./plugins/ocr",
-      "category": "document-processing",
-      "i18n": {
-        "cs": {
-          "displayName": "OCR dokumentů",
-          "description": "Převod dokumentů (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocí OCR - připraveno pro další AI zpracování.",
-          "tagLabels": {
-            "document-processing": "Zpracování dokumentů",
-            "ocr": "OCR",
-            "pdf": "PDF"
-          }
-        },
-        "en": {
-          "displayName": "Document OCR",
-          "description": "Convert documents (PDF, DOCX, PPTX, XLSX, images, ZIP) into Markdown via OCR - ready for downstream AI processing.",
-          "tagLabels": {
-            "document-processing": "Document Processing",
-            "ocr": "OCR",
-            "pdf": "PDF"
-          }
-        },
-        "sk": {
-          "displayName": "OCR dokumentov",
-          "description": "Prevod dokumentov (PDF, DOCX, PPTX, XLSX, obrázky, ZIP) do Markdownu pomocou OCR - pripravené pre ďalšie AI spracovanie.",
-          "tagLabels": {
-            "document-processing": "Spracovanie dokumentov",
-            "ocr": "OCR",
-            "pdf": "PDF"
-          }
-        }
-      }
-    },
-    {
       "uuid": "25c0713a-7c9b-439e-ae0f-80683aa29825",
       "name": "documents",
       "description": "Create, edit and visually verify Word, PDF, Excel and PowerPoint documents - every deliverable is rendered to page images so the layout is inspected before hand-off",
