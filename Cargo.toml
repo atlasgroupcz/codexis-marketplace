@@ -33,7 +33,6 @@ members = [
   "plugins/leciva/src/leciva-cli",
   "plugins/nrpzs/src/nrpzs-cli",
   "plugins/obchodny-register-sk/src/orsr-cli",
-  "plugins/ocr/src/ocr",
   "plugins/register-zmluv/src/register-zmluv",
   "plugins/registr-smluv/src/registr-smluv",
   "plugins/rzpro/src/rzpro-cli",
