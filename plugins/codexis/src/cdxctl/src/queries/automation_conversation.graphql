@@ -1,0 +1,25 @@
+query GetAutomationConversation($id: ID!) {
+    node(id: $id) {
+        ... on AutomationRun {
+            id
+            status
+            startedAt
+            finishedAt
+            trigger
+            errorMessage
+            chat {
+                id
+                title
+                messages {
+                    __typename
+                    id
+                    status
+                    parts {
+                        __typename
+                        ... on TextMessagePart { content }
+                    }
+                }
+            }
+        }
+    }
+}

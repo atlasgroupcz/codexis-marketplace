@@ -30,7 +30,7 @@ cdxctl automation create \
 ## Contract check with a project, a connection and an input file
 
 The run works in the project "Audit" (its files at `~/project/files`), sees the drive
-"Smlouvy" at `~/Smlouvy`, and reads the uploaded checklist at `~/automation/checklist.md`.
+"Smlouvy" at `~/Smlouvy`, and reads the uploaded checklist at `~/checklist.md`.
 Without `--project` and `--connection` the automation takes the project and the connections
 of the chat it is created in.
 
@@ -38,7 +38,7 @@ of the chat it is created in.
 cdxctl automation create \
   --title "Contract check" \
   --repeat WEEKLY --day-part MORNING --days-of-week 1 \
-  --prompt "Compare every contract in ~/Smlouvy with ~/automation/checklist.md and list the gaps." \
+  --prompt "Compare every contract in ~/Smlouvy with ~/checklist.md and list the gaps." \
   --project "Audit" \
   --connection "Smlouvy" \
   --file ./checklist.md

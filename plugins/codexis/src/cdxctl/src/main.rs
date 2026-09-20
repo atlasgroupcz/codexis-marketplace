@@ -136,7 +136,7 @@ enum AutomationCommands {
         /// Connection (cloud drive or drive name, or Node ID) mounted into every run, repeatable. Defaults to the active chat's connections
         #[arg(long = "connection")]
         connection: Vec<String>,
-        /// File from this VM to store on the automation, repeatable; every run sees it read-only under ~/automation
+        /// File from this VM to store in the automation's persistent workspace, repeatable
         #[arg(long = "file")]
         file: Vec<String>,
         /// Create in disabled state
@@ -240,7 +240,20 @@ enum AutomationCommands {
         /// Automation ID (Node ID or UUID)
         id: String,
     },
-    /// Files stored on an automation; every run reads them under ~/automation
+    /// List completed runs of an automation
+    Runs {
+        /// Automation ID; defaults to the current automation inside a run
+        id: Option<String>,
+        /// Maximum runs to return
+        #[arg(long, default_value_t = 10)]
+        limit: usize,
+    },
+    /// Retrieve a run's stored conversation
+    Conversation {
+        /// Automation run Node ID returned by `automation runs`
+        run_id: String,
+    },
+    /// Files stored in an automation's persistent workspace
     Files {
         #[command(subcommand)]
         command: AutomationFileCommands,
@@ -890,6 +903,12 @@ fn main() {
             AutomationCommands::Trigger { id } => {
                 commands::automation::trigger(&client, &id, format)
             }
+            AutomationCommands::Runs { id, limit } => {
+                commands::automation::runs(&client, id.as_deref(), limit, format)
+            }
+            AutomationCommands::Conversation { run_id } => {
+                commands::automation::conversation(&client, &run_id, format)
+            }
             AutomationCommands::Files { command } => match command {
                 AutomationFileCommands::List { id } => {
                     commands::automation::list_files(&client, &id, format)
@@ -1486,6 +1505,38 @@ mod tests {
             }
             _ => panic!("expected automation create command"),
         }
+    }
+
+    #[test]
+    fn parses_automation_run_history_commands() {
+        let runs = Cli::try_parse_from([
+            "cdxctl",
+            "automation",
+            "runs",
+            "automation-id",
+            "--limit",
+            "4",
+        ])
+        .expect("automation runs should parse");
+        match runs.command {
+            Commands::Automation {
+                command: AutomationCommands::Runs { id, limit },
+            } => {
+                assert_eq!(id.as_deref(), Some("automation-id"));
+                assert_eq!(limit, 4);
+            }
+            _ => panic!("expected automation runs command"),
+        }
+
+        let conversation =
+            Cli::try_parse_from(["cdxctl", "automation", "conversation", "run-node-id"])
+                .expect("automation conversation should parse");
+        assert!(matches!(
+            conversation.command,
+            Commands::Automation {
+                command: AutomationCommands::Conversation { run_id }
+            } if run_id == "run-node-id"
+        ));
     }
 
     #[test]

@@ -49,9 +49,9 @@ const ATTACHMENTS_PATH: &str = "/rest/attachments";
 /// is given - for an automation that home IS its stored files directory.
 const FILES_UPLOAD_PATH: &str = "/rest/files/upload-multiple";
 
-/// Home of the automation isolation, which the daemon mounts onto the automation's
-/// files directory. Every run sees the same files read-only under `~/automation`.
+/// Home of the automation isolation and every run of that automation.
 const AUTOMATION_FILES_HOME: &str = "~";
+const AUTOMATION_ID_ENV: &str = "CODEXIS_PUBLIC_AUTOMATION_ID";
 
 pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlError> {
     let data = client.execute(graphql::GET_AUTOMATIONS, json!({}))?;
@@ -65,6 +65,76 @@ pub fn list(client: &GraphQLClient, format: OutputFormat) -> Result<(), CdxctlEr
     }
     print_output(&Value::Array(automations), format);
     Ok(())
+}
+
+pub fn runs(
+    client: &GraphQLClient,
+    id: Option<&str>,
+    limit: usize,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    if limit == 0 {
+        return Err(CdxctlError::Parse("--limit must be positive".into()));
+    }
+    let environment_id = std::env::var(AUTOMATION_ID_ENV).ok();
+    let automation_id = resolve_runs_automation_id(id, environment_id.as_deref())?;
+    let data = client.execute(
+        graphql::GET_AUTOMATION_RUNS,
+        json!({ "id": resolve_node_id(&automation_id, "Automation") }),
+    )?;
+    let automation = data
+        .get("node")
+        .filter(|node| !node.is_null())
+        .ok_or_else(|| {
+            CdxctlError::GraphQL(vec![format!("Automation not found: {automation_id}")])
+        })?;
+    let runs = previous_runs(automation, limit);
+    print_output(&runs, format);
+    Ok(())
+}
+
+fn previous_runs(automation: &Value, limit: usize) -> Value {
+    Value::Array(
+        automation
+            .get("runs")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|run| run.get("status").and_then(Value::as_str) != Some("RUNNING"))
+            .take(limit)
+            .cloned()
+            .collect(),
+    )
+}
+
+pub fn conversation(
+    client: &GraphQLClient,
+    run_id: &str,
+    format: OutputFormat,
+) -> Result<(), CdxctlError> {
+    let data = client.execute(
+        graphql::GET_AUTOMATION_CONVERSATION,
+        json!({ "id": run_id }),
+    )?;
+    let run = data
+        .get("node")
+        .filter(|node| !node.is_null())
+        .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation run not found: {run_id}")]))?;
+    print_output(run, format);
+    Ok(())
+}
+
+fn resolve_runs_automation_id(
+    argument: Option<&str>,
+    environment: Option<&str>,
+) -> Result<String, CdxctlError> {
+    argument
+        .or(environment)
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_owned)
+        .ok_or_else(|| {
+            CdxctlError::Parse("automation id is required outside an automation run".into())
+        })
 }
 
 pub fn create(
@@ -787,9 +857,9 @@ fn lift_file_path(value: &mut Value) {
 mod tests {
     use super::{
         add_files, automation_file_path, build_update_input, chat_context_values,
-        context_keys_to_fill, flatten_automation, lift_file_path, lift_nested_nodes, list_files,
-        print_automation_payload, remove_file, upload_files, ResolvedInputs, ScheduleArgs,
-        UpdateArgs,
+        context_keys_to_fill, conversation, flatten_automation, lift_file_path, lift_nested_nodes,
+        list_files, previous_runs, print_automation_payload, remove_file,
+        resolve_runs_automation_id, runs, upload_files, ResolvedInputs, ScheduleArgs, UpdateArgs,
     };
     use crate::client::GraphQLClient;
     use crate::error::CdxctlError;
@@ -940,6 +1010,118 @@ mod tests {
             format!("http://{address}/graphql"),
             "Bearer test-token".to_string(),
         )
+    }
+
+    #[test]
+    fn resolve_runs_automation_id_prefers_the_argument() {
+        assert_eq!(
+            resolve_runs_automation_id(Some("argument"), Some("environment")).unwrap(),
+            "argument"
+        );
+        assert_eq!(
+            resolve_runs_automation_id(None, Some("environment")).unwrap(),
+            "environment"
+        );
+        assert!(matches!(
+            resolve_runs_automation_id(None, None),
+            Err(CdxctlError::Parse(_))
+        ));
+    }
+
+    #[test]
+    fn previous_runs_excludes_active_runs_and_applies_the_limit() {
+        let automation = json!({
+            "runs": [
+                { "id": "running", "status": "RUNNING" },
+                { "id": "latest", "status": "COMPLETED" },
+                { "id": "older", "status": "FAILED" }
+            ]
+        });
+
+        assert_eq!(
+            previous_runs(&automation, 1),
+            json!([{ "id": "latest", "status": "COMPLETED" }])
+        );
+    }
+
+    #[test]
+    fn runs_queries_the_selected_automation() {
+        let (address, requests) = stub_daemon(
+            "HTTP/1.1 200 OK",
+            r#"{"data":{"node":{"id":"automation","runs":[]}}}"#,
+        );
+
+        runs(
+            &client_for(&address),
+            Some(AUTOMATION_UUID),
+            10,
+            OutputFormat::Json,
+        )
+        .unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(request.contains("query GetAutomationRuns"));
+        assert!(request.contains(&format!("\"id\":\"{AUTOMATION_NODE_ID}\"")));
+    }
+
+    #[test]
+    fn runs_rejects_zero_limit() {
+        let error = runs(
+            &client_for("127.0.0.1:1"),
+            Some(AUTOMATION_UUID),
+            0,
+            OutputFormat::Json,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.to_string(), "Parse error: --limit must be positive");
+    }
+
+    #[test]
+    fn runs_names_a_missing_automation() {
+        let (address, requests) = stub_daemon("HTTP/1.1 200 OK", r#"{"data":{"node":null}}"#);
+
+        let error = runs(
+            &client_for(&address),
+            Some(AUTOMATION_UUID),
+            10,
+            OutputFormat::Json,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            format!("GraphQL error: Automation not found: {AUTOMATION_UUID}")
+        );
+        requests.recv().unwrap();
+    }
+
+    #[test]
+    fn conversation_queries_the_run_node() {
+        let (address, requests) = stub_daemon(
+            "HTTP/1.1 200 OK",
+            r#"{"data":{"node":{"id":"run","chat":{"messages":[]}}}}"#,
+        );
+
+        conversation(&client_for(&address), "run-node-id", OutputFormat::Json).unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(request.contains("query GetAutomationConversation"));
+        assert!(request.contains("\"id\":\"run-node-id\""));
+    }
+
+    #[test]
+    fn conversation_names_a_missing_run() {
+        let (address, requests) = stub_daemon("HTTP/1.1 200 OK", r#"{"data":{"node":null}}"#);
+
+        let error =
+            conversation(&client_for(&address), "run-node-id", OutputFormat::Json).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "GraphQL error: Automation run not found: run-node-id"
+        );
+        requests.recv().unwrap();
     }
 
     fn file_in_a_fresh_directory(name: &str) -> (std::path::PathBuf, std::path::PathBuf) {

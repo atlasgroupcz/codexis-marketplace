@@ -14,6 +14,11 @@ pub const DELETE_AUTOMATION: &str = include_str!("queries/automation_delete.grap
 
 pub const TRIGGER_AUTOMATION: &str = include_str!("queries/automation_trigger.graphql");
 
+pub const GET_AUTOMATION_RUNS: &str = include_str!("queries/automation_runs.graphql");
+
+pub const GET_AUTOMATION_CONVERSATION: &str =
+    include_str!("queries/automation_conversation.graphql");
+
 // The files stored on an automation live in its own isolation: the daemon mounts the
 // automation's files directory read-write at `~`, so listing `~` of `Automation:<uuid>`
 // is the automation's file list. Uploading goes through the REST files endpoint with the
