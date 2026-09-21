@@ -136,8 +136,10 @@ enum AutomationCommands {
         /// Connection (cloud drive or drive name, or Node ID) mounted into every run, repeatable. Defaults to the active chat's connections
         #[arg(long = "connection")]
         connection: Vec<String>,
-        /// File from this VM to store in the automation's persistent workspace, repeatable
-        #[arg(long = "file")]
+        #[arg(
+            long = "file",
+            help = "File from this VM to store in the automation's persistent workspace, repeatable"
+        )]
         file: Vec<String>,
         /// Create in disabled state
         #[arg(long, default_value = "false")]
@@ -240,20 +242,24 @@ enum AutomationCommands {
         /// Automation ID (Node ID or UUID)
         id: String,
     },
-    /// List completed runs of an automation
+    #[command(about = "List completed runs of an automation")]
     Runs {
-        /// Automation ID; defaults to the current automation inside a run
+        #[arg(help = "Automation ID; defaults to the current automation inside a run")]
         id: Option<String>,
-        /// Maximum runs to return
-        #[arg(long, default_value_t = 10)]
+        #[arg(long, default_value_t = 10, help = "Maximum runs to return")]
         limit: usize,
     },
-    /// Retrieve a run's stored conversation
+    #[command(about = "Retrieve a run's stored conversation")]
     Conversation {
-        /// Automation run Node ID returned by `automation runs`
+        #[arg(help = "Automation run Node ID returned by `automation runs`")]
         run_id: String,
+        #[arg(
+            long,
+            help = "Include the raw run/chat envelope with every message and part type"
+        )]
+        full: bool,
     },
-    /// Files stored in an automation's persistent workspace
+    #[command(about = "Files stored in an automation's persistent workspace")]
     Files {
         #[command(subcommand)]
         command: AutomationFileCommands,
@@ -906,8 +912,8 @@ fn main() {
             AutomationCommands::Runs { id, limit } => {
                 commands::automation::runs(&client, id.as_deref(), limit, format)
             }
-            AutomationCommands::Conversation { run_id } => {
-                commands::automation::conversation(&client, &run_id, format)
+            AutomationCommands::Conversation { run_id, full } => {
+                commands::automation::conversation(&client, &run_id, full, format)
             }
             AutomationCommands::Files { command } => match command {
                 AutomationFileCommands::List { id } => {
@@ -1531,10 +1537,28 @@ mod tests {
         let conversation =
             Cli::try_parse_from(["cdxctl", "automation", "conversation", "run-node-id"])
                 .expect("automation conversation should parse");
-        assert!(matches!(
-            conversation.command,
+        match conversation.command {
             Commands::Automation {
-                command: AutomationCommands::Conversation { run_id }
+                command: AutomationCommands::Conversation { run_id, full },
+            } => {
+                assert_eq!(run_id, "run-node-id");
+                assert!(!full);
+            }
+            _ => panic!("expected automation conversation command"),
+        }
+
+        let full_conversation = Cli::try_parse_from([
+            "cdxctl",
+            "automation",
+            "conversation",
+            "run-node-id",
+            "--full",
+        ])
+        .expect("full automation conversation should parse");
+        assert!(matches!(
+            full_conversation.command,
+            Commands::Automation {
+                command: AutomationCommands::Conversation { run_id, full: true }
             } if run_id == "run-node-id"
         ));
     }

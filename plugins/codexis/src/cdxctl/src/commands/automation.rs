@@ -49,7 +49,6 @@ const ATTACHMENTS_PATH: &str = "/rest/attachments";
 /// is given - for an automation that home IS its stored files directory.
 const FILES_UPLOAD_PATH: &str = "/rest/files/upload-multiple";
 
-/// Home of the automation isolation and every run of that automation.
 const AUTOMATION_FILES_HOME: &str = "~";
 const AUTOMATION_ID_ENV: &str = "CODEXIS_PUBLIC_AUTOMATION_ID";
 
@@ -110,6 +109,7 @@ fn previous_runs(automation: &Value, limit: usize) -> Value {
 pub fn conversation(
     client: &GraphQLClient,
     run_id: &str,
+    full: bool,
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let data = client.execute(
@@ -120,8 +120,51 @@ pub fn conversation(
         .get("node")
         .filter(|node| !node.is_null())
         .ok_or_else(|| CdxctlError::GraphQL(vec![format!("Automation run not found: {run_id}")]))?;
-    print_output(run, format);
+    let output = if full {
+        run.clone()
+    } else {
+        compact_conversation(run)
+    };
+    print_output(&output, format);
     Ok(())
+}
+
+fn compact_conversation(run: &Value) -> Value {
+    let messages: Vec<Value> = run
+        .get("chat")
+        .and_then(|chat| chat.get("messages"))
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(compact_conversation_message)
+        .collect();
+    json!({
+        "finishedAt": run.get("finishedAt").cloned().unwrap_or(Value::Null),
+        "errorMessage": run.get("errorMessage").cloned().unwrap_or(Value::Null),
+        "messages": messages,
+    })
+}
+
+fn compact_conversation_message(message: &Value) -> Option<Value> {
+    let role = match message.get("__typename").and_then(Value::as_str) {
+        Some("UserChatMessage") => "user",
+        Some("AiChatMessage") => "assistant",
+        _ => return None,
+    };
+    let content = message
+        .get("parts")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|part| part.get("__typename").and_then(Value::as_str) == Some("TextMessagePart"))
+        .filter_map(|part| part.get("content").and_then(Value::as_str))
+        .filter(|content| !content.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    if content.is_empty() {
+        return None;
+    }
+    Some(json!({ "role": role, "content": content }))
 }
 
 fn resolve_runs_automation_id(
@@ -857,9 +900,10 @@ fn lift_file_path(value: &mut Value) {
 mod tests {
     use super::{
         add_files, automation_file_path, build_update_input, chat_context_values,
-        context_keys_to_fill, conversation, flatten_automation, lift_file_path, lift_nested_nodes,
-        list_files, previous_runs, print_automation_payload, remove_file,
-        resolve_runs_automation_id, runs, upload_files, ResolvedInputs, ScheduleArgs, UpdateArgs,
+        compact_conversation, context_keys_to_fill, conversation, flatten_automation,
+        lift_file_path, lift_nested_nodes, list_files, previous_runs, print_automation_payload,
+        remove_file, resolve_runs_automation_id, runs, upload_files, ResolvedInputs, ScheduleArgs,
+        UpdateArgs,
     };
     use crate::client::GraphQLClient;
     use crate::error::CdxctlError;
@@ -1100,10 +1144,16 @@ mod tests {
     fn conversation_queries_the_run_node() {
         let (address, requests) = stub_daemon(
             "HTTP/1.1 200 OK",
-            r#"{"data":{"node":{"id":"run","chat":{"messages":[]}}}}"#,
+            r#"{"data":{"node":{"finishedAt":"2026-09-21T08:00:00Z","errorMessage":null,"chat":{"messages":[]}}}}"#,
         );
 
-        conversation(&client_for(&address), "run-node-id", OutputFormat::Json).unwrap();
+        conversation(
+            &client_for(&address),
+            "run-node-id",
+            false,
+            OutputFormat::Json,
+        )
+        .unwrap();
 
         let request = requests.recv().unwrap();
         assert!(request.contains("query GetAutomationConversation"));
@@ -1111,11 +1161,102 @@ mod tests {
     }
 
     #[test]
+    fn full_conversation_uses_the_diagnostic_query() {
+        let (address, requests) = stub_daemon(
+            "HTTP/1.1 200 OK",
+            r#"{"data":{"node":{"id":"run","chat":{"messages":[]}}}}"#,
+        );
+
+        conversation(
+            &client_for(&address),
+            "run-node-id",
+            true,
+            OutputFormat::Json,
+        )
+        .unwrap();
+
+        let request = requests.recv().unwrap();
+        assert!(request.contains("query GetAutomationConversation"));
+        assert!(request.contains("\"id\":\"run-node-id\""));
+    }
+
+    #[test]
+    fn compact_conversation_keeps_only_user_and_assistant_text() {
+        let run = json!({
+            "finishedAt": "2026-09-21T08:00:00Z",
+            "errorMessage": "The final write failed.",
+            "chat": {
+                "messages": [
+                    {
+                        "__typename": "SystemChatMessage",
+                        "parts": [
+                            { "__typename": "TextMessagePart", "content": "System instructions" }
+                        ]
+                    },
+                    {
+                        "__typename": "UserChatMessage",
+                        "parts": [
+                            { "__typename": "TextMessagePart", "content": "Check the documents." },
+                            { "__typename": "FileMessagePart", "fileEntry": { "name": "brief.pdf" } }
+                        ]
+                    },
+                    {
+                        "__typename": "AiChatMessage",
+                        "parts": [
+                            { "__typename": "ReasoningMessagePart", "content": "Private reasoning" },
+                            { "__typename": "ShellToolMessagePart", "command": "ls" },
+                            { "__typename": "TextMessagePart", "content": "No changes found." },
+                            { "__typename": "TextMessagePart", "content": "The report is ready." }
+                        ]
+                    },
+                    {
+                        "__typename": "AiChatMessage",
+                        "parts": [
+                            { "__typename": "ShellToolMessagePart", "command": "pwd" }
+                        ]
+                    },
+                    {
+                        "__typename": "ErrorChatMessage",
+                        "parts": [
+                            { "__typename": "ErrorMessagePart", "message": "Hidden chat error" }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        assert_eq!(
+            compact_conversation(&run),
+            json!({
+                "finishedAt": "2026-09-21T08:00:00Z",
+                "errorMessage": "The final write failed.",
+                "messages": [
+                    { "role": "user", "content": "Check the documents." },
+                    { "role": "assistant", "content": "No changes found.\n\nThe report is ready." }
+                ]
+            })
+        );
+    }
+
+    #[test]
+    fn compact_conversation_handles_a_run_without_a_chat() {
+        assert_eq!(
+            compact_conversation(&json!({})),
+            json!({ "finishedAt": null, "errorMessage": null, "messages": [] })
+        );
+    }
+
+    #[test]
     fn conversation_names_a_missing_run() {
         let (address, requests) = stub_daemon("HTTP/1.1 200 OK", r#"{"data":{"node":null}}"#);
 
-        let error =
-            conversation(&client_for(&address), "run-node-id", OutputFormat::Json).unwrap_err();
+        let error = conversation(
+            &client_for(&address),
+            "run-node-id",
+            false,
+            OutputFormat::Json,
+        )
+        .unwrap_err();
 
         assert_eq!(
             error.to_string(),

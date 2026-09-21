@@ -125,13 +125,16 @@ cdxctl automation runs [automation-id] --limit 10
 
 # Retrieve one run's conversation using an id returned above
 cdxctl automation conversation <run-id>
+
+# Include the raw run/chat envelope with every message and part type
+cdxctl automation conversation <run-id> --full
 ```
 
 **Model + jurisdiction:** the model, its tuned settings, and the jurisdiction all default to the active chat, so usually you pass nothing. Override the model with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and jurisdiction with `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
 
 **Project, connections, files:** the project and the connections also default to the active chat. `--project` takes a project name or id (the run sees its files at `~/project/files`); `--connection` takes a cloud drive or drive name or id, repeatable (mounted at `~/<name>`; on `update` the list replaces the stored one). `--file <path>` uploads a file from this VM into the automation's writable `~`, and `update --file` adds more. `automation list` shows `project` and `connections`; the workspace files have their own commands.
 
-**Run history:** `automation runs` returns completed, failed and budgeted runs newest first. Inside an automation it defaults to `CODEXIS_PUBLIC_AUTOMATION_ID`; elsewhere pass the automation id. Use the returned run Node id with `automation conversation` to retrieve that run's stored messages.
+**Run history:** `automation runs` returns completed, failed and budgeted runs newest first. Inside an automation it defaults to `CODEXIS_PUBLIC_AUTOMATION_ID`; elsewhere pass the automation id. Use the returned run Node id with `automation conversation`. Its default output contains the finish time, run error and only the ordered user and assistant text. Pass `--full` for the raw run/chat envelope with every message and part type; text parts include their content and other parts remain identified by type.
 
 **Files on an automation:** `cdxctl automation files list <id>` shows what the automation stores, `cdxctl automation files add <id> --file <path>` (repeatable) uploads more from this VM, and `cdxctl automation files remove <id> <name>` deletes one by the name the listing prints. This works on a saved automation; `create --file` / `update --file` are the same store reached while writing the automation itself.
 
