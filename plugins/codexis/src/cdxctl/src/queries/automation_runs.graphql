@@ -1,0 +1,17 @@
+query GetAutomationRuns($id: ID!) {
+    node(id: $id) {
+        ... on Automation {
+            id
+            title
+            runs {
+                id
+                status
+                startedAt
+                finishedAt
+                trigger
+                errorMessage
+                chat { id title }
+            }
+        }
+    }
+}

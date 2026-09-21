@@ -3,7 +3,7 @@ uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
 description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.9.0
+version: 2.10.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -30,7 +30,7 @@ i18n:
 
 # cdxctl - Platform Management CLI
 
-`cdxctl` manages agents, skills, automations, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
+`cdxctl` manages agents, skills, automations and their run history, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
 
 Always go through `cdxctl` for these platform objects - never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
 
@@ -73,7 +73,7 @@ such endpoint. Never `cat` or edit the `.env` file by hand.
 
 ## Automations
 
-An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same project and connections. Every run is an isolated chat of its own: the project's files are mounted read-only at `~/project/files`, the connections under `~/<connection name>`, and the files stored on the automation read-only at `~/automation`. So create it from a chat already configured for the job, and pass only the flags you want to change.
+An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same project and connections. Every automation owns a writable workspace mounted as `~` in all of its runs. Project files are mounted at `~/project/files` with the access configured in the automation, and connections under `~/<connection name>`. So create it from a chat already configured for the job, and pass only the flags you want to change.
 
 ```bash
 # List all automations
@@ -97,7 +97,7 @@ cdxctl automation create \
 cdxctl automation create \
     --title "Contract check" \
     --repeat WEEKLY --day-part MORNING --days-of-week 1 \
-    --prompt "Compare the contracts in ~/Smlouvy with the checklist in ~/automation/checklist.md" \
+    --prompt "Compare the contracts in ~/Smlouvy with the checklist in ~/checklist.md" \
     --project "Audit" \
     --connection "Smlouvy" \
     --file ./checklist.md
@@ -119,11 +119,22 @@ cdxctl automation disable <id>
 # Delete, or trigger a run now
 cdxctl automation delete <id>
 cdxctl automation trigger <id>
+
+# List previous runs; inside a run the automation id is optional
+cdxctl automation runs [automation-id] --limit 10
+
+# Retrieve one run's conversation using an id returned above
+cdxctl automation conversation <run-id>
+
+# Include the raw run/chat envelope with every message and part type
+cdxctl automation conversation <run-id> --full
 ```
 
 **Model + jurisdiction:** the model, its tuned settings, and the jurisdiction all default to the active chat, so usually you pass nothing. Override the model with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and jurisdiction with `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
 
-**Project, connections, files:** the project and the connections also default to the active chat. `--project` takes a project name or id (the run sees its files at `~/project/files`); `--connection` takes a cloud drive or drive name or id, repeatable (mounted at `~/<name>`; on `update` the list replaces the stored one). `--file <path>` uploads a file from this VM to the automation, repeatable; the runs see the stored files read-only at `~/automation/<file name>`, and `update --file` adds more. `automation list` shows `project` and `connections`; the stored files have their own commands.
+**Project, connections, files:** the project and the connections also default to the active chat. `--project` takes a project name or id (the run sees its files at `~/project/files`); `--connection` takes a cloud drive or drive name or id, repeatable (mounted at `~/<name>`; on `update` the list replaces the stored one). `--file <path>` uploads a file from this VM into the automation's writable `~`, and `update --file` adds more. `automation list` shows `project` and `connections`; the workspace files have their own commands.
+
+**Run history:** `automation runs` returns completed, failed and budgeted runs newest first. Inside an automation it defaults to `CODEXIS_PUBLIC_AUTOMATION_ID`; elsewhere pass the automation id. Use the returned run Node id with `automation conversation`. Its default output contains the finish time, run error and only the ordered user and assistant text. Pass `--full` for the raw run/chat envelope with every message and part type; text parts include their content and other parts remain identified by type.
 
 **Files on an automation:** `cdxctl automation files list <id>` shows what the automation stores, `cdxctl automation files add <id> --file <path>` (repeatable) uploads more from this VM, and `cdxctl automation files remove <id> <name>` deletes one by the name the listing prints. This works on a saved automation; `create --file` / `update --file` are the same store reached while writing the automation itself.
 

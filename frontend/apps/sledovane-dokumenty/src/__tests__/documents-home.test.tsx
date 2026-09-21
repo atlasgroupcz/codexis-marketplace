@@ -237,7 +237,9 @@ describe('DocumentsHome', () => {
     )
 
     // the overview fixture carries two unconfirmed act changes
-    expect(await screen.findByRole('button', { name: /Acts/ })).toHaveTextContent('2')
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Acts/ })).toHaveTextContent('2')
+    })
   })
 
   it('shows an error when the overview request fails', async () => {
