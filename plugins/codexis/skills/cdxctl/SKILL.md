@@ -2,8 +2,8 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.6.0
+description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+version: 2.10.0
 i18n:
   cs:
     displayName: "Správa platformy"
@@ -30,19 +30,56 @@ i18n:
 
 # cdxctl - Platform Management CLI
 
-`cdxctl` manages agents, skills, automations, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
+`cdxctl` manages agents, skills, automations and their run history, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
 
 Always go through `cdxctl` for these platform objects - never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
 
+## VM packages
+
+Use `cdxctl package` when a task needs an Ubuntu package on the VM. A change applies to the
+whole VM and every chat sandbox of this user. Packages survive reboots but not a replacement of
+the VM system image, so install again when a tool is missing.
+
+```bash
+cdxctl package show ffmpeg      # installed?, installed and candidate version
+cdxctl package install ffmpeg   # apt-get update, then apt-get install
+cdxctl package remove ffmpeg
+cdxctl package update           # apt-get update only
+```
+
+`install`, `remove` and `update` wait for apt to finish and print `{"success", "output"}`;
+when apt fails the command exits with code 7 and the apt output on stderr. `show` exits nonzero
+when apt does not know the package. Use exact package names; versions, APT flags, local
+`.deb` files, repositories, and keys are not accepted.
+
+## App env
+
+A plugin that needs a user-provided secret (an API key for its data source) keeps it in
+`~/.cdx/apps/<app>/.env`. The plugin reads that file itself; only `cdxctl appenv` writes it,
+because the file sits outside the sandbox. `<app>` is the plugin name (`katastr`, `cdx-sk`).
+
+```bash
+cdxctl appenv katastr set API_KEY <value>   # add or replace API_KEY=<value>
+cdxctl appenv katastr delete API_KEY        # drop the line; other lines stay
+```
+
+Use it when a plugin has no settings command of its own and the user hands you the key, or
+when the user asks to remove a stored key. When the plugin ships one
+(`katastr-cli settings set <KEY>`), call that instead, because it validates the key before
+storing it. Names are env var names
+(`API_KEY`, not `api-key`); a value must be one line. The command prints `{"success",
+"output"}` and exits 7 with the script output when the write fails, 6 when the daemon has no
+such endpoint. Never `cat` or edit the `.env` file by hand.
+
 ## Automations
 
-An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same working directory. So create it from a chat already configured for the job, and pass only the flags you want to change.
+An automation is a schedule plus a prompt (or a shell command) that runs unattended. It runs the way the chat it was created in is set up: same model and its settings, same jurisdiction, same skills, same project and connections. Every automation owns a writable workspace mounted as `~` in all of its runs. Project files are mounted at `~/project/files` with the access configured in the automation, and connections under `~/<connection name>`. So create it from a chat already configured for the job, and pass only the flags you want to change.
 
 ```bash
 # List all automations
 cdxctl automation list
 
-# Create an automation (inherits model + jurisdiction + skills + work dir from this chat)
+# Create an automation (inherits model + jurisdiction + skills + project + connections from this chat)
 cdxctl automation create \
     --title "Daily Report" \
     --repeat DAILY --day-part MORNING \
@@ -54,7 +91,16 @@ cdxctl automation create \
     --repeat DAILY --day-part MORNING \
     --prompt "Report new Supreme Court rulings on notice periods" \
     --model CLAUDE_SONNET_5 --jurisdiction CZ \
-    --skill "<id>" --work-dir "/home/codexis/judikatura"
+    --skill "<id>"
+
+# Give the runs a project, a connection and input files
+cdxctl automation create \
+    --title "Contract check" \
+    --repeat WEEKLY --day-part MORNING --days-of-week 1 \
+    --prompt "Compare the contracts in ~/Smlouvy with the checklist in ~/checklist.md" \
+    --project "Audit" \
+    --connection "Smlouvy" \
+    --file ./checklist.md
 
 # Create a COMMAND automation
 cdxctl automation create-command \
@@ -73,9 +119,24 @@ cdxctl automation disable <id>
 # Delete, or trigger a run now
 cdxctl automation delete <id>
 cdxctl automation trigger <id>
+
+# List previous runs; inside a run the automation id is optional
+cdxctl automation runs [automation-id] --limit 10
+
+# Retrieve one run's conversation using an id returned above
+cdxctl automation conversation <run-id>
+
+# Include the raw run/chat envelope with every message and part type
+cdxctl automation conversation <run-id> --full
 ```
 
 **Model + jurisdiction:** the model, its tuned settings, and the jurisdiction all default to the active chat, so usually you pass nothing. Override the model with `--model` (the enum name, e.g. `CLAUDE_SONNET_5`) and jurisdiction with `--jurisdiction` (`CZ`, `SK`, `EU`, ...; repeatable). On `update` they are kept unless you pass them again.
+
+**Project, connections, files:** the project and the connections also default to the active chat. `--project` takes a project name or id (the run sees its files at `~/project/files`); `--connection` takes a cloud drive or drive name or id, repeatable (mounted at `~/<name>`; on `update` the list replaces the stored one). `--file <path>` uploads a file from this VM into the automation's writable `~`, and `update --file` adds more. `automation list` shows `project` and `connections`; the workspace files have their own commands.
+
+**Run history:** `automation runs` returns completed, failed and budgeted runs newest first. Inside an automation it defaults to `CODEXIS_PUBLIC_AUTOMATION_ID`; elsewhere pass the automation id. Use the returned run Node id with `automation conversation`. Its default output contains the finish time, run error and only the ordered user and assistant text. Pass `--full` for the raw run/chat envelope with every message and part type; text parts include their content and other parts remain identified by type.
+
+**Files on an automation:** `cdxctl automation files list <id>` shows what the automation stores, `cdxctl automation files add <id> --file <path>` (repeatable) uploads more from this VM, and `cdxctl automation files remove <id> <name>` deletes one by the name the listing prints. This works on a saved automation; `create --file` / `update --file` are the same store reached while writing the automation itself.
 
 **Enable / disable vs update:** toggling on/off is its own command, not a flag on `update`. `enable`/`disable` work for your own automations and for read-only ones shipped by a plugin. `update` only edits USER automations and never changes the enabled state.
 
@@ -248,13 +309,67 @@ A precise trigger `--description` with the keywords and what it is not for; a co
 
 **IDs:** `cdxctl skill update` and `cdxctl skill delete` accept the GraphQL `id` from `cdxctl skill list`, a base64 Node ID, or a raw skill name.
 
+## Projects
+
+A project is a named container the user starts chats from. It carries instructions every chat
+under it follows, and shared folders - the drives and cloud drives mounted into those chats.
+Its own files live in the directory `project list` prints as `directoryPath`.
+
+```bash
+# List projects with their shared folders
+cdxctl project list
+
+# One project in full, by name or ID
+cdxctl project get "Audit 2026"
+
+# Create a project with two shared folders
+cdxctl project create \
+    --name "Audit 2026" \
+    --description "Roční audit dodavatelských smluv" \
+    --instructions-file ./pokyny.md \
+    --drive "Smlouvy" \
+    --drive "Judikatura"
+
+# Update (partial - only the flags you pass change)
+cdxctl project update "Audit 2026" --instructions "Vycházej jen ze smluv v projektu."
+
+# Replace the whole shared-folder list
+cdxctl project update "Audit 2026" --drive "Smlouvy 2026"
+```
+
+Name a shared folder in `--drive` by its name, as `cdxctl automation create --connection` does;
+a Node ID works too. The candidates are the user's own drives, the drives shared with them, and
+their cloud drives. An unknown name fails the command and saves nothing.
+
+`--drive` replaces the whole list rather than adding to it, so pass every folder the project
+should keep. Write long instructions to a temp file and pass `--instructions-file`.
+
+Two limits worth knowing before promising anything:
+
+- **Folders from the user's computer are read-only here.** Only the desktop app can register
+  one, because it alone knows the device. `project update` carries the ones already stored
+  forward untouched; the CLI can neither add nor remove them.
+- **Agents and skills do not belong to a project.** They are the user's own and are available in
+  every chat, so there is nothing to attach. Use `cdxctl agent` and `cdxctl skill`.
+
+Projects cannot be deleted from the CLI - the daemon has no such mutation. Point the user at the
+app.
+
+**IDs:** `cdxctl project get` and `cdxctl project update` accept the project name, the GraphQL
+`id` from `cdxctl project list`, or a raw project UUID.
+
 ## Tabular Extraction
 
 Extract structured data from files in a folder. Define columns (what to extract), then start extraction - the backend processes each file with AI.
 
+The folder is a path inside one isolation. Without `--project` it is a folder of the current chat's sandbox (`/home/codexis/...` as the chat sees it); `--project <id>` reads the folder in that project's files instead, where `~` is the project's file root. The project id comes from the app's project list or from `cdx-sledovane-dokumenty project available`.
+
 ```bash
 # Check current extraction state for a folder
 cdxctl tabular status ~/invoices
+
+# The same folder inside a project's files
+cdxctl tabular status ~/invoices --project 5b1c1c4e-0000-4000-8000-000000000001
 
 # Add columns (what data to extract from each file)
 cdxctl tabular add-column ~/invoices --name "Invoice Number" --col-type text --description "The invoice number or ID"

@@ -3,7 +3,7 @@
 A tracked *subject* is either a company (by IČO) or a natural person (name +
 date of birth). Each subject may have zero or more insolvency proceedings
 (řízení) in ISIR. State is stored one JSON file per subject under
-$CODEXIS_PUBLIC_USER_HOME/.cdx/apps/insolvence/subjekty/<uuid>/state.json.
+$CODEXIS_PUBLIC_USER_HOME/.cdx/app-state/insolvence/subjekty/<uuid>/state.json.
 """
 
 import datetime
@@ -24,7 +24,7 @@ from .exceptions import (
 from .fs import atomic_write_json
 
 _USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
-APP_DIR = os.path.join(_USER_HOME, ".cdx", "apps", "insolvence", "subjekty")
+APP_DIR = os.path.join(_USER_HOME, ".cdx", "app-state", "insolvence", "subjekty")
 
 DRUH_LABELS = {
     "konkurs": "Konkurs",

@@ -39,6 +39,16 @@ the marks a user wants to protect.
 
 **IMPORTANT:** Stop only on a genuine `ERROR:` line (bad input, auth/key rejected, network, not-found) - report it, don't guess workarounds and don't blindly retry. Adding an already-tracked **word** mark (`add-text`), or removing a mark that isn't tracked, is a safe no-op (prints `OK:`) - but re-adding an already-tracked **logo** (`add-logo`) is NOT deduped and creates a duplicate. When acting on several marks, run each independently; one `ERROR:` doesn't mean skip the rest.
 
+## Credentials
+
+The EUIPO API needs the user's own client_id and client_secret, generated for free
+on the EUIPO developer portal. The user enters them in the Hlídač ochranných známek
+app (gear icon); the app validates them against EUIPO and stores them through the
+platform (`cdxctl appenv znamky set EUIPO_CLIENT_ID|EUIPO_CLIENT_SECRET`), and every
+command reads them from `~/.cdx/apps/znamky/.env`. Do not write that file by hand and
+do not call `cdxctl appenv` for these names directly - the app validates first. On an
+`ERROR:` line saying the credentials are missing or rejected, send the user to that app.
+
 ## Output format
 
 - **`sledovani list`, `sledovani check`** - human-readable plain text. Summarize for the user; do
@@ -126,7 +136,7 @@ is an informational assessment, not legal advice.
 
 ## `znamky-cli sledovani` - protected-mark monitoring
 
-Stateful watchdog. State is stored in `~/.cdx/apps/znamky/sledovane/`. A single central cron
+Stateful watchdog. State is stored in `~/.cdx/app-state/znamky/sledovane/`; the EUIPO credentials stay in `~/.cdx/apps/znamky/.env`. A single central cron
 automation (`0 7 * * *`) runs `znamky-cli sledovani check` daily to re-search the registers and
 record newly appeared similar marks.
 

@@ -4,7 +4,10 @@ type: COMMAND
 title: Sledované dokumenty - kontrola změn
 description: Pravidelná kontrola sledovaných dokumentů v CODEXIS.
 command: cdx-sledovane-dokumenty check
-cron: 0 8 * * 1
+schedule:
+  repeat: WEEKLY
+  dayPart: MORNING
+  daysOfWeek: [1]
 enabled: true
 notify-on-success: false
 notify-on-failure: false

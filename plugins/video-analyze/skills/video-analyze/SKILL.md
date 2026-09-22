@@ -5,7 +5,7 @@ icon: icon.svg
 description: >-
   This skill should be invoked whenever user needs to analyze, transcribe,
   summarize, or describe video or audio content - local files (mp4, webm,
-  mov, avi, mkv, mp3, wav, flac, ogg, aac) or YouTube URLs. Use this skill
+  mov, mp3, wav, flac, ogg, aac) or YouTube URLs. Use this skill
   instead of yt-dlp, youtube-dl, youtube-transcript-api, pytube, ffmpeg,
   whisper, or direct LLM transcription tools - those are not available here
   and will not produce a usable result. Triggers on "analyze video",
@@ -13,7 +13,7 @@ description: >-
   "what is in this video", "audio transcript", "přepiš video",
   "analyzuj video", "shrnutí videa", "popiš video", "co se říká ve videu",
   "prepíš video".
-allowed-tools: shell
+allowed-tools: readFile, shell
 i18n:
   cs:
     displayName: "Analýza videa a audia"
@@ -40,66 +40,43 @@ i18n:
 
 # Video & Audio Analysis
 
-Analyze video/audio files or YouTube URLs using the `video-analyze` command.
+`video-analyze` hands a local video or audio file, or a YouTube URL, to the CODEXIS backend, which transcribes or analyses it with a multimodal model. Nothing runs in the VM and no model key is needed.
 
 ## Workflow
 
-When the user asks you to work with a media file, **always follow this two-step approach:**
-
-### Step 1: Generate transcript first
-
-Before answering any question about a media file, generate a detailed transcript:
+**Step 1: transcribe first.**
 
 ```bash
 video-analyze transcript <source>
 ```
 
-The command prints the **file path** to stdout (e.g. `.transcripts/meeting.mp4.transcript.txt`). The transcript itself is saved to that file - read it with `readFile` to access the content.
+Prints the path of the transcript file. Read it with `readFile` and answer from it. The transcript is timestamped: `[MM:SS] Speaker text`, `(scene)` lines for what is on screen, `(audio)` lines for notable sounds.
 
-The transcript uses a simple timestamped format with spoken dialogue, scene descriptions, and audio cues. Produced by Gemini Pro.
-
-**CRITICAL - always pass `timeoutMs: 300000` (5 minutes) to the shell call.** The default 30-second shell timeout is too short for transcription: Gemini upload + multi-pass transcription regularly takes 30s-3min even for short clips, and the daemon will kill the call mid-flight without it. Without `timeoutMs`, the call times out, leaving no transcript file on disk and no useful path on stdout.
-
-### Step 2: Answer from the transcript
-
-Read the transcript file and use its contents to answer the user's question. In most cases, the transcript contains everything you need.
-
-### Step 3: Fall back to direct query only if needed
-
-If the transcript does not contain enough information to answer the user's question (e.g. they ask about a very specific visual detail not captured in the transcript), use the direct query mode:
+**Step 2: ask directly only for what the transcript does not carry**, such as a visual detail:
 
 ```bash
-video-analyze <source> "<specific question about what's missing>"
+video-analyze <source> "<question>"
 ```
 
-This re-sends the media to Gemini with your specific question. Only use this when the transcript genuinely lacks the answer.
+Prints the answer.
 
-## Examples
+## Waiting
+
+Both commands take minutes. **Always pass `timeoutMs: 600000` to the shell call.** The command prints `job <id>` to stderr as soon as the backend accepts the request, then polls until the job finishes. If the shell call is cut off, or the command gives up after eight minutes with an error naming the job, the job keeps running on the backend. Pick it up again with
 
 ```bash
-# Step 1: Generate transcript (prints file path)
-video-analyze transcript /home/codexis/meeting.mp4
-# → .transcripts/meeting.mp4.transcript.txt
-
-# Then read the transcript
-readFile .transcripts/meeting.mp4.transcript.txt
-
-# Step 3: Only if transcript is insufficient, ask a targeted question
-video-analyze /home/codexis/meeting.mp4 "What color is the logo shown at 2:15?"
+video-analyze wait <id>
 ```
 
-## Supported formats
+which waits the same way and prints the transcript path or the answer. Repeat it while it keeps giving up; do not submit the same source again.
 
-- **Video:** mp4, webm, mov, avi, mkv
-- **Audio:** mp3, wav, flac, ogg, aac
-- **YouTube:** full URLs (youtube.com, youtu.be)
+## Sources
 
-## Error handling
+- A relative path is taken from the current directory; an absolute path or a YouTube URL is sent as it is.
+- A local file is transcribed once; asking again for unchanged content returns the stored transcript.
+- Video: mp4, webm, mov, mpeg, wmv, flv, 3gp. Audio: mp3, wav, flac, ogg, aac, m4a. A file over the backend limit is refused; the error states the limit.
+- YouTube: watch, shorts, live, embed and youtu.be URLs. A YouTube video is processed on every call.
 
-- **429 / rate limit errors are transient.** Wait 10-30 seconds and retry.
+## Errors
 
-## Output
-
-- `transcript` mode: prints the saved file path to stdout
-- Query mode: prints the Gemini response text directly to stdout
-- On error, prints an error message to stderr and exits with a non-zero code.
+An error is printed to stderr with a non-zero exit code. A failed job says why, for example an unsupported format or a missing file. Do not fall back to yt-dlp, ffmpeg, whisper or a direct model call; they are not available here.

@@ -1,0 +1,34 @@
+{
+  "name": "codexis-ucetnictvi",
+  "iconPath": "skills/codexis-ucetnictvi/icon.webp",
+  "version": "1.0.0",
+  "description": "Czech accounting law and practice analysis with CODEXIS",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": ["codexis", "accounting", "ucetnictvi", "czech"],
+  "license": "PROPRIETARY",
+  "accessible-part": "MONITOR_UCETNICTVI_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-ucetnictvi" },
+  "tags": ["legal", "czech", "accounting"],
+  "i18n": {
+    "cs": {
+      "displayName": "Monitor - Účetnictví",
+      "description": "Analýza českých účetních předpisů, standardů a daňových vazeb s využitím databáze CODEXIS.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "accounting": "Účetnictví" }
+    },
+    "en": {
+      "displayName": "Monitor - Accounting",
+      "description": "Analysis of Czech accounting rules, standards and tax links using the CODEXIS database.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "accounting": "Accounting" }
+    },
+    "sk": {
+      "displayName": "Monitor - Účtovníctvo",
+      "description": "Analýza českých účtovných predpisov, štandardov a daňových väzieb s využitím databázy CODEXIS.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "accounting": "Účtovníctvo" }
+    }
+  },
+  "dependencies": ["codexis"],
+  "skills": "./skills"
+}

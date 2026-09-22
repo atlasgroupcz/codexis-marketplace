@@ -35,3 +35,7 @@ if [[ -e "${USER_HOME}/.cdx/apps/leciva" ]]; then
   rm -rf "${USER_HOME}/.cdx/apps/leciva" 2>/dev/null || true
   echo "Removed legacy local index: ${USER_HOME}/.cdx/apps/leciva" >&2
 fi
+if [[ -e "${USER_HOME}/.cdx/app-state/leciva" ]]; then
+  rm -rf "${USER_HOME}/.cdx/app-state/leciva" 2>/dev/null || true
+  echo "Removed legacy local index: ${USER_HOME}/.cdx/app-state/leciva" >&2
+fi

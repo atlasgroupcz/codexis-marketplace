@@ -3,7 +3,10 @@ uuid: 3bb4e9bf-6e71-4d02-b01a-c814c0a85f9b
 type: AGENT
 title: AML screening of a person
 description: Screen a given person from public sources - PEP status, sanctions and adverse media.
-cron: 0 7 1 * *
+schedule:
+  repeat: MONTHLY
+  dayPart: MORNING
+  dayOfMonth: 1
 max-turns: 25
 enabled: false
 notify-on-success: true

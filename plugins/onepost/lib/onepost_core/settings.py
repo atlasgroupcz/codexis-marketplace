@@ -1,10 +1,16 @@
-"""Settings for ONEPOST API access."""
+"""Settings for ONEPOST API access.
+
+The credential file `~/.cdx/apps/onepost/.env` is read-only inside the plugin's
+isolation, so writing goes through `cdxctl appenv` (see :mod:`app_env`) and the
+daemon rewrites the file. Reading it is unchanged.
+"""
 
 import os
 from urllib.parse import urlparse
 
+from . import app_env
+from .app_env import AppEnvError
 from .exceptions import ConfigError
-from .fs import atomic_replace
 
 USER_HOME = os.environ.get("CODEXIS_PUBLIC_USER_HOME") or os.path.expanduser("~")
 ENV_DIR = os.path.join(USER_HOME, ".cdx", "apps", "onepost")
@@ -32,13 +38,26 @@ def _read_env_file() -> dict[str, str]:
     return values
 
 
-def _write_env_file(values: dict[str, str]) -> None:
-    def writer(f):
-        for key in sorted(values):
-            if values[key]:
-                f.write(f"{key}={values[key]}\n")
+APP_ID = "onepost"
+KEY_VAR = "ONEPOST_API_KEY"
+URL_VAR = "ONEPOST_API_URL"
+#: The name an older build of this plugin wrote. `read_api_key` still falls back
+#: to it, so a write has to clear it or it would outlive the key it replaced.
+LEGACY_KEY_VAR = "API_KEY"
 
-    atomic_replace(ENV_FILE, writer, mode=0o600)
+
+def _store(name: str, value: str, label: str) -> None:
+    try:
+        app_env.set_value(APP_ID, name, value)
+    except AppEnvError as e:
+        raise AppEnvError(f"Uložení {label} selhalo: {e}", e.exit_code) from e
+
+
+def _forget(name: str, label: str) -> None:
+    try:
+        app_env.delete_value(APP_ID, name)
+    except AppEnvError as e:
+        raise AppEnvError(f"Uložení {label} selhalo: {e}", e.exit_code) from e
 
 
 def normalize_api_url(url: str) -> str:
@@ -115,16 +134,17 @@ def read_api_key_source() -> str:
 
 
 def write_api_key(key: str) -> None:
-    values = _read_env_file()
-    values["ONEPOST_API_KEY"] = key.strip()
-    values.pop("API_KEY", None)
-    _write_env_file(values)
+    """Store the key through the platform, or remove it when `key` is empty."""
+    key = key.strip()
+    if key:
+        _store(KEY_VAR, key, "API klíče")
+    else:
+        _forget(KEY_VAR, "API klíče")
+    _forget(LEGACY_KEY_VAR, "API klíče")
 
 
 def write_api_url(url: str) -> None:
-    values = _read_env_file()
-    values["ONEPOST_API_URL"] = normalize_api_url(url)
-    _write_env_file(values)
+    _store(URL_VAR, normalize_api_url(url), "API URL")
 
 
 def mask_key(key: str) -> str:

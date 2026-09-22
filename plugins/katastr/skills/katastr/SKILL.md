@@ -84,7 +84,7 @@ raw lookup.
 
 ## `katastr-cli tracking` - proceeding monitoring
 
-Stateful tracker. State lives in `~/.cdx/apps/katastr/rizeni/`. A central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
+Stateful tracker. State lives in `~/.cdx/app-state/katastr/rizeni/`; the API key stays in `~/.cdx/apps/katastr/.env`. A central cron automation (`0 8 * * 1`) runs `katastr-cli tracking check` every Monday 8:00 to refresh all tracked proceedings.
 
 ```bash
 katastr-cli tracking add V-123/2026-701 [--label "Novákovi"]       # verify in ČÚZK + save baseline
@@ -194,7 +194,7 @@ also reports data-as-of date and service health. Both are best-effort on top
 of the local key status/validation - relay whatever they print, including any
 ČÚZK operational message (e.g. an approaching key expiry).
 
-The key comes from the ČÚZK customer portal (free, requires Identita občana or remote-access account) and is stored in `~/.cdx/apps/katastr/.env` (shared by all `katastr-cli` subcommands and the UI). On `API klíč ... není nastaven` / `... byl odmítnut`:
+The key comes from the ČÚZK customer portal (free, requires Identita občana or remote-access account). `settings set` validates it against ČÚZK and stores it through `cdxctl appenv katastr set API_KEY <KEY>`; every `katastr-cli` subcommand and the UI read it from `~/.cdx/apps/katastr/.env`. Do not write that file by hand and do not call `cdxctl appenv` for the katastr key directly - `settings set` does the validation first. On `API klíč ... není nastaven` / `... byl odmítnut`:
 1. `katastr-cli settings test` to diagnose
 2. 401/403 → ask for a new key, then `katastr-cli settings set <NEW_KEY>`
 3. network error → ČÚZK API is unreachable, retry later

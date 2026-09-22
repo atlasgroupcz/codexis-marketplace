@@ -13,6 +13,7 @@ remove_path() {
 
 remove_path "${TARGET_BIN_DIR}/leciva-cli"
 remove_path "${USER_HOME}/.cdx/apps/leciva"
+remove_path "${USER_HOME}/.cdx/app-state/leciva"
 
 # Sweep leftover temp files from an interrupted install (e.g. power loss).
 rm -f "${TARGET_BIN_DIR}"/.leciva-cli.tmp.* 2>/dev/null || true

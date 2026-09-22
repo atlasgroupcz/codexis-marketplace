@@ -5,7 +5,10 @@ title: Monthly HR & payroll changes digest
 description: Each month, summarize labour-law and payroll changes relevant to HR.
 skill-full-names:
   - codexis:codexis
-cron: 0 7 1 * *
+schedule:
+  repeat: MONTHLY
+  dayPart: MORNING
+  dayOfMonth: 1
 max-turns: 20
 enabled: false
 notify-on-success: true

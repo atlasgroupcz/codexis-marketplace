@@ -5,7 +5,10 @@ title: Weekly legal digest on a topic
 description: Every week, summarize new legislation, case law and commentary on a topic of your choice.
 skill-full-names:
   - codexis:codexis
-cron: 0 7 * * 1
+schedule:
+  repeat: WEEKLY
+  dayPart: MORNING
+  daysOfWeek: [1]
 max-turns: 20
 enabled: false
 notify-on-success: true

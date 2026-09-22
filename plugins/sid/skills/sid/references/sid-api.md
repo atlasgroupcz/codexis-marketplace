@@ -25,7 +25,9 @@ without guessing.
 | `settings whoami` | `GET /api/v1/users/me` |
 
 Authentication is always the `x-api-key` header; the key is read from
-`~/.cdx/apps/sid/.env` (mode 0600) and never passed as an argument.
+`~/.cdx/apps/sid/.env` (mode 0600) and never passed as an argument. `settings
+set-key` validates the key and then stores it through the platform (`cdxctl
+appenv sid set SID_API_KEY <KEY>`); the plugin never writes that file itself.
 
 The plugin targets **production** (`https://sid.codexis.cz`), declared as
 `CODEXIS_PLUGIN_SID_API_URL` in the manifest. `SID_API_URL` in the env file
@@ -177,7 +179,9 @@ Settings follow the same convention as the znamky/katastr plugins:
 | File | Role |
 |------|------|
 | `~/.local/share/sid/settings/defaults.json` | shipped defaults, installed by the hook |
-| `~/.cdx/apps/sid/settings.json` | user override, only the changed keys |
+| `~/.cdx/app-state/sid/settings.json` | user override, only the changed keys |
+
+State goes under `~/.cdx/app-state/sid`; the API key stays in `~/.cdx/apps/sid/.env`.
 
 ```json
 { "version": 1, "notify": { "inApp": true } }

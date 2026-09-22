@@ -1,7 +1,7 @@
 {
   "name": "onepost",
   "iconPath": "icon.svg",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "ONEPOST API access for Czech ISDS data boxes - mailboxes, folders, messages, attachments, concepts, sending, search and message receiving",
   "author": {
     "name": "ATLAS GROUP",

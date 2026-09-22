@@ -1,0 +1,19 @@
+{
+  "name": "codexis-gdpr",
+  "iconPath": "skills/codexis-gdpr/icon.webp",
+  "version": "1.0.0",
+  "description": "Czech and EU data protection law analysis with CODEXIS",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["codexis", "gdpr", "privacy", "personal-data", "czech", "eu"],
+  "license": "PROPRIETARY",
+  "accessible-part": "MONITOR_GDPR_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-gdpr" },
+  "tags": ["legal", "czech", "privacy"],
+  "i18n": {
+    "cs": { "displayName": "Monitor - Ochrana osobních údajů", "description": "Analýza ochrany osobních údajů, GDPR a české navazující úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobní údaje" } },
+    "en": { "displayName": "Monitor - Data Protection", "description": "Analysis of GDPR and Czech data protection law using CODEXIS.", "tagLabels": { "legal": "Law", "czech": "Czech Republic", "privacy": "Data Protection" } },
+    "sk": { "displayName": "Monitor - Ochrana osobných údajov", "description": "Analýza ochrany osobných údajov, GDPR a českej nadväzujúcej úpravy s využitím CODEXIS.", "tagLabels": { "legal": "Právo", "czech": "Česko", "privacy": "Osobné údaje" } }
+  },
+  "dependencies": ["codexis"],
+  "skills": "./skills"
+}

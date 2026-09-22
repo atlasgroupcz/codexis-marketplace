@@ -1,0 +1,31 @@
+{
+  "name": "codexis-bozp",
+  "iconPath": "skills/codexis-bozp/icon.webp",
+  "version": "1.0.0",
+  "description": "Czech occupational health and safety law analysis with CODEXIS",
+  "author": { "name": "ATLAS GROUP", "email": "klientske.centrum@atlasgroup.cz" },
+  "keywords": ["codexis", "bozp", "occupational-safety", "employment", "czech"],
+  "license": "PROPRIETARY",
+  "accessible-part": "MONITOR_BOZP_AI",
+  "paywall": { "illustrationPath": "assets/paywall.png", "contactUrl": "https://codexis.ai/poptavka?produkt=monitor-bozp" },
+  "tags": ["legal", "czech", "occupational-safety"],
+  "i18n": {
+    "cs": {
+      "displayName": "Monitor - BOZP",
+      "description": "Analýza českých předpisů bezpečnosti a ochrany zdraví při práci s využitím databáze CODEXIS.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "occupational-safety": "BOZP" }
+    },
+    "en": {
+      "displayName": "Monitor - OHS",
+      "description": "Analysis of Czech occupational health and safety law using the CODEXIS database.",
+      "tagLabels": { "legal": "Law", "czech": "Czech Republic", "occupational-safety": "OHS" }
+    },
+    "sk": {
+      "displayName": "Monitor - BOZP",
+      "description": "Analýza českých predpisov bezpečnosti a ochrany zdravia pri práci s využitím databázy CODEXIS.",
+      "tagLabels": { "legal": "Právo", "czech": "Česko", "occupational-safety": "BOZP" }
+    }
+  },
+  "dependencies": ["codexis"],
+  "skills": "./skills"
+}

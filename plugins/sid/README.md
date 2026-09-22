@@ -13,6 +13,7 @@ Doplněk potřebuje váš osobní API klíč:
 3. Vložte ho do pole a uložte - asistent klíč ihned ověří.
 
 Klíč je osobní, takže asistent vidí přesně ty dokumenty a složky, na které máte právo vy.
+Ukládá se přes platformu (`cdxctl`), doplněk sám do souboru s klíčem nezapisuje.
 
 ## Co plugin umí
 

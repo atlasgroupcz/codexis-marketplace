@@ -249,3 +249,89 @@ cdx-cli schema related/counts
 - Using only relation lists when `amendmentDocIds` already identify the amending acts directly.
 - Explaining impact from an amending act title without comparing the actual provision text.
 - Continuing to diff when `/versions` already proves that no change exists on the target date.
+
+## Running the fetches as a program
+
+An act's `/versions`, `/toc` and the provisions you care about are independent fetches;
+doing them one turn at a time costs a turn each and pulls every byte into the context.
+Shape rules for any such program are in `SKILL.md`.
+
+Values go into `args`, never into a command string, and the two helpers below are assumed:
+
+    const cdx = async (...args) => {
+      const out = await shell({ command: 'cdx-cli', args, timeoutSeconds: 180 })
+      return out.trim()
+    }
+    const json = async (...args) => JSON.parse(await cdx(...args))
+
+`JD` has `--court`, `--city` and `--type`; `ES` has `--type` and `--issued-from/--issued-to` but
+**no** `--court`. `--limit` tops out at 50 - send more queries rather than a bigger one.
+
+### 1. One statute, everything about it at once
+
+Versions, table of contents and the provisions you care about are four independent fetches. Doing
+them in sequence from the chat costs four turns and pulls every byte into the context; one program
+issues them together and returns the wording plus where it sits.
+
+    export default async function () {
+      const ACT = { num: "89", year: "2012" }
+      const SECTIONS = ["paragraf159", "paragraf2909", "paragraf2913"]
+      const base = `cdx://cz_law/${ACT.num}/${ACT.year}`
+
+      const [meta, versions, toc] = await parallel([
+        () => json('get', `${base}/meta`),
+        () => json('get', `${base}/versions`),
+        () => json('get', `${base}/toc`)
+      ])
+      if (!meta || !versions) {
+        return { error: `${ACT.num}/${ACT.year} Sb. se nepodařilo načíst.` }
+      }
+
+      const current = versions.find((v) => !v.validTo) ?? versions[versions.length - 1]
+      const texts = await parallel(SECTIONS.map((part) => async () => ({
+        part,
+        text: (await cdx('get', `${base}/text?part=${part}`)).slice(0, 4000)
+      })))
+
+      const headings = (toc?.items ?? toc ?? [])
+      return {
+        act: `${ACT.num}/${ACT.year} Sb.`,
+        versionId: meta.docId,
+        inForceFrom: current?.validFrom ?? null,
+        laterBoundaries: versions.filter((v) => current && v.validFrom > current.validFrom)
+          .map((v) => v.validFrom),
+        provisions: texts.filter(Boolean),
+        tocEntries: Array.isArray(headings) ? headings.length : null
+      }
+    }
+
+The same shape works across acts: put several `base` values in the outer `parallel` and you have the
+whole regime - wording, dates and structure - in one call instead of a dozen.
+
+### 2. Commentary sweep
+
+Commentary tied to the provisions an earlier phase actually identified.
+
+    export default async function () {
+      const PROVISIONS = [
+        { label: "§ 159 odst. 1 o. z.", docId: "CR17044", query: "péče řádného hospodáře" },
+        { label: "§ 51 z. o. k.", docId: "CR17045", query: "pravidlo podnikatelského úsudku" }
+      ]
+
+      const swept = await parallel(PROVISIONS.map((provision) => async () => {
+        const body = await json('search', 'COMMENT', '--query', provision.query,
+          '--related-doc', provision.docId, '--limit', '20')
+        return {
+          provision: provision.label,
+          relatedTo: provision.docId,
+          totalResults: body.totalResults ?? 0,
+          commentary: (body.results ?? []).slice(0, 5).map((r) => r.docId)
+        }
+      }))
+
+      return { provisions: swept.filter(Boolean) }
+    }
+
+Commentary is secondary. Keep it in its own bucket so the opinion never rests a proposition on
+it - it points at primary sources, it does not replace them.
+

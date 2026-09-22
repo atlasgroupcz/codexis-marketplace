@@ -4,7 +4,9 @@ type: COMMAND
 title: Hlídač sbírky listin
 description: Pravidelná kontrola sledovaných subjektů ve Sbírce listin.
 command: sbirka-listin-cli sledovani check
-cron: 0 7 * * *
+schedule:
+  repeat: DAILY
+  dayPart: MORNING
 enabled: true
 notify-on-success: false
 notify-on-failure: false

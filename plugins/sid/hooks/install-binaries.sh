@@ -27,7 +27,7 @@ install_binary() {
 }
 
 # Shipped notification defaults. The user's own overrides live elsewhere
-# (~/.cdx/apps/<app>/settings.json) and are never touched by this hook.
+# (~/.cdx/app-state/<app>/settings.json) and are never touched by this hook.
 install_settings() {
   local source_root="${PLUGIN_DIR}/settings"
   [[ -d "$source_root" ]] || return 0

@@ -1,12 +1,3 @@
-// @template case-law-research
-// @use-when A question that has to be answered from what the courts actually decide: what the settled
-//   practice is, which decision carries it, whether it still holds under today's wording, and where
-//   the courts disagree. Not for reading the client's file and not for writing the client opinion.
-// @jurisdictions CZ SK EU
-// @args question (required) - the legal question, in the user's own words
-// @args jurisdiction - CZ, SK or EU; defaults to CZ
-// @args asOf - the date the answer must be true for; defaults to today
-
 export const meta = {
   name: "case-law-research",
   description: "Rešerše judikatury: rozbor otázky → vyhledání rozhodnutí → ověření a zpráva.",
@@ -30,15 +21,33 @@ const LABEL_VERIFY = issue => `ověření: ${issue}`
 
 const REPORT_PREFIX = "resherse-judikatura"
 
-const RELAY = (path, docx) => `---
+const INSTRUCTIONS = (path, docx) => `Uvnitř <report> je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
 
-Pokyn pro asistenta: tohle je hotová rešerše judikatury. Vypiš ji uživateli do chatu CELOU a doslova, včetně všech nadpisů, tabulek, citací rozhodnutí a doslovných výňatků.
+Neshrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl.
 
-Nešrnuj ji, nezkracuj, nevybírej z ní a nepřeformulovávej ji vlastními slovy. Nevynechávej oddíly proto, že se ti zdají dlouhé - právě ty citace a výňatky jsou to, kvůli čemu si o rešerši uživatel řekl. Nepřidávej k ní vlastní právní závěry.
+Nic mimo <report> do chatu nepatří. <request> je zadání, se kterým rešerše běžela; slouží ti ke kontrole, na co odpovídá a k jakému datu, a do odpovědi ho neopisuj - uživatel svou otázku zná. Tyhle pokyny do chatu nevypisuj taky.
 
-Tenhle pokyn ani tuhle patičku do chatu nevypisuj. Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.${docx ? `
+Rešerše odpovídá na dílčí otázky, na které si sama otázku rozdělila, ne na otázku uživatele. Zeptal-li se uživatel na svou věc - jak dopadne spor, jaké má šance, co má dělat - připoj pod rešerši oddíl "## Závěr" a odpověz v něm na to, co se ptal, dvěma až pěti větami. Stůj jen na tom, co rešerše ověřila; nepřidávej ustanovení ani rozhodnutí, která v ní nejsou, a nezakrývej, co zůstalo neověřené. Když si uživatel řekl o rešerši samotnou, žádný závěr nepřipojuj.
+
+Celá rešerše je uložena i jako ${path}; odpověď tím souborem nenahrazuj.${docx ? `
 
 Rešerše je vysázená i ve Wordu jako ${docx} - hotový dokument s titulní stranou, obsahem a hlavičkou CODEXIS. Nabídni ho odkazem na konci odpovědi a znovu ho nevyráběj.` : ""}`
+
+const PAYLOAD = (question, jurisdiction, asOf, report, path, docx) => `<case_law_research>
+<request>
+Otázka: ${question}
+Jurisdikce: ${jurisdiction}
+Rozhodné datum: ${asOf}
+</request>
+
+<report>
+${report}
+</report>
+
+<instructions>
+${INSTRUCTIONS(path, docx)}
+</instructions>
+</case_law_research>`
 
 const RULES = `Odpovídej česky. Piš jen to, co jsi otevřel a přečetl. Zdroj si nikdy nevymýšlej - když ho nemáš, řekni to.
 
@@ -130,6 +139,8 @@ Dílčí otázka: ${question}
 
 Níže je hotový oddíl rešerše. Otevři každé rozhodnutí, které je v něm citováno, a přečti odůvodnění. U každého zjisti trojí: sedí doslovný výňatek na to, co je uvedeno? Nese ta pasáž tvrzení, které se o ni opírá, nebo je tvrzení širší než rozhodnutí? A řešil soud tentýž problém a srovnatelný skutek? Rozhodnutí, které není citované značkou a datem, ber jako neověřitelné.
 
+Pak se zeptej na opačnou stranu: co oddíl neříká a říct měl. Sám vyhledej rozhodnutí, která závěr oddílu vyvracejí nebo ho podstatně upravují, a hlavně ta, která mění, jak se dokazují podmínky ustanovení, o něž se oddíl opírá. Nestačí, že oddíl cituje ustanovení správně - k ustanovením se váže judikatura, která u určité skupiny osob nebo situací některou podmínku prokazuje jinak nebo ji nezkoumá vůbec. Ustanovení opsané z textu zákona bez téhle judikatury vede k opačnému závěru, než jaký soudy dovozují. Hledej cíleně tam, kde by protistrana hledala.
+
 Oddíl neopisuj ani nepřepisuj - ten zůstane, jak je. Vrať jen svůj nález, v markdownu:
 
 ## Neobstálo
@@ -140,6 +151,9 @@ Oddíl neopisuj ani nepřepisuj - ten zůstane, jak je. Vrať jen svůj nález, 
 
 ## Obstálo
 Značky rozhodnutí, která jsi otevřel a potvrdil.
+
+## Chybí
+Řádek na každé nosné rozhodnutí nebo pravidlo, které v oddílu není a patří tam: značka, co z něj plyne a který závěr oddílu to mění. Tenhle oddíl nech prázdný jen tehdy, když jsi opravdu hledal a nic nenašel.
 
 ## Neověřeno
 Co se ověřit nepodařilo a proč.
@@ -577,9 +591,10 @@ export default async function (args) {
     ? "\n## Co v rešerši chybí\n\n" + gaps.join("\n") + "\n"
     : ""
 
-  const report = `${REPORT_HEADER(question, jurisdiction, asOf)}
-${body}
+  const chatReport = `${body}
 ${missing}`
+  const report = `${REPORT_HEADER(question, jurisdiction, asOf)}
+${chatReport}`
 
   const { writeFile } = await import("node:fs/promises")
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")
@@ -598,7 +613,5 @@ ${missing}`
     log(`dokument se nepodařilo vysázet: ${failure.message}`)
   }
 
-  return `${report}
-
-${RELAY(path, docx)}`
+  return PAYLOAD(question, jurisdiction, asOf, chatReport, path, docx)
 }

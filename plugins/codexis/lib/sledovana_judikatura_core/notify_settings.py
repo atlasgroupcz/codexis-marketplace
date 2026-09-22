@@ -7,7 +7,7 @@ Two layers, on two different trees:
                lib, refreshed on update.
 - user     ->  <APP_DIR>/settings.json  (only the keys the user changed)
                User-data tree (state.APP_DIR, i.e. CODEXIS_PUBLIC_USER_HOME
-               or ``~`` + .cdx/apps/<APP_ID>).
+               or ``~`` + .cdx/app-state/<APP_ID>).
 
 Effective config is computed at read time; nothing is merged into the user file.
 """

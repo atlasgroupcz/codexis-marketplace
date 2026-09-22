@@ -3,7 +3,10 @@ uuid: 2cf8430c-283d-49cb-b879-677406a03be0
 type: AGENT
 title: Weekly news digest on a topic
 description: Every week, summarize the latest news and developments on a topic of your choice.
-cron: 0 7 * * 1
+schedule:
+  repeat: WEEKLY
+  dayPart: MORNING
+  daysOfWeek: [1]
 max-turns: 20
 enabled: false
 notify-on-success: true

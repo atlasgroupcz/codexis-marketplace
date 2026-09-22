@@ -42,6 +42,12 @@ datify-cli settings show      # configured, masked token, where it came from
 datify-cli settings test      # confirm Datify still accepts it
 ```
 
+`settings set-key` validates the token against Datify and stores it through the
+platform (`cdxctl appenv datify set DATIFY_API_KEY <TOKEN>`); every command and
+the settings page read it from `~/.cdx/apps/datify/.env`. Do not write that file
+by hand and do not call `cdxctl appenv` for the token directly - `set-key` does
+the validation first.
+
 ## Two things that decide how you use this API
 
 **1. Record values are keyed by property UUID, not by name.** A record comes

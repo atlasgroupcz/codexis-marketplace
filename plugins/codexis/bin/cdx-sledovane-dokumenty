@@ -19,11 +19,22 @@ Usage:
     cdx-sledovane-dokumenty related remove <codexisId> <type>
     cdx-sledovane-dokumenty related list <codexisId>
     cdx-sledovane-dokumenty related types <codexisId>
+    cdx-sledovane-dokumenty project available
+    cdx-sledovane-dokumenty project browse [<project>] [--folder <path>]
+    cdx-sledovane-dokumenty project add [<project>] [--folder <path>]
+    cdx-sledovane-dokumenty project list
+    cdx-sledovane-dokumenty project scan|harvest|refresh|show [<project>] [--folder <path>]
+    cdx-sledovane-dokumenty project check [<project>] [--folder <path>] [--no-notify]
+    cdx-sledovane-dokumenty project confirm [<project>] [--folder <path>] [--act <codexisId>]
+    cdx-sledovane-dokumenty project remove [<project>] [--folder <path>] [--purge]
+
+<project> is a project name, UUID or daemon id; omitted, it is the project the
+current chat belongs to. --folder is a path inside the project's files; omitted,
+the whole project is watched.
 """
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -41,20 +52,21 @@ for p in CANDIDATES:
 try:
     from sledovane_dokumenty_core import (
         clients,
-        folder_check,
-        folders,
         harvest,
         notify,
-        related as related_mod,
+        project_check,
+        projects,
         settings,
         state,
         tracking,
+    )
+    from sledovane_dokumenty_core import (
+        related as related_mod,
     )
     from sledovane_dokumenty_core.exceptions import (
         CdxClientError,
         DocumentError,
     )
-    from sledovane_dokumenty_core.folders import WatchedFolderError
 except ImportError as e:
     print(f"ERROR: sledovane_dokumenty_core library not found: {e}", file=sys.stderr)
     sys.exit(2)
@@ -325,30 +337,53 @@ def cmd_related_types(args):
     print()
 
 
-# ── watched folders ──────────────────────────────────────────────────────────
+# ── watched projects ─────────────────────────────────────────────────────────
 
 
 def _print_json(obj):
     print(json.dumps(obj, indent=2, ensure_ascii=False))
 
 
-def cmd_folder_add(args):
-    res = folders.add_watch(args.root, name=args.name)
-    status(
-        f"OK: Sledování složky „{res['name']}“ zahájeno "
-        f"({res['total']} dokumentů, {res['added']} nových)."
-    )
+def _watch_id(args):
+    return projects.resolve_watch(args.project, args.folder)["uuid"]
+
+
+def _describe(entry):
+    return f"„{entry['name']}“ {projects.folder_label(entry['path'])}"
+
+
+def cmd_project_available(args):
+    _print_json(projects.require_available())
+
+
+def cmd_project_browse(args):
+    _print_json(projects.browse(args.project, args.folder))
+
+
+def cmd_project_add(args):
+    res = projects.add_watch(args.project, args.folder)
+    status(f"OK: Sledování složky {_describe(res)} zahájeno ({res['uuid']}).")
+    if not res["files_available"]:
+        status(
+            "  Soubory projektu odtud nejsou vidět - naskenují se při extrakci "
+            "z aplikace Sledované dokumenty nebo z chatu v tomto projektu."
+        )
+        return
+    status(f"  Dokumentů: {res['total']} ({res['added']} nových).")
     if res.get("total"):
-        status(f"  Spusťte extrakci: cdx-sledovane-dokumenty folder harvest {res['root']}")
+        status(
+            "  Spusťte extrakci: cdx-sledovane-dokumenty project harvest "
+            f"{res['projectId']} --folder {res['path']}"
+        )
 
 
-def cmd_folder_list(args):
-    watches = folders.list_watches()
+def cmd_project_list(args):
+    watches = projects.list_watches()
     if not watches:
-        print("Žádné sledované složky.")
+        print("Žádné sledované složky projektů.")
         return
     for w in watches:
-        print(f"  {w['name']}  ({w['root']})")
+        print(f"  {_describe(w)}  (projekt {w['projectId']})")
         print(
             f"    Dokumentů: {w['documents']}  K extrakci: {w['pending_harvest']}  "
             f"Odkazů: {w['legislation']}"
@@ -361,8 +396,8 @@ def cmd_folder_list(args):
         print()
 
 
-def cmd_folder_scan(args):
-    _, summary = folders.sync_watched(folders.normalize_root(args.root))
+def cmd_project_scan(args):
+    _, summary = projects.sync_watched(_watch_id(args))
     status(
         f"OK: Sken hotov - {summary['total']} dokumentů "
         f"(+{summary['added']} nových, ~{summary['changed']} změněných, "
@@ -370,8 +405,7 @@ def cmd_folder_scan(args):
     )
 
 
-def cmd_folder_harvest(args):
-    res = harvest.harvest_folder(args.root, printer=print_progress)
+def _report_harvest(res):
     suffix = (
         f", {res['failed']} selhalo (zkusí se příště)" if res["failed"] else ""
     )
@@ -381,20 +415,23 @@ def cmd_folder_harvest(args):
     )
 
 
-def cmd_folder_refresh(args):
-    abs_root = folders.normalize_root(args.root)
-    folders.sync_watched(abs_root)
-    folders.mark_all_for_reharvest(abs_root)
-    res = harvest.harvest_folder(abs_root, printer=print_progress)
-    status(
-        f"OK: Složka obnovena - {res['documents']} dokumentů přeextrahováno, "
-        f"{res['references']} odkazů."
-    )
+def cmd_project_harvest(args):
+    _report_harvest(harvest.harvest_watch(_watch_id(args), printer=print_progress))
 
 
-def cmd_folder_check(args):
-    result = folder_check.check_folders(
-        args.root, printer=print_progress, send_notifications=not args.no_notify
+def cmd_project_refresh(args):
+    watch_id = _watch_id(args)
+    entry = projects.require_watch(watch_id)
+    if projects.folder_dir(entry["projectId"], entry["path"]) is not None:
+        projects.sync_watched(watch_id)
+    projects.mark_all_for_reharvest(watch_id)
+    _report_harvest(harvest.harvest_watch(watch_id, printer=print_progress))
+
+
+def cmd_project_check(args):
+    watch_id = _watch_id(args) if args.project or args.folder else None
+    result = project_check.check_watches(
+        watch_id, printer=print_progress, send_notifications=not args.no_notify
     )
     for e in result["errors"]:
         print(f"  ! {e}")
@@ -402,34 +439,28 @@ def cmd_folder_check(args):
         status("Žádné nové změny legislativy.")
     else:
         status(f"OK: {result['changes_found']} nových změn legislativy.")
-    # Only the refused notification ends the run non-zero. The errors printed
-    # above keep exiting zero, as they always have - turning those red is a
-    # separate decision and does not belong in this fix.
     if result["notify_failed"]:
         err("Upozornění se nepodařilo odeslat do aplikace.")
         sys.exit(1)
 
 
-def cmd_folder_show(args):
-    abs_root = os.path.abspath(os.path.expanduser(args.root))
+def cmd_project_show(args):
+    watch_id = _watch_id(args)
     _print_json({
-        "watched": folders.read_watched(abs_root),
-        "tracking": folders.read_tracking(abs_root),
+        "watch": projects.find_watch(watch_id),
+        "watched": projects.read_watched(watch_id),
+        "tracking": projects.read_tracking(watch_id),
     })
 
 
-def cmd_folder_confirm(args):
-    marked = folder_check.confirm_folder(args.root, args.codexis_id)
+def cmd_project_confirm(args):
+    marked = project_check.confirm_watch(_watch_id(args), args.act)
     status(f"OK: {marked} změn potvrzeno." if marked else "Žádná nepotvrzená změna.")
 
 
-def cmd_folder_remove(args):
-    removed = folders.remove_watch(args.root, purge=args.purge)
+def cmd_project_remove(args):
+    removed = projects.remove_watch(_watch_id(args), purge=args.purge)
     status("OK: Složka odebrána ze sledování." if removed else "Složka nebyla sledována.")
-
-
-def cmd_folder_browse(args):
-    _print_json(folders.browse(args.path))
 
 
 # ── notify (unified) ─────────────────────────────────────────────────────────
@@ -555,51 +586,49 @@ def build_parser():
     prelt.add_argument("codexis_id")
     prelt.set_defaults(func=cmd_related_types)
 
-    pf = sub.add_parser("folder", help="Watch a folder of documents for legislation")
-    pf_sub = pf.add_subparsers(dest="sub", required=True)
+    pp = sub.add_parser("project", help="Watch a folder of a project's documents for legislation")
+    pp_sub = pp.add_subparsers(dest="sub", required=True)
+    project_help = "Project name, UUID or daemon id (default: the current chat's project)"
+    folder_help = "Folder inside the project's files (default: the whole project)"
 
-    pfa = pf_sub.add_parser("add", help="Start watching a folder")
-    pfa.add_argument("root")
-    pfa.add_argument("--name")
-    pfa.set_defaults(func=cmd_folder_add)
+    def _watch_args(parser, project_default_help=project_help):
+        parser.add_argument("project", nargs="?", help=project_default_help)
+        parser.add_argument("--folder", default=None, help=folder_help)
 
-    pfl = pf_sub.add_parser("list", help="List watched folders")
-    pfl.set_defaults(func=cmd_folder_list)
-
-    pfs = pf_sub.add_parser("scan", help="Rescan files (checksums)")
-    pfs.add_argument("root")
-    pfs.set_defaults(func=cmd_folder_scan)
-
-    pfh = pf_sub.add_parser("harvest", help="AI-extract legislation references")
-    pfh.add_argument("root")
-    pfh.set_defaults(func=cmd_folder_harvest)
-
-    pfref = pf_sub.add_parser("refresh", help="Force full re-harvest")
-    pfref.add_argument("root")
-    pfref.set_defaults(func=cmd_folder_refresh)
-
-    pfc = pf_sub.add_parser("check", help="Deterministic legislation-change check")
-    pfc.add_argument("root", nargs="?")
-    pfc.add_argument("--no-notify", action="store_true")
-    pfc.set_defaults(func=cmd_folder_check)
-
-    pfsh = pf_sub.add_parser("show", help="Show watched.json + tracking state as JSON")
-    pfsh.add_argument("root")
-    pfsh.set_defaults(func=cmd_folder_show)
-
-    pfcf = pf_sub.add_parser("confirm", help="Confirm changes + advance baseline")
-    pfcf.add_argument("root")
-    pfcf.add_argument("codexis_id", nargs="?")
-    pfcf.set_defaults(func=cmd_folder_confirm)
-
-    pfr = pf_sub.add_parser("remove", help="Stop watching a folder")
-    pfr.add_argument("root")
-    pfr.add_argument("--purge", action="store_true", help="also delete .watched/")
-    pfr.set_defaults(func=cmd_folder_remove)
-
-    pfb = pf_sub.add_parser("browse", help="List sub-directories (folder picker)")
-    pfb.add_argument("path", nargs="?")
-    pfb.set_defaults(func=cmd_folder_browse)
+    ppav = pp_sub.add_parser("available", help="List the user's projects (JSON)")
+    ppav.set_defaults(func=cmd_project_available)
+    ppb = pp_sub.add_parser("browse", help="List sub-folders of a project folder (JSON)")
+    _watch_args(ppb)
+    ppb.set_defaults(func=cmd_project_browse)
+    ppa = pp_sub.add_parser("add", help="Start watching a folder of a project")
+    _watch_args(ppa)
+    ppa.set_defaults(func=cmd_project_add)
+    ppl = pp_sub.add_parser("list", help="List watched folders")
+    ppl.set_defaults(func=cmd_project_list)
+    pps = pp_sub.add_parser("scan", help="Rescan files (checksums)")
+    _watch_args(pps)
+    pps.set_defaults(func=cmd_project_scan)
+    pph = pp_sub.add_parser("harvest", help="AI-extract legislation references")
+    _watch_args(pph)
+    pph.set_defaults(func=cmd_project_harvest)
+    ppref = pp_sub.add_parser("refresh", help="Force full re-harvest")
+    _watch_args(ppref)
+    ppref.set_defaults(func=cmd_project_refresh)
+    ppc = pp_sub.add_parser("check", help="Deterministic legislation-change check")
+    _watch_args(ppc, "Project to check (default: every watched folder)")
+    ppc.add_argument("--no-notify", action="store_true")
+    ppc.set_defaults(func=cmd_project_check)
+    ppsh = pp_sub.add_parser("show", help="Show watched.json + tracking state as JSON")
+    _watch_args(ppsh)
+    ppsh.set_defaults(func=cmd_project_show)
+    ppcf = pp_sub.add_parser("confirm", help="Confirm changes + advance baseline")
+    _watch_args(ppcf)
+    ppcf.add_argument("--act", help="Confirm only this CODEXIS id")
+    ppcf.set_defaults(func=cmd_project_confirm)
+    ppr = pp_sub.add_parser("remove", help="Stop watching a folder")
+    _watch_args(ppr)
+    ppr.add_argument("--purge", action="store_true", help="Also delete the stored state")
+    ppr.set_defaults(func=cmd_project_remove)
 
     pnf = sub.add_parser("notify", help="Manage notification settings")
     pnf_sub = pnf.add_subparsers(dest="sub", required=True)

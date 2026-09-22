@@ -1,9 +1,57 @@
 #!/usr/bin/env node
 
 // src/config.ts
+var import_node_fs2 = require("node:fs");
+var import_node_path2 = require("node:path");
+var import_node_os = require("node:os");
+
+// src/app-env.ts
+var import_node_child_process = require("node:child_process");
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
-var import_node_os = require("node:os");
+
+class AppEnvError extends Error {
+  exitCode;
+  constructor(message, exitCode) {
+    super(message);
+    this.name = "AppEnvError";
+    this.exitCode = exitCode;
+  }
+}
+function cdxctlProgram() {
+  if (process.env.SID_CDXCTL)
+    return process.env.SID_CDXCTL;
+  for (const home of [process.env.HOME, process.env.CODEXIS_PUBLIC_USER_HOME]) {
+    if (!home)
+      continue;
+    const candidate = import_node_path.join(home, ".local", "bin", "cdxctl");
+    if (import_node_fs.existsSync(candidate))
+      return candidate;
+  }
+  return "cdxctl";
+}
+function run(args) {
+  const result = import_node_child_process.spawnSync(cdxctlProgram(), args, {
+    stdio: ["ignore", "ignore", "pipe"],
+    encoding: "utf8"
+  });
+  if (result.error) {
+    throw new AppEnvError(`cdxctl se nepodařilo spustit: ${result.error.message}`, null);
+  }
+  if (result.status === 0)
+    return;
+  const detail = (result.stderr ?? "").trim();
+  throw new AppEnvError(`cdxctl appenv skončil s kódem ${result.status}: ${detail}`, result.status);
+}
+function setAppEnv(app, name, value) {
+  run(["appenv", app, "set", name, value]);
+}
+function deleteAppEnv(app, name) {
+  run(["appenv", app, "delete", name]);
+}
+
+// src/config.ts
+var APP_ID = "sid";
 var EXIT = {
   OK: 0,
   ERROR: 1,
@@ -18,12 +66,12 @@ function userHome() {
   return process.env.CODEXIS_PUBLIC_USER_HOME || import_node_os.homedir();
 }
 function envFilePath() {
-  return process.env.SID_ENV_FILE || import_node_path.join(userHome(), ".cdx", "apps", "sid", ".env");
+  return process.env.SID_ENV_FILE || import_node_path2.join(userHome(), ".cdx", "apps", "sid", ".env");
 }
 function readEnvFile() {
   const out = {};
   try {
-    for (const line of import_node_fs.readFileSync(envFilePath(), "utf8").split(`
+    for (const line of import_node_fs2.readFileSync(envFilePath(), "utf8").split(`
 `)) {
       const t = line.trim();
       if (!t || t.startsWith("#") || !t.includes("="))
@@ -44,38 +92,24 @@ function getBaseUrl() {
   const raw = process.env.CODEXIS_PLUGIN_SID_API_URL || readEnvFile().SID_API_URL || DEFAULT_BASE_URL;
   return raw.trim().replace(/\/+$/, "");
 }
-function writeEnvFile(entries) {
-  for (const [k, v] of Object.entries(entries)) {
-    if (/[\r\n]/.test(k) || /[\r\n]/.test(v)) {
-      throw new Error(`Odmítnut zápis do .env: hodnota '${k}' obsahuje konec řádku.`);
-    }
+function rejectNewlines(key, value) {
+  if (/[\r\n]/.test(key) || /[\r\n]/.test(value)) {
+    throw new Error(`Odmítnuto uložení: hodnota '${key}' obsahuje konec řádku.`);
   }
-  const path = envFilePath();
-  import_node_fs.mkdirSync(import_node_path.dirname(path), { recursive: true, mode: 448 });
-  const body = Object.entries(entries).map(([k, v]) => `${k}=${v}`).join(`
-`) + `
-`;
-  const tmp = `${path}.tmp-${process.pid}`;
-  import_node_fs.writeFileSync(tmp, body, { mode: 384 });
-  import_node_fs.renameSync(tmp, path);
 }
 function writeEnvValue(key, value) {
-  writeEnvFile({ ...readEnvFile(), [key]: value });
+  rejectNewlines(key, value);
+  setAppEnv(APP_ID, key, value);
 }
 function writeApiKey(key) {
-  writeEnvFile({ ...readEnvFile(), SID_API_KEY: key });
+  writeEnvValue("SID_API_KEY", key);
 }
 function deleteApiKey() {
-  const rest = readEnvFile();
-  delete rest.SID_API_KEY;
-  delete rest.SID_USER_ROLE;
-  delete rest.SID_USER_EMAIL;
-  if (Object.keys(rest).length === 0) {
-    if (import_node_fs.existsSync(envFilePath()))
-      import_node_fs.rmSync(envFilePath());
-    return;
+  const stored = readEnvFile();
+  for (const name of ["SID_API_KEY", "SID_USER_ROLE", "SID_USER_EMAIL"]) {
+    if (name in stored)
+      deleteAppEnv(APP_ID, name);
   }
-  writeEnvFile(rest);
 }
 
 // src/http.ts
@@ -137,30 +171,30 @@ async function apiGet(path, f = fetch, keyOverride) {
 }
 
 // src/notify-settings.ts
-var import_node_fs2 = require("node:fs");
-var import_node_path2 = require("node:path");
+var import_node_fs3 = require("node:fs");
+var import_node_path3 = require("node:path");
 var import_node_os2 = require("node:os");
 var BUILTIN = { inApp: true };
 function defaultsPath() {
-  return process.env.SID_DEFAULTS_FILE || import_node_path2.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
+  return process.env.SID_DEFAULTS_FILE || import_node_path3.join(import_node_os2.homedir(), ".local", "share", "sid", "settings", "defaults.json");
 }
 function userSettingsPath() {
-  return import_node_path2.join(userHome(), ".cdx", "apps", "sid", "settings.json");
+  return import_node_path3.join(userHome(), ".cdx", "app-state", "sid", "settings.json");
 }
 function writeNotifyOverride(patch) {
   const path = userSettingsPath();
   const current = readJson(path) ?? {};
   const currentNotify = current.notify && typeof current.notify === "object" ? current.notify : {};
   const next = { ...current, notify: { ...currentNotify, ...patch } };
-  import_node_fs2.mkdirSync(import_node_path2.dirname(path), { recursive: true, mode: 448 });
+  import_node_fs3.mkdirSync(import_node_path3.dirname(path), { recursive: true, mode: 448 });
   const tmp = `${path}.tmp-${process.pid}`;
-  import_node_fs2.writeFileSync(tmp, JSON.stringify(next, null, 2) + `
+  import_node_fs3.writeFileSync(tmp, JSON.stringify(next, null, 2) + `
 `, { mode: 384 });
-  import_node_fs2.renameSync(tmp, path);
+  import_node_fs3.renameSync(tmp, path);
 }
 function readJson(path) {
   try {
-    const parsed = JSON.parse(import_node_fs2.readFileSync(path, "utf8"));
+    const parsed = JSON.parse(import_node_fs3.readFileSync(path, "utf8"));
     return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     return null;
