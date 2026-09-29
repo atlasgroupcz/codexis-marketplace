@@ -48,7 +48,7 @@ Reading the file gives you the wording as markdown. It does not give you the pag
 render those as well:
 
 ```bash
-cdx-render -i /home/codexis/smlouva.docx
+cdx-render -i /home/codexis/smlouva.docx -o /tmp/smlouva-pages
 ```
 
 Then `Read` the PNGs. Do not skip this for documents where the layout carries meaning -
@@ -108,11 +108,11 @@ const doc = new Document({
 Packer.toBuffer(doc).then((buf) => fs.writeFileSync('/home/codexis/smlouva.docx', buf));
 ```
 
-**Only the `.docx` is the deliverable - write it under `./`.** Everything you produce merely to
-build or check it is throwaway scratch that belongs under `./.tmp`, never next to the document:
-your generator script (`./.tmp/create-smlouva.js`), the LibreOffice intermediate `.pdf`, and the
-page PNGs. `cdx-render` already writes its output under `./.tmp` by default, so just `Read` the
-paths it prints - do not pass `-o` pointing back into the working directory.
+**For DOCX-only requests, the `.docx` is the deliverable - write it under `./`.** Everything you produce merely to
+build or check it is throwaway scratch that belongs under `/tmp`, never next to the document:
+your generator script (`/tmp/create-smlouva.js`), the LibreOffice intermediate `.pdf`, and the
+page PNGs. By default, `cdx-render` puts its output in the input file's `.tmp` directory. Pass
+`-o /tmp/smlouva-pages` and `Read` the paths it prints.
 
 **Page size:** `docx-js` defaults to A4 (11906 × 16838 DXA), which is what Czech and Slovak
 documents want - but set it explicitly anyway. US Letter is 12240 × 15840.
@@ -137,7 +137,7 @@ Your first render is almost never right. Treat QA as a bug hunt, not a confirmat
 **1. Render and look.**
 
 ```bash
-cdx-render -i /home/codexis/smlouva.docx
+cdx-render -i /home/codexis/smlouva.docx -o /tmp/smlouva-pages
 ```
 
 `Read` every page image. You are looking for: text clipped at the margin, overlapping
@@ -162,8 +162,8 @@ pandoc /home/codexis/smlouva.docx -t plain |
   grep -iE 'lorem|ipsum|xxxx|TODO|\[doplnit\]|\{\{'
 ```
 
-**4. Fix, then re-render the affected pages** (`cdx-render -i file.docx -f 3 -l 3`). One fix
-routinely creates the next problem. Do not declare success until a full pass finds nothing new.
+**4. Fix, then re-render the affected pages** (`cdx-render -i file.docx -f 3 -l 3 -o /tmp/smlouva-pages`).
+One fix routinely creates the next problem. Do not declare success until a full pass finds nothing new.
 
 ## Word compatibility - the render is LibreOffice, not Word
 
@@ -219,7 +219,10 @@ right even when the real font is missing - which is exactly how a font problem h
 - A document with the right words and a broken layout is a failed deliverable. The render is
   the deliverable, not the code that produced it.
 
-## Converting to PDF
+## Converting to PDF for delivery
+
+When the user wants a PDF deliverable, write it next to the DOCX. For scratch conversion and
+visual checks, use `cdx-render -o /tmp/smlouva-pages`.
 
 ```bash
 soffice -env:UserInstallation="file:///tmp/lo_profile_$$" --headless \
