@@ -2,7 +2,7 @@
 //!
 //! The caller names a directory, never a file: the agent driving this CLI has
 //! not seen the bytes, so a name it invents carries a guessed extension, and
-//! everything downstream (`ocr` above all) picks its reader from that extension.
+//! everything downstream (`readFile` above all) picks its reader from that extension.
 //! Datify sends the real name in `Content-Disposition`, so that is what lands on
 //! disk. Renaming afterwards is `mv`, which the shell does better than a flag.
 //!

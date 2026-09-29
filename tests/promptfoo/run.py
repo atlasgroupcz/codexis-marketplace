@@ -31,7 +31,7 @@ Usage:
     tests/promptfoo/run.py \\
         --git-url https://gitlab.agrp.dev/profidata/codexis-marketplace.git \\
         --git-ref feat/promptfoo-poc-cdx-at \\
-        [video-analyze.config.yaml ocr.config.yaml ...]
+        [video-analyze.config.yaml katastr.config.yaml ...]
 """
 
 from __future__ import annotations
@@ -80,7 +80,6 @@ BATCHES: list[list[str]] = [
         "cdx-sk-sknus.config.yaml",
         "cdx-sk-oz.config.yaml",
         "data-gouv-fr.config.yaml",
-        "ocr.config.yaml",
         "video-analyze.config.yaml",
     ],
     # visualization ships 10 skills (visualize + 9 visualize-* variants).

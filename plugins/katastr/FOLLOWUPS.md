@@ -26,32 +26,25 @@ Deferred by decision: the win is real but bounded, and it must stay polite to
 
 ## B. Not-yet-done reuse / dedup
 
-1. **`percent_encode` still exists three more times, and has drifted.** Not
+1. **`percent_encode` still exists twice more, and has drifted.** Not
    copies of one function - functions sharing a name:
 
    | where | keeps literal | takes |
    | --- | --- | --- |
    | `katastr/lookup.rs` | RFC 3986 unreserved - **now the `percent-encoding` crate** | `&str` |
-   | `ocr/main.rs` | `A-Za-z0-9-_.~` | `&[u8]` |
-   | `video-analyze/main.rs` | the same **plus `/`** | `&[u8]` |
+   | `video-analyze/main.rs` | `A-Za-z0-9-_.~` **plus `/`** | `&[u8]` |
    | `cdx-common/curl.rs::percent_encode_utf8` | every ASCII byte | `&str` |
 
-   `ocr` and `video-analyze` build the identical URL - `?path=<encoded>`, a
-   filesystem path in a query parameter - yet only one escapes the slash.
-   `video-analyze` matched `ocr` character for character until commit
-   `becee5bb`, which dropped two of the function's three callers and, in the
-   same edit, let `/` through. The reasoning reads as "this only encodes paths
-   now, so keep the slashes readable" - but the value still lands in a query
-   parameter, where a slash is data, not structure. Both forms are legal
-   (RFC 3986 §3.4 permits a literal `/` in a query) and `ocr` proves `%2F`
-   works against the same daemon, so this is not a bug. It is one plugin's rule
-   drifting inside an unrelated commit, which is exactly what a shared helper
-   prevents.
+   `video-analyze` puts a filesystem path into a query parameter
+   (`?path=<encoded>`) and lets `/` through since commit `becee5bb`. Both forms
+   are legal (RFC 3986 §3.4 permits a literal `/` in a query), so this is not a
+   bug. It is one plugin's rule drifting inside an unrelated commit, which is
+   exactly what a shared helper prevents.
 
    katastr now calls `percent_encoding::utf8_percent_encode`, proved
-   byte-for-byte against the hand-rolled version it replaced. The other two can
-   do the same: the crate has zero transitive dependencies. Note they depend on
-   neither ureq nor reqwest (both shell out to `curl`), so for them it is a
+   byte-for-byte against the hand-rolled version it replaced. `video-analyze`
+   can do the same: the crate has zero transitive dependencies. Note it depends
+   on neither ureq nor reqwest (it shells out to `curl`), so for it this is a
    real, if tiny, new dependency - and unifying changes `video-analyze`'s wire
    format (`/` becomes `%2F`).
 

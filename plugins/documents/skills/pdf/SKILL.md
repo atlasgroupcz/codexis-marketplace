@@ -38,25 +38,28 @@ with a hand-rolled conversion that skips the visual check.
 
 ## Reading a PDF - text and images, not one or the other
 
-Text extraction is exact but blind: it cannot tell you that a clause is struck through, that
-a stamp covers the signature, or that a table has merged cells. The page image shows all of
-that but is unreliable for long numbers, spisové značky and URLs. **Use both, page by page.**
+Read every PDF with `readFile`. It returns per-page Markdown next to each page image, so one
+read gives you the exact strings and the visual layout together. Scanned pages go through the
+platform OCR, the best OCR available to you, so a PDF with no text layer reads too.
 
-Reading the file gives you both halves at once: per-page markdown next to the page image.
-Scanned pages come through OCR, so a PDF with no text layer reads too. One read covers at
-most 20 pages and carries the images only when the window is 10 pages or fewer - pass a page
-range (`1-5`, `3`) for anything longer.
+**Never install or run your own OCR.** No `tesseract`, `ocrmypdf`, `pytesseract`, `easyocr`,
+`paddleocr` or any other OCR engine, and no `cdxctl package install` to get one. It cannot beat
+the Markdown `readFile` already gave you, and it costs the user time for a worse result.
 
-When the two disagree about a number or a name, **the image wins for layout, the text wins
-for exact strings** - go back to the image and read the value off it. OCR silently mangles
-diacritics and handwritten annotations, so never take a scanned value on trust.
+One read covers at most 20 pages and carries the page images only when the window is 10 pages
+or fewer - pass a page range (`1-5`, `3`) for anything longer, so you get the images.
 
-For a wider window at once, or for more detail than the inline images carry, render the pages
-yourself - `cdx-render` runs at 150 dpi against the inline 100.
+The image shows what text cannot: a struck-through clause, a stamp over the signature, merged
+table cells. **The image wins for layout, the text wins for exact strings.** When the Markdown
+of a page is garbled or missing a value, read the value off that page's image. When the inline
+image is too small to read, render the page at a higher resolution and read the PNG:
 
 ```bash
-cdx-render -i rozsudek.pdf -f 1 -l 3      # first three pages
+cdx-render -i rozsudek.pdf -f 3 -l 3 -r 300   # page 3 at 300 dpi
 ```
+
+`cdx-render` runs at 150 dpi by default against the inline 100, and also covers a wider window
+than one read carries images for.
 
 ## Creating a PDF
 

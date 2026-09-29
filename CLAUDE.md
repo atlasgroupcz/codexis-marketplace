@@ -223,7 +223,7 @@ and catches only cosmetic drift.
 
 A skill's `SKILL.md` frontmatter holds ready-made prompts the daemon renders on
 the plugin page, under the `i18n` block it already carries. They are **optional** -
-`ocr`, `video-analyze` and `visualization` ship none on purpose, because nobody
+`video-analyze` and `visualization` ship none on purpose, because nobody
 addresses them directly; they run as part of another request.
 
 ```yaml

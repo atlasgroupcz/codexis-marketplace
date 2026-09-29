@@ -20,7 +20,7 @@ ureq = { version = "3", default-features = false, features = ["rustls"], optiona
 default = ["sources"]
 # The `sources` module (daemon source publishing). Pulls in `serde_json`.
 # On by default for the search plugins; disable it (default-features = false)
-# for plugins that only need the std-only helpers (e.g. ocr, video-analyze).
+# for plugins that only need the std-only helpers (e.g. video-analyze).
 sources = ["dep:serde_json"]
 # The `curl` module (curl HTTP plumbing for the search plugins). Pulls in `serde_json`.
 curl = ["dep:serde_json", "url"]
