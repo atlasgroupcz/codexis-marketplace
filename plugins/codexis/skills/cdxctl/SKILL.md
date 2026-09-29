@@ -196,8 +196,7 @@ cdxctl plugin uninstall <id>
 cdxctl agent list --editable-only
 
 # Write the system prompt to a temp file. Pass its path.
-mkdir -p ./.tmp
-cat > ./.tmp/koncipient-pp.md <<'EOF'
+cat > /tmp/koncipient-pp.md <<'EOF'
 Posuď zákonnost výpovědi ze strany zaměstnavatele.
 Na vstupu dostaneš text výpovědi, pracovní smlouvu a popis okolností.
 Vycházej ze zákoníku práce (§ 48-62) a judikatury NS.
@@ -213,7 +212,7 @@ cdxctl agent create --name koncipient-pp --description "Posuzuje zákonnost výp
   --example-prompt en:"Judge whether this dismissal is lawful and propose a fix." \
   --example-prompt en:"Check whether the notice period was observed." \
   --example-prompt en:"Summarize the risks of this dismissal in a table." \
-  --instructions-file ./.tmp/koncipient-pp.md
+  --instructions-file /tmp/koncipient-pp.md
 
 cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
@@ -221,7 +220,7 @@ cdxctl agent delete <id>
 
 An agent is a reusable persona. It has its own model, tools, and instructions.
 
-Write the system prompt to a temp file under `./.tmp/`. Pass its path with `--instructions-file`.
+Write the system prompt to a temp file under `/tmp/`. Pass its path with `--instructions-file`.
 
 The model and jurisdictions come from the active chat.
 
@@ -265,8 +264,7 @@ A skill is reusable know-how the AI loads on demand: the method for a task - the
 cdxctl skill list --editable-only
 
 # Write the skill body to a temp file, then create the skill from flags.
-mkdir -p ./.tmp
-cat > ./.tmp/vypoved-kontrola.md <<'EOF'
+cat > /tmp/vypoved-kontrola.md <<'EOF'
 Posuď zákonnost výpovědi ze strany zaměstnavatele.
 Na vstupu dostaneš text výpovědi a pracovní smlouvu.
 Vycházej ze zákoníku práce (§ 48-62) a judikatury NS.
@@ -279,7 +277,7 @@ cdxctl skill create --name vypoved-kontrola \
   --example-prompt cs:"Posuď zákonnost této výpovědi a navrhni nápravu." \
   --example-prompt en:"Judge whether this dismissal is lawful and propose a fix." \
   --jurisdiction CZ \
-  --instructions-file ./.tmp/vypoved-kontrola.md
+  --instructions-file /tmp/vypoved-kontrola.md
 
 cdxctl skill update <id> --description "New trigger text"
 cdxctl skill delete <id>
@@ -287,7 +285,7 @@ cdxctl skill delete <id>
 
 Describe the skill with flags; the whole SKILL.md is built for you.
 
-Write the skill body to a temp file under `./.tmp/` and pass its path with `--instructions-file`.
+Write the skill body to a temp file under `/tmp/` and pass its path with `--instructions-file`.
 
 `--description` is the AI trigger text - write it as "Use when …" with the keywords that route to this skill, and say what it is NOT for when a sibling skill is close. Keep it under 1024 characters.
 
@@ -326,7 +324,7 @@ cdxctl project get "Audit 2026"
 cdxctl project create \
     --name "Audit 2026" \
     --description "Roční audit dodavatelských smluv" \
-    --instructions-file ./pokyny.md \
+    --instructions-file /tmp/pokyny.md \
     --drive "Smlouvy" \
     --drive "Judikatura"
 
@@ -342,7 +340,7 @@ a Node ID works too. The candidates are the user's own drives, the drives shared
 their cloud drives. An unknown name fails the command and saves nothing.
 
 `--drive` replaces the whole list rather than adding to it, so pass every folder the project
-should keep. Write long instructions to a temp file and pass `--instructions-file`.
+should keep. Write long instructions to a temp file under `/tmp` and pass `--instructions-file`.
 
 Two limits worth knowing before promising anything:
 
