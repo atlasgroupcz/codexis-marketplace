@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 
 const REPORT_PATH: &str = "/rest/v1/plugin/bug-report";
 const SEVERITIES: [&str; 4] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+const SESSION_ID_HEADER: &str = "X-CDX-Session-Id";
+const SESSION_ID_ENV: &str = "CODEXIS_PUBLIC_SESSION_ID";
 
 /// File a bug report. Append-only and fire and forget: one POST, print what the
 /// daemon created, no follow-up read and no way to edit or delete it afterwards.
@@ -16,12 +18,21 @@ pub fn report(
     format: OutputFormat,
 ) -> Result<(), CdxctlError> {
     let payload = build_payload(title, description, severity)?;
-    match client.rest_post_json(REPORT_PATH, &payload) {
+    let headers = session_headers(std::env::var(SESSION_ID_ENV).ok());
+    match client.rest_post_json(REPORT_PATH, &payload, &headers) {
         Ok(created) => print_output(&created, format),
         Err(CdxctlError::Unsupported(_)) => print_output(&unsupported_response(), format),
         Err(other) => return Err(other),
     }
     Ok(())
+}
+
+fn session_headers(session_id: Option<String>) -> Vec<(&'static str, String)> {
+    session_id
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .map(|value| vec![(SESSION_ID_HEADER, value)])
+        .unwrap_or_default()
 }
 
 /// A daemon older than the bug report feature has no such endpoint. Report that
@@ -85,6 +96,41 @@ mod tests {
             }
             other => panic!("expected a parse error, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn sends_the_chat_session_when_running_inside_a_chat() {
+        assert_eq!(
+            session_headers(Some(" chat-1 ".to_string())),
+            vec![(SESSION_ID_HEADER, "chat-1".to_string())]
+        );
+    }
+
+    #[test]
+    fn sends_no_session_outside_a_chat() {
+        assert!(session_headers(None).is_empty());
+        assert!(session_headers(Some("  ".to_string())).is_empty());
+    }
+
+    #[test]
+    fn posts_the_session_header_with_the_report() {
+        let (address, requests) = stub_daemon("HTTP/1.1 201 Created", "{\"id\":\"bug-1\"}");
+        let client = GraphQLClient::with_endpoint(
+            format!("http://{address}/graphql"),
+            "Bearer test-token".to_string(),
+        );
+        let payload = build_payload("t", "d", "LOW").unwrap();
+
+        client
+            .rest_post_json(
+                REPORT_PATH,
+                &payload,
+                &session_headers(Some("chat-1".to_string())),
+            )
+            .unwrap();
+
+        let request = requests.recv().unwrap().to_lowercase();
+        assert!(request.contains("x-cdx-session-id: chat-1"));
     }
 
     #[test]
