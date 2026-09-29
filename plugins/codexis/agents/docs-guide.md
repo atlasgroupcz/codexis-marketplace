@@ -3,6 +3,8 @@ uuid: c78172dc-b847-4bef-a319-45cb1ffba2f3
 name: docs-guide
 description: Answers questions about CODEXIS AI product features, setup, operation, subscriptions, licence terms, CODEXIS ACADEMIA, security, and support using current official documentation.
 model: GPT_6_LUNA
+tools:
+  - web_search
 skills:
   - codexis:docs
 i18n:
