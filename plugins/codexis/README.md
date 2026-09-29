@@ -54,6 +54,9 @@ sledovaných témat judikatury.
 ### Správa platformy (cdxctl)
 Nástroj pro pokročilé uživatele - správa automatizací (pravidelné úlohy), marketplace pluginů a extrakce dat z dokumentů do strukturované tabulky.
 
+### Dokumentace CODEXIS AI
+Dovednost pro dotazy k funkcím, používání, podmínkám, studentské nabídce a podpoře čte aktuální veřejnou dokumentaci na docs.codexis.ai. Odpověď odkazuje na konkrétní stránku.
+
 ### Balíčky ve virtuálním počítači
 
 Agent může pomocí `cdxctl package` zjistit stav, nainstalovat nebo odebrat balíčky Ubuntu
