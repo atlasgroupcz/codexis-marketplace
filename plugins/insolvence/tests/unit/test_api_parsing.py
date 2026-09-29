@@ -1,5 +1,7 @@
 """ISIR SOAP response parsing - deterministic, no network (canned XML)."""
 
+import xml.etree.ElementTree as ET
+
 import pytest
 from insolvence_core import api_client
 from insolvence_core.exceptions import ApiParseError
@@ -63,18 +65,34 @@ def _person_xml(relevance, rows):
 
 @pytest.fixture
 def fake_post(monkeypatch):
+    sent = []
+
     def _set(xml_bytes):
-        monkeypatch.setattr(api_client, "_post", lambda envelope: xml_bytes)
+        def _post(envelope):
+            sent.append(envelope)
+            return xml_bytes
+
+        monkeypatch.setattr(api_client, "_post", _post)
+        return sent
 
     return _set
+
+
+def _request_fields(envelope: str) -> dict:
+    request = next(
+        el
+        for el in ET.fromstring(envelope).iter()
+        if el.tag.endswith("getIsirWsCuzkDataRequest")
+    )
+    return {child.tag: child.text for child in request}
 
 
 class TestCompanyParse:
     def test_maps_proceeding(self, fake_post):
         fake_post(_COMPANY_XML)
         result = api_client.lookup_company("04863313")
+        assert set(result) == {"nazev", "rizeni"}
         assert result["nazev"] == "J.O. Investment s.r.o."
-        assert result["relevance"] == 2
         assert len(result["rizeni"]) == 1
         r = result["rizeni"][0]
         assert r["spisova_znacka"] == "MSPH 78 INS 21517/2021"
@@ -90,6 +108,11 @@ class TestCompanyParse:
         result = api_client.lookup_company("04863313")
         assert result["rizeni"] == []
 
+    def test_service_error_code_raises(self, fake_post):
+        fake_post(_EMPTY_XML.replace(b"WS2", b"WS1"))
+        with pytest.raises(ApiParseError, match="WS1"):
+            api_client.lookup_company("04863313")
+
     def test_soap_fault_raises(self, fake_post):
         fake_post(_FAULT_XML)
         with pytest.raises(ApiParseError):
@@ -97,27 +120,54 @@ class TestCompanyParse:
 
 
 class TestPersonParse:
-    def test_weak_relevance_discarded(self, fake_post):
-        # relevance 7 = surname-only fallback → no trustworthy match
-        fake_post(
-            _person_xml(7, [{"p": "Novak", "j": "Petr", "d": "1990-01-01", "bc": "1"}])
-        )
-        result = api_client.lookup_person("Novak", "Jan", "1980-05-01")
-        assert result["rizeni"] == []
-        assert result["relevance"] == 7
+    def test_request_is_capped_at_surname_given_name_and_birthdate(self, fake_post):
+        sent = fake_post(_EMPTY_XML)
+        api_client.lookup_person("Novák", "Jan", "1976-10-09")
+        fields = _request_fields(sent[0])
+        assert fields["nazevOsoby"] == "Novák"
+        assert fields["jmeno"] == "Jan"
+        assert fields["datumNarozeni"] == "1976-10-09"
+        assert fields["maxRelevanceVysledku"] == "4"
+        assert list(fields)[-1] == "maxRelevanceVysledku"  # XSD sequence order
 
-    def test_dob_match_filters_rows(self, fake_post):
-        # relevance 5 (surname+DOB); only the row with the requested DOB is kept
+    def test_request_without_given_name_is_capped_at_surname_and_birthdate(
+        self, fake_post
+    ):
+        sent = fake_post(_EMPTY_XML)
+        api_client.lookup_person("Novák", "", "1976-10-09")
+        fields = _request_fields(sent[0])
+        assert "jmeno" not in fields
+        assert fields["maxRelevanceVysledku"] == "5"
+
+    def test_no_exact_match_is_an_empty_list(self, fake_post):
+        fake_post(_EMPTY_XML)
+        result = api_client.lookup_person("Novák", "Jan", "1980-05-01")
+        assert result == {"rizeni": []}
+
+    def test_exact_match_maps_proceeding(self, fake_post):
         fake_post(
             _person_xml(
-                5,
+                4, [{"p": "Novák", "j": "Jan", "d": "1976-10-09", "bc": "12844"}]
+            )
+        )
+        result = api_client.lookup_person("Novák", "Jan", "1976-10-09")
+        assert set(result) == {"rizeni"}
+        assert len(result["rizeni"]) == 1
+        assert result["rizeni"][0]["spisova_znacka"] == "KSBR 20 INS 12844/2024"
+        assert result["rizeni"][0]["druh"] == "oddluzeni"
+
+    def test_co_debtor_row_is_dropped(self, fake_post):
+        # A joint oddlužení returns the spouse's row with the debtor's proceeding.
+        fake_post(
+            _person_xml(
+                4,
                 [
-                    {"p": "Novak", "j": "Jan", "d": "1980-05-01", "bc": "10"},
-                    {"p": "Novak", "j": "Jan", "d": "1975-03-03", "bc": "20"},
+                    {"p": "Novák", "j": "Jan", "d": "1976-10-09", "bc": "12844"},
+                    {"p": "Nováková", "j": "Andrea", "d": "1980-07-23", "bc": "12844"},
                 ],
             )
         )
-        result = api_client.lookup_person("Novak", "Jan", "1980-05-01")
-        assert len(result["rizeni"]) == 1
-        assert result["rizeni"][0]["spisova_znacka"] == "KSBR 20 INS 10/2024"
-        assert result["rizeni"][0]["druh"] == "oddluzeni"
+        result = api_client.lookup_person("Novák", "Jan", "1976-10-09")
+        assert [r["spisova_znacka"] for r in result["rizeni"]] == [
+            "KSBR 20 INS 12844/2024"
+        ]
