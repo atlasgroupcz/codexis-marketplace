@@ -10,12 +10,12 @@ Currently supports:
       - upload:
           destination: /home/codexis/ee-foo
           files:
-            - path: ocr-test.png
-              source: ../fixtures/ocr-test.png   # relative to YAML dir
+            - path: sample.pdf
+              source: ../fixtures/sample.pdf   # relative to YAML dir
 
 Usage:
     export CDX_EVAL_AUTH_TOKEN=<jwt>
-    tests/promptfoo/setup.py tests/promptfoo/ocr.config.yaml
+    tests/promptfoo/setup.py plugins/katastr/tests/promptfoo/katastr.config.yaml
 
 `{{ run_id }}` in destination/path values is replaced by a stable per-
 invocation ID so re-running the suite doesn't collide with prior fixtures.

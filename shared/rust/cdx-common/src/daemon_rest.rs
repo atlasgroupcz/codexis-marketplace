@@ -1,4 +1,4 @@
-//! Auth helper for plugins that call daemon REST endpoints directly (OCR, media
+//! Auth helper for plugins that call daemon REST endpoints directly (media
 //! upload) rather than publishing sources. std-only.
 //!
 //! This is a *different* concern from [`crate::config::DaemonConfig`]: there is

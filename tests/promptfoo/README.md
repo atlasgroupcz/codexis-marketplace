@@ -95,7 +95,7 @@ If a run outlasts the token's TTL (~30 min in local Keycloak), re-export
 - Multi-step / `capture:` flows (e.g. cdxctl-marketplace-git's 5
   steps where one captures a marketplace ID for the next) need the
   conversation pattern in promptfoo - workable, but a per-yaml port.
-- The `setup:` block (file uploads - used by ocr fixtures and the
+- The `setup:` block (file uploads - used by the tabular fixtures and the
   katastr API key) maps to a `beforeEach` extension hook in JS, or
   runs once before `promptfoo eval` from a wrapper script.
 

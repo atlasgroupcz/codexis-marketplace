@@ -390,7 +390,7 @@ def test_example_prompt_text_must_not_be_blank():
 def test_example_prompts_match_the_schema(skill_md: Path):
     """Optional block, pinned shape.
 
-    ocr, video-analyze and visualization ship none on purpose: they run as part of
+    video-analyze and visualization ship none on purpose: they run as part of
     another request, so there is no opening prompt to suggest. Absence is valid, so
     only the contents are pinned. Em-dashes are not checked here -
     test_repo_hygiene.py already sweeps every tracked source file, and a second
