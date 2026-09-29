@@ -179,13 +179,12 @@ otherwise the daily run keeps consuming changes before yours sees them.
 
 Each detected change is stored with `confirmed_on: null` until marked read.
 
-### Person matching caveat
+### Person matching
 
-Natural-person lookup matches by surname + given name + date of birth. The ISIR service only
-returns a trustworthy person match when the **date of birth matches** (it otherwise falls back to
-surname-only results, which this tool discards to avoid false positives). For an unambiguous match
-the birth number (rodné číslo) would be required, which this tool does not collect - so a
-"no insolvency" result for a person means "no proceeding found for that exact name + DOB".
+A natural person is matched on the exact surname + given name + date of birth, the same as the
+public ISIR search. An empty `rizeni` list is a definite answer: no insolvency proceeding is
+recorded for that person - say so plainly. People with the same name but a different date of
+birth are never returned.
 
 ---
 
@@ -197,10 +196,8 @@ insolvence-cli lustrace osoba <PŘÍJMENÍ> <JMÉNO> <RRRR-MM-DD>
 ```
 
 Returns JSON: `{ "nazev"?, "rizeni": [ { spisova_znacka, soud, druh, stav, datum_zahajeni,
-datum_ukonceni, aktivni, url_detail } ], "relevance" }`. The `relevance` field (1-7) reports the
-ISIR match quality (1 = by rodné číslo, 2 = by IČO, 4/5 = surname + DOB matched, 6/7 = weak
-surname-only - discarded for persons). `url_detail` is the official ISIR detail page for the
-proceeding.
+datum_ukonceni, aktivni, url_detail } ] }` (`nazev` only for a company). `url_detail` is the
+official ISIR detail page for the proceeding.
 
 ---
 

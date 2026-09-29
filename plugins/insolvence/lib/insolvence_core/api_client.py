@@ -26,6 +26,9 @@ WS_URL = (
 TYPES_NS = "http://isirws.cca.cz/types/"
 TIMEOUT = 30
 RETRIES = 2
+# relevanceVysledku codes: 4 = surname + given name + DOB, 5 = surname + DOB.
+RELEVANCE_SURNAME_GIVEN_DOB = 4
+RELEVANCE_SURNAME_DOB = 5
 
 # nazevOrganizace → standard court code used in spisová značka prefixes.
 COURT_CODES = {
@@ -149,16 +152,14 @@ def _post(envelope: str) -> bytes:
     raise ApiNetworkError(f"ISIR WS nedostupné: {last_err}")
 
 
-def _query(fields: dict):
-    """POST a getIsirWsCuzkData request; return (data_elements, relevance:int).
+def _query(fields: dict) -> list:
+    """POST a getIsirWsCuzkData request; return its ``<data>`` elements.
 
-    Empty results (kodChyby WS2) return ([], relevance). Faults / other error
-    codes raise ApiParseError.
+    An empty result (kodChyby WS2) returns []. Faults / other error codes raise
+    ApiParseError.
     """
     try:
-        root = ET.fromstring(
-            _post(fields if isinstance(fields, str) else _envelope(fields))
-        )
+        root = ET.fromstring(_post(_envelope(fields)))
     except ET.ParseError as e:
         raise ApiParseError(f"Neplatná XML odpověď ISIR WS: {e}")
 
@@ -168,19 +169,15 @@ def _query(fields: dict):
         raise ApiParseError(f"ISIR WS SOAP Fault: {msg}")
 
     stav_els = _find_all_local(root, "stav")
-    relevance = 0
     if stav_els:
-        stav = stav_els[0]
-        kod = _child_text(stav, "kodChyby")
-        rel = _child_text(stav, "relevanceVysledku")
-        relevance = int(rel) if rel.isdigit() else 0
-        if kod and kod != "WS2":
-            text = _child_text(stav, "textChyby") or kod
-            raise ApiParseError(f"ISIR WS chyba {kod}: {text}")
+        kod = _child_text(stav_els[0], "kodChyby")
         if kod == "WS2":
-            return [], relevance
+            return []
+        if kod:
+            text = _child_text(stav_els[0], "textChyby") or kod
+            raise ApiParseError(f"ISIR WS chyba {kod}: {text}")
 
-    return _find_all_local(root, "data"), relevance
+    return _find_all_local(root, "data")
 
 
 # ── row mapping ──────────────────────────────────────────────────────────────
@@ -220,39 +217,41 @@ def _row_to_rizeni(el) -> dict:
 def lookup_company(ico: str) -> dict:
     """Look up insolvency proceedings for a company by IČO.
 
-    Returns {"nazev": str, "rizeni": [<proceeding>...], "relevance": int}.
+    Returns {"nazev": str, "rizeni": [<proceeding>...]}.
     """
-    rows, relevance = _query({"ic": ico, "maxPocetVysledku": 200})
+    rows = _query({"ic": ico, "maxPocetVysledku": 200})
     nazev = _child_text(rows[0], "nazevOsoby") if rows else ""
-    return {
-        "nazev": nazev,
-        "rizeni": [_row_to_rizeni(el) for el in rows],
-        "relevance": relevance,
-    }
+    return {"nazev": nazev, "rizeni": [_row_to_rizeni(el) for el in rows]}
 
 
 def lookup_person(prijmeni: str, jmeno: str, datum_narozeni: str) -> dict:
     """Look up insolvency proceedings for a natural person by surname + given + DOB.
 
-    Only trusts matches where the date of birth actually matched
-    (relevanceVysledku 1/4/5); surname-only fallbacks (6/7) are treated as
-    "no match for this person" to avoid false positives.
+    ``maxRelevanceVysledku`` caps the match at the criteria given (surname +
+    given name + DOB, or surname + DOB without a given name), so ISIR never
+    falls back to name-only matches and an empty list means no proceeding for
+    exactly this person. Rows of co-debtors (a spouse in a joint
+    oddlužení) come back with the debtor's proceeding and are dropped by DOB.
+
+    Returns {"rizeni": [<proceeding>...]}.
     """
-    rows, relevance = _query(
+    rows = _query(
         {
             "nazevOsoby": prijmeni,
-            "jmeno": jmeno or None,
+            "jmeno": jmeno,
             "datumNarozeni": datum_narozeni,
             "maxPocetVysledku": 200,
             "vyhledatPresnouShoduJmen": "T",
             "vyhledatBezDiakritiky": "T",
+            "maxRelevanceVysledku": (
+                RELEVANCE_SURNAME_GIVEN_DOB if jmeno else RELEVANCE_SURNAME_DOB
+            ),
         }
     )
-    if relevance not in (1, 4, 5):
-        return {"rizeni": [], "relevance": relevance}
-    rizeni = [
-        _row_to_rizeni(el)
-        for el in rows
-        if _strip_date(_child_text(el, "datumNarozeni")) == datum_narozeni
-    ]
-    return {"rizeni": rizeni, "relevance": relevance}
+    return {
+        "rizeni": [
+            _row_to_rizeni(el)
+            for el in rows
+            if _strip_date(_child_text(el, "datumNarozeni")) == datum_narozeni
+        ]
+    }

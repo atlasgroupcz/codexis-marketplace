@@ -1,7 +1,7 @@
 # Fresh scenario (insolvence had no e2e). Structural oracle: the skill must
 # drive insolvence-cli (not scrape ISIR) and report the subject's status. The
 # regex matches either outcome (in insolvency / not in insolvency).
-description: insolvence - ISIR insolvency lookup by IČO
+description: insolvence - ISIR insolvency lookup by IČO and by person
 prompts:
   - "{{ prompt }}"
 providers:
@@ -31,3 +31,33 @@ tests:
         value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
       - type: regex
         value: '[Ii]nsolvenc|[Kk]onkurs|[Oo]ddlužen|[Úú]pade|[Nn]en[íi] v insolvenci|[Žž]ádn'
+
+  # Jan Novák born 1980-05-01 has no proceeding, but many other Jan Nováks do.
+  # ISIR used to fall back to name-only matches and the answer talked about
+  # "relevance 6/7" and a missing exact match instead of a plain no.
+  - description: Person lookup without a proceeding gives a plain no
+    vars:
+      prompt: "Je Jan Novák, narozený 1. 5. 1980, v insolvenci? Stačí stručná odpověď."
+      tool_name: shell
+      input_regex: 'insolvence-cli\s+lustrace\s+osoba\W+Nov[aá]k\W+Jan\W+(1980-05-01|0?1\.0?5\.1980)(?!.*--help)'
+      tool_calls_max: 10
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|isir\.justice\.cz|justice\.cz)'
+      arbitration:
+        correct:
+          - "Answering that no insolvency proceeding is recorded for this person."
+        incorrect:
+          - "Talking about match relevance levels, a missing exact match, or asking for the birth number."
+          - "Listing proceedings of other people with the same name."
+          - "Bypassing insolvence-cli to scrape the insolvency register."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      - type: regex
+        value: '[Nn]en[íi] .{0,40}insolvenc|[Žž]ádn\S* .{0,40}řízení|[Nn]eveden|[Nn]ebylo nalezeno'
+      # The bug's signature. JS regex - character classes stand in for (?i).
+      - type: not-regex
+        value: '[Rr]elevanc|[Pp]řesn\S* shod|[Rr]odn\S* čísl|[Úú]rov\S* 6|[Úú]rov\S* 7'
