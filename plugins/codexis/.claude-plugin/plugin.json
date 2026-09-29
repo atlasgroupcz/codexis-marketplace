@@ -1,7 +1,7 @@
 {
   "name": "codexis",
   "iconPath": "icon.svg",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
   "author": {
     "name": "ATLAS GROUP",
@@ -43,6 +43,7 @@
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "skills": "./skills",
+  "agents": "./agents",
   "components": "./components",
   "env": {
     "CODEXIS_PLUGIN_BASE_URL": "https://app.codexis.cz",
