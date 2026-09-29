@@ -26,13 +26,7 @@ i18n:
 
 # CODEXIS AI product documentation
 
-Use the public documentation as the source for CODEXIS AI product facts. Begin with the short index for the user's language:
-
-- Czech: `https://docs.codexis.ai/llms.txt`
-- English: `https://docs.codexis.ai/en/llms.txt`
-- Slovak: `https://docs.codexis.ai/sk/llms.txt`
-
-Fetch the index with an available web or shell tool, then fetch only the pages relevant to the question. The linked Markdown handbook pages carry a `Source:` URL for the corresponding public page. Product, terms, student offer, and support pages may be HTML or PDF; read the linked source itself before answering. `llms-full.txt` is a bulk product documentation export for broad analysis, so use the short index for ordinary questions.
+Use the public documentation as the source for CODEXIS AI product facts. Fetch the English index at `https://docs.codexis.ai/llms.txt` with an available web or shell tool, then fetch only the pages relevant to the question. The public product resources page links to features, security, terms, CODEXIS ACADEMIA, and support. Read the linked source itself before answering. `https://docs.codexis.ai/llms-full.txt` contains the complete handbook for broad analysis, so use the short index for ordinary questions. Answer in the user's language.
 
 For data use, subscriptions, licence terms, or CODEXIS ACADEMIA, read the terms page and its applicable linked PDF alongside the relevant security or student page. If the public pages disagree, identify the conflict and use the applicable terms for the contractual claim.
 
