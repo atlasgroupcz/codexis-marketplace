@@ -77,15 +77,22 @@ impl GraphQLClient {
     }
 
     /// POST a JSON body (used for /rest/v1/plugin/bug-report).
-    pub fn rest_post_json(&self, path: &str, body: &Value) -> Result<Value, CdxctlError> {
+    pub fn rest_post_json(
+        &self,
+        path: &str,
+        body: &Value,
+        headers: &[(&str, String)],
+    ) -> Result<Value, CdxctlError> {
         let url = format!("{}{}", self.rest_base_url(), path);
-        let response = self
+        let mut request = self
             .client
             .post(&url)
             .header("Authorization", &self.auth)
-            .header("Accept", "application/json")
-            .json(body)
-            .send()?;
+            .header("Accept", "application/json");
+        for (name, value) in headers {
+            request = request.header(*name, value);
+        }
+        let response = request.json(body).send()?;
         let status = response.status();
         let text = response.text()?;
         if status == reqwest::StatusCode::NOT_FOUND {
