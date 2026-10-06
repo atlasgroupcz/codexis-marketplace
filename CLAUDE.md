@@ -178,7 +178,6 @@ plugins/plugin-name/
 │   └── skill-name/
 │       ├── SKILL.md      # Skill definition
 │       └── references/   # Type-specific implementations
-├── workflow-templates/   # Workflow templates the chat can fetch and adapt (one folder each)
 ├── README.md             # User-facing overview (required, Czech)
 └── shared/               # Shared resources
 ```
@@ -273,59 +272,6 @@ not something a user asks about.
 `tests/test_conformance.py` validates the block when it exists and never requires
 it. Em-dashes are not checked there - `tests/test_repo_hygiene.py` already sweeps
 every tracked source file.
-
-## Workflow templates
-
-`workflow-templates/<name>/` holds one ready-made multi-phase workflow the daemon offers the
-model when it reaches for the `workflow` tool. A template is two files beside each other, plus
-whatever its phases load:
-
-```
-workflow-templates/case-law-research/
-├── case-law-research.js    # the workflow script
-├── case-law-research.md    # how it is advertised, and how to drive it
-└── references/             # anything the phases load (standards, .docx templates)
-```
-
-The `.js` is a normal workflow script - `export const meta` plus
-`export default async function (args)` - and carries no metadata of its own.
-
-The `.md` decides how the template is advertised. Its frontmatter:
-
-```yaml
----
-template: case-law-research      # the template's id
-script: case-law-research.js     # the script it drives, resolved next to this file
-description: >
-  A question that has to be answered from what the courts actually decide: what the settled
-  practice is, which decision carries it, and where the courts disagree. Not for reading the
-  client's file and not for writing the client opinion.
-jurisdictions: CZ SK EU
-args:
-  - question (required) - the legal question, in the user's own words
-  - jurisdiction - CZ, SK or EU; defaults to CZ
-i18n:
-  cs:
-    displayName: Rešerše judikatury
-  en:
-    displayName: Case law research
-  sk:
-    displayName: Rešerš judikatúry
----
-```
-
-`description` is the selection hint - the only thing the model sees before it fetches the
-template - so write it as when to reach for this template, not as a summary of its phases.
-`jurisdictions` ranks the template for chats in that jurisdiction, `args` names what the model
-must collect before it runs, and `i18n.<lang>.displayName` is the name the UI shows.
-
-The body is written for the model at the moment it runs the template: what to ask the user for
-and in whose words, what comes back and what to do with it, and when to reach for something
-else instead. It belongs there rather than in the script - the script gets adapted and
-resubmitted, the markdown stays as guidance.
-
-Templates are never run as they are: the model fetches the source, adapts it, and submits the
-adapted script, so keep the script well under the 64 000-character script limit.
 
 ## Writing skills - Anthropic conventions
 
