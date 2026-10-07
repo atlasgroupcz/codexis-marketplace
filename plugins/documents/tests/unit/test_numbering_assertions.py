@@ -1,4 +1,5 @@
 import re
+from html import escape
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,15 @@ def test_accepts_intended_restart_semantics(case):
 
 def test_rejects_original_redundant_restarts():
     assert not assert_numbering(input_xml(CASES[0]), CASES[0])
+
+
+@pytest.mark.parametrize(
+    "wrapper", ["<p>{}</p>", '<pre><code class="language-xml">{}</code></pre>']
+)
+def test_reads_xml_from_graphql_html_content(wrapper):
+    xml = input_xml(CASES[1])
+    assert assert_numbering(wrapper.format(escape(xml)), CASES[1])
+    assert not assert_numbering(wrapper.format(escape(input_xml(CASES[0]))), CASES[0])
 
 
 def test_rejects_replacing_default_restarts_with_never_restart():

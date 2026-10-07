@@ -1,4 +1,5 @@
 import re
+from html import unescape
 from xml.etree import ElementTree
 
 NAMESPACE = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
@@ -6,6 +7,8 @@ NAMESPACE = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
 def assert_numbering(output: str, context: dict) -> bool:
     answer = output.split("<<CDX_EVAL_TOOL_CALLS>>")[0].strip()
+    if re.match(r"<(?:p|pre|code)(?:\s|>)", answer):
+        answer = unescape(re.sub(r"</?(?:p|pre|code)(?:\s[^>]*)?>", "", answer)).strip()
     answer = re.sub(r"^```(?:xml)?\s*|\s*```$", "", answer).strip()
     try:
         root = ElementTree.fromstring(answer)
