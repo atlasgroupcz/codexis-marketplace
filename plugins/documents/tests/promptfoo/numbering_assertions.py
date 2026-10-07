@@ -26,6 +26,11 @@ def assert_numbering(output: str, context: dict) -> bool:
         or instance.get(f"{NAMESPACE}numId") == "0"
     ):
         return False
+    expected_num_id = context["vars"].get("numbering_num_id")
+    if expected_num_id is not None and instance.get(f"{NAMESPACE}numId") != str(
+        expected_num_id
+    ):
+        return False
     reference = instance.find(f"{NAMESPACE}abstractNumId")
     definition_id = definition.get(f"{NAMESPACE}abstractNumId")
     if (

@@ -96,3 +96,9 @@ def test_rejects_fixed_start_disguised_as_continuation():
         "</w:lvlOverride></w:num></w:numbering>",
     )
     assert not assert_numbering(xml, case)
+
+
+def test_rejects_renaming_the_instance_referenced_by_existing_paragraphs():
+    case = CASES[-1]
+    xml = input_xml(case).replace('w:numId="2"', 'w:numId="3"')
+    assert not assert_numbering(xml, case)

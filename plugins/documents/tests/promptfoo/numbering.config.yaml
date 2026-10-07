@@ -109,6 +109,7 @@ tests:
           </w:abstractNum>
           <w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>
         </w:numbering>
+      numbering_num_id: 2
       numbering_levels:
         - {start: 1, numFmt: upperRoman, lvlText: '%1', lvlRestart: null}
         - {start: 1, numFmt: decimal, lvlText: '%2', lvlRestart: 0}
