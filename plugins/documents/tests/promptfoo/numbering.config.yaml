@@ -1,0 +1,93 @@
+description: documents - preserve Word numbering restart semantics
+target_plugin: documents
+
+prompts:
+  - "{{ prompt }}"
+
+providers:
+  - id: file://../../../../tests/promptfoo/provider.py
+    label: cdx-daemon
+    config: {}
+
+tests:
+  - description: omit redundant restarts when each child restarts after its parent
+    vars:
+      prompt: |-
+        Nejprve načti skill documents:docx. Opravuji číslování ve word/numbering.xml.
+        LibreOffice čísla zobrazuje, ale desktopový Word je vynechává. Každá podúroveň
+        má začínat od jedničky po změně bezprostředně nadřazené úrovně. Uprav definici
+        pro kompatibilitu s Wordem, zachovej automatické číslování a vrať pouze XML:
+        <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:abstractNum w:abstractNumId="1">
+            <w:multiLevelType w:val="multilevel"/>
+            <w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1"/></w:lvl>
+            <w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlRestart w:val="1"/><w:lvlText w:val="%1.%2"/></w:lvl>
+            <w:lvl w:ilvl="2"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlRestart w:val="2"/><w:lvlText w:val="%1.%2.%3"/></w:lvl>
+          </w:abstractNum>
+          <w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>
+        </w:numbering>
+      numbering_levels:
+        - {start: 1, numFmt: decimal, lvlText: '%1', lvlRestart: null}
+        - {start: 1, numFmt: decimal, lvlText: '%1.%2', lvlRestart: null}
+        - {start: 1, numFmt: decimal, lvlText: '%1.%2.%3', lvlRestart: null}
+      tool_name: skill
+      input_regex: '"skill"\s*:\s*"(?:[^"\n]*:)?docx"'
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://numbering_assertions.py:assert_numbering
+
+  - description: retain an explicit zero when child numbering must continue across parents
+    vars:
+      prompt: |-
+        Nejprve načti skill documents:docx. Kontroluji word/numbering.xml pro desktopový
+        Word. Položky druhé úrovně se mají číslovat průběžně přes všechny sekce a při
+        změně sekce se nesmějí vracet k jedničce. Zachovej tuto záměrnou vlastnost.
+        Vrať pouze výsledné XML po kontrole:
+        <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:abstractNum w:abstractNumId="2">
+            <w:multiLevelType w:val="multilevel"/>
+            <w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="upperRoman"/><w:lvlText w:val="%1"/></w:lvl>
+            <w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlRestart w:val="0"/><w:lvlText w:val="%2"/></w:lvl>
+          </w:abstractNum>
+          <w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>
+        </w:numbering>
+      numbering_levels:
+        - {start: 1, numFmt: upperRoman, lvlText: '%1', lvlRestart: null}
+        - {start: 1, numFmt: decimal, lvlText: '%2', lvlRestart: 0}
+      tool_name: skill
+      input_regex: '"skill"\s*:\s*"(?:[^"\n]*:)?docx"'
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://numbering_assertions.py:assert_numbering
+
+  - description: retain an intentional restart after a more distant ancestor
+    vars:
+      prompt: |-
+        Nejprve načti skill documents:docx. Kontroluji word/numbering.xml pro desktopový
+        Word. Třetí úroveň musí pokračovat přes změny druhé úrovně a začínat znovu
+        až při změně první úrovně. Zachovej tento záměrný restart po vzdálenějším
+        předkovi i automatické číslování. Vrať pouze výsledné XML:
+        <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:abstractNum w:abstractNumId="3">
+            <w:multiLevelType w:val="multilevel"/>
+            <w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1"/></w:lvl>
+            <w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1.%2"/></w:lvl>
+            <w:lvl w:ilvl="2"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlRestart w:val="1"/><w:lvlText w:val="%1.%2.%3"/></w:lvl>
+          </w:abstractNum>
+          <w:num w:numId="3"><w:abstractNumId w:val="3"/></w:num>
+        </w:numbering>
+      numbering_levels:
+        - {start: 1, numFmt: decimal, lvlText: '%1', lvlRestart: null}
+        - {start: 1, numFmt: decimal, lvlText: '%1.%2', lvlRestart: null}
+        - {start: 1, numFmt: decimal, lvlText: '%1.%2.%3', lvlRestart: 1}
+      tool_name: skill
+      input_regex: '"skill"\s*:\s*"(?:[^"\n]*:)?docx"'
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://numbering_assertions.py:assert_numbering

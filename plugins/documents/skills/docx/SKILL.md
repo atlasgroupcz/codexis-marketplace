@@ -171,6 +171,24 @@ One fix routinely creates the next problem. Do not declare success until a full 
 perfect in the render and wrong on their machine, and the render will never tell you. Close the
 gap in the generator instead:
 
+**Omit redundant `w:lvlRestart` for ordinary multilevel lists.** When each child level
+restarts after its immediate parent, use the default behavior: omit `w:lvlRestart`.
+For example, `w:lvlRestart w:val="1"` at `w:ilvl="1"` and `w:val="2"` at
+`w:ilvl="2"` merely restate that default. These valid OOXML settings have caused
+desktop Word to hide paragraph numbers even while LibreOffice and the browser preview
+show them. Do not add them to new lists with this restart pattern.
+
+When repairing an existing list, remove only redundant restart settings after checking
+the intended behavior. Preserve `w:lvlRestart w:val="0"` for numbering that must never
+restart, and preserve intentional restarts after a different ancestor level. Never strip
+every `w:lvlRestart` from a document or replace automatic numbering with typed numbers.
+Level indices are zero-based; positive restart values identify ancestor levels one-based.
+
+Inspect `word/numbering.xml` and the paragraphs' `w:numPr` references. Check transitions
+between parent levels and any independent list in an annex. A successful LibreOffice
+render or an XML schema check alone does not prove that numbering works in desktop Word.
+Verify it in Word when available; otherwise state that Word rendering remains unverified.
+
 **Always pass `lineRule` with `line`.** `{ line: 360 }` alone leaves the rule unset, and Word and
 LibreOffice do not have to agree on the default.
 
@@ -216,8 +234,8 @@ right even when the real font is missing - which is exactly how a font problem h
   Word installs and come out as boxes.
 - Consistent typography: one body font, one heading scale, one spacing rhythm. For legal
   documents Times New Roman 12pt with 1.5 line spacing is the safe house style.
-- A document with the right words and a broken layout is a failed deliverable. The render is
-  the deliverable, not the code that produced it.
+- A document with the right words and a broken layout is a failed deliverable. The DOCX is
+  the deliverable; a correct LibreOffice render alone does not establish Word compatibility.
 
 ## Converting to PDF for delivery
 
