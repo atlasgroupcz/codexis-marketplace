@@ -164,6 +164,12 @@ pandoc /home/codexis/smlouva.docx -t plain |
 
 **4. Fix, then re-render the affected pages** (`cdx-render -i file.docx -f 3 -l 3 -o /tmp/smlouva-pages`).
 One fix routinely creates the next problem. Do not declare success until a full pass finds nothing new.
+For a numbering mismatch between LibreOffice and Word, apply the compatibility checks below.
+Preserving the requested automatic numbering and list hierarchy takes priority over matching
+the LibreOffice preview. Once the numbering definitions and paragraph references pass those
+checks, do not restructure lists or repeat the same render to chase a LibreOffice-only difference.
+If Word is unavailable and no other defects remain, deliver the DOCX, describe the remaining
+preview difference, and state that its display in Word is unverified. That completes this check.
 
 ## Word compatibility - the render is LibreOffice, not Word
 
@@ -183,6 +189,15 @@ the intended behavior. Preserve `w:lvlRestart w:val="0"` for numbering that must
 restart, and preserve intentional restarts after a different ancestor level. Never strip
 every `w:lvlRestart` from a document or replace automatic numbering with typed numbers.
 Level indices are zero-based; positive restart values identify ancestor levels one-based.
+
+Preserve the shared `w:numId` for paragraphs that belong to one continuous list. Do not
+simulate continuation by moving a later paragraph to a new numbering instance with a
+hard-coded `w:startOverride` such as 2. That freezes its starting number and breaks
+continuity when earlier items are inserted or removed. A minimal restart repair keeps
+paragraph references, the list hierarchy and independent lists unchanged; do not flatten
+the list or move its parent headings into a separate numbering instance. If a LibreOffice render
+still shows the wrong continuation, verify the existing list semantics in Word instead
+of replacing them with fixed starting numbers to match the preview.
 
 Inspect `word/numbering.xml` and the paragraphs' `w:numPr` references. Check transitions
 between parent levels and any independent list in an annex. A successful LibreOffice
