@@ -184,6 +184,14 @@ restart, and preserve intentional restarts after a different ancestor level. Nev
 every `w:lvlRestart` from a document or replace automatic numbering with typed numbers.
 Level indices are zero-based; positive restart values identify ancestor levels one-based.
 
+Preserve the shared `w:numId` for paragraphs that belong to one continuous list. Do not
+simulate continuation by moving a later paragraph to a new numbering instance with a
+hard-coded `w:startOverride` such as 2. That freezes its starting number and breaks
+continuity when earlier items are inserted or removed. A minimal restart repair keeps
+unaffected paragraph references and independent lists unchanged. If a LibreOffice render
+still shows the wrong continuation, verify the existing list semantics in Word instead
+of replacing them with fixed starting numbers to match the preview.
+
 Inspect `word/numbering.xml` and the paragraphs' `w:numPr` references. Check transitions
 between parent levels and any independent list in an annex. A successful LibreOffice
 render or an XML schema check alone does not prove that numbering works in desktop Word.

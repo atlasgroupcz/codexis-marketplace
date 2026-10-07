@@ -85,3 +85,14 @@ def test_rejects_missing_numbering_identity_and_reference():
         .replace('<w:abstractNumId w:val="2"/>', "<w:abstractNumId/>")
     )
     assert not assert_numbering(xml, CASES[1])
+
+
+def test_rejects_fixed_start_disguised_as_continuation():
+    case = CASES[-1]
+    xml = input_xml(case).replace(
+        "</w:numbering>",
+        '<w:num w:numId="3"><w:abstractNumId w:val="2"/>'
+        '<w:lvlOverride w:ilvl="1"><w:startOverride w:val="2"/>'
+        "</w:lvlOverride></w:num></w:numbering>",
+    )
+    assert not assert_numbering(xml, case)

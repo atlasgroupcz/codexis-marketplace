@@ -91,3 +91,31 @@ tests:
         value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
       - type: python
         value: file://numbering_assertions.py:assert_numbering
+
+  - description: preserve one continuous list when the preview suggests a fixed restart
+    vars:
+      prompt: |-
+        Nejprve načti skill documents:docx. V dokumentu jsou dvě sekce, každá obsahuje
+        jednu položku. Všechny odstavce používají numId 2, sekce úroveň 0 a položky
+        úroveň 1. Náhled z LibreOffice ukazuje u obou položek jedničku. Dokument je pro
+        desktopový Word a položky mají tvořit jeden průběžný seznam; uživatel bude
+        později přidávat další položky do první sekce. Zkontroluj číslování a vrať
+        pouze výsledné word/numbering.xml:
+        <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:abstractNum w:abstractNumId="2">
+            <w:multiLevelType w:val="multilevel"/>
+            <w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="upperRoman"/><w:lvlText w:val="%1"/></w:lvl>
+            <w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlRestart w:val="0"/><w:lvlText w:val="%2"/></w:lvl>
+          </w:abstractNum>
+          <w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>
+        </w:numbering>
+      numbering_levels:
+        - {start: 1, numFmt: upperRoman, lvlText: '%1', lvlRestart: null}
+        - {start: 1, numFmt: decimal, lvlText: '%2', lvlRestart: 0}
+      tool_name: skill
+      input_regex: '"skill"\s*:\s*"(?:[^"\n]*:)?docx"'
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://numbering_assertions.py:assert_numbering
