@@ -1,13 +1,13 @@
-# Agent examples
+# Assistant examples
 
 Worked `cdxctl agent create` calls. Copy the shape, swap the content.
 
 `--display-name`, `--summary` and `--example-prompt` take `lang:text` and repeat once
 per language - the prompt's language and English.
 
-Every agent gets **three `--example-prompt` per language**, in the order they should
+Every assistant gets **three `--example-prompt` per language**, in the order they should
 appear. They are what the user clicks to start a run, so each is a concrete, directly
-runnable sentence asking the agent for one of its jobs - never a category label, never
+runnable sentence asking the assistant for one of its jobs - never a category label, never
 a `«fill this in»` placeholder. Cover three different jobs rather than one question
 reworded.
 
@@ -124,11 +124,11 @@ cdxctl agent create --name kontrolor-jen-cteni \
   --tool readFile --tool grep
 ```
 
-## Updating an agent
+## Updating an assistant
 
 ```bash
 # Adds the pdf skill: --skill replaces the WHOLE list, so repeat the skills the
-# agent already has. The Czech summary is replaced; other languages and fields stay put.
+# assistant already has. The Czech summary is replaced; other languages and fields stay put.
 cdxctl agent update personalista-smlouvy \
   --summary cs:"Připraví, zkontroluje a archivuje pracovní smlouvu." \
   --skill codexis --skill docx --skill pdf

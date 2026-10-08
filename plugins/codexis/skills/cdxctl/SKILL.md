@@ -2,35 +2,35 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom agents, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom assistants, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
 version: 2.10.0
 i18n:
   cs:
     displayName: "Správa platformy"
-    summary: "Vytváření a správa vlastních agentů, dovedností, automatizací a doplňků přímo z konverzace."
+    summary: "Vytváření a správa vlastních asistentů, dovedností, automatizací a doplňků přímo z konverzace."
     examplePrompts:
       - "Vytvoř automatizaci, která mi každé pondělí ráno zkontroluje sledované dokumenty."
       - "Vypiš moje automatizace a tu, která běží denně, mi vypni."
-      - "Vytvoř agenta, který posoudí zákonnost výpovědi podle zákoníku práce."
+      - "Vytvoř asistenta, který posoudí zákonnost výpovědi podle zákoníku práce."
   en:
     displayName: "Platform Management"
-    summary: "Create and manage custom agents, skills, automations, and plugins directly from chat."
+    summary: "Create and manage custom assistants, skills, automations, and plugins directly from chat."
     examplePrompts:
       - "Create an automation that checks my tracked documents every Monday morning."
       - "List my automations and disable the one that runs daily."
-      - "Create an agent that reviews whether a dismissal is lawful under the Czech Labour Code."
+      - "Create an assistant that reviews whether a dismissal is lawful under the Czech Labour Code."
   sk:
     displayName: "Správa platformy"
-    summary: "Vytváranie a správa vlastných agentov, zručností, automatizácií a doplnkov priamo z konverzácie."
+    summary: "Vytváranie a správa vlastných asistentov, zručností, automatizácií a doplnkov priamo z konverzácie."
     examplePrompts:
       - "Vytvor automatizáciu, ktorá mi každý pondelok ráno skontroluje sledované dokumenty."
       - "Vypíš moje automatizácie a tú, ktorá beží denne, mi vypni."
-      - "Vytvor agenta, ktorý posúdi zákonnosť výpovede podľa českého zákonníka práce."
+      - "Vytvor asistenta, ktorý posúdi zákonnosť výpovede podľa českého zákonníka práce."
 ---
 
 # cdxctl - Platform Management CLI
 
-`cdxctl` manages agents, skills, automations and their run history, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
+`cdxctl` manages assistants, skills, automations and their run history, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
 
 Always go through `cdxctl` for these platform objects - never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
 
@@ -190,7 +190,7 @@ cdxctl plugin install <id>
 cdxctl plugin uninstall <id>
 ```
 
-## Agents
+## Assistants
 
 ```bash
 cdxctl agent list --editable-only
@@ -218,35 +218,35 @@ cdxctl agent update <id> --description "New description"
 cdxctl agent delete <id>
 ```
 
-An agent is a reusable persona. It has its own model, tools, and instructions.
+An assistant is a reusable persona. It has its own model, tools, and instructions.
 
 Write the system prompt to a temp file under `/tmp/`. Pass its path with `--instructions-file`.
 
 The model and jurisdictions come from the active chat.
 
-Every new agent needs `--display-name` and `--summary`. Pass each as `lang:text` and repeat it once per language. `--display-name` is what the user sees on the Agents page; `--name` is the technical slug the system uses (lowercase, hyphens).
+Every new assistant needs `--display-name` and `--summary`. Pass each as `lang:text` and repeat it once per language. `--display-name` is what the user sees on the Assistants page; `--name` is the technical slug the system uses (lowercase, hyphens).
 
 Give the display name and summary in the prompt's language and in English. A Czech prompt gets Czech and English. Always add English.
 
-Every new agent also gets **three `--example-prompt` per language** - the same `lang:text` shape, repeated once per prompt, in the order they should appear. They are what the user clicks to start a run, so write them concrete and directly runnable: a real sentence that asks this agent for one of its jobs, not a category label like "smlouvy" and not a `«fill this in»` placeholder. Cover three different things the agent does rather than one question reworded, and keep each to one sentence.
+Every new assistant also gets **three `--example-prompt` per language** - the same `lang:text` shape, repeated once per prompt, in the order they should appear. They are what the user clicks to start a run, so write them concrete and directly runnable: a real sentence that asks this assistant for one of its jobs, not a category label like "smlouvy" and not a `«fill this in»` placeholder. Cover three different things the assistant does rather than one question reworded, and keep each to one sentence.
 
-`update` keeps every field you do not pass. Pass only the fields you change. List flags (`--skill`, `--tool`, `--disallowed-tool`, `--jurisdiction`) replace the whole stored list - to add one skill, pass the full list including the skills the agent already has. `--display-name`, `--summary` and `--example-prompt` are per-language: the languages you pass are replaced, the rest stay. Repeating `--example-prompt` for one language replaces that language's whole list, so pass all three prompts when you change one.
+`update` keeps every field you do not pass. Pass only the fields you change. List flags (`--skill`, `--tool`, `--disallowed-tool`, `--jurisdiction`) replace the whole stored list - to add one skill, pass the full list including the skills the assistant already has. `--display-name`, `--summary` and `--example-prompt` are per-language: the languages you pass are replaced, the rest stay. Repeating `--example-prompt` for one language replaces that language's whole list, so pass all three prompts when you change one.
 
-Run `cdxctl skill list` first. Read the agent's job and give it every skill that fits - pass each with `--skill`, in the same run as the create. A legal agent gets the legal-research skill; a document agent gets the document skills. Contract, filing, and compliance work is legal work, so it gets a legal skill on top of any document skill. Choose the fitting skills yourself from the agent's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
+Run `cdxctl skill list` first. Read the assistant's job and give it every skill that fits - pass each with `--skill`, in the same run as the create. A legal assistant gets the legal-research skill; a document assistant gets the document skills. Contract, filing, and compliance work is legal work, so it gets a legal skill on top of any document skill. Choose the fitting skills yourself from the assistant's purpose. `cdxctl` shows the accepted values for `--skill` and `--model`.
 
-Match the legal skill to the agent's jurisdiction. Each legal skill in `cdxctl skill list` covers one country's law. Pick the one that covers the agent's jurisdiction. When the list has no legal skill for that jurisdiction, leave the legal skill out and keep the document skills.
+Match the legal skill to the assistant's jurisdiction. Each legal skill in `cdxctl skill list` covers one country's law. Pick the one that covers the assistant's jurisdiction. When the list has no legal skill for that jurisdiction, leave the legal skill out and keep the document skills.
 
 See `references/agent-examples.md` for worked examples: the legal-vs-document choice, the jurisdiction match, restricting tools, and a non-lossy update.
 
-Leave `--tool` and `--disallowed-tool` out so the agent keeps every tool. Set them only to restrict the agent on purpose.
+Leave `--tool` and `--disallowed-tool` out so the assistant keeps every tool. Set them only to restrict the assistant on purpose.
 
-When you confirm the new agent to the user, keep it plain and non-technical: the display name, what the agent does, and its skills. Say it in the user's words. Leave out the slug, the command, and other internals.
+When you confirm the new assistant to the user, keep it plain and non-technical: the display name, what the assistant does, and its skills. Say it in the user's words. Leave out the slug, the command, and other internals.
 
 ### Writing the instructions file
 
 Use short sentences. Keep each paragraph to two or three sentences.
 
-Say the agent's job and the input it gets. Name the sources to use, like `zákoník práce § 52`. Say what to check and the output shape, like `table: finding, section, risk`.
+Say the assistant's job and the input it gets. Name the sources to use, like `zákoník práce § 52`. Say what to check and the output shape, like `table: finding, section, risk`.
 
 ```
 Posuď zákonnost výpovědi ze strany zaměstnavatele.
@@ -258,7 +258,7 @@ Výstupem je tabulka: zjištění, ustanovení, riziko, doporučená náprava.
 
 ## Skills
 
-A skill is reusable know-how the AI loads on demand: the method for a task - the steps, which sources to use, how to check them, which tools help. That is different from an agent, which is a persona. If the user did not clearly ask for a skill, ask first.
+A skill is reusable know-how the AI loads on demand: the method for a task - the steps, which sources to use, how to check them, which tools help. That is different from an assistant, which is a persona. If the user did not clearly ask for a skill, ask first.
 
 ```bash
 cdxctl skill list --editable-only
@@ -291,7 +291,7 @@ Write the skill body to a temp file under `/tmp/` and pass its path with `--inst
 
 Every new skill needs `--display-name` and `--summary`. Pass each as `lang:text` and repeat once per language - the prompt's language and English. `--display-name` is what the user sees on the Skills page; `--name` is the technical slug (lowercase, hyphens).
 
-`--example-prompt` takes the same `lang:text` shape and is repeated once per prompt, in the order they should appear. At most three per language. Optional on a skill, which the AI reaches for on its own - unlike an agent, which the user starts by clicking a prompt.
+`--example-prompt` takes the same `lang:text` shape and is repeated once per prompt, in the order they should appear. At most three per language. Optional on a skill, which the AI reaches for on its own - unlike an assistant, which the user starts by clicking a prompt.
 
 Give the skill `--jurisdiction` when it covers one country's law (e.g. `CZ`), and `--jurisdiction-required` when the AI should reach for it only in that jurisdiction. Leave `--allowed-tool` out so the skill keeps every tool; set it only to restrict on purpose.
 
@@ -347,7 +347,7 @@ Two limits worth knowing before promising anything:
 - **Folders from the user's computer are read-only here.** Only the desktop app can register
   one, because it alone knows the device. `project update` carries the ones already stored
   forward untouched; the CLI can neither add nor remove them.
-- **Agents and skills do not belong to a project.** They are the user's own and are available in
+- **Assistants and skills do not belong to a project.** They are the user's own and are available in
   every chat, so there is nothing to attach. Use `cdxctl agent` and `cdxctl skill`.
 
 Projects cannot be deleted from the CLI - the daemon has no such mutation. Point the user at the
@@ -459,7 +459,7 @@ cdxctl notification email send \
     --attach /tmp/report.pdf
 ```
 
-The mail is sent from the agent's address and is threaded into the current chat, so when the
+The mail is sent from the assistant's address and is threaded into the current chat, so when the
 recipient hits **Reply** their answer continues this same conversation. Pass `--no-thread` for mail
 that should not come back - a reply to it starts a new chat instead.
 

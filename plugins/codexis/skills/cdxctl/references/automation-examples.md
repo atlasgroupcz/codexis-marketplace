@@ -60,7 +60,7 @@ cdxctl automation files remove <id> checklist.md
 
 ## Weekly command automation
 
-Runs a shell command, not an agent turn. No model or jurisdiction needed.
+Runs a shell command, not an assistant turn. No model or jurisdiction needed.
 
 ```bash
 cdxctl automation create-command \
