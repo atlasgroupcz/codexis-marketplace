@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
 use crate::http::KatasterClient;
+use crate::konanie;
 use crate::sources;
 
 const ROOT_HELP: &str = "\
@@ -15,10 +16,12 @@ Examples:
   kataster-sk-cli parcela 805556 \"1234/9\"
   kataster-sk-cli detail 1070374091
   kataster-sk-cli detail 123456 --register e --geometry
+  kataster-sk-cli pracoviska Bratislava
+  kataster-sk-cli konanie Bratislava V-4500/2026
 
 Anonymous parcel data only - owner names and title-deed (LV) contents are not
 available without a verified ESKN login; hand the user a deep link instead.
-Override base URLs with ZBGIS_BASE_URL and ESKN_BASE_URL.
+Override base URLs with ZBGIS_BASE_URL, ESKN_BASE_URL and ESKN_PORTAL_URL.
 ";
 
 #[derive(Parser, Debug)]
@@ -42,6 +45,15 @@ pub enum Command {
     Parcela { ku_code: u32, parcel_number: String },
     /// Fetch parcel attributes by object id (from `parcela` results).
     Detail(DetailArgs),
+    /// List cadastral workplaces (pracovisko) accepted by `konanie`, optionally filtered by name.
+    Pracoviska { query: Option<String> },
+    /// Current status of a cadastral proceeding (podanie / konanie) by workplace and number.
+    Konanie {
+        /// Workplace name (diacritics optional) or id from `pracoviska`.
+        pracovisko: String,
+        /// Number as `D-číslo/rok`, e.g. `V-4500/2026`.
+        number: String,
+    },
 }
 
 #[derive(Args, Debug)]
@@ -107,6 +119,14 @@ pub fn run() -> Result<()> {
                 query.push(("outSR", "4326"));
             }
             crate::land_use::enrich_detail(&client.eskn_get(&path, &query)?)
+        }
+        Command::Pracoviska { query } => {
+            konanie::list_pracoviska(&client, query.as_deref())?.to_string()
+        }
+        Command::Konanie { pracovisko, number } => {
+            let (status, sources) = konanie::lookup(&client, &pracovisko, &number)?;
+            source_entries = sources;
+            status.to_string()
         }
     };
 
