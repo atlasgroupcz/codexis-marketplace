@@ -31,8 +31,9 @@ i18n:
 
 # DOCX - creation, editing, visual verification
 
-A `.docx` is a ZIP of XML files. You never have to read that XML by hand: generate with
-`docx-js`, then **look at the rendered result** before you hand it over.
+A `.docx` is a ZIP of XML files. Generate new documents with `docx-js`. For an existing
+document, inspect and edit the relevant XML while preserving the rest of the package.
+Keep the original file unchanged so you can compare it with the final deliverable.
 
 **IMPORTANT:** Stop on a genuine `Error:` line from `cdx-render` - report it and don't blindly
 retry. LibreOffice and poppler are part of the guest image, so a missing `soffice` or `pdftoppm`
@@ -171,6 +172,22 @@ checks, do not restructure lists or repeat the same render to chase a LibreOffic
 If Word is unavailable and no other defects remain, deliver the DOCX, describe the remaining
 preview difference, and state that its display in Word is unverified. That completes this check.
 
+**5. Verify the final file after the last write.** A check made before a later edit does not
+validate the deliverable. For a repair whose only required change is removing redundant
+numbering restarts, run this after rendering and after any subsequent edit:
+
+```bash
+cdx-check-docx-restarts /home/codexis/smlouva-original.docx /home/codexis/smlouva.docx
+```
+
+Use the untouched input as the first argument. The command rejects changes to paragraph
+references, list instances, starting values, intentional restarts and other package parts.
+If it fails, restore those from the original and repeat the minimal repair and check before
+linking the final file. Do not bypass a failure to match the LibreOffice preview.
+For tasks that also require text or layout edits, compare the final numbering definitions
+and paragraph references against the original separately; this strict restart-only check
+is not suitable for those broader edits. A passing check does not verify Word rendering.
+
 ## Word compatibility - the render is LibreOffice, not Word
 
 `cdx-render` draws the document with LibreOffice. The user opens it in Word. A file can look
@@ -266,4 +283,5 @@ soffice -env:UserInstallation="file:///tmp/lo_profile_$$" --headless \
 
 - `docx-js` (Node, preinstalled) - creating documents
 - `cdx-render` - document → page PNGs (LibreOffice + poppler)
+- `cdx-check-docx-restarts` - final preservation check for restart-only repairs
 - `pandoc` - tracked changes

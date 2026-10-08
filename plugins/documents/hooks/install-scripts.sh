@@ -9,7 +9,7 @@ SCRIPT_NAME=$(basename "$0")
 function usage() {
     cat <<EOM
 
-Install cdx-render and cdx-recalc into the user-local bin directory.
+Install document rendering, recalculation and restart-check commands into the user-local bin directory.
 
 usage: ${SCRIPT_NAME} [options]
 
@@ -57,6 +57,7 @@ function main() {
 
     install_script "${plugin_dir}/shared/scripts/render.sh" "${target}/cdx-render" || exit 1
     install_script "${plugin_dir}/shared/scripts/recalc.sh" "${target}/cdx-recalc" || exit 1
+    install_script "${plugin_dir}/shared/scripts/check_docx_restarts.py" "${target}/cdx-check-docx-restarts" || exit 1
 
     warn_on_missing_runtime
 }

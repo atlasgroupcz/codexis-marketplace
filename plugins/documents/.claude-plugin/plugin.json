@@ -1,7 +1,7 @@
 {
   "name": "documents",
   "iconPath": "icon.svg",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Create, edit and visually verify Word, PDF, Excel and PowerPoint documents - renders every deliverable to page images so the AI can inspect the layout before handing it over",
   "author": {
     "name": "ATLAS GROUP",
