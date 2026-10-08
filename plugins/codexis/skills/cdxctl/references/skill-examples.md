@@ -6,7 +6,7 @@ temp file under `./.tmp/` and pass it with `--instructions-file`.
 `--display-name`, `--summary` and `--example-prompt` take `lang:text` and repeat once per
 language. `--example-prompt` repeats once per prompt as well, at most three per language,
 in the order they should appear. It is optional on a skill - the AI reaches for a skill on
-its own, where an agent is started by clicking a prompt. When you do give prompts, write
+its own, where an assistant is started by clicking a prompt. When you do give prompts, write
 them concrete and directly runnable.
 
 ## Legal-research skill (jurisdiction-specific)

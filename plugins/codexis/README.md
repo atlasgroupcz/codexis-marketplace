@@ -58,11 +58,11 @@ Nástroj pro pokročilé uživatele - správa automatizací (pravidelné úlohy)
 Dovednost pro dotazy k funkcím, používání, podmínkám, studentské nabídce a podpoře čte aktuální veřejnou dokumentaci na docs.codexis.ai. Odpověď odkazuje na konkrétní stránku.
 
 ### Průvodce CODEXIS AI
-Agent odpovídá na dotazy k používání CODEXIS AI, podmínkám, zabezpečení a studentské nabídce. Používá dovednost Dokumentace CODEXIS AI a odkazuje na aktuální veřejné zdroje.
+Asistent odpovídá na dotazy k používání CODEXIS AI, podmínkám, zabezpečení a studentské nabídce. Používá dovednost Dokumentace CODEXIS AI a odkazuje na aktuální veřejné zdroje.
 
 ### Balíčky ve virtuálním počítači
 
-Agent může pomocí `cdxctl package` zjistit stav, nainstalovat nebo odebrat balíčky Ubuntu
+Asistent může pomocí `cdxctl package` zjistit stav, nainstalovat nebo odebrat balíčky Ubuntu
 a aktualizovat jejich seznam. Změny platí pro celý virtuální počítač uživatele; přežijí restart,
 ale ne výměnu jeho systémového obrazu.
 
