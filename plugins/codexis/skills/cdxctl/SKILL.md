@@ -2,37 +2,66 @@
 uuid: b678385e-6770-40bd-a33e-1d73e790f865
 name: cdxctl
 icon: icon.svg
-description: Manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom assistants, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
-version: 2.10.0
+description: Searches previous chats with optional project filtering and manages Codexis platform objects with the cdxctl CLI - creates, lists, updates, enables/disables, or deletes custom assistants, skills, scheduled automations, plugins, marketplaces, in-app frontend notifications (the bell/sheet, NOT OS notify-send/dbus), outbound email, and tabular extraction from a folder of files, installs and removes Ubuntu packages on the user VM, stores a plugin's secrets and settings as env values for it (API keys a plugin asks for), and files bug reports about the platform itself. Use when the user asks to find previous conversations, search chat history, or build, edit, schedule, install, or remove any of these platform objects from chat, or when something in the platform is broken and should be reported (report a bug, nahlásit chybu, něco nefunguje).
+version: 2.11.0
 i18n:
   cs:
     displayName: "Správa platformy"
     summary: "Vytváření a správa vlastních asistentů, dovedností, automatizací a doplňků přímo z konverzace."
     examplePrompts:
+      - "Najdi v mých předchozích chatech, kde jsme řešili výpověď nájmu."
       - "Vytvoř automatizaci, která mi každé pondělí ráno zkontroluje sledované dokumenty."
-      - "Vypiš moje automatizace a tu, která běží denně, mi vypni."
       - "Vytvoř asistenta, který posoudí zákonnost výpovědi podle zákoníku práce."
   en:
     displayName: "Platform Management"
     summary: "Create and manage custom assistants, skills, automations, and plugins directly from chat."
     examplePrompts:
+      - "Find my previous chats where we discussed lease termination."
       - "Create an automation that checks my tracked documents every Monday morning."
-      - "List my automations and disable the one that runs daily."
       - "Create an assistant that reviews whether a dismissal is lawful under the Czech Labour Code."
   sk:
     displayName: "Správa platformy"
     summary: "Vytváranie a správa vlastných asistentov, zručností, automatizácií a doplnkov priamo z konverzácie."
     examplePrompts:
+      - "Nájdi v mojich predchádzajúcich chatoch, kde sme riešili výpoveď nájmu."
       - "Vytvor automatizáciu, ktorá mi každý pondelok ráno skontroluje sledované dokumenty."
-      - "Vypíš moje automatizácie a tú, ktorá beží denne, mi vypni."
       - "Vytvor asistenta, ktorý posúdi zákonnosť výpovede podľa českého zákonníka práce."
 ---
 
 # cdxctl - Platform Management CLI
 
-`cdxctl` manages assistants, skills, automations and their run history, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
+`cdxctl` searches previous chats and manages assistants, skills, automations and their run history, marketplaces, plugins, notifications, outbound email, and tabular extraction via the shell. Output is JSON by default (use `--table` for human-readable).
 
 Always go through `cdxctl` for these platform objects - never hand-edit the underlying files or reach for OS tools (no `notify-send`, `dbus`, `crontab`, manual JSON/markdown edits). The CLI is the single source of truth.
+
+## Chat search
+
+Use `cdxctl chat search` to find previous conversations. Pass the user's search
+terms and, when requested, restrict the search to a project. The platform's existing
+search decides which indexed content matches and how results are ranked.
+
+```bash
+cdxctl chat search "výpověď nájmu"
+cdxctl chat search "výpověď nájmu" --project "Právní agenda" --limit 5
+cdxctl chat search "výpověď nájmu" --project "Právní agenda" --limit 5 --offset 5
+```
+
+`--project` accepts a project name, raw UUID or the ID from `cdxctl project list`.
+Omitting it searches all of the user's chats, including chats outside projects; it
+does not inherit the current chat's project. If a name is ambiguous, use one of the
+project IDs reported by the command.
+
+Results are a JSON array in the search backend's order. Each result contains `id`,
+`title`, `modifiedAt`, `snippet`, `automation` and `project` (`id` and `name`, or
+null). Use these results and matching excerpts to answer the user. An excerpt may
+contain highlighting and is not the entire conversation. `--table` prints a compact
+view with project names.
+
+The default limit is 20; `--limit` accepts 1-100. `--offset` defaults to 0 and skips
+that many results on the server. Request another page only when needed. An empty
+array means the search returned no results. Report command errors instead of
+claiming that nothing matched. Date filters and reading the full chat are not
+supported by this command.
 
 ## VM packages
 

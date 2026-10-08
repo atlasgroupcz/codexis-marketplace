@@ -2,6 +2,7 @@ pub mod agent;
 pub mod appenv;
 pub mod automation;
 pub mod bug;
+pub mod chat;
 pub mod marketplace;
 pub mod notification;
 pub mod notification_email;
