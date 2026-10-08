@@ -233,6 +233,35 @@ fn find_project(client: &GraphQLClient, id: &str) -> Result<Value, CdxctlError> 
     select_project(&fetch_projects(client)?, id)
 }
 
+pub fn resolve_project_id(client: &GraphQLClient, identifier: &str) -> Result<String, CdxctlError> {
+    let projects = fetch_projects(client)?;
+    let node_id = resolve_node_id(identifier, "Project");
+    if let Some(project) = projects
+        .iter()
+        .find(|project| project.get("id").and_then(Value::as_str) == Some(node_id.as_str()))
+    {
+        return project_id(project, identifier);
+    }
+    let matches: Vec<&Value> = projects
+        .iter()
+        .filter(|project| project.get("name").and_then(Value::as_str) == Some(identifier))
+        .collect();
+    match matches.as_slice() {
+        [] => Err(CdxctlError::Parse(format!("No such project: {identifier}"))),
+        [project] => project_id(project, identifier),
+        _ => {
+            let ids = matches
+                .iter()
+                .filter_map(|project| project.get("id").and_then(Value::as_str))
+                .collect::<Vec<_>>()
+                .join(", ");
+            Err(CdxctlError::Parse(format!(
+                "Ambiguous project: {identifier}. Use a project ID: {ids}"
+            )))
+        }
+    }
+}
+
 /// Pick the project a command acts on. The value is either the project's name or its Node ID;
 /// a bare UUID is wrapped into one, which is what the daemon's ids decode to.
 fn select_project(projects: &[Value], id: &str) -> Result<Value, CdxctlError> {

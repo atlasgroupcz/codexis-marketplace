@@ -9,18 +9,26 @@ pub fn stub_daemon(
     status_line: &'static str,
     body: &'static str,
 ) -> (String, mpsc::Receiver<String>) {
+    stub_daemon_responses(vec![(status_line, body.to_string())])
+}
+
+pub fn stub_daemon_responses(
+    responses: Vec<(&'static str, String)>,
+) -> (String, mpsc::Receiver<String>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap().to_string();
     let (sender, receiver) = mpsc::channel();
     thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
-        sender.send(read_request(&mut stream)).unwrap();
-        let response = format!(
+        for (status_line, body) in responses {
+            let (mut stream, _) = listener.accept().unwrap();
+            sender.send(read_request(&mut stream)).unwrap();
+            let response = format!(
             "{status_line}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
             body.len()
         );
-        stream.write_all(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
+            stream.write_all(response.as_bytes()).unwrap();
+            stream.flush().unwrap();
+        }
     });
     (address, receiver)
 }
