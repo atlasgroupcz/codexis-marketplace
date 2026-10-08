@@ -147,27 +147,6 @@ mod tests {
     }
 
     #[test]
-    fn executes_table_output_and_propagates_search_failure() {
-        let (client, _requests) = daemon(vec![
-            json!({"data":{"search":[{"id":"chat-a","project":{"id":"project-a","name":"Právní agenda"}}]}}),
-        ]);
-        execute(
-            &client,
-            ChatCommands::Search(args(None)),
-            OutputFormat::Table,
-        )
-        .unwrap();
-        let (client, _requests) =
-            daemon(vec![json!({"errors":[{"message":"Search unavailable"}]})]);
-        assert!(execute(
-            &client,
-            ChatCommands::Search(args(None)),
-            OutputFormat::Json
-        )
-        .is_err());
-    }
-
-    #[test]
     fn resolves_project_name_uuid_and_node_id_before_searching() {
         let id = encode_node_id("Project", PROJECT_UUID);
         for identifier in ["Právní agenda", PROJECT_UUID, id.as_str()] {

@@ -1,4 +1,4 @@
-use super::{find_node_id, resolve_node_id};
+use super::{find_node_id, resolve_node_id, root_node_id};
 use crate::client::GraphQLClient;
 use crate::commands::agent::format_input_error;
 use crate::error::CdxctlError;
@@ -235,11 +235,13 @@ fn find_project(client: &GraphQLClient, id: &str) -> Result<Value, CdxctlError> 
 
 pub fn resolve_project_id(client: &GraphQLClient, identifier: &str) -> Result<String, CdxctlError> {
     let projects = fetch_projects(client)?;
-    let node_id = resolve_node_id(identifier, "Project");
-    if let Some(project) = projects
-        .iter()
-        .find(|project| project.get("id").and_then(Value::as_str) == Some(node_id.as_str()))
-    {
+    if let Some(project) = projects.iter().find(|project| {
+        let Some(id) = project.get("id").and_then(Value::as_str) else {
+            return false;
+        };
+        id == identifier
+            || root_node_id(id, "Project").is_some_and(|uuid| uuid.eq_ignore_ascii_case(identifier))
+    }) {
         return project_id(project, identifier);
     }
     let matches: Vec<&Value> = projects
