@@ -106,6 +106,18 @@ def test_rejects_missing_package_parts(tmp_path):
         check_restart_repair(original, repaired)
 
 
+@pytest.mark.parametrize("duplicate_original", [True, False])
+def test_rejects_ambiguous_duplicate_package_parts(tmp_path, duplicate_original):
+    original = document(tmp_path / "original.docx", input_xml(CASES[0]))
+    repaired = document(tmp_path / "repaired.docx", corrected_numbering())
+    with ZipFile(original if duplicate_original else repaired, "a") as archive:
+        with pytest.warns(UserWarning, match="Duplicate name"):
+            archive.writestr("word/document.xml", b"original document")
+
+    with pytest.raises(ValueError, match="duplicate"):
+        check_restart_repair(original, repaired)
+
+
 def test_accepts_numbering_serialization_changes(tmp_path):
     original = document(tmp_path / "original.docx", input_xml(CASES[0]))
     repaired = document(

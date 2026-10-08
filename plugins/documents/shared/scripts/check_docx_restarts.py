@@ -21,6 +21,9 @@ def structure(element: ElementTree.Element) -> tuple:
 
 def check_restart_repair(original: Path, repaired: Path) -> None:
     with ZipFile(original) as source, ZipFile(repaired) as result:
+        for archive in (source, result):
+            if len(archive.namelist()) != len(set(archive.namelist())):
+                raise ValueError("The DOCX contains duplicate package parts")
         if set(source.namelist()) != set(result.namelist()):
             raise ValueError("The repair changed the DOCX package parts")
         if NUMBERING not in source.namelist():
