@@ -1,0 +1,12 @@
+query SearchChats($query: String!, $projectId: ID, $limit: Int!, $offset: Int!) {
+    search(query: $query, projectId: $projectId, limit: $limit, offset: $offset) {
+        id
+        title
+        modifiedAt
+        snippet
+        ... on ChatSearchHit {
+            automation
+            project { id name }
+        }
+    }
+}

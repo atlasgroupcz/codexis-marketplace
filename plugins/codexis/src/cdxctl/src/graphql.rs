@@ -1,3 +1,5 @@
+pub const SEARCH_CHATS: &str = include_str!("queries/chat_search.graphql");
+
 // ==================== Automations ====================
 
 pub const GET_AUTOMATIONS: &str = include_str!("queries/automation_get.graphql");

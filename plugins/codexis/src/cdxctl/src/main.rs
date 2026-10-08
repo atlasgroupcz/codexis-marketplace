@@ -26,6 +26,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(about = "Search previous chats")]
+    Chat {
+        #[command(subcommand)]
+        command: commands::chat::ChatCommands,
+    },
     #[command(about = "Manage Ubuntu packages on the underlying VM")]
     Package {
         #[command(subcommand)]
@@ -774,6 +779,7 @@ fn main() {
     let format = OutputFormat::from_flag(cli.table);
 
     let result = match cli.command {
+        Commands::Chat { command } => commands::chat::execute(&client, command, format),
         Commands::Package { command } => commands::package::execute(&client, command, format),
         Commands::Appenv { app, command } => {
             commands::appenv::execute(&client, &app, command, format)
@@ -1253,6 +1259,51 @@ fn preflight_guard(command: &Commands) -> Result<(), error::CdxctlError> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn chat_search_accepts_query_and_filters() {
+        assert!(super::Cli::try_parse_from([
+            "cdxctl",
+            "chat",
+            "search",
+            "výpověď nájmu",
+            "--project",
+            "Právní agenda",
+            "--limit",
+            "5",
+            "--offset",
+            "10",
+            "--table",
+        ])
+        .is_ok());
+    }
+
+    #[test]
+    fn chat_search_accepts_unfiltered_query() {
+        assert!(super::Cli::try_parse_from(["cdxctl", "chat", "search", "nájem"]).is_ok());
+    }
+
+    #[test]
+    fn chat_search_rejects_invalid_queries_and_pagination() {
+        for arguments in [
+            vec!["cdxctl", "chat", "search"],
+            vec!["cdxctl", "chat", "search", "  "],
+            vec!["cdxctl", "chat", "search", "nájem", "--project", ""],
+            vec!["cdxctl", "chat", "search", "nájem", "--limit", "0"],
+            vec!["cdxctl", "chat", "search", "nájem", "--limit", "101"],
+            vec!["cdxctl", "chat", "search", "nájem", "--offset", "-1"],
+            vec![
+                "cdxctl",
+                "chat",
+                "search",
+                "nájem",
+                "--offset",
+                "2147483648",
+            ],
+        ] {
+            assert!(super::Cli::try_parse_from(arguments).is_err());
+        }
+    }
+
     use super::*;
 
     #[test]

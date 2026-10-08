@@ -1,4 +1,4 @@
-use super::{find_node_id, resolve_node_id};
+use super::{find_node_id, resolve_node_id, root_node_id};
 use crate::client::GraphQLClient;
 use crate::commands::agent::format_input_error;
 use crate::error::CdxctlError;
@@ -231,6 +231,37 @@ fn fetch_projects(client: &GraphQLClient) -> Result<Vec<Value>, CdxctlError> {
 
 fn find_project(client: &GraphQLClient, id: &str) -> Result<Value, CdxctlError> {
     select_project(&fetch_projects(client)?, id)
+}
+
+pub fn resolve_project_id(client: &GraphQLClient, identifier: &str) -> Result<String, CdxctlError> {
+    let projects = fetch_projects(client)?;
+    if let Some(project) = projects.iter().find(|project| {
+        let Some(id) = project.get("id").and_then(Value::as_str) else {
+            return false;
+        };
+        id == identifier
+            || root_node_id(id, "Project").is_some_and(|uuid| uuid.eq_ignore_ascii_case(identifier))
+    }) {
+        return project_id(project, identifier);
+    }
+    let matches: Vec<&Value> = projects
+        .iter()
+        .filter(|project| project.get("name").and_then(Value::as_str) == Some(identifier))
+        .collect();
+    match matches.as_slice() {
+        [] => Err(CdxctlError::Parse(format!("No such project: {identifier}"))),
+        [project] => project_id(project, identifier),
+        _ => {
+            let ids = matches
+                .iter()
+                .filter_map(|project| project.get("id").and_then(Value::as_str))
+                .collect::<Vec<_>>()
+                .join(", ");
+            Err(CdxctlError::Parse(format!(
+                "Ambiguous project: {identifier}. Use a project ID: {ids}"
+            )))
+        }
+    }
 }
 
 /// Pick the project a command acts on. The value is either the project's name or its Node ID;
