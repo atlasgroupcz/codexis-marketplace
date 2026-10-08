@@ -7,7 +7,7 @@ SCRIPT_NAME=$(basename "$0")
 function usage() {
     cat <<EOM
 
-Remove cdx-render and cdx-recalc from the user-local bin directory.
+Remove document rendering, recalculation and restart-check commands from the user-local bin directory.
 
 usage: ${SCRIPT_NAME} [options]
 
@@ -31,7 +31,7 @@ function main() {
         shift
     done
 
-    rm -f "${target}/cdx-render" "${target}/cdx-recalc"
+    rm -f "${target}/cdx-render" "${target}/cdx-recalc" "${target}/cdx-check-docx-restarts"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
