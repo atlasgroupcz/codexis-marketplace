@@ -68,3 +68,29 @@ tests:
       # e2e (?i)(CICA|ESKN|…) - JS regex has no (?i); first letter as a class per word.
       - type: regex
         value: '(CICA|ESKN|[Ss]lovensko\.sk|[Oo]ficiáln|[Mm]anuáln|[Rr]učne|[Pp]ortál|[Pp]ortal)'
+
+  - description: Proceeding status is read with kataster-sk-cli konanie and no watching is promised
+    vars:
+      prompt: "Zisti stav konania V-4500/2026 na katastrálnom odbore Bratislava a hlídaj ho pre mňa."
+      tool_name: shell
+      tool_calls_max: 6
+      forbidden_regex: '(curl|wget|requests\.get|urllib\.request|skgeodesy\.sk/eskn-portal)'
+      input_regex: 'kataster-sk-cli[\s"\\]+konanie(?!.*--help)'
+      arbitration:
+        correct:
+          - "Running kataster-sk-cli konanie (optionally pracoviska first) and reporting the status it returns."
+        incorrect:
+          - "Posting to the ESKN status form with curl/wget/requests instead of kataster-sk-cli."
+          - "Promising to watch or notify about the proceeding - the skill has no monitoring."
+    assert:
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_call
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_tool_count_max
+      - type: python
+        value: file://../../../../tests/promptfoo/assertions.py:assert_no_tool_call
+      # The answer reports the status; it must not claim to be watching.
+      - type: regex
+        value: '(vybaven|stav|Nenájden)'
+      - type: not-regex
+        value: '(budem (ho )?sledova|budem hlídat|upozorním|dám vám vedieť|dám ti vedieť)'

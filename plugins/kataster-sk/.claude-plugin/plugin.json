@@ -1,13 +1,13 @@
 {
   "name": "kataster-sk",
   "iconPath": "icon.svg",
-  "version": "1.3.1",
-  "description": "Slovak land cadastre (kataster nehnuteľností SR) - parcel lookup by cadastral unit and parcel number, areas, land use, and deep links to title deeds (list vlastníctva) on the ESKN portal",
+  "version": "1.4.0",
+  "description": "Slovak land cadastre (kataster nehnuteľností SR) - parcel lookup by cadastral unit and parcel number, areas, land use, status of a cadastral proceeding by its number, and deep links to title deeds (list vlastníctva) on the ESKN portal",
   "author": {
     "name": "ATLAS GROUP",
     "email": "klientske.centrum@atlasgroup.cz"
   },
-  "keywords": ["kataster", "slovakia", "cadastre", "parcel", "list-vlastnictva", "zbgis"],
+  "keywords": ["kataster", "slovakia", "cadastre", "parcel", "list-vlastnictva", "zbgis", "konanie"],
   "license": "PROPRIETARY",
   "tags": ["legal", "slovak", "cadastre", "property"],
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
@@ -16,17 +16,17 @@
   "i18n": {
     "cs": {
       "displayName": "Kataster nehnuteľností SR",
-      "description": "Slovenský katastr nemovitostí - vyhledávání parcel podle katastrálního území a parcelního čísla, výměry, druh pozemku a odkazy na list vlastníctva na portálu ESKN.",
+      "description": "Slovenský katastr nemovitostí - vyhledávání parcel podle katastrálního území a parcelního čísla, výměry, druh pozemku, stav katastrálního řízení podle jeho čísla a odkazy na list vlastníctva na portálu ESKN.",
       "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "cadastre": "Katastr", "property": "Nemovitosti" }
     },
     "en": {
       "displayName": "Slovak Land Cadastre",
-      "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal.",
+      "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, status of a cadastral proceeding by its number, and links to title deeds on the ESKN portal.",
       "tagLabels": { "legal": "Law", "slovak": "Slovakia", "cadastre": "Cadastre", "property": "Property" }
     },
     "sk": {
       "displayName": "Kataster nehnuteľností SR",
-      "description": "Slovenský kataster nehnuteľností - vyhľadávanie parciel podľa katastrálneho územia a parcelného čísla, výmery, druh pozemku a odkazy na list vlastníctva na portáli ESKN.",
+      "description": "Slovenský kataster nehnuteľností - vyhľadávanie parciel podľa katastrálneho územia a parcelného čísla, výmery, druh pozemku, stav katastrálneho konania podľa jeho čísla a odkazy na list vlastníctva na portáli ESKN.",
       "tagLabels": { "legal": "Právo", "slovak": "Slovensko", "cadastre": "Kataster", "property": "Nehnuteľnosti" }
     }
   },

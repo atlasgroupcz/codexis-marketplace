@@ -516,13 +516,13 @@
     {
       "uuid": "4785cc31-461b-4516-8a68-5567b1312dfb",
       "name": "kataster-sk",
-      "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal",
+      "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, status of a cadastral proceeding by its number, and links to title deeds on the ESKN portal",
       "source": "./plugins/kataster-sk",
       "category": "legal",
       "i18n": {
         "cs": {
           "displayName": "Kataster nehnuteľností SR",
-          "description": "Slovenský katastr nemovitostí - vyhledávání parcel podle katastrálního území a parcelního čísla, výměry, druh pozemku a odkazy na list vlastníctva na portálu ESKN.",
+          "description": "Slovenský katastr nemovitostí - vyhledávání parcel podle katastrálního území a parcelního čísla, výměry, druh pozemku, stav katastrálního řízení podle jeho čísla a odkazy na list vlastníctva na portálu ESKN.",
           "tagLabels": {
             "legal": "Právo",
             "slovak": "Slovensko",
@@ -532,7 +532,7 @@
         },
         "en": {
           "displayName": "Slovak Land Cadastre",
-          "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, and links to title deeds on the ESKN portal.",
+          "description": "Slovak land cadastre (kataster nehnuteľností) - parcel lookup by cadastral unit and parcel number, areas, land use, status of a cadastral proceeding by its number, and links to title deeds on the ESKN portal.",
           "tagLabels": {
             "legal": "Law",
             "slovak": "Slovakia",
@@ -542,7 +542,7 @@
         },
         "sk": {
           "displayName": "Kataster nehnuteľností SR",
-          "description": "Slovenský kataster nehnuteľností - vyhľadávanie parciel podľa katastrálneho územia a parcelného čísla, výmery, druh pozemku a odkazy na list vlastníctva na portáli ESKN.",
+          "description": "Slovenský kataster nehnuteľností - vyhľadávanie parciel podľa katastrálneho územia a parcelného čísla, výmery, druh pozemku, stav katastrálneho konania podľa jeho čísla a odkazy na list vlastníctva na portáli ESKN.",
           "tagLabels": {
             "legal": "Právo",
             "slovak": "Slovensko",
