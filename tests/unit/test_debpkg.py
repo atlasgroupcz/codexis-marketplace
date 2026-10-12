@@ -7,10 +7,13 @@ packages end to end.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import stat
-from pathlib import Path
+import subprocess
+import zipfile
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -60,7 +63,7 @@ def make_plugin(
 
 
 def meta(base: Path, name: str = "demo", **files: str) -> Path:
-    directory = base / "meta" / name
+    directory = base / "repo" / "plugins" / name
     (directory / "deb").mkdir(parents=True)
     for filename, content in files.items():
         (directory / "deb" / filename).write_text(content)
@@ -70,7 +73,8 @@ def meta(base: Path, name: str = "demo", **files: str) -> Path:
 def lay_out(base: Path, plugin: Path, meta_dir: Path | None = None) -> debpkg.Package:
     root = base / "root" / plugin.name
     root.mkdir(parents=True)
-    return debpkg.lay_out(plugin, meta_dir or base / "meta" / plugin.name, root)
+    meta_dir = meta_dir or base / "repo" / "plugins" / plugin.name
+    return debpkg.lay_out(plugin, meta_dir, root)
 
 
 def test_elf_command_is_installed_in_usr_bin_and_linked_from_the_plugin(tmp_path):
@@ -186,6 +190,12 @@ def test_binary_for_an_unsupported_architecture_is_rejected(tmp_path):
         lay_out(tmp_path, plugin)
 
 
+def test_package_names_carry_the_codexis_prefix_once():
+    assert debpkg.package_name("ares") == "codexis-ares"
+    assert debpkg.package_name("codexis") == "codexis"
+    assert debpkg.package_name("codexis-dane") == "codexis-dane"
+
+
 def test_depends_join_interpreters_plugin_dependencies_and_declared_tools(tmp_path):
     plugin = make_plugin(
         tmp_path,
@@ -195,14 +205,20 @@ def test_depends_join_interpreters_plugin_dependencies_and_declared_tools(tmp_pa
             "shared/run.sh": "#!/usr/bin/env bash\n",
         },
         executable=("bin/demo-cli", "components/demo/demo-cgi", "shared/run.sh"),
-        dependencies=["codexis"],
+        dependencies=["codexis", "ares"],
     )
-    meta_dir = meta(tmp_path, control="Depends: curl\nRecommends: jq\n")
+    meta_dir = meta(tmp_path, control="Depends: curl, jq\n")
 
     package = lay_out(tmp_path, plugin, meta_dir)
 
-    assert package.depends == ["nodejs", "python3", "codexis-codexis", "curl"]
-    assert package.recommends == ["jq"]
+    assert package.depends == [
+        "nodejs",
+        "python3",
+        "codexis",
+        "codexis-ares",
+        "curl",
+        "jq",
+    ]
 
 
 def test_script_with_an_unmapped_interpreter_is_rejected(tmp_path):
@@ -249,22 +265,60 @@ def test_declared_link_to_a_file_the_plugin_does_not_ship_is_rejected(tmp_path):
         lay_out(tmp_path, plugin, meta_dir)
 
 
-def test_fragment_reads_folded_relations_and_skips_comments(tmp_path):
+def wheel(base: Path) -> tuple[str, str]:
+    """A pure-Python wheel on disk: its file:// URL and sha256."""
+    path = base / "demolib-1.0-py3-none-any.whl"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("demolib/__init__.py", "VALUE = 42\n")
+        archive.writestr("demolib-1.0.dist-info/LICENSE", "BSD\n")
+        archive.writestr("demolib-1.0.data/scripts/tool.py", "")
+    return path.as_uri(), hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_wheel_is_unpacked_into_the_plugin_lib(tmp_path):
+    url, digest = wheel(tmp_path)
+    plugin = make_plugin(tmp_path)
+    meta_dir = meta(tmp_path, wheels=f"# vendored\n{url} sha256={digest}\n")
+
+    package = lay_out(tmp_path, plugin, meta_dir)
+
+    lib = tmp_path / "root/demo" / TREE / "demo/lib"
+    assert sorted(p.name for p in lib.iterdir()) == ["demolib", "demolib-1.0.dist-info"]
+    assert package.python_modules
+
+
+def test_wheel_whose_hash_does_not_match_is_rejected(tmp_path):
+    url, _ = wheel(tmp_path)
+    plugin = make_plugin(tmp_path)
+    meta_dir = meta(tmp_path, wheels=f"{url} sha256={'0' * 64}\n")
+
+    with pytest.raises(PackagingError, match="sha256 mismatch"):
+        lay_out(tmp_path, plugin, meta_dir)
+
+
+def test_wheel_with_compiled_code_is_rejected(tmp_path):
+    meta_dir = meta(
+        tmp_path, wheels="https://x/numpy-2.0-cp312-cp312-linux_x86_64.whl sha256=ab\n"
+    )
+
+    with pytest.raises(PackagingError, match="only pure-Python wheels"):
+        debpkg.read_wheels(meta_dir)
+
+
+def test_depends_field_may_be_folded_and_commented(tmp_path):
     meta_dir = meta(
         tmp_path,
         control="# tools the binary spawns\nDepends: curl,\n  libreoffice-core | libreoffice\n",
     )
 
-    assert debpkg.read_fragment(meta_dir) == {
-        "Depends": ["curl", "libreoffice-core | libreoffice"]
-    }
+    assert debpkg.read_depends(meta_dir) == ["curl", "libreoffice-core | libreoffice"]
 
 
-def test_fragment_rejects_fields_the_builder_derives(tmp_path):
-    meta_dir = meta(tmp_path, control="Version: 9.9.9\n")
+def test_control_accepts_only_depends(tmp_path):
+    meta_dir = meta(tmp_path, control="Depends: curl\nRecommends: jq\n")
 
-    with pytest.raises(PackagingError, match="expected one of"):
-        debpkg.read_fragment(meta_dir)
+    with pytest.raises(PackagingError, match="expected a single Depends field"):
+        debpkg.read_depends(meta_dir)
 
 
 def test_control_carries_version_revision_maintainer_and_wrapped_description(tmp_path):
@@ -282,22 +336,109 @@ def test_control_carries_version_revision_maintainer_and_wrapped_description(tmp
     assert "Maintainer: ATLAS GROUP <dev@example.com>" in lines
     assert "Depends: libc6 (>= 2.34)" in lines
     assert "Description: Demo - Packaging" in lines
-    assert not any(line.startswith("Recommends:") for line in lines)
     extended = lines[lines.index("Description: Demo - Packaging") + 1 :]
     assert len(extended) > 1
     assert all(line.startswith(" ") and len(line) <= 79 for line in extended)
+
+
+def marketplace(*names: str) -> dict:
+    return {
+        "owner": {"name": "ATLAS GROUP", "email": "dev@example.com"},
+        "i18n": {"en": {"displayName": "Marketplace", "description": "All of it."}},
+        "plugins": [{"name": name} for name in names],
+    }
+
+
+def test_marketplace_package_depends_on_every_listed_plugin(tmp_path):
+    packages = [
+        lay_out(tmp_path, make_plugin(tmp_path, name=name))
+        for name in ("sid", "codexis")
+    ]
+
+    meta_package = debpkg.marketplace_package(
+        marketplace("codexis", "sid"), packages, epoch=1791458640
+    )
+
+    assert meta_package.name == "codexis-marketplace"
+    assert meta_package.depends == ["codexis (>= 1.2.3-1)", "codexis-sid (>= 1.2.3-1)"]
+    assert meta_package.version == "20261008.112400"
+    assert meta_package.architecture == "all"
+
+
+def test_marketplace_listing_a_plugin_that_was_not_built_is_rejected(tmp_path):
+    packages = [lay_out(tmp_path, make_plugin(tmp_path, name="sid"))]
+
+    with pytest.raises(PackagingError, match="unbuilt plugins: ares"):
+        debpkg.marketplace_package(marketplace("ares", "sid"), packages, epoch=0)
+
+
+def test_marketplace_package_is_only_control_metadata(tmp_path):
+    packages = [lay_out(tmp_path, make_plugin(tmp_path, name="sid"))]
+    meta_package = debpkg.marketplace_package(marketplace("sid"), packages, epoch=0)
+    root = tmp_path / "meta-root"
+    root.mkdir()
+
+    debpkg.write_metadata(meta_package, root)
+
+    assert [p.name for p in (root / "DEBIAN").iterdir()] == ["control"]
+    assert meta_package.filename == "codexis-marketplace_19700101.000000_all.deb"
+
+
+def run_script(package: debpkg.Package, name: str, root: Path) -> None:
+    script = debpkg.maintainer_scripts(package, PurePosixPath(root))[name]
+    subprocess.run(["sh", "-c", script], check=True)
+
+
+def installed(root: Path, *names: str) -> None:
+    for name in names:
+        (root / name / ".claude-plugin").mkdir(parents=True)
+        (root / name / ".claude-plugin" / "plugin.json").write_text("{}")
+
+
+def test_postinst_lists_every_installed_plugin_in_plugins_txt(tmp_path):
+    package = lay_out(tmp_path, make_plugin(tmp_path))
+    root = tmp_path / "installed"
+    installed(root, "demo", "ares")
+    (root / "not-a-plugin").mkdir()
+
+    run_script(package, "postinst", root)
+
+    assert (root / "plugins.txt").read_text().splitlines() == [
+        str(root / "ares"),
+        str(root / "demo"),
+    ]
+
+
+def test_removing_a_plugin_drops_it_from_plugins_txt(tmp_path):
+    package = lay_out(tmp_path, make_plugin(tmp_path))
+    root = tmp_path / "installed"
+    installed(root, "demo", "ares")
+    run_script(package, "postinst", root)
+
+    run_script(package, "prerm", root)
+    (root / "demo" / ".claude-plugin" / "plugin.json").unlink()
+    run_script(package, "postrm", root)
+
+    assert (root / "plugins.txt").read_text().splitlines() == [str(root / "ares")]
+
+
+def test_removing_the_last_plugin_leaves_no_plugins_txt(tmp_path):
+    package = lay_out(tmp_path, make_plugin(tmp_path))
+    root = tmp_path / "installed"
+    installed(root, "demo")
+    run_script(package, "postinst", root)
+
+    run_script(package, "prerm", root)
+
+    assert list(root.glob("plugins.txt*")) == []
 
 
 def test_prerm_cleans_python_caches_only_for_plugins_shipping_modules(tmp_path):
     with_modules = lay_out(tmp_path, make_plugin(tmp_path, files={"lib/core/x.py": ""}))
     without = lay_out(tmp_path, make_plugin(tmp_path, name="plain"))
 
-    for package in (with_modules, without):
-        debpkg.write_metadata(package, tmp_path / "root" / package.plugin)
-
-    script = tmp_path / "root/demo/DEBIAN/prerm"
-    assert f"find /{TREE}/demo -type d -name __pycache__" in script.read_text()
-    assert not (tmp_path / "root/plain/DEBIAN/prerm").exists()
+    assert "__pycache__" in debpkg.maintainer_scripts(with_modules)["prerm"]
+    assert "__pycache__" not in debpkg.maintainer_scripts(without)["prerm"]
 
 
 def test_md5sums_list_payload_files_but_not_symlinks(tmp_path):
@@ -313,6 +454,22 @@ def test_md5sums_list_payload_files_but_not_symlinks(tmp_path):
     assert listed == ["usr/bin/demo-cli", f"{TREE}/demo/.claude-plugin/plugin.json"]
 
 
+def build(tmp_path: Path, *plugins: str) -> int:
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    return debpkg.main(
+        [
+            "--payload",
+            str(tmp_path / "payload"),
+            "--repo",
+            str(tmp_path / "repo"),
+            "--out",
+            str(out),
+            *plugins,
+        ]
+    )
+
+
 def test_main_rejects_a_command_shipped_by_two_plugins(tmp_path, capsys):
     for name in ("one", "two"):
         make_plugin(
@@ -321,39 +478,22 @@ def test_main_rejects_a_command_shipped_by_two_plugins(tmp_path, capsys):
             files={"bin/same": "#!/bin/sh\n"},
             executable=("bin/same",),
         )
-    out = tmp_path / "out"
-    out.mkdir()
 
-    status = debpkg.main(
-        [
-            "--payload",
-            str(tmp_path / "payload"),
-            "--meta",
-            str(tmp_path / "meta"),
-            "--out",
-            str(out),
-        ]
-    )
-
-    assert status == 1
+    assert build(tmp_path) == 1
     assert "/usr/bin/same is shipped by both" in capsys.readouterr().err
-    assert not any(out.iterdir())
+    assert not any((tmp_path / "out").iterdir())
+
+
+def test_main_rejects_two_plugins_sharing_a_package_name(tmp_path, capsys):
+    make_plugin(tmp_path, name="dane")
+    make_plugin(tmp_path, name="codexis-dane")
+
+    assert build(tmp_path) == 1
+    assert "package name codexis-dane is taken twice" in capsys.readouterr().err
 
 
 def test_main_rejects_an_unknown_plugin_name(tmp_path, capsys):
     make_plugin(tmp_path)
 
-    status = debpkg.main(
-        [
-            "--payload",
-            str(tmp_path / "payload"),
-            "--meta",
-            str(tmp_path / "meta"),
-            "--out",
-            str(tmp_path),
-            "nope",
-        ]
-    )
-
-    assert status == 1
+    assert build(tmp_path, "nope") == 1
     assert "unknown plugins: nope" in capsys.readouterr().err

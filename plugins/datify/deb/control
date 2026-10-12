@@ -1,2 +1,1 @@
-Depends: codexis-codexis
-Recommends: jq
+Depends: codexis, jq

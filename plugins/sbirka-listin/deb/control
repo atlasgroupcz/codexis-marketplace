@@ -1,2 +1,1 @@
-Depends: curl
-Recommends: jq
+Depends: curl, jq

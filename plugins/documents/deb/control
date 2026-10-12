@@ -1,2 +1,2 @@
-Depends: libreoffice-writer, libreoffice-calc, libreoffice-impress, poppler-utils, unzip
-Recommends: pandoc, qpdf, pngcheck
+Depends: libreoffice-writer, libreoffice-calc, libreoffice-impress,
+ poppler-utils, unzip, pandoc, qpdf, pngcheck

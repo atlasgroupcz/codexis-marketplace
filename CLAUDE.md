@@ -416,20 +416,29 @@ For multi-binary plugins, prefer extracting these commands into `hooks/install-b
 
 ### Debian packages
 
-`shared/deb/build-debs.sh [plugin...]` builds one `codexis-<plugin>` package
-per plugin into `target/deb/`, versioned `<plugin.json version>-1`, from the
-committed artifacts (run `./build.sh` first). `shared/deb/smoke-test.sh`
-installs them all into a clean Ubuntu 26.04 and runs every command.
+`shared/deb/build-debs.sh` builds one package per plugin into `target/deb/`,
+plus `codexis-marketplace`, which depends on all of them, and a `Packages`
+index, so the directory is a flat apt repository. Packages are named
+`codexis-<plugin>` (a `codexis*` plugin keeps its name) and versioned
+`<plugin.json version>-1`. They hold the committed artifacts, so run
+`./build.sh` first. `shared/deb/smoke-test.sh` installs `codexis-marketplace`
+into a clean Ubuntu 26.04 and checks every package.
 
 A package installs the shipped plugin tree (what the dist ships, minus the
 lifecycle `hooks/*.sh`) under `/usr/share/cdx-plugins/codexis/<plugin>/` and
-puts every `bin/` entry on `/usr/bin`. Depends is derived from the contents
-(shared libraries, script shebangs) and plugin.json `dependencies`. Declare
-everything else the plugin needs at runtime - a tool a binary spawns, a command
-the skills pipe through - in `plugins/<name>/deb/control` (`Depends`,
-`Recommends`, `Suggests` only). A script that becomes a command under another
-name goes in `plugins/<name>/deb/links` (dh_link format). A Node bundle must not
-`require` anything but `node:` built-ins.
+puts every `bin/` entry on `/usr/bin`. Its maintainer scripts keep
+`/usr/share/cdx-plugins/codexis/plugins.txt` listing the installed plugin
+directories.
+
+Depends is derived from the contents (shared libraries, script shebangs) and
+plugin.json `dependencies`. Everything else the plugin or its skills need at
+runtime - a tool a binary spawns, a command the skills pipe through, a Python
+library - is a hard dependency declared in `plugins/<name>/deb/control` (a
+single `Depends` field). A pure-Python library Ubuntu does not package goes in
+`plugins/<name>/deb/wheels` (`<url> sha256=<hex>`) and is unpacked into the
+plugin's `lib/`. A script that becomes a command under another name goes in
+`plugins/<name>/deb/links` (dh_link format). A Node bundle must not `require`
+anything but `node:` built-ins.
 
 ### Source Previews (`previews/`)
 

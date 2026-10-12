@@ -24,7 +24,8 @@ PLUGINS = sorted(
 
 @pytest.mark.parametrize("plugin", PLUGINS, ids=lambda p: p.name)
 def test_deb_metadata_parses_and_links_reach_shipped_files(plugin: Path) -> None:
-    debpkg.read_fragment(plugin)
+    debpkg.read_depends(plugin)
+    debpkg.read_wheels(plugin)
     tree = debpkg.INSTALL_ROOT / plugin.name
     for target, _ in debpkg.read_links(plugin):
         assert target.is_relative_to(tree), f"{target} is outside /{tree}"

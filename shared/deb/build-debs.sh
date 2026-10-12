@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Build one .deb per marketplace plugin into target/deb/.
+# Build one .deb per marketplace plugin into target/deb/, with a Packages index
+# that makes the directory a flat apt repository.
 #
-#   shared/deb/build-debs.sh              every plugin
+#   shared/deb/build-debs.sh              every plugin and codexis-marketplace
 #   shared/deb/build-debs.sh codexis sid  just these
 #
 # Packages the committed artifacts (bin/, components/) as they ship, so run
@@ -37,4 +38,4 @@ docker run --rm \
   -v "$OUT_DIR:/out" \
   "$DEB_IMAGE" \
   python3 /workspace/shared/deb/debpkg.py \
-    --payload /payload --meta /workspace/plugins --out /out "$@"
+    --payload /payload --repo /workspace --out /out "$@"
