@@ -414,6 +414,23 @@ Example (from codexis plugin):
 
 For multi-binary plugins, prefer extracting these commands into `hooks/install-binaries.sh` and `hooks/uninstall-binaries.sh` (see the `codexis`, `cdx-sk`, `ares`, `cdx-at`, `cdx-cz-psp`, `cdx-cz-spp` plugins). Those scripts default `TARGET_BIN_DIR` to `${HOME}/.local/bin` and can be overridden via the `TARGET_BIN_DIR` env var if a different prefix is needed.
 
+### Debian packages
+
+`shared/deb/build-debs.sh [plugin...]` builds one `codexis-<plugin>` package
+per plugin into `target/deb/`, versioned `<plugin.json version>-1`, from the
+committed artifacts (run `./build.sh` first). `shared/deb/smoke-test.sh`
+installs them all into a clean Ubuntu 26.04 and runs every command.
+
+A package installs the shipped plugin tree (what the dist ships, minus the
+lifecycle `hooks/*.sh`) under `/usr/share/cdx-plugins/codexis/<plugin>/` and
+puts every `bin/` entry on `/usr/bin`. Depends is derived from the contents
+(shared libraries, script shebangs) and plugin.json `dependencies`. Declare
+everything else the plugin needs at runtime - a tool a binary spawns, a command
+the skills pipe through - in `plugins/<name>/deb/control` (`Depends`,
+`Recommends`, `Suggests` only). A script that becomes a command under another
+name goes in `plugins/<name>/deb/links` (dh_link format). A Node bundle must not
+`require` anything but `node:` built-ins.
+
 ### Source Previews (`previews/`)
 
 A plugin can render an in-chat HTML preview for the sources it publishes. Publish sources with `previewUrl` in the `<plugin-name>://<resource-path>` form; the daemon resolves it through the plugin's preview handler declared by `previews/preview.json`:
