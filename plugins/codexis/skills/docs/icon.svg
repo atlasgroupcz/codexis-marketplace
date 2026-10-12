@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="42 42 216 216">
+  <path fill="#688ed5" d="M150 83C123 66 87 64 50 73v146c37-9 73-7 100 10 27-17 63-19 100-10V73c-37-9-73-7-100 10Z"/>
+  <path fill="#bee0fb" d="M150 89c-25-17-55-20-91-12v132c35-7 66-3 91 13 25-16 56-20 91-13V77c-36-8-66-5-91 12Z"/>
+  <path fill="#dff2ff" d="M150 83c-23-16-51-21-82-16v132c31-5 59 0 82 16 23-16 51-21 82-16V67c-31-5-59 0-82 16Z"/>
+  <path fill="#d3e6fc" d="M150 83v132c23-16 51-21 82-16V67c-31-5-59 0-82 16Z"/>
+  <path fill="#688ed5" d="M147 83h6v132h-6Z"/>
+  <path fill="#7cb302" d="M184 66c7-1 14-2 22-2v42l-11-8-11 8Z"/>
+  <g fill="none" stroke="#688ed5" stroke-width="6" stroke-linecap="round">
+    <path d="M84 104c17 0 31 3 46 10M84 125c17 0 31 3 46 10M84 146c17 0 31 3 46 10M84 167c12 0 23 2 34 6"/>
+    <path d="M170 120c14-5 28-7 43-7M170 141c10-4 20-6 30-6"/>
+  </g>
+  <circle fill="#dff2ff" cx="217" cy="202" r="34"/>
+  <circle fill="#688ed5" cx="217" cy="202" r="29"/>
+  <circle fill="#dff2ff" cx="217" cy="188" r="4"/>
+  <rect fill="#dff2ff" x="213" y="199" width="8" height="21" rx="4"/>
+</svg>
