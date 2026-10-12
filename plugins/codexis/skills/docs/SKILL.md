@@ -1,8 +1,9 @@
 ---
 uuid: 59ff1b12-0419-4bb4-9197-c843a1aac629
 name: docs
+icon: icon.svg
 description: Use when the user asks about CODEXIS AI or CODEXIS AI Agent product features, setup, operation, limitations, subscriptions, licence terms, CODEXIS ACADEMIA, security, or support.
-version: 1.1.0
+version: 1.1.1
 i18n:
   cs:
     displayName: "CODEXIS AI - Dokumentace"
