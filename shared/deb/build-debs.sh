@@ -8,9 +8,10 @@
 #   shared/deb/build-debs.sh dist codexis sid ares  just these
 #
 # <dist> is a git checkout of a marketplace distribution, such as ./create-dist.sh
-# writes; the time of its HEAD commit versions <namespace>-marketplace. The
-# namespace prefixes the package names and names the directory under
-# /usr/share/cdx-plugins the plugins install into. Needs docker and git.
+# writes. Its HEAD commit is the marketplace revision, and its time versions
+# <namespace>-marketplace. The namespace prefixes the package names and names the
+# directory under /usr/share/cdx-plugins the distribution installs into. Needs
+# docker and git.
 set -euo pipefail
 
 if [[ $# -lt 2 ]]; then
@@ -27,6 +28,7 @@ OUT_DIR="$ROOT_DIR/target/deb"
 # Depends from this image's packages. Pinned by digest, like the other builders.
 DEB_IMAGE="buildpack-deps:resolute@sha256:c51212ca047bc2504e4e0fabfaee2fab439366ac8df87c71661b09a22a34d706"
 EPOCH="$(git -C "$DIST_DIR" log -1 --format=%ct)"
+REVISION="$(git -C "$DIST_DIR" rev-parse HEAD)"
 
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
@@ -42,4 +44,5 @@ docker run --rm \
   -v "$OUT_DIR:/out" \
   "$DEB_IMAGE" \
   python3 /builder/debpkg.py \
-    --marketplace /marketplace --namespace "$NAMESPACE" --out /out "$@"
+    --marketplace /marketplace --namespace "$NAMESPACE" --revision "$REVISION" \
+    --out /out "$@"

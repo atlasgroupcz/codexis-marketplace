@@ -433,10 +433,14 @@ plugin named after the namespace keeps its name) and versioned
 `<plugin.json version>-1`; the marketplace package is versioned by the time of
 the source commit.
 
-A package installs the plugin tree as the dist ships it, minus `deb/`, under
-`/usr/share/cdx-plugins/<namespace>/<plugin>/` and puts every `bin/` entry on
-`/usr/bin`. The builder writes
-`<plugin>/cdx-manifest.json` into the tree: the package version, the
+Installed, `/usr/share/cdx-plugins/<namespace>/` is the distribution: the same
+layout and files as the marketplace volume, read the same way. A plugin package
+installs the plugin tree as the dist ships it, minus `deb/`, where its
+`marketplace.json` source points (`.../codexis/plugins/<plugin>/`), and puts
+every `bin/` entry on `/usr/bin`. `<namespace>-marketplace` installs the rest of
+the dist (`marketplace.json`, `plugin-runtime/`, ...) and
+`.codexis-marketplace-revision`, the dist commit. The builder writes
+`cdx-manifest.json` into each plugin tree: the package version, the
 `marketplace.json` category, and the path (relative to the plugin) of every file
 the daemon loads - `plugin.json`, README, skills, agents, apps, previews,
 automations and `.mcp.json`. Hooks are not listed.

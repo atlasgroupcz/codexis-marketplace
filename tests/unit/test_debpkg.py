@@ -25,7 +25,7 @@ import pytest
 from shared.deb import debpkg
 from shared.deb.debpkg import PackagingError
 
-TREE = "usr/share/cdx-plugins/codexis"
+TREE = "usr/share/cdx-plugins/codexis/plugins"
 
 
 def elf(machine: int = 0x3E) -> bytes:
@@ -79,7 +79,9 @@ def meta(base: Path, name: str = "demo", **files: str) -> Path:
 def lay_out(base: Path, plugin: Path) -> debpkg.Package:
     root = base / "root" / plugin.name
     root.mkdir(parents=True)
-    return debpkg.lay_out(plugin, root, "codexis", "legal")
+    marketplace_dir = base / "marketplace"
+    location = PurePosixPath(plugin.relative_to(marketplace_dir).as_posix())
+    return debpkg.lay_out(marketplace_dir, location, root, "codexis", "legal")
 
 
 def test_elf_command_is_installed_in_usr_bin_and_linked_from_the_plugin(tmp_path):
@@ -257,14 +259,21 @@ def test_package_names_carry_the_namespace_prefix_once():
 
 
 def test_namespace_names_the_packages_and_the_directory_they_install_into(tmp_path):
-    plugin = make_plugin(tmp_path, name="contracts", dependencies=["clauses"])
+    make_plugin(tmp_path, name="contracts", dependencies=["clauses"])
     root = tmp_path / "root"
     root.mkdir()
 
-    package = debpkg.lay_out(plugin, root, "lawve", "legal")
+    package = debpkg.lay_out(
+        tmp_path / "marketplace",
+        PurePosixPath("plugins/contracts"),
+        root,
+        "lawve",
+        "legal",
+    )
     meta_package = debpkg.marketplace_package(marketplace(), [package], "lawve", 0)
 
-    assert (root / "usr/share/cdx-plugins/lawve/contracts/cdx-manifest.json").is_file()
+    manifest = root / "usr/share/cdx-plugins/lawve/plugins/contracts/cdx-manifest.json"
+    assert manifest.is_file()
     assert package.name == "lawve-contracts"
     assert package.depends == ["lawve-clauses"]
     assert meta_package.name == "lawve-marketplace"
@@ -440,18 +449,33 @@ def test_marketplace_package_depends_on_every_listed_plugin(tmp_path):
     assert meta_package.architecture == "all"
 
 
-def test_marketplace_package_is_only_control_metadata(tmp_path):
-    packages = [lay_out(tmp_path, make_plugin(tmp_path, name="sid"))]
-    meta_package = debpkg.marketplace_package(
-        marketplace("sid"), packages, "codexis", epoch=0
-    )
+def test_marketplace_package_installs_the_distribution_around_its_plugins(tmp_path):
+    marketplace_dir = tmp_path / "marketplace"
+    make_plugin(tmp_path, name="sid")
+    for rel in (
+        ".claude-plugin/marketplace.json",
+        "icon.svg",
+        "plugin-runtime/install-executable.sh",
+        ".git/HEAD",
+    ):
+        (marketplace_dir / rel).parent.mkdir(parents=True, exist_ok=True)
+        (marketplace_dir / rel).write_text("x")
     root = tmp_path / "meta-root"
     root.mkdir()
 
-    debpkg.write_metadata(meta_package, root)
+    debpkg.lay_out_marketplace(
+        marketplace_dir, [PurePosixPath("plugins/sid")], root, "codexis", "ab" * 20
+    )
 
-    assert [p.name for p in (root / "DEBIAN").iterdir()] == ["control"]
-    assert meta_package.filename == "codexis-marketplace_19700101.000000_all.deb"
+    installed = root / "usr/share/cdx-plugins/codexis"
+    files = sorted(p.relative_to(installed).as_posix() for p in debpkg._files(root))
+    assert files == [
+        ".claude-plugin/marketplace.json",
+        ".codexis-marketplace-revision",
+        "icon.svg",
+        "plugin-runtime/install-executable.sh",
+    ]
+    assert (installed / ".codexis-marketplace-revision").read_text() == "ab" * 20 + "\n"
 
 
 def test_prerm_removes_python_caches_from_the_installed_tree(tmp_path):
@@ -520,6 +544,8 @@ def build(tmp_path: Path, *plugins: str) -> int:
             str(tmp_path / "marketplace"),
             "--namespace",
             "codexis",
+            "--revision",
+            "ab" * 20,
             "--out",
             str(out),
             *plugins,
@@ -602,12 +628,14 @@ def test_main_rejects_a_plugin_marketplace_json_gives_no_category(tmp_path, caps
     assert "marketplace.json gives demo no category" in capsys.readouterr().err
 
 
-def test_plugin_directory_is_the_one_the_marketplace_entry_points_at(tmp_path):
-    plugin = make_plugin(tmp_path).rename(tmp_path / "marketplace/extras")
+def test_plugin_location_is_where_the_marketplace_entry_points(tmp_path):
+    make_plugin(tmp_path).rename(tmp_path / "marketplace/extras")
 
-    entry = {"name": "demo", "source": "./extras"}
+    entry = {"name": "demo", "source": "./extras/../extras"}
 
-    assert debpkg.source_dir(tmp_path / "marketplace", entry) == plugin
+    location = debpkg.source_path(tmp_path / "marketplace", entry)
+
+    assert location == PurePosixPath("extras")
 
 
 @pytest.mark.parametrize(

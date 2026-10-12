@@ -27,7 +27,7 @@ PLUGINS = sorted(
 def test_deb_metadata_parses_and_links_reach_shipped_files(plugin: Path) -> None:
     debpkg.read_depends(plugin)
     debpkg.read_wheels(plugin)
-    tree = debpkg.install_root("codexis") / plugin.name
+    tree = debpkg.install_root("codexis") / "plugins" / plugin.name
     for target, _ in debpkg.read_links(plugin):
         assert target.is_relative_to(tree), f"{target} is outside /{tree}"
         assert (plugin / target.relative_to(tree)).is_file(), f"/{target} missing"
@@ -57,7 +57,8 @@ def test_every_marketplace_plugin_has_the_category_its_manifest_carries() -> Non
 
 @pytest.mark.parametrize("entry", MARKETPLACE["plugins"], ids=lambda e: e["name"])
 def test_marketplace_entry_points_at_the_plugin_it_names(entry: dict) -> None:
-    plugin_json = debpkg.source_dir(REPO_ROOT, entry) / ".claude-plugin" / "plugin.json"
+    location = debpkg.source_path(REPO_ROOT, entry)
+    plugin_json = REPO_ROOT / location / ".claude-plugin" / "plugin.json"
     assert json.loads(plugin_json.read_text())["name"] == entry["name"]
 
 
