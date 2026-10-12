@@ -74,7 +74,7 @@ def lay_out(base: Path, plugin: Path, meta_dir: Path | None = None) -> debpkg.Pa
     root = base / "root" / plugin.name
     root.mkdir(parents=True)
     meta_dir = meta_dir or base / "repo" / "plugins" / plugin.name
-    return debpkg.lay_out(plugin, meta_dir, root)
+    return debpkg.lay_out(plugin, meta_dir, root, "legal")
 
 
 def test_elf_command_is_installed_in_usr_bin_and_linked_from_the_plugin(tmp_path):
@@ -139,6 +139,79 @@ def test_hooks_directory_holding_only_lifecycle_scripts_is_not_shipped(tmp_path)
     lay_out(tmp_path, plugin)
 
     assert not (tmp_path / "root/demo" / TREE / "demo/hooks").exists()
+
+
+def manifest_of(base: Path, plugin: Path) -> dict:
+    lay_out(base, plugin)
+    return json.loads(
+        (
+            base / "root" / plugin.name / TREE / plugin.name / "cdx-manifest.json"
+        ).read_text()
+    )
+
+
+def test_manifest_lists_the_files_the_daemon_loads_relative_to_the_plugin(tmp_path):
+    plugin = make_plugin(
+        tmp_path,
+        files={
+            "README.md": "## Co to je?\n",
+            "skills/search/SKILL.md": "x",
+            "skills/search/references/api.md": "x",
+            "skills/track/SKILL.md": "x",
+            "agents/guide.md": "x",
+            "components/watch/component.json": "{}",
+            "components/watch/index.html": "x",
+            "previews/preview.json": "{}",
+            "previews/preview.css": "x",
+            "automations/check.md": "x",
+            "automation-templates/digest.md": "x",
+            "settings/watch/defaults.json": "{}",
+            "hooks/hooks.json": '{"hooks": {}}',
+            ".mcp.json": "{}",
+        },
+    )
+
+    assert manifest_of(tmp_path, plugin) == {
+        "schemaVersion": 1,
+        "name": "demo",
+        "version": "1.2.3-1",
+        "category": "legal",
+        "plugin": ".claude-plugin/plugin.json",
+        "readme": "README.md",
+        "skills": ["skills/search/SKILL.md", "skills/track/SKILL.md"],
+        "agents": ["agents/guide.md"],
+        "apps": ["components/watch/component.json"],
+        "previews": ["previews/preview.json"],
+        "automations": ["automation-templates/digest.md", "automations/check.md"],
+        "mcpServers": ".mcp.json",
+    }
+
+
+def test_manifest_leaves_out_what_the_plugin_does_not_have(tmp_path):
+    assert set(manifest_of(tmp_path, make_plugin(tmp_path))) == {
+        "schemaVersion",
+        "name",
+        "version",
+        "category",
+        "plugin",
+    }
+
+
+def test_manifest_follows_the_skill_directories_plugin_json_declares(tmp_path):
+    plugin = make_plugin(
+        tmp_path,
+        files={"skills/old/SKILL.md": "x", "more/new/SKILL.md": "x"},
+        skills=["./more"],
+    )
+
+    assert manifest_of(tmp_path, plugin)["skills"] == ["more/new/SKILL.md"]
+
+
+def test_declared_directory_outside_the_plugin_is_rejected(tmp_path):
+    plugin = make_plugin(tmp_path, agents="../elsewhere")
+
+    with pytest.raises(PackagingError, match="outside the plugin"):
+        lay_out(tmp_path, plugin)
 
 
 def test_file_modes_are_normalized_for_every_user(tmp_path):
@@ -345,7 +418,7 @@ def marketplace(*names: str) -> dict:
     return {
         "owner": {"name": "ATLAS GROUP", "email": "dev@example.com"},
         "i18n": {"en": {"displayName": "Marketplace", "description": "All of it."}},
-        "plugins": [{"name": name} for name in names],
+        "plugins": [{"name": name, "category": "legal"} for name in names],
     }
 
 
@@ -384,61 +457,31 @@ def test_marketplace_package_is_only_control_metadata(tmp_path):
     assert meta_package.filename == "codexis-marketplace_19700101.000000_all.deb"
 
 
-def run_script(package: debpkg.Package, name: str, root: Path) -> None:
-    script = debpkg.maintainer_scripts(package, PurePosixPath(root))[name]
-    subprocess.run(["sh", "-c", script], check=True)
+def test_prerm_removes_python_caches_from_the_installed_tree(tmp_path):
+    package = lay_out(tmp_path, make_plugin(tmp_path, files={"lib/core/x.py": ""}))
+    installed = tmp_path / "installed"
+    module = installed / "demo/lib/core/x.py"
+    cache = module.parent / "__pycache__"
+    cache.mkdir(parents=True)
+    (cache / "x.cpython-313.pyc").write_bytes(b"")
+    module.write_text("")
+
+    prerm = debpkg.maintainer_scripts(package, PurePosixPath(installed))["prerm"]
+    subprocess.run(["sh", "-c", prerm], check=True)
+
+    assert not cache.exists()
+    assert module.is_file()
 
 
-def installed(root: Path, *names: str) -> None:
-    for name in names:
-        (root / name / ".claude-plugin").mkdir(parents=True)
-        (root / name / ".claude-plugin" / "plugin.json").write_text("{}")
+def test_plugin_without_python_modules_ships_no_maintainer_scripts(tmp_path):
+    package = lay_out(
+        tmp_path, make_plugin(tmp_path, files={"skills/demo/SKILL.md": "x"})
+    )
 
+    debpkg.write_metadata(package, tmp_path / "root/demo")
 
-def test_postinst_lists_every_installed_plugin_in_plugins_txt(tmp_path):
-    package = lay_out(tmp_path, make_plugin(tmp_path))
-    root = tmp_path / "installed"
-    installed(root, "demo", "ares")
-    (root / "not-a-plugin").mkdir()
-
-    run_script(package, "postinst", root)
-
-    assert (root / "plugins.txt").read_text().splitlines() == [
-        str(root / "ares"),
-        str(root / "demo"),
-    ]
-
-
-def test_removing_a_plugin_drops_it_from_plugins_txt(tmp_path):
-    package = lay_out(tmp_path, make_plugin(tmp_path))
-    root = tmp_path / "installed"
-    installed(root, "demo", "ares")
-    run_script(package, "postinst", root)
-
-    run_script(package, "prerm", root)
-    (root / "demo" / ".claude-plugin" / "plugin.json").unlink()
-    run_script(package, "postrm", root)
-
-    assert (root / "plugins.txt").read_text().splitlines() == [str(root / "ares")]
-
-
-def test_removing_the_last_plugin_leaves_no_plugins_txt(tmp_path):
-    package = lay_out(tmp_path, make_plugin(tmp_path))
-    root = tmp_path / "installed"
-    installed(root, "demo")
-    run_script(package, "postinst", root)
-
-    run_script(package, "prerm", root)
-
-    assert list(root.glob("plugins.txt*")) == []
-
-
-def test_prerm_cleans_python_caches_only_for_plugins_shipping_modules(tmp_path):
-    with_modules = lay_out(tmp_path, make_plugin(tmp_path, files={"lib/core/x.py": ""}))
-    without = lay_out(tmp_path, make_plugin(tmp_path, name="plain"))
-
-    assert "__pycache__" in debpkg.maintainer_scripts(with_modules)["prerm"]
-    assert "__pycache__" not in debpkg.maintainer_scripts(without)["prerm"]
+    debian = tmp_path / "root/demo/DEBIAN"
+    assert sorted(p.name for p in debian.iterdir()) == ["control", "md5sums"]
 
 
 def test_md5sums_list_payload_files_but_not_symlinks(tmp_path):
@@ -451,12 +494,22 @@ def test_md5sums_list_payload_files_but_not_symlinks(tmp_path):
 
     sums = (tmp_path / "root/demo/DEBIAN/md5sums").read_text().splitlines()
     listed = sorted(line.split("  ", 1)[1] for line in sums)
-    assert listed == ["usr/bin/demo-cli", f"{TREE}/demo/.claude-plugin/plugin.json"]
+    assert listed == [
+        "usr/bin/demo-cli",
+        f"{TREE}/demo/.claude-plugin/plugin.json",
+        f"{TREE}/demo/cdx-manifest.json",
+    ]
 
 
 def build(tmp_path: Path, *plugins: str) -> int:
+    """Run the builder; a marketplace.json listing every plugin unless one exists."""
     out = tmp_path / "out"
     out.mkdir(exist_ok=True)
+    listing = tmp_path / "repo/.claude-plugin/marketplace.json"
+    if not listing.exists():
+        names = sorted(p.name for p in (tmp_path / "payload").iterdir())
+        listing.parent.mkdir(parents=True)
+        listing.write_text(json.dumps(marketplace(*names)))
     return debpkg.main(
         [
             "--payload",
@@ -497,3 +550,13 @@ def test_main_rejects_an_unknown_plugin_name(tmp_path, capsys):
 
     assert build(tmp_path, "nope") == 1
     assert "unknown plugins: nope" in capsys.readouterr().err
+
+
+def test_main_rejects_a_plugin_marketplace_json_gives_no_category(tmp_path, capsys):
+    make_plugin(tmp_path)
+    listing = tmp_path / "repo/.claude-plugin/marketplace.json"
+    listing.parent.mkdir(parents=True)
+    listing.write_text(json.dumps({"plugins": [{"name": "demo"}]}))
+
+    assert build(tmp_path) == 1
+    assert "marketplace.json gives demo no category" in capsys.readouterr().err

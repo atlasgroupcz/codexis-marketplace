@@ -7,6 +7,7 @@ someone builds the packages.
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path, PurePosixPath
 
@@ -30,6 +31,26 @@ def test_deb_metadata_parses_and_links_reach_shipped_files(plugin: Path) -> None
     for target, _ in debpkg.read_links(plugin):
         assert target.is_relative_to(tree), f"{target} is outside /{tree}"
         assert (plugin / target.relative_to(tree)).is_file(), f"/{target} missing"
+
+
+@pytest.mark.parametrize("plugin", PLUGINS, ids=lambda p: p.name)
+def test_manifest_lists_the_skills_the_install_contract_names(plugin: Path) -> None:
+    plugin_json = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text())
+    manifest = debpkg.plugin_manifest(plugin, plugin_json, "1.0.0-1", "legal")
+    contract = json.loads((plugin / "tests" / "install" / "expected.json").read_text())
+    skills = [
+        f"{plugin.name}:{PurePosixPath(path).parent.name}"
+        for path in manifest.get("skills", [])
+    ]
+    assert sorted(skills) == sorted(contract["skills"])
+
+
+def test_every_marketplace_plugin_has_the_category_its_manifest_carries() -> None:
+    marketplace = json.loads(
+        (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text()
+    )
+    missing = [e["name"] for e in marketplace["plugins"] if not e.get("category")]
+    assert not missing, f"marketplace.json entries without a category: {missing}"
 
 
 def test_every_shipped_script_runs_on_a_packaged_interpreter() -> None:

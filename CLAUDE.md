@@ -426,9 +426,11 @@ into a clean Ubuntu 26.04 and checks every package.
 
 A package installs the shipped plugin tree (what the dist ships, minus the
 lifecycle `hooks/*.sh`) under `/usr/share/cdx-plugins/codexis/<plugin>/` and
-puts every `bin/` entry on `/usr/bin`. Its maintainer scripts keep
-`/usr/share/cdx-plugins/codexis/plugins.txt` listing the installed plugin
-directories.
+puts every `bin/` entry on `/usr/bin`. The builder writes
+`<plugin>/cdx-manifest.json` into the tree: the package version, the
+`marketplace.json` category, and the path (relative to the plugin) of every file
+the daemon loads - `plugin.json`, README, skills, agents, apps, previews,
+automations and `.mcp.json`. Hooks are not listed.
 
 Depends is derived from the contents (shared libraries, script shebangs) and
 plugin.json `dependencies`. Everything else the plugin or its skills need at

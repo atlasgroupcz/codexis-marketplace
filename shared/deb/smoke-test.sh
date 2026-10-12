@@ -3,8 +3,8 @@
 # guest VM's release) with one `apt-get install codexis-marketplace`, then check
 # that every package stands on its own: apt resolves all of its Depends, every
 # command it puts on PATH starts from /, every Python module it ships in lib/
-# imports, none of its symlinks dangle, plugins.txt lists every plugin, and
-# purging leaves nothing behind. Run shared/deb/build-debs.sh first.
+# imports, none of its symlinks dangle, its cdx-manifest.json names only files
+# it ships, and purging leaves nothing behind. Run shared/deb/build-debs.sh first.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -67,11 +67,30 @@ for lib in "$root"/*/lib; do
   done
 done
 
-listed=$(wc -l < "$root/plugins.txt")
-[ "$listed" -eq $((built - 1)) ] || fail "plugins.txt lists $listed plugins, expected $((built - 1))"
-while IFS= read -r dir; do
-  [ -f "$dir/.claude-plugin/plugin.json" ] || fail "plugins.txt names $dir, which is no plugin"
-done < "$root/plugins.txt"
+python3 - "$root" $((built - 1)) <<"PY" || failed=1
+import json
+import sys
+from pathlib import Path
+
+root, expected = Path(sys.argv[1]), int(sys.argv[2])
+manifests = sorted(root.glob("*/cdx-manifest.json"))
+failed = len(manifests) != expected
+if failed:
+    print(f"FAIL {len(manifests)} plugins carry a cdx-manifest.json, expected {expected}")
+for path in manifests:
+    manifest = json.loads(path.read_text())
+    listed = [manifest["plugin"], manifest.get("readme"), manifest.get("mcpServers")]
+    for kind in ("skills", "agents", "apps", "previews", "automations"):
+        listed += manifest.get(kind, [])
+    missing = [rel for rel in listed if rel and not (path.parent / rel).is_file()]
+    name = manifest["name"]
+    if name != path.parent.name or missing:
+        print(f"FAIL {path}: names {name}, missing {missing}")
+        failed = True
+    else:
+        print(f"ok   manifest {path.parent.name}")
+sys.exit(failed)
+PY
 
 apt-get purge -y -qq $packages >/dev/null
 if [ -e /usr/share/cdx-plugins ]; then

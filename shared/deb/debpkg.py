@@ -12,9 +12,8 @@ Every plugin package installs:
 
 An ELF command is a real file in /usr/bin and the plugin's bin/ entry links to
 it. A script command stays in the plugin tree and /usr/bin links to it: the
-Python entry points find their lib/ next to their own resolved path. The
-maintainer scripts keep /usr/share/cdx-plugins/codexis/plugins.txt listing the
-installed plugin directories.
+Python entry points find their lib/ next to their own resolved path. Each tree
+carries cdx-manifest.json, which lists the files the daemon loads from it.
 
 Depends is derived from the package contents (dpkg-shlibdeps for ELF files,
 shebangs for scripts) and plugin.json `dependencies`; `deb/control` adds what
@@ -50,6 +49,8 @@ BIN_DIR = PurePosixPath("usr/bin")
 PACKAGE_PREFIX = "codexis"
 MARKETPLACE_PACKAGE = "codexis-marketplace"
 DEBIAN_REVISION = "1"
+MANIFEST = "cdx-manifest.json"
+MANIFEST_SCHEMA = 1
 
 # Program a shebang runs -> the package providing it. None for programs from
 # Essential packages, which a package must not depend on.
@@ -294,10 +295,68 @@ def _interpreter_depends(files: list[Path]) -> list[str]:
     return sorted(set(depends))
 
 
-def lay_out(plugin_dir: Path, meta_dir: Path, root: Path) -> Package:
+def _declared_dirs(tree: Path, plugin_json: dict, key: str) -> list[Path]:
+    """The directories plugin.json `key` names (a path or a list), ./<key> if none."""
+    value = plugin_json.get(key, f"./{key}")
+    dirs = []
+    for path in [value] if isinstance(value, str) else value:
+        rel = PurePosixPath(os.path.normpath(path))
+        if rel.is_absolute() or rel.parts[:1] == ("..",):
+            raise PackagingError(f"plugin.json {key}: {path} is outside the plugin")
+        dirs.append(tree / rel)
+    return dirs
+
+
+def plugin_manifest(tree: Path, plugin_json: dict, version: str, category: str) -> dict:
+    """cdx-manifest.json of the plugin at `tree`: what the daemon loads from it.
+
+    Each entry is the path of a file the daemon parses, relative to the plugin
+    directory, so that file stays the only source of what it says. A kind the
+    plugin does not have is left out, and so are hooks: dpkg does what the
+    lifecycle hooks did.
+    """
+
+    def within(key: str, pattern: str) -> list[Path]:
+        return [
+            p for d in _declared_dirs(tree, plugin_json, key) for p in d.glob(pattern)
+        ]
+
+    manifest: dict = {
+        "schemaVersion": MANIFEST_SCHEMA,
+        "name": plugin_json["name"],
+        "version": version,
+        "category": category,
+        "plugin": ".claude-plugin/plugin.json",
+    }
+    if (tree / "README.md").is_file():
+        manifest["readme"] = "README.md"
+    kinds = {
+        "skills": within("skills", "*/SKILL.md"),
+        "agents": within("agents", "*.md"),
+        "apps": within("components", "*/component.json"),
+        "previews": list(tree.glob("previews/preview.json")),
+        "automations": [
+            *tree.glob("automations/*.md"),
+            *tree.glob("automation-templates/*.md"),
+        ],
+    }
+    for kind, paths in kinds.items():
+        if listed := sorted(
+            {p.relative_to(tree).as_posix() for p in paths if p.is_file()}
+        ):
+            manifest[kind] = listed
+    if (tree / ".mcp.json").is_file():
+        manifest["mcpServers"] = ".mcp.json"
+    return manifest
+
+
+def lay_out(plugin_dir: Path, meta_dir: Path, root: Path, category: str) -> Package:
     """Arrange the package filesystem of one plugin under `root`."""
-    manifest = json.loads((plugin_dir / ".claude-plugin" / "plugin.json").read_text())
-    name = manifest["name"]
+    plugin_json = json.loads(
+        (plugin_dir / ".claude-plugin" / "plugin.json").read_text()
+    )
+    name = plugin_json["name"]
+    version = f"{plugin_json['version']}-{DEBIAN_REVISION}"
     tree = root / INSTALL_ROOT / name
     shutil.copytree(plugin_dir, tree, symlinks=True)
 
@@ -311,21 +370,23 @@ def lay_out(plugin_dir: Path, meta_dir: Path, root: Path) -> Package:
 
     vendor_wheels(meta_dir, tree)
     commands = _install_commands(root, tree, meta_dir)
+    manifest = plugin_manifest(tree, plugin_json, version, category)
+    (tree / MANIFEST).write_text(json.dumps(manifest, indent=2) + "\n")
     _normalize_modes(root)
     files = _files(root)
     architecture, elf_files = _architecture(files)
-    author = manifest["author"]
+    author = plugin_json["author"]
     return Package(
         plugin=name,
         name=package_name(name),
-        version=f"{manifest['version']}-{DEBIAN_REVISION}",
+        version=version,
         architecture=architecture,
         maintainer=f"{author['name']} <{author['email']}>",
-        synopsis=manifest.get("i18n", {}).get("en", {}).get("displayName", name),
-        description=manifest["description"],
+        synopsis=plugin_json.get("i18n", {}).get("en", {}).get("displayName", name),
+        description=plugin_json["description"],
         depends=_unique(
             _interpreter_depends(files)
-            + [package_name(d) for d in manifest.get("dependencies", [])]
+            + [package_name(d) for d in plugin_json.get("dependencies", [])]
             + read_depends(meta_dir)
         ),
         commands=commands,
@@ -417,43 +478,20 @@ def control(package: Package, size: int) -> str:
 def maintainer_scripts(
     package: Package, root: PurePosixPath = PurePosixPath("/") / INSTALL_ROOT
 ) -> dict[str, str]:
-    """postinst, prerm and postrm of a plugin package installed under `root`."""
-    header = "#!/bin/sh\nset -e\n"
-    index = textwrap.dedent(
+    """The maintainer scripts of a package installed under `root`, by name."""
+    if not package.python_modules:
+        return {}
+    tree = root / str(package.plugin)
+    prerm = textwrap.dedent(
         f"""\
-        # plugins.txt lists every installed plugin directory, one per line.
-        root={root}
-        if [ -d "$root" ]; then
-          for dir in "$root"/*/; do
-            if [ -f "${{dir}}.claude-plugin/plugin.json" ]; then
-              echo "${{dir%/}}"
-            fi
-          done > "$root/plugins.txt.new"
-          if [ -s "$root/plugins.txt.new" ]; then
-            mv "$root/plugins.txt.new" "$root/plugins.txt"
-          else
-            rm -f "$root/plugins.txt.new" "$root/plugins.txt"
-          fi
-        fi
+        #!/bin/sh
+        set -e
+        # A command run as root leaves __pycache__ next to the Python modules;
+        # dpkg does not own it, so it would keep the tree behind.
+        [ ! -d {tree} ] || find {tree} -type d -name __pycache__ -prune -exec rm -rf {{}} +
         """
     )
-    prerm = header + textwrap.dedent(
-        f"""\
-        # Gone before dpkg removes the files, so the last plugin out leaves no
-        # directory behind; postrm writes the list again for those that remain.
-        rm -f {root}/plugins.txt
-        """
-    )
-    if package.python_modules:
-        tree = root / str(package.plugin)
-        prerm += textwrap.dedent(
-            f"""\
-            # A command run as root leaves __pycache__ next to the Python
-            # modules; dpkg does not own it, so it would keep the tree behind.
-            [ ! -d {tree} ] || find {tree} -type d -name __pycache__ -prune -exec rm -rf {{}} +
-            """
-        )
-    return {"postinst": header + index, "prerm": prerm, "postrm": header + index}
+    return {"prerm": prerm}
 
 
 def md5sums(root: Path) -> str:
@@ -474,10 +512,9 @@ def write_metadata(package: Package, root: Path) -> None:
     if sums:
         (debian / "md5sums").write_text(sums)
         (debian / "md5sums").chmod(0o644)
-    if package.plugin:
-        for name, text in maintainer_scripts(package).items():
-            (debian / name).write_text(text)
-            (debian / name).chmod(0o755)
+    for name, text in maintainer_scripts(package).items():
+        (debian / name).write_text(text)
+        (debian / name).chmod(0o755)
 
 
 def check_conflicts(packages: list[Package]) -> None:
@@ -553,6 +590,10 @@ def main(argv: list[str] | None = None) -> int:
     if unknown:
         print(f"error: unknown plugins: {', '.join(unknown)}", file=sys.stderr)
         return 1
+    marketplace = json.loads(
+        (args.repo / ".claude-plugin" / "marketplace.json").read_text()
+    )
+    categories = {e["name"]: e.get("category") for e in marketplace["plugins"]}
 
     with tempfile.TemporaryDirectory() as work:
         try:
@@ -560,16 +601,16 @@ def main(argv: list[str] | None = None) -> int:
             # between two of them fails the run before a .deb is written.
             roots = []
             for plugin in args.plugins or available:
+                if not (category := categories.get(plugin)):
+                    raise PackagingError(f"marketplace.json gives {plugin} no category")
                 root = Path(work) / plugin
                 root.mkdir(mode=0o755)
                 meta_dir = args.repo / "plugins" / plugin
-                roots.append((lay_out(args.payload / plugin, meta_dir, root), root))
+                package = lay_out(args.payload / plugin, meta_dir, root, category)
+                roots.append((package, root))
             packages = [package for package, _ in roots]
             check_conflicts(packages)
             if not args.plugins:
-                marketplace = json.loads(
-                    (args.repo / ".claude-plugin" / "marketplace.json").read_text()
-                )
                 if "SOURCE_DATE_EPOCH" not in os.environ:
                     raise PackagingError("SOURCE_DATE_EPOCH must be set")
                 epoch = int(os.environ["SOURCE_DATE_EPOCH"])
