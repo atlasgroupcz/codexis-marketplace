@@ -416,17 +416,26 @@ For multi-binary plugins, prefer extracting these commands into `hooks/install-b
 
 ### Debian packages
 
-`shared/deb/build-debs.sh` builds one package per plugin into `target/deb/`,
-plus `codexis-marketplace`, which depends on all of them, and a `Packages`
-index, so the directory is a flat apt repository. Packages are named
-`codexis-<plugin>` (a `codexis*` plugin keeps its name) and versioned
-`<plugin.json version>-1`. They hold the committed artifacts, so run
-`./build.sh` first. `shared/deb/smoke-test.sh` installs `codexis-marketplace`
-into a clean Ubuntu 26.04 and checks every package.
+The packages are built from the distribution, not from the source tree:
 
-A package installs the shipped plugin tree (what the dist ships, minus the
-lifecycle `hooks/*.sh`) under `/usr/share/cdx-plugins/codexis/<plugin>/` and
-puts every `bin/` entry on `/usr/bin`. The builder writes
+```bash
+./build.sh                                # refresh bin/ and components/
+./create-dist.sh                          # dist/
+shared/deb/build-debs.sh dist codexis     # target/deb/
+shared/deb/smoke-test.sh codexis          # install it all into a clean Ubuntu 26.04
+```
+
+`build-debs.sh <dist> <namespace>` builds one package per plugin the
+distribution's `marketplace.json` lists, plus `<namespace>-marketplace`, which
+depends on all of them, and a `Packages` index, so `target/deb/` is a flat apt
+repository. Nothing is published. Packages are named `<namespace>-<plugin>` (a
+plugin named after the namespace keeps its name) and versioned
+`<plugin.json version>-1`; the marketplace package is versioned by the time of
+the source commit.
+
+A package installs the plugin tree as the dist ships it, minus `deb/`, under
+`/usr/share/cdx-plugins/<namespace>/<plugin>/` and puts every `bin/` entry on
+`/usr/bin`. The builder writes
 `<plugin>/cdx-manifest.json` into the tree: the package version, the
 `marketplace.json` category, and the path (relative to the plugin) of every file
 the daemon loads - `plugin.json`, README, skills, agents, apps, previews,

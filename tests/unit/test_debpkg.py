@@ -1,15 +1,20 @@
 """Unit tests for the Debian packaging of plugins (shared/deb/debpkg.py).
 
-Each test lays a small fixture plugin out the way the builder does. Nothing here
-calls dpkg-deb or dpkg-shlibdeps; shared/deb/smoke-test.sh covers the built
-packages end to end.
+Each test lays a small fixture plugin out the way the builder does. Only the
+tests of a whole build call dpkg-deb, and they skip where it is missing; nothing
+calls dpkg-shlibdeps. shared/deb/smoke-test.sh covers the built packages end to
+end.
 """
 
 from __future__ import annotations
 
+import dataclasses
+import gzip
 import hashlib
 import json
 import os
+import re
+import shutil
 import stat
 import subprocess
 import zipfile
@@ -37,7 +42,7 @@ def make_plugin(
     executable: tuple[str, ...] = (),
     **manifest: object,
 ) -> Path:
-    plugin = base / "payload" / name
+    plugin = base / "marketplace" / "plugins" / name
     (plugin / ".claude-plugin").mkdir(parents=True)
     (plugin / ".claude-plugin" / "plugin.json").write_text(
         json.dumps(
@@ -63,18 +68,18 @@ def make_plugin(
 
 
 def meta(base: Path, name: str = "demo", **files: str) -> Path:
-    directory = base / "repo" / "plugins" / name
-    (directory / "deb").mkdir(parents=True)
+    """The plugin `name` with `files` in its deb/ packaging metadata."""
+    plugin = base / "marketplace" / "plugins" / name
+    (plugin / "deb").mkdir(parents=True)
     for filename, content in files.items():
-        (directory / "deb" / filename).write_text(content)
-    return directory
+        (plugin / "deb" / filename).write_text(content)
+    return plugin
 
 
-def lay_out(base: Path, plugin: Path, meta_dir: Path | None = None) -> debpkg.Package:
+def lay_out(base: Path, plugin: Path) -> debpkg.Package:
     root = base / "root" / plugin.name
     root.mkdir(parents=True)
-    meta_dir = meta_dir or base / "repo" / "plugins" / plugin.name
-    return debpkg.lay_out(plugin, meta_dir, root, "legal")
+    return debpkg.lay_out(plugin, root, "codexis", "legal")
 
 
 def test_elf_command_is_installed_in_usr_bin_and_linked_from_the_plugin(tmp_path):
@@ -113,32 +118,14 @@ def test_script_command_stays_in_the_plugin_and_usr_bin_links_to_it(tmp_path):
     assert command.resolve() == script.resolve()
 
 
-def test_lifecycle_scripts_are_dropped_and_claude_hooks_kept(tmp_path):
-    plugin = make_plugin(
-        tmp_path,
-        files={
-            "hooks/install-binaries.sh": "#!/usr/bin/env bash\n",
-            "hooks/hooks.json": "{}",
-        },
-        executable=("hooks/install-binaries.sh",),
-    )
+def test_packaging_metadata_is_read_from_the_plugin_but_not_installed(tmp_path):
+    plugin = make_plugin(tmp_path)
+    meta(tmp_path, control="Depends: curl\n")
 
-    lay_out(tmp_path, plugin)
+    package = lay_out(tmp_path, plugin)
 
-    hooks = tmp_path / "root/demo" / TREE / "demo/hooks"
-    assert sorted(p.name for p in hooks.iterdir()) == ["hooks.json"]
-
-
-def test_hooks_directory_holding_only_lifecycle_scripts_is_not_shipped(tmp_path):
-    plugin = make_plugin(
-        tmp_path,
-        files={"hooks/install-binaries.sh": "#!/usr/bin/env bash\n"},
-        executable=("hooks/install-binaries.sh",),
-    )
-
-    lay_out(tmp_path, plugin)
-
-    assert not (tmp_path / "root/demo" / TREE / "demo/hooks").exists()
+    assert package.depends == ["curl"]
+    assert not (tmp_path / "root/demo" / TREE / "demo/deb").exists()
 
 
 def manifest_of(base: Path, plugin: Path) -> dict:
@@ -263,10 +250,24 @@ def test_binary_for_an_unsupported_architecture_is_rejected(tmp_path):
         lay_out(tmp_path, plugin)
 
 
-def test_package_names_carry_the_codexis_prefix_once():
-    assert debpkg.package_name("ares") == "codexis-ares"
-    assert debpkg.package_name("codexis") == "codexis"
-    assert debpkg.package_name("codexis-dane") == "codexis-dane"
+def test_package_names_carry_the_namespace_prefix_once():
+    assert debpkg.package_name("codexis", "ares") == "codexis-ares"
+    assert debpkg.package_name("codexis", "codexis") == "codexis"
+    assert debpkg.package_name("codexis", "codexis-dane") == "codexis-dane"
+
+
+def test_namespace_names_the_packages_and_the_directory_they_install_into(tmp_path):
+    plugin = make_plugin(tmp_path, name="contracts", dependencies=["clauses"])
+    root = tmp_path / "root"
+    root.mkdir()
+
+    package = debpkg.lay_out(plugin, root, "lawve", "legal")
+    meta_package = debpkg.marketplace_package(marketplace(), [package], "lawve", 0)
+
+    assert (root / "usr/share/cdx-plugins/lawve/contracts/cdx-manifest.json").is_file()
+    assert package.name == "lawve-contracts"
+    assert package.depends == ["lawve-clauses"]
+    assert meta_package.name == "lawve-marketplace"
 
 
 def test_depends_join_interpreters_plugin_dependencies_and_declared_tools(tmp_path):
@@ -280,9 +281,9 @@ def test_depends_join_interpreters_plugin_dependencies_and_declared_tools(tmp_pa
         executable=("bin/demo-cli", "components/demo/demo-cgi", "shared/run.sh"),
         dependencies=["codexis", "ares"],
     )
-    meta_dir = meta(tmp_path, control="Depends: curl, jq\n")
+    meta(tmp_path, control="Depends: curl, jq\n")
 
-    package = lay_out(tmp_path, plugin, meta_dir)
+    package = lay_out(tmp_path, plugin)
 
     assert package.depends == [
         "nodejs",
@@ -319,11 +320,9 @@ def test_declared_link_into_usr_bin_turns_a_data_script_into_a_command(tmp_path)
     plugin = make_plugin(
         tmp_path, files={"shared/scripts/render.sh": "#!/usr/bin/env bash\n"}
     )
-    meta_dir = meta(
-        tmp_path, links=f"{TREE}/demo/shared/scripts/render.sh usr/bin/demo-render\n"
-    )
+    meta(tmp_path, links=f"{TREE}/demo/shared/scripts/render.sh usr/bin/demo-render\n")
 
-    package = lay_out(tmp_path, plugin, meta_dir)
+    package = lay_out(tmp_path, plugin)
 
     command = tmp_path / "root/demo/usr/bin/demo-render"
     assert os.access(command.resolve(), os.X_OK)
@@ -332,10 +331,10 @@ def test_declared_link_into_usr_bin_turns_a_data_script_into_a_command(tmp_path)
 
 def test_declared_link_to_a_file_the_plugin_does_not_ship_is_rejected(tmp_path):
     plugin = make_plugin(tmp_path)
-    meta_dir = meta(tmp_path, links=f"{TREE}/demo/missing.sh usr/bin/demo-missing\n")
+    meta(tmp_path, links=f"{TREE}/demo/missing.sh usr/bin/demo-missing\n")
 
     with pytest.raises(PackagingError, match="not packaged"):
-        lay_out(tmp_path, plugin, meta_dir)
+        lay_out(tmp_path, plugin)
 
 
 def wheel(base: Path) -> tuple[str, str]:
@@ -351,9 +350,9 @@ def wheel(base: Path) -> tuple[str, str]:
 def test_wheel_is_unpacked_into_the_plugin_lib(tmp_path):
     url, digest = wheel(tmp_path)
     plugin = make_plugin(tmp_path)
-    meta_dir = meta(tmp_path, wheels=f"# vendored\n{url} sha256={digest}\n")
+    meta(tmp_path, wheels=f"# vendored\n{url} sha256={digest}\n")
 
-    package = lay_out(tmp_path, plugin, meta_dir)
+    package = lay_out(tmp_path, plugin)
 
     lib = tmp_path / "root/demo" / TREE / "demo/lib"
     assert sorted(p.name for p in lib.iterdir()) == ["demolib", "demolib-1.0.dist-info"]
@@ -363,35 +362,35 @@ def test_wheel_is_unpacked_into_the_plugin_lib(tmp_path):
 def test_wheel_whose_hash_does_not_match_is_rejected(tmp_path):
     url, _ = wheel(tmp_path)
     plugin = make_plugin(tmp_path)
-    meta_dir = meta(tmp_path, wheels=f"{url} sha256={'0' * 64}\n")
+    meta(tmp_path, wheels=f"{url} sha256={'0' * 64}\n")
 
     with pytest.raises(PackagingError, match="sha256 mismatch"):
-        lay_out(tmp_path, plugin, meta_dir)
+        lay_out(tmp_path, plugin)
 
 
 def test_wheel_with_compiled_code_is_rejected(tmp_path):
-    meta_dir = meta(
+    plugin = meta(
         tmp_path, wheels="https://x/numpy-2.0-cp312-cp312-linux_x86_64.whl sha256=ab\n"
     )
 
     with pytest.raises(PackagingError, match="only pure-Python wheels"):
-        debpkg.read_wheels(meta_dir)
+        debpkg.read_wheels(plugin)
 
 
 def test_depends_field_may_be_folded_and_commented(tmp_path):
-    meta_dir = meta(
+    plugin = meta(
         tmp_path,
         control="# tools the binary spawns\nDepends: curl,\n  libreoffice-core | libreoffice\n",
     )
 
-    assert debpkg.read_depends(meta_dir) == ["curl", "libreoffice-core | libreoffice"]
+    assert debpkg.read_depends(plugin) == ["curl", "libreoffice-core | libreoffice"]
 
 
 def test_control_accepts_only_depends(tmp_path):
-    meta_dir = meta(tmp_path, control="Depends: curl\nRecommends: jq\n")
+    plugin = meta(tmp_path, control="Depends: curl\nRecommends: jq\n")
 
     with pytest.raises(PackagingError, match="expected a single Depends field"):
-        debpkg.read_depends(meta_dir)
+        debpkg.read_depends(plugin)
 
 
 def test_control_carries_version_revision_maintainer_and_wrapped_description(tmp_path):
@@ -418,7 +417,10 @@ def marketplace(*names: str) -> dict:
     return {
         "owner": {"name": "ATLAS GROUP", "email": "dev@example.com"},
         "i18n": {"en": {"displayName": "Marketplace", "description": "All of it."}},
-        "plugins": [{"name": name, "category": "legal"} for name in names],
+        "plugins": [
+            {"name": name, "category": "legal", "source": f"./plugins/{name}"}
+            for name in names
+        ],
     }
 
 
@@ -429,7 +431,7 @@ def test_marketplace_package_depends_on_every_listed_plugin(tmp_path):
     ]
 
     meta_package = debpkg.marketplace_package(
-        marketplace("codexis", "sid"), packages, epoch=1791458640
+        marketplace("codexis", "sid"), packages, "codexis", epoch=1791458640
     )
 
     assert meta_package.name == "codexis-marketplace"
@@ -438,16 +440,11 @@ def test_marketplace_package_depends_on_every_listed_plugin(tmp_path):
     assert meta_package.architecture == "all"
 
 
-def test_marketplace_listing_a_plugin_that_was_not_built_is_rejected(tmp_path):
-    packages = [lay_out(tmp_path, make_plugin(tmp_path, name="sid"))]
-
-    with pytest.raises(PackagingError, match="unbuilt plugins: ares"):
-        debpkg.marketplace_package(marketplace("ares", "sid"), packages, epoch=0)
-
-
 def test_marketplace_package_is_only_control_metadata(tmp_path):
     packages = [lay_out(tmp_path, make_plugin(tmp_path, name="sid"))]
-    meta_package = debpkg.marketplace_package(marketplace("sid"), packages, epoch=0)
+    meta_package = debpkg.marketplace_package(
+        marketplace("sid"), packages, "codexis", epoch=0
+    )
     root = tmp_path / "meta-root"
     root.mkdir()
 
@@ -466,7 +463,8 @@ def test_prerm_removes_python_caches_from_the_installed_tree(tmp_path):
     (cache / "x.cpython-313.pyc").write_bytes(b"")
     module.write_text("")
 
-    prerm = debpkg.maintainer_scripts(package, PurePosixPath(installed))["prerm"]
+    package = dataclasses.replace(package, tree=PurePosixPath(installed / "demo"))
+    prerm = debpkg.maintainer_scripts(package)["prerm"]
     subprocess.run(["sh", "-c", prerm], check=True)
 
     assert not cache.exists()
@@ -501,26 +499,70 @@ def test_md5sums_list_payload_files_but_not_symlinks(tmp_path):
     ]
 
 
+def list_plugins(base: Path, *entries: dict) -> None:
+    """Write the marketplace.json of the fixture marketplace."""
+    listing = base / "marketplace/.claude-plugin/marketplace.json"
+    listing.parent.mkdir(parents=True)
+    listing.write_text(json.dumps({**marketplace(), "plugins": list(entries)}))
+
+
 def build(tmp_path: Path, *plugins: str) -> int:
     """Run the builder; a marketplace.json listing every plugin unless one exists."""
     out = tmp_path / "out"
     out.mkdir(exist_ok=True)
-    listing = tmp_path / "repo/.claude-plugin/marketplace.json"
+    listing = tmp_path / "marketplace/.claude-plugin/marketplace.json"
     if not listing.exists():
-        names = sorted(p.name for p in (tmp_path / "payload").iterdir())
-        listing.parent.mkdir(parents=True)
-        listing.write_text(json.dumps(marketplace(*names)))
+        names = sorted(p.name for p in (tmp_path / "marketplace/plugins").iterdir())
+        list_plugins(tmp_path, *marketplace(*names)["plugins"])
     return debpkg.main(
         [
-            "--payload",
-            str(tmp_path / "payload"),
-            "--repo",
-            str(tmp_path / "repo"),
+            "--marketplace",
+            str(tmp_path / "marketplace"),
+            "--namespace",
+            "codexis",
             "--out",
             str(out),
             *plugins,
         ]
     )
+
+
+needs_dpkg_deb = pytest.mark.skipif(
+    shutil.which("dpkg-deb") is None, reason="dpkg-deb is not installed"
+)
+
+
+def built_packages(out: Path) -> list[str]:
+    return sorted(re.findall(r"^Package: (.+)$", (out / "Packages").read_text(), re.M))
+
+
+@needs_dpkg_deb
+def test_main_builds_every_plugin_and_the_marketplace_package_into_an_index(
+    tmp_path, monkeypatch
+):
+    for name in ("one", "two"):
+        make_plugin(tmp_path, name=name, files={"skills/x/SKILL.md": "x"})
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "0")
+
+    assert build(tmp_path) == 0
+
+    out = tmp_path / "out"
+    assert built_packages(out) == ["codexis-marketplace", "codexis-one", "codexis-two"]
+    assert sorted(p.name for p in out.glob("*.deb")) == [
+        "codexis-marketplace_19700101.000000_all.deb",
+        "codexis-one_1.2.3-1_all.deb",
+        "codexis-two_1.2.3-1_all.deb",
+    ]
+
+
+@needs_dpkg_deb
+def test_main_builds_only_the_plugins_it_is_given(tmp_path):
+    for name in ("one", "two"):
+        make_plugin(tmp_path, name=name)
+
+    assert build(tmp_path, "two") == 0
+
+    assert built_packages(tmp_path / "out") == ["codexis-two"]
 
 
 def test_main_rejects_a_command_shipped_by_two_plugins(tmp_path, capsys):
@@ -554,9 +596,72 @@ def test_main_rejects_an_unknown_plugin_name(tmp_path, capsys):
 
 def test_main_rejects_a_plugin_marketplace_json_gives_no_category(tmp_path, capsys):
     make_plugin(tmp_path)
-    listing = tmp_path / "repo/.claude-plugin/marketplace.json"
-    listing.parent.mkdir(parents=True)
-    listing.write_text(json.dumps({"plugins": [{"name": "demo"}]}))
+    list_plugins(tmp_path, {"name": "demo", "source": "./plugins/demo"})
 
     assert build(tmp_path) == 1
     assert "marketplace.json gives demo no category" in capsys.readouterr().err
+
+
+def test_plugin_directory_is_the_one_the_marketplace_entry_points_at(tmp_path):
+    plugin = make_plugin(tmp_path).rename(tmp_path / "marketplace/extras")
+
+    entry = {"name": "demo", "source": "./extras"}
+
+    assert debpkg.source_dir(tmp_path / "marketplace", entry) == plugin
+
+
+@pytest.mark.parametrize(
+    ("source", "error"),
+    [
+        ("../demo", "../demo is outside the marketplace"),
+        ({"source": "url", "url": "https://x/demo.git"}, "is not a directory of"),
+        ("./plugins", "./plugins holds no .claude-plugin/plugin.json"),
+    ],
+    ids=["outside", "another-repository", "no-plugin-json"],
+)
+def test_main_rejects_a_source_that_is_no_plugin_of_the_marketplace(
+    tmp_path, capsys, source, error
+):
+    make_plugin(tmp_path)
+    list_plugins(tmp_path, {"name": "demo", "category": "legal", "source": source})
+
+    assert build(tmp_path) == 1
+    assert error in capsys.readouterr().err
+
+
+def test_main_rejects_an_entry_whose_plugin_json_names_another_plugin(tmp_path, capsys):
+    make_plugin(tmp_path, name="other")
+    list_plugins(
+        tmp_path, {"name": "demo", "category": "legal", "source": "./plugins/other"}
+    )
+
+    assert build(tmp_path) == 1
+    assert "lists demo, its plugin.json names other" in capsys.readouterr().err
+
+
+def test_index_is_each_control_file_as_written_with_its_location_and_checksums(
+    tmp_path,
+):
+    controls = {
+        "a_1_all.deb": "Package: a\nDescription: A\n a line ending in à\n",
+        "b_1_all.deb": "Package: b\nDescription: B\n",
+    }
+    for filename in controls:
+        (tmp_path / filename).write_bytes(filename.encode())
+
+    debpkg.write_index(tmp_path, controls)
+
+    index = (tmp_path / "Packages").read_text()
+    entries = index.split("\n\n")
+    assert entries[0].startswith(controls["a_1_all.deb"])
+    assert entries[1].startswith(controls["b_1_all.deb"])
+    digest = hashlib.sha256(b"b_1_all.deb").hexdigest()
+    assert entries[1].splitlines()[2:] == [
+        "Filename: ./b_1_all.deb",
+        "Size: 11",
+        f"MD5sum: {hashlib.md5(b'b_1_all.deb').hexdigest()}",
+        f"SHA1: {hashlib.sha1(b'b_1_all.deb').hexdigest()}",
+        f"SHA256: {digest}",
+    ]
+    packed = gzip.decompress((tmp_path / "Packages.gz").read_bytes())
+    assert packed == index.encode()

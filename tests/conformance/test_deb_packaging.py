@@ -27,7 +27,7 @@ PLUGINS = sorted(
 def test_deb_metadata_parses_and_links_reach_shipped_files(plugin: Path) -> None:
     debpkg.read_depends(plugin)
     debpkg.read_wheels(plugin)
-    tree = debpkg.INSTALL_ROOT / plugin.name
+    tree = debpkg.install_root("codexis") / plugin.name
     for target, _ in debpkg.read_links(plugin):
         assert target.is_relative_to(tree), f"{target} is outside /{tree}"
         assert (plugin / target.relative_to(tree)).is_file(), f"/{target} missing"
@@ -45,12 +45,20 @@ def test_manifest_lists_the_skills_the_install_contract_names(plugin: Path) -> N
     assert sorted(skills) == sorted(contract["skills"])
 
 
+MARKETPLACE = json.loads(
+    (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text()
+)
+
+
 def test_every_marketplace_plugin_has_the_category_its_manifest_carries() -> None:
-    marketplace = json.loads(
-        (REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text()
-    )
-    missing = [e["name"] for e in marketplace["plugins"] if not e.get("category")]
+    missing = [e["name"] for e in MARKETPLACE["plugins"] if not e.get("category")]
     assert not missing, f"marketplace.json entries without a category: {missing}"
+
+
+@pytest.mark.parametrize("entry", MARKETPLACE["plugins"], ids=lambda e: e["name"])
+def test_marketplace_entry_points_at_the_plugin_it_names(entry: dict) -> None:
+    plugin_json = debpkg.source_dir(REPO_ROOT, entry) / ".claude-plugin" / "plugin.json"
+    assert json.loads(plugin_json.read_text())["name"] == entry["name"]
 
 
 def test_every_shipped_script_runs_on_a_packaged_interpreter() -> None:

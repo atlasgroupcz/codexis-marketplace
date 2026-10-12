@@ -1,35 +1,44 @@
 #!/usr/bin/env bash
 # Install the whole marketplace from target/deb/ into a clean Ubuntu 26.04 (the
-# guest VM's release) with one `apt-get install codexis-marketplace`, then check
-# that every package stands on its own: apt resolves all of its Depends, every
-# command it puts on PATH starts from /, every Python module it ships in lib/
-# imports, none of its symlinks dangle, its cdx-manifest.json names only files
-# it ships, and purging leaves nothing behind. Run shared/deb/build-debs.sh first.
+# guest VM's release) with one `apt-get install <namespace>-marketplace`, then
+# check that every package stands on its own: apt resolves all of its Depends,
+# every command it puts on PATH starts from /, every Python module it ships in
+# lib/ imports, none of its symlinks dangle, its cdx-manifest.json names only
+# files it ships, and purging leaves nothing behind.
+#
+#   shared/deb/smoke-test.sh <namespace>    after shared/deb/build-debs.sh
 set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "usage: $0 <namespace>" >&2
+  exit 2
+fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEB_DIR="$ROOT_DIR/target/deb"
+NAMESPACE="$1"
 IMAGE="ubuntu:26.04@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7"
 
-if ! compgen -G "$DEB_DIR/codexis-marketplace_*.deb" >/dev/null; then
-  echo "ERROR: no codexis-marketplace in $DEB_DIR - run shared/deb/build-debs.sh first." >&2
+if ! compgen -G "$DEB_DIR/$NAMESPACE-marketplace_*.deb" >/dev/null; then
+  echo "ERROR: no $NAMESPACE-marketplace in $DEB_DIR - run shared/deb/build-debs.sh first." >&2
   exit 1
 fi
 
-docker run --rm --platform linux/amd64 -v "$DEB_DIR:/debs:ro" "$IMAGE" bash -c '
+docker run --rm --platform linux/amd64 -e NAMESPACE="$NAMESPACE" \
+  -v "$DEB_DIR:/debs:ro" "$IMAGE" bash -c '
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-echo "deb [trusted=yes] file:/debs ./" > /etc/apt/sources.list.d/codexis.list
+echo "deb [trusted=yes] file:/debs ./" > /etc/apt/sources.list.d/marketplace.list
 apt-get update -qq
-apt-get install -y -qq --no-install-recommends codexis-marketplace >/dev/null
+apt-get install -y -qq --no-install-recommends "$NAMESPACE-marketplace" >/dev/null
 
 failed=0
 fail() { echo "FAIL $*"; failed=1; }
 
 built=$(ls /debs/*.deb | wc -l)
-packages=$(dpkg-query -W -f "\${Package}\n" "codexis*")
+packages=$(dpkg-query -W -f "\${Package}\n" "$NAMESPACE*")
 installed=$(echo "$packages" | wc -l)
-[ "$installed" -eq "$built" ] || fail "codexis-marketplace installed $installed of $built packages"
+[ "$installed" -eq "$built" ] || fail "$NAMESPACE-marketplace installed $installed of $built packages"
 
 for package in $packages; do
   while IFS= read -r path; do
@@ -54,7 +63,7 @@ for package in $packages; do
   done < <(dpkg -L "$package")
 done
 
-root=/usr/share/cdx-plugins/codexis
+root="/usr/share/cdx-plugins/$NAMESPACE"
 for lib in "$root"/*/lib; do
   for module in "$lib"/*; do
     name=$(basename "$module" .py)

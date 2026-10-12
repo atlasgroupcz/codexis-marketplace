@@ -43,6 +43,3 @@ __pycache__/
 /Cargo.toml
 /Cargo.lock
 /target/
-
-# Debian packaging metadata (shared/deb/build-debs.sh reads it from the repo)
-/plugins/*/deb/

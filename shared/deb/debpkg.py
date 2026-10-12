@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Build one Debian package per marketplace plugin, plus codexis-marketplace.
+"""Build one Debian package per plugin of a marketplace, plus <namespace>-marketplace.
 
-Runs inside the pinned build image that build-debs.sh starts. That script stages
-what each plugin ships (git-tracked files minus dist-exclusions.txt) as the
-payload, and mounts the repo for the per-plugin `deb/` metadata, which the dist
-does not carry.
+Runs inside the pinned build image that build-debs.sh starts, on a marketplace
+distribution such as ./create-dist.sh writes: `.claude-plugin/marketplace.json`
+and the plugin directories its entries point at. A plugin's `deb/` directory is
+its packaging metadata; the package does not install it.
 
-Every plugin package installs:
-  /usr/share/cdx-plugins/codexis/<plugin>/  the plugin tree the daemon loads
-  /usr/bin/<command>                        each bin/ entry, invokable on PATH
+The namespace (`codexis` for this repo) prefixes the package names and names the
+directory the plugins install into. Every plugin package installs:
+  /usr/share/cdx-plugins/<namespace>/<plugin>/  the plugin tree the daemon loads
+  /usr/bin/<command>                            each bin/ entry, invokable on PATH
 
 An ELF command is a real file in /usr/bin and the plugin's bin/ entry links to
 it. A script command stays in the plugin tree and /usr/bin links to it: the
@@ -20,7 +21,7 @@ shebangs for scripts) and plugin.json `dependencies`; `deb/control` adds what
 neither can see, such as a tool a binary spawns. `deb/wheels` names pure-Python
 libraries Ubuntu does not package; they are unpacked into the plugin's lib/.
 
-codexis-marketplace has no files and depends on every plugin package, so one
+<namespace>-marketplace has no files and depends on every plugin package, so one
 `apt install codexis-marketplace` installs the whole marketplace.
 """
 
@@ -44,10 +45,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
-INSTALL_ROOT = PurePosixPath("usr/share/cdx-plugins/codexis")
+PLUGINS_ROOT = PurePosixPath("usr/share/cdx-plugins")
 BIN_DIR = PurePosixPath("usr/bin")
-PACKAGE_PREFIX = "codexis"
-MARKETPLACE_PACKAGE = "codexis-marketplace"
 DEBIAN_REVISION = "1"
 MANIFEST = "cdx-manifest.json"
 MANIFEST_SCHEMA = 1
@@ -80,6 +79,8 @@ class Package:
     description: str
     depends: list[str]
     plugin: str | None = None
+    # Where the plugin tree installs, absolute; None for the marketplace package.
+    tree: PurePosixPath | None = None
     section: str = "misc"
     commands: list[str] = field(default_factory=list)
     elf_files: list[Path] = field(default_factory=list)
@@ -91,11 +92,16 @@ class Package:
         return f"{self.name}_{self.version}_{self.architecture}.deb"
 
 
-def package_name(plugin: str) -> str:
-    """codexis-<plugin>, without doubling the prefix of codexis* plugins."""
-    if plugin == PACKAGE_PREFIX or plugin.startswith(f"{PACKAGE_PREFIX}-"):
+def install_root(namespace: str) -> PurePosixPath:
+    """The directory the plugin trees of `namespace` install into, relative to /."""
+    return PLUGINS_ROOT / namespace
+
+
+def package_name(namespace: str, plugin: str) -> str:
+    """<namespace>-<plugin>, without doubling the prefix of a plugin named after it."""
+    if plugin == namespace or plugin.startswith(f"{namespace}-"):
         return plugin
-    return f"{PACKAGE_PREFIX}-{plugin}"
+    return f"{namespace}-{plugin}"
 
 
 def elf_machine(path: Path) -> int | None:
@@ -140,9 +146,9 @@ def _lines(path: Path) -> Iterator[tuple[int, str]]:
             yield number, line
 
 
-def read_depends(meta_dir: Path) -> list[str]:
+def read_depends(plugin_dir: Path) -> list[str]:
     """The Depends field of `<plugin>/deb/control` (deb822, may be folded)."""
-    path = meta_dir / "deb" / "control"
+    path = plugin_dir / "deb" / "control"
     value = None
     for number, line in _lines(path):
         if line[0] in " \t" and value is not None:
@@ -155,9 +161,9 @@ def read_depends(meta_dir: Path) -> list[str]:
     return split_relations(value or "")
 
 
-def read_links(meta_dir: Path) -> list[tuple[PurePosixPath, PurePosixPath]]:
+def read_links(plugin_dir: Path) -> list[tuple[PurePosixPath, PurePosixPath]]:
     """Extra symlinks from `<plugin>/deb/links`, in dh_link format."""
-    path = meta_dir / "deb" / "links"
+    path = plugin_dir / "deb" / "links"
     links = []
     for number, line in _lines(path):
         parts = line.split()
@@ -168,9 +174,9 @@ def read_links(meta_dir: Path) -> list[tuple[PurePosixPath, PurePosixPath]]:
     return links
 
 
-def read_wheels(meta_dir: Path) -> list[tuple[str, str]]:
+def read_wheels(plugin_dir: Path) -> list[tuple[str, str]]:
     """(url, sha256) of each wheel `<plugin>/deb/wheels` names."""
-    path = meta_dir / "deb" / "wheels"
+    path = plugin_dir / "deb" / "wheels"
     wheels = []
     for number, line in _lines(path):
         parts = line.split()
@@ -183,13 +189,13 @@ def read_wheels(meta_dir: Path) -> list[tuple[str, str]]:
     return wheels
 
 
-def vendor_wheels(meta_dir: Path, tree: Path) -> None:
+def vendor_wheels(plugin_dir: Path, tree: Path) -> None:
     """Unpack the wheels `deb/wheels` names into the plugin's lib/.
 
     lib/ is on sys.path for every Python entry point of a plugin, so a library
     placed there imports as if installed. The .dist-info stays for its license.
     """
-    for url, digest in read_wheels(meta_dir):
+    for url, digest in read_wheels(plugin_dir):
         with urllib.request.urlopen(url) as response:
             data = response.read()
         if hashlib.sha256(data).hexdigest() != digest:
@@ -229,7 +235,7 @@ def _normalize_modes(root: Path) -> None:
             path.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
 
 
-def _install_commands(root: Path, tree: Path, meta_dir: Path) -> list[str]:
+def _install_commands(root: Path, tree: Path, plugin_dir: Path) -> list[str]:
     usr_bin = root / BIN_DIR
     bin_dir = tree / "bin"
     entries = sorted(bin_dir.iterdir()) if bin_dir.is_dir() else []
@@ -243,9 +249,11 @@ def _install_commands(root: Path, tree: Path, meta_dir: Path) -> list[str]:
             usr_bin.mkdir(parents=True, exist_ok=True)
             shutil.move(entry, command)
             _symlink(entry, command)
-    for target, link in read_links(meta_dir):
+    for target, link in read_links(plugin_dir):
         if not (root / target).is_file():
-            raise PackagingError(f"{meta_dir.name}: link target /{target} not packaged")
+            raise PackagingError(
+                f"{plugin_dir.name}: link target /{target} not packaged"
+            )
         _symlink(root / link, root / target)
         # A script the plugin ships as data becomes a command here, as its
         # install hook made it one with `install -m 0755`.
@@ -295,16 +303,21 @@ def _interpreter_depends(files: list[Path]) -> list[str]:
     return sorted(set(depends))
 
 
+def _within(path: str, context: str, container: str) -> PurePosixPath:
+    """`path` normalized; refused when it leaves the directory it is relative to."""
+    rel = PurePosixPath(os.path.normpath(path))
+    if rel.is_absolute() or rel.parts[:1] == ("..",):
+        raise PackagingError(f"{context}: {path} is outside the {container}")
+    return rel
+
+
 def _declared_dirs(tree: Path, plugin_json: dict, key: str) -> list[Path]:
     """The directories plugin.json `key` names (a path or a list), ./<key> if none."""
     value = plugin_json.get(key, f"./{key}")
-    dirs = []
-    for path in [value] if isinstance(value, str) else value:
-        rel = PurePosixPath(os.path.normpath(path))
-        if rel.is_absolute() or rel.parts[:1] == ("..",):
-            raise PackagingError(f"plugin.json {key}: {path} is outside the plugin")
-        dirs.append(tree / rel)
-    return dirs
+    return [
+        tree / _within(path, f"plugin.json {key}", "plugin")
+        for path in ([value] if isinstance(value, str) else value)
+    ]
 
 
 def plugin_manifest(tree: Path, plugin_json: dict, version: str, category: str) -> dict:
@@ -350,26 +363,39 @@ def plugin_manifest(tree: Path, plugin_json: dict, version: str, category: str) 
     return manifest
 
 
-def lay_out(plugin_dir: Path, meta_dir: Path, root: Path, category: str) -> Package:
+def source_dir(marketplace_dir: Path, entry: dict) -> Path:
+    """The plugin directory a marketplace.json entry points at."""
+    name, source = entry["name"], entry.get("source")
+    if not isinstance(source, str):
+        raise PackagingError(
+            f"marketplace.json {name}: source {json.dumps(source)} "
+            "is not a directory of the marketplace"
+        )
+    directory = marketplace_dir / _within(
+        source, f"marketplace.json {name}", "marketplace"
+    )
+    if not (directory / ".claude-plugin" / "plugin.json").is_file():
+        raise PackagingError(
+            f"marketplace.json {name}: {source} holds no .claude-plugin/plugin.json"
+        )
+    return directory
+
+
+def lay_out(plugin_dir: Path, root: Path, namespace: str, category: str) -> Package:
     """Arrange the package filesystem of one plugin under `root`."""
     plugin_json = json.loads(
         (plugin_dir / ".claude-plugin" / "plugin.json").read_text()
     )
     name = plugin_json["name"]
     version = f"{plugin_json['version']}-{DEBIAN_REVISION}"
-    tree = root / INSTALL_ROOT / name
+    installed = install_root(namespace) / name
+    tree = root / installed
     shutil.copytree(plugin_dir, tree, symlinks=True)
+    # The packaging metadata is read from plugin_dir; it is not installed.
+    shutil.rmtree(tree / "deb", ignore_errors=True)
 
-    # dpkg installs and removes the files, so the marketplace lifecycle scripts
-    # (which copy binaries into ~/.local/bin) have nothing left to do.
-    for script in tree.glob("hooks/*.sh"):
-        script.unlink()
-    hooks = tree / "hooks"
-    if hooks.is_dir() and not any(hooks.iterdir()):
-        hooks.rmdir()
-
-    vendor_wheels(meta_dir, tree)
-    commands = _install_commands(root, tree, meta_dir)
+    vendor_wheels(plugin_dir, tree)
+    commands = _install_commands(root, tree, plugin_dir)
     manifest = plugin_manifest(tree, plugin_json, version, category)
     (tree / MANIFEST).write_text(json.dumps(manifest, indent=2) + "\n")
     _normalize_modes(root)
@@ -378,7 +404,8 @@ def lay_out(plugin_dir: Path, meta_dir: Path, root: Path, category: str) -> Pack
     author = plugin_json["author"]
     return Package(
         plugin=name,
-        name=package_name(name),
+        tree=PurePosixPath("/") / installed,
+        name=package_name(namespace, name),
         version=version,
         architecture=architecture,
         maintainer=f"{author['name']} <{author['email']}>",
@@ -386,8 +413,8 @@ def lay_out(plugin_dir: Path, meta_dir: Path, root: Path, category: str) -> Pack
         description=plugin_json["description"],
         depends=_unique(
             _interpreter_depends(files)
-            + [package_name(d) for d in plugin_json.get("dependencies", [])]
-            + read_depends(meta_dir)
+            + [package_name(namespace, d) for d in plugin_json.get("dependencies", [])]
+            + read_depends(plugin_dir)
         ),
         commands=commands,
         elf_files=elf_files,
@@ -396,30 +423,25 @@ def lay_out(plugin_dir: Path, meta_dir: Path, root: Path, category: str) -> Pack
 
 
 def marketplace_package(
-    marketplace: dict, packages: list[Package], epoch: int
+    marketplace: dict, packages: list[Package], namespace: str, epoch: int
 ) -> Package:
-    """codexis-marketplace: no files, a Depends on every listed plugin.
+    """<namespace>-marketplace: no files, a Depends on every plugin package.
 
-    The marketplace has no version of its own, so the build commit's time is
-    one: it grows with every release, which is all apt needs to upgrade it.
+    The marketplace has no version of its own, so the time of the commit it was
+    built from is one: it grows with every release, which is all apt needs to
+    upgrade it.
     """
-    built = {p.plugin: p for p in packages}
-    listed = [entry["name"] for entry in marketplace["plugins"]]
-    missing = sorted(set(listed) - set(built))
-    if missing:
-        raise PackagingError(f"marketplace lists unbuilt plugins: {', '.join(missing)}")
+    name = f"{namespace}-marketplace"
     owner = marketplace["owner"]
     english = marketplace.get("i18n", {}).get("en", {})
     return Package(
-        name=MARKETPLACE_PACKAGE,
+        name=name,
         version=time.strftime("%Y%m%d.%H%M%S", time.gmtime(epoch)),
         architecture="all",
         maintainer=f"{owner['name']} <{owner['email']}>",
-        synopsis=english.get("displayName", MARKETPLACE_PACKAGE),
+        synopsis=english.get("displayName", name),
         description=english.get("description", ""),
-        depends=sorted(
-            f"{built[name].name} (>= {built[name].version})" for name in listed
-        ),
+        depends=sorted(f"{p.name} (>= {p.version})" for p in packages),
         section="metapackages",
     )
 
@@ -475,13 +497,11 @@ def control(package: Package, size: int) -> str:
     return "\n".join(lines) + "\n"
 
 
-def maintainer_scripts(
-    package: Package, root: PurePosixPath = PurePosixPath("/") / INSTALL_ROOT
-) -> dict[str, str]:
-    """The maintainer scripts of a package installed under `root`, by name."""
+def maintainer_scripts(package: Package) -> dict[str, str]:
+    """The maintainer scripts of `package`, by name."""
     if not package.python_modules:
         return {}
-    tree = root / str(package.plugin)
+    tree = package.tree
     prerm = textwrap.dedent(
         f"""\
         #!/bin/sh
@@ -517,9 +537,9 @@ def write_metadata(package: Package, root: Path) -> None:
         (debian / name).chmod(0o755)
 
 
-def check_conflicts(packages: list[Package]) -> None:
+def check_conflicts(packages: list[Package], namespace: str) -> None:
     """Fail when two packages share a name or would ship the same command."""
-    names: set[str] = {MARKETPLACE_PACKAGE}
+    names: set[str] = {f"{namespace}-marketplace"}
     owners: dict[str, str] = {}
     for package in packages:
         if package.name in names:
@@ -534,7 +554,8 @@ def check_conflicts(packages: list[Package]) -> None:
             owners[command] = package.name
 
 
-def build_deb(package: Package, root: Path, out_dir: Path) -> None:
+def build_deb(package: Package, root: Path, out_dir: Path) -> str:
+    """Build `package` from `root` into `out_dir`; returns its control file."""
     package.shlibs = shlib_depends(package.elf_files)
     write_metadata(package, root)
     subprocess.run(
@@ -551,80 +572,106 @@ def build_deb(package: Package, root: Path, out_dir: Path) -> None:
     )
     depends = ", ".join(_unique(package.shlibs + package.depends))
     print(f"{package.filename}  Depends: {depends or '-'}")
+    return (root / "DEBIAN" / "control").read_text()
 
 
-def write_index(out_dir: Path) -> None:
-    """Packages index, so `out_dir` serves as a flat apt repository."""
-    index = subprocess.run(
-        ["dpkg-scanpackages", "--multiversion", "."],
-        cwd=out_dir,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
-    (out_dir / "Packages").write_text(index)
+def write_index(out_dir: Path, controls: dict[str, str]) -> None:
+    """Packages index of the .deb files in `out_dir`, by filename to control file.
+
+    It makes `out_dir` a flat apt repository. Each entry is the control file as
+    written: dpkg-scanpackages would reparse it and strip a 0xA0 byte ending a
+    wrapped description line, splitting a UTF-8 character such as "à" in two.
+    """
+    entries = []
+    for filename, text in sorted(controls.items()):
+        data = (out_dir / filename).read_bytes()
+        entries.append(
+            text
+            + f"Filename: ./{filename}\n"
+            + f"Size: {len(data)}\n"
+            + f"MD5sum: {hashlib.md5(data).hexdigest()}\n"
+            + f"SHA1: {hashlib.sha1(data).hexdigest()}\n"
+            + f"SHA256: {hashlib.sha256(data).hexdigest()}\n"
+        )
+    index = "\n".join(entries).encode()
+    (out_dir / "Packages").write_bytes(index)
     # apt asks a flat repository for the compressed index first.
-    (out_dir / "Packages.gz").write_bytes(gzip.compress(index.encode(), mtime=0))
+    (out_dir / "Packages.gz").write_bytes(gzip.compress(index, mtime=0))
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Build one Debian package per marketplace plugin."
+        description="Build one Debian package per plugin of a marketplace."
     )
-    parser.add_argument("--payload", type=Path, required=True)
-    parser.add_argument("--repo", type=Path, required=True)
+    parser.add_argument(
+        "--marketplace",
+        type=Path,
+        required=True,
+        help="directory holding .claude-plugin/marketplace.json",
+    )
+    parser.add_argument(
+        "--namespace",
+        required=True,
+        help="prefix of the package names and directory under /usr/share/cdx-plugins",
+    )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument(
         "plugins",
         nargs="*",
-        help="plugin names (default: all of them and codexis-marketplace)",
+        help="plugin names (default: all of them and <namespace>-marketplace)",
     )
     args = parser.parse_args(argv)
 
-    available = sorted(
-        p.name
-        for p in args.payload.iterdir()
-        if (p / ".claude-plugin" / "plugin.json").is_file()
+    marketplace = json.loads(
+        (args.marketplace / ".claude-plugin" / "marketplace.json").read_text()
     )
-    unknown = sorted(set(args.plugins) - set(available))
+    entries = marketplace["plugins"]
+    unknown = sorted(set(args.plugins) - {e["name"] for e in entries})
     if unknown:
         print(f"error: unknown plugins: {', '.join(unknown)}", file=sys.stderr)
         return 1
-    marketplace = json.loads(
-        (args.repo / ".claude-plugin" / "marketplace.json").read_text()
-    )
-    categories = {e["name"]: e.get("category") for e in marketplace["plugins"]}
 
     with tempfile.TemporaryDirectory() as work:
         try:
             # Every package is laid out before any is built, so a conflict
             # between two of them fails the run before a .deb is written.
             roots = []
-            for plugin in args.plugins or available:
-                if not (category := categories.get(plugin)):
+            for entry in entries:
+                plugin = entry["name"]
+                if args.plugins and plugin not in args.plugins:
+                    continue
+                if not (category := entry.get("category")):
                     raise PackagingError(f"marketplace.json gives {plugin} no category")
+                source = source_dir(args.marketplace, entry)
                 root = Path(work) / plugin
                 root.mkdir(mode=0o755)
-                meta_dir = args.repo / "plugins" / plugin
-                package = lay_out(args.payload / plugin, meta_dir, root, category)
+                package = lay_out(source, root, args.namespace, category)
+                if package.plugin != plugin:
+                    raise PackagingError(
+                        f"marketplace.json lists {plugin}, "
+                        f"its plugin.json names {package.plugin}"
+                    )
                 roots.append((package, root))
             packages = [package for package, _ in roots]
-            check_conflicts(packages)
+            check_conflicts(packages, args.namespace)
             if not args.plugins:
                 if "SOURCE_DATE_EPOCH" not in os.environ:
                     raise PackagingError("SOURCE_DATE_EPOCH must be set")
                 epoch = int(os.environ["SOURCE_DATE_EPOCH"])
-                meta_root = Path(work) / MARKETPLACE_PACKAGE
-                meta_root.mkdir(mode=0o755)
-                roots.append(
-                    (marketplace_package(marketplace, packages, epoch), meta_root)
+                meta_package = marketplace_package(
+                    marketplace, packages, args.namespace, epoch
                 )
-            for package, root in roots:
-                build_deb(package, root, args.out)
+                meta_root = Path(work) / meta_package.name
+                meta_root.mkdir(mode=0o755)
+                roots.append((meta_package, meta_root))
+            controls = {
+                package.filename: build_deb(package, root, args.out)
+                for package, root in roots
+            }
         except PackagingError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
-    write_index(args.out)
+    write_index(args.out, controls)
     return 0
 
 
