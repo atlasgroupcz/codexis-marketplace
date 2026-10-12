@@ -4,7 +4,9 @@
 # check that every package stands on its own: apt resolves all of its Depends,
 # every command it puts on PATH starts from /, every Python module it ships in
 # lib/ imports, none of its symlinks dangle, its cdx-manifest.json names only
-# files it ships, and purging leaves nothing behind.
+# files it ships, and purging leaves nothing behind. The installed directory
+# must also read as the marketplace: its marketplace.json and revision, and each
+# plugin where marketplace.json says it is.
 #
 #   shared/deb/smoke-test.sh <namespace>    after shared/deb/build-debs.sh
 set -euo pipefail
@@ -64,7 +66,8 @@ for package in $packages; do
 done
 
 root="/usr/share/cdx-plugins/$NAMESPACE"
-for lib in "$root"/*/lib; do
+for lib in $(find "$root" -name cdx-manifest.json -printf "%h/lib\n"); do
+  [ -d "$lib" ] || continue
   for module in "$lib"/*; do
     name=$(basename "$module" .py)
     [ -f "$module/__init__.py" ] || [ "${module%.py}" != "$module" ] || continue
@@ -78,27 +81,38 @@ done
 
 python3 - "$root" $((built - 1)) <<"PY" || failed=1
 import json
+import re
 import sys
 from pathlib import Path
 
 root, expected = Path(sys.argv[1]), int(sys.argv[2])
-manifests = sorted(root.glob("*/cdx-manifest.json"))
-failed = len(manifests) != expected
-if failed:
-    print(f"FAIL {len(manifests)} plugins carry a cdx-manifest.json, expected {expected}")
-for path in manifests:
+problems = []
+revision = (root / ".codexis-marketplace-revision").read_text().strip()
+if not re.fullmatch(r"[0-9a-f]{40,64}", revision):
+    problems.append(f"revision {revision!r} is no commit")
+manifests = list(root.rglob("cdx-manifest.json"))
+if len(manifests) != expected:
+    problems.append(f"{len(manifests)} plugins carry a cdx-manifest.json, expected {expected}")
+marketplace = json.loads((root / ".claude-plugin/marketplace.json").read_text())
+for entry in marketplace["plugins"]:
+    name, source = entry["name"], entry["source"]
+    path = root / source / "cdx-manifest.json"
+    if not path.is_file():
+        problems.append(f"{name}: no cdx-manifest.json at {source}")
+        continue
     manifest = json.loads(path.read_text())
     listed = [manifest["plugin"], manifest.get("readme"), manifest.get("mcpServers")]
     for kind in ("skills", "agents", "apps", "previews", "automations"):
         listed += manifest.get(kind, [])
     missing = [rel for rel in listed if rel and not (path.parent / rel).is_file()]
-    name = manifest["name"]
-    if name != path.parent.name or missing:
-        print(f"FAIL {path}: names {name}, missing {missing}")
-        failed = True
+    found = manifest["name"]
+    if found != name or missing:
+        problems.append(f"{path}: names {found}, missing {missing}")
     else:
-        print(f"ok   manifest {path.parent.name}")
-sys.exit(failed)
+        print(f"ok   manifest {source}")
+for problem in problems:
+    print(f"FAIL {problem}")
+sys.exit(bool(problems))
 PY
 
 apt-get purge -y -qq $packages >/dev/null

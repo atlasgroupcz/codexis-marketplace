@@ -7,9 +7,11 @@ and the plugin directories its entries point at. A plugin's `deb/` directory is
 its packaging metadata; the package does not install it.
 
 The namespace (`codexis` for this repo) prefixes the package names and names the
-directory the plugins install into. Every plugin package installs:
-  /usr/share/cdx-plugins/<namespace>/<plugin>/  the plugin tree the daemon loads
-  /usr/bin/<command>                            each bin/ entry, invokable on PATH
+directory the marketplace installs into, /usr/share/cdx-plugins/<namespace>/.
+Installed, that directory is the distribution: every package puts its files
+where the distribution has them. A plugin package installs:
+  <namespace dir>/<source>/  the plugin tree, at its marketplace.json source
+  /usr/bin/<command>         each bin/ entry, invokable on PATH
 
 An ELF command is a real file in /usr/bin and the plugin's bin/ entry links to
 it. A script command stays in the plugin tree and /usr/bin links to it: the
@@ -21,8 +23,9 @@ shebangs for scripts) and plugin.json `dependencies`; `deb/control` adds what
 neither can see, such as a tool a binary spawns. `deb/wheels` names pure-Python
 libraries Ubuntu does not package; they are unpacked into the plugin's lib/.
 
-<namespace>-marketplace has no files and depends on every plugin package, so one
-`apt install codexis-marketplace` installs the whole marketplace.
+<namespace>-marketplace installs the rest of the distribution (marketplace.json
+and the files beside it) and REVISION_FILE, and depends on every plugin package,
+so one `apt install codexis-marketplace` installs the whole marketplace.
 """
 
 from __future__ import annotations
@@ -49,6 +52,9 @@ PLUGINS_ROOT = PurePosixPath("usr/share/cdx-plugins")
 BIN_DIR = PurePosixPath("usr/bin")
 DEBIAN_REVISION = "1"
 MANIFEST = "cdx-manifest.json"
+# The commit the marketplace was built from, which the daemon reads to tell a
+# release from the one before. The marketplace volume carries it too.
+REVISION_FILE = ".codexis-marketplace-revision"
 MANIFEST_SCHEMA = 1
 
 # Program a shebang runs -> the package providing it. None for programs from
@@ -363,32 +369,37 @@ def plugin_manifest(tree: Path, plugin_json: dict, version: str, category: str) 
     return manifest
 
 
-def source_dir(marketplace_dir: Path, entry: dict) -> Path:
-    """The plugin directory a marketplace.json entry points at."""
+def source_path(marketplace_dir: Path, entry: dict) -> PurePosixPath:
+    """Where a marketplace.json entry's plugin is, relative to the marketplace."""
     name, source = entry["name"], entry.get("source")
     if not isinstance(source, str):
         raise PackagingError(
             f"marketplace.json {name}: source {json.dumps(source)} "
             "is not a directory of the marketplace"
         )
-    directory = marketplace_dir / _within(
-        source, f"marketplace.json {name}", "marketplace"
-    )
-    if not (directory / ".claude-plugin" / "plugin.json").is_file():
+    location = _within(source, f"marketplace.json {name}", "marketplace")
+    if not (marketplace_dir / location / ".claude-plugin" / "plugin.json").is_file():
         raise PackagingError(
             f"marketplace.json {name}: {source} holds no .claude-plugin/plugin.json"
         )
-    return directory
+    return location
 
 
-def lay_out(plugin_dir: Path, root: Path, namespace: str, category: str) -> Package:
-    """Arrange the package filesystem of one plugin under `root`."""
+def lay_out(
+    marketplace_dir: Path,
+    location: PurePosixPath,
+    root: Path,
+    namespace: str,
+    category: str,
+) -> Package:
+    """Arrange the package filesystem of the plugin at `location` under `root`."""
+    plugin_dir = marketplace_dir / location
     plugin_json = json.loads(
         (plugin_dir / ".claude-plugin" / "plugin.json").read_text()
     )
     name = plugin_json["name"]
     version = f"{plugin_json['version']}-{DEBIAN_REVISION}"
-    installed = install_root(namespace) / name
+    installed = install_root(namespace) / location
     tree = root / installed
     shutil.copytree(plugin_dir, tree, symlinks=True)
     # The packaging metadata is read from plugin_dir; it is not installed.
@@ -422,10 +433,34 @@ def lay_out(plugin_dir: Path, root: Path, namespace: str, category: str) -> Pack
     )
 
 
+def lay_out_marketplace(
+    marketplace_dir: Path,
+    locations: list[PurePosixPath],
+    root: Path,
+    namespace: str,
+    revision: str,
+) -> None:
+    """Arrange the marketplace's own files under `root`: all but its plugins."""
+    plugins = {marketplace_dir / location for location in locations}
+
+    def ignore(directory: str, names: list[str]) -> list[str]:
+        here = Path(directory)
+        return [
+            name
+            for name in names
+            if here / name in plugins or (here == marketplace_dir and name == ".git")
+        ]
+
+    target = root / install_root(namespace)
+    shutil.copytree(marketplace_dir, target, symlinks=True, ignore=ignore)
+    (target / REVISION_FILE).write_text(revision + "\n")
+    _normalize_modes(root)
+
+
 def marketplace_package(
     marketplace: dict, packages: list[Package], namespace: str, epoch: int
 ) -> Package:
-    """<namespace>-marketplace: no files, a Depends on every plugin package.
+    """<namespace>-marketplace, with a Depends on every plugin package.
 
     The marketplace has no version of its own, so the time of the commit it was
     built from is one: it grows with every release, which is all apt needs to
@@ -616,6 +651,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument(
+        "--revision",
+        required=True,
+        help=f"commit the marketplace was built from, written to {REVISION_FILE}",
+    )
+    parser.add_argument(
         "plugins",
         nargs="*",
         help="plugin names (default: all of them and <namespace>-marketplace)",
@@ -636,22 +676,26 @@ def main(argv: list[str] | None = None) -> int:
             # Every package is laid out before any is built, so a conflict
             # between two of them fails the run before a .deb is written.
             roots = []
+            locations = []
             for entry in entries:
                 plugin = entry["name"]
                 if args.plugins and plugin not in args.plugins:
                     continue
                 if not (category := entry.get("category")):
                     raise PackagingError(f"marketplace.json gives {plugin} no category")
-                source = source_dir(args.marketplace, entry)
+                location = source_path(args.marketplace, entry)
                 root = Path(work) / plugin
                 root.mkdir(mode=0o755)
-                package = lay_out(source, root, args.namespace, category)
+                package = lay_out(
+                    args.marketplace, location, root, args.namespace, category
+                )
                 if package.plugin != plugin:
                     raise PackagingError(
                         f"marketplace.json lists {plugin}, "
                         f"its plugin.json names {package.plugin}"
                     )
                 roots.append((package, root))
+                locations.append(location)
             packages = [package for package, _ in roots]
             check_conflicts(packages, args.namespace)
             if not args.plugins:
@@ -663,6 +707,13 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 meta_root = Path(work) / meta_package.name
                 meta_root.mkdir(mode=0o755)
+                lay_out_marketplace(
+                    args.marketplace,
+                    locations,
+                    meta_root,
+                    args.namespace,
+                    args.revision,
+                )
                 roots.append((meta_package, meta_root))
             controls = {
                 package.filename: build_deb(package, root, args.out)
