@@ -1,0 +1,3 @@
+usr/share/cdx-plugins/codexis/documents/shared/scripts/render.sh usr/bin/cdx-render
+usr/share/cdx-plugins/codexis/documents/shared/scripts/recalc.sh usr/bin/cdx-recalc
+usr/share/cdx-plugins/codexis/documents/shared/scripts/check_docx_restarts.py usr/bin/cdx-check-docx-restarts

@@ -414,6 +414,43 @@ Example (from codexis plugin):
 
 For multi-binary plugins, prefer extracting these commands into `hooks/install-binaries.sh` and `hooks/uninstall-binaries.sh` (see the `codexis`, `cdx-sk`, `ares`, `cdx-at`, `cdx-cz-psp`, `cdx-cz-spp` plugins). Those scripts default `TARGET_BIN_DIR` to `${HOME}/.local/bin` and can be overridden via the `TARGET_BIN_DIR` env var if a different prefix is needed.
 
+### Debian packages
+
+The packages are built from the distribution, not from the source tree:
+
+```bash
+./build.sh                                # refresh bin/ and components/
+./create-dist.sh                          # dist/
+shared/deb/build-debs.sh dist codexis     # target/deb/
+shared/deb/smoke-test.sh codexis          # install it all into a clean Ubuntu 26.04
+```
+
+`build-debs.sh <dist> <namespace>` builds one package per plugin the
+distribution's `marketplace.json` lists, plus `<namespace>-marketplace`, which
+depends on all of them, and a `Packages` index, so `target/deb/` is a flat apt
+repository. Nothing is published. Packages are named `<namespace>-<plugin>` (a
+plugin named after the namespace keeps its name) and versioned
+`<plugin.json version>-1`; the marketplace package is versioned by the time of
+the source commit.
+
+A package installs the plugin tree as the dist ships it, minus `deb/`, under
+`/usr/share/cdx-plugins/<namespace>/<plugin>/` and puts every `bin/` entry on
+`/usr/bin`. The builder writes
+`<plugin>/cdx-manifest.json` into the tree: the package version, the
+`marketplace.json` category, and the path (relative to the plugin) of every file
+the daemon loads - `plugin.json`, README, skills, agents, apps, previews,
+automations and `.mcp.json`. Hooks are not listed.
+
+Depends is derived from the contents (shared libraries, script shebangs) and
+plugin.json `dependencies`. Everything else the plugin or its skills need at
+runtime - a tool a binary spawns, a command the skills pipe through, a Python
+library - is a hard dependency declared in `plugins/<name>/deb/control` (a
+single `Depends` field). A pure-Python library Ubuntu does not package goes in
+`plugins/<name>/deb/wheels` (`<url> sha256=<hex>`) and is unpacked into the
+plugin's `lib/`. A script that becomes a command under another name goes in
+`plugins/<name>/deb/links` (dh_link format). A Node bundle must not `require`
+anything but `node:` built-ins.
+
 ### Source Previews (`previews/`)
 
 A plugin can render an in-chat HTML preview for the sources it publishes. Publish sources with `previewUrl` in the `<plugin-name>://<resource-path>` form; the daemon resolves it through the plugin's preview handler declared by `previews/preview.json`:
