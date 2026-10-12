@@ -66,17 +66,9 @@ Behavior:
 
 - Creates a gitignored `./dist/` directory inside this repository
 - Recreates that directory from scratch on every run
-- Builds the dist contents with `rsync` in a temporary staging directory
-- Applies exclusions from `dist-exclusions.txt`, including the root `README.md`
+- Copies the git-tracked files, minus the exclusions in `dist-exclusions.txt` (including the root `README.md`)
 - Overlays files from `dist-content/` into the dist root while preserving relative paths
-- Treats `dist/` as a checkout of `git@github.com:atlasgroupcz/codexis-marketplace.git`
-- Pushes the generated contents to the target branch after committing any detected changes
-
-Branch selection:
-
-- Uses `DIST_BRANCH` when set
-- Otherwise uses the remote default branch when it can be resolved
-- Falls back to `main` when the remote is empty or has no symbolic `HEAD`
+- Commits the result as the only commit of a fresh git repository in `dist/`, dated like the source commit
 
 Examples:
 
@@ -99,8 +91,7 @@ python tests/run.py <unit|marketplace|eval|all>
 
 ## VM volume image
 
-The released public distribution can be packaged as the read-only marketplace volume consumed by
-CODEXIS VMs:
+The distribution can be packaged as the read-only marketplace volume consumed by CODEXIS VMs:
 
 ```bash
 ./build-volume-image.sh \

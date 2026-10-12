@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Build the marketplace distribution into dist/: what the marketplace ships, as
+# a single commit of a fresh git repository. build-volume-image.sh packs that
+# commit; shared/deb/build-debs.sh packages it.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -6,56 +9,17 @@ REPO_NAME="$(basename "$ROOT_DIR")"
 DIST_DIR="$ROOT_DIR/dist"
 EXCLUDES_FILE="$ROOT_DIR/dist-exclusions.txt"
 DIST_CONTENT_DIR="$ROOT_DIR/dist-content"
-DIST_REMOTE_URL="${DIST_REMOTE_URL:-git@github.com:atlasgroupcz/codexis-marketplace.git}"
-TEMP_DIST_DIR="$(mktemp -d)"
 TEMP_TRACKED_DIR="$(mktemp -d)"
 TEMP_FILE_LIST="$(mktemp)"
 
 cleanup() {
-  rm -rf "$TEMP_DIST_DIR" "$TEMP_TRACKED_DIR" "$TEMP_FILE_LIST"
+  rm -rf "$TEMP_TRACKED_DIR" "$TEMP_FILE_LIST"
 }
 
-resolve_dist_branch() {
-  local remote_head_ref
-
-  if [[ -n "${DIST_BRANCH:-}" ]]; then
-    printf '%s\n' "$DIST_BRANCH"
-    return
-  fi
-
-  remote_head_ref="$(git ls-remote --symref "$DIST_REMOTE_URL" HEAD 2>/dev/null | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2; exit}')"
-
-  if [[ -n "$remote_head_ref" ]]; then
-    printf '%s\n' "$remote_head_ref"
-    return
-  fi
-
-  printf 'main\n'
-}
-
-prepare_dist_repo() {
-  local dist_branch="$1"
-
-  echo "Preparing distribution repository at: $DIST_DIR"
-  rm -rf "$DIST_DIR"
-
-  if git ls-remote --exit-code --heads "$DIST_REMOTE_URL" "$dist_branch" >/dev/null 2>&1; then
-    git clone --branch "$dist_branch" --single-branch "$DIST_REMOTE_URL" "$DIST_DIR"
-    return
-  fi
-
-  mkdir -p "$DIST_DIR"
-  git -C "$DIST_DIR" init --quiet
-  git -C "$DIST_DIR" checkout -b "$dist_branch" >/dev/null 2>&1
-  git -C "$DIST_DIR" remote add origin "$DIST_REMOTE_URL"
-}
-
-commit_dist_changes() {
-  local dist_branch="$1"
+commit_dist() {
   local source_branch
   local source_rev
   local source_dirty=""
-  local commit_message
 
   source_branch="$(git -C "$ROOT_DIR" branch --show-current 2>/dev/null || true)"
   source_rev="$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || printf 'unknown')"
@@ -72,24 +36,19 @@ commit_dist_changes() {
       "$source_status" >&2
   fi
 
-  commit_message="${DIST_COMMIT_MESSAGE:-Sync dist from ${REPO_NAME} (${source_branch:-detached}@${source_rev}${source_dirty})}"
+  # The dist commit carries the source commit's time, so what is versioned from
+  # it (the marketplace package) follows the source, not the hour it was built.
+  local source_date
+  source_date="$(git -C "$ROOT_DIR" log -1 --format=%cI)"
 
+  git -C "$DIST_DIR" init --quiet --initial-branch=main
   git -C "$DIST_DIR" add --all
-
-  if git -C "$DIST_DIR" diff --cached --quiet --exit-code; then
-    echo "No distribution changes to commit."
-    return
-  fi
-
-  git -C "$DIST_DIR" commit -m "$commit_message"
-  git -C "$DIST_DIR" push --set-upstream origin "$dist_branch"
+  GIT_AUTHOR_DATE="$source_date" GIT_COMMITTER_DATE="$source_date" \
+    git -C "$DIST_DIR" commit --quiet \
+    -m "Dist of ${REPO_NAME} (${source_branch:-detached}@${source_rev}${source_dirty})"
 }
 
 trap cleanup EXIT
-
-DIST_BRANCH="$(resolve_dist_branch)"
-
-echo "Creating distribution staging copy at: $TEMP_DIST_DIR"
 
 if [[ ! -f "$EXCLUDES_FILE" ]]; then
   echo "ERROR: Missing excludes file: $EXCLUDES_FILE" >&2
@@ -106,9 +65,9 @@ fi
 #   bypasses the exclude filters, so this pass copies every tracked file,
 #   including the dev ones - pass 2 is what drops those.
 #
-#   Pass 2 copies that mirror into the staging dir applying the exclude file. A
-#   plain recursive rsync DOES honor --exclude-from, so this drops the
-#   tracked-but-dev files (src/, tests/, build.sh, Cargo.toml, uv.lock, ...).
+#   Pass 2 copies that mirror into dist/ applying the exclude file. A plain
+#   recursive rsync DOES honor --exclude-from, so this drops the tracked-but-dev
+#   files (src/, tests/, build.sh, Cargo.toml, uv.lock, ...).
 git -C "$ROOT_DIR" ls-files -z > "$TEMP_FILE_LIST"
 if [[ ! -s "$TEMP_FILE_LIST" ]]; then
   echo "ERROR: git ls-files listed no tracked files in $ROOT_DIR (not a git checkout?)." >&2
@@ -116,16 +75,16 @@ if [[ ! -s "$TEMP_FILE_LIST" ]]; then
   exit 1
 fi
 
+echo "Creating distribution at: $DIST_DIR"
+rm -rf "$DIST_DIR"
 rsync -a --from0 --files-from="$TEMP_FILE_LIST" "$ROOT_DIR"/ "$TEMP_TRACKED_DIR"/
-rsync -a --delete --delete-excluded --exclude-from="$EXCLUDES_FILE" "$TEMP_TRACKED_DIR"/ "$TEMP_DIST_DIR"/
+rsync -a --exclude-from="$EXCLUDES_FILE" "$TEMP_TRACKED_DIR"/ "$DIST_DIR"/
 
 if [[ -d "$DIST_CONTENT_DIR" ]]; then
   echo "Applying dist-content overlay from: $DIST_CONTENT_DIR"
-  rsync -a --exclude='.gitkeep' "$DIST_CONTENT_DIR"/ "$TEMP_DIST_DIR"/
+  rsync -a --exclude='.gitkeep' "$DIST_CONTENT_DIR"/ "$DIST_DIR"/
 fi
 
-prepare_dist_repo "$DIST_BRANCH"
-rsync -a --delete --exclude='.git' "$TEMP_DIST_DIR"/ "$DIST_DIR"/
-commit_dist_changes "$DIST_BRANCH"
+commit_dist
 
-echo "Distribution repository created successfully at: $DIST_DIR"
+echo "Distribution created at: $DIST_DIR ($(git -C "$DIST_DIR" rev-parse --short HEAD))"
