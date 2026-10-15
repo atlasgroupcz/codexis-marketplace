@@ -35,7 +35,7 @@ pub fn table<const N: usize>(
 ) -> Table {
     let mut table = Table::new();
     table
-        .load_style(UTF8_FULL_CONDENSED)
+        .load_preset(UTF8_FULL_CONDENSED)
         .set_content_arrangement(ContentArrangement::Dynamic)
         .set_header(header);
     for row in rows {
