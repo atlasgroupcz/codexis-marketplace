@@ -1,0 +1,55 @@
+{
+  "name": "turboleal",
+  "iconPath": "icon.svg",
+  "version": "1.0.0",
+  "description": "Turboleal legislation watch - watch sets from a brief and documents, watched Czech laws and sections, references and change alerts",
+  "author": {
+    "name": "ATLAS GROUP",
+    "email": "klientske.centrum@atlasgroup.cz"
+  },
+  "keywords": [
+    "turboleal",
+    "legislation",
+    "watch",
+    "alerts",
+    "codexis"
+  ],
+  "license": "PROPRIETARY",
+  "env": {
+    "CODEXIS_PLUGIN_TURBOLEAL_API_URL": "https://turboleal.cdx.agrp.dev"
+  },
+  "tags": [
+    "legal",
+    "legislation"
+  ],
+  "i18n": {
+    "cs": {
+      "displayName": "Turboleal - hlídač legislativy",
+      "description": "Hlídání legislativy podle zadání a dokumentů - sledované předpisy a paragrafy, reference a upozornění na změny.",
+      "tagLabels": {
+        "legal": "Právo",
+        "legislation": "Legislativa"
+      }
+    },
+    "en": {
+      "displayName": "Turboleal - Legislation Watch",
+      "description": "Watch legislation from a brief and documents - watched laws and sections, references and change alerts.",
+      "tagLabels": {
+        "legal": "Law",
+        "legislation": "Legislation"
+      }
+    },
+    "sk": {
+      "displayName": "Turboleal - strážca legislatívy",
+      "description": "Sledovanie legislatívy podľa zadania a dokumentov - sledované predpisy a paragrafy, referencie a upozornenia na zmeny.",
+      "tagLabels": {
+        "legal": "Právo",
+        "legislation": "Legislatíva"
+      }
+    }
+  },
+  "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
+  "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
+  "skills": "./skills"
+}

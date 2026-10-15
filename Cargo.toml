@@ -37,6 +37,7 @@ members = [
   "plugins/registr-smluv/src/registr-smluv",
   "plugins/rzpro/src/rzpro-cli",
   "plugins/sbirka-listin/src/sbirka-listin",
+  "plugins/turboleal/src/turboleal-cli",
   "plugins/video-analyze/src/video-analyze",
   "plugins/zrsr/src/zrsr-cli",
 ]
