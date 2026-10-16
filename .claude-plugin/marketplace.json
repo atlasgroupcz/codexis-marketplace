@@ -1481,39 +1481,6 @@
           }
         }
       }
-    },
-    {
-      "uuid": "111b1d68-7b87-43e3-8c3f-454c13b8d320",
-      "name": "turboleal",
-      "description": "Turboleal legislation watch - watch sets from a brief and documents, watched Czech laws and sections, references and change alerts",
-      "source": "./plugins/turboleal",
-      "category": "legal",
-      "i18n": {
-        "cs": {
-          "displayName": "Turboleal - hlídač legislativy",
-          "description": "Hlídání legislativy podle zadání a dokumentů - sledované předpisy a paragrafy, reference a upozornění na změny.",
-          "tagLabels": {
-            "legal": "Právo",
-            "legislation": "Legislativa"
-          }
-        },
-        "en": {
-          "displayName": "Turboleal - Legislation Watch",
-          "description": "Watch legislation from a brief and documents - watched laws and sections, references and change alerts.",
-          "tagLabels": {
-            "legal": "Law",
-            "legislation": "Legislation"
-          }
-        },
-        "sk": {
-          "displayName": "Turboleal - strážca legislatívy",
-          "description": "Sledovanie legislatívy podľa zadania a dokumentov - sledované predpisy a paragrafy, referencie a upozornenia na zmeny.",
-          "tagLabels": {
-            "legal": "Právo",
-            "legislation": "Legislatíva"
-          }
-        }
-      }
     }
   ]
 }

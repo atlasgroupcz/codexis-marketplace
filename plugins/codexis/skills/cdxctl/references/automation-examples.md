@@ -64,9 +64,9 @@ Runs a shell command, not an assistant turn. No model or jurisdiction needed.
 
 ```bash
 cdxctl automation create-command \
-  --title "Tracked documents check" \
+  --title "Watched legislation alerts" \
   --repeat WEEKLY --day-part MORNING --days-of-week 1 \
-  --command "cdx-sledovane-dokumenty check"
+  --command "turboleal-cli -o json alerts list --unacknowledged"
 ```
 
 ## Updating (keeps what you do not pass)

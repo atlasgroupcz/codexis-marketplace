@@ -30,9 +30,18 @@ install_binary() {
 }
 
 install_binary "cdx-cli" "cdx-cli"
-install_binary "cdx-sledovane-dokumenty"
 install_binary "cdx-sledovana-judikatura"
 install_binary "cdxctl" "cdxctl"
+install_binary "turboleal-cli" "turboleal-cli"
+
+# The previous Sledované dokumenty implementation is replaced by Turboleal;
+# an update must not leave its binary and library behind.
+rm -f "${TARGET_BIN_DIR}/cdx-sledovane-dokumenty" 2>/dev/null || true
+rm -rf "${SHARED_LIB_DIR}/sledovane_dokumenty_core" "${SETTINGS_DIR}/sledovane-dokumenty" 2>/dev/null || true
+
+TURBOLEAL_LIB_DIR="${TURBOLEAL_LIB_DIR:-${HOME}/.local/lib/turboleal}"
+install -d "${TURBOLEAL_LIB_DIR}"
+install -m 0644 "${PLUGIN_DIR}/lib/turboleal/turboleal.cjs" "${TURBOLEAL_LIB_DIR}/turboleal.cjs"
 
 install_lib() {
   local module_name="$1"
@@ -63,7 +72,6 @@ install_lib() {
   echo "Installed ${module_name} -> ${dest}"
 }
 
-install_lib "sledovane_dokumenty_core"
 install_lib "sledovana_judikatura_core"
 
 install_settings() {
@@ -71,7 +79,7 @@ install_settings() {
   if [[ ! -d "${source_root}" ]]; then
     return
   fi
-  # Ship one subdir per app (e.g. settings/sledovane-dokumenty/), each
+  # Ship one subdir per app (e.g. settings/sledovana-judikatura/), each
   # installed atomically like install_lib above: copy into a temp dir, flush
   # it to disk, then swap it into place via rename. A crash never leaves a
   # half-copied tree at the real path. These are the read-only shipped

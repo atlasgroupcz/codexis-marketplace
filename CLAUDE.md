@@ -407,9 +407,9 @@ Run the container with `--user "$(id -u):$(id -g)"`, otherwise `dist/` and
 
 Example (from codexis plugin):
 ```json
-"postInstall": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\"",
-"postUninstall": "rm -f \"${HOME}/.local/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdxctl\"",
-"onUpdate": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-sledovane-dokumenty\" \"${HOME}/.local/bin/cdx-sledovane-dokumenty\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\""
+"postInstall": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\"",
+"postUninstall": "rm -f \"${HOME}/.local/bin/cdx-cli\" \"${HOME}/.local/bin/cdxctl\"",
+"onUpdate": "install -d \"${HOME}/.local/bin\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdx-cli\" \"${HOME}/.local/bin/cdx-cli\" && install -m 0755 \"${PLUGIN_DIR}/bin/cdxctl\" \"${HOME}/.local/bin/cdxctl\""
 ```
 
 For multi-binary plugins, prefer extracting these commands into `hooks/install-binaries.sh` and `hooks/uninstall-binaries.sh` (see the `codexis`, `cdx-sk`, `ares`, `cdx-at`, `cdx-cz-psp`, `cdx-cz-spp` plugins). Those scripts default `TARGET_BIN_DIR` to `${HOME}/.local/bin` and can be overridden via the `TARGET_BIN_DIR` env var if a different prefix is needed.

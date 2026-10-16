@@ -133,9 +133,9 @@ cdxctl automation create \
 
 # Create a COMMAND automation
 cdxctl automation create-command \
-    --title "Tracked Documents Check" \
+    --title "Watched Legislation Alerts" \
     --repeat WEEKLY --day-part MORNING --days-of-week 1 \
-    --command "cdx-sledovane-dokumenty check"
+    --command "turboleal-cli -o json alerts list --unacknowledged"
 
 # Update (partial - only the flags you pass change; enabled is untouched)
 cdxctl automation update <id> --title "New Title"

@@ -1,6 +1,6 @@
 """Shared fixtures for codexis unit tests.
 
-Adds both core libs (sledovana_judikatura_core, sledovane_dokumenty_core) to
+Adds the sledovana_judikatura_core lib to
 sys.path and isolates filesystem state per test by monkeypatching APP_DIR.
 """
 
@@ -24,17 +24,3 @@ def judikatura_app_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(state, "APP_DIR", str(target))
     return target
 
-
-@pytest.fixture
-def dokumenty_app_dir(tmp_path, monkeypatch):
-    """Redirect sledovane-dokumenty state I/O to a tmp directory.
-
-    Also redirects GROUPS_PATH so group ops land in the same tmp.
-    """
-    from sledovane_dokumenty_core import state
-
-    target = tmp_path / "sledovane-dokumenty"
-    target.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(state, "APP_DIR", str(target))
-    monkeypatch.setattr(state, "GROUPS_PATH", str(target / "groups.json"))
-    return target

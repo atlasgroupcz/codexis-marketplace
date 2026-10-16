@@ -1,7 +1,7 @@
 {
   "name": "codexis",
   "iconPath": "icon.svg",
-  "version": "2.9.2",
+  "version": "3.0.0",
   "description": "CODEXIS legal database API access for Czech, Slovak, and EU legislation, case law, legal literature, and contract templates",
   "author": {
     "name": "ATLAS GROUP",
@@ -46,6 +46,7 @@
   "components": "./components",
   "env": {
     "CODEXIS_PLUGIN_BASE_URL": "https://app.codexis.cz",
-    "CODEXIS_PLUGIN_API_URL": "https://app.codexis.cz"
+    "CODEXIS_PLUGIN_API_URL": "https://app.codexis.cz",
+    "CODEXIS_PLUGIN_TURBOLEAL_API_URL": "https://turboleal-profidata-main.onprem.agrp.dev"
   }
 }

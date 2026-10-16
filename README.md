@@ -16,7 +16,7 @@ Example (`codexis`):
 plugins/codexis/
 ├── bin/
 │   ├── cdx-cli
-│   └── cdx-sledovane-dokumenty
+│   └── cdxctl
 └── src/
     ├── build.sh
     └── cdx-cli/

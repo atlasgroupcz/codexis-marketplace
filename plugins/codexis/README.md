@@ -25,7 +25,7 @@ Odborné publikace a komentáře LIBERIS k jednotlivým zákonům - pro hlubší
 - **Daně a účetnictví** - volitelné monitorové pluginy pro daňové a účetní dotazy kombinují předpisy, judikaturu a výkladovou praxi.
 - **Příprava dokumentů** - při tvorbě smluv nebo právních podání máte okamžitý přístup k aktuálnímu znění předpisů.
 - **Kontrola souladu** - ověříte, zda váš postup nebo dokument odpovídá platné legislativě.
-- **Sledování změn legislativy** - komponenta „Sledované dokumenty" vám umožní sledovat změny u vybraných právních předpisů, nebo si nechat hlídat složku se smlouvami ve svém projektu a legislativu, na kterou odkazují.
+- **Sledování změn legislativy** - sledované dokumenty (Turboleal) hlídají zákony a paragrafy podle vašeho zadání nebo nahraných smluv a upozorní na jejich změny.
 - **Sledování judikatury** - komponenta „Sledovaná judikatura" hlídá nová rozhodnutí k tématu, které si zvolíte, a posílá pravidelný report o trendech.
 
 ## Součásti pluginu
@@ -34,22 +34,21 @@ Odborné publikace a komentáře LIBERIS k jednotlivým zákonům - pro hlubší
 Hlavní funkce - fulltextové vyhledávání napříč všemi zdroji CODEXIS. Výsledky obsahují přímé odkazy do databáze.
 
 ### Sledované dokumenty
-Interaktivní komponenta se dvěma režimy:
-
-- **Sledování předpisů** - vyberete konkrétní právní předpisy a dozvíte se o jejich změnách.
-- **Sledování složky v projektu** - vyberete některý ze svých projektů a v něm složku s dokumenty (nebo celý projekt). Smlouvy ve formátu `.docx`, `.pdf` či `.txt` plugin projde, vytěží z nich, na kterou legislativu odkazují, a dál hlídá změny právě těch předpisů. Nemusíte tedy vědět dopředu, co všechno hlídat, a nový dokument ve složce se přidá sám.
-
-Upozornění chodí do aplikace. E-mail je ve výchozím stavu vypnutý, zapnout ho
-a přidat další adresáty můžete v nastavení doplňku.
+Hlídání legislativy v Turbolealu. Popíšete, čím se zabýváte, nebo nahrajete
+smlouvy a interní předpisy a Turboleal z nich sám dohledá zákony a paragrafy,
+které se vás týkají. Když se některý změní, chystá se změna nebo přibude nový
+paragraf, dostanete upozornění v aplikaci i e-mailem. V chatu se můžete zeptat,
+co se ve sledované legislativě mění a od kdy. Pro propojení vložte osobní API
+klíč z Turbolealu v aplikaci „Turboleal - API klíč".
 
 ### Sledovaná judikatura
 Interaktivní komponenta pro dlouhodobé sledování judikatury k tématu. Popíšete, co vás zajímá („nová judikatura k okamžitému zrušení pracovního poměru"), plugin téma rozdělí na podoblasti, postaví výchozí analýzu současného přístupu soudů a pak v pravidelných intervalech reportuje, co se změnilo. Report se přizpůsobí vaší profesi a preferovanému formátu.
 
 ### CLI nástroje
 Plugin při instalaci přidává `cdx-cli` jako hlavní CLI a instaluje také
-`cdxctl` pro správu platformy, `cdx-sledovane-dokumenty` pro správu
-sledovaných dokumentů a složek projektů a `cdx-sledovana-judikatura` pro správu
-sledovaných témat judikatury.
+`cdxctl` pro správu platformy, `turboleal-cli` pro sledované dokumenty
+(Turboleal) a `cdx-sledovana-judikatura` pro správu sledovaných témat
+judikatury.
 
 ### Správa platformy (cdxctl)
 Nástroj pro pokročilé uživatele - správa automatizací (pravidelné úlohy), marketplace pluginů a extrakce dat z dokumentů do strukturované tabulky.

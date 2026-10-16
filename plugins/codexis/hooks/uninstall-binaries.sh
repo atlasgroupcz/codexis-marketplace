@@ -12,6 +12,8 @@ remove_path() {
 
 remove_path "${TARGET_BIN_DIR}/cdx-cli"
 remove_path "${TARGET_BIN_DIR}/cdx-sledovane-dokumenty"
+remove_path "${TARGET_BIN_DIR}/turboleal-cli"
+remove_path "${TURBOLEAL_LIB_DIR:-${HOME}/.local/lib/turboleal}"
 remove_path "${TARGET_BIN_DIR}/cdx-sledovana-judikatura"
 remove_path "${TARGET_BIN_DIR}/cdxctl"
 remove_path "${HOME}/.local/share/codexis"
@@ -21,3 +23,4 @@ rm -f "${TARGET_BIN_DIR}"/.cdx-cli.tmp.* 2>/dev/null || true
 rm -f "${TARGET_BIN_DIR}"/.cdx-sledovane-dokumenty.tmp.* 2>/dev/null || true
 rm -f "${TARGET_BIN_DIR}"/.cdx-sledovana-judikatura.tmp.* 2>/dev/null || true
 rm -f "${TARGET_BIN_DIR}"/.cdxctl.tmp.* 2>/dev/null || true
+rm -f "${TARGET_BIN_DIR}"/.turboleal-cli.tmp.* 2>/dev/null || true

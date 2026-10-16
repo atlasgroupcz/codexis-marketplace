@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/../../../shared/scripts/component-build.sh"
 
-build_component sledovane-dokumenty
+build_component turboleal
 build_component sledovana-judikatura
 
 echo "Completed component build: $(basename "$PLUGIN_DIR")"
