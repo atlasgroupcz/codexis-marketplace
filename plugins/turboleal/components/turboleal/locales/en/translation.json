@@ -1,0 +1,26 @@
+{
+  "app": {
+    "loadFailed": "Could not load the settings.",
+    "saveFailed": "Saving failed.",
+    "leadConnected": "The assistant works with your Turboleal watch sets and alerts.",
+    "leadIdle": "Paste an API key and the assistant can reach your Turboleal watch sets.",
+    "saved": "API key saved.",
+    "deleted": "API key deleted.",
+    "overridden": "The key comes from {{source}} and overrides the stored one.",
+    "connectionSection": "Connection"
+  },
+  "connection": {
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "remove": "Remove",
+    "confirmRemove": "Really remove?",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "settings": {
+    "placeholder": "api-key-...",
+    "getKey": "Where do I get an API key?",
+    "getKeyHint": "In Turboleal, open API klíče in the sidebar and create a new key.",
+    "label": "Paste your Turboleal API key"
+  }
+}

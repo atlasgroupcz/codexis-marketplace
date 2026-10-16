@@ -1,0 +1,26 @@
+{
+  "app": {
+    "loadFailed": "Nastavenia sa nepodarilo načítať.",
+    "saveFailed": "Uloženie sa nepodarilo.",
+    "leadConnected": "Asistent pracuje s vašimi sledovanými sadami a upozorneniami v Turbolealu.",
+    "leadIdle": "Vložte API kľúč a asistent sa dostane k vašim sledovaným sadám v Turbolealu.",
+    "saved": "API kľúč uložený.",
+    "deleted": "API kľúč zmazaný.",
+    "overridden": "Kľúč je nastavený premennou {{source}} a má prednosť pred uloženým.",
+    "connectionSection": "Pripojenie"
+  },
+  "connection": {
+    "connected": "Pripojené",
+    "notConnected": "Nepripojené",
+    "remove": "Odobrať",
+    "confirmRemove": "Naozaj odobrať?",
+    "save": "Uložiť",
+    "saving": "Ukladám..."
+  },
+  "settings": {
+    "placeholder": "api-key-...",
+    "getKey": "Kde získam API kľúč?",
+    "getKeyHint": "V Turbolealu otvorte v bočnom paneli API klíče a vytvorte nový kľúč.",
+    "label": "Vložte API kľúč z Turbolealu"
+  }
+}
