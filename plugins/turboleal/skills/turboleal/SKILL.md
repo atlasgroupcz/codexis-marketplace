@@ -197,7 +197,7 @@ you need everything.
 chat "Sources" panel automatically. Turboleal answers link only to Turboleal:
 each alert to its `turbolealUrl` (opens that alert), never the bare `/alerts`
 page, and never to CODEXIS (app.codexis.cz, next.codexis.cz), e.g.
-[Upozornění v Turbolealu – zákon č. 586/1992 Sb., § 38g](<turbolealUrl>).
+[Upozornění v Turbolealu - zákon č. 586/1992 Sb., § 38g](<turbolealUrl>).
 
 ### Rules
 

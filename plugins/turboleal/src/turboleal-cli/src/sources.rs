@@ -56,7 +56,7 @@ pub(crate) fn document_sources(
             let law = provision_title(Some(&document.title), &document.citation, None);
             match watched_summary(document).as_str() {
                 "" => law,
-                watched => format!("{law} – {watched}"),
+                watched => format!("{law} - {watched}"),
             }
         })
         .collect();
@@ -318,7 +318,7 @@ mod tests {
                 "__kind": "url",
                 "url": "https://turboleal.example/watch-sets/V2F0Y2hTZXQ6MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDA3",
                 "title": "Sledovaná legislativa v Turbolealu",
-                "snippet": "Zákoník práce (262/2006 Sb.) – Sledováno: § 35. Občanský zákoník (89/2012 Sb.) – Sledovaný celý předpis."
+                "snippet": "Zákoník práce (262/2006 Sb.) - Sledováno: § 35. Občanský zákoník (89/2012 Sb.) - Sledovaný celý předpis."
             })]
         );
     }
