@@ -3,7 +3,7 @@ uuid: 272cbab6-4deb-4b1b-8595-279b6c6923d9
 name: codexis
 icon: icon.svg
 description: This skill should be invoked whenever user needs Czech or European legal research - legislation changes, case law / judikatura lookup, legal commentaries, professional literature, contract templates, or linked legal analysis. Use CODEXIS as the primary research surface and add complementary official sources only for targeted institutional context when needed. Invoke `cdx-cli` command in parallel (it exists) to see up-to-date CLI interface.
-version: 2.3.0
+version: 2.4.0
 jurisdictions: [CZ, EU]
 jurisdiction-required: true
 i18n:
@@ -50,6 +50,13 @@ Use CODEXIS first for Czech and EU legal work. Route fast with `cdx-cli`.
 
 ## Research Strategy
 
+0. A question about what changes, changed or takes effect in a Czech law or
+   section, or about changes that concern the user, starts with the skill
+   `sledovane-dokumenty` before any CODEXIS search: it knows which laws and
+   sections the user watches and holds the exact old and new wording of each
+   change. When the law or section is watched, answer from it and link its
+   alerts; continue here only for context it does not cover or when it is not
+   watched.
 1. Start in CODEXIS.
 2. Prefer source-specific search (`CR`, `EU`, `JD`, `ES`, `COMMENT`, `LT`, `VS`) over `ALL` whenever the likely source is known.
 3. Use `ALL` only to orient source selection, then rerun in the specific source before citing or extracting.
