@@ -1,0 +1,23 @@
+{
+  "id": "turboleal",
+  "title": "Turboleal - API klíč",
+  "icon": "icon.svg",
+  "route": "turboleal",
+  "description": "Nastavení osobního API klíče pro přístup k Turbolealu.",
+  "entrypoint": "index.html",
+  "binary": "turboleal-cgi",
+  "i18n": {
+    "cs": {
+      "displayName": "Turboleal - API klíč",
+      "description": "Vložte osobní API klíč vytvořený v Turbolealu (API klíče) a odemkněte práci se sledovanými sadami a upozorněními."
+    },
+    "en": {
+      "displayName": "Turboleal - API key",
+      "description": "Paste your personal API key created in Turboleal (API klíče) to work with your watch sets and alerts."
+    },
+    "sk": {
+      "displayName": "Turboleal - API kľúč",
+      "description": "Vložte osobný API kľúč vytvorený v Turbolealu (API klíče) a odomknite prácu so sledovanými sadami a upozorneniami."
+    }
+  }
+}

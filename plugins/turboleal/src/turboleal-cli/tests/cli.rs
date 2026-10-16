@@ -1,4 +1,6 @@
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 
 use assert_cmd::Command;
 use mockito::{Matcher, Server};
@@ -7,15 +9,53 @@ use predicates::prelude::*;
 const WATCH_SET: &str = "0199e7a4-3c2f-7b8e-9a1d-5f3c2e8b4a10";
 const SECOND_WATCH_SET: &str = "0199e7a4-3c2f-7b8e-9a1d-5f3c2e8b4a0f";
 
-fn turboleal(server: &Server) -> Command {
+const API_KEY: &str = "api-key-AbCdEfGhIjKlMnOpQrSt";
+
+fn isolated(home: &Path) -> Command {
     let mut command = Command::cargo_bin("turboleal-cli").unwrap();
-    command.env_remove("CODEXIS_USER_API_TOKEN").args([
-        "--api-url",
-        &server.url(),
-        "--token",
-        "test-token",
-    ]);
     command
+        .env_remove("TURBOLEAL_API_KEY")
+        .env_remove("CODEXIS_PLUGIN_TURBOLEAL_API_URL")
+        .env("CODEXIS_PUBLIC_USER_HOME", home)
+        .env("HOME", home);
+    command
+}
+
+fn turboleal(server: &Server) -> Command {
+    let mut command = isolated(&tempfile_dir());
+    command.args(["--api-url", &server.url(), "--api-key", "test-token"]);
+    command
+}
+
+fn me_mock(server: &mut Server, key: &str) -> mockito::Mock {
+    server
+        .mock("GET", "/api/v1/me")
+        .match_header("authorization", format!("Bearer {key}").as_str())
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"id":"00000000-0000-0000-0000-000000000001","email":"jan@atlasgroup.cz","name":"Jan"}"#)
+        .create()
+}
+
+fn fake_cdxctl(directory: &Path) -> std::path::PathBuf {
+    let bin = directory.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    let script = bin.join("cdxctl");
+    fs::write(
+        &script,
+        format!(
+            "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\n",
+            directory.join("cdxctl.log").display()
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o755)).unwrap();
+    bin
+}
+
+fn store_key(home: &Path, key: &str) {
+    let apps = home.join(".cdx").join("apps").join("turboleal");
+    fs::create_dir_all(&apps).unwrap();
+    fs::write(apps.join(".env"), format!("TURBOLEAL_API_KEY={key}\n")).unwrap();
 }
 
 fn watch_set_json(id: &str, name: &str) -> String {
@@ -140,13 +180,14 @@ fn alerts_get_prints_json_when_asked() {
 }
 
 #[test]
-fn unauthorized_response_explains_the_token() {
+fn unauthorized_response_explains_how_to_get_an_api_key() {
     let mut server = Server::new();
     server.mock("GET", "/api/v1/me").with_status(401).create();
 
     turboleal(&server).arg("me").assert().failure().stderr(
         predicate::str::contains("HTTP 401")
-            .and(predicate::str::contains("CODEXIS_USER_API_TOKEN")),
+            .and(predicate::str::contains("API klíče"))
+            .and(predicate::str::contains("turboleal-cli auth login")),
     );
 }
 
@@ -167,21 +208,21 @@ fn validation_problem_lists_the_invalid_fields() {
 }
 
 #[test]
-fn api_commands_need_a_token() {
-    Command::cargo_bin("turboleal-cli")
-        .unwrap()
-        .env_remove("CODEXIS_USER_API_TOKEN")
-        .arg("me")
+fn api_commands_without_a_key_point_to_the_api_keys_page() {
+    isolated(&tempfile_dir())
+        .args(["--api-url", "https://turboleal.example", "me"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("no access token"));
+        .stderr(
+            predicate::str::contains("no Turboleal API key").and(predicate::str::contains(
+                "https://turboleal.example/api-keys",
+            )),
+        );
 }
 
 #[test]
-fn completions_work_without_a_token() {
-    Command::cargo_bin("turboleal-cli")
-        .unwrap()
-        .env_remove("CODEXIS_USER_API_TOKEN")
+fn completions_work_without_a_key() {
+    isolated(&tempfile_dir())
         .args(["completions", "zsh"])
         .assert()
         .success()
@@ -196,23 +237,126 @@ fn tempfile_dir() -> std::path::PathBuf {
 }
 
 #[test]
-fn runtime_token_from_environment_is_sent_once_as_bearer() {
+fn the_shared_codexis_token_is_never_sent() {
     let mut server = Server::new();
-    let me = server
-        .mock("GET", "/api/v1/me")
-        .match_header("authorization", "Bearer runtime-jwt")
-        .with_status(200)
-        .with_header("content-type", "application/json")
-        .with_body(r#"{"id":"00000000-0000-0000-0000-000000000001","email":"jan@atlasgroup.cz","name":"Jan"}"#)
-        .create();
+    let me = me_mock(&mut server, API_KEY);
+    let home = tempfile_dir();
+    store_key(&home, API_KEY);
 
-    Command::cargo_bin("turboleal-cli")
-        .unwrap()
-        .env("CODEXIS_USER_API_TOKEN", "Bearer runtime-jwt")
+    isolated(&home)
+        .env("CODEXIS_USER_API_TOKEN", "shared-jwt")
         .env("CODEXIS_PLUGIN_TURBOLEAL_API_URL", server.url())
         .args(["-o", "json", "me"])
         .assert()
         .success()
         .stdout(predicate::str::contains("jan@atlasgroup.cz"));
     me.assert();
+}
+
+#[test]
+fn the_environment_key_wins_over_the_saved_one() {
+    let mut server = Server::new();
+    let me = me_mock(&mut server, "api-key-from-env");
+    let home = tempfile_dir();
+    store_key(&home, API_KEY);
+
+    isolated(&home)
+        .env("TURBOLEAL_API_KEY", "api-key-from-env")
+        .args(["--api-url", &server.url(), "me"])
+        .assert()
+        .success();
+    me.assert();
+}
+
+#[test]
+fn auth_login_verifies_the_key_from_stdin_and_saves_it_through_cdxctl() {
+    let mut server = Server::new();
+    let me = me_mock(&mut server, API_KEY);
+    let home = tempfile_dir();
+    let bin = fake_cdxctl(&home);
+
+    isolated(&home)
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+        .args(["--api-url", &server.url(), "auth", "login"])
+        .write_stdin(format!("{API_KEY}\n"))
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Saved API key api-key-AbCd…")
+                .and(predicate::str::contains("Jan <jan@atlasgroup.cz>"))
+                .and(predicate::str::contains("EfGh").not()),
+        );
+
+    me.assert();
+    assert_eq!(
+        fs::read_to_string(home.join("cdxctl.log")).unwrap(),
+        format!("appenv turboleal set TURBOLEAL_API_KEY {API_KEY}\n")
+    );
+}
+
+#[test]
+fn auth_login_does_not_save_a_key_turboleal_rejects() {
+    let mut server = Server::new();
+    server.mock("GET", "/api/v1/me").with_status(401).create();
+    let home = tempfile_dir();
+    let bin = fake_cdxctl(&home);
+
+    isolated(&home)
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+        .args(["--api-url", &server.url(), "auth", "login", API_KEY])
+        .assert()
+        .failure()
+        .stderr(
+            predicate::str::contains("rejected the API key")
+                .and(predicate::str::contains("EfGh").not()),
+        );
+
+    assert!(!home.join("cdxctl.log").exists());
+}
+
+#[test]
+fn auth_status_reports_the_masked_key_and_the_user() {
+    let mut server = Server::new();
+    let me = me_mock(&mut server, API_KEY);
+    let home = tempfile_dir();
+    store_key(&home, API_KEY);
+
+    isolated(&home)
+        .args(["--api-url", &server.url(), "-o", "json", "auth", "status"])
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains(r#""maskedKey": "api-key-AbCd…""#)
+                .and(predicate::str::contains(r#""email": "jan@atlasgroup.cz""#))
+                .and(predicate::str::contains("EfGh").not()),
+        );
+    me.assert();
+}
+
+#[test]
+fn auth_status_without_a_key_fails_with_the_api_keys_link() {
+    isolated(&tempfile_dir())
+        .args(["--api-url", "https://turboleal.example", "auth", "status"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "https://turboleal.example/api-keys",
+        ));
+}
+
+#[test]
+fn auth_logout_deletes_the_saved_key_through_cdxctl() {
+    let home = tempfile_dir();
+    let bin = fake_cdxctl(&home);
+
+    isolated(&home)
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+        .args(["auth", "logout"])
+        .assert()
+        .success();
+
+    assert_eq!(
+        fs::read_to_string(home.join("cdxctl.log")).unwrap(),
+        "appenv turboleal delete TURBOLEAL_API_KEY\n"
+    );
 }

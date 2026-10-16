@@ -41,7 +41,9 @@ pub fn dispatch(client: &ApiClient, output: &Output, command: Command) -> Result
             })
         }
         Command::Alerts(command) => alerts::run(client, output, command),
-        Command::Completions { .. } => unreachable!("completions run without an API client"),
+        Command::Auth(_) | Command::Completions { .. } => {
+            unreachable!("auth and completions run without an API client")
+        }
     }
 }
 

@@ -13,18 +13,13 @@ pub struct Cli {
         long,
         global = true,
         env = "CODEXIS_PLUGIN_TURBOLEAL_API_URL",
-        default_value = "https://turboleal.cdx.agrp.dev"
+        default_value = crate::config::DEFAULT_API_URL
     )]
     pub api_url: String,
 
-    /// Keycloak access token (realm atlasgroup); the CODEXIS runtime injects it.
-    #[arg(
-        long,
-        global = true,
-        env = "CODEXIS_USER_API_TOKEN",
-        hide_env_values = true
-    )]
-    pub token: Option<String>,
+    /// Turboleal API key (api-key-...); defaults to TURBOLEAL_API_KEY, then the key saved by `auth login`.
+    #[arg(long, global = true)]
+    pub api_key: Option<String>,
 
     /// Output format.
     #[arg(short, long, global = true, value_enum, default_value_t = OutputFormat::Table)]
@@ -42,6 +37,9 @@ pub enum OutputFormat {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Manage the Turboleal API key this tool uses.
+    #[command(subcommand)]
+    Auth(AuthCommand),
     /// Show the signed-in user.
     Me,
     /// Manage watch sets.
@@ -66,6 +64,19 @@ pub enum Command {
         /// Shell to generate completions for.
         shell: Shell,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum AuthCommand {
+    /// Check that an API key is set and Turboleal accepts it; the key itself is never printed.
+    Status,
+    /// Verify an API key against Turboleal and save it for later runs.
+    Login {
+        /// The API key; omit it or pass - to read it from standard input.
+        key: Option<String>,
+    },
+    /// Forget the saved API key.
+    Logout,
 }
 
 #[derive(Debug, Args)]

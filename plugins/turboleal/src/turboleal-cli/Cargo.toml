@@ -1,6 +1,6 @@
 [package]
 name = "turboleal-cli"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 license = "PROPRIETARY"
 
@@ -11,6 +11,10 @@ path = "src/lib.rs"
 [[bin]]
 name = "turboleal-cli"
 path = "src/main.rs"
+
+[[bin]]
+name = "turboleal-cgi"
+path = "src/cgi_main.rs"
 
 [dependencies]
 anyhow = "1"
@@ -23,10 +27,13 @@ serde_json = "1"
 thiserror = "2"
 uuid = { version = "1", features = ["serde"] }
 walkdir = "2"
-cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client"] }
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "env-file", "app-env"] }
+cdx-cgi = { path = "../../../../shared/rust/cdx-cgi" }
 
 [dev-dependencies]
 assert_cmd = "2"
 mockito = "1"
 predicates = "3"
+tempfile = "3"
+cdx-common = { path = "../../../../shared/rust/cdx-common", default-features = false, features = ["reqwest-client", "env-file", "app-env", "test-support"] }
 uuid = { version = "1", features = ["v4"] }

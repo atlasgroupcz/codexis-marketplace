@@ -1,7 +1,7 @@
 {
   "name": "turboleal",
   "iconPath": "icon.svg",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Turboleal legislation watch - watch sets from a brief and documents, watched Czech laws and sections, references and change alerts",
   "author": {
     "name": "ATLAS GROUP",
@@ -16,7 +16,7 @@
   ],
   "license": "PROPRIETARY",
   "env": {
-    "CODEXIS_PLUGIN_TURBOLEAL_API_URL": "https://turboleal.cdx.agrp.dev"
+    "CODEXIS_PLUGIN_TURBOLEAL_API_URL": "https://turboleal-profidata-main.onprem.agrp.dev"
   },
   "tags": [
     "legal",
@@ -51,5 +51,6 @@
   "postInstall": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
   "postUninstall": "bash \"${PLUGIN_DIR}/hooks/uninstall-binaries.sh\"",
   "onUpdate": "bash \"${PLUGIN_DIR}/hooks/install-binaries.sh\"",
-  "skills": "./skills"
+  "skills": "./skills",
+  "components": "./components"
 }

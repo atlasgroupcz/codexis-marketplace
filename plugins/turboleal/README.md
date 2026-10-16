@@ -5,6 +5,24 @@ nahrajete smlouvy a interní předpisy, a Turboleal pomocí AI najde zákony a
 paragrafy, které se vás týkají. Každé dvě hodiny je kontroluje v CODEXIS a při
 novele, zrušení nebo chystané změně vytvoří upozornění.
 
+## Nastavení
+
+Doplněk potřebuje váš osobní API klíč z Turbolealu:
+
+1. V Turbolealu otevřete v postranním panelu **API klíče** a vytvořte nový klíč.
+2. Otevřete aplikaci **Turboleal - API klíč**, vložte klíč a uložte ho - klíč se
+   hned ověří.
+
+Klíč můžete vložit i přímo do konverzace, asistent ho ověří a uloží za vás. Klíč
+je osobní, asistent tak vidí jen vaše sledované sady. Ukládá se přes platformu
+(`cdxctl`), doplněk sám do souboru s klíčem nezapisuje. V Turbolealu ho můžete
+kdykoli zneplatnit.
+
+## Součásti pluginu
+
+### Turboleal - API klíč (aplikace)
+Vložení, ověření a odebrání osobního API klíče.
+
 ## Co v něm najdete?
 
 ### Sledované sady

@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: Turboleal legislation watch for Czech law. Use when the user wants to watch legislation relevant to their business, contracts or internal rules, see which laws and sections a watch set tracks and why, upload documents to a watch set, or read and acknowledge alerts about amended, upcoming, removed or repealed sections. Triggers on "turboleal", "hlídač legislativy", "sledovaná sada", "hlídej legislativu", "upozornění na změnu zákona", "co se změnilo v zákonech, které sleduji".
-version: 1.0.0
+version: 1.1.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -31,11 +31,43 @@ i18n:
 
 # Turboleal - legislation watch
 
-One tool - **`turboleal-cli`** - talks to the Turboleal API as the signed-in user.
-The runtime provides the API URL and the user's token, so never pass `--token`
-or `--api-url` yourself. Do not call `curl` or other tools against Turboleal.
+One tool - **`turboleal-cli`** - talks to the Turboleal API as the user, with
+the user's personal Turboleal API key. Never pass `--api-key` or `--api-url`
+yourself. Do not call `curl` or other tools against Turboleal.
 
 Always add `-o json` and read the result with `jq`.
+
+## API key
+
+Before the first Turboleal command in a conversation, run:
+
+```bash
+turboleal-cli -o json auth status
+```
+
+It succeeds when a key is saved and Turboleal accepts it (the key is shown
+masked as `api-key-AbCd…`). When it fails:
+
+1. Ask the user to create a key in Turboleal: open
+   https://turboleal-profidata-main.onprem.agrp.dev/api-keys (sidebar
+   **API klíče**), create a key and copy it. The key starts with `api-key-` and
+   is shown only once.
+2. Tell them they can either save it themselves in the app
+   **Turboleal - API klíč**, or paste it into the chat.
+3. When they paste it, save it without echoing it, then confirm with the masked
+   key from the output:
+
+   ```bash
+   turboleal-cli -o json auth login <<'EOF'
+   api-key-...
+   EOF
+   ```
+
+   `auth login` checks the key with Turboleal before saving it. Never repeat the
+   key in your reply, never write it to a file and never put it on a command
+   line other than this heredoc.
+
+`turboleal-cli auth logout` forgets the saved key, only when the user asks.
 
 ## How Turboleal works
 
@@ -87,7 +119,7 @@ Lists are paged; pass `--all` when you need everything.
 
 - Deleting a watch set or a file is irreversible: confirm with the user first and
   name what will be deleted.
-- Stop on an `ERROR:` line and report it. HTTP 401 means the user's session token
-  is missing or expired.
+- Stop on an `error:` line and report it. HTTP 401 means the API key is missing,
+  revoked or invalid: follow **API key** above to get a new one.
 - Answer in the user's language and cite laws as in the output (`262/2006 Sb.`,
   `§ 52`).

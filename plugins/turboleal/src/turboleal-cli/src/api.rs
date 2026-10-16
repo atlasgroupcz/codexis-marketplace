@@ -12,7 +12,7 @@ use crate::model::{Alert, Document, File, Me, Page, Reference, WatchSet, WatchSe
 
 #[derive(Debug, thiserror::Error)]
 pub enum ApiError {
-    #[error("invalid API URL or token: {0}")]
+    #[error("invalid API URL or API key: {0}")]
     Config(String),
     #[error("request failed: {0}")]
     Transport(#[from] reqwest::Error),
@@ -48,7 +48,10 @@ impl fmt::Display for Problem {
         if self.status == StatusCode::UNAUTHORIZED.as_u16() {
             write!(
                 formatter,
-                "\n  hint: the access token is missing or expired (--token / CODEXIS_USER_API_TOKEN)"
+                "\n  hint: the Turboleal API key is missing, revoked or invalid. Create one in Turboleal \
+                 (API klíče) and save it with `turboleal-cli auth login`.\n  \
+                 nápověda: API klíč Turbolealu chybí nebo byl zneplatněn. Vytvořte nový v Turbolealu \
+                 (API klíče) a uložte ho přes `turboleal-cli auth login`."
             )?;
         }
         Ok(())
@@ -79,14 +82,14 @@ pub struct ApiClient {
 }
 
 impl ApiClient {
-    pub fn new(api_url: &str, token: &str) -> ApiResult<Self> {
+    pub fn new(api_url: &str, api_key: &str) -> ApiResult<Self> {
         let mut headers = HeaderMap::new();
-        let token = token.trim();
-        let token = token
+        let api_key = api_key.trim();
+        let api_key = api_key
             .strip_prefix("Bearer ")
-            .or_else(|| token.strip_prefix("bearer "))
-            .unwrap_or(token);
-        let mut authorization = HeaderValue::from_str(&format!("Bearer {token}"))
+            .or_else(|| api_key.strip_prefix("bearer "))
+            .unwrap_or(api_key);
+        let mut authorization = HeaderValue::from_str(&format!("Bearer {api_key}"))
             .map_err(|error| ApiError::Config(error.to_string()))?;
         authorization.set_sensitive(true);
         headers.insert(AUTHORIZATION, authorization);
