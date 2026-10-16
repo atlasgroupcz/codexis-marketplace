@@ -310,7 +310,9 @@ fn alerts_get_attaches_the_codexis_section_and_the_alert_to_the_chat() {
         .success()
         .stdout(predicate::str::contains(
             r#""codexisUrl": "https://app.codexis.cz/doc/CR26785#paragraf2""#,
-        ));
+        ))
+        .stdout(predicate::str::contains(r#""turbolealUrl": "http"#))
+        .stdout(predicate::str::contains("/alerts?alerts="));
 
     published.assert();
 }

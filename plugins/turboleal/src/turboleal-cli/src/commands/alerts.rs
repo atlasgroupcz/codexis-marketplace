@@ -17,9 +17,13 @@ pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result
             page,
         } => {
             let acknowledged = unacknowledged.then_some(false);
-            let alerts = collect(&page, |after, limit| {
+            let mut alerts = collect(&page, |after, limit| {
                 client.alerts(watch_set, acknowledged, after, limit)
             })?;
+            alerts
+                .items
+                .iter_mut()
+                .for_each(|alert| link(client, alert));
             publish_sources(client, &alerts.items);
             output.print(&alerts, |page| {
                 print(&page.items);
@@ -27,7 +31,8 @@ pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result
             })
         }
         AlertCommand::Get { id } => {
-            let alert = client.alert(id)?;
+            let mut alert = client.alert(id)?;
+            link(client, &mut alert);
             publish_sources(client, std::slice::from_ref(&alert));
             output.print(&alert, print_detail)
         }
@@ -42,6 +47,10 @@ pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result
             })
         }
     }
+}
+
+fn link(client: &ApiClient, alert: &mut Alert) {
+    alert.turboleal_url = sources::alert_page_url(client.app_url(), alert.id);
 }
 
 /// Cites the alerts in the chat; the law names come from the watch sets'

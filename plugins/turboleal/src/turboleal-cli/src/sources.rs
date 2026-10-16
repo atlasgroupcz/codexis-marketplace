@@ -197,6 +197,7 @@ mod tests {
             diff: None,
             diff_markdown: None,
             codexis_url: codexis_url.map(str::to_owned),
+            turboleal_url: None,
             references: vec![],
             acknowledged_at: None,
         }

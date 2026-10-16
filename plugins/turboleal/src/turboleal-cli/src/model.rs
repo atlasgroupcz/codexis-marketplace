@@ -102,6 +102,8 @@ pub struct Alert {
     pub diff_markdown: Option<String>,
     #[serde(default)]
     pub codexis_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turboleal_url: Option<String>,
     pub references: Vec<Reference>,
     pub acknowledged_at: Option<String>,
 }
