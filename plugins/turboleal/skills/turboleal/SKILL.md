@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: "This skill should be invoked when the user asks about changes in the legislation they watch in Turboleal: what changed or takes effect in their watch sets or watched laws and sections (\"co se změnilo v tom, co sleduji\", \"v našich sadách\", \"co nabude účinnosti do konce roku\"), what changes in a specific law or section (\"co se mění v § 38g zákona o daních z příjmů\", \"jaké změny čekají zákoník práce\", \"mění se § 52 zákoníku práce?\"), whether something new concerns them, their company or employees (\"týká se nás něco nového\"), their change alerts, and creating or changing watch sets. Invoke it first for these, before codexis and sledovane-dokumenty: it checks whether the law or section is watched and then has the exact old and new wording of the change. Only when Turboleal says the law is not watched do general questions about it belong to codexis."
-version: 1.3.0
+version: 1.3.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -54,6 +54,16 @@ past tense, conditional or adjective in the first or second person:
 | „pokud jste myslel/a“, „jste měla“ | „Pokud máte na mysli …“, „Máte k dispozici …“ |
 | „abyste dostal/a“, „byl/a byste rád/a“ | „Upozornění přijde e-mailem.“, „Chcete …?“ |
 | „jsem rád“, „jsem si jistá“ | „Rádi pomůžeme.“ or leave it out |
+
+The short status line before each tool call is the same: present tense or a
+noun phrase, never the first-person past tense and never „abych“.
+
+| Never | Instead |
+| --- | --- |
+| „Načítám upozornění, abych zjistil …“ | „Načítám upozornění.“ |
+| „abych našel“, „abych zjistila“ | „Ověřuji sledované paragrafy.“ |
+| „Našel jsem 15 upozornění, teď …“ | „Nalezeno 15 upozornění. Načítám znění změn.“ |
+| „Podívala jsem se do sad.“ | „Kontrola sledovaných sad.“ |
 
 - Answer in the user's language, Czech by default. Factual, plain, short
   paragraphs. Lead with the substance: what changes, from when, what it means
@@ -120,7 +130,9 @@ What the user can ask you, for example:
 
 ## When Turboleal is not connected
 
-If the key check fails, tell the user in plain words:
+If a Turboleal call fails because the key is missing or invalid (the error
+message says „API klíč Turbolealu chybí nebo byl zneplatněn“ or „Turboleal
+není připojený“), tell the user in plain words:
 
 1. Otevřete [Turboleal - API klíče](https://turboleal-profidata-main.onprem.agrp.dev/api-keys)
    a klikněte na **Vytvořit klíč**. Klíč si zkopírujte, zobrazí se jen jednou.
@@ -141,14 +153,12 @@ library in a `script` program (below), never with `alerts list` chains,
 
 ### Key
 
-Before the first Turboleal command in a conversation:
-
-```bash
-turboleal-cli -o json auth status
-```
-
-It succeeds when a key is saved and Turboleal accepts it. When the user pastes
-a key, save it without echoing it:
+Never check the key up front: no separate `auth status` before a question.
+Start with the `script` program or the command that answers the question;
+when the key is missing or invalid it fails with a clear Czech message, and
+only then follow **When Turboleal is not connected**. Run
+`turboleal-cli -o json auth status` only when the user asks whether Turboleal
+is connected. When the user pastes a key, save it without echoing it:
 
 ```bash
 turboleal-cli -o json auth login <<'EOF'
@@ -194,9 +204,10 @@ you need everything.
 ### Reading alerts: one `script` program per question
 
 The plugin installs a library at `~/.local/lib/turboleal/turboleal.cjs`. Use it
-ONLY from the `script` tool, with ONE program per question. It reads the
-same key, fetches all pages, maps law names, filters on its own side and
-queues every returned alert for the chat "Sources" panel.
+ONLY from the `script` tool, with ONE program per question: no overview
+program followed by a detail program. It reads the same key, fetches all
+pages, maps law names and filters on its own side. Only the alerts you pass to
+`t.cite` reach the chat "Sources" panel.
 
 A `script` program may import only `node:` builtins, written in single
 quotes, so load the library with `createRequire`. Every program starts and
@@ -208,13 +219,16 @@ ends like this:
     const t = createRequire(import.meta.url)(homedir() + '/.local/lib/turboleal/turboleal.cjs')
 
     export default async function () {
-      // ... t.watched / t.alerts ...
+      // ... t.watched / t.alerts, then t.summarize / t.detail ...
+      t.cite(result)
       await t.flushSources()
       return result
     }
 
-`await t.flushSources()` before `return` is mandatory: without it the
-Turboleal links never reach the Sources panel.
+`t.cite(items)` with exactly the alerts the program returns, then
+`await t.flushSources()` before `return`, are mandatory: without them the
+Turboleal links never reach the Sources panel. Never cite alerts you fetched
+but do not return.
 
 The library:
 
@@ -233,19 +247,27 @@ The library:
   `alerts ack`) and `overview`: up to six `changes` (`deleted` or `inserted`
   with `text`, `changed` with `before` and `after`, each with `where` such as
   "odst. 3 písm. a)", texts cut to about 200 characters), `more` (changes not
-  listed), `renumbered` (renumbering and reference-only edits) and
-  `renumberingOnly`.
+  listed), `renumbered` (each renumbered paragraph as `before` and `after`,
+  e.g. "odst. 5" -> "odst. 3"), `referencesOnly` (how many edits only change
+  cross-references) and `renumberingOnly`. A deleted or inserted paragraph
+  includes its letters and points in its `text`.
 - `t.detail(alert)`: the summary plus `fullOverview` (every paragraph, same
   item kinds plus `renumbered` and `referencesOnly`) and `diffMarkdown` (an
   older alert carries a unified diff there instead). Only for the few alerts you explain word for word.
+- `t.cite(items)`: queues the Turboleal pages of the given alerts, summaries
+  or details (one or an array) for the Sources panel and returns them
+  unchanged. `t.flushSources()` sends only what was cited.
 - `t.alert(id)`, `t.me()`, `t.watchSets()`, `t.documents(watchSetId)`.
 
 Rules:
 
 - Return compact results only: `summarize` for lists, `detail` only for one
-  or a few chosen alerts, never raw alerts or whole documents. First the
-  compact list, then, if the user wants the exact wording, a second program
-  with `detail` for the chosen ones.
+  or a few relevant alerts, never raw alerts or whole documents.
+- One program answers the question. When the question names a section or a
+  topic, the same program already adds `t.detail` for the few matching alerts
+  (up to about three), and `summarize` for the rest. A second program only
+  for a follow-up question from the user.
+- Return only the alerts the answer is about, and cite exactly those.
 - A question about a specific law or section ("Co se mění v § 38g zákona o
   daních z příjmů?") starts with `t.watched`. Watched: answer from its alerts
   with links. Not watched: say "Tento paragraf ve sledovaných sadách není."
@@ -267,7 +289,7 @@ Rules:
         return {
           law, section,
           watchedIn: watched.map((w) => w.watchSetName),
-          alerts: alerts.map((a) => t.summarize(a))
+          alerts: t.cite(alerts.map((a) => (alerts.length <= 3 ? t.detail(a) : t.summarize(a))))
         }
       }))
       await t.flushSources()
@@ -287,17 +309,37 @@ Rules:
         t.alerts({ unacknowledged: true, effectiveTo: new Date().getFullYear() + '-12-31' }),
         t.alerts({ detectedFrom: day(-7) })
       ])
-      await t.flushSources()
-      return {
+      const result = {
         byYearEnd: byYearEnd.map((a) => t.summarize(a)),
         lastWeek: lastWeek.map((a) => t.summarize(a))
       }
+      t.cite([...result.byYearEnd, ...result.lastWeek])
+      await t.flushSources()
+      return result
     }
 
 "Do konce roku" includes what is already in force; tell the two apart by
 `inForce`.
 
-#### 3. The exact wording of chosen alerts
+#### 3. A topic: the matching alerts with their wording
+
+    import { createRequire } from 'node:module'
+    import { homedir } from 'node:os'
+
+    const t = createRequire(import.meta.url)(homedir() + '/.local/lib/turboleal/turboleal.cjs')
+
+    export default async function () {
+      const PROVISIONS = [['262/2006', '35'], ['262/2006', '52']]
+      const alerts = (await Promise.all(
+        PROVISIONS.map(([law, section]) => t.alerts({ law, section, unacknowledged: true }))
+      )).flat()
+      const result = alerts.map((a) => (alerts.length <= 3 ? t.detail(a) : t.summarize(a)))
+      t.cite(result)
+      await t.flushSources()
+      return result
+    }
+
+#### 4. Follow-up: the exact wording of alerts from an earlier answer
 
     import { createRequire } from 'node:module'
     import { homedir } from 'node:os'
@@ -307,8 +349,9 @@ Rules:
     export default async function () {
       const IDS = ['<id from the summary>', '<id from the summary>']
       const alerts = await Promise.all(IDS.map((id) => t.alert(id)))
+      const result = t.cite(alerts.map((a) => t.detail(a)))
       await t.flushSources()
-      return alerts.map((a) => t.detail(a))
+      return result
     }
 
 A failed call throws an error whose message says what went wrong; a 401
@@ -343,11 +386,18 @@ means the key is missing or invalid (see **When Turboleal is not connected**).
 `{++new++}` was inserted. Hard rules:
 
 - Read every change in `overview`; when `more` is above zero or you quote the
-  wording, read `fullOverview` and `diffMarkdown` from `t.detail`. Describe
-  every deleted and every inserted passage; none may be left out.
+  wording, read `fullOverview` and `diffMarkdown` from `t.detail` (in the same
+  program). Describe every deleted and every inserted passage; none may be
+  left out.
+- Name every deleted and every inserted paragraph by its number from
+  `overview` (`where`), each one: "Vypouští se odst. 3, 4 a 10." Never merge
+  two of them into one, skip one or infer the numbers from the renumbering.
+  `renumbered` gives the old and new number of the paragraphs that stay
+  ("Dosavadní odst. 5 až 9 se označují jako odst. 3 až 7.").
 - A deleted or an inserted paragraph, letter or point is a substantive change,
   never "technická změna". Say what it said or says ("Vypouští se odst. 3 a 4
-  o limitu 420 000 Kč u osobního automobilu.").
+  o limitu 420 000 Kč u osobního automobilu a odst. 10 s definicí vybraného
+  osobního automobilu.").
 - A changed amount, deadline, condition or wording is a substantive change;
   quote it as "Dosud: „…“. Nově: „…“."
 - Renumbering alone (`renumbered`, `referencesOnly`, `renumberingOnly`) is not
@@ -358,8 +408,9 @@ means the key is missing or invalid (see **When Turboleal is not connected**).
 
 ### Chat sources
 
-`t.alerts` and `t.alert` queue the Turboleal page of every returned alert (up
-to 50) and `await t.flushSources()` sends them to the chat "Sources" panel.
+`t.cite` queues the Turboleal page of each alert the program returns (up to
+50) and `await t.flushSources()` sends only those to the chat "Sources" panel.
+Fetching alerts alone publishes nothing.
 Turboleal answers link only to Turboleal: each alert to its `turbolealUrl`
 (opens that alert), never the bare `/alerts` page, and never to CODEXIS
 (app.codexis.cz, next.codexis.cz), e.g.

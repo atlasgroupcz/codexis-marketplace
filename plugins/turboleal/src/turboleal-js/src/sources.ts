@@ -45,18 +45,32 @@ function authorization(token: string): string {
   return parts.length === 3 && parts.every(Boolean) && !token.includes(" ") ? `Bearer ${token}` : token
 }
 
+const known = new Map<string, SourceEntry>()
 const pending = new Map<string, SourceEntry>()
 
-/** Queues Turboleal pages for the chat "Sources" panel until `flushSources`. */
-export function cite(entries: SourceEntry[]): void {
-  for (const value of entries) {
+/** Records fetched Turboleal pages so that `cite` can name them. */
+export function remember(entries: SourceEntry[]): void {
+  for (const value of entries) known.set(value.url, value)
+}
+
+export type Citable = { turbolealUrl: string }
+
+/**
+ * Queues the Turboleal pages of the given alerts, summaries or details for the
+ * chat "Sources" panel until `flushSources`; returns its argument unchanged.
+ */
+export function cite<T extends Citable | Citable[]>(items: T): T {
+  for (const item of Array.isArray(items) ? items : [items]) {
+    const value = known.get(item.turbolealUrl)
+    if (!value || pending.has(value.url)) continue
     if (pending.size >= SOURCES_CAP) break
-    if (!pending.has(value.url)) pending.set(value.url, value)
+    pending.set(value.url, value)
   }
+  return items
 }
 
 /**
- * Sends the queued sources; call it once at the end of the program, the script
+ * Sends the cited sources, nothing else; call it once at the end of the program, the script
  * runner exits without waiting for the event loop. Best effort: never throws,
  * at most a line on stderr.
  */

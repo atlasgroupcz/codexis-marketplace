@@ -1,4 +1,6 @@
 import { describe, expect, it } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { compactOverview, diffOverview } from "./diff"
 
 describe("diffOverview", () => {
@@ -82,7 +84,7 @@ describe("compactOverview", () => {
 
     const compact = compactOverview(overview)
 
-    expect(compact?.renumbered).toBe(1)
+    expect(compact?.renumbered).toEqual([{ before: "odst. 4", after: "odst. 3" }])
     expect(compact?.more).toBe(0)
     expect(compact?.changes.map((change) => change.kind)).toEqual(["deleted", "inserted"])
     const inserted = compact?.changes[1]
@@ -97,6 +99,27 @@ describe("compactOverview", () => {
 
     expect(compact?.changes).toHaveLength(6)
     expect(compact?.more).toBe(2)
+  })
+
+  it("lists every deleted paragraph of § 72 ZDPH with its letters and each renumbering", () => {
+    const compact = compactOverview(diffOverview(readFileSync(join(import.meta.dir, "fixtures", "zdph-72-2027.md"), "utf8")))
+
+    expect(compact?.changes.map((change) => `${change.kind} ${change.where}`)).toEqual([
+      "deleted odst. 3",
+      "deleted odst. 4",
+      "deleted odst. 10",
+      "deleted poznámka 78)",
+    ])
+    expect(compact?.changes[0]).toMatchObject({ text: expect.stringContaining("a) částka 420 000 Kč") })
+    expect(compact?.more).toBe(0)
+    expect(compact?.renumbered).toEqual([
+      { before: "odst. 5", after: "odst. 3" },
+      { before: "odst. 6", after: "odst. 4" },
+      { before: "odst. 7", after: "odst. 5" },
+      { before: "odst. 8", after: "odst. 6" },
+      { before: "odst. 9", after: "odst. 7" },
+    ])
+    expect(compact?.renumberingOnly).toBe(false)
   })
 
   it("has nothing to say without a diff", () => {

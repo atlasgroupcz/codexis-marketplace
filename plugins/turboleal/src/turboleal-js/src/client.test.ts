@@ -192,7 +192,8 @@ describe("summarize", () => {
       overview: {
         changes: [{ kind: "inserted", where: "odst. 6", text: "(6) Nový odstavec." }],
         more: 0,
-        renumbered: 0,
+        renumbered: [],
+        referencesOnly: 0,
         renumberingOnly: false,
       },
     })

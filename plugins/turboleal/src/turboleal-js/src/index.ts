@@ -4,7 +4,8 @@ export { detail, summarize, Turboleal, TurbolealError } from "./client"
 export type { Alert, AlertQuery, Detail, Document, Me, Summary, SummaryOptions, Watched, WatchedQuery, WatchSet } from "./client"
 export { compactOverview, diffOverview } from "./diff"
 export type { CompactChange, CompactOverview, DiffItem, DiffOverview } from "./diff"
-export { flushSources } from "./sources"
+export { cite, flushSources } from "./sources"
+export type { Citable } from "./sources"
 
 let shared: Turboleal | undefined
 

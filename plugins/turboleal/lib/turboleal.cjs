@@ -40,6 +40,7 @@ __export(exports_src, {
   configure: () => configure,
   compactOverview: () => compactOverview,
   client: () => client,
+  cite: () => cite,
   alerts: () => alerts,
   alert: () => alert,
   TurbolealError: () => TurbolealError,
@@ -202,19 +203,28 @@ function compactOverview(overview) {
   if (!overview)
     return null;
   const changes = [];
-  let renumbered = 0;
+  const renumbered = [];
+  let referencesOnly = 0;
   for (const item of overview.items) {
-    if (item.kind === "renumbered" || item.kind === "changed" && item.referencesOnly)
-      renumbered++;
-    else if (item.kind === "changed") {
-      changes.push({ kind: "changed", where: item.where, before: clip(item.before), after: clip(item.after) });
-    } else
-      changes.push({ kind: item.kind, where: item.where, text: clip(item.text) });
+    if (item.kind === "renumbered")
+      renumbered.push({ before: item.before, after: item.after });
+    else if (item.kind === "changed" && item.referencesOnly)
+      referencesOnly++;
+    else if (item.kind === "changed")
+      changes.push({ kind: "changed", where: item.where, before: item.before, after: item.after });
+    else {
+      const parent = [...changes].reverse().find((change) => change.kind === item.kind && change.where !== null && item.where?.startsWith(`${change.where} `));
+      if (parent && parent.kind !== "changed")
+        parent.text = `${parent.text} ${item.text}`;
+      else
+        changes.push({ kind: item.kind, where: item.where, text: item.text });
+    }
   }
   return {
-    changes: changes.slice(0, COMPACT_CHANGES),
+    changes: changes.slice(0, COMPACT_CHANGES).map((change) => change.kind === "changed" ? { ...change, before: clip(change.before), after: clip(change.after) } : { ...change, text: clip(change.text) }),
     more: Math.max(0, changes.length - COMPACT_CHANGES),
     renumbered,
+    referencesOnly,
     renumberingOnly: overview.renumberingOnly
   };
 }
@@ -311,14 +321,22 @@ function authorization(token) {
   const parts = token.split(".");
   return parts.length === 3 && parts.every(Boolean) && !token.includes(" ") ? `Bearer ${token}` : token;
 }
+var known = new Map;
 var pending = new Map;
-function cite(entries2) {
-  for (const value of entries2) {
+function remember(entries2) {
+  for (const value of entries2)
+    known.set(value.url, value);
+}
+function cite(items) {
+  for (const item of Array.isArray(items) ? items : [items]) {
+    const value = known.get(item.turbolealUrl);
+    if (!value || pending.has(value.url))
+      continue;
     if (pending.size >= SOURCES_CAP)
       break;
-    if (!pending.has(value.url))
-      pending.set(value.url, value);
+    pending.set(value.url, value);
   }
+  return items;
 }
 async function flushSources() {
   const entries2 = [...pending.values()];
@@ -411,19 +429,18 @@ class Turboleal {
     const effective = range(query.effectiveFrom, query.effectiveTo);
     const detected = range(query.detectedFrom, query.detectedTo);
     const alerts = raw.map((alert) => this.alertOf(alert, titles)).filter((alert) => !law || matchesLaw(law, alert.citation, alert.lawTitle)).filter((alert) => !section || alert.label !== null && sectionKey(alert.label) === section).filter((alert) => !query.types || query.types.includes(alert.type)).filter((alert) => inRange(alert.effectiveFrom, effective)).filter((alert) => inRange(pragueDate(alert.detectedAt), detected)).sort((left, right) => (left.effectiveFrom ?? "9999").localeCompare(right.effectiveFrom ?? "9999")).slice(0, query.limit ?? Number.POSITIVE_INFINITY);
-    cite(alerts.map(alertSource));
     return alerts;
   }
   async alert(id) {
     const raw = await this.get(`/alerts/${id}`);
     const alert = this.alertOf(raw, await this.titles(new Set([raw.watchSetId])));
-    cite([alertSource(alert)]);
     return alert;
   }
   alertOf(raw, titles) {
     const alert = strip(raw);
     alert.lawTitle = titles.get(alert.documentId) ?? null;
     alert.turbolealUrl = alertPageUrl(this.appUrl, alert.id);
+    remember([alertSource(alert)]);
     return alert;
   }
   async titles(watchSets) {

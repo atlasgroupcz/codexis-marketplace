@@ -10,10 +10,13 @@ export type CompactChange =
   | { kind: "deleted" | "inserted"; where: string | null; text: string }
   | { kind: "changed"; where: string | null; before: string; after: string }
 
+export type Renumbering = { before: string | null; after: string | null }
+
 export type CompactOverview = {
   changes: CompactChange[]
   more: number
-  renumbered: number
+  renumbered: Renumbering[]
+  referencesOnly: number
   renumberingOnly: boolean
 }
 
@@ -138,22 +141,38 @@ function similarity(left: string, right: string): number {
 
 /**
  * The substantive changes only, each passage cut to about 200 characters, at
- * most six of them; renumbering and reference-only edits are just counted.
+ * most six of them; a deleted or inserted paragraph carries its letters and
+ * points. Renumbering is listed as old and new numbers, reference-only edits
+ * are just counted.
  */
 export function compactOverview(overview: DiffOverview | null): CompactOverview | null {
   if (!overview) return null
   const changes: CompactChange[] = []
-  let renumbered = 0
+  const renumbered: Renumbering[] = []
+  let referencesOnly = 0
   for (const item of overview.items) {
-    if (item.kind === "renumbered" || (item.kind === "changed" && item.referencesOnly)) renumbered++
-    else if (item.kind === "changed") {
-      changes.push({ kind: "changed", where: item.where, before: clip(item.before), after: clip(item.after) })
-    } else changes.push({ kind: item.kind, where: item.where, text: clip(item.text) })
+    if (item.kind === "renumbered") renumbered.push({ before: item.before, after: item.after })
+    else if (item.kind === "changed" && item.referencesOnly) referencesOnly++
+    else if (item.kind === "changed") changes.push({ kind: "changed", where: item.where, before: item.before, after: item.after })
+    else {
+      const parent = [...changes]
+        .reverse()
+        .find((change) => change.kind === item.kind && change.where !== null && item.where?.startsWith(`${change.where} `))
+      if (parent && parent.kind !== "changed") parent.text = `${parent.text} ${item.text}`
+      else changes.push({ kind: item.kind, where: item.where, text: item.text })
+    }
   }
   return {
-    changes: changes.slice(0, COMPACT_CHANGES),
+    changes: changes
+      .slice(0, COMPACT_CHANGES)
+      .map((change) =>
+        change.kind === "changed"
+          ? { ...change, before: clip(change.before), after: clip(change.after) }
+          : { ...change, text: clip(change.text) },
+      ),
     more: Math.max(0, changes.length - COMPACT_CHANGES),
     renumbered,
+    referencesOnly,
     renumberingOnly: overview.renumberingOnly,
   }
 }

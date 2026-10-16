@@ -1,7 +1,7 @@
 import { apiKey as storedApiKey, apiUrl as configuredApiUrl } from "./config"
 import { type CompactOverview, compactOverview, type DiffOverview, diffOverview } from "./diff"
 import { alertPageUrl, czechDate, fold, isoDate, pragueDate, provisionTitle, sectionKey, typeLabel } from "./format"
-import { cite, entry, type SourceEntry } from "./sources"
+import { entry, remember, type SourceEntry } from "./sources"
 
 export type Me = { id: string; email: string | null; name: string | null }
 export type WatchSet = { id: string; name: string; brief: string; extractionStatus: string; createdAt: string }
@@ -184,14 +184,12 @@ export class Turboleal {
       .filter((alert) => inRange(pragueDate(alert.detectedAt), detected))
       .sort((left, right) => (left.effectiveFrom ?? "9999").localeCompare(right.effectiveFrom ?? "9999"))
       .slice(0, query.limit ?? Number.POSITIVE_INFINITY)
-    cite(alerts.map(alertSource))
     return alerts
   }
 
   async alert(id: string): Promise<Alert> {
     const raw = await this.get<Record<string, unknown>>(`/alerts/${id}`)
     const alert = this.alertOf(raw, await this.titles(new Set([raw.watchSetId as string])))
-    cite([alertSource(alert)])
     return alert
   }
 
@@ -199,6 +197,7 @@ export class Turboleal {
     const alert = strip(raw) as Alert
     alert.lawTitle = titles.get(alert.documentId) ?? null
     alert.turbolealUrl = alertPageUrl(this.appUrl, alert.id)
+    remember([alertSource(alert)])
     return alert
   }
 
