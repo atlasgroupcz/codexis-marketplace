@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: Turboleal legislation watch for Czech law. Use when the user wants to watch legislation relevant to their business, contracts or internal rules, see which laws and sections a watch set tracks and why, upload documents to a watch set, or read and acknowledge alerts about amended, upcoming, removed or repealed sections. Triggers on "turboleal", "hlídač legislativy", "sledovaná sada", "hlídej legislativu", "upozornění na změnu zákona", "co se změnilo v zákonech, které sleduji".
-version: 1.1.0
+version: 1.1.1
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -114,6 +114,10 @@ Lists are paged; pass `--all` when you need everything.
   in CODEXIS.
 - **Changes**: `alerts list --unacknowledged`, then `alerts get` for the diff and
   amendments. Acknowledge only when the user asks.
+- **What changed**: `alerts get` returns the change in `diffMarkdown`, the section
+  text as Markdown with CriticMarkup: `{--old--}` was deleted, `{++new++}` was
+  inserted. Explain the change from it; do not reconstruct it from CODEXIS. Older
+  alerts may carry a unified `diff` instead.
 
 ## Rules
 

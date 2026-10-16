@@ -95,6 +95,7 @@ pub struct Alert {
     pub detected_at: String,
     pub amendments: Vec<Amendment>,
     pub diff: Option<String>,
+    pub diff_markdown: Option<String>,
     pub references: Vec<Reference>,
     pub acknowledged_at: Option<String>,
 }

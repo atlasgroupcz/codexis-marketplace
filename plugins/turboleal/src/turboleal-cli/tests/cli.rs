@@ -179,6 +179,71 @@ fn alerts_get_prints_json_when_asked() {
         );
 }
 
+const ALERT: &str = "0199e7a4-3c2f-7b8e-9a1d-5f3c2e8b4a12";
+
+fn alert_mock(server: &mut Server, diff: &str, diff_markdown: &str) -> mockito::Mock {
+    server
+        .mock("GET", format!("/api/v1/alerts/{ALERT}").as_str())
+        .with_body(format!(
+            r#"{{"id":"{ALERT}","watchSetId":"{WATCH_SET}","type":"AMENDED","documentId":"CR26785",
+            "citation":"89/2012 Sb.","sectionId":"0199e7a4-3c2f-7b8e-9a1d-5f3c2e8b4a13","partId":"paragraf2",
+            "label":"§ 2","effectiveFrom":"2027-01-01","detectedAt":"2026-10-15T12:00:00Z","amendments":[],
+            "diff":{diff},"diffMarkdown":{diff_markdown},"diffHtml":"<p><del>tři</del><ins>pět</ins></p>",
+            "references":[],"acknowledgedAt":null}}"#
+        ))
+        .create()
+}
+
+#[test]
+fn alerts_get_prints_the_markdown_diff() {
+    let mut server = Server::new();
+    alert_mock(
+        &mut server,
+        "null",
+        r#""Lhůta činí {--tři--}{++pět++} dny.""#,
+    );
+
+    turboleal(&server)
+        .args(["alerts", "get", ALERT])
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Lhůta činí {--tři--}{++pět++} dny.")
+                .and(predicate::str::contains("<del>").not()),
+        );
+}
+
+#[test]
+fn alerts_get_keeps_the_markdown_diff_in_json() {
+    let mut server = Server::new();
+    alert_mock(
+        &mut server,
+        "null",
+        r#""Lhůta činí {--tři--}{++pět++} dny.""#,
+    );
+
+    turboleal(&server)
+        .args(["-o", "json", "alerts", "get", ALERT])
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains(r#""diffMarkdown": "Lhůta činí {--tři--}{++pět++} dny.""#)
+                .and(predicate::str::contains("diffHtml").not()),
+        );
+}
+
+#[test]
+fn alerts_get_falls_back_to_the_legacy_diff() {
+    let mut server = Server::new();
+    alert_mock(&mut server, r#""```diff\n-old\n+new\n```""#, "null");
+
+    turboleal(&server)
+        .args(["alerts", "get", ALERT])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("-old\n+new").and(predicate::str::contains("```").not()));
+}
+
 #[test]
 fn unauthorized_response_explains_how_to_get_an_api_key() {
     let mut server = Server::new();

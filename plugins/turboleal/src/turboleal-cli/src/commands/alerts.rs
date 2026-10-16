@@ -75,7 +75,9 @@ fn print_detail(alert: &Alert) {
             .collect();
         println!("Amended by: {}", amendments.join(", "));
     }
-    if let Some(diff) = &alert.diff {
+    if let Some(diff_markdown) = &alert.diff_markdown {
+        println!("\n{}", diff_markdown.trim_end());
+    } else if let Some(diff) = &alert.diff {
         println!(
             "\n{}",
             diff.trim_start_matches("```diff\n")
