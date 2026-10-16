@@ -79,8 +79,6 @@ pub enum Command {
 
 #[derive(Debug, Subcommand)]
 pub enum AuthCommand {
-    /// Check that an API key is set and Turboleal accepts it; the key itself is never printed.
-    Status,
     /// Verify an API key against Turboleal and save it for later runs.
     Login {
         /// The API key; omit it or pass - to read it from standard input.

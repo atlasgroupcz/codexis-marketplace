@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: "This skill should be invoked when the user asks about changes in the legislation they watch in Turboleal: what changed or takes effect in their watch sets or watched laws and sections (\"co se změnilo v tom, co sleduji\", \"v našich sadách\", \"co nabude účinnosti do konce roku\"), what changes in a specific law or section (\"co se mění v § 38g zákona o daních z příjmů\", \"jaké změny čekají zákoník práce\", \"mění se § 52 zákoníku práce?\"), whether something new concerns them, their company or employees (\"týká se nás něco nového\"), their change alerts, and creating or changing watch sets. Invoke it first for these, before codexis and sledovane-dokumenty: it checks whether the law or section is watched and then has the exact old and new wording of the change. Only when Turboleal says the law is not watched do general questions about it belong to codexis."
-version: 1.3.1
+version: 1.3.2
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -153,12 +153,10 @@ library in a `script` program (below), never with `alerts list` chains,
 
 ### Key
 
-Never check the key up front: no separate `auth status` before a question.
-Start with the `script` program or the command that answers the question;
-when the key is missing or invalid it fails with a clear Czech message, and
-only then follow **When Turboleal is not connected**. Run
-`turboleal-cli -o json auth status` only when the user asks whether Turboleal
-is connected. When the user pastes a key, save it without echoing it:
+Never check the key up front. Start with the `script` program or the command
+that answers the question; when the key is missing or invalid it fails with a
+clear Czech message, and only then follow **When Turboleal is not connected**.
+When the user pastes a key, save it without echoing it:
 
 ```bash
 turboleal-cli -o json auth login <<'EOF'

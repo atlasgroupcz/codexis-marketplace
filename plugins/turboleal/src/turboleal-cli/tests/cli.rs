@@ -478,36 +478,6 @@ fn auth_login_does_not_save_a_key_turboleal_rejects() {
 }
 
 #[test]
-fn auth_status_reports_the_masked_key_and_the_user() {
-    let mut server = Server::new();
-    let me = me_mock(&mut server, API_KEY);
-    let home = tempfile_dir();
-    store_key(&home, API_KEY);
-
-    isolated(&home)
-        .args(["--api-url", &server.url(), "-o", "json", "auth", "status"])
-        .assert()
-        .success()
-        .stdout(
-            predicate::str::contains(r#""maskedKey": "api-key-AbCd…""#)
-                .and(predicate::str::contains(r#""email": "jan@atlasgroup.cz""#))
-                .and(predicate::str::contains("EfGh").not()),
-        );
-    me.assert();
-}
-
-#[test]
-fn auth_status_without_a_key_fails_with_the_api_keys_link() {
-    isolated(&tempfile_dir())
-        .args(["--api-url", "https://turboleal.example", "auth", "status"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "https://turboleal.example/api-keys",
-        ));
-}
-
-#[test]
 fn auth_logout_deletes_the_saved_key_through_cdxctl() {
     let home = tempfile_dir();
     let bin = fake_cdxctl(&home);

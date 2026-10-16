@@ -33,7 +33,7 @@ pub fn run(cli: Cli) -> Result<()> {
             );
             Ok(())
         }
-        Command::Auth(command) => auth(&cli.api_url, cli.api_key.as_deref(), &output, command),
+        Command::Auth(command) => auth(&cli.api_url, &output, command),
         command => {
             let key = config::resolve_api_key(cli.api_key.as_deref())
                 .ok_or_else(|| anyhow!(missing_key_hint(&cli.api_url)))?;
@@ -43,24 +43,8 @@ pub fn run(cli: Cli) -> Result<()> {
     }
 }
 
-fn auth(api_url: &str, flag: Option<&str>, output: &Output, command: AuthCommand) -> Result<()> {
+fn auth(api_url: &str, output: &Output, command: AuthCommand) -> Result<()> {
     match command {
-        AuthCommand::Status => {
-            let status = settings::status(api_url, flag).map_err(|error| match error {
-                SettingsError::NotConfigured => anyhow!(missing_key_hint(api_url)),
-                SettingsError::Rejected(_) => anyhow!("{error}\n{}", missing_key_hint(api_url)),
-                other => other.into(),
-            })?;
-            output.print(&status, |status| {
-                println!(
-                    "API key {} ({})",
-                    field(status, "maskedKey"),
-                    field(status, "keySource")
-                );
-                println!("Signed in as {}", user(&status["user"]));
-                println!("Turboleal {}", field(status, "apiUrl"));
-            })
-        }
         AuthCommand::Login { key } => {
             let key = match key.filter(|key| key != "-") {
                 Some(key) => key,
