@@ -78,6 +78,7 @@ struct PageQuery {
 
 pub struct ApiClient {
     http: Client,
+    app: String,
     base: String,
 }
 
@@ -98,10 +99,16 @@ impl ApiClient {
             .default_headers(headers)
             .timeout(Duration::from_secs(120))
             .build()?;
+        let app = api_url.trim().trim_end_matches('/').to_owned();
         Ok(Self {
             http,
-            base: format!("{}/api/v1", api_url.trim_end_matches('/')),
+            base: format!("{app}/api/v1"),
+            app,
         })
+    }
+
+    pub fn app_url(&self) -> &str {
+        &self.app
     }
 
     pub fn me(&self) -> ApiResult<Me> {

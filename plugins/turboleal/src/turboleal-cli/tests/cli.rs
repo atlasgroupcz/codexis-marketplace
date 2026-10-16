@@ -16,6 +16,10 @@ fn isolated(home: &Path) -> Command {
     command
         .env_remove("TURBOLEAL_API_KEY")
         .env_remove("CODEXIS_PLUGIN_TURBOLEAL_API_URL")
+        .env_remove("CODEXIS_PUBLIC_DAEMON_URL")
+        .env_remove("CODEXIS_PUBLIC_SESSION_ID")
+        .env_remove("CODEXIS_PUBLIC_TOOL_CALL_ID")
+        .env_remove("CODEXIS_PUBLIC_SUBAGENT_RUN_ID")
         .env("CODEXIS_PUBLIC_USER_HOME", home)
         .env("HOME", home);
     command
@@ -242,6 +246,102 @@ fn alerts_get_falls_back_to_the_legacy_diff() {
         .assert()
         .success()
         .stdout(predicate::str::contains("-old\n+new").and(predicate::str::contains("```").not()));
+}
+
+fn in_chat(command: &mut Command, home: &Path, daemon: &Server) {
+    let secret = home.join(".cdx").join("env");
+    fs::create_dir_all(&secret).unwrap();
+    fs::write(secret.join("secret"), "Bearer daemon-token").unwrap();
+    command
+        .env("HOME", home)
+        .env("CODEXIS_PUBLIC_DAEMON_URL", daemon.url())
+        .env("CODEXIS_PUBLIC_SESSION_ID", "chat-1")
+        .env("CODEXIS_PUBLIC_TOOL_CALL_ID", "call-1");
+}
+
+fn alert_with_codexis_link(server: &mut Server) {
+    server
+        .mock("GET", format!("/api/v1/alerts/{ALERT}").as_str())
+        .with_body(format!(
+            r#"{{"id":"{ALERT}","watchSetId":"{WATCH_SET}","type":"AMENDED","documentId":"CR26785",
+            "citation":"89/2012 Sb.","sectionId":"0199e7a4-3c2f-7b8e-9a1d-5f3c2e8b4a13","partId":"paragraf2",
+            "label":"§ 2","effectiveFrom":"2027-01-01","detectedAt":"2026-10-15T12:00:00Z","amendments":[],
+            "diffMarkdown":"x","codexisUrl":"https://app.codexis.cz/doc/CR26785#paragraf2",
+            "references":[],"acknowledgedAt":null}}"#
+        ))
+        .create();
+}
+
+#[test]
+fn alerts_get_attaches_the_codexis_section_and_the_alert_to_the_chat() {
+    let mut server = Server::new();
+    alert_with_codexis_link(&mut server);
+    server
+        .mock("GET", format!("/api/v1/watch-sets/{WATCH_SET}/documents").as_str())
+        .with_body(
+            r#"[{"documentId":"CR26785","citation":"89/2012 Sb.","title":"Občanský zákoník",
+            "status":"VALID","codexisUrl":"https://app.codexis.cz/doc/CR26785","wholeDocument":true,"sections":[]}]"#,
+        )
+        .create();
+    let published = server
+        .mock(
+            "POST",
+            "/rest/v1/plugin/chats/chat-1/tool-calls/call-1/sources",
+        )
+        .match_header("authorization", "Bearer daemon-token")
+        .match_body(Matcher::PartialJson(serde_json::json!({
+            "sources": [
+                {
+                    "url": "https://app.codexis.cz/doc/CR26785#paragraf2",
+                    "title": "Občanský zákoník (89/2012 Sb.), § 2",
+                    "snippet": "Změna znění (novela). Účinnost od 1. 1. 2027."
+                },
+                { "title": "Upozornění v Turbolealu" }
+            ]
+        })))
+        .create();
+    let home = tempfile_dir();
+    let mut command = turboleal(&server);
+    in_chat(&mut command, &home, &server);
+
+    command
+        .args(["-o", "json", "alerts", "get", ALERT])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#""codexisUrl": "https://app.codexis.cz/doc/CR26785#paragraf2""#,
+        ));
+
+    published.assert();
+}
+
+#[test]
+fn a_failed_source_publish_never_fails_the_command() {
+    let mut server = Server::new();
+    alert_with_codexis_link(&mut server);
+    server
+        .mock(
+            "GET",
+            format!("/api/v1/watch-sets/{WATCH_SET}/documents").as_str(),
+        )
+        .with_status(500)
+        .create();
+    server
+        .mock(
+            "POST",
+            "/rest/v1/plugin/chats/chat-1/tool-calls/call-1/sources",
+        )
+        .with_status(500)
+        .create();
+    let home = tempfile_dir();
+    let mut command = turboleal(&server);
+    in_chat(&mut command, &home, &server);
+
+    command
+        .args(["-o", "json", "alerts", "get", ALERT])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(r#""type": "AMENDED""#));
 }
 
 #[test]

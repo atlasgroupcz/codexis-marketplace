@@ -9,6 +9,7 @@ use crate::api::{ApiClient, ApiResult};
 use crate::cli::{Command, PageArgs, ReferenceCommand};
 use crate::model::{Page, Reference};
 use crate::output::{Output, table, text};
+use crate::sources;
 
 pub fn dispatch(client: &ApiClient, output: &Output, command: Command) -> Result<()> {
     match command {
@@ -49,6 +50,7 @@ pub fn dispatch(client: &ApiClient, output: &Output, command: Command) -> Result
 
 fn documents(client: &ApiClient, output: &Output, watch_set: Uuid) -> Result<()> {
     let documents = client.documents(watch_set)?;
+    sources::publish(&sources::document_sources(&documents, sources::SOURCES_CAP));
     output.print(&documents, |documents| {
         if documents.is_empty() {
             println!("No watched legislation yet.");

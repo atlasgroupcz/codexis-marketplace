@@ -2,8 +2,8 @@
 uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
-description: Turboleal legislation watch for Czech law. Use when the user wants to watch legislation relevant to their business, contracts or internal rules, see which laws and sections a watch set tracks and why, upload documents to a watch set, or read and acknowledge alerts about amended, upcoming, removed or repealed sections. Triggers on "turboleal", "hlídač legislativy", "sledovaná sada", "hlídej legislativu", "upozornění na změnu zákona", "co se změnilo v zákonech, které sleduji".
-version: 1.1.3
+description: "Turboleal: legislation the user or company watches in Turboleal (sledované sady, hlídání legislativy). Prefer over codexis and sledovane-dokumenty for what changes and from when: „co se změnilo v předpisech, které sleduji“, „co se mění v § …“, „týká se nás něco nového“, „nabude účinnosti“, upozornění na změny. Creates watch sets from a brief or documents; says why a section is watched."
+version: 1.1.4
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -187,6 +187,15 @@ you need everything.
 - **Why a section is watched**: `references list` gives each quote and reason.
   `--unlinked` shows citations that matched nothing in CODEXIS.
 - **Acknowledge** (`alerts ack`) only when the user asks.
+
+### Chat sources
+
+`alerts get`, `alerts list` and `documents` attach their sources to the chat
+"Sources" panel automatically: the CODEXIS text of each changed or watched law
+or section, and the alert in Turbolealu. Nothing to do on your side. Cite the
+same links in your answer with human labels, e.g.
+[zákon č. 586/1992 Sb., o daních z příjmů, § 38g](https://app.codexis.cz/doc/...)
+from `codexisUrl`.
 
 ### Rules
 

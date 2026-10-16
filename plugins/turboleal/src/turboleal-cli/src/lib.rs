@@ -5,6 +5,7 @@ pub mod config;
 pub mod model;
 mod output;
 pub mod settings;
+mod sources;
 
 use std::io::Read;
 

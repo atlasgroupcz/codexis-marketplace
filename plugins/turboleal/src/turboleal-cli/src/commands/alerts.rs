@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use anyhow::Result;
 
 use crate::api::ApiClient;
@@ -5,6 +7,7 @@ use crate::cli::AlertCommand;
 use crate::commands::{collect, print_next_cursor, print_references};
 use crate::model::Alert;
 use crate::output::{Output, table, text};
+use crate::sources;
 
 pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result<()> {
     match command {
@@ -17,6 +20,7 @@ pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result
             let alerts = collect(&page, |after, limit| {
                 client.alerts(watch_set, acknowledged, after, limit)
             })?;
+            publish_sources(client, &alerts.items);
             output.print(&alerts, |page| {
                 print(&page.items);
                 print_next_cursor(page.next_cursor);
@@ -24,6 +28,7 @@ pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result
         }
         AlertCommand::Get { id } => {
             let alert = client.alert(id)?;
+            publish_sources(client, std::slice::from_ref(&alert));
             output.print(&alert, print_detail)
         }
         AlertCommand::Ack { id } => {
@@ -37,6 +42,25 @@ pub fn run(client: &ApiClient, output: &Output, command: AlertCommand) -> Result
             })
         }
     }
+}
+
+/// Cites the alerts in the chat; the law names come from the watch sets'
+/// documents, and a failed lookup only leaves a source without the name.
+fn publish_sources(client: &ApiClient, alerts: &[Alert]) {
+    let alerts = &alerts[..alerts.len().min(sources::SOURCES_CAP)];
+    let watch_sets: HashSet<_> = alerts.iter().map(|alert| alert.watch_set_id).collect();
+    let titles: HashMap<String, String> = watch_sets
+        .into_iter()
+        .filter_map(|watch_set| client.documents(watch_set).ok())
+        .flatten()
+        .map(|document| (document.document_id, document.title))
+        .collect();
+    sources::publish(&sources::alert_sources(
+        alerts,
+        &titles,
+        client.app_url(),
+        sources::SOURCES_CAP,
+    ));
 }
 
 fn print(alerts: &[Alert]) {
