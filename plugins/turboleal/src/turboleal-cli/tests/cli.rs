@@ -273,7 +273,7 @@ fn alert_with_codexis_link(server: &mut Server) {
 }
 
 #[test]
-fn alerts_get_attaches_the_codexis_section_and_the_alert_to_the_chat() {
+fn alerts_get_attaches_only_the_turboleal_alert_to_the_chat() {
     let mut server = Server::new();
     alert_with_codexis_link(&mut server);
     server
@@ -292,11 +292,9 @@ fn alerts_get_attaches_the_codexis_section_and_the_alert_to_the_chat() {
         .match_body(Matcher::PartialJson(serde_json::json!({
             "sources": [
                 {
-                    "url": "https://app.codexis.cz/doc/CR26785#paragraf2",
-                    "title": "Občanský zákoník (89/2012 Sb.), § 2",
+                    "title": "Upozornění v Turbolealu: Občanský zákoník (89/2012 Sb.), § 2",
                     "snippet": "Změna znění (novela). Účinnost od 1. 1. 2027."
-                },
-                { "title": "Upozornění v Turbolealu" }
+                }
             ]
         })))
         .create();
@@ -308,9 +306,7 @@ fn alerts_get_attaches_the_codexis_section_and_the_alert_to_the_chat() {
         .args(["-o", "json", "alerts", "get", ALERT])
         .assert()
         .success()
-        .stdout(predicate::str::contains(
-            r#""codexisUrl": "https://app.codexis.cz/doc/CR26785#paragraf2""#,
-        ))
+        .stdout(predicate::str::contains("codexis").not())
         .stdout(predicate::str::contains(r#""turbolealUrl": "http"#))
         .stdout(predicate::str::contains("/alerts?alerts="));
 

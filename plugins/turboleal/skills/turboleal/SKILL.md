@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: "This skill should be invoked whenever the user asks what changes, changed or takes effect in Czech laws or sections (\"co se mění v § …\", \"co se změnilo\", \"nabude účinnosti\", \"do konce roku\") or whether something new concerns them, their company or employees (\"týká se nás něco nového\"), and for watch sets, watched legislation and change alerts. Invoke it first, before codexis and sledovane-dokumenty: Turboleal has the user's watched sections with the exact old and new wording; use codexis afterwards only for extra context."
-version: 1.1.5
+version: 1.1.6
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -193,14 +193,11 @@ you need everything.
 
 ### Chat sources
 
-`alerts get`, `alerts list` and `documents` attach their sources to the chat
-"Sources" panel automatically: the CODEXIS text of each changed or watched law
-or section, and the alert in Turbolealu. Nothing to do on your side. Cite the
-same links in your answer with human labels: link each alert to its
-`turbolealUrl` (opens that alert in Turbolealu, never the bare `/alerts` page)
-and each law or section to its `codexisUrl`, e.g.
-[zákon č. 586/1992 Sb., o daních z příjmů, § 38g](https://app.codexis.cz/doc/...)
-from `codexisUrl`.
+`alerts get`, `alerts list` and `documents` attach their Turboleal pages to the
+chat "Sources" panel automatically. Turboleal answers link only to Turboleal:
+each alert to its `turbolealUrl` (opens that alert), never the bare `/alerts`
+page, and never to CODEXIS (app.codexis.cz, next.codexis.cz), e.g.
+[Upozornění v Turbolealu – zákon č. 586/1992 Sb., § 38g](<turbolealUrl>).
 
 ### Rules
 

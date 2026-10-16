@@ -52,8 +52,6 @@ pub struct Document {
     pub citation: String,
     pub title: String,
     pub status: String,
-    #[serde(default)]
-    pub codexis_url: Option<String>,
     pub whole_document: bool,
     pub sections: Vec<Section>,
 }
@@ -64,8 +62,6 @@ pub struct Section {
     pub id: Uuid,
     pub part_id: Option<String>,
     pub label: Option<String>,
-    #[serde(default)]
-    pub codexis_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,8 +96,6 @@ pub struct Alert {
     pub amendments: Vec<Amendment>,
     pub diff: Option<String>,
     pub diff_markdown: Option<String>,
-    #[serde(default)]
-    pub codexis_url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub turboleal_url: Option<String>,
     pub references: Vec<Reference>,

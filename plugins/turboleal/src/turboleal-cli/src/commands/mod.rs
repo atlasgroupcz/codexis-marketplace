@@ -50,7 +50,11 @@ pub fn dispatch(client: &ApiClient, output: &Output, command: Command) -> Result
 
 fn documents(client: &ApiClient, output: &Output, watch_set: Uuid) -> Result<()> {
     let documents = client.documents(watch_set)?;
-    sources::publish(&sources::document_sources(&documents, sources::SOURCES_CAP));
+    sources::publish(&sources::document_sources(
+        watch_set,
+        &documents,
+        client.app_url(),
+    ));
     output.print(&documents, |documents| {
         if documents.is_empty() {
             println!("No watched legislation yet.");
