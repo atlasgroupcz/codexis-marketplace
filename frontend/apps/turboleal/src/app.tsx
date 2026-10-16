@@ -1,7 +1,7 @@
 import type { ConnectionSectionLabels } from '@workspace/ui/components/connection-section'
 import { ConnectionSection } from '@workspace/ui/components/connection-section'
 import type { ConnState } from '@workspace/ui/components/connection-status'
-import { ConnectionStatus, connStateOf } from '@workspace/ui/components/connection-status'
+import { connStateOf } from '@workspace/ui/components/connection-status'
 import { GroupLabel } from '@workspace/ui/components/settings-dialog'
 import { Skeleton } from '@workspace/ui/components/skeleton'
 import { Toaster, toast } from '@workspace/ui/components/sonner'
@@ -78,11 +78,7 @@ export function App() {
       )}
 
       <section className="border-border rounded-xl border p-5">
-        <GroupLabel
-          icon={KeyRound}
-          className="mb-4"
-          trailing={<ConnectionStatus state={state} labels={labels} />}
-        >
+        <GroupLabel icon={KeyRound} className="mb-4">
           {t('app.connectionSection')}
         </GroupLabel>
         <ConnectionSection

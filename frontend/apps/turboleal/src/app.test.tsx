@@ -74,6 +74,14 @@ describe('App', () => {
 
     expect(await screen.findByText(/api-key-AbCd…/)).toBeTruthy()
     expect(screen.getByText(i18n.t('app.leadConnected'))).toBeTruthy()
+    expect(screen.queryByText(i18n.t('connection.connected'))).toBeNull()
+  })
+
+  it('shows no connection badge without a stored key', async () => {
+    renderApp()
+
+    expect(await screen.findByText(i18n.t('app.leadIdle'))).toBeTruthy()
+    expect(screen.queryByText(i18n.t('connection.notConnected'))).toBeNull()
   })
 
   it('saves the pasted key and reloads the state', async () => {
