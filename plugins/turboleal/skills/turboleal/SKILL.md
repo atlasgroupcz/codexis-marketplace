@@ -2,8 +2,8 @@
 uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
-description: "Invoke FIRST, before codexis and sledovane-dokumenty, when the user asks what changes, changed or takes effect in a Czech law or section (\"co se mění v § 38g ZDP\", \"do konce roku\"), what changed in what they watch, whether something new concerns them, or about watch sets and alerts. Turboleal checks whether it is watched and has the exact wording; if not watched, codexis answers."
-version: 1.3.3
+description: "Use FIRST, before codexis and sledovane-dokumenty, to watch legislation from a file or description (upload: references are extracted automatically) and for what changes, changed or takes effect in a Czech law or § (\"co se mění v § 38g ZDP\"), in what the user watches, or concerns them; watch sets and alerts. It checks if a § is watched and has the exact wording; if not, codexis answers."
+version: 1.3.4
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -378,8 +378,14 @@ means the key is missing or invalid (see **When Turboleal is not connected**).
   `documents` by law with section labels.
 - **Add a topic**: `watch-sets update --brief` with the existing brief plus the
   new topic; never drop the existing text.
-- **Documents**: `files upload`; processing takes minutes. `files list` shows
-  DONE or FAILED (`error` explains a failure; retell it in plain words).
+- **Documents** ("hlídej legislativu z tohoto souboru", a file in the chat or
+  the workspace): `files upload` into the watch set the user names, or create
+  one named after the file. Turboleal extracts the referenced laws and sections
+  itself; there is no manual harvest or extraction step, never offer one and
+  never send the user to sledovane-dokumenty. Processing takes minutes:
+  poll `files list` until DONE or FAILED (`error` explains a failure; retell it
+  in plain words), then summarise `documents` by law with section labels. From
+  then on changes are checked automatically and arrive as alerts.
 - **Why a section is watched**: `references list` gives each quote and reason.
   `--unlinked` shows citations that matched nothing in CODEXIS.
 - **Acknowledge** (`alerts ack`) only when the user asks.
