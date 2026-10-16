@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: "This skill should be invoked whenever the user asks what changes, changed or takes effect in Czech laws or sections (\"co se mění v § …\", \"co se změnilo\", \"nabude účinnosti\", \"do konce roku\") or whether something new concerns them, their company or employees (\"týká se nás něco nového\"), and for watch sets, watched legislation and change alerts. Invoke it first, before codexis and sledovane-dokumenty: Turboleal has the user's watched sections with the exact old and new wording; use codexis afterwards only for extra context."
-version: 1.1.6
+version: 1.2.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -166,10 +166,63 @@ turboleal-cli -o json alerts ack <ALERT_ID>
 `--brief` accepts `@FILE` for a long brief. Lists are paged; pass `--all` when
 you need everything.
 
+### Reading changes: one script instead of many commands
+
+To answer a question about changes, run ONE `node` script with the bundled
+library instead of chaining `alerts list`, `alerts get` and `documents` through
+`jq`. It reads the same key, fetches all pages, maps law names, filters on its
+own side, cites the Turboleal pages in the chat and prints only what you need.
+Keep `turboleal-cli` for `auth`, for writes (create, update, upload, ack,
+delete) and for watch sets, files and references.
+
+- `alerts({ watchSet, unacknowledged, law, section, effectiveFrom, effectiveTo, types })`:
+  alerts with `diffMarkdown`, `lawTitle` and `turbolealUrl`. `law` matches the
+  citation or name ("262/2006", "zakonik prace"), `section` the label ("38g").
+- `changes({ from, to, by: "detected" | "effective", watchSet })`: every change
+  in the watched laws, also outside the watched sections (`watched` false).
+  Dates are inclusive; `from` defaults to a week before `to`, `to` to today.
+- `alert(id)`, `me()`, `watchSets()`, `documents(watchSetId)`.
+- `summarize(item)`: the Czech type, Czech dates, law, section, amending laws,
+  `turbolealUrl` and `diffMarkdown` - print this, not the raw item.
+
+What changed in the last week:
+
+```bash
+node --input-type=module -e "
+import * as t from '$HOME/.local/lib/turboleal/turboleal.mjs'
+const items = await t.changes({ by: 'detected' })
+console.log(JSON.stringify(items.map(t.summarize), null, 1))
+"
+```
+
+What takes effect by the end of the year:
+
+```bash
+node --input-type=module -e "
+import * as t from '$HOME/.local/lib/turboleal/turboleal.mjs'
+const today = new Date()
+const alerts = await t.alerts({ unacknowledged: true, effectiveFrom: today, effectiveTo: today.getFullYear() + '-12-31' })
+console.log(JSON.stringify(alerts.map(t.summarize), null, 1))
+"
+```
+
+What changes in § 38g of the income tax act:
+
+```bash
+node --input-type=module -e "
+import * as t from '$HOME/.local/lib/turboleal/turboleal.mjs'
+const alerts = await t.alerts({ law: '586/1992', section: '38g' })
+console.log(JSON.stringify(alerts.map(t.summarize), null, 1))
+"
+```
+
+A failed call throws an error whose message says what went wrong; a 401 means
+the key is missing or invalid (see **When Turboleal is not connected**).
+
 ### Workflows
 
-- **What changed**: `alerts list --unacknowledged`, then `alerts get` for each
-  relevant alert. Filter by law, section label and `effectiveFrom` yourself to
+- **What changed**: one library script (above). With the CLI only:
+  `alerts list --unacknowledged`, then `alerts get` for each relevant alert. Filter by law, section label and `effectiveFrom` yourself to
   answer "zkušební doba" or "do konce roku"; use `documents` to map the topic to
   sections and to get the law's name.
 - **Reading a change**: `diffMarkdown` is the section text with CriticMarkup:
@@ -193,8 +246,9 @@ you need everything.
 
 ### Chat sources
 
-`alerts get`, `alerts list` and `documents` attach their Turboleal pages to the
-chat "Sources" panel automatically. Turboleal answers link only to Turboleal:
+`alerts get`, `alerts list`, `documents` and the library's `alerts`, `alert`
+and `changes` attach their Turboleal pages to the chat "Sources" panel
+automatically. Turboleal answers link only to Turboleal:
 each alert to its `turbolealUrl` (opens that alert), never the bare `/alerts`
 page, and never to CODEXIS (app.codexis.cz, next.codexis.cz), e.g.
 [Upozornění v Turbolealu - zákon č. 586/1992 Sb., § 38g](<turbolealUrl>).
