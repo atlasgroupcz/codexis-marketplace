@@ -44,12 +44,115 @@ function apiKey() {
   return readEnv(API_KEY_VAR) ?? readEnvVar(envPath(), API_KEY_VAR);
 }
 
+// src/diff.ts
+var INSERTED = /\{\+\+([\s\S]*?)\+\+\}/g;
+var DELETED = /\{--([\s\S]*?)--\}/g;
+var ENUMERATOR = /^(\(\d+[a-z]*\)|[a-z]{1,2}\)|\d+[a-z]*\.)\s*/;
+var REFERENCE = /(§|odst\.|odstavc[eiůích]*|odstavec|písm\.|písmen[eaou]?|bod[uůy]?|čl\.|článk[uůy])\s*(\d+[a-z]*|[a-z]{1,2}\))/g;
+var SIMILAR = 0.6;
+function diffOverview(diffMarkdown) {
+  if (!diffMarkdown)
+    return null;
+  const blocks = diffMarkdown.split(/\n\s*\n/).filter((block) => !block.trimStart().startsWith("#"));
+  const marked = blocks.map((block) => block.includes("{--") || block.includes("{++"));
+  const before = entries(blocks.map((block) => clean(block.replace(INSERTED, "").replace(DELETED, "$1"))));
+  const after = entries(blocks.map((block) => clean(block.replace(DELETED, "").replace(INSERTED, "$1"))));
+  const items = [];
+  const usedBefore = new Set;
+  const usedAfter = new Set;
+  const pair = (old, fresh) => {
+    usedBefore.add(old);
+    usedAfter.add(fresh);
+    if (old.enumerator !== fresh.enumerator && (marked[old.block] || marked[fresh.block])) {
+      items.push({ kind: "renumbered", before: old.where, after: fresh.where, text: fresh.text });
+    }
+  };
+  for (const sameBlock of [true, false]) {
+    for (const old of before) {
+      if (usedBefore.has(old))
+        continue;
+      const fresh = after.find((candidate) => !usedAfter.has(candidate) && candidate.body === old.body && (!sameBlock || candidate.block === old.block));
+      if (fresh)
+        pair(old, fresh);
+    }
+  }
+  for (const old of before) {
+    if (usedBefore.has(old))
+      continue;
+    const fresh = after.find((candidate) => !usedAfter.has(candidate) && candidate.block === old.block);
+    if (fresh && similarity(old.body, fresh.body) >= SIMILAR) {
+      usedBefore.add(old);
+      usedAfter.add(fresh);
+      items.push({
+        kind: "changed",
+        where: fresh.where,
+        before: old.text,
+        after: fresh.text,
+        referencesOnly: neutral(old.text) === neutral(fresh.text)
+      });
+    }
+  }
+  for (const old of before)
+    if (!usedBefore.has(old))
+      items.push({ kind: "deleted", where: old.where, text: old.text });
+  for (const fresh of after)
+    if (!usedAfter.has(fresh))
+      items.push({ kind: "inserted", where: fresh.where, text: fresh.text });
+  items.sort((left, right) => blockOf(left, before, after) - blockOf(right, before, after));
+  const renumberingOnly = items.length > 0 && items.every((item) => item.kind === "renumbered" || item.kind === "changed" && item.referencesOnly);
+  return { items, renumberingOnly };
+}
+function blockOf(item, before, after) {
+  const text = item.kind === "changed" ? item.after : item.text;
+  return (after.find((entry) => entry.text === text) ?? before.find((entry) => entry.text === text))?.block ?? 0;
+}
+function entries(texts) {
+  let paragraph = null;
+  let letter = null;
+  let point = null;
+  const result = [];
+  texts.forEach((text, block) => {
+    if (!text)
+      return;
+    const footnote = /^(\d+)\)\s*/.exec(text);
+    if (footnote) {
+      result.push({ block, text, enumerator: null, body: text.slice(footnote[0].length), where: `poznámka ${footnote[1]})` });
+      return;
+    }
+    const enumerator = ENUMERATOR.exec(text)?.[1] ?? null;
+    if (enumerator?.startsWith("(")) {
+      paragraph = enumerator.slice(1, -1);
+      letter = null;
+      point = null;
+    } else if (enumerator?.endsWith(")")) {
+      letter = enumerator;
+      point = null;
+    } else if (enumerator) {
+      point = enumerator.slice(0, -1);
+    }
+    const where = [paragraph && `odst. ${paragraph}`, letter && `písm. ${letter}`, point && `bod ${point}`].filter(Boolean).join(" ");
+    result.push({ block, text, enumerator, body: text.replace(ENUMERATOR, ""), where: where || null });
+  });
+  return result;
+}
+function clean(text) {
+  return text.replace(/\\([\\`*_{}[\]()#+\-.!])/g, "$1").replace(/\s+/g, " ").trim();
+}
+function neutral(text) {
+  return text.replace(ENUMERATOR, "#").replace(REFERENCE, "$1 #").replace(/\b[a-z]{1,2}\)/g, "#)");
+}
+function similarity(left, right) {
+  const a = new Set(left.toLowerCase().split(/\s+/));
+  const b = new Set(right.toLowerCase().split(/\s+/));
+  const shared = [...a].filter((word) => b.has(word)).length;
+  return shared / Math.max(1, Math.min(a.size, b.size));
+}
+
 // src/format.ts
 var TYPE_LABELS = {
   AMENDED: "změna znění (novela)",
   UPCOMING_AMENDMENT: "připravovaná změna, zatím nenabyla účinnosti",
   ADDED: "nové ustanovení",
-  CHANGED: "změna znění",
   REMOVED: "zrušené ustanovení",
   REPEALED: "zrušený předpis"
 };
@@ -72,9 +175,6 @@ function alertPageUrl(appUrl, alertId) {
   const state = JSON.stringify({ acknowledged: "all", alert: nodeId("Alert", alertId) });
   return `${appUrl.replace(/\/+$/, "")}/alerts?${new URLSearchParams({ alerts: state })}`;
 }
-function watchSetPageUrl(appUrl, watchSetId) {
-  return `${appUrl.replace(/\/+$/, "")}/watch-sets/${nodeId("WatchSet", watchSetId)}`;
-}
 function provisionTitle(law, citation, label) {
   const name = law?.trim() ? `${law.trim()} (${citation})` : citation;
   return label?.trim() ? `${name}, ${label.trim()}` : name;
@@ -83,19 +183,23 @@ function fold(value) {
   return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 function sectionKey(value) {
-  return fold(value).replace(/§|par\.|paragraf/g, "").replace(/\s+/g, "");
+  return fold(value.split(" - ")[0]).replace(/§|par\.|paragraf/g, "").replace(/\s+/g, "");
+}
+var PRAGUE = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit" });
+function pragueDate(value) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))
+    return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : PRAGUE.format(date);
 }
 function isoDate(value) {
-  if (!(value instanceof Date))
-    return value;
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  return value instanceof Date ? pragueDate(value) : value;
 }
 
 // src/sources.ts
 import { readFileSync as readFileSync2 } from "node:fs";
 import { join as join2 } from "node:path";
-var SOURCES_CAP = 20;
+var SOURCES_CAP = 50;
 var SNIPPET_MAX_CHARS = 300;
 var PUBLISH_TIMEOUT_MS = 1e4;
 function entry(url, title, snippet) {
@@ -134,8 +238,8 @@ function authorization(token) {
 }
 var pending = new Map;
 var hooked = false;
-function cite(entries) {
-  for (const value of entries) {
+function cite(entries2) {
+  for (const value of entries2) {
     if (pending.size >= SOURCES_CAP)
       break;
     if (!pending.has(value.url))
@@ -147,10 +251,10 @@ function cite(entries) {
   }
 }
 async function publishSources() {
-  const entries = [...pending.values()];
+  const entries2 = [...pending.values()];
   pending.clear();
   hooked = false;
-  if (entries.length === 0)
+  if (entries2.length === 0)
     return;
   const target = daemon();
   if (!target)
@@ -159,7 +263,7 @@ async function publishSources() {
     const response = await fetch(target.url, {
       method: "POST",
       headers: { Authorization: target.authorization, "Content-Type": "application/json" },
-      body: JSON.stringify({ sources: entries }),
+      body: JSON.stringify({ sources: entries2 }),
       signal: AbortSignal.timeout(PUBLISH_TIMEOUT_MS)
     });
     if (!response.ok)
@@ -213,20 +317,33 @@ class Turboleal {
     }
     return documents;
   }
+  async watched(query = {}) {
+    const law = query.law ? fold(query.law) : undefined;
+    const section = query.section ? sectionKey(query.section) : undefined;
+    const sets = await this.watchSets();
+    const lists = await Promise.all(sets.map((set) => this.documents(set.id)));
+    return sets.flatMap((set, index) => lists[index].filter((document) => !law || matchesLaw(law, document.citation, document.title)).map((document) => ({
+      watchSetId: set.id,
+      watchSetName: set.name,
+      citation: document.citation,
+      title: document.title,
+      wholeDocument: document.wholeDocument,
+      sections: document.sections.flatMap((item) => item.label ? [item.label] : [])
+    })).filter((document) => !section || document.wholeDocument || document.sections.some((label) => sectionKey(label) === section)));
+  }
   async alerts(query = {}) {
     const raw = await this.all("/alerts", {
       watchSetId: query.watchSet,
       acknowledged: query.unacknowledged ? false : undefined
     });
     const titles = await this.titles(new Set(raw.map((alert) => alert.watchSetId)));
-    const alerts = raw.map((alert) => this.alertOf(alert, titles));
     const law = query.law ? fold(query.law) : undefined;
     const section = query.section ? sectionKey(query.section) : undefined;
-    const from = query.effectiveFrom ? isoDate(query.effectiveFrom) : undefined;
-    const to = query.effectiveTo ? isoDate(query.effectiveTo) : undefined;
-    const filtered = alerts.filter((alert) => !law || matchesLaw(law, alert.citation, alert.lawTitle)).filter((alert) => !section || alert.label !== null && sectionKey(alert.label) === section).filter((alert) => !query.types || query.types.includes(alert.type)).filter((alert) => inRange(alert.effectiveFrom, from, to));
-    cite(filtered.map(alertSource));
-    return filtered;
+    const effective = range(query.effectiveFrom, query.effectiveTo);
+    const detected = range(query.detectedFrom, query.detectedTo);
+    const alerts = raw.map((alert) => this.alertOf(alert, titles)).filter((alert) => !law || matchesLaw(law, alert.citation, alert.lawTitle)).filter((alert) => !section || alert.label !== null && sectionKey(alert.label) === section).filter((alert) => !query.types || query.types.includes(alert.type)).filter((alert) => inRange(alert.effectiveFrom, effective)).filter((alert) => inRange(pragueDate(alert.detectedAt), detected)).sort((left, right) => (left.effectiveFrom ?? "9999").localeCompare(right.effectiveFrom ?? "9999"));
+    cite(alerts.map(alertSource));
+    return alerts;
   }
   async alert(id) {
     const raw = await this.get(`/alerts/${id}`);
@@ -234,48 +351,11 @@ class Turboleal {
     cite([alertSource(alert)]);
     return alert;
   }
-  async changes(query = {}) {
-    const [raw, documents] = await Promise.all([
-      this.all("/changes", {
-        from: query.from ? isoDate(query.from) : undefined,
-        to: query.to ? isoDate(query.to) : undefined,
-        by: query.by,
-        watchSetId: query.watchSet
-      }),
-      this.watchedDocuments(query.watchSet)
-    ]);
-    const law = query.law ? fold(query.law) : undefined;
-    const section = query.section ? sectionKey(query.section) : undefined;
-    const changes = raw.map((change) => this.changeOf(change, documents)).filter((change) => !law || matchesLaw(law, change.citation, change.title)).filter((change) => !section || change.caption !== null && sectionKey(change.caption) === section).filter((change) => query.watched === undefined || change.watched === query.watched);
-    cite(this.watchSetSources(changes));
-    return changes;
-  }
   alertOf(raw, titles) {
     const alert = strip(raw);
     alert.lawTitle = titles.get(alert.documentId) ?? null;
     alert.turbolealUrl = alertPageUrl(this.appUrl, alert.id);
     return alert;
-  }
-  changeOf(raw, documents) {
-    const change = strip(raw, ["codexisUrl"]);
-    change.watchSetIds = documents.get(change.documentId) ?? [];
-    const [watchSet] = change.watchSetIds;
-    change.turbolealUrl = watchSet ? watchSetPageUrl(this.appUrl, watchSet) : null;
-    return change;
-  }
-  watchSetSources(changes) {
-    return changes.filter((change) => change.turbolealUrl).map((change) => entry(change.turbolealUrl, "Sledovaná legislativa v Turbolealu"));
-  }
-  async watchedDocuments(watchSet) {
-    const ids = watchSet ? [watchSet] : (await this.watchSets()).map((set) => set.id);
-    const lists = await Promise.all(ids.map((id) => this.documents(id).catch(() => [])));
-    const watched = new Map;
-    lists.forEach((documents, index) => {
-      for (const document of documents) {
-        watched.set(document.documentId, [...watched.get(document.documentId) ?? [], ids[index]]);
-      }
-    });
-    return watched;
   }
   async titles(watchSets) {
     const lists = await Promise.all([...watchSets].filter(Boolean).map((id) => this.documents(id).catch(() => [])));
@@ -323,16 +403,19 @@ async function problem(response) {
   const hint = response.status === 401 ? ` ${UNAUTHORIZED_HINT}` : "";
   return new TurbolealError(`HTTP ${response.status}${detail ? `: ${detail}` : ""}${hint}`, response.status);
 }
-function strip(raw, fields = HIDDEN_FIELDS) {
+function strip(raw) {
   const copy = { ...raw };
-  for (const field of fields)
+  for (const field of HIDDEN_FIELDS)
     delete copy[field];
   return copy;
 }
 function matchesLaw(law, citation, title) {
   return fold(citation).includes(law) || title !== null && fold(title).includes(law);
 }
-function inRange(date, from, to) {
+function range(from, to) {
+  return { from: from ? isoDate(from) : undefined, to: to ? isoDate(to) : undefined };
+}
+function inRange(date, { from, to }) {
   if (!from && !to)
     return true;
   if (!date)
@@ -340,36 +423,33 @@ function inRange(date, from, to) {
   return (!from || date >= from) && (!to || date <= to);
 }
 function alertSource(alert) {
-  return entry(alert.turbolealUrl, `Upozornění v Turbolealu: ${provisionTitle(alert.lawTitle, alert.citation, alert.label)}`, changeSnippet(alert.type, alert.effectiveFrom, alert.amendments));
+  return entry(alert.turbolealUrl, `Upozornění v Turbolealu: ${provisionTitle(alert.lawTitle, alert.citation, alert.label)}`, changeSnippet(alert));
 }
-function changeSnippet(type, effectiveFrom, amendments) {
-  const label = typeLabel(type);
+function changeSnippet(alert) {
+  const label = typeLabel(alert.type);
   const parts = [`${label.charAt(0).toUpperCase()}${label.slice(1)}.`];
-  if (effectiveFrom)
-    parts.push(`Účinnost od ${czechDate(effectiveFrom)}.`);
-  if (amendments.length)
-    parts.push(`Novela č. ${amendments.map((amendment) => amendment.citation).join(", ")}.`);
+  if (alert.effectiveFrom)
+    parts.push(`Účinnost od ${czechDate(alert.effectiveFrom)}.`);
+  if (alert.amendments.length) {
+    parts.push(`Novela č. ${alert.amendments.map((amendment) => amendment.citation).join(", ")}.`);
+  }
   return parts.join(" ");
 }
-function summarize(item) {
-  const isAlert = "sectionId" in item;
-  const lawTitle = isAlert ? item.lawTitle : item.title;
-  const summary = {
-    type: typeLabel(item.type),
-    law: lawTitle?.trim() || null,
-    citation: item.citation,
-    section: (isAlert ? item.label : item.caption) ?? null,
-    effectiveFrom: czechDate(item.effectiveFrom),
-    detectedAt: czechDate(item.detectedAt),
-    amendments: item.amendments.map((amendment) => amendment.citation),
-    turbolealUrl: item.turbolealUrl,
-    diffMarkdown: item.diffMarkdown ?? (isAlert ? item.diff : null)
+function summarize(alert, today = new Date) {
+  return {
+    type: typeLabel(alert.type),
+    law: alert.lawTitle?.trim() || null,
+    citation: alert.citation,
+    section: alert.label ?? null,
+    effectiveFrom: czechDate(alert.effectiveFrom),
+    inForce: alert.effectiveFrom ? alert.effectiveFrom <= isoDate(today) : null,
+    detectedAt: czechDate(pragueDate(alert.detectedAt)),
+    amendments: alert.amendments.map((amendment) => amendment.citation),
+    acknowledged: alert.acknowledgedAt !== null,
+    turbolealUrl: alert.turbolealUrl,
+    overview: diffOverview(alert.diffMarkdown),
+    diffMarkdown: alert.diffMarkdown ?? alert.diff
   };
-  if (isAlert)
-    summary.acknowledged = item.acknowledgedAt !== null;
-  else
-    summary.watched = item.watched;
-  return summary;
 }
 
 // src/index.ts
@@ -387,16 +467,17 @@ var watchSets = () => client().watchSets();
 var documents = (watchSetId) => client().documents(watchSetId);
 var alerts = (query) => client().alerts(query);
 var alert = (id) => client().alert(id);
-var changes = (query) => client().changes(query);
+var watched = (query) => client().watched(query);
 export {
+  watched,
   watchSets,
   summarize,
   publishSources,
   me,
   documents,
+  diffOverview,
   configure,
   client,
-  changes,
   alerts,
   alert,
   TurbolealError,

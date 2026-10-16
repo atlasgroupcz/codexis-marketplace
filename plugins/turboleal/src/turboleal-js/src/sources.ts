@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { readEnv } from "./config"
 
-export const SOURCES_CAP = 20
+export const SOURCES_CAP = 50
 const SNIPPET_MAX_CHARS = 300
 const PUBLISH_TIMEOUT_MS = 10_000
 

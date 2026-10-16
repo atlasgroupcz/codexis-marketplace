@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { type Alert, type Change, type FetchLike, summarize, Turboleal, TurbolealError } from "./client"
+import { type Alert, type FetchLike, summarize, Turboleal, TurbolealError } from "./client"
 
 const APP = "https://turboleal.example"
 const SET_A = "00000000-0000-0000-0000-00000000000a"
@@ -89,10 +89,12 @@ describe("alerts", () => {
     const byLaw = await client.alerts({ law: "danich z prijmu", section: "38g" })
     const byDate = await client.alerts({ effectiveFrom: "2026-01-01", effectiveTo: new Date(2026, 11, 31) })
     const byType = await client.alerts({ types: ["UPCOMING_AMENDMENT"], law: "262/2006" })
+    const byDetection = await client.alerts({ detectedFrom: "2026-10-15", detectedTo: "2026-10-15" })
 
-    expect(byLaw.map((alert) => alert.id.slice(-1))).toEqual(["1", "3"])
+    expect(byLaw.map((alert) => alert.id.slice(-1))).toEqual(["3", "1"])
     expect(byDate.map((alert) => alert.id.slice(-1))).toEqual(["3"])
     expect(byType.map((alert) => alert.id.slice(-1))).toEqual(["4"])
+    expect(byDetection.map((alert) => alert.id.slice(-1))).toEqual(["3", "1", "2", "4"])
   })
 
   it("keeps the alert when its law name cannot be looked up", async () => {
@@ -105,42 +107,26 @@ describe("alerts", () => {
   })
 })
 
-describe("changes", () => {
-  it("passes the range, maps documents to watch sets and drops CODEXIS links", async () => {
-    const change = {
-      id: "c1",
-      documentId: "CR3",
-      citation: "262/2006 Sb.",
-      title: "Zákoník práce",
-      contentItemId: "paragraf35",
-      caption: "§ 35",
-      type: "CHANGED",
-      effectiveFrom: "2026-12-01",
-      detectedAt: "2026-10-10T08:00:00Z",
-      amendments: [],
-      watched: true,
-      codexisUrl: "https://next.codexis.cz/doc/CR3",
-      diffMarkdown: "a{++b++}",
-      diffHtml: "<p>b</p>",
-    }
-    const { calls, client } = fakeApi({
-      "/api/v1/changes": () => ({ items: [change, { ...change, id: "c2", caption: "§ 36", watched: false }], nextCursor: null }),
-      "/api/v1/watch-sets": () => ({ items: [{ id: SET_A }, { id: SET_B }], nextCursor: null }),
-      [`/api/v1/watch-sets/${SET_A}/documents`]: () => documentsA,
+describe("watched", () => {
+  it("finds the watch sets that watch a law or section and nothing else", async () => {
+    const { client } = fakeApi({
+      "/api/v1/watch-sets": () => ({ items: [{ id: SET_A, name: "Pekárna" }, { id: SET_B, name: "IT" }], nextCursor: null }),
+      [`/api/v1/watch-sets/${SET_A}/documents`]: () => [
+        { ...documentsA[0], sections: [{ id: "s1", partId: "paragraf38g", label: "§ 38g" }] },
+        documentsA[1],
+      ],
       [`/api/v1/watch-sets/${SET_B}/documents`]: () => [],
     })
 
-    const changes = await client.changes({ from: "2026-10-01", to: "2026-12-31", by: "effective", section: "35" })
+    const income = await client.watched({ law: "586/1992", section: "38g" })
+    const labour = await client.watched({ law: "zakonik prace", section: "§ 52" })
+    const missing = await client.watched({ law: "586/1992", section: "§ 7a" })
 
-    const query = calls.find((url) => url.pathname === "/api/v1/changes")?.searchParams
-    expect(query?.get("from")).toBe("2026-10-01")
-    expect(query?.get("to")).toBe("2026-12-31")
-    expect(query?.get("by")).toBe("effective")
-    expect(changes.map((item) => item.id)).toEqual(["c1"])
-    expect(changes[0].watchSetIds).toEqual([SET_A])
-    expect(changes[0].turbolealUrl).toBe(`${APP}/watch-sets/V2F0Y2hTZXQ6MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDBh`)
-    expect(changes[0].diffHtml).toBe("<p>b</p>")
-    expect(JSON.stringify(changes)).not.toContain("codexis")
+    expect(income).toEqual([
+      { watchSetId: SET_A, watchSetName: "Pekárna", citation: "586/1992 Sb.", title: "Zákon o daních z příjmů", wholeDocument: false, sections: ["§ 38g"] },
+    ])
+    expect(labour.map((item) => item.wholeDocument)).toEqual([true])
+    expect(missing).toEqual([])
   })
 })
 
@@ -181,50 +167,30 @@ describe("errors", () => {
 describe("summarize", () => {
   it("turns an alert into Czech words and keeps the Turboleal link and diff", () => {
     const alert = {
-      ...alertBody(1),
+      ...alertBody(1, { diffMarkdown: "### § 38g (CHANGED)\n\n(1) Text.\n\n{++(6) Nový odstavec.++}" }),
       lawTitle: "Zákon o daních z příjmů",
       turbolealUrl: `${APP}/alerts?x`,
     } as unknown as Alert
 
-    expect(summarize(alert)).toEqual({
+    expect(summarize(alert, "2026-10-16")).toEqual({
       type: "připravovaná změna, zatím nenabyla účinnosti",
       law: "Zákon o daních z příjmů",
       citation: "586/1992 Sb.",
       section: "§ 38g",
       effectiveFrom: "1. 1. 2027",
+      inForce: false,
       detectedAt: "15. 10. 2026",
       amendments: ["120/2026 Sb."],
       acknowledged: false,
       turbolealUrl: `${APP}/alerts?x`,
-      diffMarkdown: "{--old--}{++new++}",
+      overview: { items: [{ kind: "inserted", where: "odst. 6", text: "(6) Nový odstavec." }], renumberingOnly: false },
+      diffMarkdown: "### § 38g (CHANGED)\n\n(1) Text.\n\n{++(6) Nový odstavec.++}",
     })
   })
 
-  it("names a change by its caption and tells whether it is watched", () => {
-    const change = {
-      id: "c1",
-      documentId: "CR3",
-      citation: "262/2006 Sb.",
-      title: "Zákoník práce",
-      contentItemId: "paragraf35",
-      caption: "§ 35",
-      type: "REMOVED",
-      effectiveFrom: null,
-      detectedAt: "2026-10-10T08:00:00Z",
-      amendments: [],
-      watched: false,
-      diffMarkdown: null,
-      diffHtml: null,
-      watchSetIds: [],
-      turbolealUrl: null,
-    } as Change
+  it("dates the detection in Prague and tells what is already in force", () => {
+    const alert = { ...alertBody(1, { effectiveFrom: "2026-01-01", detectedAt: "2026-10-15T23:30:00Z" }), turbolealUrl: "u" } as unknown as Alert
 
-    expect(summarize(change)).toMatchObject({
-      type: "zrušené ustanovení",
-      law: "Zákoník práce",
-      section: "§ 35",
-      effectiveFrom: null,
-      watched: false,
-    })
+    expect(summarize(alert, "2026-10-16")).toMatchObject({ inForce: true, detectedAt: "16. 10. 2026" })
   })
 })

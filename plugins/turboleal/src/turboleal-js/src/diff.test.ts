@@ -1,0 +1,69 @@
+import { describe, expect, it } from "bun:test"
+import { diffOverview } from "./diff"
+
+describe("diffOverview", () => {
+  it("reports inserted paragraphs as their own items", () => {
+    const overview = diffOverview("### § 38g (CHANGED)\n\n(5) Beze změny.\n\n{++(6) Nově podá přiznání každý.++}\n\n{++(7) A také paušalista.++}")
+
+    expect(overview).toEqual({
+      items: [
+        { kind: "inserted", where: "odst. 6", text: "(6) Nově podá přiznání každý." },
+        { kind: "inserted", where: "odst. 7", text: "(7) A také paušalista." },
+      ],
+      renumberingOnly: false,
+    })
+  })
+
+  it("realigns a word-level diff into a deleted paragraph and a renumbered one", () => {
+    const overview = diffOverview(
+      [
+        "(2) Daní na vstupu se rozumí daň.",
+        "(3) {--U--}{++Nárok++} {--pořízení automobilu se za daň považuje částka 420 000 Kč.--}{++vzniká okamžikem plnění.++}",
+        "{--(4) Nárok vzniká okamžikem plnění.--}",
+      ].join("\n\n"),
+    )
+
+    expect(overview?.items).toHaveLength(2)
+    expect(overview?.items).toContainEqual({
+      kind: "deleted",
+      where: "odst. 3",
+      text: "(3) U pořízení automobilu se za daň považuje částka 420 000 Kč.",
+    })
+    expect(overview?.items).toContainEqual({
+      kind: "renumbered",
+      before: "odst. 4",
+      after: "odst. 3",
+      text: "(3) Nárok vzniká okamžikem plnění.",
+    })
+    expect(overview?.renumberingOnly).toBe(false)
+  })
+
+  it("flags a change of letters and references alone as renumbering", () => {
+    const overview = diffOverview("d) plnění v § 54 odst. 1 písm. a) až {--j),--}{++i),++} {--l)--}{++k)++} až {--t)--}{++r)++}, nebo")
+
+    expect(overview?.items).toHaveLength(1)
+    expect(overview?.items[0]).toMatchObject({ kind: "changed", where: "písm. d)", referencesOnly: true })
+    expect(overview?.renumberingOnly).toBe(true)
+  })
+
+  it("keeps a changed amount as a substantive change", () => {
+    const overview = diffOverview("(1) Přiznání podá, kdo měl příjmy nad {--50--}{++100++} 000 Kč.")
+
+    expect(overview).toEqual({
+      items: [
+        {
+          kind: "changed",
+          where: "odst. 1",
+          before: "(1) Přiznání podá, kdo měl příjmy nad 50 000 Kč.",
+          after: "(1) Přiznání podá, kdo měl příjmy nad 100 000 Kč.",
+          referencesOnly: false,
+        },
+      ],
+      renumberingOnly: false,
+    })
+  })
+
+  it("has nothing to say without a diff", () => {
+    expect(diffOverview(null)).toBeNull()
+  })
+})

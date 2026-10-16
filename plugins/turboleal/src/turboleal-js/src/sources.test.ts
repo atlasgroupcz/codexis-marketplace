@@ -38,7 +38,7 @@ describe("sources", () => {
     }) as unknown as typeof fetch
 
     cite([entry("https://t/a", "A", "x".repeat(400)), entry("https://t/a", "A again")])
-    cite(Array.from({ length: 30 }, (_, index) => entry(`https://t/${index}`, "B")))
+    cite(Array.from({ length: 60 }, (_, index) => entry(`https://t/${index}`, "B")))
     await publishSources()
     await publishSources()
 

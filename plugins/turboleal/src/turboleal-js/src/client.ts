@@ -1,14 +1,6 @@
 import { apiKey as storedApiKey, apiUrl as configuredApiUrl } from "./config"
-import {
-  alertPageUrl,
-  czechDate,
-  fold,
-  isoDate,
-  provisionTitle,
-  sectionKey,
-  typeLabel,
-  watchSetPageUrl,
-} from "./format"
+import { type DiffOverview, diffOverview } from "./diff"
+import { alertPageUrl, czechDate, fold, isoDate, pragueDate, provisionTitle, sectionKey, typeLabel } from "./format"
 import { cite, entry, type SourceEntry } from "./sources"
 
 export type Me = { id: string; email: string | null; name: string | null }
@@ -52,22 +44,13 @@ export type Alert = {
   lawTitle: string | null
   turbolealUrl: string
 }
-export type Change = {
-  id: string
-  documentId: string
+export type Watched = {
+  watchSetId: string
+  watchSetName: string
   citation: string
   title: string
-  contentItemId: string | null
-  caption: string | null
-  type: "ADDED" | "CHANGED" | "REMOVED"
-  effectiveFrom: string | null
-  detectedAt: string
-  amendments: Amendment[]
-  watched: boolean
-  diffMarkdown: string | null
-  diffHtml: string | null
-  watchSetIds: string[]
-  turbolealUrl: string | null
+  wholeDocument: boolean
+  sections: string[]
 }
 export type Summary = {
   type: string
@@ -75,11 +58,12 @@ export type Summary = {
   citation: string
   section: string | null
   effectiveFrom: string | null
+  inForce: boolean | null
   detectedAt: string | null
   amendments: string[]
-  acknowledged?: boolean
-  watched?: boolean
-  turbolealUrl: string | null
+  acknowledged: boolean
+  turbolealUrl: string
+  overview: DiffOverview | null
   diffMarkdown: string | null
 }
 
@@ -91,17 +75,11 @@ export type AlertQuery = {
   section?: string
   effectiveFrom?: DateLike
   effectiveTo?: DateLike
+  detectedFrom?: DateLike
+  detectedTo?: DateLike
   types?: string[]
 }
-export type ChangeQuery = {
-  from?: DateLike
-  to?: DateLike
-  by?: "detected" | "effective"
-  watchSet?: string
-  law?: string
-  section?: string
-  watched?: boolean
-}
+export type WatchedQuery = { law?: string; section?: string }
 
 type Page<T> = { items: T[]; nextCursor: string | null }
 type Query = Record<string, string | number | boolean | undefined>
@@ -159,24 +137,51 @@ export class Turboleal {
     return documents
   }
 
+  /** Where the user watches a law or a section; empty when nothing matches. */
+  async watched(query: WatchedQuery = {}): Promise<Watched[]> {
+    const law = query.law ? fold(query.law) : undefined
+    const section = query.section ? sectionKey(query.section) : undefined
+    const sets = await this.watchSets()
+    const lists = await Promise.all(sets.map((set) => this.documents(set.id)))
+    return sets.flatMap((set, index) =>
+      lists[index]
+        .filter((document) => !law || matchesLaw(law, document.citation, document.title))
+        .map((document) => ({
+          watchSetId: set.id,
+          watchSetName: set.name,
+          citation: document.citation,
+          title: document.title,
+          wholeDocument: document.wholeDocument,
+          sections: document.sections.flatMap((item) => (item.label ? [item.label] : [])),
+        }))
+        .filter(
+          (document) =>
+            !section || document.wholeDocument || document.sections.some((label) => sectionKey(label) === section),
+        ),
+    )
+  }
+
+  /** Every alert in range, all pages; the filters run here, inclusive at both ends. */
   async alerts(query: AlertQuery = {}): Promise<Alert[]> {
     const raw = await this.all<Record<string, unknown>>("/alerts", {
       watchSetId: query.watchSet,
       acknowledged: query.unacknowledged ? false : undefined,
     })
     const titles = await this.titles(new Set(raw.map((alert) => alert.watchSetId as string)))
-    const alerts = raw.map((alert) => this.alertOf(alert, titles))
     const law = query.law ? fold(query.law) : undefined
     const section = query.section ? sectionKey(query.section) : undefined
-    const from = query.effectiveFrom ? isoDate(query.effectiveFrom) : undefined
-    const to = query.effectiveTo ? isoDate(query.effectiveTo) : undefined
-    const filtered = alerts
+    const effective = range(query.effectiveFrom, query.effectiveTo)
+    const detected = range(query.detectedFrom, query.detectedTo)
+    const alerts = raw
+      .map((alert) => this.alertOf(alert, titles))
       .filter((alert) => !law || matchesLaw(law, alert.citation, alert.lawTitle))
       .filter((alert) => !section || (alert.label !== null && sectionKey(alert.label) === section))
       .filter((alert) => !query.types || query.types.includes(alert.type))
-      .filter((alert) => inRange(alert.effectiveFrom, from, to))
-    cite(filtered.map(alertSource))
-    return filtered
+      .filter((alert) => inRange(alert.effectiveFrom, effective))
+      .filter((alert) => inRange(pragueDate(alert.detectedAt), detected))
+      .sort((left, right) => (left.effectiveFrom ?? "9999").localeCompare(right.effectiveFrom ?? "9999"))
+    cite(alerts.map(alertSource))
+    return alerts
   }
 
   async alert(id: string): Promise<Alert> {
@@ -186,59 +191,11 @@ export class Turboleal {
     return alert
   }
 
-  async changes(query: ChangeQuery = {}): Promise<Change[]> {
-    const [raw, documents] = await Promise.all([
-      this.all<Record<string, unknown>>("/changes", {
-        from: query.from ? isoDate(query.from) : undefined,
-        to: query.to ? isoDate(query.to) : undefined,
-        by: query.by,
-        watchSetId: query.watchSet,
-      }),
-      this.watchedDocuments(query.watchSet),
-    ])
-    const law = query.law ? fold(query.law) : undefined
-    const section = query.section ? sectionKey(query.section) : undefined
-    const changes = raw
-      .map((change) => this.changeOf(change, documents))
-      .filter((change) => !law || matchesLaw(law, change.citation, change.title))
-      .filter((change) => !section || (change.caption !== null && sectionKey(change.caption) === section))
-      .filter((change) => query.watched === undefined || change.watched === query.watched)
-    cite(this.watchSetSources(changes))
-    return changes
-  }
-
   private alertOf(raw: Record<string, unknown>, titles: Map<string, string>): Alert {
     const alert = strip(raw) as Alert
     alert.lawTitle = titles.get(alert.documentId) ?? null
     alert.turbolealUrl = alertPageUrl(this.appUrl, alert.id)
     return alert
-  }
-
-  private changeOf(raw: Record<string, unknown>, documents: Map<string, string[]>): Change {
-    const change = strip(raw, ["codexisUrl"]) as Change
-    change.watchSetIds = documents.get(change.documentId) ?? []
-    const [watchSet] = change.watchSetIds
-    change.turbolealUrl = watchSet ? watchSetPageUrl(this.appUrl, watchSet) : null
-    return change
-  }
-
-  private watchSetSources(changes: Change[]): SourceEntry[] {
-    return changes
-      .filter((change) => change.turbolealUrl)
-      .map((change) => entry(change.turbolealUrl as string, "Sledovaná legislativa v Turbolealu"))
-  }
-
-  /** Document id -> the watch sets that watch it, from every watch set or the one given. */
-  private async watchedDocuments(watchSet?: string): Promise<Map<string, string[]>> {
-    const ids = watchSet ? [watchSet] : (await this.watchSets()).map((set) => set.id)
-    const lists = await Promise.all(ids.map((id) => this.documents(id).catch(() => [] as Document[])))
-    const watched = new Map<string, string[]>()
-    lists.forEach((documents, index) => {
-      for (const document of documents) {
-        watched.set(document.documentId, [...(watched.get(document.documentId) ?? []), ids[index]])
-      }
-    })
-    return watched
   }
 
   /** Law names by CODEXIS document id; a failed lookup only leaves the name out. */
@@ -291,9 +248,9 @@ async function problem(response: Response): Promise<TurbolealError> {
   return new TurbolealError(`HTTP ${response.status}${detail ? `: ${detail}` : ""}${hint}`, response.status)
 }
 
-function strip(raw: Record<string, unknown>, fields = HIDDEN_FIELDS): Record<string, unknown> {
+function strip(raw: Record<string, unknown>): Record<string, unknown> {
   const copy = { ...raw }
-  for (const field of fields) delete copy[field]
+  for (const field of HIDDEN_FIELDS) delete copy[field]
   return copy
 }
 
@@ -301,7 +258,13 @@ function matchesLaw(law: string, citation: string, title: string | null): boolea
   return fold(citation).includes(law) || (title !== null && fold(title).includes(law))
 }
 
-function inRange(date: string | null, from?: string, to?: string): boolean {
+type Range = { from?: string; to?: string }
+
+function range(from?: DateLike, to?: DateLike): Range {
+  return { from: from ? isoDate(from) : undefined, to: to ? isoDate(to) : undefined }
+}
+
+function inRange(date: string | null, { from, to }: Range): boolean {
   if (!from && !to) return true
   if (!date) return false
   return (!from || date >= from) && (!to || date <= to)
@@ -311,34 +274,37 @@ function alertSource(alert: Alert): SourceEntry {
   return entry(
     alert.turbolealUrl,
     `Upozornění v Turbolealu: ${provisionTitle(alert.lawTitle, alert.citation, alert.label)}`,
-    changeSnippet(alert.type, alert.effectiveFrom, alert.amendments),
+    changeSnippet(alert),
   )
 }
 
-function changeSnippet(type: string, effectiveFrom: string | null, amendments: Amendment[]): string {
-  const label = typeLabel(type)
+function changeSnippet(alert: Alert): string {
+  const label = typeLabel(alert.type)
   const parts = [`${label.charAt(0).toUpperCase()}${label.slice(1)}.`]
-  if (effectiveFrom) parts.push(`Účinnost od ${czechDate(effectiveFrom)}.`)
-  if (amendments.length) parts.push(`Novela č. ${amendments.map((amendment) => amendment.citation).join(", ")}.`)
+  if (alert.effectiveFrom) parts.push(`Účinnost od ${czechDate(alert.effectiveFrom)}.`)
+  if (alert.amendments.length) {
+    parts.push(`Novela č. ${alert.amendments.map((amendment) => amendment.citation).join(", ")}.`)
+  }
   return parts.join(" ")
 }
 
-/** A compact, user-facing view of an alert or a change, ready to retell in Czech. */
-export function summarize(item: Alert | Change): Summary {
-  const isAlert = "sectionId" in item
-  const lawTitle = isAlert ? item.lawTitle : item.title
-  const summary: Summary = {
-    type: typeLabel(item.type),
-    law: lawTitle?.trim() || null,
-    citation: item.citation,
-    section: (isAlert ? item.label : item.caption) ?? null,
-    effectiveFrom: czechDate(item.effectiveFrom),
-    detectedAt: czechDate(item.detectedAt),
-    amendments: item.amendments.map((amendment) => amendment.citation),
-    turbolealUrl: item.turbolealUrl,
-    diffMarkdown: item.diffMarkdown ?? (isAlert ? item.diff : null),
+/**
+ * A compact, user-facing view of an alert: Czech type and dates, whether it is
+ * already in force, the Turboleal link, and the diff read paragraph by paragraph.
+ */
+export function summarize(alert: Alert, today: DateLike = new Date()): Summary {
+  return {
+    type: typeLabel(alert.type),
+    law: alert.lawTitle?.trim() || null,
+    citation: alert.citation,
+    section: alert.label ?? null,
+    effectiveFrom: czechDate(alert.effectiveFrom),
+    inForce: alert.effectiveFrom ? alert.effectiveFrom <= isoDate(today) : null,
+    detectedAt: czechDate(pragueDate(alert.detectedAt)),
+    amendments: alert.amendments.map((amendment) => amendment.citation),
+    acknowledged: alert.acknowledgedAt !== null,
+    turbolealUrl: alert.turbolealUrl,
+    overview: diffOverview(alert.diffMarkdown),
+    diffMarkdown: alert.diffMarkdown ?? alert.diff,
   }
-  if (isAlert) summary.acknowledged = item.acknowledgedAt !== null
-  else summary.watched = item.watched
-  return summary
 }

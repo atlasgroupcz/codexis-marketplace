@@ -46,5 +46,6 @@ describe("format", () => {
     expect(czechDate("soon")).toBe("soon")
     expect(sectionKey("§ 38g")).toBe(sectionKey("38g"))
     expect(sectionKey("§ 38ga")).not.toBe(sectionKey("38g"))
+    expect(sectionKey("§ 72 - Nárok na odpočet daně")).toBe(sectionKey("72"))
   })
 })
