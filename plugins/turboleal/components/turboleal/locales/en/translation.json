@@ -14,6 +14,7 @@
     "notConnected": "Not connected",
     "remove": "Remove",
     "confirmRemove": "Really remove?",
+    "removeKey": "Remove API key",
     "save": "Save",
     "saving": "Saving..."
   },

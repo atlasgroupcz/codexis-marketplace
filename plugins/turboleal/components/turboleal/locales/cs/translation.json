@@ -14,6 +14,7 @@
     "notConnected": "Nepřipojeno",
     "remove": "Odebrat",
     "confirmRemove": "Opravdu odebrat?",
+    "removeKey": "Odebrat API klíč",
     "save": "Uložit",
     "saving": "Ukládám..."
   },

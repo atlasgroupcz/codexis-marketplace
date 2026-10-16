@@ -77,6 +77,30 @@ describe('App', () => {
     expect(screen.queryByText(i18n.t('connection.connected'))).toBeNull()
   })
 
+  it('removes the stored key from its row after a confirming second click', async () => {
+    const user = userEvent.setup()
+    mocks.fetchSettings.mockResolvedValue(CONFIGURED)
+    renderApp()
+    const remove = await screen.findByRole('button', { name: i18n.t('connection.removeKey') })
+    mocks.fetchSettings.mockResolvedValue(NOT_CONFIGURED)
+
+    await user.click(remove)
+    expect(mocks.deleteApiKey).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: i18n.t('connection.confirmRemove') }))
+
+    await waitFor(() => expect(mocks.deleteApiKey).toHaveBeenCalledOnce())
+    expect(await screen.findByPlaceholderText(i18n.t('settings.placeholder'))).toBeTruthy()
+  })
+
+  it('offers no separate remove button below a stored key', async () => {
+    mocks.fetchSettings.mockResolvedValue(CONFIGURED)
+    renderApp()
+
+    await screen.findByText(/api-key-AbCd…/)
+    expect(screen.queryByRole('button', { name: i18n.t('connection.remove') })).toBeNull()
+    expect(screen.queryByRole('button', { name: i18n.t('connection.save') })).toBeNull()
+  })
+
   it('shows no connection badge without a stored key', async () => {
     renderApp()
 

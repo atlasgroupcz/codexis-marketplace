@@ -8,6 +8,7 @@ import { Toaster, toast } from '@workspace/ui/components/sonner'
 import { KeyRound, Scale } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StoredKey } from '@/components/stored-key'
 import type { Settings } from '@/lib/api'
 import { deleteApiKey, fetchSettings, saveApiKey } from '@/lib/api'
 
@@ -38,6 +39,12 @@ export function App() {
     confirmRemove: t('connection.confirmRemove'),
     save: t('connection.save'),
     saving: t('connection.saving'),
+  }
+
+  const getKey = {
+    href: settings?.generateUrl ?? '',
+    label: t('settings.getKey'),
+    hint: t('settings.getKeyHint'),
   }
 
   const handleSave = async (values: Record<string, string>) => {
@@ -81,28 +88,37 @@ export function App() {
         <GroupLabel icon={KeyRound} className="mb-4">
           {t('app.connectionSection')}
         </GroupLabel>
-        <ConnectionSection
-          loading={settings === null}
-          configured={settings?.configured ?? false}
-          maskedKey={settings?.maskedKey ?? ''}
-          fields={[
-            {
-              name: 'apiKey',
-              label: t('settings.label'),
-              type: 'password',
-              placeholder: t('settings.placeholder'),
-              mono: true,
-            },
-          ]}
-          getKey={{
-            href: settings?.generateUrl ?? '',
-            label: t('settings.getKey'),
-            hint: t('settings.getKeyHint'),
-          }}
-          labels={labels}
-          onSave={handleSave}
-          onDelete={handleDelete}
-        />
+        {settings?.configured ? (
+          <StoredKey
+            maskedKey={settings.maskedKey}
+            getKey={getKey}
+            labels={{
+              remove: t('connection.remove'),
+              removeKey: t('connection.removeKey'),
+              confirmRemove: t('connection.confirmRemove'),
+            }}
+            onDelete={handleDelete}
+          />
+        ) : (
+          <ConnectionSection
+            loading={settings === null}
+            configured={false}
+            maskedKey=""
+            fields={[
+              {
+                name: 'apiKey',
+                label: t('settings.label'),
+                type: 'password',
+                placeholder: t('settings.placeholder'),
+                mono: true,
+              },
+            ]}
+            getKey={getKey}
+            labels={labels}
+            onSave={handleSave}
+            onDelete={handleDelete}
+          />
+        )}
       </section>
 
       {settings?.keySource && settings.keySource !== settings.settingsFile && (
