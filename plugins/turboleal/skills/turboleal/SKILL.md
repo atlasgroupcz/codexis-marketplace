@@ -174,8 +174,11 @@ you need everything.
   sections and to get the law's name.
 - **Reading a change**: `diffMarkdown` is the section text with CriticMarkup:
   `{--old--}` was deleted, `{++new++}` was inserted. Turn it into "dosud / nově"
-  with quotes. Do not reconstruct it from CODEXIS. Older alerts may carry a
-  unified `diff` instead.
+  with quotes. Older alerts may carry a unified `diff` instead.
+- **Takes effect (nabude účinnosti)**: an alert takes effect in the future when
+  `effectiveFrom` is after today (usually `UPCOMING_AMENDMENT`). For "do konce
+  roku" keep alerts with `effectiveFrom` up to 31. 12. of this year and sort by
+  date.
 - **New watch set**: write the brief from the user's description (field,
   employees, activities, topics), create it, poll `watch-sets get` every ~20 s
   until `extractionStatus` is DONE (usually under two minutes), then summarise
@@ -198,6 +201,17 @@ same links in your answer with human labels, e.g.
 from `codexisUrl`.
 
 ### Rules
+
+- The wording of a change comes only from the alert's `diffMarkdown` (or
+  `diff`). Never quote CODEXIS, the codexis skills or your own memory as the
+  old or new text, and never mix them in. If an alert has no diff, say the text
+  is in Turbolealu and link the alert.
+- Turboleal questions ("co se změnilo / mění v tom, co sleduji", alerts, watch
+  sets) are answered from Turboleal even when the user does not say
+  "Turboleal"; use the codexis skills only for the surrounding law the user
+  asks about explicitly.
+- Never print an enum value (`AMENDED`, `UPCOMING_AMENDMENT`, ...) or a field
+  name; always the Czech words from the table above.
 
 - Deleting a watch set or a file is irreversible: name what will be deleted and
   get the user's confirmation first.
