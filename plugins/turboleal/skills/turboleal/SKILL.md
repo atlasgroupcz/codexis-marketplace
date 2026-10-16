@@ -2,8 +2,8 @@
 uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
-description: "This skill should be invoked when the user asks about changes in the legislation they watch in Turboleal: what changed or takes effect in their watch sets or watched laws and sections (\"co se změnilo v tom, co sleduji\", \"v našich sadách\", \"co nabude účinnosti do konce roku\"), what changes in a specific law or section (\"co se mění v § 38g zákona o daních z příjmů\", \"jaké změny čekají zákoník práce\", \"mění se § 52 zákoníku práce?\"), whether something new concerns them, their company or employees (\"týká se nás něco nového\"), their change alerts, and creating or changing watch sets. Invoke it first for these, before codexis and sledovane-dokumenty: it checks whether the law or section is watched and then has the exact old and new wording of the change. Only when Turboleal says the law is not watched do general questions about it belong to codexis."
-version: 1.3.2
+description: "Invoke FIRST, before codexis and sledovane-dokumenty, when the user asks what changes, changed or takes effect in a Czech law or section (\"co se mění v § 38g ZDP\", \"do konce roku\"), what changed in what they watch, whether something new concerns them, or about watch sets and alerts. Turboleal checks whether it is watched and has the exact wording; if not watched, codexis answers."
+version: 1.3.3
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -266,6 +266,12 @@ Rules:
   (up to about three), and `summarize` for the rest. A second program only
   for a follow-up question from the user.
 - Return only the alerts the answer is about, and cite exactly those.
+- A topic question ("Týká se nás něco nového ohledně zaměstnanců?") cannot be
+  filtered by law or section up front. Run one program that returns compact
+  summaries WITHOUT `t.cite`/`t.flushSources()`, pick the relevant alerts
+  yourself, then run a second short program that loads only those with
+  `t.alert(id)`, cites them and returns `t.detail` for each. The Sources panel
+  then holds exactly the alerts in the answer.
 - A question about a specific law or section ("Co se mění v § 38g zákona o
   daních z příjmů?") starts with `t.watched`. Watched: answer from its alerts
   with links. Not watched: say "Tento paragraf ve sledovaných sadách není."
