@@ -28,3 +28,7 @@ install_binary() {
 
 install_binary "turboleal-cli" "turboleal-cli"
 
+TARGET_LIB_DIR="${TARGET_LIB_DIR:-${HOME}/.local/lib/turboleal}"
+install -d "${TARGET_LIB_DIR}"
+rm -f "${TARGET_LIB_DIR}/turboleal.mjs"
+install -m 0644 "${PLUGIN_DIR}/lib/turboleal.cjs" "${TARGET_LIB_DIR}/turboleal.cjs"

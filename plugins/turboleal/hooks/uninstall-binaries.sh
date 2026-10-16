@@ -11,6 +11,7 @@ remove_path() {
 }
 
 remove_path "${TARGET_BIN_DIR}/turboleal-cli"
+remove_path "${TARGET_LIB_DIR:-${HOME}/.local/lib/turboleal}"
 
 # Sweep leftover temp files from an interrupted install (e.g. power loss).
 rm -f "${TARGET_BIN_DIR}"/.turboleal-cli.tmp.* 2>/dev/null || true
