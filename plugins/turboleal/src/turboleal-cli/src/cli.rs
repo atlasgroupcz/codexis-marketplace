@@ -4,6 +4,8 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use uuid::Uuid;
 
+use crate::format::{CHANGE_TYPES, iso_date};
+
 /// Command-line client for the Turboleal legislation watch.
 #[derive(Debug, Parser)]
 #[command(name = "turboleal-cli", version, about, propagate_version = true)]
@@ -59,6 +61,15 @@ pub enum Command {
     /// Read and acknowledge alerts about changed legislation.
     #[command(subcommand)]
     Alerts(AlertCommand),
+    /// Show the watch sets that watch a law or one of its sections; empty when nothing does.
+    Watched {
+        /// Citation or name of the law, e.g. 262/2006 or "zakonik prace"; case and diacritics are ignored.
+        #[arg(long)]
+        law: String,
+        /// Section label, e.g. "§ 38g" or 38g (does not match § 38ga).
+        #[arg(long)]
+        section: Option<String>,
+    },
     /// Print a shell completion script.
     Completions {
         /// Shell to generate completions for.
@@ -156,9 +167,37 @@ pub enum ReferenceCommand {
     },
 }
 
+#[derive(Debug, Args)]
+pub struct AlertFilterArgs {
+    /// Only laws whose citation or name contains this text, e.g. 262/2006 or "zakonik prace";
+    /// case and diacritics are ignored.
+    #[arg(long)]
+    pub law: Option<String>,
+    /// Only this section, e.g. "§ 38g" or 38g (does not match § 38ga).
+    #[arg(long)]
+    pub section: Option<String>,
+    /// Only changes taking effect on or after this day.
+    #[arg(long, value_name = "YYYY-MM-DD", value_parser = iso_date)]
+    pub effective_from: Option<String>,
+    /// Only changes taking effect on or before this day.
+    #[arg(long, value_name = "YYYY-MM-DD", value_parser = iso_date)]
+    pub effective_to: Option<String>,
+    /// Only changes Turboleal found on or after this day (Prague time).
+    #[arg(long, value_name = "YYYY-MM-DD", value_parser = iso_date)]
+    pub detected_from: Option<String>,
+    /// Only changes Turboleal found on or before this day (Prague time).
+    #[arg(long, value_name = "YYYY-MM-DD", value_parser = iso_date)]
+    pub detected_to: Option<String>,
+    /// Only this change type; repeat for more.
+    #[arg(long = "type", value_name = "TYPE", value_parser = CHANGE_TYPES)]
+    pub types: Vec<String>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum AlertCommand {
     /// List alerts, newest first.
+    ///
+    /// Any filter or --summary fetches every page and sorts by the day the change takes effect.
     List {
         /// Only alerts of this watch set.
         #[arg(long)]
@@ -167,10 +206,20 @@ pub enum AlertCommand {
         #[arg(long)]
         unacknowledged: bool,
         #[command(flatten)]
+        filter: AlertFilterArgs,
+        /// Print compact Czech summaries with the diff read paragraph by paragraph.
+        #[arg(long)]
+        summary: bool,
+        #[command(flatten)]
         page: PageArgs,
     },
     /// Show one alert with its diff.
-    Get { id: Uuid },
+    Get {
+        id: Uuid,
+        /// Print a compact Czech summary with the diff read paragraph by paragraph.
+        #[arg(long)]
+        summary: bool,
+    },
     /// Mark an alert as handled; the section stays watched.
     #[command(visible_alias = "acknowledge")]
     Ack { id: Uuid },

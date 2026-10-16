@@ -3,7 +3,7 @@ uuid: 4b7bf02c-3b18-4253-bddb-b434c8bf8a6d
 name: turboleal
 icon: icon.svg
 description: "This skill should be invoked when the user asks about changes in the legislation they watch in Turboleal: what changed or takes effect in their watch sets or watched laws and sections (\"co se změnilo v tom, co sleduji\", \"v našich sadách\", \"co nabude účinnosti do konce roku\"), whether something new concerns them, their company or employees (\"týká se nás něco nového\"), their change alerts, and creating or changing watch sets. Invoke it first for these, before codexis and sledovane-dokumenty: Turboleal has the exact old and new wording of the watched sections. General questions about what changes in any law the user does not watch belong to codexis."
-version: 1.2.1
+version: 1.3.0
 jurisdictions: [CZ]
 i18n:
   cs:
@@ -124,7 +124,8 @@ confirm "Turboleal je připojený." Never repeat the key.
 
 One tool, **`turboleal-cli`**, talks to Turboleal as the user with their
 personal API key. Never pass `--api-key` or `--api-url`, never call `curl`.
-Always add `-o json` and read the result with `jq`.
+Always add `-o json`. Never pipe Turboleal output through `jq` chains and
+never run `node -e`: the CLI already filters, summarizes and cites.
 
 ### Key
 
@@ -172,82 +173,122 @@ turboleal-cli -o json files upload <WATCH_SET_ID> <FILE_OR_DIR>... [--folder sml
 turboleal-cli -o json files delete <WATCH_SET_ID> <FILE_ID>
 turboleal-cli -o json documents <WATCH_SET_ID>
 turboleal-cli -o json references list <WATCH_SET_ID> [--unlinked]
-turboleal-cli -o json alerts list [--watch-set <ID>] [--unacknowledged]
-turboleal-cli -o json alerts get <ALERT_ID>
+turboleal-cli -o json watched --law <TEXT> [--section <LABEL>]
+turboleal-cli -o json alerts list [--watch-set <ID>] [--unacknowledged] [--law <TEXT>] [--section <LABEL>]
+    [--effective-from <YYYY-MM-DD>] [--effective-to <YYYY-MM-DD>]
+    [--detected-from <YYYY-MM-DD>] [--detected-to <YYYY-MM-DD>] [--type <TYPE>]... [--summary]
+turboleal-cli -o json alerts get <ALERT_ID> [--summary]
 turboleal-cli -o json alerts ack <ALERT_ID>
 ```
 
 `--brief` accepts `@FILE` for a long brief. Lists are paged; pass `--all` when
 you need everything.
 
-### Reading alerts: one script instead of many commands
+### Reading alerts
 
-To answer a question about changes, run ONE `node` script with the bundled
-library instead of chaining `alerts list`, `alerts get` and `documents` through
-`jq`. It reads the same key, fetches all pages, maps law names, filters on its
-own side, cites every returned alert in the chat and prints only what you need.
-Keep `turboleal-cli` for `auth`, for writes (create, update, upload, ack,
-delete) and for files and references.
+- `alerts list` filters, all optional and inclusive:
+  - `--law` matches the citation or the name, case and diacritics ignored
+    ("262/2006", "zakonik prace").
+  - `--section` matches the label exactly ("38g" or "§ 38g" is § 38g, never
+    § 38ga).
+  - `--effective-from/--effective-to`: when the change takes effect.
+  - `--detected-from/--detected-to`: when Turboleal found it, as a day in
+    Prague ("za poslední týden").
+  - `--type` (repeatable): `AMENDED`, `UPCOMING_AMENDMENT`, `ADDED`,
+    `REMOVED`, `REPEALED`.
+  Any filter or `--summary` fetches every page and sorts by `effectiveFrom`.
+- `--summary` prints one compact object per alert instead of the raw alert:
+  `type` and dates in Czech, `law` (the name), `citation`, `section`,
+  `inForce` (already in effect today), `amendments`, `acknowledged`,
+  `turbolealUrl`, `id` (only for `alerts ack`), `diffMarkdown` and `overview`,
+  the diff read paragraph by paragraph: `items` of kind `deleted`, `inserted`,
+  `changed` (with `before`, `after` and `referencesOnly`) or `renumbered`,
+  each with `where` ("odst. 3 písm. a)"), and `renumberingOnly` when nothing
+  but numbering and references changed. Always read alerts with `--summary`.
+- `watched --law ... [--section ...]` lists the watch sets that watch a law
+  or a section (a whole watched law matches every section); `[]` means the
+  user does not watch it.
 
-- `alerts({ watchSet, unacknowledged, law, section, effectiveFrom, effectiveTo, detectedFrom, detectedTo, types })`:
-  every matching alert, sorted by `effectiveFrom`, with `diffMarkdown`,
-  `lawTitle` and `turbolealUrl`. All filters are optional and inclusive; dates
-  are `YYYY-MM-DD` or a `Date`. `law` matches the citation or the name
-  ("262/2006", "zakonik prace"), `section` the label ("38g").
-  `detectedFrom`/`detectedTo` is when Turboleal found the change ("za poslední
-  týden"), `effectiveFrom`/`effectiveTo` when it takes effect.
-- `watched({ law, section })`: the watch sets that watch a law or a section;
-  empty means the user does not watch it.
-- `alert(id)`, `me()`, `watchSets()`, `documents(watchSetId)`.
-- `summarize(alert)`: the Czech type, Czech dates, `inForce` (already in
-  effect today), law, section, amending laws, `turbolealUrl`, `diffMarkdown`
-  and `overview`, the diff read paragraph by paragraph: `items` of kind
-  `deleted`, `inserted`, `changed` (with `before`, `after` and
-  `referencesOnly`) or `renumbered`, each with `where` ("odst. 3 písm. a)"),
-  and `renumberingOnly` when nothing but numbering and references changed.
-  Print the summaries, not the raw alerts.
-
-What Turboleal found in the last week:
+When one command answers the question, run exactly that command:
 
 ```bash
-node --input-type=module -e "
-import * as t from '$HOME/.local/lib/turboleal/turboleal.mjs'
-const weekAgo = new Date(Date.now() - 7 * 864e5)
-const alerts = await t.alerts({ detectedFrom: weekAgo })
-console.log(JSON.stringify(alerts.map((a) => t.summarize(a)), null, 1))
-"
+turboleal-cli -o json alerts list --unacknowledged --effective-to 2026-12-31 --summary
+turboleal-cli -o json alerts list --detected-from 2026-10-09 --summary
+turboleal-cli -o json alerts list --law "zakonik prace" --section 52 --summary
 ```
 
-What takes effect by the end of the year (everything unacknowledged up to
-31. 12., also what is already in force; tell the two apart by `inForce`):
+When the answer needs several calls (several laws or sections, a list and
+some details, two date ranges), write ONE `script` program instead of several
+tool calls. Rules for the program:
 
-```bash
-node --input-type=module -e "
-import * as t from '$HOME/.local/lib/turboleal/turboleal.mjs'
-const alerts = await t.alerts({ unacknowledged: true, effectiveTo: new Date().getFullYear() + '-12-31' })
-console.log(JSON.stringify(alerts.map((a) => t.summarize(a)), null, 1))
-"
-```
+- Call the CLI only through `shell({ command: 'turboleal-cli', args: [...] })`
+  and run the calls under `parallel`. Values go into `args`, never into a
+  command string. Import nothing.
+- Return only the compact summaries (or the `watched` result), never the raw
+  alerts.
 
-What changes in § 38g of the income tax act, or that it is not watched:
+The examples assume this helper:
 
-```bash
-node --input-type=module -e "
-import * as t from '$HOME/.local/lib/turboleal/turboleal.mjs'
-const where = await t.watched({ law: '586/1992', section: '38g' })
-const alerts = where.length ? await t.alerts({ law: '586/1992', section: '38g' }) : []
-console.log(JSON.stringify({ watched: where, alerts: alerts.map((a) => t.summarize(a)) }, null, 1))
-"
-```
+    const turboleal = async (...args) =>
+      JSON.parse(await shell({ command: 'turboleal-cli', args: ['-o', 'json', ...args], timeoutSeconds: 120 }))
 
-A failed call throws an error whose message says what went wrong; a 401 means
-the key is missing or invalid (see **When Turboleal is not connected**).
+#### 1. Several sections: watched or not, and what changes
+
+    export default async function () {
+      const PROVISIONS = [
+        ['586/1992', '38g'],
+        ['262/2006', '52'],
+        ['262/2006', '35']
+      ]
+      return parallel(PROVISIONS.map(([law, section]) => async () => {
+        const watched = await turboleal('watched', '--law', law, '--section', section)
+        const alerts = watched.length
+          ? await turboleal('alerts', 'list', '--law', law, '--section', section, '--summary')
+          : []
+        return { law, section, watched: watched.map((w) => w.watchSetName), alerts }
+      }))
+    }
+
+An empty `watched` means: say the section is not watched and offer to add it.
+
+#### 2. A topic spread over several laws, up to the end of the year
+
+    export default async function () {
+      const LAWS = ['zakonik prace', '435/2004', '187/2006']
+      const END = '2026-12-31'
+      const found = await parallel(LAWS.map((law) => async () => ({
+        law,
+        alerts: await turboleal('alerts', 'list', '--unacknowledged', '--law', law,
+          '--effective-to', END, '--summary')
+      })))
+      return found.filter(Boolean).filter((entry) => entry.alerts.length)
+    }
+
+#### 3. Two questions at once, and the details of chosen alerts
+
+    export default async function () {
+      const day = (offset) => new Date(Date.now() + offset * 864e5).toISOString().slice(0, 10)
+      const WEEK_AGO = day(-7)
+      const TODAY = day(0)
+      const IDS = ['<ALERT_ID>', '<ALERT_ID>']
+      const [lastWeek, nextMonths, ...details] = await parallel([
+        () => turboleal('alerts', 'list', '--detected-from', WEEK_AGO, '--summary'),
+        () => turboleal('alerts', 'list', '--unacknowledged', '--effective-from', TODAY,
+          '--effective-to', '2027-03-31', '--summary'),
+        ...IDS.map((id) => () => turboleal('alerts', 'get', id, '--summary'))
+      ])
+      return { lastWeek, nextMonths, details }
+    }
+
+A failed call ends with an `error:` line that says what went wrong; a 401
+means the key is missing or invalid (see **When Turboleal is not connected**).
 
 ### Workflows
 
-- **What changed**: one library script (above). Map a topic ("zaměstnanci",
+- **What changed**: one `alerts list ... --summary` call, or one `script`
+  program when several are needed (above). Map a topic ("zaměstnanci",
   "zkušební doba") to the watched laws and sections with `documents` or
-  `watched`, then filter `alerts` by them.
+  `watched`, then filter `alerts list` by them.
 - **Reading a change**: see **Reading a diff** below. Older alerts may carry a
   unified `diff` instead of `diffMarkdown`.
 - **Takes effect (nabude účinnosti)**: for "do konce roku" take every
@@ -272,7 +313,7 @@ the key is missing or invalid (see **When Turboleal is not connected**).
 `{++new++}` was inserted. Hard rules:
 
 - Read the whole diff, not the first lines, and use `overview` from
-  `summarize`. Describe every deleted and every inserted passage; none may be
+  `--summary`. Describe every deleted and every inserted passage; none may be
   left out.
 - A deleted or an inserted paragraph, letter or point is a substantive change,
   never "technická změna". Say what it said or says ("Vypouští se odst. 3 a 4
@@ -287,9 +328,9 @@ the key is missing or invalid (see **When Turboleal is not connected**).
 
 ### Chat sources
 
-`alerts get`, `alerts list`, `documents` and the library's `alerts` and
-`alert` attach their Turboleal pages to the chat "Sources" panel automatically,
-for every returned alert. Turboleal answers link only to Turboleal:
+`alerts get`, `alerts list` and `documents` attach their Turboleal pages to
+the chat "Sources" panel automatically, for every returned alert (up to 50
+per call). Turboleal answers link only to Turboleal:
 each alert to its `turbolealUrl` (opens that alert), never the bare `/alerts`
 page, and never to CODEXIS (app.codexis.cz, next.codexis.cz), e.g.
 [Upozornění v Turbolealu - zákon č. 586/1992 Sb., § 38g](<turbolealUrl>).

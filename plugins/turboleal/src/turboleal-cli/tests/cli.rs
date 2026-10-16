@@ -523,3 +523,328 @@ fn auth_logout_deletes_the_saved_key_through_cdxctl() {
         "appenv turboleal delete TURBOLEAL_API_KEY\n"
     );
 }
+
+fn listed_alert(id: u32, overrides: serde_json::Value) -> serde_json::Value {
+    let mut alert = serde_json::json!({
+        "id": format!("00000000-0000-0000-0000-{id:012}"),
+        "watchSetId": WATCH_SET,
+        "type": "UPCOMING_AMENDMENT",
+        "documentId": "CR1",
+        "citation": "586/1992 Sb.",
+        "sectionId": "00000000-0000-0000-0000-000000000200",
+        "partId": "paragraf38g",
+        "label": "§ 38g",
+        "effectiveFrom": "2027-01-01",
+        "detectedAt": "2026-10-15T12:00:00Z",
+        "amendments": [{ "documentId": "CR2", "citation": "120/2026 Sb." }],
+        "diff": null,
+        "diffHtml": "<p>x</p>",
+        "diffMarkdown": "(1) Přiznání podá, kdo měl příjmy nad {--50--}{++100++} 000 Kč.",
+        "codexisUrl": "https://next.codexis.cz/doc/CR1",
+        "references": [],
+        "remindedAt": null,
+        "acknowledgedAt": null
+    });
+    alert
+        .as_object_mut()
+        .unwrap()
+        .extend(overrides.as_object().unwrap().clone());
+    alert
+}
+
+fn documents_mock(server: &mut Server) -> mockito::Mock {
+    server
+        .mock("GET", format!("/api/v1/watch-sets/{WATCH_SET}/documents").as_str())
+        .with_body(
+            serde_json::json!([
+                { "documentId": "CR1", "citation": "586/1992 Sb.", "title": "Zákon o daních z příjmů",
+                  "status": "VALID", "wholeDocument": false,
+                  "sections": [{ "id": "00000000-0000-0000-0000-000000000001", "partId": "paragraf38g", "label": "§ 38g" }] },
+                { "documentId": "CR3", "citation": "262/2006 Sb.", "title": "Zákoník práce",
+                  "status": "VALID", "wholeDocument": true, "sections": [] }
+            ])
+            .to_string(),
+        )
+        .create()
+}
+
+fn alerts_mock(server: &mut Server, alerts: Vec<serde_json::Value>) -> mockito::Mock {
+    server
+        .mock("GET", "/api/v1/alerts")
+        .match_query(Matcher::Any)
+        .with_body(serde_json::json!({ "items": alerts, "nextCursor": null }).to_string())
+        .create()
+}
+
+fn summary_ids(stdout: &[u8]) -> Vec<String> {
+    let summaries: serde_json::Value = serde_json::from_slice(stdout).unwrap();
+    summaries
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|summary| summary["id"].as_str().unwrap()[35..].to_owned())
+        .collect()
+}
+
+#[test]
+fn alerts_list_summary_follows_the_cursor_names_the_law_and_links_only_turboleal() {
+    let mut server = Server::new();
+    let first = server
+        .mock("GET", "/api/v1/alerts")
+        .match_query(Matcher::AllOf(vec![
+            Matcher::UrlEncoded("acknowledged".into(), "false".into()),
+            Matcher::UrlEncoded("limit".into(), "200".into()),
+        ]))
+        .match_request(|request| !request.path_and_query().contains("after="))
+        .with_body(
+            serde_json::json!({
+                "items": [listed_alert(1, serde_json::json!({}))],
+                "nextCursor": "00000000-0000-0000-0000-000000000001"
+            })
+            .to_string(),
+        )
+        .create();
+    let second = server
+        .mock("GET", "/api/v1/alerts")
+        .match_query(Matcher::UrlEncoded(
+            "after".into(),
+            "00000000-0000-0000-0000-000000000001".into(),
+        ))
+        .with_body(
+            serde_json::json!({ "items": [listed_alert(2, serde_json::json!({}))], "nextCursor": null })
+                .to_string(),
+        )
+        .create();
+    let documents = documents_mock(&mut server).expect(1);
+
+    let assert = turboleal(&server)
+        .args([
+            "-o",
+            "json",
+            "alerts",
+            "list",
+            "--unacknowledged",
+            "--summary",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("codexis").not());
+
+    let summaries: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout).unwrap();
+    assert_eq!(summary_ids(&assert.get_output().stdout), ["1", "2"]);
+    assert_eq!(summaries[0]["law"], "Zákon o daních z příjmů");
+    assert_eq!(
+        summaries[0]["type"],
+        "připravovaná změna, zatím nenabyla účinnosti"
+    );
+    assert_eq!(
+        summaries[0]["turbolealUrl"],
+        format!(
+            "{}/alerts?alerts=%7B%22acknowledged%22%3A%22all%22%2C%22alert%22%3A%22QWxlcnQ6MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAx%22%7D",
+            server.url()
+        )
+    );
+    assert_eq!(summaries[0]["overview"]["items"][0]["kind"], "changed");
+    first.assert();
+    second.assert();
+    documents.assert();
+}
+
+#[test]
+fn alerts_list_filters_by_law_section_dates_and_type() {
+    let mut server = Server::new();
+    alerts_mock(
+        &mut server,
+        vec![
+            listed_alert(1, serde_json::json!({})),
+            listed_alert(2, serde_json::json!({ "label": "§ 38ga" })),
+            listed_alert(
+                3,
+                serde_json::json!({ "effectiveFrom": "2026-07-01", "type": "AMENDED" }),
+            ),
+            listed_alert(
+                4,
+                serde_json::json!({ "documentId": "CR3", "citation": "262/2006 Sb.", "label": "§ 35" }),
+            ),
+        ],
+    );
+    documents_mock(&mut server);
+    let ids = |args: &[&str]| {
+        let assert = turboleal(&server)
+            .args(["-o", "json", "alerts", "list", "--summary"])
+            .args(args)
+            .assert()
+            .success();
+        summary_ids(&assert.get_output().stdout)
+    };
+
+    assert_eq!(
+        ids(&["--law", "danich z prijmu", "--section", "38g"]),
+        ["3", "1"]
+    );
+    assert_eq!(
+        ids(&[
+            "--effective-from",
+            "2026-01-01",
+            "--effective-to",
+            "2026-12-31"
+        ]),
+        ["3"]
+    );
+    assert_eq!(
+        ids(&["--type", "UPCOMING_AMENDMENT", "--law", "zákoník práce"]),
+        ["4"]
+    );
+    assert_eq!(
+        ids(&[
+            "--detected-from",
+            "2026-10-15",
+            "--detected-to",
+            "2026-10-15"
+        ]),
+        ["3", "1", "2", "4"]
+    );
+    assert_eq!(
+        ids(&["--detected-from", "2026-10-16"]),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
+fn alerts_list_with_a_filter_keeps_the_page_shape_without_summary() {
+    let mut server = Server::new();
+    alerts_mock(
+        &mut server,
+        vec![
+            listed_alert(1, serde_json::json!({})),
+            listed_alert(2, serde_json::json!({ "label": "§ 38ga" })),
+        ],
+    );
+    documents_mock(&mut server);
+
+    let assert = turboleal(&server)
+        .args(["-o", "json", "alerts", "list", "--section", "§ 38g"])
+        .assert()
+        .success();
+
+    let page: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout).unwrap();
+    assert_eq!(page["items"].as_array().unwrap().len(), 1);
+    assert_eq!(page["items"][0]["lawTitle"], "Zákon o daních z příjmů");
+    assert_eq!(page["nextCursor"], serde_json::Value::Null);
+}
+
+#[test]
+fn alerts_list_rejects_a_date_that_is_not_iso() {
+    let server = Server::new();
+
+    turboleal(&server)
+        .args(["alerts", "list", "--effective-to", "31. 12. 2026"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("YYYY-MM-DD"));
+}
+
+#[test]
+fn alerts_list_cites_every_returned_alert_in_the_chat() {
+    let mut server = Server::new();
+    alerts_mock(
+        &mut server,
+        (1..=12)
+            .map(|id| listed_alert(id, serde_json::json!({})))
+            .collect(),
+    );
+    documents_mock(&mut server);
+    let published = server
+        .mock(
+            "POST",
+            "/rest/v1/plugin/chats/chat-1/tool-calls/call-1/sources",
+        )
+        .match_request(|request| {
+            let body: serde_json::Value = serde_json::from_slice(request.body().unwrap()).unwrap();
+            body["sources"]
+                .as_array()
+                .is_some_and(|sources| sources.len() == 12)
+        })
+        .create();
+    let home = tempfile_dir();
+    let mut command = turboleal(&server);
+    in_chat(&mut command, &home, &server);
+
+    command
+        .args(["-o", "json", "alerts", "list", "--summary"])
+        .assert()
+        .success();
+
+    published.assert();
+}
+
+#[test]
+fn alerts_get_summary_keeps_the_alert_when_its_law_name_cannot_be_looked_up() {
+    let mut server = Server::new();
+    alert_mock(
+        &mut server,
+        "null",
+        r#""(1) Lhůta činí {--tři--}{++pět++} dny.""#,
+    );
+
+    let assert = turboleal(&server)
+        .args(["-o", "json", "alerts", "get", ALERT, "--summary"])
+        .assert()
+        .success();
+
+    let summary: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout).unwrap();
+    assert_eq!(summary["law"], serde_json::Value::Null);
+    assert_eq!(summary["citation"], "89/2012 Sb.");
+    assert_eq!(summary["effectiveFrom"], "1. 1. 2027");
+    assert_eq!(summary["overview"]["items"][0]["where"], "odst. 1");
+    assert_eq!(
+        summary["diffMarkdown"],
+        "(1) Lhůta činí {--tři--}{++pět++} dny."
+    );
+}
+
+#[test]
+fn watched_finds_the_watch_sets_that_watch_a_law_or_section() {
+    let mut server = Server::new();
+    server
+        .mock("GET", "/api/v1/watch-sets")
+        .match_query(Matcher::UrlEncoded("limit".into(), "200".into()))
+        .with_body(format!(
+            r#"{{"items":[{},{}],"nextCursor":null}}"#,
+            watch_set_json(WATCH_SET, "Pekárna"),
+            watch_set_json(SECOND_WATCH_SET, "IT")
+        ))
+        .create();
+    documents_mock(&mut server);
+    server
+        .mock(
+            "GET",
+            format!("/api/v1/watch-sets/{SECOND_WATCH_SET}/documents").as_str(),
+        )
+        .with_body("[]")
+        .create();
+    let watched = |args: &[&str]| {
+        let assert = turboleal(&server)
+            .args(["-o", "json", "watched"])
+            .args(args)
+            .assert()
+            .success();
+        serde_json::from_slice::<serde_json::Value>(&assert.get_output().stdout).unwrap()
+    };
+
+    let income = watched(&["--law", "586/1992", "--section", "38g"]);
+    let labour = watched(&["--law", "zakonik prace", "--section", "§ 52"]);
+    let missing = watched(&["--law", "586/1992", "--section", "§ 7a"]);
+
+    assert_eq!(income.as_array().unwrap().len(), 1);
+    assert_eq!(income[0]["watchSetName"], "Pekárna");
+    assert_eq!(income[0]["sections"], serde_json::json!(["§ 38g"]));
+    assert!(
+        income[0]["turbolealUrl"]
+            .as_str()
+            .unwrap()
+            .contains("/watch-sets/")
+    );
+    assert_eq!(labour[0]["wholeDocument"], true);
+    assert_eq!(missing, serde_json::json!([]));
+}

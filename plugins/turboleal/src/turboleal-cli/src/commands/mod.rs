@@ -1,13 +1,16 @@
 mod alerts;
 mod files;
 mod watch_sets;
+mod watched;
+
+use std::thread;
 
 use anyhow::Result;
 use uuid::Uuid;
 
 use crate::api::{ApiClient, ApiResult};
 use crate::cli::{Command, PageArgs, ReferenceCommand};
-use crate::model::{Page, Reference};
+use crate::model::{Document, Page, Reference};
 use crate::output::{Output, table, text};
 use crate::sources;
 
@@ -42,6 +45,7 @@ pub fn dispatch(client: &ApiClient, output: &Output, command: Command) -> Result
             })
         }
         Command::Alerts(command) => alerts::run(client, output, command),
+        Command::Watched { law, section } => watched::run(client, output, &law, section.as_deref()),
         Command::Auth(_) | Command::Completions { .. } => {
             unreachable!("auth and completions run without an API client")
         }
@@ -108,6 +112,25 @@ pub(crate) fn print_references(references: &[Reference]) {
             }),
         )
     );
+}
+
+pub(crate) const PAGE_LIMIT: u16 = 200;
+
+/// The watched documents of each watch set, fetched in parallel, in the given order.
+pub(crate) fn documents_of(
+    client: &ApiClient,
+    watch_sets: &[Uuid],
+) -> Vec<ApiResult<Vec<Document>>> {
+    thread::scope(|scope| {
+        let fetches: Vec<_> = watch_sets
+            .iter()
+            .map(|&watch_set| scope.spawn(move || client.documents(watch_set)))
+            .collect();
+        fetches
+            .into_iter()
+            .map(|fetch| fetch.join().expect("document fetch panicked"))
+            .collect()
+    })
 }
 
 /// Fetches one page, or every page when `--all` is given, following `nextCursor`.

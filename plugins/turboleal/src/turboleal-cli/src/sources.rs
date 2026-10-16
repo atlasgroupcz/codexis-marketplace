@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -6,9 +6,10 @@ use reqwest::Url;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::format::czech_date;
 use crate::model::{Alert, Document};
 
-pub(crate) const SOURCES_CAP: usize = 10;
+pub(crate) const SOURCES_CAP: usize = 50;
 const SNIPPET_MAX_CHARS: usize = 300;
 
 /// Best-effort publish of chat sources; delegates to the shared publisher.
@@ -16,21 +17,16 @@ pub(crate) fn publish(entries: &[Value]) {
     cdx_common::sources::try_publish("turboleal-cli", entries);
 }
 
-/// The Turboleal page of every alert, capped. Turboleal never cites CODEXIS:
-/// `titles` maps a CODEXIS document id to the law's name for the title only.
-pub(crate) fn alert_sources(
-    alerts: &[Alert],
-    titles: &HashMap<String, String>,
-    app_url: &str,
-    cap: usize,
-) -> Vec<Value> {
+/// The Turboleal page of every alert, capped. Turboleal never cites CODEXIS;
+/// the law's name only goes into the title.
+pub(crate) fn alert_sources(alerts: &[Alert], app_url: &str, cap: usize) -> Vec<Value> {
     let pages = alerts.iter().filter_map(|alert| {
         Some(entry(
             &alert_page_url(app_url, alert.id)?,
             &format!(
                 "Upozornění v Turbolealu: {}",
                 provision_title(
-                    titles.get(&alert.document_id).map(String::as_str),
+                    alert.law_title.as_deref(),
                     &alert.citation,
                     alert.label.as_deref(),
                 )
@@ -159,17 +155,6 @@ fn change_type(value: &str) -> &str {
     }
 }
 
-fn czech_date(value: &str) -> String {
-    let parts: Vec<&str> = value.split('-').collect();
-    match parts.as_slice() {
-        [year, month, day] => match (month.parse::<u8>(), day.parse::<u8>()) {
-            (Ok(month), Ok(day)) => format!("{day}. {month}. {year}"),
-            _ => value.to_owned(),
-        },
-        _ => value.to_owned(),
-    }
-}
-
 fn watched_summary(document: &Document) -> String {
     if document.whole_document {
         return "Sledovaný celý předpis.".to_owned();
@@ -211,19 +196,16 @@ mod tests {
             }],
             diff: None,
             diff_markdown: None,
+            law_title: Some("Zákon o daních z příjmů".into()),
             turboleal_url: None,
             references: vec![],
             acknowledged_at: None,
         }
     }
 
-    fn titles() -> HashMap<String, String> {
-        HashMap::from([("CR1".to_owned(), "Zákon o daních z příjmů".to_owned())])
-    }
-
     #[test]
     fn an_alert_cites_only_its_turboleal_page() {
-        let entries = alert_sources(&[alert(1, Some("§ 38g"))], &titles(), APP, SOURCES_CAP);
+        let entries = alert_sources(&[alert(1, Some("§ 38g"))], APP, SOURCES_CAP);
 
         assert_eq!(
             entries,
@@ -254,9 +236,9 @@ mod tests {
 
     #[test]
     fn alerts_respect_the_cap() {
-        let alerts: Vec<Alert> = (1..=12).map(|id| alert(id, Some("§ 38g"))).collect();
+        let alerts: Vec<Alert> = (1..=60).map(|id| alert(id, Some("§ 38g"))).collect();
 
-        let entries = alert_sources(&alerts, &titles(), APP, SOURCES_CAP);
+        let entries = alert_sources(&alerts, APP, SOURCES_CAP);
 
         assert_eq!(entries.len(), SOURCES_CAP);
         assert!(entries.iter().all(|entry| {
@@ -269,7 +251,10 @@ mod tests {
 
     #[test]
     fn an_alert_without_a_law_name_cites_the_citation() {
-        let entries = alert_sources(&[alert(1, None)], &HashMap::new(), APP, SOURCES_CAP);
+        let mut alert = alert(1, None);
+        alert.law_title = None;
+
+        let entries = alert_sources(&[alert], APP, SOURCES_CAP);
 
         assert_eq!(entries.len(), 1);
         assert_eq!(
@@ -331,7 +316,5 @@ mod tests {
         repealed.amendments.clear();
 
         assert_eq!(change_summary(&repealed), "Zrušený předpis.");
-        assert_eq!(czech_date("2027-03-09"), "9. 3. 2027");
-        assert_eq!(czech_date("soon"), "soon");
     }
 }

@@ -2,10 +2,13 @@ pub mod api;
 pub mod cli;
 mod commands;
 pub mod config;
+pub mod diff;
+pub mod format;
 pub mod model;
 mod output;
 pub mod settings;
 mod sources;
+pub mod summary;
 
 use std::io::Read;
 

@@ -96,6 +96,8 @@ pub struct Alert {
     pub amendments: Vec<Amendment>,
     pub diff: Option<String>,
     pub diff_markdown: Option<String>,
+    #[serde(default)]
+    pub law_title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub turboleal_url: Option<String>,
     pub references: Vec<Reference>,
